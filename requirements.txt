@@ -1,0 +1,2 @@
+PyYAML
+-e git+git@git.corp.adobe.com:adorton/cce-umapi.git#egg=umapi
