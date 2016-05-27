@@ -19,8 +19,10 @@ def process_args():
                         help='API Config Path')
     parser.add_argument('--group-config', dest='group_config', default=None,
                         help='Group Config Path')
+    parser.add_argument('--ldap-config', dest='ldap_config', default=None,
+                        help='LDAP Config Path')
     parser.add_argument('--auth-store-path', dest='auth_store_path', default=None,
-                        help='optionally specify the auth store path (takes precedence over "~/.umapi/auth" and UMAPI_CLI_AUTH_PATH"')
+                        help='Auth Store Path')
     parser.add_argument('--infile', dest='infile', default=None,
                         help='input file - reads from stdin if this parameter is omitted')
 
@@ -43,12 +45,16 @@ def main():
 
     api = UMAPI("https://" + c['server']['host'] + c['server']['endpoint'], auth)
 
-    if args.infile:
-        infile = open(args.infile, 'r')
+    if args.ldap_config:
+        lc = config.ldap_config(open(args.ldap_config, 'r'))
+        directory_users = input.from_ldap(lc['host'], lc['username'], lc['pw'])
     else:
-        infile = sys.stdin
+        if args.infile:
+            infile = open(args.infile, 'r')
+        else:
+            infile = sys.stdin
 
-    directory_users = input.from_csv(csv.DictReader(infile, delimiter='\t'))
+        directory_users = input.from_csv(csv.DictReader(infile, delimiter='\t'))
 
     if not args.group_config:
         print "Please provide the group config path"

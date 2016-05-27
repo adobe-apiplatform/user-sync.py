@@ -1,2 +1,3 @@
 PyYAML
--e git+git@git.corp.adobe.com:adorton/cce-umapi.git#egg=umapi
+python-ldap
+git+ssh://git@git.corp.adobe.com/adorton/cce-umapi.git#egg=umapi

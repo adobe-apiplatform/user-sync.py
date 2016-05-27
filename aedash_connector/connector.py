@@ -3,8 +3,11 @@ from umapi.error import UMAPIRequestError
 
 
 def process_rules(api, org_id, directory_users, adobe_users, rules):
+    directory_users = list(directory_users)
     for dir_user in directory_users:
         if dir_user['email'] not in adobe_users:
+            if not [g for g in dir_user['groups'] if g in rules]:
+                continue
             # create user
             print "CREATE USER - %s" % dir_user['email']
             action = Action(user=dir_user['email']).do(
@@ -20,24 +23,6 @@ def process_rules(api, org_id, directory_users, adobe_users, rules):
                 print "CREATE USER -- SUCCESS - %s" % dir_user['email']
             else:
                 print "CREATE USER -- FAILURE - %s" % dir_user['email']
-
-            continue
-
-        if dir_user['disable']:
-            # disable user
-            action = Action(user=dir_user['email']).do(
-                removeFromOrg={}
-            )
-            try:
-                res = api.action(org_id, action)
-            except UMAPIRequestError as e:
-                print "REMOVE USER -- FAILURE - %s -- %s" % (dir_user['email'], e.code)
-                continue
-
-            if res['result'] == 'success':
-                print "REMOVE USER -- SUCCESS - %s" % dir_user['email']
-            else:
-                print "REMOVE USER -- FAILURE - %s" % dir_user['email']
 
             continue
 
@@ -92,3 +77,42 @@ def process_rules(api, org_id, directory_users, adobe_users, rules):
                 print "ADDED: ", add_groups
                 print "REMOVED: ", remove_groups
 
+    # check for accounts to disable (remove group membership)
+    # get a list of directory email addresses
+    dir_emails = [u['email'] for u in directory_users]
+    adobe_groups = []
+    for groups in rules.values():
+        adobe_groups += groups
+    for adobe_email, adobe_user in adobe_users.items():
+        # don't disable if adobe email is found in directory
+        if adobe_email in dir_emails:
+            continue
+
+        if 'groups' not in adobe_user:
+            continue
+
+        # only remove users that belong to at least one directory group
+        remove_groups = [g for g in adobe_user['groups'] if g in adobe_groups]
+
+        if not remove_groups:
+            continue
+
+        action = Action(user=adobe_email).do(
+            remove=adobe_user['groups']
+        )
+
+        try:
+            res = api.action(org_id, action)
+        except UMAPIRequestError as e:
+            print "DISABLE USER -- FAILURE - %s -- %s" % (adobe_email, e.code)
+            print "REMOVED: ", remove_groups
+            continue
+
+        if res['result'] == 'success':
+            print "DISABLE USER -- SUCCESS - %s" % adobe_email
+            print "REMOVED: ", remove_groups
+        else:
+            print "DISABLE USER -- FAILURE - %s" % adobe_email
+            print "REMOVED: ", remove_groups
+
+        continue
