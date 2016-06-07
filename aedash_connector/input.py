@@ -32,7 +32,7 @@ def from_ldap(host, username, pw, domain):
     con.simple_bind_s(username, pw)
 
     base_dn = "dc=ccestestdomain,dc=com"
-    fltr = "(objectClass=person)"
+    fltr = "(&(objectClass=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
     attrs = ["givenName", "sn", "sAMAccountName", "memberOf"]
     res = con.search_s(base_dn, ldap.SCOPE_SUBTREE, fltr, attrs)
 
