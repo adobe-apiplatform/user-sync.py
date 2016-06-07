@@ -160,3 +160,7 @@ fabric.properties
 
 # Created by .ignore support plugin (hsz.mobi)
 .idea
+.pants.d
+dist
+.pids
+.pants.workdir.file_lock

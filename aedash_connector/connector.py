@@ -8,11 +8,22 @@ def process_rules(api, org_id, directory_users, adobe_users, rules):
         if dir_user['email'] not in adobe_users:
             if not [g for g in dir_user['groups'] if g in rules]:
                 continue
+
+            add_groups = []
+            for g in dir_user['groups']:
+                add_groups += rules[g]
+
             # create user
             print "CREATE USER - %s" % dir_user['email']
             action = Action(user=dir_user['email']).do(
-                addAdobeID={"email": dir_user['email']}
+                createEnterpriseID={
+                    "email": dir_user['email'],
+                    "firstname": dir_user['firstname'],
+                    "lastname": dir_user['lastname'],
+                },
+                add=add_groups,
             )
+
             try:
                 res = api.action(org_id, action)
             except UMAPIRequestError as e:
@@ -21,6 +32,7 @@ def process_rules(api, org_id, directory_users, adobe_users, rules):
 
             if res['result'] == 'success':
                 print "CREATE USER -- SUCCESS - %s" % dir_user['email']
+                print "ADDED: ", add_groups
             else:
                 print "CREATE USER -- FAILURE - %s" % dir_user['email']
 

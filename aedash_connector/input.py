@@ -25,7 +25,7 @@ def from_csv(reader):
         yield outrec
 
 
-def from_ldap(host, username, pw):
+def from_ldap(host, username, pw, domain):
     con = ldap.initialize(host)
     con.protocol_version = 3
     con.set_option(ldap.OPT_REFERRALS, 0)
@@ -42,11 +42,11 @@ def from_ldap(host, username, pw):
         if 'sAMAccountName' not in rec:
             continue
         outrec = copy.deepcopy(_TEMPLATE)
-        outrec['email'] = 'adorton+%s@adobetest.com' % rec['sAMAccountName'][0]
+        outrec['email'] = '%s@%s' % (rec['sAMAccountName'][0], domain)
         if 'givenName' in rec:
-            outrec['firstname'] = rec['givenName']
+            outrec['firstname'] = rec['givenName'][0]
         if 'sn' in rec:
-            outrec['lastname'] = rec['sn']
+            outrec['lastname'] = rec['sn'][0]
         if 'memberOf' in rec:
             for g in rec['memberOf']:
                 m = re.match(r"CN=(?P<group>[^,]+),", g)

@@ -47,7 +47,7 @@ def main():
 
     if args.ldap_config:
         lc = config.ldap_config(open(args.ldap_config, 'r'))
-        directory_users = input.from_ldap(lc['host'], lc['username'], lc['pw'])
+        directory_users = input.from_ldap(lc['host'], lc['username'], lc['pw'], c['enterprise']['domain'])
     else:
         if args.infile:
             infile = open(args.infile, 'r')
@@ -63,8 +63,7 @@ def main():
     group_config = dict([(g['directory_group'], g['dashboard_groups'])
                          for g in config.group_config(open(args.group_config, 'r'))])
 
-    adobe_users = dict([(u['email'], u) for u in paginate(api.users, c['enterprise']['org_id'])
-                        if 'adorton' in u['email']])
+    adobe_users = dict([(u['email'], u) for u in paginate(api.users, c['enterprise']['org_id'])])
 
     connector.process_rules(api, c['enterprise']['org_id'], directory_users, adobe_users, group_config)
 
