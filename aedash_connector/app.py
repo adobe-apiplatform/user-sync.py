@@ -12,19 +12,21 @@ from umapi.helper import paginate
 
 def process_args():
     parser = argparse.ArgumentParser(description='Adobe Enterprise Dashboard User Management Connector')
-    parser.add_argument('--config', dest='config_path', required=True,
-                        help='API Config Path')
-    parser.add_argument('--group-config', dest='group_config', required=True,
-                        help='Group Config Path')
-    parser.add_argument('--ldap-config', dest='ldap_config', default=None,
-                        help='LDAP Config Path')
-    parser.add_argument('--auth-store-path', dest='auth_store_path', default=None,
-                        help='Auth Store Path')
-    parser.add_argument('--infile', dest='infile', default=None,
+    parser.add_argument('-l', '--ldap-config', dest='ldap_config', default=None,
+                        help='LDAP Config Path - if not provided, tries to get input from file or stdin')
+    parser.add_argument('-i', '--infile', dest='infile', default=None,
                         help='input file - reads from stdin if this parameter is omitted')
     parser.add_argument('-V', '--version',
                         action='version',
                         version='%(prog)s (version 0.5.0)')
+
+    req_named = parser.add_argument_group('required arguments')
+    req_named.add_argument('-c', '--config', dest='config_path', required=True,
+                           help='API Config Path')
+    req_named.add_argument('-g', '--group-config', dest='group_config', required=True,
+                           help='Group Config Path')
+    req_named.add_argument('-a', '--auth-store', dest='auth_store_path', required=True,
+                           help='Auth Store Path')
 
     return parser.parse_args()
 
