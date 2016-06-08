@@ -12,9 +12,6 @@ from umapi.helper import paginate
 
 def process_args():
     parser = argparse.ArgumentParser(description='Adobe Enterprise Dashboard User Management Connector')
-    parser.add_argument('--example-config', dest='example_config', action='store_const',
-                        const=config.example_config, default=None,
-                        help='generate example config file and exit')
     parser.add_argument('--config', dest='config_path', required=True,
                         help='API Config Path')
     parser.add_argument('--group-config', dest='group_config', required=True,
