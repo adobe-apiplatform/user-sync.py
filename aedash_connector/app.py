@@ -11,13 +11,13 @@ from umapi.helper import paginate
 
 
 def process_args():
-    parser = argparse.ArgumentParser(description='Prototype Adobe Enterprise Dashboard User Management Connector')
+    parser = argparse.ArgumentParser(description='Adobe Enterprise Dashboard User Management Connector')
     parser.add_argument('--example-config', dest='example_config', action='store_const',
                         const=config.example_config, default=None,
                         help='generate example config file and exit')
-    parser.add_argument('--config-path', dest='config_path', default=None,
+    parser.add_argument('--config', dest='config_path', required=True,
                         help='API Config Path')
-    parser.add_argument('--group-config', dest='group_config', default=None,
+    parser.add_argument('--group-config', dest='group_config', required=True,
                         help='Group Config Path')
     parser.add_argument('--ldap-config', dest='ldap_config', default=None,
                         help='LDAP Config Path')
@@ -25,6 +25,9 @@ def process_args():
                         help='Auth Store Path')
     parser.add_argument('--infile', dest='infile', default=None,
                         help='input file - reads from stdin if this parameter is omitted')
+    parser.add_argument('-V', '--version',
+                        action='version',
+                        version='%(prog)s (version 0.5.0)')
 
     return parser.parse_args()
 
