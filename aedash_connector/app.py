@@ -54,10 +54,6 @@ def main():
 
         directory_users = input.from_csv(csv.DictReader(infile, delimiter='\t'))
 
-    if not args.group_config:
-        print "Please provide the group config path"
-        sys.exit(1)
-
     group_config = dict([(g['directory_group'], g['dashboard_groups'])
                          for g in config.group_config(open(args.group_config, 'r'))])
 
