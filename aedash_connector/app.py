@@ -3,6 +3,7 @@ import argparse
 import config
 import auth_store
 import csv
+import logging
 import input
 import connector
 from umapi import UMAPI
@@ -31,7 +32,16 @@ def process_args():
     return parser.parse_args()
 
 
+def init_log():
+    logging.basicConfig(format='%(asctime)s\t%(levelname)s\t%(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S',
+                        level=logging.DEBUG)
+
+
 def main():
+    # init the log
+    init_log()
+
     # process command line args
     args = process_args()
 
@@ -44,12 +54,16 @@ def main():
     api = UMAPI("https://" + c['server']['host'] + c['server']['endpoint'], auth)
 
     if args.ldap_config:
+        logging.info('Found LDAP config -- %s', args.ldap_config)
         lc = config.ldap_config(open(args.ldap_config, 'r'))
         directory_users = input.from_ldap(lc['host'], lc['username'], lc['pw'], c['enterprise']['domain'])
     else:
+        logging.info('LDAP config not provided')
         if args.infile:
+            logging.info('Found input file -- %s', args.infile)
             infile = open(args.infile, 'r')
         else:
+            logging.info('No input file - reading stdin')
             infile = sys.stdin
 
         directory_users = input.from_csv(csv.DictReader(infile, delimiter='\t'))
@@ -57,9 +71,15 @@ def main():
     group_config = dict([(g['directory_group'], g['dashboard_groups'])
                          for g in config.group_config(open(args.group_config, 'r'))])
 
+    logging.info('Group config initialized')
+
     adobe_users = dict([(u['email'], u) for u in paginate(api.users, c['enterprise']['org_id'])])
 
+    logging.info('Retrieved Adobe users')
+
     connector.process_rules(api, c['enterprise']['org_id'], directory_users, adobe_users, group_config)
+
+    logging.info('Finished processing')
 
 if __name__ == '__main__':
     main()

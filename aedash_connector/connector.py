@@ -1,3 +1,4 @@
+import logging
 from umapi import Action
 from umapi.error import UMAPIRequestError
 
@@ -14,7 +15,7 @@ def process_rules(api, org_id, directory_users, adobe_users, rules):
                 add_groups += rules[g]
 
             # create user
-            print "CREATE USER - %s" % dir_user['email']
+            logging.info("CREATE USER - %s", dir_user['email'])
             action = Action(user=dir_user['email']).do(
                 createEnterpriseID={
                     "email": dir_user['email'],
@@ -27,14 +28,14 @@ def process_rules(api, org_id, directory_users, adobe_users, rules):
             try:
                 res = api.action(org_id, action)
             except UMAPIRequestError as e:
-                print "CREATE USER -- FAILURE - %s -- %s" % (dir_user['email'], e.code)
+                logging.warn("CREATE USER -- FAILURE - %s -- %s", dir_user['email'], e.code)
                 continue
 
             if res['result'] == 'success':
-                print "CREATE USER -- SUCCESS - %s" % dir_user['email']
-                print "ADDED: ", add_groups
+                logging.info("CREATE USER -- SUCCESS - %s", dir_user['email'])
+                logging.info("ADDED: ", add_groups)
             else:
-                print "CREATE USER -- FAILURE - %s" % dir_user['email']
+                logging.warn("CREATE USER -- FAILURE - %s", dir_user['email'])
 
             continue
 
@@ -75,19 +76,19 @@ def process_rules(api, org_id, directory_users, adobe_users, rules):
             try:
                 res = api.action(org_id, action)
             except UMAPIRequestError as e:
-                print "ADD/REMOVE GROUPS -- FAILURE - %s -- %s" % (dir_user['email'], e.code)
-                print "ADDED: ", add_groups
-                print "REMOVED: ", remove_groups
+                logging.warn("ADD/REMOVE GROUPS -- FAILURE - %s -- %s", dir_user['email'], e.code)
+                logging.warn("ADDED: %s", add_groups)
+                logging.warn("REMOVED: %s", remove_groups)
                 continue
 
             if res['result'] == 'success':
-                print "ADD/REMOVE GROUPS -- SUCCESS - %s" % dir_user['email']
-                print "ADDED: ", add_groups
-                print "REMOVED: ", remove_groups
+                logging.info("ADD/REMOVE GROUPS -- SUCCESS - %s", dir_user['email'])
+                logging.info("ADDED: %s", add_groups)
+                logging.info("REMOVED: %s", remove_groups)
             else:
-                print "ADD/REMOVE GROUPS -- FAILURE - %s" % dir_user['email']
-                print "ADDED: ", add_groups
-                print "REMOVED: ", remove_groups
+                logging.warn("ADD/REMOVE GROUPS -- FAILURE - %s", dir_user['email'])
+                logging.warn("ADDED: %s", add_groups)
+                logging.warn("REMOVED: %s", remove_groups)
 
     # check for accounts to disable (remove group membership)
     # get a list of directory email addresses
@@ -116,15 +117,15 @@ def process_rules(api, org_id, directory_users, adobe_users, rules):
         try:
             res = api.action(org_id, action)
         except UMAPIRequestError as e:
-            print "DISABLE USER -- FAILURE - %s -- %s" % (adobe_email, e.code)
-            print "REMOVED: ", remove_groups
+            logging.warn("DISABLE USER -- FAILURE - %s -- %s", adobe_email, e.code)
+            logging.warn("REMOVED: %s", remove_groups)
             continue
 
         if res['result'] == 'success':
-            print "DISABLE USER -- SUCCESS - %s" % adobe_email
-            print "REMOVED: ", remove_groups
+            logging.info("DISABLE USER -- SUCCESS - %s", adobe_email)
+            logging.info("REMOVED: %s", remove_groups)
         else:
-            print "DISABLE USER -- FAILURE - %s" % adobe_email
-            print "REMOVED: ", remove_groups
+            logging.warn("DISABLE USER -- FAILURE - %s", adobe_email)
+            logging.warn("REMOVED: %s", remove_groups)
 
         continue
