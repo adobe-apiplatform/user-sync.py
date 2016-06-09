@@ -35,10 +35,6 @@ def main():
     # process command line args
     args = process_args()
 
-    if args.example_config:
-        print args.example_config()
-        sys.exit()
-
     # initialize configurator
     c = config.init(open(args.config_path, 'r'))
     store = auth_store.init(c, args.auth_store_path)
