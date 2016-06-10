@@ -33,7 +33,7 @@ def process_rules(api, org_id, directory_users, adobe_users, rules):
 
             if res['result'] == 'success':
                 logging.info("CREATE USER -- SUCCESS - %s", dir_user['email'])
-                logging.info("ADDED: ", add_groups)
+                logging.info("ADDED: %s", add_groups)
             else:
                 logging.warn("CREATE USER -- FAILURE - %s", dir_user['email'])
 
