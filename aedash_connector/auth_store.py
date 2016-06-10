@@ -36,7 +36,10 @@ class AuthStore(object):
 
     def token(self):
         with open(self.store_path, 'r') as store_file:
-            data = json.load(store_file)
+            try:
+                data = json.load(store_file)
+            except ValueError:
+                raise ValueError("Cannot decode auth store object")
             if data['expiry']:
                 expiry = dt.datetime.strptime(data['expiry'], '%Y-%m-%d %H:%M:%S')
             else:

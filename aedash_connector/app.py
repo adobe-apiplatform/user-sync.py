@@ -11,6 +11,10 @@ from umapi.auth import Auth
 from umapi.helper import paginate
 
 
+def error_hook(exctype, value, tb):
+    logging.error('UNHANDLED ERROR %s: %s', exctype, value)
+
+
 def process_args():
     parser = argparse.ArgumentParser(description='Adobe Enterprise Dashboard User Management Connector')
     parser.add_argument('-l', '--ldap-config', dest='ldap_config', default=None,
@@ -39,6 +43,9 @@ def init_log():
 
 
 def main():
+    # set up exception hook
+    sys.excepthook = error_hook
+
     # init the log
     init_log()
 
