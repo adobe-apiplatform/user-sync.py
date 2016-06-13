@@ -4,6 +4,18 @@ from umapi.error import UMAPIRequestError
 
 
 def process_rules(api, org_id, directory_users, adobe_users, rules):
+    """
+    Process group mapping rules
+
+    Compares directory users with Adobe users, and decides which to add, remove, or update.
+
+    :param api: UMAPI interface object
+    :param org_id: Adobe Organization ID
+    :param directory_users: List of Directory Users (provided by input.from_csv or input.from_ldap)
+    :param adobe_users: List of Adobe users from UMAPI
+    :param rules: List of group config rules (from group config file)
+    :return: None
+    """
     directory_users = list(directory_users)
     for dir_user in directory_users:
         if dir_user['email'] not in adobe_users:

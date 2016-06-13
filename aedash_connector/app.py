@@ -12,10 +12,12 @@ from umapi.helper import paginate
 
 
 def error_hook(exctype, value, tb):
+    """Set up the Error Hook (default exception handler)"""
     logging.error('UNHANDLED ERROR %s: %s', exctype, value)
 
 
 def process_args():
+    """Process CLI args"""
     parser = argparse.ArgumentParser(description='Adobe Enterprise Dashboard User Management Connector')
     parser.add_argument('-l', '--ldap-config', dest='ldap_config', default=None,
                         help='LDAP Config Path - if not provided, tries to get input from file or stdin')
@@ -37,6 +39,7 @@ def process_args():
 
 
 def init_log():
+    """Initialize the logger (logs to stdout)"""
     logging.basicConfig(format='%(asctime)s\t%(levelname)s\t%(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S',
                         level=logging.DEBUG)

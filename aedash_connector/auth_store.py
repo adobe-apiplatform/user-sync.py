@@ -5,6 +5,13 @@ from umapi.auth import JWT, AccessRequest
 
 
 def init(config, store_path):
+    """
+    Helper function to initialize AuthStore object from config
+
+    :param config: Application config object
+    :param store_path: Store file path
+    :return: AuthStore object
+    """
     jwt = JWT(
         config['enterprise']['org_id'],
         config['enterprise']['tech_acct'],
@@ -35,6 +42,13 @@ class AuthStore(object):
                 fp.close()
 
     def token(self):
+        """
+        Get auth token
+
+        Returns token from store if not expired, and requests new one if token is expired
+
+        :return: token string
+        """
         with open(self.store_path, 'r') as store_file:
             try:
                 data = json.load(store_file)

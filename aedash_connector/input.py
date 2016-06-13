@@ -13,6 +13,12 @@ _TEMPLATE = {
 
 
 def from_csv(reader):
+    """
+    Get Directory users from CSV file
+
+    :param reader: CSV DictReader object
+    :return: Generator yields one user record per iteration
+    """
     for rec in reader:
         outrec = copy.deepcopy(_TEMPLATE)
         outrec['firstname'] = rec['firstname']
@@ -26,6 +32,15 @@ def from_csv(reader):
 
 
 def from_ldap(host, username, pw, domain):
+    """
+    Get directory users from LDAP query
+
+    :param host: LDAP Host
+    :param username: LDAP User
+    :param pw: LDAP Domain
+    :param domain: Enterprise Domain
+    :return: Generator yields one user record per iteration
+    """
     con = ldap.initialize(host)
     con.protocol_version = 3
     con.set_option(ldap.OPT_REFERRALS, 0)
