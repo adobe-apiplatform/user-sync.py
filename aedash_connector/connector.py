@@ -18,15 +18,19 @@ def process_rules(api, org_id, directory_users, adobe_users, rules):
     """
     directory_users = list(directory_users)
     for dir_user in directory_users:
+        # if the directory user does not exist in dashboard, we might add them
         if dir_user['email'] not in adobe_users:
+            # we only add users that belong to at least one mapped group
             if not [g for g in dir_user['groups'] if g in rules]:
                 continue
 
+            # get a list of groups to add on user account creation
             add_groups = []
             for g in dir_user['groups']:
                 add_groups += rules[g]
 
             # create user
+            # we only support enterprise IDs at the moment
             logging.info("CREATE USER - %s", dir_user['email'])
             action = Action(user=dir_user['email']).do(
                 createEnterpriseID={
@@ -54,8 +58,6 @@ def process_rules(api, org_id, directory_users, adobe_users, rules):
         # if user exists and does not need disabling, then we should check to see if we need to update
         # update user details if needed (first, last, etc)
         # compare groups and add/remove where necessary
-
-        # skipping user update until we get a dashboard
 
         add_groups = []
         remove_groups = []

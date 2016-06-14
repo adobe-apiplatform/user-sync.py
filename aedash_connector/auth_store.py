@@ -12,6 +12,8 @@ def init(config, store_path):
     :param store_path: Store file path
     :return: AuthStore object
     """
+
+    # the JWT object build the JSON Web Token
     jwt = JWT(
         config['enterprise']['org_id'],
         config['enterprise']['tech_acct'],
@@ -20,6 +22,7 @@ def init(config, store_path):
         open(config['enterprise']['priv_key_path'], 'r')
     )
 
+    # when called, the AccessRequest object retrieves an access token from IMS
     access_req = AccessRequest(
         "https://" + config['server']['ims_host'] + config['server']['ims_endpoint_jwt'],
         config['enterprise']['api_key'],
@@ -36,6 +39,8 @@ class AuthStore(object):
     def __init__(self, store_path, access_req):
         self.store_path = store_path
         self.access_req = access_req
+
+        # if auth store file does not exist, then initialize with skeleton JSON object
         if not os.path.exists(store_path):
             with open(store_path, 'w') as fp:
                 fp.write(self.ini_json)

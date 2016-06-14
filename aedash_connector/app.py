@@ -57,12 +57,17 @@ def main():
 
     # initialize configurator
     c = config.init(open(args.config_path, 'r'))
+
+    # initialize auth store object
     store = auth_store.init(c, args.auth_store_path)
+
+    # initialize Auth object for API requests
     token = store.token()
     auth = Auth(c['enterprise']['api_key'], token)
 
     api = UMAPI("https://" + c['server']['host'] + c['server']['endpoint'], auth)
 
+    # if LDAP config is provided, use that even if CSV input is provided
     if args.ldap_config:
         logging.info('Found LDAP config -- %s', args.ldap_config)
         lc = config.ldap_config(open(args.ldap_config, 'r'))
@@ -78,11 +83,13 @@ def main():
 
         directory_users = input.from_csv(csv.DictReader(infile, delimiter='\t'))
 
+    # read group config and convert to a dict, indexed by the directory group name
     group_config = dict([(g['directory_group'], g['dashboard_groups'])
                          for g in config.group_config(open(args.group_config, 'r'))])
 
     logging.info('Group config initialized')
 
+    # get all users for Adobe organization and convert to dict indexed by email address
     adobe_users = dict([(u['email'], u) for u in paginate(api.users, c['enterprise']['org_id'])])
 
     logging.info('Retrieved Adobe users')
