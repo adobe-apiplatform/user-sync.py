@@ -71,7 +71,7 @@ def main():
     if args.ldap_config:
         logging.info('Found LDAP config -- %s', args.ldap_config)
         lc = config.ldap_config(open(args.ldap_config, 'r'))
-        ldap_con = input.make_ldap_con(lc['host'], lc['username'], lc['pw'])
+        ldap_con = input.make_ldap_con(lc['host'], lc['username'], lc['pw'], lc['require_tls_cert'])
         directory_users = input.from_ldap(ldap_con, c['enterprise']['domain'])
     else:
         logging.info('LDAP config not provided')

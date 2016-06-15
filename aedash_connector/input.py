@@ -64,17 +64,22 @@ def from_ldap(con, domain):
         yield outrec
 
 
-def make_ldap_con(host, username, pw):
+def make_ldap_con(host, username, pw, require_tls_cert=True):
     """
     Make an LDAP con object
 
     :param host: LDAP Host
     :param username: LDAP User
     :param pw: LDAP Domain
+    :param require_tls_cert: If False, do not force cert validation [DEFAULT: True]
     :return: LDAP con object
     """
 
+    if not require_tls_cert:
+        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+
     con = ldap.initialize(host)
+    con.start_tls_s()
     con.protocol_version = 3
     con.set_option(ldap.OPT_REFERRALS, 0)
     con.simple_bind_s(username, pw)
