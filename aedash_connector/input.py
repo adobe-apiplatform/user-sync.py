@@ -44,9 +44,9 @@ def from_ldap(con, domain, groups, base_dn, fltr):
     :return: Generator yields one user record per iteration
     """
 
-    users = []
+    users = {}
     for group in groups:
-        logging.info("Getting DN for group '%s", group)
+        logging.info("Getting DN for group '%s'", group)
         res = con.search_s(
             base_dn,
             ldap.SCOPE_SUBTREE,
@@ -62,7 +62,7 @@ def from_ldap(con, domain, groups, base_dn, fltr):
 
         logging.info("DN: %s", groupdn)
 
-        fltr = fltr % {'groupdn': groupdn}
+        qfltr = fltr % {'groupdn': groupdn}
 
         attrs = ["givenName", "sn", "sAMAccountName", "memberOf"]
         page_size = 100
@@ -74,7 +74,7 @@ def from_ldap(con, domain, groups, base_dn, fltr):
             msgid = con.search_ext(
                 base_dn,
                 ldap.SCOPE_SUBTREE,
-                filterstr=fltr,
+                filterstr=qfltr,
                 attrlist=attrs,
                 serverctrls=[lc]
             )
@@ -97,7 +97,8 @@ def from_ldap(con, domain, groups, base_dn, fltr):
                         m = re.match(r"CN=(?P<group>[^,]+),", g)
                         if m:
                             outrec['groups'].append(m.group('group'))
-                users.append(outrec)
+                if outrec['email'] not in users:
+                    users[outrec['email']] = outrec
 
             pctrls = [c for c in serverctrls
                       if c.controlType == SimplePagedResultsControl.controlType]
@@ -110,7 +111,7 @@ def from_ldap(con, domain, groups, base_dn, fltr):
             if not cookie:
                 break
 
-    return users
+    return users.values()
 
 
 def make_ldap_con(host, username, pw, require_tls_cert=True):

@@ -28,7 +28,8 @@ def process_rules(api, org_id, directory_users, adobe_users, rules, type):
             # get a list of groups to add on user account creation
             add_groups = []
             for g in dir_user['groups']:
-                add_groups += rules[g]
+                if g in rules:
+                    add_groups += rules[g]
 
             # create user
             # we only support enterprise IDs at the moment
@@ -82,7 +83,8 @@ def process_rules(api, org_id, directory_users, adobe_users, rules, type):
 
         dir_membership = []
         for g in dir_user['groups']:
-            dir_membership += rules[g]
+            if g in rules:
+                dir_membership += rules[g]
 
         add_groups += [g for g in dir_membership if g not in adobe_membership]
         remove_groups += [g for g in adobe_membership if g not in dir_membership]
