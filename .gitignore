@@ -164,4 +164,4 @@ fabric.properties
 dist
 .pids
 .pants.workdir.file_lock
-config/
+config*/

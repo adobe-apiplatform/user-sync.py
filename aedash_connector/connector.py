@@ -3,7 +3,7 @@ from umapi import Action
 from umapi.error import UMAPIRequestError
 
 
-def process_rules(api, org_id, directory_users, adobe_users, rules):
+def process_rules(api, org_id, directory_users, adobe_users, rules, type):
     """
     Process group mapping rules
 
@@ -14,6 +14,7 @@ def process_rules(api, org_id, directory_users, adobe_users, rules):
     :param directory_users: List of Directory Users (provided by input.from_csv or input.from_ldap)
     :param adobe_users: List of Adobe users from UMAPI
     :param rules: List of group config rules (from group config file)
+    :param type: Identity type - federatedID or enterpriseID
     :return: None
     """
     directory_users = list(directory_users)
@@ -32,15 +33,25 @@ def process_rules(api, org_id, directory_users, adobe_users, rules):
             # create user
             # we only support enterprise IDs at the moment
             logging.info("CREATE USER - %s", dir_user['email'])
-            action = Action(user=dir_user['email']).do(
-                createEnterpriseID={
-                    "email": dir_user['email'],
-                    "firstname": dir_user['firstname'],
-                    "lastname": dir_user['lastname'],
-                },
-                add=add_groups,
-            )
 
+            if type == 'federatedID':
+                action = Action(user=dir_user['email']).do(
+                    createFederatedID={
+                        "email": dir_user['email'],
+                        "firstname": dir_user['firstname'],
+                        "lastname": dir_user['lastname'],
+                    },
+                    add=add_groups,
+                )
+            else:
+                action = Action(user=dir_user['email']).do(
+                    createEnterpriseID={
+                        "email": dir_user['email'],
+                        "firstname": dir_user['firstname'],
+                        "lastname": dir_user['lastname'],
+                    },
+                    add=add_groups,
+                )
             try:
                 res = api.action(org_id, action)
             except UMAPIRequestError as e:

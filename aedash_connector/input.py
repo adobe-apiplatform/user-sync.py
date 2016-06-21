@@ -1,6 +1,8 @@
 import ldap
 import re
 import copy
+import logging
+from ldap.controls import SimplePagedResultsControl
 
 
 _TEMPLATE = {
@@ -19,6 +21,7 @@ def from_csv(reader):
     :param reader: CSV DictReader object
     :return: Generator yields one user record per iteration
     """
+    users = []
     for rec in reader:
         outrec = copy.deepcopy(_TEMPLATE)
         outrec['firstname'] = rec['firstname']
@@ -28,10 +31,11 @@ def from_csv(reader):
             outrec['groups'] = []
         else:
             outrec['groups'] = rec['groups'].split(',')
-        yield outrec
+        users.append(outrec)
+    return users
 
 
-def from_ldap(con, domain):
+def from_ldap(con, domain, groups, base_dn, fltr):
     """
     Get directory users from LDAP query
 
@@ -40,28 +44,73 @@ def from_ldap(con, domain):
     :return: Generator yields one user record per iteration
     """
 
-    base_dn = "dc=ccestestdomain,dc=com"
-    fltr = "(&(objectClass=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
-    attrs = ["givenName", "sn", "sAMAccountName", "memberOf"]
-    res = con.search_s(base_dn, ldap.SCOPE_SUBTREE, fltr, attrs)
+    users = []
+    for group in groups:
+        logging.info("Getting DN for group '%s", group)
+        res = con.search_s(
+            base_dn,
+            ldap.SCOPE_SUBTREE,
+            filterstr="(&(objectCategory=group)(cn=%s))" % group,
+            attrlist=['distinguishedName']
+        )
 
-    for _, rec in res:
-        if not isinstance(rec, dict):
+        groupdn = [o['distinguishedName'][0] for _, o in res if 'distinguishedName' in o]
+        if groupdn:
+            groupdn = groupdn[0]
+        else:
             continue
-        if 'sAMAccountName' not in rec:
-            continue
-        outrec = copy.deepcopy(_TEMPLATE)
-        outrec['email'] = '%s@%s' % (rec['sAMAccountName'][0], domain)
-        if 'givenName' in rec:
-            outrec['firstname'] = rec['givenName'][0]
-        if 'sn' in rec:
-            outrec['lastname'] = rec['sn'][0]
-        if 'memberOf' in rec:
-            for g in rec['memberOf']:
-                m = re.match(r"CN=(?P<group>[^,]+),", g)
-                if m:
-                    outrec['groups'].append(m.group('group'))
-        yield outrec
+
+        logging.info("DN: %s", groupdn)
+
+        fltr = fltr % {'groupdn': groupdn}
+
+        attrs = ["givenName", "sn", "sAMAccountName", "memberOf"]
+        page_size = 100
+
+        lc = SimplePagedResultsControl(True, size=page_size, cookie='')
+
+        pages = 0
+        while True:
+            msgid = con.search_ext(
+                base_dn,
+                ldap.SCOPE_SUBTREE,
+                filterstr=fltr,
+                attrlist=attrs,
+                serverctrls=[lc]
+            )
+            pages += 1
+            logging.info("Request LDAP users page %d" % pages)
+            rtype, rdata, rmsgid, serverctrls = con.result3(msgid)
+            for _, rec in rdata:
+                if not isinstance(rec, dict):
+                    continue
+                if 'sAMAccountName' not in rec:
+                    continue
+                outrec = copy.deepcopy(_TEMPLATE)
+                outrec['email'] = '%s@%s' % (rec['sAMAccountName'][0], domain)
+                if 'givenName' in rec:
+                    outrec['firstname'] = rec['givenName'][0]
+                if 'sn' in rec:
+                    outrec['lastname'] = rec['sn'][0]
+                if 'memberOf' in rec:
+                    for g in rec['memberOf']:
+                        m = re.match(r"CN=(?P<group>[^,]+),", g)
+                        if m:
+                            outrec['groups'].append(m.group('group'))
+                users.append(outrec)
+
+            pctrls = [c for c in serverctrls
+                      if c.controlType == SimplePagedResultsControl.controlType]
+            if not pctrls:
+                print logging.warn('Warning: Server ignores RFC 2696 control.')
+                break
+
+            cookie = pctrls[0].cookie
+            lc.cookie = cookie
+            if not cookie:
+                break
+
+    return users
 
 
 def make_ldap_con(host, username, pw, require_tls_cert=True):
@@ -79,7 +128,7 @@ def make_ldap_con(host, username, pw, require_tls_cert=True):
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
 
     con = ldap.initialize(host)
-    con.start_tls_s()
+    #con.start_tls_s()
     con.protocol_version = 3
     con.set_option(ldap.OPT_REFERRALS, 0)
     con.simple_bind_s(username, pw)
