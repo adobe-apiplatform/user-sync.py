@@ -73,7 +73,7 @@ This section contains two subsections - `server` and `enterprise`.
 
 Example:
 
-```
+```yaml
   server:
     host: usermanagement.adobe.io
     endpoint: /v2/usermanagement
@@ -85,7 +85,7 @@ Example:
 
 Example:
 
-```
+```yaml
   enterprise:
     org_id: [ORG ID]
     api_key: [API KEY]
