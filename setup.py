@@ -8,9 +8,6 @@ setup(name='aedash_connector',
           'PyYAML',
           'umapi',
       ],
-      dependency_links=[
-          'git+ssh://git@git.corp.adobe.com:adorton/cce-umapi.git#egg=umapi'
-      ],
       entry_points={
           'console_scripts': [
               'aedc = aedash_connector.app:main'
