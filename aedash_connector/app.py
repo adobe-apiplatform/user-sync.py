@@ -34,19 +34,25 @@ def process_args():
     return parser.parse_args()
 
 
-def init_log():
+def init_log(config):
     """Initialize the logger (logs to stdout)"""
-    logging.basicConfig(format='%(asctime)s\t%(levelname)s\t%(message)s',
+    stringFormat = '%(asctime)s\t%(levelname)s\t%(message)s'
+    logging.basicConfig(format=stringFormat,
                         datefmt='%Y-%m-%d %H:%M:%S',
+                        filename=config['relativeFilePath'],
                         level=logging.DEBUG)
+    
+    console = logging.StreamHandler()
+    console.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(stringFormat)
+    console.setFormatter(formatter)
+    logging.getLogger('').addHandler(console)
+
 
 
 def main():
     # set up exception hook
     # sys.excepthook = error_hook
-
-    # init the log
-    init_log()
 
     # process command line args
     args = process_args()
@@ -54,6 +60,9 @@ def main():
     # initialize configurator
     conf = config.init(open(args.config_path, 'r'))
     c = conf['integration']
+
+    # init the log
+    init_log(conf['logging'])
 
     # initialize auth store object
     store = auth_store.init(c, args.auth_store_path)
