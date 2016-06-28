@@ -28,3 +28,7 @@ domains:
       - directory_group: AdobeCC-All
         dashboard_groups:
          - All Apps
+
+logging:
+  # output path for logs
+  relativeFilePath: logs.txt
