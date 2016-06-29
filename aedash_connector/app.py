@@ -21,11 +21,12 @@ def process_args():
     parser = argparse.ArgumentParser(description='Adobe Enterprise Dashboard User Management Connector')
     parser.add_argument('-i', '--infile', dest='infile', default=None,
                         help='input file - reads from stdin if this parameter is omitted')
-    parser.add_argument('-t', '--test-mode', dest='test_mode', default=None,
+    parser.add_argument('-t', '--test-mode', dest='test_mode', action='store_true',
                         help='run API action calls in test mode (does not execute changes)')
     parser.add_argument('-V', '--version',
                         action='version',
                         version='%(prog)s (version 0.5.0)')
+    parser.set_defaults(test_mode=False)
 
     req_named = parser.add_argument_group('required arguments')
     req_named.add_argument('-c', '--config', dest='config_path', required=True,
@@ -66,7 +67,7 @@ def main():
 
     logging.info('Initialized auth token')
 
-    api = UMAPI("https://" + c['server']['host'] + c['server']['endpoint'], auth)
+    api = UMAPI("https://" + c['server']['host'] + c['server']['endpoint'], auth, args.test_mode)
 
     logging.info('Initialized API interface')
 
