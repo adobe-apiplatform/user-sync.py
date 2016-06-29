@@ -11,6 +11,7 @@ _TEMPLATE = {
     "email": None,
     "groups": [],
     "disable": False,
+    "country": "",
 }
 
 
@@ -27,6 +28,7 @@ def from_csv(reader):
         outrec['firstname'] = rec['firstname']
         outrec['lastname'] = rec['lastname']
         outrec['email'] = rec['email']
+        outrec['country'] = rec['country']
         if not rec['groups']:
             outrec['groups'] = []
         else:
@@ -64,7 +66,7 @@ def from_ldap(con, domain, groups, base_dn, fltr):
 
         qfltr = fltr % {'groupdn': groupdn}
 
-        attrs = ["givenName", "sn", "sAMAccountName", "memberOf"]
+        attrs = ["givenName", "sn", "sAMAccountName", "memberOf", "c"]
         page_size = 100
 
         lc = SimplePagedResultsControl(True, size=page_size, cookie='')
@@ -92,6 +94,8 @@ def from_ldap(con, domain, groups, base_dn, fltr):
                     outrec['firstname'] = rec['givenName'][0]
                 if 'sn' in rec:
                     outrec['lastname'] = rec['sn'][0]
+                if 'c' in rec:
+                    outrec['country'] = rec['c'][0]
                 if 'memberOf' in rec:
                     for g in rec['memberOf']:
                         m = re.match(r"CN=(?P<group>[^,]+),", g)
