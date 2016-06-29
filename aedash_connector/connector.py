@@ -41,6 +41,7 @@ def process_rules(api, org_id, directory_users, adobe_users, rules, type):
                         "email": dir_user['email'],
                         "firstname": dir_user['firstname'],
                         "lastname": dir_user['lastname'],
+                        "country": dir_user['country'],
                     },
                     add=add_groups,
                 )
