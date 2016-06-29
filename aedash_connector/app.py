@@ -21,6 +21,8 @@ def process_args():
     parser = argparse.ArgumentParser(description='Adobe Enterprise Dashboard User Management Connector')
     parser.add_argument('-i', '--infile', dest='infile', default=None,
                         help='input file - reads from stdin if this parameter is omitted')
+    parser.add_argument('-t', '--test-mode', dest='test_mode', default=None,
+                        help='run API action calls in test mode (does not execute changes)')
     parser.add_argument('-V', '--version',
                         action='version',
                         version='%(prog)s (version 0.5.0)')
