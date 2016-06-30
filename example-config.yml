@@ -25,10 +25,12 @@ domains:
       require_tls_cert: False
     groups:
       # example group mapping
-      - directory_group: AdobeCC-All
+      - directory_group: AdobeCC-All #Group CN
         dashboard_groups:
          - All Apps
 
 logging:
   # output path for logs
   relativeFilePath: logs.txt
+  #Logging Level: Can be "debug", "info", "warning", "error", or "critical".  This is in ascending order, meaning "debug" < "critical"
+  level: debug
