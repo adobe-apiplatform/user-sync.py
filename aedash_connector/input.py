@@ -134,7 +134,7 @@ def make_ldap_con(host, username, pw, require_tls_cert=True):
 
     con = ldap.initialize(host)
     #con.start_tls_s()
-    con.protocol_version = 3
+    con.protocol_version = ldap.VERSION3
     con.set_option(ldap.OPT_REFERRALS, 0)
     con.simple_bind_s(username, pw)
     return con
