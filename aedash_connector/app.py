@@ -40,10 +40,22 @@ def process_args():
 def init_log(config):
     """Initialize the logger (logs to stdout)"""
     stringFormat = '%(asctime)s\t%(levelname)s\t%(message)s'
+    
+    def levelLookup(x):
+        return {
+            'debug': logging.DEBUG,
+            'info': logging.INFO,
+            'warning': logging.WARNING,
+            'error': logging.ERROR,
+            'critical': logging.CRITICAL
+        }[x]
+        
+    loggingLevel = levelLookup(config['level']) or logging.NOTSET
+        
     logging.basicConfig(format=stringFormat,
                         datefmt='%Y-%m-%d %H:%M:%S',
                         filename=config['relativeFilePath'],
-                        level=logging.DEBUG)
+                        level=loggingLevel)
     
     console = logging.StreamHandler()
     console.setLevel(logging.DEBUG)
