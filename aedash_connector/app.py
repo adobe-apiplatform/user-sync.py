@@ -4,7 +4,9 @@ import config
 import csv
 import logging
 import input
+import datetime
 import connector
+import os
 from umapi import UMAPI
 from umapi.auth import Auth, JWT, AccessRequest
 from umapi.helper import paginate
@@ -51,10 +53,14 @@ def init_log(config):
     # have no logs
     if config['logToFile'] == True:
         loggingLevel = levelLookup(config['level']) or logging.NOTSET
+        filepath = config['relativeFilePath'] + "/" + datetime.date.today().isoformat() + ".txt"
+        
+        if not os.path.exists(config['relativeFilePath']):
+            os.makedirs(config['relativeFilePath'])
             
         logging.basicConfig(format=stringFormat,
                             datefmt='%Y-%m-%d %H:%M:%S',
-                            filename=config['relativeFilePath'],
+                            filename=filepath,
                             level=loggingLevel)
         
         console = logging.StreamHandler()
