@@ -28,9 +28,15 @@ domains:
       - directory_group: AdobeCC-All #Group CN
         dashboard_groups:
          - All Apps
+      - directory_group: AdobeCC-Photoshop
+      	dashboard_groups:
+      	 - Photoshop Users
 
 logging:
+  # specifies whether you wish to generate a log file
+  # 'True' or 'False'
+  logToFile: True
   # output path for logs
   relativeFilePath: logs.txt
-  #Logging Level: Can be "debug", "info", "warning", "error", or "critical".  This is in ascending order, meaning "debug" < "critical"
+  #Logging Level: Can be "debug", "info", "warning", "error", or "critical".  This is in ascending order, meaning "debug" < "critical".  Will only be used on file log, console log is always "debug"
   level: debug
