@@ -1,13 +1,12 @@
 import sys
 import argparse
 import config
-import auth_store
 import csv
 import logging
 import input
 import connector
 from umapi import UMAPI
-from umapi.auth import Auth
+from umapi.auth import Auth, JWT, AccessRequest
 from umapi.helper import paginate
 
 
@@ -31,8 +30,6 @@ def process_args():
     req_named = parser.add_argument_group('required arguments')
     req_named.add_argument('-c', '--config', dest='config_path', required=True,
                            help='API Config Path')
-    req_named.add_argument('-a', '--auth-store', dest='auth_store_path', required=True,
-                           help='Auth Store Path')
 
     return parser.parse_args()
 
@@ -79,12 +76,25 @@ def main():
     # init the log
     init_log(conf['logging'])
 
-    # initialize auth store object
-    store = auth_store.init(c, args.auth_store_path)
+    # the JWT object build the JSON Web Token
+    jwt = JWT(
+        c['enterprise']['org_id'],
+        c['enterprise']['tech_acct'],
+        c['server']['ims_host'],
+        c['enterprise']['api_key'],
+        open(c['enterprise']['priv_key_path'], 'r')
+    )
+
+    # when called, the AccessRequest object retrieves an access token from IMS
+    access_req = AccessRequest(
+        "https://" + c['server']['ims_host'] + c['server']['ims_endpoint_jwt'],
+        c['enterprise']['api_key'],
+        c['enterprise']['client_secret'],
+        jwt()
+    )
 
     # initialize Auth object for API requests
-    token = store.token()
-    auth = Auth(c['enterprise']['api_key'], token)
+    auth = Auth(c['enterprise']['api_key'], access_req())
 
     logging.info('Initialized auth token')
 
