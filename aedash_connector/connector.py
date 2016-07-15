@@ -1,6 +1,10 @@
 import logging
+import email.utils
+import time
+import math
+import random
 from umapi import Action
-from umapi.error import UMAPIRequestError
+from umapi.error import UMAPIError, UMAPIRetryError, UMAPIRequestError
 
 
 def process_rules(api, org_id, directory_users, adobe_users, rules, type):
@@ -18,6 +22,9 @@ def process_rules(api, org_id, directory_users, adobe_users, rules, type):
     :return: None
     """
     directory_users = list(directory_users)
+
+    manager = ActionManager(api, org_id)
+
     for dir_user in directory_users:
         # if the directory user does not exist in dashboard, we might add them
         if dir_user['email'] not in adobe_users:
@@ -54,17 +61,8 @@ def process_rules(api, org_id, directory_users, adobe_users, rules, type):
                     },
                     add=add_groups,
                 )
-            try:
-                res = api.action(org_id, action)
-            except UMAPIRequestError as e:
-                logging.warn("CREATE USER -- FAILURE - %s -- %s", dir_user['email'], e.code)
-                continue
 
-            if res['result'] == 'success':
-                logging.info("CREATE USER -- SUCCESS - %s", dir_user['email'])
-                logging.info("ADDED: %s", add_groups)
-            else:
-                logging.warn("CREATE USER -- FAILURE - %s", dir_user['email'])
+            manager.add_action(action)
 
             continue
 
@@ -101,22 +99,10 @@ def process_rules(api, org_id, directory_users, adobe_users, rules, type):
             action = Action(user=dir_user['email']).do(
                 **do_params
             )
-            try:
-                res = api.action(org_id, action)
-            except UMAPIRequestError as e:
-                logging.warn("ADD/REMOVE GROUPS -- FAILURE - %s -- %s", dir_user['email'], e.code)
-                logging.warn("ADDED: %s", add_groups)
-                logging.warn("REMOVED: %s", remove_groups)
-                continue
-
-            if res['result'] == 'success':
-                logging.info("ADD/REMOVE GROUPS -- SUCCESS - %s", dir_user['email'])
-                logging.info("ADDED: %s", add_groups)
-                logging.info("REMOVED: %s", remove_groups)
-            else:
-                logging.warn("ADD/REMOVE GROUPS -- FAILURE - %s", dir_user['email'])
-                logging.warn("ADDED: %s", add_groups)
-                logging.warn("REMOVED: %s", remove_groups)
+            manager.add_action(action)
+            logging.info("ADD/REMOVE GROUPS -- SUCCESS - %s", dir_user['email'])
+            logging.info("ADDED: %s", add_groups)
+            logging.info("REMOVED: %s", remove_groups)
 
     # check for accounts to disable (remove group membership)
     # get a list of directory email addresses
@@ -142,18 +128,78 @@ def process_rules(api, org_id, directory_users, adobe_users, rules, type):
             remove=adobe_user['groups']
         )
 
-        try:
-            res = api.action(org_id, action)
-        except UMAPIRequestError as e:
-            logging.warn("DISABLE USER -- FAILURE - %s -- %s", adobe_email, e.code)
-            logging.warn("REMOVED: %s", remove_groups)
-            continue
+        manager.add_action(action)
 
-        if res['result'] == 'success':
-            logging.info("DISABLE USER -- SUCCESS - %s", adobe_email)
-            logging.info("REMOVED: %s", remove_groups)
-        else:
-            logging.warn("DISABLE USER -- FAILURE - %s", adobe_email)
-            logging.warn("REMOVED: %s", remove_groups)
+        logging.info("DISABLE USER --  %s", adobe_email)
+        logging.info("REMOVING: %s", remove_groups)
 
         continue
+
+    if manager.actions:
+        manager.execute()
+
+
+class ActionManager(object):
+    max_actions = 10
+
+    def __init__(self, api, org_id):
+        self.actions = []
+        self.api = api
+        self.org_id = org_id
+
+    def add_action(self, action):
+        self.actions.append(action)
+        if len(self.actions) >= self.max_actions:
+            self.execute()
+            self.actions = []
+
+    def execute(self):
+        num_attempts = 0
+        num_attempts_max = 4
+        backoff_exponential_factor = 15  # seconds
+        backoff_random_delay_max = 5  # seconds
+
+        while True:
+            num_attempts += 1
+
+            if num_attempts > num_attempts_max:
+                logging.warn("ACTION FAILURE NO MORE RETRIES, SKIPPING...")
+                break
+
+            try:
+                res = self.api.action(self.org_id, self.actions)
+            except UMAPIRequestError as e:
+                logging.warn("ACTION ERROR - %s", e.code)
+                break
+            except UMAPIRetryError as e:
+                logging.warn("ACTION FAILURE -- %s - RETRYING", e.res.status_code)
+                if "Retry-After" in e.res.headers:
+                    retry_after_date = email.utils.parsedate_tz(e.res.headers["Retry-After"])
+                    if retry_after_date is not None:
+                        # header contains date
+                        time_backoff = int(email.utils.mktime_tz(retry_after_date) - time.time())
+                    else:
+                        # header contains delta seconds
+                        time_backoff = int(e.res.headers["Retry-After"])
+                else:
+                    # use exponential backoff with random delayh
+                    time_backoff = int(math.pow(2, num_attempts - 1)) * \
+                                   backoff_exponential_factor + \
+                                   random.randint(0, backoff_random_delay_max)
+
+                logging.info("Retrying in " + str(time_backoff) + " seconds...")
+                time.sleep(time_backoff)
+                continue
+            except UMAPIError as e:
+                logging.warn("ACTION ERROR -- %s - %s", e.res.status_code, e.res.text)
+                break
+
+            if res['result'] == 'success' and not res['notCompleted']:
+                logging.debug('ACTION SUCCESS -- %d completed', res['completed'])
+                break
+            elif res['result'] == 'success':
+                logging.warn('ACTION PARTIAL SUCCESS -- %d completed, %d failed', res['completed'], res['incomplete'])
+                break
+            else:
+                logging.warn("ACTION FAILURE")
+                break
