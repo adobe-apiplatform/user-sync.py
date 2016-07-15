@@ -47,20 +47,25 @@ def init_log(config):
             'critical': logging.CRITICAL
         }[x]
         
-    loggingLevel = levelLookup(config['level']) or logging.NOTSET
+    # Need to separate logging to file this way.  For some reason, adding an additional file handler will make the console
+    # have no logs
+    if config['logToFile'] == True:
+        loggingLevel = levelLookup(config['level']) or logging.NOTSET
+            
+        logging.basicConfig(format=stringFormat,
+                            datefmt='%Y-%m-%d %H:%M:%S',
+                            filename=config['relativeFilePath'],
+                            level=loggingLevel)
         
-    logging.basicConfig(format=stringFormat,
-                        datefmt='%Y-%m-%d %H:%M:%S',
-                        filename=config['relativeFilePath'],
-                        level=loggingLevel)
-    
-    console = logging.StreamHandler()
-    console.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(stringFormat)
-    console.setFormatter(formatter)
-    logging.getLogger('').addHandler(console)
-
-
+        console = logging.StreamHandler()
+        console.setLevel(logging.DEBUG)
+        formatter = logging.Formatter(stringFormat)
+        console.setFormatter(formatter)
+        logging.getLogger('').addHandler(console)
+    else:
+        logging.basicConfig(format=stringFormat,
+                            datefmt='%Y-%m-%d %H:%M:%S',
+                            level=logging.DEBUG)
 
 def main():
     # set up exception hook
