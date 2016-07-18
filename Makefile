@@ -7,4 +7,4 @@ pex:
 		-f wheelhouse \
 		--disable-cache \
 		--not-zip-safe .
-	rm -rf pex-build-cache
+	rm -rf wheelhouse
