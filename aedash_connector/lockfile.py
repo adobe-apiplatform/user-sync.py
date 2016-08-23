@@ -26,6 +26,8 @@ class ProcessLock(object):
         if not lock_pid:
             return False
 
+        lock_pid = int(lock_pid)
+
         try:
             # signal 0 checks if process exists & we have permission to send signals (we assume that we should)
             os.kill(lock_pid, 0)
@@ -38,7 +40,7 @@ class ProcessLock(object):
     def set_lock(self):
         pid = os.getpid()
         with open(self.path, 'w') as f:
-            f.write(pid)
+            f.write(str(pid))
 
     def unlock(self):
         os.remove(self.path)
