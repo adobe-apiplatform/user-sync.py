@@ -7,6 +7,7 @@ import input
 import datetime
 import connector
 import os
+from lockfile import create_lock
 from umapi import UMAPI
 from umapi.auth import Auth, JWT, AccessRequest
 from umapi.helper import paginate
@@ -159,4 +160,12 @@ def main():
     logging.info('Finished processing')
 
 if __name__ == '__main__':
-    main()
+    script_dir = os.path.split(os.path.realpath(__file__))[0]
+    lockpath = os.path.join(script_dir, 'lockfile')
+    with create_lock(lockpath) as lock:
+        if not lock.is_locked():
+            lock.set_lock()
+        else:
+            logging.info("process is already locked")
+            sys.exit()
+        main()
