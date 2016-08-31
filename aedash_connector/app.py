@@ -160,8 +160,7 @@ def main():
     logging.info('Finished processing')
 
 if __name__ == '__main__':
-    script_dir = os.path.split(os.path.realpath(__file__))[0]
-    lockpath = os.path.join(script_dir, 'lockfile')
+    lockpath = 'lockfile'
     with create_lock(lockpath) as lock:
         if not lock.is_locked():
             lock.set_lock()
