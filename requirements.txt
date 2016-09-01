@@ -1,3 +1,4 @@
 PyYAML
 python-ldap==2.4.25
+psutil
 cce-umapi-1.0.0.tar.gz

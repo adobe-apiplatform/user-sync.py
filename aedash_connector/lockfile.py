@@ -1,4 +1,5 @@
 import os
+import psutil
 from contextlib import contextmanager
 
 
@@ -27,15 +28,11 @@ class ProcessLock(object):
             return False
 
         lock_pid = int(lock_pid)
-
-        try:
-            # signal 0 checks if process exists & we have permission to send signals (we assume that we should)
-            os.kill(lock_pid, 0)
-        # OSError returned if process doesn't exist (or we don't have permission to signal it)
-        except OSError:
-            return False
-        else:
+        
+        if psutil.pid_exists(lock_pid):
             return True
+        else:
+            return False
 
     def set_lock(self):
         pid = os.getpid()
