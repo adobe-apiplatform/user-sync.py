@@ -4,7 +4,7 @@ setup(name='aedash_connector',
       version='0.5.0',
       packages=['aedash_connector'],
       install_requires=[
-          'python-ldap',
+          'python-ldap==2.4.25',
           'PyYAML',
           'umapi',
       ],
