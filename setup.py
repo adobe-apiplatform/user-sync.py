@@ -7,6 +7,7 @@ setup(name='aedash_connector',
           'python-ldap==2.4.25',
           'PyYAML',
           'umapi',
+          'psutil',
       ],
       entry_points={
           'console_scripts': [
