@@ -37,7 +37,7 @@ def from_csv(reader):
     return users
 
 
-def from_ldap(con, domain, groups, base_dn, fltr):
+def from_ldap(con, domain, groups, base_dn, fltr, email_id=None):
     """
     Get directory users from LDAP query
 
@@ -67,6 +67,8 @@ def from_ldap(con, domain, groups, base_dn, fltr):
         qfltr = fltr % {'groupdn': groupdn}
 
         attrs = ["givenName", "sn", "sAMAccountName", "memberOf", "c"]
+        if email_id:
+            attrs.append(email_id)
         page_size = 100
 
         lc = SimplePagedResultsControl(True, size=page_size, cookie='')
@@ -84,12 +86,15 @@ def from_ldap(con, domain, groups, base_dn, fltr):
             logging.info("Request LDAP users page %d" % pages)
             rtype, rdata, rmsgid, serverctrls = con.result3(msgid)
             for _, rec in rdata:
+                outrec = copy.deepcopy(_TEMPLATE)
                 if not isinstance(rec, dict):
                     continue
-                if 'sAMAccountName' not in rec:
-                    continue
-                outrec = copy.deepcopy(_TEMPLATE)
-                outrec['email'] = '%s@%s' % (rec['sAMAccountName'][0], domain)
+                if email_id:
+                    outrec['email'] = rec[email_id][0]
+                else:
+                    if 'sAMAccountName' not in rec:
+                        continue
+                    outrec['email'] = '%s@%s' % (rec['sAMAccountName'][0], domain)
                 if 'givenName' in rec:
                     outrec['firstname'] = rec['givenName'][0]
                 if 'sn' in rec:

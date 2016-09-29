@@ -137,7 +137,10 @@ def main():
             logging.info('No input file specified, using LDAP config')
             lc = domain_conf['ldap']
             ldap_con = input.make_ldap_con(lc['host'], lc['username'], lc['pw'], lc['require_tls_cert'])
-            directory_users = input.from_ldap(ldap_con, domain, group_config.keys(), lc['base_dn'], lc['fltr'])
+            email_id = None
+            if 'email_id' in lc:
+                email_id = lc['email_id']
+            directory_users = input.from_ldap(ldap_con, domain, group_config.keys(), lc['base_dn'], lc['fltr'], email_id)
             logging.info('Retrieved directory users from LDAP')
 
         # get all users for Adobe organization and convert to dict indexed by email address
