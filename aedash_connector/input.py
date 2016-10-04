@@ -89,7 +89,7 @@ def from_ldap(con, domain, groups, base_dn, fltr, email_id=None):
                 outrec = copy.deepcopy(_TEMPLATE)
                 if not isinstance(rec, dict):
                     continue
-                if email_id:
+                if email_id in rec:
                     outrec['email'] = rec[email_id][0]
                 else:
                     if 'sAMAccountName' not in rec:
