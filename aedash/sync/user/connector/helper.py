@@ -1,3 +1,5 @@
+import logging
+
 class Connector(object):    
     def __init__(self, implementation, options = {}):
         '''
@@ -26,4 +28,41 @@ class Connector(object):
 
     def is_existing_username(self, username):
         return self.implementation.connector_is_existing_username(self.state, username)        
+     
+class ConnectorImplementation(object):
+    def __init__(self, options):
+        '''
+        :type options: dict
+        '''        
+        self.options = options
         
+        logger_name = options.get('logger_name')
+        if (logger_name == None):
+            logger_name = 'connector'
+        logging.basicConfig(level = logging.INFO)
+        self.logger = logging.getLogger(logger_name)
+     
+    def get_options(self):
+        '''
+        :rtype dict
+        '''        
+        return self.options
+    
+    def get_logger(self):        
+        '''
+        :rtype logging.Logger
+        '''        
+        return self.logger       
+        
+def create_blank_user():
+    '''
+    :rtype dict
+    '''
+    user = {
+        "firstname": None,
+        "lastname": None,
+        "email": None,
+        "groups": [],
+        "country": None,
+    }
+    return user;
