@@ -1,6 +1,6 @@
 import logging
 
-class Connector(object):    
+class CustomerConnector(object):    
     def __init__(self, implementation, options = {}):
         '''
         :type options: dict
@@ -59,6 +59,9 @@ def create_blank_user():
     :rtype dict
     '''
     user = {
+        "identitytype": None,
+        "username": None,
+        "domain": None,
         "firstname": None,
         "lastname": None,
         "email": None,

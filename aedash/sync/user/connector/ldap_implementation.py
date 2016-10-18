@@ -33,15 +33,19 @@ class LDAPConnector(helper.ConnectorImplementation):
     
     def __init__(self, caller_options):
         options = {
-            'group_filter_format': '(&(|(objectCategory=group)(objectClass=groupOfNames))(cn=%s))',
+            'group_filter_format': '(&(|(objectCategory=group)(objectClass=groupOfNames))(cn={group}))',
             'require_tls_cert': False,
-            'email_format': '{mail}',
+            'user_email_format': '{mail}',
+            'user_username_format': None,
+            'user_domain_format': None,
+            'user_identity_type': None,
             'logger_name': 'connector.' + LDAPConnector.name
         }
         options.update(caller_options)
     
-        formatter = string.Formatter()
-        options['email_attribute_names'] = [item[1] for item in formatter.parse(options['email_format']) if item[1]]
+        self.user_email_generator = LDAPValueGenerator(options['user_email_format'])
+        self.user_username_generator = LDAPValueGenerator(options['user_username_format'])
+        self.user_domain_generator = LDAPValueGenerator(options['user_domain_format'])
         
         super(LDAPConnector, self).__init__(options)
         logger = self.get_logger()
@@ -73,12 +77,13 @@ class LDAPConnector(helper.ConnectorImplementation):
         :rtype list(dict)
         '''
         
-        options = self.get_options()
         logger = self.get_logger()
     
         users = {}
         user_attribute_names = ["givenName", "sn", "c"]    
-        user_attribute_names.extend(options['email_attribute_names'])
+        user_attribute_names.extend(self.user_email_generator.get_attribute_names())
+        user_attribute_names.extend(self.user_username_generator.get_attribute_names())
+        user_attribute_names.extend(self.user_domain_generator.get_attribute_names())
     
         maximum_requests_to_buffer = 500
         requests = deque()
@@ -132,7 +137,7 @@ class LDAPConnector(helper.ConnectorImplementation):
         res = connection.search_s(
             base_dn,
             ldap.SCOPE_SUBTREE,
-            filterstr=group_filter_format % group,
+            filterstr=group_filter_format.format(group = group),
             attrlist=attribute_list
         )
         
@@ -226,34 +231,83 @@ class LDAPConnector(helper.ConnectorImplementation):
         except:
             pass
             
-        options = self.get_options()
         logger = self.get_logger()    
             
         if ((result_type == ldap.RES_SEARCH_RESULT or result_type == ldap.RES_SEARCH_ENTRY) and len(result_response) > 0):
             record = result_response[0][1];
-            email_values = {}
-            for email_attribute_name in options['email_attribute_names']:
-                value = self.get_attribute_value(record, email_attribute_name)
-                if (value == None):
-                    logger.info('No email attribute: %s for dn: %s', email_attribute_name, dn)
-                    email_values = None
-                    break
-                email_values[email_attribute_name] = value
-            if (email_values != None):
-                user['email'] = options['email_format'].format(**email_values)
-            given_name_value =  self.get_attribute_value(record, 'givenName')
+            email, last_attribute_name = self.user_email_generator.generate_value(record)
+            if (email != None):
+                user['email'] = email
+            elif (last_attribute_name != None):
+                logger.info('No email attribute: %s for dn: %s', last_attribute_name, dn)
+                
+            username, last_attribute_name = self.user_username_generator.generate_value(record)
+            if (username != None):
+                user['username'] = username
+            elif (last_attribute_name != None):
+                logger.info('No username attribute: %s for dn: %s', last_attribute_name, dn)    
+                    
+            domain, last_attribute_name = self.user_domain_generator.generate_value(record)
+            if (domain != None):
+                user['domain'] = domain
+            elif (last_attribute_name != None):
+                logger.info('No domain attribute: %s for dn: %s', last_attribute_name, dn)    
+                                                
+            given_name_value =  LDAPValueGenerator.get_attribute_value(record, 'givenName')
             if (given_name_value != None):   
                 user['firstname'] = given_name_value
-            sn_value =  self.get_attribute_value(record, 'sn')
+            sn_value =  LDAPValueGenerator.get_attribute_value(record, 'sn')
             if sn_value != None:
                 user['lastname'] = sn_value
-            c_value = self.get_attribute_value(record, 'c')
+            c_value = LDAPValueGenerator.get_attribute_value(record, 'c')
             if c_value != None:
                 user['country'] = c_value
         else:
             logger.info('No user match for dn: %s', dn)
     
-    def get_attribute_value(self, attributes, attribute_name):
+class LDAPValueGenerator(object):
+    def __init__(self, string_format):
+        '''
+        :type string_format: str
+        '''        
+        if (string_format == None): 
+            attribute_names = []
+        else:
+            formatter = string.Formatter()
+            attribute_names = [item[1] for item in formatter.parse(string_format) if item[1]]
+            
+        self.string_format = string_format        
+        self.attribute_names = attribute_names
+        
+    def get_attribute_names(self):
+        '''
+        :rtype list(str)
+        '''
+        return self.attribute_names
+    
+    def generate_value(self, record):
+        '''
+        :type parameter_names: list(str)
+        :type record: dict
+        :type logger: logging
+        :rtype (str, str)
+        ''' 
+        result = None
+        attribute_name = None
+        if (self.string_format != None):   
+            values = {}
+            for attribute_name in self.attribute_names:
+                value = self.get_attribute_value(record, attribute_name)
+                if (value == None):
+                    values = None
+                    break
+                values[attribute_name] = value
+            if (values != None):
+                result = self.string_format.format(**values)
+        return (result, attribute_name)
+
+    @staticmethod
+    def get_attribute_value(attributes, attribute_name):
         '''
         :type attributes: dict
         :type attribute_name: str
@@ -264,6 +318,7 @@ class LDAPConnector(helper.ConnectorImplementation):
                 return attribute_value[0]
         return None
 
+    
 
 if True and __name__ == '__main__':
     import sys
@@ -276,8 +331,10 @@ if True and __name__ == '__main__':
         'password': "p@ssw0rd!",
         'base_dn': "dc=ensemble,dc=com",
     }
-    options['email_format'] = '{sAMAccountName}@ensemble.com'
-    connector = helper.Connector(sys.modules[__name__], options)
+    options['user_email_format'] = '{sAMAccountName}@ensemble.com'
+    options['user_domain_format'] = 'ensemble.com'
+    options['user_username_format'] = '{mail}'
+    connector = helper.CustomerConnector(sys.modules[__name__], options)
     users = connector.get_users_with_groups(["BulkGroup"])
     start2 = datetime.datetime.now()
     start3 = start2 - start1

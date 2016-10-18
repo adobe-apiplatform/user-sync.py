@@ -38,11 +38,14 @@ class CSVConnector(helper.ConnectorImplementation):
     def __init__(self, caller_options):
         options = {
             'delimiter': ',',
-            'first_name_column_name': 'firstname',
-            'last_name_column_name': 'lastname',
-            'email_column_name': 'email',
-            'country_column_name': 'country',
-            'groups_column_name': 'groups',
+            'first_name_column_name': 'First Name',
+            'last_name_column_name': 'Last Name',
+            'email_column_name': 'Email',
+            'country_column_name': 'Country',
+            'groups_column_name': 'Groups',
+            'username_column_name': 'Username',
+            'domain_column_name': 'Domain',
+            'identity_type_column_name': 'Identity Type',
             'logger_name': 'connector.' + CSVConnector.name
         }
         options.update(caller_options)
@@ -94,6 +97,9 @@ class CSVConnector(helper.ConnectorImplementation):
         last_name_column_name = options['last_name_column_name']
         country_column_name = options['country_column_name']
         groups_column_name = options['groups_column_name']
+        identity_type_column_name = options['identity_type_column_name']
+        username_column_name = options['username_column_name']
+        domain_column_name = options['domain_column_name']
     
         line_read = 0
         for row in reader:
@@ -128,6 +134,19 @@ class CSVConnector(helper.ConnectorImplementation):
             groups = self.get_column_value(row, groups_column_name)
             if (groups != None):
                 user['groups'].extend(groups.split(','))
+                
+            identity_type = self.get_column_value(row, identity_type_column_name)
+            if (identity_type != None):
+                user['identitytype'] = identity_type
+
+            username = self.get_column_value(row, username_column_name)
+            if (username != None):
+                user['username'] = username
+                
+            domain = self.get_column_value(row, domain_column_name)
+            if (domain != None):
+                user['domain'] = domain
+
         return users
     
     def get_column_value(self, row, column_name):
@@ -148,7 +167,7 @@ if True and __name__ == '__main__':
     options = {
         'filename': "test.csv",
     }
-    connector = helper.Connector(sys.modules[__name__], options)
+    connector = helper.CustomerConnector(sys.modules[__name__], options)
     users = connector.get_users_with_groups(["a", "g"])
     start2 = datetime.datetime.now()
     start3 = start2 - start1
