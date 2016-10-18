@@ -3,7 +3,7 @@ import csv
 
 def connector_metadata():
     metadata = {
-        'name': CSVConnector.name,
+        'name': CSVCustomerConnector.name,
         'required_options': ['filename']
     }
     return metadata
@@ -12,13 +12,13 @@ def connector_initialize(options):
     '''
     :type options: dict
     '''
-    state = CSVConnector(options)
+    state = CSVCustomerConnector(options)
     return state
 
 
 def connector_get_users_with_groups(state, groups):
     '''
-    :type state: CSVConnector
+    :type state: CSVCustomerConnector
     :type groups: list(str)
     :rtype list(dict)
     '''
@@ -26,13 +26,13 @@ def connector_get_users_with_groups(state, groups):
 
 def connector_is_existing_username(state, username):
     '''
-    :type state: CSVConnector
+    :type state: CSVCustomerConnector
     :type username: str
     :rtype bool
     '''
     return state.is_existing_username(username)
 
-class CSVConnector(helper.ConnectorImplementation):
+class CSVCustomerConnector(object):
     name = 'csv'
     
     def __init__(self, caller_options):
@@ -46,12 +46,12 @@ class CSVConnector(helper.ConnectorImplementation):
             'username_column_name': 'Username',
             'domain_column_name': 'Domain',
             'identity_type_column_name': 'Identity Type',
-            'logger_name': 'connector.' + CSVConnector.name
+            'logger_name': 'connector.' + CSVCustomerConnector.name
         }
         options.update(caller_options)
 
-        super(CSVConnector, self).__init__(options)
-        logger = self.get_logger()
+        self.options = options
+        self.logger = logger = helper.create_logger(options)
         
         filename = options['filename']
         
@@ -89,8 +89,8 @@ class CSVConnector(helper.ConnectorImplementation):
         '''
         users = {}
         
-        options = self.get_options()
-        logger = self.get_logger()
+        options = self.options
+        logger = self.logger
         
         email_column_name = options['email_column_name']
         first_name_column_name = options['first_name_column_name']
@@ -162,12 +162,13 @@ class CSVConnector(helper.ConnectorImplementation):
 if True and __name__ == '__main__':
     import sys
     import datetime
+    import customer
 
     start1 = datetime.datetime.now()    
     options = {
         'filename': "test.csv",
     }
-    connector = helper.CustomerConnector(sys.modules[__name__], options)
+    connector = customer.CustomerConnector(sys.modules[__name__], options)
     users = connector.get_users_with_groups(["a", "g"])
     start2 = datetime.datetime.now()
     start3 = start2 - start1

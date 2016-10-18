@@ -5,7 +5,7 @@ import string
 
 def connector_metadata():
     metadata = {
-        'name': LDAPConnector.name,
+        'name': LDAPCustomerConnector.name,
         'required_options': ['host', 'username', 'password', 'base_dn']
     }
     return metadata
@@ -14,12 +14,12 @@ def connector_initialize(options):
     '''
     :type options: dict
     '''
-    connector = LDAPConnector(options)
+    connector = LDAPCustomerConnector(options)
     return connector
 
 def connector_get_users_with_groups(state, groups):
     '''
-    :type state: LDAPConnector
+    :type state: LDAPCustomerConnector
     :type groups: list(str)
     :rtype list(dict)
     '''
@@ -28,7 +28,7 @@ def connector_get_users_with_groups(state, groups):
 def connector_is_existing_username(state, username):
     return True
 
-class LDAPConnector(helper.ConnectorImplementation):
+class LDAPCustomerConnector(object):
     name = 'ldap'
     
     def __init__(self, caller_options):
@@ -39,7 +39,7 @@ class LDAPConnector(helper.ConnectorImplementation):
             'user_username_format': None,
             'user_domain_format': None,
             'user_identity_type': None,
-            'logger_name': 'connector.' + LDAPConnector.name
+            'logger_name': 'connector.' + LDAPCustomerConnector.name
         }
         options.update(caller_options)
     
@@ -47,8 +47,8 @@ class LDAPConnector(helper.ConnectorImplementation):
         self.user_username_generator = LDAPValueGenerator(options['user_username_format'])
         self.user_domain_generator = LDAPValueGenerator(options['user_domain_format'])
         
-        super(LDAPConnector, self).__init__(options)
-        logger = self.get_logger()
+        self.options = options
+        self.logger = logger = helper.create_logger(options)
         
         require_tls_cert = options['require_tls_cert']
         host = options['host']
@@ -65,19 +65,13 @@ class LDAPConnector(helper.ConnectorImplementation):
         self.connection = connection
         logger.info('Connected')
         
-    def get_connection(self):
-        '''
-        :rtype ldap.LDAPObject    
-        '''
-        return self.connection
-
     def get_users_with_groups(self, groups):
         '''
         :type groups: list(str)
         :rtype list(dict)
         '''
         
-        logger = self.get_logger()
+        logger = self.logger
     
         users = {}
         user_attribute_names = ["givenName", "sn", "c"]    
@@ -88,7 +82,7 @@ class LDAPConnector(helper.ConnectorImplementation):
         maximum_requests_to_buffer = 500
         requests = deque()
         
-        connection = self.get_connection()
+        connection = self.connection
     
         for group in groups:
             group_members = self.get_ldap_group_members(group)
@@ -122,22 +116,22 @@ class LDAPConnector(helper.ConnectorImplementation):
             valid_users.append(user)                    
         return valid_users
 
-    def find_ldap_group(self, group, attribute_list = None):
+    def find_ldap_group(self, group, attribute_list=None):
         '''
         :type group: str
         :type attribute_list: list(str)
         :rtype (str, dict)
         '''
     
-        connection = self.get_connection()
-        options = self.get_options()
+        connection = self.connection
+        options = self.options
         base_dn = options['base_dn']
         group_filter_format = options['group_filter_format']
         
         res = connection.search_s(
             base_dn,
             ldap.SCOPE_SUBTREE,
-            filterstr=group_filter_format.format(group = group),
+            filterstr=group_filter_format.format(group=group),
             attrlist=attribute_list
         )
         
@@ -150,7 +144,7 @@ class LDAPConnector(helper.ConnectorImplementation):
         
         return group_tuple
 
-    def get_attribute_values(self, dn, attribute_name, attributes = None):
+    def get_attribute_values(self, dn, attribute_name, attributes=None):
         '''
         :type group_dn: str
         :type attribute_name: str
@@ -158,7 +152,7 @@ class LDAPConnector(helper.ConnectorImplementation):
         :rtype iterator
         '''
         
-        connection = self.get_connection()
+        connection = self.connection
     
         msgid = None    
         if (attributes == None):
@@ -210,7 +204,7 @@ class LDAPConnector(helper.ConnectorImplementation):
         :rtype iterator
         '''
     
-        logger = self.get_logger()
+        logger = self.logger
     
         result = None
         group_tuple = self.find_ldap_group(group)
@@ -227,11 +221,11 @@ class LDAPConnector(helper.ConnectorImplementation):
         '''
         msgid, dn, user = requests.popleft()
         try: 
-            result_type, result_response = self.get_connection().result(msgid)
+            result_type, result_response = self.connection.result(msgid)
         except:
             pass
             
-        logger = self.get_logger()    
+        logger = self.logger    
             
         if ((result_type == ldap.RES_SEARCH_RESULT or result_type == ldap.RES_SEARCH_ENTRY) and len(result_response) > 0):
             record = result_response[0][1];
@@ -253,10 +247,10 @@ class LDAPConnector(helper.ConnectorImplementation):
             elif (last_attribute_name != None):
                 logger.info('No domain attribute: %s for dn: %s', last_attribute_name, dn)    
                                                 
-            given_name_value =  LDAPValueGenerator.get_attribute_value(record, 'givenName')
+            given_name_value = LDAPValueGenerator.get_attribute_value(record, 'givenName')
             if (given_name_value != None):   
                 user['firstname'] = given_name_value
-            sn_value =  LDAPValueGenerator.get_attribute_value(record, 'sn')
+            sn_value = LDAPValueGenerator.get_attribute_value(record, 'sn')
             if sn_value != None:
                 user['lastname'] = sn_value
             c_value = LDAPValueGenerator.get_attribute_value(record, 'c')
@@ -323,6 +317,7 @@ class LDAPValueGenerator(object):
 if True and __name__ == '__main__':
     import sys
     import datetime
+    import customer
     
     start1 = datetime.datetime.now()    
     options = {
@@ -334,7 +329,7 @@ if True and __name__ == '__main__':
     options['user_email_format'] = '{sAMAccountName}@ensemble.com'
     options['user_domain_format'] = 'ensemble.com'
     options['user_username_format'] = '{mail}'
-    connector = helper.CustomerConnector(sys.modules[__name__], options)
+    connector = customer.CustomerConnector(sys.modules[__name__], options)
     users = connector.get_users_with_groups(["BulkGroup"])
     start2 = datetime.datetime.now()
     start3 = start2 - start1
