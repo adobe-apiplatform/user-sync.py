@@ -25,3 +25,18 @@ def create_blank_user():
         "country": None,
     }
     return user;
+
+def validate_options(options, required_option_names):
+    '''
+    :type options: dict
+    :type required_option_names: list(str)
+    :rtype (bool, str)
+    '''        
+    for required_option_name in required_option_names:
+        names = required_option_name.split(".")
+        scope = options
+        for name in names:
+            if (not isinstance(scope, dict)) or (not (name in scope)):
+                return (False, ('Setting not defined: "%s"' % required_option_name))
+            scope = scope[name]
+    return (True, None)

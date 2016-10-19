@@ -1,3 +1,5 @@
+import helper
+
 class CustomerConnector(object):    
     def __init__(self, implementation, options = {}):
         '''
@@ -16,9 +18,9 @@ class CustomerConnector(object):
             
         required_options = metadata.get('required_options')
         if (required_options != None):
-            for required_option in required_options:
-                if not(required_option in options):
-                    raise Exception('Missing setting: %s connector: %s' % (required_option, metadata['name']))
+            validation_result, validation_issue = helper.validate_options(options, required_options)
+            if not validation_result:
+                raise Exception('%s for connector: %s' % (validation_issue, metadata['name']))
         self.state = implementation.connector_initialize(options)
         
     def get_users_with_groups(self, groups):
