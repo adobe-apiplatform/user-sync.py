@@ -17,13 +17,13 @@ def connector_initialize(options):
     connector = LDAPCustomerConnector(options)
     return connector
 
-def connector_get_users_with_groups(state, groups):
+def connector_generate_users_with_groups(state, groups):
     '''
     :type state: LDAPCustomerConnector
     :type groups: list(str)
-    :rtype list(dict)
+    :rtype iterable(dict)
     '''
-    return state.get_users_with_groups(groups)
+    return state.generate_users_with_groups(groups)
 
 def connector_is_existing_username(state, username):
     return True
@@ -43,9 +43,9 @@ class LDAPCustomerConnector(object):
         }
         options.update(caller_options)
     
-        self.user_email_generator = LDAPValueGenerator(options['user_email_format'])
-        self.user_username_generator = LDAPValueGenerator(options['user_username_format'])
-        self.user_domain_generator = LDAPValueGenerator(options['user_domain_format'])
+        self.user_email_formatter = LDAPValueFormatter(options['user_email_format'])
+        self.user_username_formatter = LDAPValueFormatter(options['user_username_format'])
+        self.user_domain_formatter = LDAPValueFormatter(options['user_domain_format'])
         
         self.options = options
         self.logger = logger = helper.create_logger(options)
@@ -65,19 +65,19 @@ class LDAPCustomerConnector(object):
         self.connection = connection
         logger.info('Connected')
         
-    def get_users_with_groups(self, groups):
+    def generate_users_with_groups(self, groups):
         '''
         :type groups: list(str)
-        :rtype list(dict)
+        :rtype iterable(dict)
         '''
         
         logger = self.logger
     
         users = {}
         user_attribute_names = ["givenName", "sn", "c"]    
-        user_attribute_names.extend(self.user_email_generator.get_attribute_names())
-        user_attribute_names.extend(self.user_username_generator.get_attribute_names())
-        user_attribute_names.extend(self.user_domain_generator.get_attribute_names())
+        user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
+        user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
+        user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
     
         maximum_requests_to_buffer = 500
         requests = deque()
@@ -103,19 +103,20 @@ class LDAPCustomerConnector(object):
                         if (maximum_requests_to_buffer > 0):
                             maximum_requests_to_buffer -= 1
                         elif (len(requests) > 0):
-                            self.process_one_user_request(requests)
+                            processed_user = self.process_one_user_request(requests)
+                            if (processed_user != None):
+                                yield processed_user
         
         while(len(requests) > 0):
-            self.process_one_user_request(requests)
+            processed_user = self.process_one_user_request(requests)
+            if (processed_user != None):
+                yield processed_user
             
-        valid_users = []
         for dn, user in users.iteritems():
             if user['email'] == None:
                 logger.warning('Skipped user with no email for dn: %s', dn)
                 continue
-            valid_users.append(user)                    
-        return valid_users
-
+    
     def find_ldap_group(self, group, attribute_list=None):
         '''
         :type group: str
@@ -229,37 +230,39 @@ class LDAPCustomerConnector(object):
             
         if ((result_type == ldap.RES_SEARCH_RESULT or result_type == ldap.RES_SEARCH_ENTRY) and len(result_response) > 0):
             record = result_response[0][1];
-            email, last_attribute_name = self.user_email_generator.generate_value(record)
+            email, last_attribute_name = self.user_email_formatter.generate_value(record)
             if (email != None):
                 user['email'] = email
             elif (last_attribute_name != None):
                 logger.info('No email attribute: %s for dn: %s', last_attribute_name, dn)
                 
-            username, last_attribute_name = self.user_username_generator.generate_value(record)
+            username, last_attribute_name = self.user_username_formatter.generate_value(record)
             if (username != None):
                 user['username'] = username
             elif (last_attribute_name != None):
                 logger.info('No username attribute: %s for dn: %s', last_attribute_name, dn)    
                     
-            domain, last_attribute_name = self.user_domain_generator.generate_value(record)
+            domain, last_attribute_name = self.user_domain_formatter.generate_value(record)
             if (domain != None):
                 user['domain'] = domain
             elif (last_attribute_name != None):
                 logger.info('No domain attribute: %s for dn: %s', last_attribute_name, dn)    
                                                 
-            given_name_value = LDAPValueGenerator.get_attribute_value(record, 'givenName')
+            given_name_value = LDAPValueFormatter.get_attribute_value(record, 'givenName')
             if (given_name_value != None):   
                 user['firstname'] = given_name_value
-            sn_value = LDAPValueGenerator.get_attribute_value(record, 'sn')
+            sn_value = LDAPValueFormatter.get_attribute_value(record, 'sn')
             if sn_value != None:
                 user['lastname'] = sn_value
-            c_value = LDAPValueGenerator.get_attribute_value(record, 'c')
+            c_value = LDAPValueFormatter.get_attribute_value(record, 'c')
             if c_value != None:
                 user['country'] = c_value
+            return user if user['email'] != None else None
         else:
             logger.info('No user match for dn: %s', dn)
+        return None
     
-class LDAPValueGenerator(object):
+class LDAPValueFormatter(object):
     def __init__(self, string_format):
         '''
         :type string_format: str

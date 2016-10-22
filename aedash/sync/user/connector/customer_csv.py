@@ -16,13 +16,13 @@ def connector_initialize(options):
     return state
 
 
-def connector_get_users_with_groups(state, groups):
+def connector_generate_users_with_groups(state, groups):
     '''
     :type state: CSVCustomerConnector
     :type groups: list(str)
-    :rtype list(dict)
+    :rtype iterable(dict)
     '''
-    return state.get_users_with_groups(groups)
+    return state.generate_users_with_groups(groups)
 
 def connector_is_existing_username(state, username):
     '''
@@ -62,18 +62,15 @@ class CSVCustomerConnector(object):
         
         logger.info('Number of users loaded: %d', len(users))
 
-    def get_users_with_groups(self, groups):
+    def generate_users_with_groups(self, groups):
         '''
         :type groups: list(str)
-        :rtype list(dict)
+        :rtype iterable(dict)
         '''
-        
-        result = []    
         group_set = set(groups)
         for user in self.users.itervalues():
             if (not(group_set.isdisjoint(user['groups']))):
-                result.append(user)
-        return result
+                yield user
 
     def is_existing_username(self, username):
         '''
