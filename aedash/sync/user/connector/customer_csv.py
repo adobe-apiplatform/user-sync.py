@@ -16,13 +16,13 @@ def connector_initialize(options):
     return state
 
 
-def connector_generate_users_with_groups(state, groups):
+def connector_iter_users_with_groups(state, groups):
     '''
     :type state: CSVCustomerConnector
     :type groups: list(str)
     :rtype iterable(dict)
     '''
-    return state.generate_users_with_groups(groups)
+    return state.iter_users_with_groups(groups)
 
 def connector_is_existing_username(state, username):
     '''
@@ -62,7 +62,7 @@ class CSVCustomerConnector(object):
         
         logger.info('Number of users loaded: %d', len(users))
 
-    def generate_users_with_groups(self, groups):
+    def iter_users_with_groups(self, groups):
         '''
         :type groups: list(str)
         :rtype iterable(dict)
