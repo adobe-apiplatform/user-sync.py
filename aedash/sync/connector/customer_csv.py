@@ -137,6 +137,8 @@ class CSVCustomerConnector(object):
                 user['identitytype'] = identity_type
 
             username = self.get_column_value(row, username_column_name)
+            if (username == None):
+                username = email
             if (username != None):
                 user['username'] = username
                 
