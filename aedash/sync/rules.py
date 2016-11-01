@@ -1,4 +1,4 @@
-from umapi import Action
+from connector.adobe import Commands
 
 ENTERPRISE_IDENTITY_TYPE = 'ENTERPRISE_ID'
 FEDERATED_IDENTITY_TYPE = 'FEDERATED_ID'
@@ -76,18 +76,17 @@ class RuleProcessor(object):
         attributes['lastname'] = customer_user['lastname']
         attributes['country'] = customer_user['country']
         
-        action_builder = ActionBuilder()
-        action_builder.add_user(ENTERPRISE_IDENTITY_TYPE, attributes)
+        commands = Commands(customer_user['username'], customer_user['domain'])
+        commands.add_enterprise_user(attributes)
         desired_products_by_email = self.desired_products_by_organization.get(MAIN_ORGANIZATION_NAME)
         if (desired_products_by_email != None):
             desired_products = desired_products_by_email.get(email)
-            action_builder.add_products(desired_products)
-        action = action_builder.create_action(customer_user['username'], customer_user['domain'])
+            commands.add_products(desired_products)
 
         def callback(create_action, is_success, error):
             if is_success:
                 self.add_products_for_trusted_connectors(customer_user, adobe_connectors.trusted_connectors)
-        adobe_connectors.get_main_connector().get_action_manager().add_action(action, callback)
+        adobe_connectors.get_main_connector().send_commands(commands, callback)
 
     def add_products_for_trusted_connectors(self, customer_user, trusted_adobe_connectors):
         '''
@@ -107,11 +106,9 @@ class RuleProcessor(object):
         :type desired_products: set(str)
         :type trusted_adobe_connectors: dict(str, connector.adobe.AdobeConnector)
         '''
-        action_builder = ActionBuilder()
-        action_builder.add_products(desired_products)
-        if action_builder.has_commands():
-            action = action_builder.create_action(customer_user['username'], customer_user['domain'])
-            adobe_connector.get_action_manager().add_action(action)
+        commands = Commands(customer_user['username'], customer_user['domain'])
+        commands.add_products(desired_products)
+        adobe_connector.send_commands(commands)
             
     def update_adobe_users_for_connector(self, organization_name, adobe_connector):
         '''
@@ -143,12 +140,10 @@ class RuleProcessor(object):
             products_to_add = desired_products - current_products
             products_to_remove = current_products - desired_products
 
-            action_builder = ActionBuilder()
-            action_builder.add_products(products_to_add)
-            action_builder.remove_products(products_to_remove)
-            if action_builder.has_commands():
-                action = action_builder.create_action(customer_user['username'], customer_user['domain'])
-                adobe_connector.get_action_manager().add_action(action)
+            commands = Commands(customer_user['username'], customer_user['domain'])
+            commands.add_products(products_to_add)
+            commands.remove_products(products_to_remove)
+            adobe_connector.send_commands(commands)
                 
         return (all_adobe_users, orphaned_adobe_users, desired_products_by_email)
 
@@ -158,59 +153,6 @@ class RuleProcessor(object):
         :type email: str
         '''
         return email.strip().lower();
-
-class ActionBuilder(object):
-    def __init__(self):
-        self.commands = []
-
-    def add_products(self, products_to_add):
-        '''
-        :type products_to_add: set(str)
-        '''
-        if (products_to_add != None and len(products_to_add) > 0):
-            products = ActionBuilder.get_json_serializable(products_to_add)
-            self.commands.append(('add', products))
-
-    def remove_products(self, products_to_remove):
-        '''
-        :type products_to_remove: set(str)
-        '''
-        if (products_to_remove != None and len(products_to_remove) > 0):
-            products = ActionBuilder.get_json_serializable(products_to_remove)
-            self.commands.append(('remove', products))
-    
-    def add_user(self, identity_type, attributes):
-        '''
-        :type identity_type: str
-        :type attributes: dict
-        '''
-        action_name = 'createFederatedID' if identity_type == FEDERATED_IDENTITY_TYPE else 'createEnterpriseID' 
-        self.commands.append((action_name, attributes))
-
-    def has_commands(self):
-        return len(self.commands) > 0
-            
-    def create_action(self, username, domain):
-        '''
-        :type username: str
-        :type domain: str
-        '''
-        action_options = {
-            'user': username
-        }
-        if (domain != None):
-            action_options['domain'] = domain        
-        action = Action(**action_options)
-        for command in self.commands:
-            action.do(**{command[0]: command[1]})
-        return action    
-
-    @staticmethod
-    def get_json_serializable(value):
-        result = value
-        if isinstance(value, set):
-            result = list(value)
-        return result
         
 class AdobeConnectors(object):
     def __init__(self, main_connector, trusted_connectors):

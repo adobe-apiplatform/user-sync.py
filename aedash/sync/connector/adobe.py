@@ -1,17 +1,22 @@
 import email.utils
 import helper
+import json
 import logging
 import math
 import random
 import time
-from umapi import UMAPI
+from umapi import UMAPI, Action
 from umapi.auth import Auth, JWT, AccessRequest
 from umapi.error import UMAPIError, UMAPIRetryError, UMAPIRequestError
 from umapi.helper import iter_paginate
 
 import jwt
 from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
-jwt.register_algorithm('RS256', RSAAlgorithm(RSAAlgorithm.SHA256))
+
+try:
+    jwt.register_algorithm('RS256', RSAAlgorithm(RSAAlgorithm.SHA256))
+except:
+    pass
 
 class AdobeConnector(object):
     name = 'connector.adobe'
@@ -28,7 +33,8 @@ class AdobeConnector(object):
                 'ims_endpoint_jwt': '/ims/exchange/jwt'
             },
             'logger_name': AdobeConnector.name,
-            'test_mode': False
+            'test_mode': False,
+            'dry_run': False
         }
         if ('server' in caller_options):
             caller_server_options = caller_options['server']
@@ -106,6 +112,79 @@ class AdobeConnector(object):
     
     def get_action_manager(self):
         return self.action_manager
+    
+    def send_commands(self, commands, callback = None):
+        '''
+        :type commands: Commands
+        :type callback: callable(umapi.Action, bool, dict)
+        '''
+        if (len(commands) > 0):
+            username = commands.username
+            domain = commands.domain
+            action_options = {
+                'user': username
+            }
+            if (domain != None):
+                action_options['domain'] = domain        
+            action = Action(**action_options)
+            for command in commands.do_list:
+                action.do(**{command[0]: command[1]})
+                
+            self.logger.info('Sending:\n%s', json.dumps(action.data))
+            if (self.options.get('dry_run')):
+                if (callable(callback)):
+                    callback(action, True, None)
+            else:
+                self.get_action_manager().add_action(action, callback)
+
+class Commands(object):
+    def __init__(self, username, domain):
+        '''
+        :type username: str
+        :type domain: str
+        '''
+        self.username = username
+        self.domain = domain
+        self.do_list = []
+
+    def add_products(self, products_to_add):
+        '''
+        :type products_to_add: set(str)
+        '''
+        if (products_to_add != None and len(products_to_add) > 0):
+            products = Commands.get_json_serializable(products_to_add)
+            self.do_list.append(('add', products))
+
+    def remove_products(self, products_to_remove):
+        '''
+        :type products_to_remove: set(str)
+        '''
+        if (products_to_remove != None and len(products_to_remove) > 0):
+            products = Commands.get_json_serializable(products_to_remove)
+            self.do_list.append(('remove', products))
+    
+    def add_federated_user(self, attributes):
+        '''
+        :type attributes: dict
+        '''
+        self.do_list.append(('createFederatedID', attributes))
+
+    def add_enterprise_user(self, attributes):
+        '''
+        :type attributes: dict
+        '''
+        self.do_list.append(('createEnterpriseID', attributes))
+
+    def __len__(self):
+        return len(self.do_list)
+            
+    @staticmethod
+    def get_json_serializable(value):
+        result = value
+        if isinstance(value, set):
+            result = list(value)
+        return result
+    
     
 class ActionManager(object):
     max_actions = 10
@@ -272,8 +351,6 @@ if True and __name__ == '__main__':
         if ("groups" in u):
             print(u)
             
-    from umapi import Action
-    
     action2 = Action(user='davidy@ensemble.ca').do(
             add=['Default Acrobat Pro DC configuration'],
         )
