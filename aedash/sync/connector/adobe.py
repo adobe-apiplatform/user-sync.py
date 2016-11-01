@@ -130,7 +130,9 @@ class AdobeConnector(object):
             for command in commands.do_list:
                 action.do(**{command[0]: command[1]})
                 
-            self.logger.info('Sending:\n%s', json.dumps(action.data))
+            dry_run = self.options.get('dry_run')
+            action_log_level = logging.INFO if dry_run else logging.DEBUG
+            self.logger.log(action_log_level, 'Sending:\n%s', json.dumps(action.data))
             if (self.options.get('dry_run')):
                 if (callable(callback)):
                     callback(action, True, None)
