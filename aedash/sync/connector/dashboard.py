@@ -18,8 +18,8 @@ try:
 except:
     pass
 
-class AdobeConnector(object):
-    name = 'connector.adobe'
+class DashboardConnector(object):
+    name = 'connector.aedash'
     
     def __init__(self, caller_options):
         '''
@@ -32,7 +32,7 @@ class AdobeConnector(object):
                 'ims_host': 'ims-na1.adobelogin.com',
                 'ims_endpoint_jwt': '/ims/exchange/jwt'
             },
-            'logger_name': AdobeConnector.name,
+            'logger_name': DashboardConnector.name,
             'test_mode': False,
             'dry_run': False
         }
@@ -53,7 +53,7 @@ class AdobeConnector(object):
 
         validation_result, validation_issue = helper.validate_options(options, required_options)
         if not validation_result:
-            raise Exception('%s for connector: %s' % (validation_issue, AdobeConnector.name))
+            raise Exception('%s for connector: %s' % (validation_issue, DashboardConnector.name))
 
         self.options = options;        
         self.logger = logger = helper.create_logger(options)
@@ -339,7 +339,7 @@ if True and __name__ == '__main__':
     
     import requests
     
-    connector = AdobeConnector(options)
+    connector = DashboardConnector(options)
     api = connector.api
 #    res = api._call('/organizations/%s/users/%s' % (connector.org_id, 'davidy@ensemble.ca'), requests.get)
 #    res = api._call('/%s/user-groups' % connector.org_id, requests.get)
