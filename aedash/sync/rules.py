@@ -1,7 +1,7 @@
 from connector.adobe import Commands
 
-ENTERPRISE_IDENTITY_TYPE = 'ENTERPRISE_ID'
-FEDERATED_IDENTITY_TYPE = 'FEDERATED_ID'
+ENTERPRISE_IDENTITY_TYPE = 'enterpriseID'
+FEDERATED_IDENTITY_TYPE = 'federatedID'
 
 MAIN_ORGANIZATION_NAME = None
 
@@ -203,6 +203,9 @@ class Product(object):
     
     def __hash__(self):
         return hash(frozenset(self.__dict__))
+    
+    def __str__(self):
+        return str(self.__dict__)
         
 if True and __name__ == '__main__':
     mappings = {

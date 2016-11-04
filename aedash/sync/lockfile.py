@@ -1,6 +1,5 @@
 import os
 import psutil
-import logging
 
 class ProcessLock(object):
     def __init__(self, path):

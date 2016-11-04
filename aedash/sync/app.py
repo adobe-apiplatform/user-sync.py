@@ -6,6 +6,10 @@ import os
 import sys
 import lockfile
 
+import rules
+import connector.directory
+import connector.directory_csv
+
 APP_VERSION = "0.6.0"
 
 LOG_STRING_FORMAT = '%(asctime)s %(process)d %(levelname)s %(name)s - %(message)s'
@@ -67,6 +71,17 @@ def init_log(caller_options):
         fileHandler.setLevel(file_logging_level)
         fileHandler.setFormatter(logging.Formatter(LOG_STRING_FORMAT, LOG_DATE_FORMAT))        
         logging.getLogger().addHandler(fileHandler)
+        
+def begin_work(config_loader):
+    '''
+    :type config_loader: config.ConfigLoader
+    '''
+    directory_config = config_loader.get_directory_config()
+    directory_connector = connector.directory.DirectoryConnector(connector.directory_csv)
+    directory_connector.initialize(directory_config['connectors'].get(directory_connector.name))
+
+    rule_processor = rules.RuleProcessor({})
+    rule_processor.read_desired_user_products(directory_config['groups'], directory_connector)
 
 def main():    
     args = process_args()
@@ -76,15 +91,14 @@ def main():
         'main_config_filename': args.config_filename
     }
     config_loader = config.ConfigLoader(config_options)
-    main_config = config_loader.load_main_config()    
-    init_log(main_config.get('logging'))
+    init_log(config_loader.get_logging_config())
     
     script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
     lock_path = os.path.join(script_dir, 'lockfile')
     lock = lockfile.ProcessLock(lock_path)
     if lock.set_lock():
         try:
-            pass
+            begin_work(config_loader)
         finally:
             lock.unlock()
     else:
@@ -96,4 +110,5 @@ if __name__ == '__main__':
     sys.excepthook = error_hook
     
     main()
+    
     
