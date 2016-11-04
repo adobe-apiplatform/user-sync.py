@@ -3,7 +3,7 @@ import csv
 
 def connector_metadata():
     metadata = {
-        'name': CSVCustomerConnector.name,
+        'name': CSVDirectoryConnector.name,
         'required_options': ['filename']
     }
     return metadata
@@ -12,13 +12,13 @@ def connector_initialize(options):
     '''
     :type options: dict
     '''
-    state = CSVCustomerConnector(options)
+    state = CSVDirectoryConnector(options)
     return state
 
 
 def connector_iter_users_with_groups(state, groups):
     '''
-    :type state: CSVCustomerConnector
+    :type state: CSVDirectoryConnector
     :type groups: list(str)
     :rtype iterable(dict)
     '''
@@ -26,13 +26,13 @@ def connector_iter_users_with_groups(state, groups):
 
 def connector_is_existing_username(state, username):
     '''
-    :type state: CSVCustomerConnector
+    :type state: CSVDirectoryConnector
     :type username: str
     :rtype bool
     '''
     return state.is_existing_username(username)
 
-class CSVCustomerConnector(object):
+class CSVDirectoryConnector(object):
     name = 'csv'
     
     def __init__(self, caller_options):
@@ -46,7 +46,7 @@ class CSVCustomerConnector(object):
             'username_column_name': 'Username',
             'domain_column_name': 'Domain',
             'identity_type_column_name': 'Identity Type',
-            'logger_name': 'connector.' + CSVCustomerConnector.name
+            'logger_name': 'connector.' + CSVDirectoryConnector.name
         }
         options.update(caller_options)
 
@@ -161,13 +161,13 @@ class CSVCustomerConnector(object):
 if True and __name__ == '__main__':
     import sys
     import datetime
-    import customer
+    from aedash.sync.connector import directory
 
     start1 = datetime.datetime.now()    
     options = {
         'filename': "test.csv",
     }
-    connector = customer.CustomerConnector(sys.modules[__name__], options)
+    connector = directory.DirectoryConnector(sys.modules[__name__], options)
     users = connector.get_users_with_groups(["a", "g"])
     start2 = datetime.datetime.now()
     start3 = start2 - start1

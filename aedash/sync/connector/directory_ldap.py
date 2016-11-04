@@ -5,7 +5,7 @@ import string
 
 def connector_metadata():
     metadata = {
-        'name': LDAPCustomerConnector.name,
+        'name': LDAPDirectoryConnector.name,
         'required_options': ['host', 'username', 'password', 'base_dn']
     }
     return metadata
@@ -14,12 +14,12 @@ def connector_initialize(options):
     '''
     :type options: dict
     '''
-    connector = LDAPCustomerConnector(options)
+    connector = LDAPDirectoryConnector(options)
     return connector
 
 def connector_iter_users_with_groups(state, groups):
     '''
-    :type state: LDAPCustomerConnector
+    :type state: LDAPDirectoryConnector
     :type groups: list(str)
     :rtype iterable(dict)
     '''
@@ -28,7 +28,7 @@ def connector_iter_users_with_groups(state, groups):
 def connector_is_existing_username(state, username):
     return True
 
-class LDAPCustomerConnector(object):
+class LDAPDirectoryConnector(object):
     name = 'ldap'
     
     def __init__(self, caller_options):
@@ -39,7 +39,7 @@ class LDAPCustomerConnector(object):
             'user_username_format': None,
             'user_domain_format': None,
             'user_identity_type': None,
-            'logger_name': 'connector.' + LDAPCustomerConnector.name
+            'logger_name': 'connector.' + LDAPDirectoryConnector.name
         }
         options.update(caller_options)
     
@@ -320,7 +320,7 @@ class LDAPValueFormatter(object):
 if True and __name__ == '__main__':
     import sys
     import datetime
-    import customer
+    from aedash.sync.connector import directory
     
     start1 = datetime.datetime.now()    
     options = {
@@ -332,7 +332,7 @@ if True and __name__ == '__main__':
     options['user_email_format'] = '{sAMAccountName}@ensemble.com'
     options['user_domain_format'] = 'ensemble.com'
     options['user_username_format'] = '{mail}'
-    connector = customer.CustomerConnector(sys.modules[__name__], options)
+    connector = directory.DirectoryConnector(sys.modules[__name__], options)
     users = connector.get_users_with_groups(["BulkGroup"])
     start2 = datetime.datetime.now()
     start3 = start2 - start1

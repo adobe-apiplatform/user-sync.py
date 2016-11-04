@@ -1,6 +1,6 @@
 import helper
 
-class CustomerConnector(object):    
+class DirectoryConnector(object):    
     def __init__(self, implementation, options = {}):
         '''
         :type options: dict

@@ -9,23 +9,23 @@ class RuleProcessor(object):
     
     def __init__(self, options):
         self.options = options        
-        self.customer_user_by_email = {}
+        self.directory_user_by_email = {}
         self.desired_products_by_organization = {}
         self.orphaned_adobe_users_by_organization = {}
     
-    def read_desired_user_products(self, mappings, customer_connector):
+    def read_desired_user_products(self, mappings, directory_connector):
         '''
         :type mappings: dict(str, list(AdobeProduct)
-        :type customer_connector: connector.customer.CustomerConnector
+        :type directory_connector: aedash.sync.connector.directory.DirectoryConnector
         '''
-        customer_user_by_email = self.customer_user_by_email
+        directory_user_by_email = self.directory_user_by_email
         desired_products_by_organization = self.desired_products_by_organization
         
-        customer_groups = mappings.keys()
-        for customer_user in customer_connector.iter_users_with_groups(customer_groups):
-            email = RuleProcessor.normalize_email(customer_user['email'])
-            customer_user_by_email[email] = customer_user             
-            for group in customer_user['groups']:
+        directory_groups = mappings.keys()
+        for directory_user in directory_connector.iter_users_with_groups(directory_groups):
+            email = RuleProcessor.normalize_email(directory_user['email'])
+            directory_user_by_email[email] = directory_user             
+            for group in directory_user['groups']:
                 adobe_products = mappings.get(group)
                 if (adobe_products != None):
                     for adobe_product in adobe_products:
@@ -57,8 +57,8 @@ class RuleProcessor(object):
                 if (email in added_adobe_emails):
                     continue
                 if (email in main_adobe_users):
-                    customer_user = self.customer_user_by_email[email]
-                    self.add_products_for_connector(customer_user, desired_products, adobe_connector)
+                    directory_user = self.directory_user_by_email[email]
+                    self.add_products_for_connector(directory_user, desired_products, adobe_connector)
                 else:
                     self.add_adobe_user(email, adobe_connectors)
                     added_adobe_emails.add(email)
@@ -68,15 +68,15 @@ class RuleProcessor(object):
         :type email: str
         :type adobe_connectors: AdobeConnectors
         '''
-        customer_user = self.customer_user_by_email[email]
+        directory_user = self.directory_user_by_email[email]
 
         attributes = {}
         attributes['email'] = email
-        attributes['firstname'] = customer_user['firstname']
-        attributes['lastname'] = customer_user['lastname']
-        attributes['country'] = customer_user['country']
+        attributes['firstname'] = directory_user['firstname']
+        attributes['lastname'] = directory_user['lastname']
+        attributes['country'] = directory_user['country']
         
-        commands = Commands(customer_user['username'], customer_user['domain'])
+        commands = Commands(directory_user['username'], directory_user['domain'])
         commands.add_enterprise_user(attributes)
         desired_products_by_email = self.desired_products_by_organization.get(MAIN_ORGANIZATION_NAME)
         if (desired_products_by_email != None):
@@ -85,28 +85,28 @@ class RuleProcessor(object):
 
         def callback(create_action, is_success, error):
             if is_success:
-                self.add_products_for_trusted_connectors(customer_user, adobe_connectors.trusted_connectors)
+                self.add_products_for_trusted_connectors(directory_user, adobe_connectors.trusted_connectors)
         adobe_connectors.get_main_connector().send_commands(commands, callback)
 
-    def add_products_for_trusted_connectors(self, customer_user, trusted_adobe_connectors):
+    def add_products_for_trusted_connectors(self, directory_user, trusted_adobe_connectors):
         '''
-        :type customer_user: dict
+        :type directory_user: dict
         :type trusted_adobe_connectors: dict(str, connector.adobe.AdobeConnector)
         '''
         desired_products_by_organization = self.desired_products_by_organization    
         for organization_name, adobe_connector in trusted_adobe_connectors.iteritems():
             desired_products_by_email = desired_products_by_organization.get(organization_name)
             if desired_products_by_email != None:
-                desired_products = desired_products_by_email.get(customer_user['email'])
-                self.add_products_for_connector(customer_user, desired_products, adobe_connector)
+                desired_products = desired_products_by_email.get(directory_user['email'])
+                self.add_products_for_connector(directory_user, desired_products, adobe_connector)
 
-    def add_products_for_connector(self, customer_user, desired_products, adobe_connector):
+    def add_products_for_connector(self, directory_user, desired_products, adobe_connector):
         '''
-        :type customer_user: dict
+        :type directory_user: dict
         :type desired_products: set(str)
         :type trusted_adobe_connectors: dict(str, connector.adobe.AdobeConnector)
         '''
-        commands = Commands(customer_user['username'], customer_user['domain'])
+        commands = Commands(directory_user['username'], directory_user['domain'])
         commands.add_products(desired_products)
         adobe_connector.send_commands(commands)
             
@@ -115,7 +115,7 @@ class RuleProcessor(object):
         :type organization_name: str
         :type adobe_connector: connector.adobe.AdobeConnector
         '''
-        customer_user_by_email = self.customer_user_by_email
+        directory_user_by_email = self.directory_user_by_email
         
         desired_products_by_email = self.desired_products_by_organization.get(organization_name)
         desired_products_by_email = {} if desired_products_by_email == None else desired_products_by_email.copy()        
@@ -126,8 +126,8 @@ class RuleProcessor(object):
             email = RuleProcessor.normalize_email(adobe_user['email'])
             all_adobe_users[email] = adobe_user
             
-            customer_user = customer_user_by_email.get(email)
-            if (customer_user == None):
+            directory_user = directory_user_by_email.get(email)
+            if (directory_user == None):
                 orphaned_adobe_users[email] = adobe_user
                 continue                    
                 
@@ -140,7 +140,7 @@ class RuleProcessor(object):
             products_to_add = desired_products - current_products
             products_to_remove = current_products - desired_products
 
-            commands = Commands(customer_user['username'], customer_user['domain'])
+            commands = Commands(directory_user['username'], directory_user['domain'])
             commands.add_products(products_to_add)
             commands.remove_products(products_to_remove)
             adobe_connector.send_commands(commands)
@@ -209,12 +209,12 @@ if True and __name__ == '__main__':
         'acrobat': [Product("Default Acrobat Pro DC configuration", 'trusted')]
     }
 
-    import connector.customer
-    import connector.customer_csv
+    import connector.directory
+    import connector.directory_csv
     csv_options = {
-        'filename': "test.csv",
+        'filename': "data/test.csv",
     }    
-    customer_connector = connector.customer.CustomerConnector(connector.customer_csv, csv_options)
+    directory_connector = connector.directory.DirectoryConnector(connector.directory_csv, csv_options)
 
     import connector.adobe
     adobe_main_options = {
@@ -223,7 +223,7 @@ if True and __name__ == '__main__':
             'api_key': "4839484fa90147d6bb88f8db0c791ff1",
             'client_secret': "f907d26e-416e-4bbb-9c3e-7aa2dc439208",
             'tech_acct': "0E3B6A995806C4BE0A495CC7@techacct.adobe.com",
-            'priv_key_path': "connector/1/private.key"
+            'priv_key_path': "data/1/private1.key"
         }
     }
     adobe_trusted_options = {
@@ -232,7 +232,7 @@ if True and __name__ == '__main__':
             'api_key': "55561e5ccfd048c0b136dbec5f9904e8",
             'client_secret': "cf8cb4e6-89bf-4f2b-9b24-f048a7fee153",
             'tech_acct': "0ABD91645806C7500A495E57@techacct.adobe.com",
-            'priv_key_path': "connector/2/private.key"
+            'priv_key_path': "data/2/private2.key"
         }
     }
     adobe_main_connector = connector.adobe.AdobeConnector(adobe_main_options)
@@ -241,10 +241,10 @@ if True and __name__ == '__main__':
     adobe_connectors = AdobeConnectors(adobe_main_connector, {'trusted': adobe_trusted_connector})
 
     rule_processor = RuleProcessor({})
-    rule_processor.read_desired_user_products(mappings, customer_connector)
+    rule_processor.read_desired_user_products(mappings, directory_connector)
     rule_processor.process_adobe_users(adobe_connectors)
     
-    adobe_connectors.execute_actions()
+#    adobe_connectors.execute_actions()
     
     a = 0
     a+=1
