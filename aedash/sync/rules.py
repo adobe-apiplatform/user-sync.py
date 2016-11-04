@@ -212,7 +212,7 @@ if True and __name__ == '__main__':
     import connector.directory
     import connector.directory_csv
     csv_options = {
-        'filename': "data/test.csv",
+        'file_path': "data/test.csv",
     }    
     directory_connector = connector.directory.DirectoryConnector(connector.directory_csv, csv_options)
 

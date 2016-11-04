@@ -4,7 +4,7 @@ import csv
 def connector_metadata():
     metadata = {
         'name': CSVDirectoryConnector.name,
-        'required_options': ['filename']
+        'required_options': ['file_path']
     }
     return metadata
 
@@ -53,10 +53,10 @@ class CSVDirectoryConnector(object):
         self.options = options
         self.logger = logger = helper.create_logger(options)
         
-        filename = options['filename']
+        file_path = options['file_path']
         
-        logger.info('Reading from: %s', filename)
-        with open(filename, 'r', 1) as input_file:
+        logger.info('Reading from: %s', file_path)
+        with open(file_path, 'r', 1) as input_file:
             reader = csv.DictReader(input_file, delimiter = options['delimiter'])
             self.users = users = self.read_users(reader)    
         
@@ -165,7 +165,7 @@ if True and __name__ == '__main__':
 
     start1 = datetime.datetime.now()    
     options = {
-        'filename': "test.csv",
+        'file_path': "test.csv",
     }
     connector = directory.DirectoryConnector(sys.modules[__name__], options)
     users = connector.get_users_with_groups(["a", "g"])
