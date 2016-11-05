@@ -1,7 +1,7 @@
-from collections import deque 
 import helper
 import ldap
 import string
+from ldap.controls.libldap import SimplePagedResultsControl
 
 def connector_metadata():
     metadata = {
@@ -17,16 +17,13 @@ def connector_initialize(options):
     connector = LDAPDirectoryConnector(options)
     return connector
 
-def connector_iter_users_with_groups(state, groups):
+def connector_load_users_and_groups(state, groups):
     '''
     :type state: LDAPDirectoryConnector
     :type groups: list(str)
     :rtype iterable(dict)
     '''
-    return state.iter_users_with_groups(groups)
-
-def connector_is_existing_username(state, username):
-    return True
+    return state.load_users_and_groups(groups)
 
 class LDAPDirectoryConnector(object):
     name = 'ldap'
@@ -34,11 +31,13 @@ class LDAPDirectoryConnector(object):
     def __init__(self, caller_options):
         options = {
             'group_filter_format': '(&(|(objectCategory=group)(objectClass=groupOfNames))(cn={group}))',
+            'all_users_filter': '(&(objectclass=person))',
             'require_tls_cert': False,
             'user_email_format': '{mail}',
             'user_username_format': None,
             'user_domain_format': None,
             'user_identity_type': None,
+            'search_page_size': 200,
             'logger_name': 'connector.' + LDAPDirectoryConnector.name
         }
         options.update(caller_options)
@@ -63,60 +62,33 @@ class LDAPDirectoryConnector(object):
         connection.set_option(ldap.OPT_REFERRALS, 0)
         connection.simple_bind_s(username, password)
         self.connection = connection
-        logger.info('Connected')
+        logger.info('Connected to: %s ', host)            
         
-    def iter_users_with_groups(self, groups):
+    def load_users_and_groups(self, groups):
         '''
         :type groups: list(str)
         :rtype iterable(dict)
         '''
-        
-        logger = self.logger
-    
-        users = {}
-        user_attribute_names = ["givenName", "sn", "c"]    
-        user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
-        user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
-        user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
-    
-        maximum_requests_to_buffer = 500
-        requests = deque()
-        
-        connection = self.connection
-    
+        self.user_by_dn = user_by_dn = dict(self.iter_all_users())
+        self.logger.info('Total users loaded: %d', len(user_by_dn))
+
         for group in groups:
             group_members = self.get_ldap_group_members(group)
+            total_group_members = 0
+            total_group_users = 0            
             if group_members != None:
                 for group_member in group_members:
-                    new_user = False
-                    if group_member in users:
-                        user = users[group_member];
-                    else:
-                        user = helper.create_blank_user()
-                        users[group_member] = user
-                        new_user = True
-                    user['groups'].append(group)
-                    
-                    if new_user:
-                        msgid = connection.search(group_member, ldap.SCOPE_BASE, attrlist=user_attribute_names)
-                        requests.append((msgid, group_member, user))
-                        if (maximum_requests_to_buffer > 0):
-                            maximum_requests_to_buffer -= 1
-                        elif (len(requests) > 0):
-                            processed_user = self.process_one_user_request(requests)
-                            if (processed_user != None):
-                                yield processed_user
+                    total_group_members += 1
+                    user = user_by_dn.get(group_member)
+                    if (user != None):
+                        total_group_users += 1
+                        user_groups = user['groups']
+                        if not group in user_groups:
+                            user_groups.append(group)
+            self.logger.debug('Group %s members: %d users: %d', group, total_group_members, total_group_users)
         
-        while(len(requests) > 0):
-            processed_user = self.process_one_user_request(requests)
-            if (processed_user != None):
-                yield processed_user
-            
-        for dn, user in users.iteritems():
-            if user['email'] == None:
-                logger.warning('Skipped user with no email for dn: %s', dn)
-                continue
-    
+        return user_by_dn.itervalues()    
+        
     def find_ldap_group(self, group, attribute_list=None):
         '''
         :type group: str
@@ -215,38 +187,41 @@ class LDAPDirectoryConnector(object):
             group_dn, group_attributes = group_tuple;
             result = self.get_attribute_values(group_dn, 'member', group_attributes)
         return result
+    
+    def iter_all_users(self):
+        options = self.options
+        base_dn = options['base_dn']
+        all_users_filter = options['all_users_filter']
         
-    def process_one_user_request(self, requests):
-        '''
-        :type requests: collections.deque
-        '''
-        msgid, dn, user = requests.popleft()
-        try: 
-            result_type, result_response = self.connection.result(msgid)
-        except:
-            pass
+        user_attribute_names = ["givenName", "sn", "c"]    
+        user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
+        user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
+        user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
+
+        result_iter = self.iter_search_result(base_dn, ldap.SCOPE_SUBTREE, all_users_filter, user_attribute_names)
+        for dn, record in result_iter:
+            if (dn == None):
+                continue
             
-        logger = self.logger    
-            
-        if ((result_type == ldap.RES_SEARCH_RESULT or result_type == ldap.RES_SEARCH_ENTRY) and len(result_response) > 0):
-            record = result_response[0][1];
             email, last_attribute_name = self.user_email_formatter.generate_value(record)
-            if (email != None):
-                user['email'] = email
-            elif (last_attribute_name != None):
-                logger.info('No email attribute: %s for dn: %s', last_attribute_name, dn)
+            if (email == None):
+                if (last_attribute_name != None):
+                    self.logger.info('No email attribute: %s for dn: %s', last_attribute_name, dn)
+                continue
+            
+            user = helper.create_blank_user()
+            user['email'] = email
                 
             username, last_attribute_name = self.user_username_formatter.generate_value(record)
-            if (username != None):
-                user['username'] = username
-            elif (last_attribute_name != None):
-                logger.info('No username attribute: %s for dn: %s', last_attribute_name, dn)    
+            if (username == None and last_attribute_name != None):
+                self.logger.info('No username attribute: %s for dn: %s', last_attribute_name, dn)    
+            user['username'] = username if username != None else email
                     
             domain, last_attribute_name = self.user_domain_formatter.generate_value(record)
             if (domain != None):
                 user['domain'] = domain
             elif (last_attribute_name != None):
-                logger.info('No domain attribute: %s for dn: %s', last_attribute_name, dn)    
+                self.logger.info('No domain attribute: %s for dn: %s', last_attribute_name, dn)    
                                                 
             given_name_value = LDAPValueFormatter.get_attribute_value(record, 'givenName')
             if (given_name_value != None):   
@@ -257,10 +232,42 @@ class LDAPDirectoryConnector(object):
             c_value = LDAPValueFormatter.get_attribute_value(record, 'c')
             if c_value != None:
                 user['country'] = c_value
-            return user if user['email'] != None else None
-        else:
-            logger.info('No user match for dn: %s', dn)
-        return None
+            yield (dn, user)
+    
+    def iter_search_result(self, base_dn, scope, filter_string, attributes):
+        '''
+        type: filter_string: str
+        type: attributes: list(str)
+        '''
+        connection = self.connection
+        search_page_size = self.options['search_page_size']
+        
+        lc = SimplePagedResultsControl(True, size=search_page_size, cookie='')
+
+        msgid = None
+        has_next_page = True        
+        while has_next_page:
+            response_data = None
+            result_type = None
+            if (msgid != None):
+                result_type, response_data, _rmsgid, serverctrls = connection.result3(msgid)
+                pctrls = [c for c in serverctrls
+                          if c.controlType == SimplePagedResultsControl.controlType]
+                if not pctrls:
+                    self.logger.warn('Server ignored RFC 2696 control.')
+                    has_next_page = False
+                else: 
+                    lc.cookie = cookie = pctrls[0].cookie
+                    if not cookie:
+                        has_next_page = False
+            
+            if (has_next_page):
+                msgid = connection.search_ext(base_dn, scope, filterstr=filter_string, attrlist=attributes, serverctrls=[lc])
+
+            if ((result_type == ldap.RES_SEARCH_RESULT or result_type == ldap.RES_SEARCH_ENTRY) and (response_data != None)):
+                for item in response_data:
+                    yield item
+        
     
 class LDAPValueFormatter(object):
     def __init__(self, string_format):
@@ -322,6 +329,8 @@ if True and __name__ == '__main__':
     import datetime
     from aedash.sync.connector import directory
     
+    users = []
+    
     start1 = datetime.datetime.now()    
     options = {
         'host': "ldap://dev-ad.ensemble.com",
@@ -329,11 +338,24 @@ if True and __name__ == '__main__':
         'password': "p@ssw0rd!",
         'base_dn': "dc=ensemble,dc=com",
     }
+    options1 = {
+        'host': "ldap://dev-ldap.ensemble.com",
+        'username': "cn=DND-QA,ou=Test Accounts,dc=ensemble,dc=com",
+        'password': "password",
+        'base_dn': "dc=ensemble,dc=com",
+    }
     options['user_email_format'] = '{sAMAccountName}@ensemble.com'
-    options['user_domain_format'] = 'ensemble.com'
-    options['user_username_format'] = '{mail}'
-    connector = directory.DirectoryConnector(sys.modules[__name__], options)
-    users = connector.get_users_with_groups(["BulkGroup"])
+#    options['user_domain_format'] = 'ensemble.com'
+#    options['user_username_format'] = '{mail}'
+    options1['user_email_format'] = '{uid}@ensemble.com'
+    connector = directory.DirectoryConnector(sys.modules[__name__])
+    connector.initialize(options1)
+    
+    users = list(connector.load_users_and_groups(["Bulk Group"]))
+    
+    
     start2 = datetime.datetime.now()
     start3 = start2 - start1
+    
+    print(len(users))
     print("3: " + str(start3));

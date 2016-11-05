@@ -15,69 +15,50 @@ def connector_initialize(options):
     state = CSVDirectoryConnector(options)
     return state
 
-
-def connector_iter_users_with_groups(state, groups):
+def connector_load_users_and_groups(state, groups):
     '''
     :type state: CSVDirectoryConnector
     :type groups: list(str)
     :rtype iterable(dict)
     '''
-    return state.iter_users_with_groups(groups)
-
-def connector_is_existing_username(state, username):
-    '''
-    :type state: CSVDirectoryConnector
-    :type username: str
-    :rtype bool
-    '''
-    return state.is_existing_username(username)
+    return state.load_users_and_groups(groups)
 
 class CSVDirectoryConnector(object):
     name = 'csv'
     
     def __init__(self, caller_options):
         options = {
-            'delimiter': ',',
-            'first_name_column_name': 'First Name',
-            'last_name_column_name': 'Last Name',
-            'email_column_name': 'Email',
-            'country_column_name': 'Country',
-            'groups_column_name': 'Groups',
-            'username_column_name': 'Username',
-            'domain_column_name': 'Domain',
-            'identity_type_column_name': 'Identity Type',
+            'delimiter': '\t',
+            'first_name_column_name': 'firstname',
+            'last_name_column_name': 'lastname',
+            'email_column_name': 'email',
+            'country_column_name': 'country',
+            'groups_column_name': 'groups',
+            'username_column_name': 'username',
+            'domain_column_name': 'domain',
+            'identity_type_column_name': 'type',
             'logger_name': 'connector.' + CSVDirectoryConnector.name
         }
         options.update(caller_options)
 
         self.options = options
-        self.logger = logger = helper.create_logger(options)
+        self.logger = helper.create_logger(options)
         
-        file_path = options['file_path']
-        
-        logger.info('Reading from: %s', file_path)
-        with open(file_path, 'r', 1) as input_file:
-            reader = csv.DictReader(input_file, delimiter = options['delimiter'])
-            self.users = users = self.read_users(reader)    
-        
-        logger.info('Number of users loaded: %d', len(users))
 
-    def iter_users_with_groups(self, groups):
+    def load_users_and_groups(self, groups):
         '''
         :type groups: list(str)
         :rtype iterable(dict)
-        '''
-        group_set = set(groups)
-        for user in self.users.itervalues():
-            if (not(group_set.isdisjoint(user['groups']))):
-                yield user
-
-    def is_existing_username(self, username):
-        '''
-        :type username: str
-        :rtype bool
-        '''
-        return username in self.users
+        '''        
+        options = self.options
+        file_path = options['file_path']
+        self.logger.info('Reading from: %s', file_path)
+        with open(file_path, 'r', 1) as input_file:
+            reader = csv.DictReader(input_file, delimiter = options['delimiter'])
+            self.users = users = self.read_users(reader)
+                        
+        self.logger.info('Number of users loaded: %d', len(users))
+        return users.itervalues()
 
     def read_users(self, reader):
         '''

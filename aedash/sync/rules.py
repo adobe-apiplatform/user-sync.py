@@ -22,7 +22,7 @@ class RuleProcessor(object):
         desired_products_by_organization = self.desired_products_by_organization
         
         directory_groups = mappings.keys()
-        for directory_user in directory_connector.iter_users_with_groups(directory_groups):
+        for directory_user in directory_connector.load_users_and_groups(directory_groups):
             email = RuleProcessor.normalize_email(directory_user['email'])
             directory_user_by_email[email] = directory_user             
             for group in directory_user['groups']:

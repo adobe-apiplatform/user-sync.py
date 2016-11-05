@@ -25,11 +25,9 @@ class DirectoryConnector(object):
                 raise Exception('%s for connector: %s' % (validation_issue, self.metadata['name']))
         self.state = self.implementation.connector_initialize(options)
         
-    def iter_users_with_groups(self, groups):
-        return self.implementation.connector_iter_users_with_groups(self.state, groups)        
+    def load_users_and_groups(self, groups):
+        '''
+        :type groups: list(str)
+        '''
+        return self.implementation.connector_load_users_and_groups(self.state, groups)        
 
-    def get_users_with_groups(self, groups):
-        return list(self.iter_users_with_groups(groups))
-
-    def is_existing_username(self, username):
-        return self.implementation.connector_is_existing_username(self.state, username)  
