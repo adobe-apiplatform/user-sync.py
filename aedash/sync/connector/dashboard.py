@@ -94,17 +94,17 @@ class DashboardConnector(object):
     
         # initialize Auth object for API requests
         auth = Auth(api_key, access_token)
-        self.api = api = UMAPI(um_endpoint, auth, options['test_mode'])
+        self.api_delegate = api_delegate = ApiDelegate(UMAPI(um_endpoint, auth, options['test_mode']), logger)
         logger.info('API initialized on: %s', um_endpoint)
         
-        self.action_manager = ActionManager(api, org_id, logger)
+        self.action_manager = ActionManager(api_delegate, org_id, logger)
         
     def get_users(self):
         return list(self.iter_users())
 
     def iter_users(self):
         users = {}
-        for u in iter_paginate(self.api.users, self.org_id):
+        for u in iter_paginate(self.api_delegate.users, self.org_id):
             email = u['email'] 
             if not (email in users):
                 users[email] = u            
@@ -191,14 +191,14 @@ class Commands(object):
 class ActionManager(object):
     max_actions = 10
 
-    def __init__(self, api, org_id, logger):
+    def __init__(self, api_delegate, org_id, logger):
         '''
-        :type api: umapi.Api
+        :type api_delegate: ApiDelegate
         :type org_id: str
         :type logger: logging.Logger
         '''
         self.items = []
-        self.api = api
+        self.api_delegate = api_delegate
         self.org_id = org_id
         self.logger = logger.getChild('action')
         self.next_request_id = 1;
@@ -226,8 +226,6 @@ class ActionManager(object):
     def execute(self):
         num_attempts = 0
         num_attempts_max = 4
-        backoff_exponential_factor = 15  # seconds
-        backoff_random_delay_max = 5  # seconds
 
         items = self.items
         self.items = []
@@ -241,28 +239,12 @@ class ActionManager(object):
 
             is_request_error = False
             try:
-                res = self.api.action(self.org_id, [item['action'] for item in items])
+                res = self.api_delegate.action(self.org_id, [item['action'] for item in items])
             except UMAPIRequestError as e:
                 is_request_error = True
                 res = e.result
             except UMAPIRetryError as e:
-                self.logger.warn("FAILURE -- %s - RETRYING", e.res.status_code)
-                if "Retry-After" in e.res.headers:
-                    retry_after_date = email.utils.parsedate_tz(e.res.headers["Retry-After"])
-                    if retry_after_date is not None:
-                        # header contains date
-                        time_backoff = int(email.utils.mktime_tz(retry_after_date) - time.time())
-                    else:
-                        # header contains delta seconds
-                        time_backoff = int(e.res.headers["Retry-After"])
-                else:
-                    # use exponential backoff with random delayh
-                    time_backoff = int(math.pow(2, num_attempts - 1)) * \
-                                   backoff_exponential_factor + \
-                                   random.randint(0, backoff_random_delay_max)
-
-                self.logger.info("Retrying in " + str(time_backoff) + " seconds...")
-                time.sleep(time_backoff)
+                num_attempts = num_attempts_max
                 continue
             except UMAPIError as e:
                 self.logger.warn("ERROR -- %s - %s", e.res.status_code, e.res.text)
@@ -292,6 +274,62 @@ class ActionManager(object):
                 if (callable(item_callback)):
                     item_callback(item['action'], item_is_success, item_error)
             break
+        
+class ApiDelegate(object):
+    num_attempts_max = 4
+    backoff_exponential_factor = 15  # seconds
+    backoff_random_delay_max = 5  # seconds
+
+    def __init__(self, api, logger):
+        '''
+        :type api: umapi.Api
+        :type logger: logging.Logger
+        '''
+        self.api = api
+        self.logger = logger.getChild('api')
+    
+    def users(self, *args):
+        return self.make_api_call(self.api.users, args)
+    
+    def action(self, *args): 
+        return self.make_api_call(self.api.action, args)
+    
+    def make_api_call(self, api_call, args):
+        '''
+        :type api_call: callable
+        :type args: list
+        '''
+        num_attempts = 0
+        while True:
+            num_attempts += 1
+            try:
+                res = api_call(*args)
+                break
+            except UMAPIRetryError as e:
+                self.logger.info("Retry error: %s", e.res.status_code)
+                if num_attempts >= self.num_attempts_max:
+                    self.logger.info("Retry max attempts reached")
+                    raise e
+                
+                if "Retry-After" in e.res.headers:
+                    retry_after_date = email.utils.parsedate_tz(e.res.headers["Retry-After"])
+                    if retry_after_date is not None:
+                        # header contains date
+                        time_backoff = int(email.utils.mktime_tz(retry_after_date) - time.time())
+                    else:
+                        # header contains delta seconds
+                        time_backoff = int(e.res.headers["Retry-After"])
+                else:
+                    # use exponential backoff with random delay
+                    time_backoff = int(math.pow(2, num_attempts - 1)) * \
+                                   self.backoff_exponential_factor + \
+                                   random.randint(0, self.backoff_random_delay_max)
+    
+                self.logger.info("Retrying in %d seconds...", time_backoff)
+                time.sleep(time_backoff)
+
+        return res
+        
     
 if True and __name__ == '__main__':
     o1 = object()
@@ -321,7 +359,7 @@ if True and __name__ == '__main__':
             'api_key': "4839484fa90147d6bb88f8db0c791ff1",
             'client_secret': "f907d26e-416e-4bbb-9c3e-7aa2dc439208",
             'tech_acct': "0E3B6A995806C4BE0A495CC7@techacct.adobe.com",
-            'priv_key_path': "1/private.key"
+            'priv_key_path': "data/1/private1.key"
         }
     }
     
@@ -331,24 +369,26 @@ if True and __name__ == '__main__':
             'api_key': "55561e5ccfd048c0b136dbec5f9904e8",
             'client_secret': "cf8cb4e6-89bf-4f2b-9b24-f048a7fee153",
             'tech_acct': "0ABD91645806C7500A495E57@techacct.adobe.com",
-            'priv_key_path': "2/private.key"
+            'priv_key_path': "data/2/private2.key"
         }
     }
     
-    options = options2
+    options = options3
     
     import requests
     
     connector = DashboardConnector(options)
-    api = connector.api
+    #api = connector.api
 #    res = api._call('/organizations/%s/users/%s' % (connector.org_id, 'davidy@ensemble.ca'), requests.get)
 #    res = api._call('/%s/user-groups' % connector.org_id, requests.get)
     #res = api._call('/%s/products' % connector.org_id, requests.get)
     #res = api._call('/groups/%s/0' % connector.org_id, requests.get)
-    res = api._call('/users/%s/0?domain=%s' % (connector.org_id, 'ensemble.ca'), requests.get)
+    #res = api._call('/users/%s/0?domain=%s' % (connector.org_id, 'ensemble.ca'), requests.get)
+
+#    for i in range(1, 100):
+    users = connector.get_users()
 
     
-    users = connector.get_users()
     for u in users:
         if ("groups" in u):
             print(u)
@@ -375,8 +415,9 @@ if True and __name__ == '__main__':
     )
     manager = connector.get_action_manager()
     
-    manager.add_action(action)
-    manager.execute()
+    for i in range(1, 100):
+        manager.add_action(action2)
+        manager.execute()
     
     a=0
     a+=1
