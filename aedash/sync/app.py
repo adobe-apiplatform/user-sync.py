@@ -7,6 +7,7 @@ import sys
 import lockfile
 
 import rules
+import connector.dashboard
 import connector.directory
 import connector.directory_csv
 
@@ -81,16 +82,27 @@ def begin_work(config_loader):
 
     directory_connector = connector.directory.DirectoryConnector(connector.directory_csv)
     directory_connector.initialize(directory_config['connectors'].get(directory_connector.name))
+    
+    dashboard_main_connector = connector.dashboard.DashboardConnector(dashboard_config['owning'])
+    dashboard_trustee_connectors = {}    
+    for trustee_organization_name, trustee_config in dashboard_config['trustees'].iteritems():
+        dashboard_trustee_conector = connector.dashboard.DashboardConnector(trustee_config)
+        dashboard_trustee_connectors[trustee_organization_name] = dashboard_trustee_conector 
+    dashboard_connectors = rules.DashboardConnectors(dashboard_main_connector, dashboard_trustee_connectors)
 
     rule_processor = rules.RuleProcessor({})
     rule_processor.read_desired_user_products(directory_config['groups'], directory_connector)
+    rule_processor.process_dashboard_users(dashboard_connectors)
+    
+    dashboard_connectors.execute_actions()
 
 def main():    
     args = process_args()
     
     config_options = {
-        'directory': args.config_path,
-        'main_config_filename': args.config_filename
+        'config_directory': args.config_path,
+        'main_config_filename': args.config_filename,
+        'test_mode': args.test_mode
     }
     config_loader = config.ConfigLoader(config_options)
     init_log(config_loader.get_logging_config())

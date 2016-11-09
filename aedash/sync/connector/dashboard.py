@@ -34,7 +34,6 @@ class DashboardConnector(object):
             },
             'logger_name': DashboardConnector.name,
             'test_mode': False,
-            'dry_run': False
         }
         if ('server' in caller_options):
             caller_server_options = caller_options['server']
@@ -130,14 +129,10 @@ class DashboardConnector(object):
             for command in commands.do_list:
                 action.do(**{command[0]: command[1]})
                 
-            dry_run = self.options.get('dry_run')
-            action_log_level = logging.INFO if dry_run else logging.DEBUG
-            self.logger.log(action_log_level, 'Sending:\n%s', json.dumps(action.data))
-            if (self.options.get('dry_run')):
-                if (callable(callback)):
-                    callback(action, True, None)
-            else:
-                self.get_action_manager().add_action(action, callback)
+            test_mode = self.options.get('test_mode')
+            action_log_level = logging.INFO if test_mode else logging.DEBUG
+            self.logger.log(action_log_level, 'Adding request:\n%s', json.dumps(action.data))
+            self.get_action_manager().add_action(action, callback)
 
 class Commands(object):
     def __init__(self, username, domain):

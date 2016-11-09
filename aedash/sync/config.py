@@ -18,7 +18,8 @@ class ConfigLoader(object):
         '''        
         self.options = options = {
             'config_directory': DEFAULT_CONFIG_DIRECTORY,
-            'main_config_filename': DEFAULT_MAIN_CONFIG_FILENAME
+            'main_config_filename': DEFAULT_MAIN_CONFIG_FILENAME,
+            'test_mode': False
         }
         options.update(caller_options)     
 
@@ -52,6 +53,10 @@ class ConfigLoader(object):
         owning_config_filename = dashboard_config.get('owning_config_filename', DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME)
         trustee_config_filename_format = dashboard_config.get('trustee_config_filename_format', DEFAULT_DASHBOARD_TRUSTEE_CONFIG_FILENAME_FORMAT)
         
+        config_from_options = {
+            'test_mode': self.options['test_mode']
+        }
+        
         trustee_config_file_paths = {}
         trustee_config_filename_wildcard = trustee_config_filename_format.format(**{'organization_name': '*'})
         for file_path in glob.glob1(self.options.get('config_directory'), trustee_config_filename_wildcard):
@@ -63,6 +68,7 @@ class ConfigLoader(object):
         owning_config = dashboard_config.get('owning', {})
         owning_config_sources = self.get_config_sources(owning_config)
         owning_config_sources.append(owning_config_filename)
+        owning_config_sources.append(config_from_options)
         dashboard_config['owning'] = self.get_dict_config(owning_config_sources)
                 
         trustees_config = dashboard_config.get('trustees', {})
@@ -73,11 +79,12 @@ class ConfigLoader(object):
                 trustee_config_file_path = trustee_config_file_paths.pop(key, None)
                 if (trustee_config_file_path != None):
                     trustee_config_sources.append(trustee_config_file_path)
+                trustee_config_sources.append(config_from_options)
                 new_item = self.get_dict_config(trustee_config_sources)
                 new_trustees_config[key] = new_item
             
         for key, item in trustee_config_file_paths.iteritems():
-            new_item = self.get_dict_config([item])
+            new_item = self.get_dict_config([item, config_from_options])
             new_trustees_config[key] = new_item
         
         return dashboard_config
