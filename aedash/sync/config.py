@@ -1,11 +1,15 @@
+import glob
 import os
-import yaml
+import re
 import types
+import yaml
 
 import rules
 
 DEFAULT_CONFIG_DIRECTORY = ''
 DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
+DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME = 'dashboard-owning-config.yaml'
+DEFAULT_DASHBOARD_TRUSTEE_CONFIG_FILENAME_FORMAT = 'dashboard-trustee-{organization_name}-config.yaml'
 
 class ConfigLoader(object):
     def __init__(self, caller_options):
@@ -13,7 +17,7 @@ class ConfigLoader(object):
         :type caller_options: dict
         '''        
         self.options = options = {
-            'directory': DEFAULT_CONFIG_DIRECTORY,
+            'config_directory': DEFAULT_CONFIG_DIRECTORY,
             'main_config_filename': DEFAULT_MAIN_CONFIG_FILENAME
         }
         options.update(caller_options)     
@@ -35,6 +39,48 @@ class ConfigLoader(object):
     def get_logging_config(self):
         main_config = self.get_main_config()
         return main_config.get('logging', {})
+
+    def get_dashboard_config(self):
+        return self.get_config('dashboard', self.load_dashboard_config)
+    
+    def load_dashboard_config(self):
+        main_config = self.get_main_config()
+        dashboard_config = main_config.get('dashboard', None)
+        if (dashboard_config == None):
+            dashboard_config = {}
+
+        owning_config_filename = dashboard_config.get('owning_config_filename', DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME)
+        trustee_config_filename_format = dashboard_config.get('trustee_config_filename_format', DEFAULT_DASHBOARD_TRUSTEE_CONFIG_FILENAME_FORMAT)
+        
+        trustee_config_file_paths = {}
+        trustee_config_filename_wildcard = trustee_config_filename_format.format(**{'organization_name': '*'})
+        for file_path in glob.glob1(self.options.get('config_directory'), trustee_config_filename_wildcard):
+            parse_result = self.parse_string(trustee_config_filename_format, file_path)
+            organization_name = parse_result.get('organization_name')
+            if (organization_name != None):
+                trustee_config_file_paths[organization_name] = file_path
+             
+        owning_config = dashboard_config.get('owning', {})
+        owning_config_sources = self.get_config_sources(owning_config)
+        owning_config_sources.append(owning_config_filename)
+        dashboard_config['owning'] = self.get_dict_config(owning_config_sources)
+                
+        trustees_config = dashboard_config.get('trustees', {})
+        dashboard_config['trustees'] = new_trustees_config = {}
+        if (isinstance(trustees_config, dict)):
+            for key, item in trustees_config.iteritems():
+                trustee_config_sources = self.get_config_sources(item)
+                trustee_config_file_path = trustee_config_file_paths.pop(key, None)
+                if (trustee_config_file_path != None):
+                    trustee_config_sources.append(trustee_config_file_path)
+                new_item = self.get_dict_config(trustee_config_sources)
+                new_trustees_config[key] = new_item
+            
+        for key, item in trustee_config_file_paths.iteritems():
+            new_item = self.get_dict_config([item])
+            new_trustees_config[key] = new_item
+        
+        return dashboard_config
     
     def get_directory_config(self):
         return self.get_config('directory', self.load_directory_config)
@@ -47,12 +93,8 @@ class ConfigLoader(object):
         directory_config['connectors'] = new_connectors_config = {}                
         if (isinstance(connectors_config, dict)):
             for key, item in connectors_config.iteritems():
-                if (isinstance(item, types.StringTypes)):
-                    path = item if os.path.isabs(item) else self.get_file_path(item)
-                    new_item = self.load_from_yaml(path)
-                else:
-                    new_item = item
-                new_connectors_config[key] = new_item
+                config_sources = self.get_config_sources(item)
+                new_connectors_config[key] = self.get_dict_config(config_sources)
                 
         groups_config = directory_config.get('groups')
         directory_config['groups'] = new_groups_config = {}                
@@ -81,8 +123,45 @@ class ConfigLoader(object):
                             products.append(product)
         
         return directory_config
+    
+    def get_config_sources(self, value):
+        values = value if (isinstance(value, types.ListType)) else [value]
+        return values
+        
+    def get_configs(self, sources):
+        '''
+        :type sources: list
+        '''        
+        configs = []
+        for source in sources: 
+            if (isinstance(source, types.StringTypes)):
+                absolute_path = self.get_absolute_file_path(source)
+                if (os.path.isfile(absolute_path)):
+                    config = self.load_from_yaml(absolute_path)
+                    configs.append(config)
+            else:
+                configs.append(source)
+        return configs
+    
+    def get_dict_config(self, sources):
+        '''
+        :type sources: list
+        '''        
+        configs = self.get_configs(sources)
+        return self.combine_dicts(configs)
 
+    def get_absolute_file_path(self, value):
+        '''
+        :type value: str
+        '''        
+        path = value if os.path.isabs(value) else self.get_file_path(value)
+        return path
+    
     def get_config(self, key, factory_method):
+        '''
+        :type key: str
+        :type factory_method: callable
+        '''        
         config = self.config_cache.get(key)
         if (config == None):
             config = factory_method()
@@ -101,6 +180,36 @@ class ConfigLoader(object):
         :type filename: str
         :rtype str
         '''        
-        directory = self.options.get('directory')
+        directory = self.options.get('config_directory')
         path = os.path.join(directory, filename)
         return path
+
+    @staticmethod
+    def parse_string(format_string, string_value):
+        '''
+        :type format_string: str
+        :type string_value: str
+        :rtype dict
+        '''
+        regex = re.sub(r'{(.+?)}', r'(?P<_\1>.+)', format_string)
+        values = list(re.search(regex, string_value).groups())
+        keys = re.findall(r'{(.+?)}', format_string)
+        _dict = dict(zip(keys, values))
+        return _dict
+    
+    @staticmethod
+    def combine_dicts(dicts):        
+        '''
+        :type dicts: list(dict)
+        :rtype dict
+        '''
+        result = {}
+        for dict_item in dicts:
+            if (isinstance(dict_item, dict)):
+                for dict_key, dict_item in dict_item.iteritems():
+                    result_item = result.get(dict_key)
+                    if (isinstance(result_item, dict) and isinstance(dict_item, dict)):
+                        result_item.update(dict_item)
+                    else:
+                        result[dict_key] = dict_item
+        return result

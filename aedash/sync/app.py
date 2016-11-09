@@ -19,7 +19,7 @@ logging.basicConfig(format=LOG_STRING_FORMAT, datefmt=LOG_DATE_FORMAT, level=log
 def error_hook(exctype, value, tb):
     """Set up the Error Hook (default exception handler)"""
     try:
-        logging.getLogger('main').error('Exception %s: %s', exctype, value)
+        logging.getLogger('main').error('Unhandled exception', exc_info=(exctype, value, tb))
     except:
         pass
 
@@ -77,6 +77,8 @@ def begin_work(config_loader):
     :type config_loader: config.ConfigLoader
     '''
     directory_config = config_loader.get_directory_config()
+    dashboard_config = config_loader.get_dashboard_config()
+
     directory_connector = connector.directory.DirectoryConnector(connector.directory_csv)
     directory_connector.initialize(directory_config['connectors'].get(directory_connector.name))
 
