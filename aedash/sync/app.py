@@ -40,6 +40,12 @@ def process_args():
     parser.add_argument('--users', 
                         help="specify the users to be considered for sync. Legal values are 'all' (the default), 'group name or names' (one or more specified AD groups), 'file f' (a specified input file).", 
                         action='append', nargs="+", default=['all'], metavar=('all|file|group', 'arg1'), dest='users')
+    parser.add_argument('--update-user-info', 
+                        help="if user information differs between the customer side and the Adobe side, the Adobe side is updated to match.", 
+                        action='store_true', dest='update_user_info')
+    parser.add_argument('--process-groups', 
+                        help="if the membership in mapped groups differs between the customer side and the Adobe side, the group membership is updated on the Adobe side so that the memberships in mapped groups matches the customer side.", 
+                        action='store_true', dest='manage_products')
     return parser.parse_args()
 
 def init_log(caller_options):
@@ -90,7 +96,8 @@ def begin_work(config_loader):
         dashboard_trustee_connectors[trustee_organization_name] = dashboard_trustee_conector 
     dashboard_connectors = rules.DashboardConnectors(dashboard_main_connector, dashboard_trustee_connectors)
 
-    rule_processor = rules.RuleProcessor({})
+    rule_config = config_loader.get_rule_config()
+    rule_processor = rules.RuleProcessor(rule_config)
     rule_processor.read_desired_user_products(directory_config['groups'], directory_connector)
     rule_processor.process_dashboard_users(dashboard_connectors)
     
@@ -102,7 +109,9 @@ def main():
     config_options = {
         'config_directory': args.config_path,
         'main_config_filename': args.config_filename,
-        'test_mode': args.test_mode
+        'test_mode': args.test_mode,        
+        'manage_products': args.manage_products,
+        'update_user_info': args.update_user_info
     }
     config_loader = config.ConfigLoader(config_options)
     init_log(config_loader.get_logging_config())

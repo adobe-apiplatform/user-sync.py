@@ -137,6 +137,13 @@ class Commands(object):
         self.username = username
         self.domain = domain
         self.do_list = []
+        
+    def update_user(self, attributes):
+        '''
+        :type attributes: dict
+        '''
+        if (attributes != None and len(attributes) > 0):
+            self.do_list.append(('update', attributes))
 
     def add_products(self, products_to_add):
         '''
@@ -364,8 +371,6 @@ if True and __name__ == '__main__':
     }
     
     options = options3
-    
-    import requests
     
     connector = DashboardConnector(options)
     #api = connector.api

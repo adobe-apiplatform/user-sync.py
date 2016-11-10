@@ -19,7 +19,10 @@ class ConfigLoader(object):
         self.options = options = {
             'config_directory': DEFAULT_CONFIG_DIRECTORY,
             'main_config_filename': DEFAULT_MAIN_CONFIG_FILENAME,
-            'test_mode': False
+            'test_mode': False,
+            
+            'manage_products': True,
+            'update_user_info': True
         }
         options.update(caller_options)     
 
@@ -222,4 +225,12 @@ class ConfigLoader(object):
                         result_item.update(dict_item)
                     else:
                         result[dict_key] = dict_item
+        return result
+
+    def get_rule_config(self):
+        options = self.options
+        result = {
+            'manage_products': options['manage_products'],
+            'update_user_info': options['update_user_info']
+        }
         return result
