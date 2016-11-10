@@ -53,10 +53,6 @@ class ConfigLoader(object):
         owning_config_filename = dashboard_config.get('owning_config_filename', DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME)
         trustee_config_filename_format = dashboard_config.get('trustee_config_filename_format', DEFAULT_DASHBOARD_TRUSTEE_CONFIG_FILENAME_FORMAT)
         
-        config_from_options = {
-            'test_mode': self.options['test_mode']
-        }
-        
         trustee_config_file_paths = {}
         trustee_config_filename_wildcard = trustee_config_filename_format.format(**{'organization_name': '*'})
         for file_path in glob.glob1(self.options.get('config_directory'), trustee_config_filename_wildcard):
@@ -68,24 +64,31 @@ class ConfigLoader(object):
         owning_config = dashboard_config.get('owning', {})
         owning_config_sources = self.get_config_sources(owning_config)
         owning_config_sources.append(owning_config_filename)
-        owning_config_sources.append(config_from_options)
+        owning_config_sources.append({
+            'test_mode': self.options['test_mode'],
+            'logger_name': 'dashboard.owning'
+        })
         dashboard_config['owning'] = self.get_dict_config(owning_config_sources)
                 
-        trustees_config = dashboard_config.get('trustees', {})
+        trustees_config = dashboard_config.get('trustees')
+        if (not isinstance(trustees_config, dict)):
+            trustees_config = {}
+        
         dashboard_config['trustees'] = new_trustees_config = {}
-        if (isinstance(trustees_config, dict)):
-            for key, item in trustees_config.iteritems():
-                trustee_config_sources = self.get_config_sources(item)
-                trustee_config_file_path = trustee_config_file_paths.pop(key, None)
-                if (trustee_config_file_path != None):
-                    trustee_config_sources.append(trustee_config_file_path)
-                trustee_config_sources.append(config_from_options)
-                new_item = self.get_dict_config(trustee_config_sources)
-                new_trustees_config[key] = new_item
-            
-        for key, item in trustee_config_file_paths.iteritems():
-            new_item = self.get_dict_config([item, config_from_options])
-            new_trustees_config[key] = new_item
+        organization_names = set()
+        organization_names.update(trustees_config.iterkeys(), trustee_config_file_paths.iterkeys())
+        for organization_name in organization_names:
+            trustee_config = trustees_config.get(organization_name)
+            trustee_config_sources = self.get_config_sources(trustee_config) if trustee_config != None else []
+            trustee_config_file_path = trustee_config_file_paths.get(organization_name, None)
+            if (trustee_config_file_path != None):
+                trustee_config_sources.append(trustee_config_file_path)
+            trustee_config_sources.append({            
+                'test_mode': self.options['test_mode'],
+                'logger_name': 'dashboard.trustee.%s' % organization_name
+            })
+            combined_trustee_config = self.get_dict_config(trustee_config_sources)
+            new_trustees_config[organization_name] = combined_trustee_config
         
         return dashboard_config
     

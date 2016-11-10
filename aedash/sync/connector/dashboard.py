@@ -19,7 +19,7 @@ except:
     pass
 
 class DashboardConnector(object):
-    name = 'connector.aedash'
+    name = 'connector.dashboard'
     
     def __init__(self, caller_options):
         '''
@@ -121,17 +121,11 @@ class DashboardConnector(object):
             username = commands.username
             domain = commands.domain
             action_options = {
-                'user': username
             }
             if (domain != None):
                 action_options['domain'] = domain        
-            action = Action(**action_options)
-            for command in commands.do_list:
-                action.do(**{command[0]: command[1]})
-                
-            test_mode = self.options.get('test_mode')
-            action_log_level = logging.INFO if test_mode else logging.DEBUG
-            self.logger.log(action_log_level, 'Adding request:\n%s', json.dumps(action.data))
+            action = Action(username, **action_options)
+            action.do(**dict(commands.do_list))                
             self.get_action_manager().add_action(action, callback)
 
 class Commands(object):
@@ -212,6 +206,7 @@ class ActionManager(object):
             'callback': callback
         }
         self.items.append(item)
+        self.logger.log(logging.INFO, 'Added request: %s', json.dumps(action.data))
         if len(self.items) >= self.max_actions:
             self.execute()
     
@@ -224,7 +219,7 @@ class ActionManager(object):
 
         items = self.items
         self.items = []
-
+        self.logger.info('Executing total number of actions: %d', len(items))
         while True:
             num_attempts += 1
 
@@ -248,13 +243,13 @@ class ActionManager(object):
             error_by_request_id = None
             if (res != None):
                 log_level = logging.DEBUG if res['result'] == 'success' else logging.WARN 
-                self.logger.log(log_level, 'Result %s -- %d completed, %d failed', res['result'], res['completed'], res['notCompleted'])
+                self.logger.log(log_level, 'Result %s -- %d completed, %d completedInTestMode, %d failed', res['result'], res['completed'], res.get('completedInTestMode'), res['notCompleted'])
 
                 if ('errors' in res):
                     error_by_request_id = {}
                     for error in res['errors']:
                         if ('message' in error or 'errorCode' in error):
-                            self.logger.info('Error code: "%s" message: "%s"', error.get('errorCode'), error.get('message'))
+                            self.logger.info('Error requestID: %s code: "%s" message: "%s"', error.get('requestID'), error.get('errorCode'), error.get('message'))
                         if ('requestID' in error):
                             request_id = error['requestID']
                             error_by_request_id[request_id] = error
@@ -410,9 +405,11 @@ if True and __name__ == '__main__':
     )
     manager = connector.get_action_manager()
     
+    '''
     for i in range(1, 100):
         manager.add_action(action2)
         manager.execute()
+    '''
     
     a=0
     a+=1
