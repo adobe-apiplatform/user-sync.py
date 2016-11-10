@@ -174,8 +174,8 @@ class RuleProcessor(object):
             
             products_to_add = None
             products_to_remove = None    
+            desired_products = desired_products_by_user_key.pop(user_key, None)
             if (manage_products):                
-                desired_products = desired_products_by_user_key.pop(user_key, None)
                 if desired_products == None:
                     desired_products = set()
                 current_products = dashboard_user.get('groups')

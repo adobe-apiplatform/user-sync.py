@@ -19,8 +19,11 @@ class ConfigLoader(object):
         self.options = options = {
             'config_directory': DEFAULT_CONFIG_DIRECTORY,
             'main_config_filename': DEFAULT_MAIN_CONFIG_FILENAME,
-            'test_mode': False,
             
+            'directory_connector_module_name': 'connector.directory_ldap',
+            'directory_connector_overridden_options': None,
+
+            'test_mode': False,            
             'manage_products': True,
             'update_user_info': True
         }
@@ -137,6 +140,31 @@ class ConfigLoader(object):
         
         return directory_config
     
+    def get_directory_connector_module_name(self):
+        '''
+        :rtype str
+        '''
+        options = self.options
+        return options['directory_connector_module_name']
+        #return __import__(directory_connector_module_name, fromlist=[''])    
+    
+    def get_directory_connector_options(self, connector_name):
+        '''
+        :rtype dict
+        '''
+        configs = []        
+        directory_config = self.get_directory_config()        
+        configs.append(directory_config['connectors'].get(connector_name))
+        configs.append(self.options['directory_connector_overridden_options'])
+        return self.combine_dicts(configs)
+    
+    def get_directory_groups(self):
+        '''
+        :rtype dict
+        '''
+        directory_config = self.get_directory_config()
+        return directory_config['groups']        
+        
     def get_config_sources(self, value):
         values = value if (isinstance(value, types.ListType)) else [value]
         return values

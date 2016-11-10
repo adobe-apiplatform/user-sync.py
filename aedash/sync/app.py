@@ -39,7 +39,7 @@ def process_args():
                         default=config.DEFAULT_MAIN_CONFIG_FILENAME, dest='config_filename')
     parser.add_argument('--users', 
                         help="specify the users to be considered for sync. Legal values are 'all' (the default), 'group name or names' (one or more specified AD groups), 'file f' (a specified input file).", 
-                        action='append', nargs="+", default=['all'], metavar=('all|file|group', 'arg1'), dest='users')
+                        nargs="+", default=['all'], metavar=('all|file|group', 'arg1'), dest='users')
     parser.add_argument('--update-user-info', 
                         help="if user information differs between the customer side and the Adobe side, the Adobe side is updated to match.", 
                         action='store_true', dest='update_user_info')
@@ -82,13 +82,15 @@ def init_log(caller_options):
 def begin_work(config_loader):
     '''
     :type config_loader: config.ConfigLoader
-    '''
-    directory_config = config_loader.get_directory_config()
-    dashboard_config = config_loader.get_dashboard_config()
-
-    directory_connector = connector.directory.DirectoryConnector(connector.directory_csv)
-    directory_connector.initialize(directory_config['connectors'].get(directory_connector.name))
+    '''    
+    directory_connector_module_name = config_loader.get_directory_connector_module_name()
+    directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])    
+    directory_connector = connector.directory.DirectoryConnector(directory_connector_module)
     
+    directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
+    directory_connector.initialize(directory_connector_options)
+    
+    dashboard_config = config_loader.get_dashboard_config()
     dashboard_main_connector = connector.dashboard.DashboardConnector(dashboard_config['owning'])
     dashboard_trustee_connectors = {}    
     for trustee_organization_name, trustee_config in dashboard_config['trustees'].iteritems():
@@ -98,14 +100,14 @@ def begin_work(config_loader):
 
     rule_config = config_loader.get_rule_config()
     rule_processor = rules.RuleProcessor(rule_config)
-    rule_processor.read_desired_user_products(directory_config['groups'], directory_connector)
+    rule_processor.read_desired_user_products(config_loader.get_directory_groups(), directory_connector)
     rule_processor.process_dashboard_users(dashboard_connectors)
     
     dashboard_connectors.execute_actions()
 
 def main():    
     args = process_args()
-    
+
     config_options = {
         'config_directory': args.config_path,
         'main_config_filename': args.config_filename,
@@ -113,6 +115,14 @@ def main():
         'manage_products': args.manage_products,
         'update_user_info': args.update_user_info
     }
+    
+    users_args = args.users
+    users_action = users_args.pop(0)
+    if (users_action == 'file'):
+        config_options['directory_connector_module_name'] = 'connector.directory_csv'
+        if (len(users_args) > 0):
+            config_options['directory_connector_overridden_options'] = {'file_path': users_args.pop(0)}            
+        
     config_loader = config.ConfigLoader(config_options)
     init_log(config_loader.get_logging_config())
     
