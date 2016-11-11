@@ -23,6 +23,7 @@ class ConfigLoader(object):
             'directory_connector_module_name': 'connector.directory_ldap',
             'directory_connector_overridden_options': None,
             'directory_group_filter': None,
+            'username_filter_regex': None,
 
             'test_mode': False,            
             'manage_products': True,
@@ -135,7 +136,7 @@ class ConfigLoader(object):
                             product_name = parts.pop()
                             organization_name = ':'.join(parts)
                             if (len(organization_name) == 0):
-                                organization_name = None
+                                organization_name = rules.OWNING_ORGANIZATION_NAME
                             product = rules.Product(product_name, organization_name)
                             products.append(product)
         
@@ -260,6 +261,7 @@ class ConfigLoader(object):
         options = self.options
         result = {
             'directory_group_filter': options['directory_group_filter'],
+            'username_filter_regex': options['username_filter_regex'],
             'manage_products': options['manage_products'],
             'update_user_info': options['update_user_info']
         }

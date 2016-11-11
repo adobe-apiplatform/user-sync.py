@@ -1,4 +1,5 @@
 import logging
+
 from aedash.sync.connector.dashboard import Commands
 
 
@@ -15,6 +16,8 @@ class RuleProcessor(object):
         '''        
         options = {
             'directory_group_filter': None,
+            'username_filter_regex': None,
+            
             'manage_products': True,
             'update_user_info': True
         }
@@ -39,6 +42,7 @@ class RuleProcessor(object):
         directory_group_filter = options['directory_group_filter']
         if (directory_group_filter != None):
             directory_group_filter = set(directory_group_filter)
+        username_filter_regex = options['username_filter_regex']
         
         directory_user_by_user_key = self.directory_user_by_user_key        
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
@@ -49,8 +53,15 @@ class RuleProcessor(object):
         for directory_user in directory_connector.load_users_and_groups(directory_groups):
             user_key = RuleProcessor.get_directory_user_key(directory_user)
             directory_user_by_user_key[user_key] = directory_user            
+            
             if not self.is_directory_user_in_groups(directory_user, directory_group_filter):
                 continue
+            if (username_filter_regex != None):
+                username = RuleProcessor.get_username_from_user_key(user_key)
+                search_result = username_filter_regex.search(username)
+                if (search_result == None):
+                    continue
+            
             filtered_directory_user_by_user_key[user_key] = directory_user            
             self.get_user_desired_products(OWNING_ORGANIZATION_NAME, user_key)                         
             for group in directory_user['groups']:
@@ -60,6 +71,10 @@ class RuleProcessor(object):
                         organization_name = dashboard_product.organization_name
                         user_desired_products = self.get_user_desired_products(organization_name, user_key)
                         user_desired_products.add(dashboard_product.product_name)
+    
+        self.logger.info('Total users after filtering: %d', len(filtered_directory_user_by_user_key))
+        self.logger.debug('Product work list: %s', self.desired_products_by_organization)
+
     
     def is_directory_user_in_groups(self, directory_user, groups):
         '''
@@ -88,7 +103,7 @@ class RuleProcessor(object):
         '''
         :type dashboard_connectors: DashboardConnectors
         '''
-        self.logger.info('Synching...')
+        self.logger.info('Syncing...')
         
         options = self.options
         manage_products = options['manage_products'] 
@@ -266,6 +281,10 @@ class RuleProcessor(object):
             return username
         return username + ',' + domain
 
+    @staticmethod
+    def get_username_from_user_key(user_key):
+        index = user_key.find(',')
+        return user_key if index < 0 else user_key[:index]
 
         
 class DashboardConnectors(object):

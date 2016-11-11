@@ -3,6 +3,7 @@ import config
 import datetime
 import logging
 import os
+import re
 import sys
 import lockfile
 
@@ -33,13 +34,17 @@ def process_args():
                         help='run API action calls in test mode (does not execute changes). Logs what would have been executed.',
                         action='store_true', dest='test_mode')
     parser.add_argument('-c', '--config-path',
-                        help='specify path to config files. Default is the current directory.',
-                        action='store_true', default=config.DEFAULT_CONFIG_DIRECTORY, dest='config_path')
+                        help='specify path to config files. (default: "%(default)s")',
+                        default=config.DEFAULT_CONFIG_DIRECTORY, metavar='path', dest='config_path')
     parser.add_argument('--config-filename',
-                        default=config.DEFAULT_MAIN_CONFIG_FILENAME, dest='config_filename')
+                        help='main config filename. (default: "%(default)s")',
+                        default=config.DEFAULT_MAIN_CONFIG_FILENAME, metavar='filename', dest='config_filename')
     parser.add_argument('--users', 
                         help="specify the users to be considered for sync. Legal values are 'all' (the default), 'group name or names' (one or more specified AD groups), 'file f' (a specified input file).", 
                         nargs="+", default=['all'], metavar=('all|file|group', 'arg1'), dest='users')
+    parser.add_argument('--user-filter',
+                        help='limit the selected set of users that may be examined for syncing, with the pattern being a regular expression.',
+                        metavar='pattern', dest='username_filter_pattern')
     parser.add_argument('--update-user-info', 
                         help="if user information differs between the customer side and the Adobe side, the Adobe side is updated to match.", 
                         action='store_true', dest='update_user_info')
@@ -129,6 +134,9 @@ def main():
             logger.error('Missing groups for --users %s [groups]' % users_action)
             return
         config_options['directory_group_filter'] = users_args.pop(0).split(',')
+    
+    if (args.username_filter_pattern):
+        config_options['username_filter_regex'] = re.compile(args.username_filter_pattern, re.IGNORECASE)
         
     config_loader = config.ConfigLoader(config_options)
     init_log(config_loader.get_logging_config())

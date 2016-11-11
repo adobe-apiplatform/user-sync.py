@@ -62,7 +62,7 @@ class LDAPDirectoryConnector(object):
         connection.set_option(ldap.OPT_REFERRALS, 0)
         connection.simple_bind_s(username, password)
         self.connection = connection
-        logger.info('Connected to: %s ', host)            
+        logger.info('Connected')            
         
     def load_users_and_groups(self, groups):
         '''
@@ -206,7 +206,7 @@ class LDAPDirectoryConnector(object):
             email, last_attribute_name = self.user_email_formatter.generate_value(record)
             if (email == None):
                 if (last_attribute_name != None):
-                    self.logger.info('No email attribute: %s for dn: %s', last_attribute_name, dn)
+                    self.logger.warn('No email attribute: %s for dn: %s', last_attribute_name, dn)
                 continue
             
             user = helper.create_blank_user()
