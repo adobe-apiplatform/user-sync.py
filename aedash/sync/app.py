@@ -9,18 +9,18 @@ import lockfile
 import rules
 import connector.dashboard
 import connector.directory
-import connector.directory_csv
 
 APP_VERSION = "0.6.0"
 
 LOG_STRING_FORMAT = '%(asctime)s %(process)d %(levelname)s %(name)s - %(message)s'
 LOG_DATE_FORMAT ='%Y-%m-%d %H:%M:%S'
 logging.basicConfig(format=LOG_STRING_FORMAT, datefmt=LOG_DATE_FORMAT, level=logging.DEBUG)
+logger = logging.getLogger('main')
 
 def error_hook(exctype, value, tb):
     """Set up the Error Hook (default exception handler)"""
     try:
-        logging.getLogger('main').error('Unhandled exception', exc_info=(exctype, value, tb))
+        logger.error('Unhandled exception', exc_info=(exctype, value, tb))
     except:
         pass
 
@@ -91,12 +91,12 @@ def begin_work(config_loader):
     directory_connector.initialize(directory_connector_options)
     
     dashboard_config = config_loader.get_dashboard_config()
-    dashboard_main_connector = connector.dashboard.DashboardConnector(dashboard_config['owning'])
+    dashboard_owning_connector = connector.dashboard.DashboardConnector(dashboard_config['owning'])
     dashboard_trustee_connectors = {}    
     for trustee_organization_name, trustee_config in dashboard_config['trustees'].iteritems():
         dashboard_trustee_conector = connector.dashboard.DashboardConnector(trustee_config)
         dashboard_trustee_connectors[trustee_organization_name] = dashboard_trustee_conector 
-    dashboard_connectors = rules.DashboardConnectors(dashboard_main_connector, dashboard_trustee_connectors)
+    dashboard_connectors = rules.DashboardConnectors(dashboard_owning_connector, dashboard_trustee_connectors)
 
     rule_config = config_loader.get_rule_config()
     rule_processor = rules.RuleProcessor(rule_config)
@@ -104,7 +104,7 @@ def begin_work(config_loader):
     rule_processor.process_dashboard_users(dashboard_connectors)
     
     dashboard_connectors.execute_actions()
-
+    
 def main():    
     args = process_args()
 
@@ -119,9 +119,16 @@ def main():
     users_args = args.users
     users_action = users_args.pop(0)
     if (users_action == 'file'):
+        if (len(users_args) == 0):
+            logger.error('Missing file path for --users %s [file_path]' % users_action)
+            return
         config_options['directory_connector_module_name'] = 'connector.directory_csv'
-        if (len(users_args) > 0):
-            config_options['directory_connector_overridden_options'] = {'file_path': users_args.pop(0)}            
+        config_options['directory_connector_overridden_options'] = {'file_path': users_args.pop(0)}
+    elif (users_action == 'group'):            
+        if (len(users_args) == 0):
+            logger.error('Missing groups for --users %s [groups]' % users_action)
+            return
+        config_options['directory_group_filter'] = users_args.pop(0).split(',')
         
     config_loader = config.ConfigLoader(config_options)
     init_log(config_loader.get_logging_config())
@@ -135,7 +142,7 @@ def main():
         finally:
             lock.unlock()
     else:
-        logging.getLogger('main').info("Process is already locked")
+        logger.info("Process is already locked")
 
 
 if __name__ == '__main__':

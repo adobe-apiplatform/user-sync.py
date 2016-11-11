@@ -14,15 +14,17 @@ class RuleProcessor(object):
         :type caller_options:dict
         '''        
         options = {
+            'directory_group_filter': None,
             'manage_products': True,
             'update_user_info': True
         }
         options.update(caller_options)        
         self.options = options        
         self.directory_user_by_user_key = {}
+        self.filtered_directory_user_by_user_key = {}
         self.desired_products_by_organization = {}
         self.orphaned_dashboard_users_by_organization = {}
-        
+                
         self.logger = logger = logging.getLogger('processor')
         logger.debug('Initialized with options: %s', options)
     
@@ -32,11 +34,24 @@ class RuleProcessor(object):
         :type directory_connector: aedash.sync.connector.directory.DirectoryConnector
         '''
         self.logger.info('Building work list...')
+        
+        options = self.options
+        directory_group_filter = options['directory_group_filter']
+        if (directory_group_filter != None):
+            directory_group_filter = set(directory_group_filter)
+        
         directory_user_by_user_key = self.directory_user_by_user_key        
+        filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
+
         directory_groups = mappings.keys()
+        if (directory_group_filter != None):
+            directory_groups.extend(directory_group_filter)                    
         for directory_user in directory_connector.load_users_and_groups(directory_groups):
             user_key = RuleProcessor.get_directory_user_key(directory_user)
             directory_user_by_user_key[user_key] = directory_user            
+            if not self.is_directory_user_in_groups(directory_user, directory_group_filter):
+                continue
+            filtered_directory_user_by_user_key[user_key] = directory_user            
             self.get_user_desired_products(OWNING_ORGANIZATION_NAME, user_key)                         
             for group in directory_user['groups']:
                 dashboard_products = mappings.get(group)
@@ -45,6 +60,19 @@ class RuleProcessor(object):
                         organization_name = dashboard_product.organization_name
                         user_desired_products = self.get_user_desired_products(organization_name, user_key)
                         user_desired_products.add(dashboard_product.product_name)
+    
+    def is_directory_user_in_groups(self, directory_user, groups):
+        '''
+        :type directory_user: dict
+        :type groups: set
+        :rtype bool
+        '''
+        if groups == None:
+            return True
+        for directory_user_group in directory_user['groups']:
+            if (directory_user_group in groups):
+                return True
+        return False
     
     def get_user_desired_products(self, organization_name, user_key):
         desired_products_by_organization = self.desired_products_by_organization
@@ -149,6 +177,7 @@ class RuleProcessor(object):
         :type dashboard_connector: aedash.sync.connector.dashboard.DashboardConnector
         '''
         directory_user_by_user_key = self.directory_user_by_user_key
+        filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
         
         desired_products_by_user_key = self.desired_products_by_organization.get(organization_name)
         desired_products_by_user_key = {} if desired_products_by_user_key == None else desired_products_by_user_key.copy()        
@@ -167,6 +196,12 @@ class RuleProcessor(object):
             if (directory_user == None):
                 orphaned_dashboard_users[user_key] = dashboard_user
                 continue     
+
+            desired_products = desired_products_by_user_key.pop(user_key, None)
+            if (desired_products == None):
+                if (user_key not in filtered_directory_user_by_user_key):
+                    continue
+                desired_products = set()
             
             user_attribute_difference = None
             if (update_user_info and organization_name == OWNING_ORGANIZATION_NAME):
@@ -174,10 +209,7 @@ class RuleProcessor(object):
             
             products_to_add = None
             products_to_remove = None    
-            desired_products = desired_products_by_user_key.pop(user_key, None)
-            if (manage_products):                
-                if desired_products == None:
-                    desired_products = set()
+            if (manage_products):        
                 current_products = dashboard_user.get('groups')
                 current_products = set() if current_products == None else set(current_products)            
 
@@ -233,6 +265,7 @@ class RuleProcessor(object):
         if (username.find('@') >= 0):
             return username
         return username + ',' + domain
+
 
         
 class DashboardConnectors(object):

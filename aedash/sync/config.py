@@ -22,6 +22,7 @@ class ConfigLoader(object):
             
             'directory_connector_module_name': 'connector.directory_ldap',
             'directory_connector_overridden_options': None,
+            'directory_group_filter': None,
 
             'test_mode': False,            
             'manage_products': True,
@@ -258,6 +259,7 @@ class ConfigLoader(object):
     def get_rule_config(self):
         options = self.options
         result = {
+            'directory_group_filter': options['directory_group_filter'],
             'manage_products': options['manage_products'],
             'update_user_info': options['update_user_info']
         }

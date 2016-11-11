@@ -31,7 +31,7 @@ class LDAPDirectoryConnector(object):
     def __init__(self, caller_options):
         options = {
             'group_filter_format': '(&(|(objectCategory=group)(objectClass=groupOfNames))(cn={group}))',
-            'all_users_filter': '(&(objectclass=person))',
+            'all_users_filter': '(&(objectClass=person)(|(objectClass=top)(objectClass=user)))',
             'require_tls_cert': False,
             'user_email_format': '{mail}',
             'user_username_format': None,
@@ -321,41 +321,3 @@ class LDAPValueFormatter(object):
             if (len(attribute_value) > 0):
                 return attribute_value[0]
         return None
-
-    
-
-if True and __name__ == '__main__':
-    import sys
-    import datetime
-    from aedash.sync.connector import directory
-    
-    users = []
-    
-    start1 = datetime.datetime.now()    
-    options = {
-        'host': "ldap://dev-ad.ensemble.com",
-        'username': "CN=ADFS User,CN=Users,dc=ensemble,dc=com",
-        'password': "p@ssw0rd!",
-        'base_dn': "dc=ensemble,dc=com",
-    }
-    options1 = {
-        'host': "ldap://dev-ldap.ensemble.com",
-        'username': "cn=DND-QA,ou=Test Accounts,dc=ensemble,dc=com",
-        'password': "password",
-        'base_dn': "dc=ensemble,dc=com",
-    }
-    options['user_email_format'] = '{sAMAccountName}@ensemble.com'
-#    options['user_domain_format'] = 'ensemble.com'
-#    options['user_username_format'] = '{mail}'
-    options1['user_email_format'] = '{uid}@ensemble.com'
-    connector = directory.DirectoryConnector(sys.modules[__name__])
-    connector.initialize(options1)
-    
-    users = list(connector.load_users_and_groups(["Bulk Group"]))
-    
-    
-    start2 = datetime.datetime.now()
-    start3 = start2 - start1
-    
-    print(len(users))
-    print("3: " + str(start3));
