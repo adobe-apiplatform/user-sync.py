@@ -74,7 +74,7 @@ class LDAPDirectoryConnector(object):
 
         for group in groups:
             group_members = self.get_ldap_group_members(group)
-                total_group_members = 0
+            total_group_members = 0
             total_group_users = 0            
             if group_members != None:
                 for group_member in group_members:
@@ -82,9 +82,9 @@ class LDAPDirectoryConnector(object):
                     user = user_by_dn.get(group_member)
                     if (user != None):
                         total_group_users += 1
-            user_groups = user['groups']
+                        user_groups = user['groups']
                         if not group in user_groups:
-                        user_groups.append(group)
+                            user_groups.append(group)
             self.logger.debug('Group %s members: %d users: %d', group, total_group_members, total_group_users)
         
         return user_by_dn.itervalues()    
