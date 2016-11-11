@@ -74,7 +74,7 @@ class LDAPDirectoryConnector(object):
 
         for group in groups:
             group_members = self.get_ldap_group_members(group)
-            total_group_members = 0
+                total_group_members = 0
             total_group_users = 0            
             if group_members != None:
                 for group_member in group_members:
@@ -82,9 +82,9 @@ class LDAPDirectoryConnector(object):
                     user = user_by_dn.get(group_member)
                     if (user != None):
                         total_group_users += 1
-                        user_groups = user['groups']
+            user_groups = user['groups']
                         if not group in user_groups:
-                            user_groups.append(group)
+                        user_groups.append(group)
             self.logger.debug('Group %s members: %d users: %d', group, total_group_members, total_group_users)
         
         return user_by_dn.itervalues()    
@@ -245,29 +245,35 @@ class LDAPDirectoryConnector(object):
         lc = SimplePagedResultsControl(True, size=search_page_size, cookie='')
 
         msgid = None
-        has_next_page = True        
-        while has_next_page:
-            response_data = None
-            result_type = None
-            if (msgid != None):
-                result_type, response_data, _rmsgid, serverctrls = connection.result3(msgid)
-                pctrls = [c for c in serverctrls
-                          if c.controlType == SimplePagedResultsControl.controlType]
-                if not pctrls:
-                    self.logger.warn('Server ignored RFC 2696 control.')
-                    has_next_page = False
-                else: 
-                    lc.cookie = cookie = pctrls[0].cookie
-                    if not cookie:
+        try:
+            has_next_page = True        
+            while has_next_page:
+                response_data = None
+                result_type = None
+                if (msgid != None):
+                    result_type, response_data, _rmsgid, serverctrls = connection.result3(msgid)
+                    msgid = None
+                    pctrls = [c for c in serverctrls
+                              if c.controlType == SimplePagedResultsControl.controlType]
+                    if not pctrls:
+                        self.logger.warn('Server ignored RFC 2696 control.')
                         has_next_page = False
-            
-            if (has_next_page):
-                msgid = connection.search_ext(base_dn, scope, filterstr=filter_string, attrlist=attributes, serverctrls=[lc])
-
-            if ((result_type == ldap.RES_SEARCH_RESULT or result_type == ldap.RES_SEARCH_ENTRY) and (response_data != None)):
-                for item in response_data:
-                    yield item
-        
+                    else: 
+                        lc.cookie = cookie = pctrls[0].cookie
+                        if not cookie:
+                            has_next_page = False
+                
+                if (has_next_page):
+                    msgid = connection.search_ext(base_dn, scope, filterstr=filter_string, attrlist=attributes, serverctrls=[lc])
+    
+                if ((result_type == ldap.RES_SEARCH_RESULT or result_type == ldap.RES_SEARCH_ENTRY) and (response_data != None)):
+                    for item in response_data:
+                        yield item        
+        except GeneratorExit:
+            if (msgid != None):
+                connection.abandon(msgid)
+                msgid = None
+            raise
     
 class LDAPValueFormatter(object):
     def __init__(self, string_format):
