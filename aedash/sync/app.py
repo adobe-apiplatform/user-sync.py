@@ -45,6 +45,9 @@ def process_args():
     parser.add_argument('--user-filter',
                         help='limit the selected set of users that may be examined for syncing, with the pattern being a regular expression.',
                         metavar='pattern', dest='username_filter_pattern')
+    parser.add_argument('--source-filter',
+                        help='send the file to the specified connector (for example, --source-filter ldap:foo.yml). This parameter is used to limit the scope of the LDAP query.',
+                        metavar='connector:file', dest='source_filter_args')
     parser.add_argument('--update-user-info', 
                         help="if user information differs between the customer side and the Adobe side, the Adobe side is updated to match.", 
                         action='store_true', dest='update_user_info')
@@ -166,6 +169,18 @@ def main():
         logger.warn('--remove-nonexistent-users ignored when --generate-remove-list is specified')    
     config_options['remove_nonexistent_users'] = remove_nonexistent_users
                     
+    source_filter_args = args.source_filter_args
+    if (source_filter_args != None):
+        source_filter_args_separator_index = source_filter_args.find(':')
+        if (source_filter_args_separator_index >= 0):
+            connector_name = source_filter_args[:source_filter_args_separator_index]
+            source_filter_file_path = source_filter_args[source_filter_args_separator_index + 1:]
+            config_options['directory_source_filters'] = {
+                connector_name: source_filter_file_path
+            } 
+        else:
+            logger.warn("Invalid arg for --source-filter: %s", source_filter_args)
+    
     config_loader.set_options(config_options)
     
     script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))

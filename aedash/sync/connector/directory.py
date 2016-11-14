@@ -28,6 +28,7 @@ class DirectoryConnector(object):
     def load_users_and_groups(self, groups):
         '''
         :type groups: list(str)
+        :rtype (bool, iterable(dict))
         '''
         return self.implementation.connector_load_users_and_groups(self.state, groups)        
 

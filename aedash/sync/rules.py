@@ -61,8 +61,13 @@ class RuleProcessor(object):
 
         directory_groups = mappings.keys()
         if (directory_group_filter != None):
-            directory_groups.extend(directory_group_filter)                    
-        for directory_user in directory_connector.load_users_and_groups(directory_groups):
+            directory_groups.extend(directory_group_filter)
+        all_loaded, directory_users = directory_connector.load_users_and_groups(directory_groups) 
+        if (not all_loaded and self.find_orphaned_dashboard_users):
+            self.logger.warn('Not all users loaded.  Cannot check orphaned users...')
+            self.find_orphaned_dashboard_users = False
+                                       
+        for directory_user in directory_users:
             user_key = RuleProcessor.get_directory_user_key(directory_user)
             directory_user_by_user_key[user_key] = directory_user            
             
@@ -168,20 +173,21 @@ class RuleProcessor(object):
         '''
         :type dashboard_connectors: DashboardConnectors
         '''
-        options = self.options
-        remove_list_output_path = options['remove_list_output_path']
-        remove_nonexistent_users = options['remove_nonexistent_users']
-        
         remove_user_key_list = self.remove_user_key_list
-        
-        if (remove_list_output_path != None):
-            self.logger.info('Writing remove list to: %s', remove_list_output_path)
-            self.write_remove_list(remove_list_output_path, self.iter_orphaned_federated_dashboard_users())
-        elif (remove_nonexistent_users):
-            self.logger.info('Registering federated orphaned users to be removed...')        
-            for dashboard_user in self.iter_orphaned_federated_dashboard_users():
-                user_key = self.get_dashboard_user_key(dashboard_user)
-                remove_user_key_list.add(user_key)
+            
+        if (self.find_orphaned_dashboard_users):
+            options = self.options
+            remove_list_output_path = options['remove_list_output_path']
+            remove_nonexistent_users = options['remove_nonexistent_users']
+            
+            if (remove_list_output_path != None):
+                self.logger.info('Writing remove list to: %s', remove_list_output_path)
+                self.write_remove_list(remove_list_output_path, self.iter_orphaned_federated_dashboard_users())
+            elif (remove_nonexistent_users):
+                self.logger.info('Registering federated orphaned users to be removed...')        
+                for dashboard_user in self.iter_orphaned_federated_dashboard_users():
+                    user_key = self.get_dashboard_user_key(dashboard_user)
+                    remove_user_key_list.add(user_key)
             
         if (len(remove_user_key_list)):
             self.logger.info('Removing users: %s', remove_user_key_list)
@@ -225,7 +231,9 @@ class RuleProcessor(object):
         directory_user = self.directory_user_by_user_key[user_key]
 
         attributes = self.get_user_attributes(directory_user)
-        attributes['country'] = directory_user['country']                
+        country = directory_user['country']
+        if (country != None):
+            attributes['country'] = country                
         attributes['option'] = "updateIfAlreadyExists" if update_user_info else 'ignoreIfAlreadyExists'
         
         commands = Commands(directory_user['username'], directory_user['domain'])

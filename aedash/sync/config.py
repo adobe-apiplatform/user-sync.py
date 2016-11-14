@@ -39,6 +39,7 @@ class ConfigLoader(object):
             'directory_connector_overridden_options': None,
             'directory_group_filter': None,
             'username_filter_regex': None,
+            'directory_source_filters': None,
 
             'test_mode': False,            
             'manage_products': True,
@@ -116,6 +117,9 @@ class ConfigLoader(object):
         return self.get_config('directory', self.load_directory_config)
     
     def load_directory_config(self):
+        options = self.options
+        directory_source_filters = options['directory_source_filters']
+        
         main_config = self.get_main_config()
         directory_config = main_config.get('directory', {})
         
@@ -125,6 +129,19 @@ class ConfigLoader(object):
             for key, item in connectors_config.iteritems():
                 config_sources = self.get_config_sources(item)
                 new_connectors_config[key] = self.get_dict_config(config_sources)
+                
+        connector_names = set(new_connectors_config.iterkeys())
+        if (directory_source_filters != None):
+            connector_names.union(directory_source_filters.iterkeys())
+        for connector_name in connector_names:
+            source_filter_sources = []
+            connector_config = new_connectors_config.get(connector_name)
+            if (connector_config != None):
+                source_filter_sources.append(connector_config.get('source_filter'))
+            else:
+                new_connectors_config[connector_name] = connector_config = {}
+            source_filter_sources.append(directory_source_filters.get(connector_name))
+            connector_config['source_filters'] = self.get_dict_config(source_filter_sources)
                 
         groups_config = directory_config.get('groups')
         directory_config['groups'] = new_groups_config = {}                

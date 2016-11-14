@@ -19,7 +19,7 @@ def connector_load_users_and_groups(state, groups):
     '''
     :type state: CSVDirectoryConnector
     :type groups: list(str)
-    :rtype iterable(dict)
+    :rtype (bool, iterable(dict))
     '''
     return state.load_users_and_groups(groups)
 
@@ -48,7 +48,7 @@ class CSVDirectoryConnector(object):
     def load_users_and_groups(self, groups):
         '''
         :type groups: list(str)
-        :rtype iterable(dict)
+        :rtype (bool, iterable(dict))
         '''        
         options = self.options
         file_path = options['file_path']
@@ -58,7 +58,7 @@ class CSVDirectoryConnector(object):
             self.users = users = self.read_users(reader)
                         
         self.logger.info('Number of users loaded: %d', len(users))
-        return users.itervalues()
+        return (True, users.itervalues())
 
     def read_users(self, reader):
         '''

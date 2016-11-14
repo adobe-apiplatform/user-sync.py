@@ -21,7 +21,7 @@ def connector_load_users_and_groups(state, groups):
     '''
     :type state: LDAPDirectoryConnector
     :type groups: list(str)
-    :rtype iterable(dict)
+    :rtype (bool, iterable(dict))
     '''
     return state.load_users_and_groups(groups)
 
@@ -38,7 +38,8 @@ class LDAPDirectoryConnector(object):
             'user_domain_format': None,
             'user_identity_type': None,
             'search_page_size': 200,
-            'logger_name': 'connector.' + LDAPDirectoryConnector.name
+            'logger_name': 'connector.' + LDAPDirectoryConnector.name,
+            'source_filters': {}
         }
         options.update(caller_options)
     
@@ -67,9 +68,22 @@ class LDAPDirectoryConnector(object):
     def load_users_and_groups(self, groups):
         '''
         :type groups: list(str)
-        :rtype iterable(dict)
+        :rtype (bool, iterable(dict))
         '''
-        self.user_by_dn = user_by_dn = dict(self.iter_all_users())
+        options = self.options
+        all_users_filter = options['all_users_filter']
+        
+        is_using_source_filter = False
+        source_filters = options['source_filters']
+        source_filter = source_filters.get('all_users_filter')
+        if (source_filter != None):
+            users_filter = "(&%s%s)" % (all_users_filter, source_filter)
+            is_using_source_filter = True
+            self.logger.info('Applied source filter: %s', users_filter)
+        else:
+            users_filter = all_users_filter
+
+        self.user_by_dn = user_by_dn = dict(self.iter_users(users_filter))
         self.logger.info('Total users loaded: %d', len(user_by_dn))
 
         for group in groups:
@@ -87,7 +101,7 @@ class LDAPDirectoryConnector(object):
                             user_groups.append(group)
             self.logger.debug('Group %s members: %d users: %d', group, total_group_members, total_group_users)
         
-        return user_by_dn.itervalues()    
+        return (not is_using_source_filter, user_by_dn.itervalues())    
         
     def find_ldap_group(self, group, attribute_list=None):
         '''
@@ -188,17 +202,16 @@ class LDAPDirectoryConnector(object):
             result = self.get_attribute_values(group_dn, 'member', group_attributes)
         return result
     
-    def iter_all_users(self):
+    def iter_users(self, users_filter):
         options = self.options
         base_dn = options['base_dn']
-        all_users_filter = options['all_users_filter']
         
         user_attribute_names = ["givenName", "sn", "c"]    
         user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
 
-        result_iter = self.iter_search_result(base_dn, ldap.SCOPE_SUBTREE, all_users_filter, user_attribute_names)
+        result_iter = self.iter_search_result(base_dn, ldap.SCOPE_SUBTREE, users_filter, user_attribute_names)
         for dn, record in result_iter:
             if (dn == None):
                 continue
