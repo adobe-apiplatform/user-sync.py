@@ -1,6 +1,6 @@
 username: [LDAP USER]
-pw: [LDAP PASSWORD]
-host: [LDAP HOST]
+password: [LDAP PASSWORD]
+host: [LDAP HOST URL.  e.g. ldap://ldap.example.com]
 base_dn: [defines the base DN. e.g. DC=example,DC=com]
 
 # specifies the string format used to construct a group query.
