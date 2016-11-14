@@ -140,18 +140,3 @@ class CSVDirectoryConnector(object):
             value = None
         return value
     
-if True and __name__ == '__main__':
-    import sys
-    import datetime
-    from aedash.sync.connector import directory
-
-    start1 = datetime.datetime.now()    
-    options = {
-        'file_path': "test.csv",
-    }
-    connector = directory.DirectoryConnector(sys.modules[__name__], options)
-    users = connector.get_users_with_groups(["a", "g"])
-    start2 = datetime.datetime.now()
-    start3 = start2 - start1
-    print("3: " + str(start3));
-    

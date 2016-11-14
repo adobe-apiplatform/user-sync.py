@@ -4,7 +4,9 @@ import re
 import types
 import yaml
 
-from aedash.sync import rules
+import aedash.sync.error
+import aedash.sync.rules
+
 
 DEFAULT_CONFIG_DIRECTORY = ''
 DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
@@ -26,7 +28,7 @@ class ConfigLoader(object):
         self.main_config_path = main_config_path = self.get_file_path(main_config_filename)
         
         if (not os.path.isfile(main_config_path)):
-            raise Exception('Config file does not exist: %s' % (main_config_path))  
+            raise aedash.sync.error.AssertionException('Config file does not exist: %s' % (main_config_path))  
         
         self.config_cache = {}
         
@@ -166,8 +168,8 @@ class ConfigLoader(object):
                             product_name = parts.pop()
                             organization_name = ':'.join(parts)
                             if (len(organization_name) == 0):
-                                organization_name = rules.OWNING_ORGANIZATION_NAME
-                            product = rules.Product(product_name, organization_name)
+                                organization_name = aedash.sync.rules.OWNING_ORGANIZATION_NAME
+                            product = aedash.sync.rules.Product(product_name, organization_name)
                             products.append(product)
         
         return directory_config

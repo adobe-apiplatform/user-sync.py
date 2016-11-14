@@ -1,8 +1,8 @@
-import ldap
+import ldap.controls.libldap
 import string
-from ldap.controls.libldap import SimplePagedResultsControl
 
-from aedash.sync.connector import helper
+import aedash.sync.connector.helper
+import aedash.sync.error
 
 def connector_metadata():
     metadata = {
@@ -49,7 +49,7 @@ class LDAPDirectoryConnector(object):
         self.user_domain_formatter = LDAPValueFormatter(options['user_domain_format'])
         
         self.options = options
-        self.logger = logger = helper.create_logger(options)
+        self.logger = logger = aedash.sync.connector.helper.create_logger(options)
         
         require_tls_cert = options['require_tls_cert']
         host = options['host']
@@ -127,7 +127,7 @@ class LDAPDirectoryConnector(object):
         for current_tuple in res:
             if (current_tuple[0] != None):
                 if (group_tuple != None):
-                    raise Exception("Multiple LDAP groups found for: %s" % group)
+                    raise aedash.sync.error.AssertionException("Multiple LDAP groups found for: %s" % group)
                 group_tuple = current_tuple
         
         return group_tuple
@@ -223,7 +223,7 @@ class LDAPDirectoryConnector(object):
                     self.logger.warn('No email attribute: %s for dn: %s', last_attribute_name, dn)
                 continue
             
-            user = helper.create_blank_user()
+            user = aedash.sync.connector.helper.create_blank_user()
             user['email'] = email
                 
             username, last_attribute_name = self.user_username_formatter.generate_value(record)
@@ -256,7 +256,7 @@ class LDAPDirectoryConnector(object):
         connection = self.connection
         search_page_size = self.options['search_page_size']
         
-        lc = SimplePagedResultsControl(True, size=search_page_size, cookie='')
+        lc = ldap.controls.libldap.SimplePagedResultsControl(True, size=search_page_size, cookie='')
 
         msgid = None
         try:
@@ -268,7 +268,7 @@ class LDAPDirectoryConnector(object):
                     result_type, response_data, _rmsgid, serverctrls = connection.result3(msgid)
                     msgid = None
                     pctrls = [c for c in serverctrls
-                              if c.controlType == SimplePagedResultsControl.controlType]
+                              if c.controlType == ldap.controls.libldap.SimplePagedResultsControl.controlType]
                     if not pctrls:
                         self.logger.warn('Server ignored RFC 2696 control.')
                         has_next_page = False

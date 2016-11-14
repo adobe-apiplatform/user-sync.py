@@ -1,16 +1,19 @@
 import email.utils
 import helper
 import json
+import jwt
 import logging
 import math
 import random
 import time
+
 from umapi import UMAPI, Action
 from umapi.auth import Auth, JWT, AccessRequest
 from umapi.error import UMAPIError, UMAPIRetryError, UMAPIRequestError
 from umapi.helper import iter_paginate
 
-import jwt
+import aedash.sync.error
+
 try:
     from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
     jwt.register_algorithm('RS256', RSAAlgorithm(RSAAlgorithm.SHA256))
@@ -49,13 +52,13 @@ class DashboardConnector(object):
             'enterprise.priv_key_path'
         ]
 
-        validation_result, validation_issue = helper.validate_options(options, required_options)
-        if not validation_result:
-            raise Exception('%s for connector: %s' % (validation_issue, DashboardConnector.name))
-
         self.options = options;        
         self.logger = logger = helper.create_logger(options)
         
+        validation_result, validation_issue = helper.validate_options(options, required_options)
+        if not validation_result:
+            raise aedash.sync.error.AssertionException('%s for connector: %s' % (validation_issue, DashboardConnector.name))
+
         server_options = options['server']
         enterprise_options = options['enterprise']
                 
@@ -261,7 +264,7 @@ class ActionManager(object):
                     error_by_request_id = {}
                     for error in res['errors']:
                         if ('message' in error or 'errorCode' in error):
-                            self.logger.info('Error requestID: %s code: "%s" message: "%s"', error.get('requestID'), error.get('errorCode'), error.get('message'))
+                            self.logger.warn('Error requestID: %s code: "%s" message: "%s"', error.get('requestID'), error.get('errorCode'), error.get('message'))
                         if ('requestID' in error):
                             request_id = error['requestID']
                             error_by_request_id[request_id] = error
@@ -331,64 +334,4 @@ class ApiDelegate(object):
                 time.sleep(time_backoff)
 
         return res
-        
-    
-if True and __name__ == '__main__':
-    options2 = {
-        'enterprise': {
-            'org_id': "210DB41957FFDC210A495E53@AdobeOrg",
-            'api_key': "4839484fa90147d6bb88f8db0c791ff1",
-            'client_secret': "f907d26e-416e-4bbb-9c3e-7aa2dc439208",
-            'tech_acct': "0E3B6A995806C4BE0A495CC7@techacct.adobe.com",
-            'priv_key_path': "data/1/private1.key"
-        }
-    }
-    
-    options3 = {
-        'enterprise': {
-            'org_id': "AD0F754C57FFF69A0A495E58@AdobeOrg",
-            'api_key': "55561e5ccfd048c0b136dbec5f9904e8",
-            'client_secret': "cf8cb4e6-89bf-4f2b-9b24-f048a7fee153",
-            'tech_acct': "0ABD91645806C7500A495E57@techacct.adobe.com",
-            'priv_key_path': "data/2/private2.key"
-        }
-    }
-    
-    options = options3
-    
-    connector = DashboardConnector(options)
-            
-    action2 = Action(user='davidy@ensemble.ca').do(
-            add=['Default Acrobat Pro DC configuration'],
-        )
-         
-    action3 = Action(user='davidy@ensemble.ca').do(
-            remove=['Default Acrobat Pro DC configuration'],
-        )
-    
-    action1 = Action(user='davidy@ensemble.ca').do(        
-            update={
-        "firstname" : "David5"
-       }
-    )
-    action = Action(user='davidy@ensemble.ca').do(
-            removeFromOrg=
-                { 
-                  "removedDomain" : "ensemble.ca"
-                }
-       
-    )
-    manager = connector.get_action_manager()
-    
-    '''
-    for i in range(1, 100):
-        manager.add_action(action2)
-        manager.execute()
-    '''
-    
-    a=0
-    a+=1
-    
-    '''
-    Default Acrobat Pro DC configuration
-    '''
+

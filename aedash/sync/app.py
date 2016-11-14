@@ -6,10 +6,11 @@ import os
 import re
 import sys
 
-from aedash.sync import lockfile
-from aedash.sync import rules
-from aedash.sync.connector import directory
-from aedash.sync.connector import dashboard
+import aedash.sync.error
+import aedash.sync.lockfile
+import aedash.sync.rules
+import aedash.sync.connector.directory
+import aedash.sync.connector.dashboard
 
 APP_VERSION = "0.6.0"
 
@@ -102,21 +103,21 @@ def begin_work(config_loader):
     '''    
     directory_connector_module_name = config_loader.get_directory_connector_module_name()
     directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])    
-    directory_connector = directory.DirectoryConnector(directory_connector_module)
+    directory_connector = aedash.sync.connector.directory.DirectoryConnector(directory_connector_module)
     
     directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
     directory_connector.initialize(directory_connector_options)
     
     dashboard_config = config_loader.get_dashboard_config()
-    dashboard_owning_connector = dashboard.DashboardConnector(dashboard_config['owning'])
+    dashboard_owning_connector = aedash.sync.connector.dashboard.DashboardConnector(dashboard_config['owning'])
     dashboard_trustee_connectors = {}    
     for trustee_organization_name, trustee_config in dashboard_config['trustees'].iteritems():
-        dashboard_trustee_conector = dashboard.DashboardConnector(trustee_config)
+        dashboard_trustee_conector = aedash.sync.connector.dashboard.DashboardConnector(trustee_config)
         dashboard_trustee_connectors[trustee_organization_name] = dashboard_trustee_conector 
-    dashboard_connectors = rules.DashboardConnectors(dashboard_owning_connector, dashboard_trustee_connectors)
+    dashboard_connectors = aedash.sync.rules.DashboardConnectors(dashboard_owning_connector, dashboard_trustee_connectors)
 
     rule_config = config_loader.get_rule_config()
-    rule_processor = rules.RuleProcessor(rule_config)
+    rule_processor = aedash.sync.rules.RuleProcessor(rule_config)
     rule_processor.read_desired_user_products(config_loader.get_directory_groups(), directory_connector)
     rule_processor.process_dashboard_users(dashboard_connectors)
     rule_processor.clean_dashboard_users(dashboard_connectors)
@@ -130,11 +131,7 @@ def main():
         'config_directory': args.config_path,
         'main_config_filename': args.config_filename,
     }
-    try:        
-        config_loader = config.ConfigLoader(config_bootstrap_options)
-    except Exception as e:
-        logger.error('Problem loading main config. %s', e.message)
-        return
+    config_loader = config.ConfigLoader(config_bootstrap_options)
     init_log(config_loader.get_logging_config())
     
     config_options = {
@@ -163,7 +160,7 @@ def main():
     remove_list_input_path = args.remove_list_input_path
     if (remove_list_input_path != None):
         logger.info('Reading remove list from: %s', remove_list_input_path)
-        config_options['remove_user_key_list'] = remove_user_key_list = rules.RuleProcessor.read_remove_list(remove_list_input_path)
+        config_options['remove_user_key_list'] = remove_user_key_list = aedash.sync.rules.RuleProcessor.read_remove_list(remove_list_input_path)
         logger.info('Total users in remove list: %d', len(remove_user_key_list))
     
     config_options['remove_list_output_path'] = remove_list_output_path = args.remove_list_output_path
@@ -189,7 +186,7 @@ def main():
     
     script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
     lock_path = os.path.join(script_dir, 'lockfile')
-    lock = lockfile.ProcessLock(lock_path)
+    lock = aedash.sync.lockfile.ProcessLock(lock_path)
     if lock.set_lock():
         try:
             begin_work(config_loader)
@@ -203,6 +200,9 @@ if __name__ == '__main__':
     #set up exception hook
     sys.excepthook = error_hook
     
-    main()
+    try:
+        main()
+    except aedash.sync.error.AssertionException as e:
+        logger.error(e.message)
     
     
