@@ -8,8 +8,8 @@ import rules
 
 DEFAULT_CONFIG_DIRECTORY = ''
 DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
-DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME = 'dashboard-owning-config.yaml'
-DEFAULT_DASHBOARD_TRUSTEE_CONFIG_FILENAME_FORMAT = 'dashboard-trustee-{organization_name}-config.yaml'
+DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME = 'dashboard-owning-config.yml'
+DEFAULT_DASHBOARD_TRUSTEE_CONFIG_FILENAME_FORMAT = 'dashboard-trustee-{organization_name}-config.yml'
 
 class ConfigLoader(object):
     def __init__(self, caller_options):
@@ -18,16 +18,7 @@ class ConfigLoader(object):
         '''        
         self.options = options = {
             'config_directory': DEFAULT_CONFIG_DIRECTORY,
-            'main_config_filename': DEFAULT_MAIN_CONFIG_FILENAME,
-            
-            'directory_connector_module_name': 'connector.directory_ldap',
-            'directory_connector_overridden_options': None,
-            'directory_group_filter': None,
-            'username_filter_regex': None,
-
-            'test_mode': False,            
-            'manage_products': True,
-            'update_user_info': True
+            'main_config_filename': DEFAULT_MAIN_CONFIG_FILENAME,            
         }
         options.update(caller_options)     
 
@@ -37,7 +28,28 @@ class ConfigLoader(object):
         if (not os.path.isfile(main_config_path)):
             raise Exception('Config file does not exist: %s' % (main_config_path))  
         
-        self.config_cache = {}          
+        self.config_cache = {}
+        
+    def set_options(self, caller_options):          
+        '''
+        :type caller_options: dict
+        '''
+        options = {
+            'directory_connector_module_name': 'connector.directory_ldap',
+            'directory_connector_overridden_options': None,
+            'directory_group_filter': None,
+            'username_filter_regex': None,
+
+            'test_mode': False,            
+            'manage_products': True,
+            'update_user_info': True,
+            
+            'remove_user_key_list': None,
+            'remove_list_output_path': None,
+            'remove_nonexistent_users': False
+        }
+        options.update(caller_options)
+        self.options.update(options)        
         
     def get_main_config(self):
         return self.get_config(None, self.load_main_config)
@@ -263,6 +275,10 @@ class ConfigLoader(object):
             'directory_group_filter': options['directory_group_filter'],
             'username_filter_regex': options['username_filter_regex'],
             'manage_products': options['manage_products'],
-            'update_user_info': options['update_user_info']
+            'update_user_info': options['update_user_info'],
+            'remove_user_key_list': options['remove_user_key_list'],
+            'remove_list_output_path': options['remove_list_output_path'],
+            'remove_nonexistent_users': options['remove_nonexistent_users']
+
         }
         return result

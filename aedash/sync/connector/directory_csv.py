@@ -34,7 +34,7 @@ class CSVDirectoryConnector(object):
             'email_column_name': 'email',
             'country_column_name': 'country',
             'groups_column_name': 'groups',
-            'username_column_name': 'username',
+            'username_column_name': 'user',
             'domain_column_name': 'domain',
             'identity_type_column_name': 'type',
             'logger_name': 'connector.' + CSVDirectoryConnector.name

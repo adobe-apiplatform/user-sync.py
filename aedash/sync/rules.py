@@ -1,3 +1,4 @@
+import csv
 import logging
 
 from aedash.sync.connector.dashboard import Commands
@@ -19,14 +20,25 @@ class RuleProcessor(object):
             'username_filter_regex': None,
             
             'manage_products': True,
-            'update_user_info': True
+            'update_user_info': True,
+            
+            'remove_user_key_list': None,
+            'remove_list_output_path': None,
+            'remove_nonexistent_users': False
         }
         options.update(caller_options)        
         self.options = options        
         self.directory_user_by_user_key = {}
         self.filtered_directory_user_by_user_key = {}
         self.desired_products_by_organization = {}
+        self.dashboard_users_by_organization = {}
         self.orphaned_dashboard_users_by_organization = {}
+        
+        remove_user_key_list = options['remove_user_key_list']
+        remove_user_key_list = set(remove_user_key_list) if (remove_user_key_list != None) else set()
+        self.remove_user_key_list = remove_user_key_list
+        
+        self.find_orphaned_dashboard_users = options['remove_list_output_path'] != None or options['remove_nonexistent_users']
                 
         self.logger = logger = logging.getLogger('processor')
         logger.debug('Initialized with options: %s', options)
@@ -42,10 +54,10 @@ class RuleProcessor(object):
         directory_group_filter = options['directory_group_filter']
         if (directory_group_filter != None):
             directory_group_filter = set(directory_group_filter)
-        username_filter_regex = options['username_filter_regex']
         
         directory_user_by_user_key = self.directory_user_by_user_key        
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
+        remove_user_key_list = self.remove_user_key_list
 
         directory_groups = mappings.keys()
         if (directory_group_filter != None):
@@ -56,11 +68,10 @@ class RuleProcessor(object):
             
             if not self.is_directory_user_in_groups(directory_user, directory_group_filter):
                 continue
-            if (username_filter_regex != None):
-                username = RuleProcessor.get_username_from_user_key(user_key)
-                search_result = username_filter_regex.search(username)
-                if (search_result == None):
-                    continue
+            if not self.is_selected_user_key(user_key):
+                continue
+            if (user_key in remove_user_key_list):
+                continue
             
             filtered_directory_user_by_user_key[user_key] = directory_user            
             self.get_user_desired_products(OWNING_ORGANIZATION_NAME, user_key)                         
@@ -102,28 +113,96 @@ class RuleProcessor(object):
     def process_dashboard_users(self, dashboard_connectors):
         '''
         :type dashboard_connectors: DashboardConnectors
-        '''
-        self.logger.info('Syncing...')
-        
+        '''        
         options = self.options
         manage_products = options['manage_products'] 
         
+        dashboard_users_by_organization = self.dashboard_users_by_organization
+        orphaned_dashboard_users_by_organization = self.orphaned_dashboard_users_by_organization
+        
         added_dashboard_user_keys = set()
-        _owning_dashboard_users, owning_orphaned_dashboard_users, owning_unprocessed_products_by_user_key = self.update_dashboard_users_for_connector(OWNING_ORGANIZATION_NAME, dashboard_connectors.get_owning_connector())
-        self.orphaned_dashboard_users_by_organization[OWNING_ORGANIZATION_NAME] = owning_orphaned_dashboard_users 
+
+        self.logger.info('Syncing owning...') 
+        owning_dashboard_users, owning_orphaned_dashboard_users, owning_unprocessed_products_by_user_key = self.update_dashboard_users_for_connector(OWNING_ORGANIZATION_NAME, dashboard_connectors.get_owning_connector())
+        dashboard_users_by_organization[OWNING_ORGANIZATION_NAME] = owning_dashboard_users
+        orphaned_dashboard_users_by_organization[OWNING_ORGANIZATION_NAME] = owning_orphaned_dashboard_users 
         for user_key in owning_unprocessed_products_by_user_key.iterkeys():
             self.add_dashboard_user(user_key, dashboard_connectors)
             added_dashboard_user_keys.add(user_key)
 
-        for organization_name, dashboard_connector in dashboard_connectors.get_trustee_connectors().iteritems():
-            _trustee_dashboard_users, trustee_orphaned_dashboard_users, trustee_unprocessed_products_by_user_key = self.update_dashboard_users_for_connector(organization_name, dashboard_connector)
-            self.orphaned_dashboard_users_by_organization[organization_name] = trustee_orphaned_dashboard_users 
-            if (manage_products):
-                for user_key, desired_products in trustee_unprocessed_products_by_user_key.iteritems():
-                    if (user_key in added_dashboard_user_keys):
-                        continue
-                    directory_user = self.directory_user_by_user_key[user_key]
-                    self.add_products_for_connector(directory_user, desired_products, dashboard_connector)
+        if (self.find_orphaned_dashboard_users or manage_products):
+            for organization_name, dashboard_connector in dashboard_connectors.get_trustee_connectors().iteritems():
+                self.logger.info('Syncing trustee %s...', organization_name) 
+                trustee_dashboard_users, trustee_orphaned_dashboard_users, trustee_unprocessed_products_by_user_key = self.update_dashboard_users_for_connector(organization_name, dashboard_connector)
+                dashboard_users_by_organization[organization_name] = trustee_dashboard_users
+                orphaned_dashboard_users_by_organization[organization_name] = trustee_orphaned_dashboard_users 
+                if (manage_products):
+                    for user_key, desired_products in trustee_unprocessed_products_by_user_key.iteritems():
+                        if (user_key in added_dashboard_user_keys):
+                            continue
+                        directory_user = self.directory_user_by_user_key[user_key]
+                        self.add_products_for_connector(directory_user, desired_products, dashboard_connector)
+                    
+    def iter_orphaned_federated_dashboard_users(self):
+        owning_orphaned_dashboard_users = self.orphaned_dashboard_users_by_organization[OWNING_ORGANIZATION_NAME]
+        for user_key, dashboard_user in owning_orphaned_dashboard_users.iteritems():
+            if not self.is_selected_user_key(user_key):
+                continue
+            if (dashboard_user.get('type') != 'federatedID'):
+                continue
+            yield dashboard_user
+            
+    def is_selected_user_key(self, user_key):
+        '''
+        :type user_key: str
+        '''
+        username_filter_regex = self.options['username_filter_regex']
+        if (username_filter_regex != None):
+            username = RuleProcessor.get_username_from_user_key(user_key)
+            search_result = username_filter_regex.search(username)
+            if (search_result == None):
+                return False
+        return True
+                    
+    def clean_dashboard_users(self, dashboard_connectors):
+        '''
+        :type dashboard_connectors: DashboardConnectors
+        '''
+        options = self.options
+        remove_list_output_path = options['remove_list_output_path']
+        remove_nonexistent_users = options['remove_nonexistent_users']
+        
+        remove_user_key_list = self.remove_user_key_list
+        
+        if (remove_list_output_path != None):
+            self.logger.info('Writing remove list to: %s', remove_list_output_path)
+            self.write_remove_list(remove_list_output_path, self.iter_orphaned_federated_dashboard_users())
+        elif (remove_nonexistent_users):
+            self.logger.info('Registering federated orphaned users to be removed...')        
+            for dashboard_user in self.iter_orphaned_federated_dashboard_users():
+                user_key = self.get_dashboard_user_key(dashboard_user)
+                remove_user_key_list.add(user_key)
+            
+        if (len(remove_user_key_list)):
+            self.logger.info('Removing users: %s', remove_user_key_list)
+            dashboard_users_by_organization = self.dashboard_users_by_organization
+            for organization_name, dashboard_connector in dashboard_connectors.get_trustee_connectors().iteritems():
+                dashboard_users = dashboard_users_by_organization.get(organization_name)
+                for user_key in remove_user_key_list:
+                    if (dashboard_users == None) or (user_key in dashboard_users):
+                        username, domain = self.parse_user_key(user_key)
+                        commands = Commands(username, domain)
+                        commands.remove_all_products()
+                        dashboard_connector.send_commands(commands)
+
+            dashboard_users = dashboard_users_by_organization[OWNING_ORGANIZATION_NAME]
+            for user_key in remove_user_key_list:
+                if (user_key in dashboard_users):
+                    username, domain = self.parse_user_key(user_key)
+                    commands = Commands(username, domain)
+                    commands.remove_from_org()
+                    dashboard_connectors.get_owning_connector().send_commands(commands)
+        
     
     def get_user_attributes(self, directory_user):
         attributes = {}
@@ -206,7 +285,7 @@ class RuleProcessor(object):
         for dashboard_user in dashboard_connector.iter_users():
             user_key = RuleProcessor.get_dashboard_user_key(dashboard_user)
             all_dashboard_users[user_key] = dashboard_user
-            
+
             directory_user = directory_user_by_user_key.get(user_key)
             if (directory_user == None):
                 orphaned_dashboard_users[user_key] = dashboard_user
@@ -280,11 +359,44 @@ class RuleProcessor(object):
         if (username.find('@') >= 0):
             return username
         return username + ',' + domain
+    
+    @staticmethod
+    def parse_user_key(user_key):
+        index = user_key.find(',')
+        return (user_key, None) if index < 0 else (user_key[:index], user_key[index + 1:])
 
     @staticmethod
     def get_username_from_user_key(user_key):
-        index = user_key.find(',')
-        return user_key if index < 0 else user_key[:index]
+        return RuleProcessor.parse_user_key(user_key)[0]
+    
+    @staticmethod
+    def read_remove_list(file_path):
+        '''
+        :type file_path: str
+        '''
+        result = []
+        with open(file_path, 'r', 1) as input_file:
+            reader = csv.DictReader(input_file)
+            for row in reader:
+                user = row.get('user')
+                domain = row.get('domain')
+                user_key = RuleProcessor.get_user_key(user, domain, None)
+                if (user_key != None):
+                    result.append(user_key)
+        return result
+    
+    def write_remove_list(self, file_path, dashboard_users):
+        total_users = 0
+        with open(file_path, 'w', 1) as output_file:                
+            writer = csv.DictWriter(output_file, fieldnames = ['user', 'domain'])
+            writer.writeheader()
+            for dashboard_user in dashboard_users:
+                user_key = self.get_dashboard_user_key(dashboard_user)
+                username, domain = self.parse_user_key(user_key)
+                writer.writerow({'user': username, 'domain': domain})
+                total_users += 1
+        self.logger.info('Total users in remove list: %d', total_users)
+                
 
         
 class DashboardConnectors(object):

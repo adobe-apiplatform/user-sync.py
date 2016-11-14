@@ -161,6 +161,9 @@ class Commands(object):
             products = Commands.get_json_serializable(products_to_remove)
             self.do_list.append(('remove', products))
     
+    def remove_all_products(self):
+        self.do_list.append(('remove', 'all'))
+    
     def add_federated_user(self, attributes):
         '''
         :type attributes: dict
@@ -172,6 +175,9 @@ class Commands(object):
         :type attributes: dict
         '''
         self.do_list.append(('createEnterpriseID', attributes))
+        
+    def remove_from_org(self):
+        self.do_list.append(('removeFromOrg', {}))
 
     def __len__(self):
         return len(self.do_list)
@@ -329,27 +335,6 @@ class ApiDelegate(object):
         
     
 if True and __name__ == '__main__':
-    o1 = object()
-    o2 = object()
-    d = {}
-    d[o1] = o1
-    d[o2] = o2
-    
-    l = set()
-    s = set()
-    l1 = list()
-    
-    s1 = l - s
-    
-    options1 = {
-        'enterprise': {
-            'org_id': "7EF5AE375630F4CD7F000101@AdobeOrg",
-            'api_key': "e604c71a2f624567b76528b5b9191f75",
-            'client_secret': "56a9b8f4-b068-4319-a86a-4c71e9af7362",
-            'tech_acct': "88C42DEA571F99AB7F000101@techacct.adobe.com",
-            'priv_key_path': "adobe.io.private.der"
-        }
-    }
     options2 = {
         'enterprise': {
             'org_id': "210DB41957FFDC210A495E53@AdobeOrg",
@@ -373,20 +358,6 @@ if True and __name__ == '__main__':
     options = options3
     
     connector = DashboardConnector(options)
-    #api = connector.api
-#    res = api._call('/organizations/%s/users/%s' % (connector.org_id, 'davidy@ensemble.ca'), requests.get)
-#    res = api._call('/%s/user-groups' % connector.org_id, requests.get)
-    #res = api._call('/%s/products' % connector.org_id, requests.get)
-    #res = api._call('/groups/%s/0' % connector.org_id, requests.get)
-    #res = api._call('/users/%s/0?domain=%s' % (connector.org_id, 'ensemble.ca'), requests.get)
-
-#    for i in range(1, 100):
-    users = connector.get_users()
-
-    
-    for u in users:
-        if ("groups" in u):
-            print(u)
             
     action2 = Action(user='davidy@ensemble.ca').do(
             add=['Default Acrobat Pro DC configuration'],
@@ -396,7 +367,7 @@ if True and __name__ == '__main__':
             remove=['Default Acrobat Pro DC configuration'],
         )
     
-    action1 = Action(user='davidy@ensemble.ca').do(
+    action1 = Action(user='davidy@ensemble.ca').do(        
             update={
         "firstname" : "David5"
        }
