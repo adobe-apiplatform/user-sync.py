@@ -1,0 +1,14 @@
+server:
+  # These are the defaults.
+  #
+  # host: usermanagement.adobe.io
+  # endpoint: /v2/usermanagement
+  # ims_host: ims-na1.adobelogin.com
+  # ims_endpoint_jwt: /ims/exchange/jwt
+
+enterprise:
+  org_id: [ORG ID]
+  api_key: [API KEY]
+  client_secret: [CLIENT SECRET]
+  tech_acct: [TECH ACCT ID]
+  priv_key_path: [path to private.key]

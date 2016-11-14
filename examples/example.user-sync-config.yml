@@ -1,0 +1,51 @@
+dashboard:
+  # specifies the configurations for the Adobe Enterprise Dashboards.  
+  # By default, it would look for dashboard-owning-config.yml and
+  # dashboard-trustee-*-config.yml in the configuration path,
+  # with the yml's identifying the owning organization and trustee organizations
+  # respectively.
+  #  
+  # You can also specify the configurations under this section too,
+  # with keys owning and trustees.
+  #
+  # Examples:
+  # owning: example.dashboard-config.yml
+  # trustees:
+  #   org1: example.dashboard-config.yml    
+
+directory:
+  connectors:
+    # specifies the configurations for the difference directory connectors
+    # [name_of_connector] : dictionary itself for the configuration or string
+    # or list of strings to the files containing the configurations   
+    ldap: example.connector-ldap.yml
+ 
+  groups:
+    # specifies the list of group mappings, with each group mapping consisting
+    # of a dictionary with keys: directory_group and dashboard_groups.    
+    # directory_group: string identifying the group in the directory
+    # dashboard_groups: a list of strings identifying the dashboard groups.
+    #
+    # a group in dashboard_groups can be qualified with, the first part being
+    # the trustee organization name.
+    # e.g. org1:Default Acrobat Pro DC configuration
+    #
+    # example group mappings:
+    - directory_group: AdobeCC-All #Group CN
+      dashboard_groups:
+        - All Apps
+    - directory_group: AdobeCC-Photoshop
+      dashboard_groups:
+        - Photoshop Users
+    - directory_group: acrobat
+      dashboard_groups:
+        - org1:Default Acrobat Pro DC configuration
+
+logging:
+  # specifies whether you wish to generate a log file
+  # 'True' or 'False'
+  log_to_file: True
+  # output path for logs
+  file_log_directory: logs
+  #Logging Level: Can be "debug", "info", "warning", "error", or "critical".  This is in ascending order, meaning "debug" < "critical".  Will only be used on file log, console log is always "debug"
+  file_log_level: debug

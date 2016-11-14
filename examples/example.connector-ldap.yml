@@ -1,0 +1,27 @@
+username: [LDAP USER]
+pw: [LDAP PASSWORD]
+host: [LDAP HOST]
+base_dn: [defines the base DN. e.g. DC=example,DC=com]
+
+# specifies the string format used to construct a group query.
+# {group} is replaced with the name of the group to find.
+#
+# example:
+# group_filter_format': "(&(|(objectCategory=group)(objectClass=groupOfNames))(cn={group}))"
+
+# specifies the string filter used to find all users in the directory.
+#
+# example:
+# all_users_filter': "(&(objectClass=person)(|(objectClass=top)(objectClass=user)))"
+
+# specifies how an email address is retrieved in the system.
+# the string is a string format, with names enclosed by curly brackets replaced
+# by the corresponding attributes for a user.
+#
+# example:
+# user_email_format: {mail}
+
+# set to True if you want to validate SSL cert
+# require_tls_cert: False
+
+

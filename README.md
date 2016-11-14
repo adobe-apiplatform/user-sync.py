@@ -1,5 +1,5 @@
-# aedash-connector
-Connector for Enterprise Dashboard User Management
+# aedash-user-sync
+User Sync for Adobe Enterprise Dashboard User Management
 
 # Overview
 
@@ -29,75 +29,63 @@ To build, run `make pex` from the command line in the main repo directory.
 # Basic Usage
 
 ```
-usage: aedc [-h] [-i INFILE] [-V] -c CONFIG_PATH -a AUTH_STORE_PATH
-
-Adobe Enterprise Dashboard User Management Connector
+Adobe Enterprise Dashboard User Sync
 
 optional arguments:
   -h, --help            show this help message and exit
-  -i INFILE, --infile INFILE
-                        input file - reads from stdin if this parameter is
-                        omitted
-  -V, --version         show program's version number and exit
-
-required arguments:
-  -c CONFIG_PATH, --config CONFIG_PATH
-                        API Config Path
-  -a AUTH_STORE_PATH, --auth-store AUTH_STORE_PATH
-                        Auth Store Path
+  -v, --version         show program's version number and exit
+  -t, --test-mode       run API action calls in test mode (does not execute
+                        changes). Logs what would have been executed.
+  -c path, --config-path path
+                        specify path to config files. (default: "")
+  --config-filename filename
+                        main config filename. (default: "user-sync-
+                        config.yml")
+  --users all|file|group [arg1 ...]
+                        specify the users to be considered for sync. Legal
+                        values are 'all' (the default), 'group name or names'
+                        (one or more specified AD groups), 'file f' (a
+                        specified input file).
+  --user-filter pattern
+                        limit the selected set of users that may be examined
+                        for syncing, with the pattern being a regular
+                        expression.
+  --source-filter connector:file
+                        send the file to the specified connector (for example,
+                        --source-filter ldap:foo.yml). This parameter is used
+                        to limit the scope of the LDAP query.
+  --update-user-info    if user information differs between the customer side
+                        and the Adobe side, the Adobe side is updated to
+                        match.
+  --process-groups      if the membership in mapped groups differs between the
+                        customer side and the Adobe side, the group membership
+                        is updated on the Adobe side so that the memberships
+                        in mapped groups matches the customer side.
+  --remove-nonexistent-users
+                        Causes the user sync tool to remove Federated users
+                        that exist on the Adobe side if they are not in the
+                        customer side AD. This has the effect of deleting the
+                        user account if that account is owned by the
+                        organization under which the sync operation is being
+                        run.
+  --generate-remove-list output_path
+                        processing similar to --remove-nonexistent-users
+                        except that rather than performing removals, a file is
+                        generated (with the given pathname) listing users who
+                        would be removed. This file can then be given in the
+                        --remove-list argument in a subsequent run.
+  -d input_path, --remove-list input_path
+                        specifies the file containing the list of users to be
+                        removed. Users on this list are removeFromOrg'd on the
+                        Adobe side.
 ```
-
-The connector requires two arguments to be specified.
-
-## `--config`
-
-Path to config file.  See "Configuration" section for more information.
-
-## `--auth`
-
-Path to auth token store file.  The connector will create the store file if it doesn't already exist, and initialize it with a new authentication token.
 
 # Configuration
 
-See `example-config.yml` for a configuration template.
+See `examples/example.user-sync-config.yml` for the main configuration template.  The main configuation file user-sync-config.yml must exist in the configuration path.
 
-The config file is divided into two sections - integration and domains.  These are represented as keys in config YAML.
+See `examples/example.dashboard-config.yml` for the dashboard configuration template.  
 
-## `integration`
-
-The integration section configures the keys, IDs, and endpoints for interacting with the API.  Most of the details in this section come from the integration page on [adobe.io](http://adobe.io).
-
-This section contains two subsections - `server` and `enterprise`.
-
-`server` specifies the hostnames and endpoints for the API itself, as well as IMS authentication.
-
-Example:
-
-```yaml
-  server:
-    host: usermanagement.adobe.io
-    endpoint: /v2/usermanagement
-    ims_host: ims-na1.adobelogin.com
-    ims_endpoint_jwt: /ims/exchange/jwt
-```
-
-`enterprise` contains the Organization ID, API Key, API Secret, etc.
-
-Example:
-
-```yaml
-  enterprise:
-    org_id: [ORG ID]
-    api_key: [API KEY]
-    client_secret: [CLIENT SECRET]
-    tech_acct: [TECH ACCT ID]
-    priv_key_path: /path/to/private.key
-```
-
-## `domains`
-
-`domains` contains domain-specific configuration.  Each domain config object is keyed by the domain name.
-
-Each domain key contains the configuration for that domain - the domain type (federated or enterprise), LDAP connection & query details, and security group/product group mappings.
+See `examples/example.connector-ldap.yml` for the ldap configuration template.  
 
 # Supported Workflows
