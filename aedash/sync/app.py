@@ -5,11 +5,11 @@ import logging
 import os
 import re
 import sys
-import lockfile
 
-import rules
-import connector.dashboard
-import connector.directory
+from aedash.sync import lockfile
+from aedash.sync import rules
+from aedash.sync.connector import directory
+from aedash.sync.connector import dashboard
 
 APP_VERSION = "0.6.0"
 
@@ -102,16 +102,16 @@ def begin_work(config_loader):
     '''    
     directory_connector_module_name = config_loader.get_directory_connector_module_name()
     directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])    
-    directory_connector = connector.directory.DirectoryConnector(directory_connector_module)
+    directory_connector = directory.DirectoryConnector(directory_connector_module)
     
     directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
     directory_connector.initialize(directory_connector_options)
     
     dashboard_config = config_loader.get_dashboard_config()
-    dashboard_owning_connector = connector.dashboard.DashboardConnector(dashboard_config['owning'])
+    dashboard_owning_connector = dashboard.DashboardConnector(dashboard_config['owning'])
     dashboard_trustee_connectors = {}    
     for trustee_organization_name, trustee_config in dashboard_config['trustees'].iteritems():
-        dashboard_trustee_conector = connector.dashboard.DashboardConnector(trustee_config)
+        dashboard_trustee_conector = dashboard.DashboardConnector(trustee_config)
         dashboard_trustee_connectors[trustee_organization_name] = dashboard_trustee_conector 
     dashboard_connectors = rules.DashboardConnectors(dashboard_owning_connector, dashboard_trustee_connectors)
 
@@ -129,8 +129,12 @@ def main():
     config_bootstrap_options = {
         'config_directory': args.config_path,
         'main_config_filename': args.config_filename,
-    }        
-    config_loader = config.ConfigLoader(config_bootstrap_options)
+    }
+    try:        
+        config_loader = config.ConfigLoader(config_bootstrap_options)
+    except Exception as e:
+        logger.error('Problem loading main config. %s', e.message)
+        return
     init_log(config_loader.get_logging_config())
     
     config_options = {
@@ -145,7 +149,7 @@ def main():
         if (len(users_args) == 0):
             logger.error('Missing file path for --users %s [file_path]' % users_action)
             return
-        config_options['directory_connector_module_name'] = 'connector.directory_csv'
+        config_options['directory_connector_module_name'] = 'aedash.sync.connector.directory_csv'
         config_options['directory_connector_overridden_options'] = {'file_path': users_args.pop(0)}
     elif (users_action == 'group'):            
         if (len(users_args) == 0):

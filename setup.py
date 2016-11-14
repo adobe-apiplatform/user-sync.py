@@ -1,9 +1,10 @@
 from setuptools import setup
 
-setup(name='aedash_connector',
-      version='0.5.0',
-      packages=['aedash_connector'],
+setup(name='aedash_user_sync',
+      version='0.6.0',
+      packages=['aedash', 'aedash.sync', 'aedash.sync.connector'],
       install_requires=[
+          'pycrypto',
           'python-ldap==2.4.25',
           'PyYAML',
           'umapi',
@@ -11,7 +12,7 @@ setup(name='aedash_connector',
       ],
       entry_points={
           'console_scripts': [
-              'aedc = aedash_connector.app:main'
+              'aed_sync = aedash.sync.app:main'
           ]
       },
 )

@@ -1,4 +1,4 @@
-import helper
+from aedash.sync.connector import helper
 
 class DirectoryConnector(object):    
     def __init__(self, implementation):

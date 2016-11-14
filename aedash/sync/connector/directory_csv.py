@@ -1,5 +1,6 @@
-import helper
 import csv
+
+from aedash.sync.connector import helper
 
 def connector_metadata():
     metadata = {

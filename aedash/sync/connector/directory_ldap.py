@@ -1,7 +1,8 @@
-import helper
 import ldap
 import string
 from ldap.controls.libldap import SimplePagedResultsControl
+
+from aedash.sync.connector import helper
 
 def connector_metadata():
     metadata = {

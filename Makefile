@@ -3,8 +3,9 @@ pex:
 	pip install pex requests wheel
 	pip wheel -w wheelhouse -r requirements.txt
 	pex \
-		-v -o dist/aedc -m aedash_connector.app \
+		-v -o dist/aed_sync -m aedash.sync.app \
 		-f wheelhouse \
 		--disable-cache \
 		--not-zip-safe .
 	rm -rf wheelhouse
+

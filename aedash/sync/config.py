@@ -4,7 +4,7 @@ import re
 import types
 import yaml
 
-import rules
+from aedash.sync import rules
 
 DEFAULT_CONFIG_DIRECTORY = ''
 DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
@@ -35,7 +35,7 @@ class ConfigLoader(object):
         :type caller_options: dict
         '''
         options = {
-            'directory_connector_module_name': 'connector.directory_ldap',
+            'directory_connector_module_name': 'aedash.sync.connector.directory_ldap',
             'directory_connector_overridden_options': None,
             'directory_group_filter': None,
             'username_filter_regex': None,
@@ -140,7 +140,8 @@ class ConfigLoader(object):
                 source_filter_sources.append(connector_config.get('source_filter'))
             else:
                 new_connectors_config[connector_name] = connector_config = {}
-            source_filter_sources.append(directory_source_filters.get(connector_name))
+            if (directory_source_filters != None):
+                source_filter_sources.append(directory_source_filters.get(connector_name))
             connector_config['source_filters'] = self.get_dict_config(source_filter_sources)
                 
         groups_config = directory_config.get('groups')

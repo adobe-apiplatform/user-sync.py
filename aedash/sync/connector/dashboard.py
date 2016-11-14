@@ -11,9 +11,8 @@ from umapi.error import UMAPIError, UMAPIRetryError, UMAPIRequestError
 from umapi.helper import iter_paginate
 
 import jwt
-from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
-
 try:
+    from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
     jwt.register_algorithm('RS256', RSAAlgorithm(RSAAlgorithm.SHA256))
 except:
     pass
