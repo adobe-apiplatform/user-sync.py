@@ -28,7 +28,7 @@ directory:
     #
     # a group in dashboard_groups can be qualified with, the first part being
     # the trustee organization name.
-    # e.g. org1:Default Acrobat Pro DC configuration
+    # e.g. org1::Default Acrobat Pro DC configuration
     #
     # example group mappings:
     - directory_group: AdobeCC-All #Group CN
@@ -39,7 +39,7 @@ directory:
         - Photoshop Users
     - directory_group: acrobat
       dashboard_groups:
-        - org1:Default Acrobat Pro DC configuration
+        - org1::Default Acrobat Pro DC configuration
 
 logging:
   # specifies whether you wish to generate a log file

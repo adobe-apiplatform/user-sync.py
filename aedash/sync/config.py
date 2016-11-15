@@ -13,6 +13,8 @@ DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
 DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME = 'dashboard-owning-config.yml'
 DEFAULT_DASHBOARD_TRUSTEE_CONFIG_FILENAME_FORMAT = 'dashboard-trustee-{organization_name}-config.yml'
 
+GROUP_NAME_DELIMITER = '::'
+
 class ConfigLoader(object):
     def __init__(self, caller_options):
         '''
@@ -164,13 +166,14 @@ class ConfigLoader(object):
                     else:
                         new_groups_config[directory_group] = products = []
                         for adobe_group in adobe_groups:
-                            parts = adobe_group.split(':')
+                            parts = adobe_group.split(GROUP_NAME_DELIMITER)
                             product_name = parts.pop()
-                            organization_name = ':'.join(parts)
+                            organization_name = GROUP_NAME_DELIMITER.join(parts)
                             if (len(organization_name) == 0):
                                 organization_name = aedash.sync.rules.OWNING_ORGANIZATION_NAME
-                            product = aedash.sync.rules.Product(product_name, organization_name)
-                            products.append(product)
+                            if (len(product_name) > 0):
+                                product = aedash.sync.rules.Product(product_name, organization_name)
+                                products.append(product)
         
         return directory_config
     
