@@ -37,12 +37,12 @@ class DashboardConnector(object):
             'logger_name': DashboardConnector.name,
             'test_mode': False,
         }
-        if ('server' in caller_options):
-            caller_server_options = caller_options['server']
-            caller_server_options.pop('server', None)
-            if (isinstance(caller_server_options, dict)):
-                options['server'].update(caller_server_options)
-        options.update(caller_options)
+        for key, value in caller_options.iteritems():
+            if (key == 'server'):
+                if (isinstance(value, dict)):
+                    options[key].update(value)
+            else:
+                options[key] = value
         
         required_options = [
             'enterprise.org_id',
