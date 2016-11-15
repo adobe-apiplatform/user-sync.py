@@ -19,6 +19,7 @@ class RuleProcessor(object):
             'directory_group_filter': None,
             'username_filter_regex': None,
             
+            'new_account_type': ENTERPRISE_IDENTITY_TYPE,
             'manage_products': True,
             'update_user_info': True,
             
@@ -226,6 +227,7 @@ class RuleProcessor(object):
         self.logger.info('Adding user with user key: %s', user_key)
 
         options = self.options
+        default_new_account_type = options['new_account_type']
         update_user_info = options['update_user_info'] 
         manage_products = options['manage_products'] 
 
@@ -237,8 +239,15 @@ class RuleProcessor(object):
             attributes['country'] = country                
         attributes['option'] = "updateIfAlreadyExists" if update_user_info else 'ignoreIfAlreadyExists'
         
+        account_type = directory_user.get('identitytype')
+        if (account_type == None):
+            account_type = default_new_account_type
+        
         commands = Commands(directory_user['username'], directory_user['domain'])
-        commands.add_enterprise_user(attributes)
+        if (account_type == FEDERATED_IDENTITY_TYPE):
+            commands.add_federated_user(attributes)
+        else:
+            commands.add_enterprise_user(attributes)
         if (manage_products):
             desired_products_by_user_key = self.desired_products_by_organization.get(OWNING_ORGANIZATION_NAME)
             if (desired_products_by_user_key != None):

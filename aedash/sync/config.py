@@ -299,6 +299,7 @@ class ConfigLoader(object):
         result = {
             'directory_group_filter': options['directory_group_filter'],
             'username_filter_regex': options['username_filter_regex'],
+            'new_account_type': self.get_new_account_type(),
             'manage_products': options['manage_products'],
             'update_user_info': options['update_user_info'],
             'remove_list_delimiter': self.get_remove_list_delimiter(),
@@ -315,3 +316,10 @@ class ConfigLoader(object):
         if (delimiter == None):
             delimiter = DEFAULT_REMOVE_LIST_DELIMITER
         return delimiter
+    
+    def get_new_account_type(self):
+        directory_config = self.get_config_section('directory') 
+        new_account_type = directory_config.get('type')
+        if (new_account_type == None):
+            new_account_type = aedash.sync.rules.ENTERPRISE_IDENTITY_TYPE
+        return new_account_type
