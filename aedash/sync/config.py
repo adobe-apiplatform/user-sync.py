@@ -7,13 +7,14 @@ import yaml
 import aedash.sync.error
 import aedash.sync.rules
 
-
 DEFAULT_CONFIG_DIRECTORY = ''
 DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
 DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME = 'dashboard-owning-config.yml'
 DEFAULT_DASHBOARD_TRUSTEE_CONFIG_FILENAME_FORMAT = 'dashboard-trustee-{organization_name}-config.yml'
 
 GROUP_NAME_DELIMITER = '::'
+
+DEFAULT_REMOVE_LIST_DELIMITER = '\t'
 
 class ConfigLoader(object):
     def __init__(self, caller_options):
@@ -23,22 +24,7 @@ class ConfigLoader(object):
         self.options = options = {
             'config_directory': DEFAULT_CONFIG_DIRECTORY,
             'main_config_filename': DEFAULT_MAIN_CONFIG_FILENAME,            
-        }
-        options.update(caller_options)     
 
-        main_config_filename = options.get('main_config_filename')
-        self.main_config_path = main_config_path = self.get_file_path(main_config_filename)
-        
-        if (not os.path.isfile(main_config_path)):
-            raise aedash.sync.error.AssertionException('Config file does not exist: %s' % (main_config_path))  
-        
-        self.config_cache = {}
-        
-    def set_options(self, caller_options):          
-        '''
-        :type caller_options: dict
-        '''
-        options = {
             'directory_connector_module_name': 'aedash.sync.connector.directory_ldap',
             'directory_connector_overridden_options': None,
             'directory_group_filter': None,
@@ -54,8 +40,21 @@ class ConfigLoader(object):
             'remove_list_output_path': None,
             'remove_nonexistent_users': False
         }
-        options.update(caller_options)
-        self.options.update(options)        
+        options.update(caller_options)     
+
+        main_config_filename = options.get('main_config_filename')
+        self.main_config_path = main_config_path = self.get_file_path(main_config_filename)
+        
+        if (not os.path.isfile(main_config_path)):
+            raise aedash.sync.error.AssertionException('Config file does not exist: %s' % (main_config_path))  
+        
+        self.config_cache = {}
+        
+    def set_options(self, caller_options):          
+        '''
+        :type caller_options: dict
+        '''
+        self.options.update(caller_options)        
         
     def get_main_config(self):
         return self.get_config(None, self.load_main_config)
@@ -64,17 +63,20 @@ class ConfigLoader(object):
         return self.load_from_yaml(self.main_config_path) 
     
     def get_logging_config(self):
-        main_config = self.get_main_config()
-        return main_config.get('logging', {})
+        return self.get_config_section('logging')
 
     def get_dashboard_config(self):
         return self.get_config('dashboard', self.load_dashboard_config)
     
-    def load_dashboard_config(self):
+    def get_config_section(self, name):
         main_config = self.get_main_config()
-        dashboard_config = main_config.get('dashboard', None)
-        if (dashboard_config == None):
-            dashboard_config = {}
+        section = main_config.get(name, None)
+        if (not isinstance(section, dict)):
+            section = {}
+        return section
+    
+    def load_dashboard_config(self):
+        dashboard_config = self.get_config_section('dashboard') 
 
         owning_config_filename = dashboard_config.get('owning_config_filename', DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME)
         trustee_config_filename_format = dashboard_config.get('trustee_config_filename_format', DEFAULT_DASHBOARD_TRUSTEE_CONFIG_FILENAME_FORMAT)
@@ -125,8 +127,7 @@ class ConfigLoader(object):
         options = self.options
         directory_source_filters = options['directory_source_filters']
         
-        main_config = self.get_main_config()
-        directory_config = main_config.get('directory', {})
+        directory_config = self.get_config_section('directory') 
         
         connectors_config = directory_config.get('connectors')        
         directory_config['connectors'] = new_connectors_config = {}                
@@ -300,10 +301,17 @@ class ConfigLoader(object):
             'username_filter_regex': options['username_filter_regex'],
             'manage_products': options['manage_products'],
             'update_user_info': options['update_user_info'],
-            'remove_list_delimiter': options['remove_list_delimiter'],
+            'remove_list_delimiter': self.get_remove_list_delimiter(),
             'remove_user_key_list': options['remove_user_key_list'],
             'remove_list_output_path': options['remove_list_output_path'],
             'remove_nonexistent_users': options['remove_nonexistent_users']
 
         }
         return result
+
+    def get_remove_list_delimiter(self):
+        dashboard_config = self.get_config_section('dashboard') 
+        delimiter = dashboard_config.get('remove_list_delimiter')
+        if (delimiter == None):
+            delimiter = DEFAULT_REMOVE_LIST_DELIMITER
+        return delimiter

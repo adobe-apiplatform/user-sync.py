@@ -64,9 +64,6 @@ def process_args():
     parser.add_argument('-d', '--remove-list',
                         help='specifies the file containing the list of users to be removed. Users on this list are removeFromOrg\'ed on the Adobe side.',
                         metavar='input_path', dest='remove_list_input_path')
-    parser.add_argument('--remove-list-delimiter',
-                        help='(default: "%(default)s")',
-                        metavar='delimiter', default='\t', dest='remove_list_delimiter')
     return parser.parse_args()
 
 def init_log(caller_options):
@@ -141,7 +138,6 @@ def main():
         'test_mode': args.test_mode,        
         'manage_products': args.manage_products,
         'update_user_info': args.update_user_info,        
-        'remove_list_delimiter': args.remove_list_delimiter
     }
 
     users_args = args.users
@@ -169,7 +165,7 @@ def main():
     remove_list_input_path = args.remove_list_input_path
     if (remove_list_input_path != None):
         logger.info('Reading remove list from: %s', remove_list_input_path)
-        remove_user_key_list = aedash.sync.rules.RuleProcessor.read_remove_list(remove_list_input_path, args.remove_list_delimiter)
+        remove_user_key_list = aedash.sync.rules.RuleProcessor.read_remove_list(remove_list_input_path, config_loader.get_remove_list_delimiter())
         logger.info('Total users in remove list: %d', len(remove_user_key_list))
         config_options['remove_user_key_list'] = remove_user_key_list
          

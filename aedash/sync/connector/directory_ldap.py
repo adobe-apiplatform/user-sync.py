@@ -62,7 +62,10 @@ class LDAPDirectoryConnector(object):
         connection = ldap.initialize(host)
         connection.protocol_version = ldap.VERSION3
         connection.set_option(ldap.OPT_REFERRALS, 0)
-        connection.simple_bind_s(username, password)
+        try:
+            connection.simple_bind_s(username, password)
+        except Exception as e:
+            raise aedash.sync.error.AssertionException(repr(e))
         self.connection = connection
         logger.info('Connected')            
         
