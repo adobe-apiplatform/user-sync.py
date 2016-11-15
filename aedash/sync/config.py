@@ -50,6 +50,7 @@ class ConfigLoader(object):
             'update_user_info': True,
             
             'remove_user_key_list': None,
+            'remove_list_delimiter': '\t',
             'remove_list_output_path': None,
             'remove_nonexistent_users': False
         }
@@ -299,6 +300,7 @@ class ConfigLoader(object):
             'username_filter_regex': options['username_filter_regex'],
             'manage_products': options['manage_products'],
             'update_user_info': options['update_user_info'],
+            'remove_list_delimiter': options['remove_list_delimiter'],
             'remove_user_key_list': options['remove_user_key_list'],
             'remove_list_output_path': options['remove_list_output_path'],
             'remove_nonexistent_users': options['remove_nonexistent_users']

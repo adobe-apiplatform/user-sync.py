@@ -62,8 +62,11 @@ def process_args():
                         help='processing similar to --remove-nonexistent-users except that rather than performing removals, a file is generated (with the given pathname) listing users who would be removed. This file can then be given in the --remove-list argument in a subsequent run.',
                         metavar='output_path', dest='remove_list_output_path')
     parser.add_argument('-d', '--remove-list',
-                        help='specifies the file containing the list of users to be removed. Users on this list are removeFromOrg\'d on the Adobe side.',
+                        help='specifies the file containing the list of users to be removed. Users on this list are removeFromOrg\'ed on the Adobe side.',
                         metavar='input_path', dest='remove_list_input_path')
+    parser.add_argument('--remove-list-delimiter',
+                        help='(default: "%(default)s")',
+                        metavar='delimiter', default='\t', dest='remove_list_delimiter')
     return parser.parse_args()
 
 def init_log(caller_options):
@@ -137,7 +140,8 @@ def main():
     config_options = {
         'test_mode': args.test_mode,        
         'manage_products': args.manage_products,
-        'update_user_info': args.update_user_info
+        'update_user_info': args.update_user_info,        
+        'remove_list_delimiter': args.remove_list_delimiter
     }
 
     users_args = args.users
@@ -165,9 +169,10 @@ def main():
     remove_list_input_path = args.remove_list_input_path
     if (remove_list_input_path != None):
         logger.info('Reading remove list from: %s', remove_list_input_path)
-        config_options['remove_user_key_list'] = remove_user_key_list = aedash.sync.rules.RuleProcessor.read_remove_list(remove_list_input_path)
+        remove_user_key_list = aedash.sync.rules.RuleProcessor.read_remove_list(remove_list_input_path, args.remove_list_delimiter)
         logger.info('Total users in remove list: %d', len(remove_user_key_list))
-    
+        config_options['remove_user_key_list'] = remove_user_key_list
+         
     config_options['remove_list_output_path'] = remove_list_output_path = args.remove_list_output_path
     remove_nonexistent_users = args.remove_nonexistent_users
     if (remove_nonexistent_users and remove_list_output_path):

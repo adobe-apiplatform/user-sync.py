@@ -22,6 +22,7 @@ class RuleProcessor(object):
             'manage_products': True,
             'update_user_info': True,
             
+            'remove_list_delimiter': '\t',
             'remove_user_key_list': None,
             'remove_list_output_path': None,
             'remove_nonexistent_users': False
@@ -378,13 +379,14 @@ class RuleProcessor(object):
         return RuleProcessor.parse_user_key(user_key)[0]
     
     @staticmethod
-    def read_remove_list(file_path):
+    def read_remove_list(file_path, delimiter):
         '''
         :type file_path: str
+        :type delimiter: str
         '''
         result = []
         with open(file_path, 'r', 1) as input_file:
-            reader = csv.DictReader(input_file)
+            reader = csv.DictReader(input_file, delimiter = delimiter)
             for row in reader:
                 user = row.get('user')
                 domain = row.get('domain')
@@ -394,9 +396,11 @@ class RuleProcessor(object):
         return result
     
     def write_remove_list(self, file_path, dashboard_users):
+        options = self.options
+        
         total_users = 0
         with open(file_path, 'w', 1) as output_file:                
-            writer = csv.DictWriter(output_file, fieldnames = ['user', 'domain'])
+            writer = csv.DictWriter(output_file, fieldnames = ['user', 'domain'], delimiter = options['remove_list_delimiter'])
             writer.writeheader()
             for dashboard_user in dashboard_users:
                 user_key = self.get_dashboard_user_key(dashboard_user)
