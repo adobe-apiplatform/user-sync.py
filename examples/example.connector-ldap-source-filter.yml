@@ -1,0 +1,5 @@
+
+# specifies the source filter while retrieving the users from ldap.  The filter is a ldap query string that will be passed as is to the ldap server
+#
+# Example:  
+# all_users_filter: "(CN=WantedUsers*)"
