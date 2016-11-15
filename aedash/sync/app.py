@@ -154,8 +154,13 @@ def main():
             return
         config_options['directory_group_filter'] = users_args.pop(0).split(',')
     
-    if (args.username_filter_pattern):
-        config_options['username_filter_regex'] = re.compile(args.username_filter_pattern, re.IGNORECASE)
+    username_filter_pattern = args.username_filter_pattern 
+    if (username_filter_pattern):
+        try:
+            compiled_expression = re.compile(username_filter_pattern, re.IGNORECASE)
+        except Exception as e:
+            raise aedash.sync.error.AssertionException("Bad regular expression for --user-filter: %s reason: %s" % (username_filter_pattern, e.message))
+        config_options['username_filter_regex'] = compiled_expression
     
     remove_list_input_path = args.remove_list_input_path
     if (remove_list_input_path != None):
