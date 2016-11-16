@@ -20,7 +20,7 @@ class RuleProcessor(object):
             'username_filter_regex': None,
             
             'new_account_type': ENTERPRISE_IDENTITY_TYPE,
-            'manage_products': True,
+            'manage_groups': True,
             'update_user_info': True,
             
             'remove_list_delimiter': '\t',
@@ -32,7 +32,7 @@ class RuleProcessor(object):
         self.options = options        
         self.directory_user_by_user_key = {}
         self.filtered_directory_user_by_user_key = {}
-        self.desired_products_by_organization = {}
+        self.desired_groups_by_organization = {}
         self.dashboard_users_by_organization = {}
         self.orphaned_dashboard_users_by_organization = {}
         
@@ -45,9 +45,9 @@ class RuleProcessor(object):
         self.logger = logger = logging.getLogger('processor')
         logger.debug('Initialized with options: %s', options)
     
-    def read_desired_user_products(self, mappings, directory_connector):
+    def read_desired_user_groups(self, mappings, directory_connector):
         '''
-        :type mappings: dict(str, list(Product)
+        :type mappings: dict(str, list(Group)
         :type directory_connector: aedash.sync.connector.directory.DirectoryConnector
         '''
         self.logger.info('Building work list...')
@@ -81,17 +81,17 @@ class RuleProcessor(object):
                 continue
             
             filtered_directory_user_by_user_key[user_key] = directory_user            
-            self.get_user_desired_products(OWNING_ORGANIZATION_NAME, user_key)                         
+            self.get_user_desired_groups(OWNING_ORGANIZATION_NAME, user_key)                         
             for group in directory_user['groups']:
-                dashboard_products = mappings.get(group)
-                if (dashboard_products != None):
-                    for dashboard_product in dashboard_products:
-                        organization_name = dashboard_product.organization_name
-                        user_desired_products = self.get_user_desired_products(organization_name, user_key)
-                        user_desired_products.add(dashboard_product.product_name)
+                dashboard_groups = mappings.get(group)
+                if (dashboard_groups != None):
+                    for dashboard_group in dashboard_groups:
+                        organization_name = dashboard_group.organization_name
+                        user_desired_groups = self.get_user_desired_groups(organization_name, user_key)
+                        user_desired_groups.add(dashboard_group.group_name)
     
-        self.logger.info('Total users after filtering: %d', len(filtered_directory_user_by_user_key))
-        self.logger.debug('Product work list: %s', self.desired_products_by_organization)
+        self.logger.info('Total directory users after filtering: %d', len(filtered_directory_user_by_user_key))
+        self.logger.debug('Group work list: %s', self.desired_groups_by_organization)
 
     
     def is_directory_user_in_groups(self, directory_user, groups):
@@ -107,22 +107,22 @@ class RuleProcessor(object):
                 return True
         return False
     
-    def get_user_desired_products(self, organization_name, user_key):
-        desired_products_by_organization = self.desired_products_by_organization
-        organization_desired_products = desired_products_by_organization.get(organization_name)
-        if (organization_desired_products == None):
-            desired_products_by_organization[organization_name] = organization_desired_products = {}
-        user_desired_products = organization_desired_products.get(user_key)
-        if (user_desired_products == None):
-            organization_desired_products[user_key] = user_desired_products = set()
-        return user_desired_products     
+    def get_user_desired_groups(self, organization_name, user_key):
+        desired_groups_by_organization = self.desired_groups_by_organization
+        organization_desired_groups = desired_groups_by_organization.get(organization_name)
+        if (organization_desired_groups == None):
+            desired_groups_by_organization[organization_name] = organization_desired_groups = {}
+        user_desired_groups = organization_desired_groups.get(user_key)
+        if (user_desired_groups == None):
+            organization_desired_groups[user_key] = user_desired_groups = set()
+        return user_desired_groups     
     
     def process_dashboard_users(self, dashboard_connectors):
         '''
         :type dashboard_connectors: DashboardConnectors
         '''        
         options = self.options
-        manage_products = options['manage_products'] 
+        manage_groups = options['manage_groups'] 
         
         dashboard_users_by_organization = self.dashboard_users_by_organization
         orphaned_dashboard_users_by_organization = self.orphaned_dashboard_users_by_organization
@@ -130,25 +130,25 @@ class RuleProcessor(object):
         added_dashboard_user_keys = set()
 
         self.logger.info('Syncing owning...') 
-        owning_dashboard_users, owning_orphaned_dashboard_users, owning_unprocessed_products_by_user_key = self.update_dashboard_users_for_connector(OWNING_ORGANIZATION_NAME, dashboard_connectors.get_owning_connector())
+        owning_dashboard_users, owning_orphaned_dashboard_users, owning_unprocessed_groups_by_user_key = self.update_dashboard_users_for_connector(OWNING_ORGANIZATION_NAME, dashboard_connectors.get_owning_connector())
         dashboard_users_by_organization[OWNING_ORGANIZATION_NAME] = owning_dashboard_users
         orphaned_dashboard_users_by_organization[OWNING_ORGANIZATION_NAME] = owning_orphaned_dashboard_users 
-        for user_key in owning_unprocessed_products_by_user_key.iterkeys():
+        for user_key in owning_unprocessed_groups_by_user_key.iterkeys():
             self.add_dashboard_user(user_key, dashboard_connectors)
             added_dashboard_user_keys.add(user_key)
 
-        if (self.find_orphaned_dashboard_users or manage_products):
+        if (self.find_orphaned_dashboard_users or manage_groups):
             for organization_name, dashboard_connector in dashboard_connectors.get_trustee_connectors().iteritems():
                 self.logger.info('Syncing trustee %s...', organization_name) 
-                trustee_dashboard_users, trustee_orphaned_dashboard_users, trustee_unprocessed_products_by_user_key = self.update_dashboard_users_for_connector(organization_name, dashboard_connector)
+                trustee_dashboard_users, trustee_orphaned_dashboard_users, trustee_unprocessed_groups_by_user_key = self.update_dashboard_users_for_connector(organization_name, dashboard_connector)
                 dashboard_users_by_organization[organization_name] = trustee_dashboard_users
                 orphaned_dashboard_users_by_organization[organization_name] = trustee_orphaned_dashboard_users 
-                if (manage_products):
-                    for user_key, desired_products in trustee_unprocessed_products_by_user_key.iteritems():
+                if (manage_groups):
+                    for user_key, desired_groups in trustee_unprocessed_groups_by_user_key.iteritems():
                         if (user_key in added_dashboard_user_keys):
                             continue
                         directory_user = self.directory_user_by_user_key[user_key]
-                        self.add_products_for_connector(directory_user, desired_products, dashboard_connector)
+                        self.add_groups_for_connector(directory_user, desired_groups, dashboard_connector)
                     
     def iter_orphaned_federated_dashboard_users(self):
         owning_orphaned_dashboard_users = self.orphaned_dashboard_users_by_organization[OWNING_ORGANIZATION_NAME]
@@ -200,7 +200,7 @@ class RuleProcessor(object):
                     if (dashboard_users == None) or (user_key in dashboard_users):
                         username, domain = self.parse_user_key(user_key)
                         commands = Commands(username, domain)
-                        commands.remove_all_products()
+                        commands.remove_all_groups()
                         dashboard_connector.send_commands(commands)
 
             dashboard_users = dashboard_users_by_organization[OWNING_ORGANIZATION_NAME]
@@ -229,7 +229,7 @@ class RuleProcessor(object):
         options = self.options
         default_new_account_type = options['new_account_type']
         update_user_info = options['update_user_info'] 
-        manage_products = options['manage_products'] 
+        manage_groups = options['manage_groups'] 
 
         directory_user = self.directory_user_by_user_key[user_key]
 
@@ -248,39 +248,39 @@ class RuleProcessor(object):
             commands.add_federated_user(attributes)
         else:
             commands.add_enterprise_user(attributes)
-        if (manage_products):
-            desired_products_by_user_key = self.desired_products_by_organization.get(OWNING_ORGANIZATION_NAME)
-            if (desired_products_by_user_key != None):
-                desired_products = desired_products_by_user_key.get(user_key)
-                commands.add_products(desired_products)
+        if (manage_groups):
+            desired_groups_by_user_key = self.desired_groups_by_organization.get(OWNING_ORGANIZATION_NAME)
+            if (desired_groups_by_user_key != None):
+                desired_groups = desired_groups_by_user_key.get(user_key)
+                commands.add_groups(desired_groups)
 
         def callback(create_action, is_success, error):
             if is_success:
-                if (manage_products):
-                    self.add_products_for_trustee_connectors(directory_user, dashboard_connectors.trustee_connectors)
+                if (manage_groups):
+                    self.add_groups_for_trustee_connectors(directory_user, dashboard_connectors.trustee_connectors)
         dashboard_connectors.get_owning_connector().send_commands(commands, callback)
 
-    def add_products_for_trustee_connectors(self, directory_user, trustee_dashboard_connectors):
+    def add_groups_for_trustee_connectors(self, directory_user, trustee_dashboard_connectors):
         '''
         :type directory_user: dict
         :type trustee_dashboard_connectors: dict(str, aedash.sync.connector.dashboard.DashboardConnector)
         '''
-        desired_products_by_organization = self.desired_products_by_organization    
+        desired_groups_by_organization = self.desired_groups_by_organization    
         for organization_name, dashboard_connector in trustee_dashboard_connectors.iteritems():
-            desired_products_by_user_key = desired_products_by_organization.get(organization_name)
-            if desired_products_by_user_key != None:
+            desired_groups_by_user_key = desired_groups_by_organization.get(organization_name)
+            if desired_groups_by_user_key != None:
                 user_key = RuleProcessor.get_directory_user_key(directory_user)
-                desired_products = desired_products_by_user_key.get(user_key)
-                self.add_products_for_connector(directory_user, desired_products, dashboard_connector)
+                desired_groups = desired_groups_by_user_key.get(user_key)
+                self.add_groups_for_connector(directory_user, desired_groups, dashboard_connector)
 
-    def add_products_for_connector(self, directory_user, desired_products, dashboard_connector):
+    def add_groups_for_connector(self, directory_user, desired_groups, dashboard_connector):
         '''
         :type directory_user: dict
-        :type desired_products: set(str)
+        :type desired_groups: set(str)
         :type dashboard_connector: aedash.sync.connector.dashboard.DashboardConnector
         '''
         commands = Commands(directory_user['username'], directory_user['domain'])
-        commands.add_products(desired_products)
+        commands.add_groups(desired_groups)
         dashboard_connector.send_commands(commands)
             
     def update_dashboard_users_for_connector(self, organization_name, dashboard_connector):
@@ -291,14 +291,14 @@ class RuleProcessor(object):
         directory_user_by_user_key = self.directory_user_by_user_key
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
         
-        desired_products_by_user_key = self.desired_products_by_organization.get(organization_name)
-        desired_products_by_user_key = {} if desired_products_by_user_key == None else desired_products_by_user_key.copy()        
+        desired_groups_by_user_key = self.desired_groups_by_organization.get(organization_name)
+        desired_groups_by_user_key = {} if desired_groups_by_user_key == None else desired_groups_by_user_key.copy()        
         all_dashboard_users = {}
         orphaned_dashboard_users = {}
         
         options = self.options
         update_user_info = options['update_user_info']
-        manage_products = options['manage_products'] 
+        manage_groups = options['manage_groups'] 
         
         for dashboard_user in dashboard_connector.iter_users():
             user_key = RuleProcessor.get_dashboard_user_key(dashboard_user)
@@ -309,32 +309,32 @@ class RuleProcessor(object):
                 orphaned_dashboard_users[user_key] = dashboard_user
                 continue     
 
-            desired_products = desired_products_by_user_key.pop(user_key, None)
-            if (desired_products == None):
+            desired_groups = desired_groups_by_user_key.pop(user_key, None)
+            if (desired_groups == None):
                 if (user_key not in filtered_directory_user_by_user_key):
                     continue
-                desired_products = set()
+                desired_groups = set()
             
             user_attribute_difference = None
             if (update_user_info and organization_name == OWNING_ORGANIZATION_NAME):
                 user_attribute_difference = self.get_user_attribute_difference(directory_user, dashboard_user)
             
-            products_to_add = None
-            products_to_remove = None    
-            if (manage_products):        
-                current_products = dashboard_user.get('groups')
-                current_products = set() if current_products == None else set(current_products)            
+            groups_to_add = None
+            groups_to_remove = None    
+            if (manage_groups):        
+                current_groups = dashboard_user.get('groups')
+                current_groups = set() if current_groups == None else set(current_groups)            
 
-                products_to_add = desired_products - current_products
-                products_to_remove = current_products - desired_products
+                groups_to_add = desired_groups - current_groups
+                groups_to_remove = current_groups - desired_groups
 
             commands = Commands(directory_user['username'], directory_user['domain'])
             commands.update_user(user_attribute_difference)
-            commands.add_products(products_to_add)
-            commands.remove_products(products_to_remove)
+            commands.add_groups(groups_to_add)
+            commands.remove_groups(groups_to_remove)
             dashboard_connector.send_commands(commands)
                 
-        return (all_dashboard_users, orphaned_dashboard_users, desired_products_by_user_key)
+        return (all_dashboard_users, orphaned_dashboard_users, desired_groups_by_user_key)
     
     def get_user_attribute_difference(self, directory_user, dashboard_user):
         differences = {}
@@ -450,13 +450,13 @@ class DashboardConnectors(object):
             if not had_work:
                 break
     
-class Product(object):
-    def __init__(self, product_name, organization_name):
+class Group(object):
+    def __init__(self, group_name, organization_name):
         '''
-        :type product_name: str
+        :type group_name: str
         :type organization_name: str        
         '''
-        self.product_name = product_name
+        self.group_name = group_name
         self.organization_name = organization_name
     
     def __eq__(self, other):

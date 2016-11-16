@@ -33,11 +33,10 @@ class ConfigLoader(object):
             'directory_source_filters': None,
 
             'test_mode': False,            
-            'manage_products': True,
+            'manage_groups': True,
             'update_user_info': True,
             
             'remove_user_key_list': None,
-            'remove_list_delimiter': '\t',
             'remove_list_output_path': None,
             'remove_nonexistent_users': False
         }
@@ -166,16 +165,16 @@ class ConfigLoader(object):
                     elif (adobe_groups == None or len(adobe_groups) == 0):
                         pass
                     else:
-                        new_groups_config[directory_group] = products = []
+                        new_groups_config[directory_group] = groups = []
                         for adobe_group in adobe_groups:
                             parts = adobe_group.split(GROUP_NAME_DELIMITER)
-                            product_name = parts.pop()
+                            group_name = parts.pop()
                             organization_name = GROUP_NAME_DELIMITER.join(parts)
                             if (len(organization_name) == 0):
                                 organization_name = aedash.sync.rules.OWNING_ORGANIZATION_NAME
-                            if (len(product_name) > 0):
-                                product = aedash.sync.rules.Product(product_name, organization_name)
-                                products.append(product)
+                            if (len(group_name) > 0):
+                                group = aedash.sync.rules.Group(group_name, organization_name)
+                                groups.append(group)
         
         return directory_config
     
@@ -304,7 +303,7 @@ class ConfigLoader(object):
             'directory_group_filter': options['directory_group_filter'],
             'username_filter_regex': options['username_filter_regex'],
             'new_account_type': self.get_new_account_type(),
-            'manage_products': options['manage_products'],
+            'manage_groups': options['manage_groups'],
             'update_user_info': options['update_user_info'],
             'remove_list_delimiter': self.get_remove_list_delimiter(),
             'remove_user_key_list': options['remove_user_key_list'],

@@ -147,23 +147,23 @@ class Commands(object):
         if (attributes != None and len(attributes) > 0):
             self.do_list.append(('update', attributes))
 
-    def add_products(self, products_to_add):
+    def add_groups(self, groups_to_add):
         '''
-        :type products_to_add: set(str)
+        :type groups_to_add: set(str)
         '''
-        if (products_to_add != None and len(products_to_add) > 0):
-            products = Commands.get_json_serializable(products_to_add)
-            self.do_list.append(('add', products))
+        if (groups_to_add != None and len(groups_to_add) > 0):
+            groups = Commands.get_json_serializable(groups_to_add)
+            self.do_list.append(('add', groups))
 
-    def remove_products(self, products_to_remove):
+    def remove_groups(self, groups_to_remove):
         '''
-        :type products_to_remove: set(str)
+        :type groups_to_remove: set(str)
         '''
-        if (products_to_remove != None and len(products_to_remove) > 0):
-            products = Commands.get_json_serializable(products_to_remove)
-            self.do_list.append(('remove', products))
+        if (groups_to_remove != None and len(groups_to_remove) > 0):
+            groups = Commands.get_json_serializable(groups_to_remove)
+            self.do_list.append(('remove', groups))
     
-    def remove_all_products(self):
+    def remove_all_groups(self):
         self.do_list.append(('remove', 'all'))
     
     def add_federated_user(self, attributes):

@@ -7,7 +7,6 @@ def create_logger(options):
     logger_name = options.get('logger_name')
     if (logger_name == None):
         logger_name = 'connector'
-    logging.basicConfig(level = logging.INFO)
     return logging.getLogger(logger_name)
      
 def create_blank_user():

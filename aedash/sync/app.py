@@ -54,7 +54,7 @@ def process_args():
                         action='store_true', dest='update_user_info')
     parser.add_argument('--process-groups', 
                         help="if the membership in mapped groups differs between the customer side and the Adobe side, the group membership is updated on the Adobe side so that the memberships in mapped groups matches the customer side.", 
-                        action='store_true', dest='manage_products')
+                        action='store_true', dest='manage_groups')
     parser.add_argument('--remove-nonexistent-users',
                         help='Causes the user sync tool to remove Federated users that exist on the Adobe side if they are not in the customer side AD. This has the effect of deleting the user account if that account is owned by the organization under which the sync operation is being run.',
                         action='store_true', dest='remove_nonexistent_users')
@@ -118,7 +118,7 @@ def begin_work(config_loader):
 
     rule_config = config_loader.get_rule_config()
     rule_processor = aedash.sync.rules.RuleProcessor(rule_config)
-    rule_processor.read_desired_user_products(config_loader.get_directory_groups(), directory_connector)
+    rule_processor.read_desired_user_groups(config_loader.get_directory_groups(), directory_connector)
     rule_processor.process_dashboard_users(dashboard_connectors)
     rule_processor.clean_dashboard_users(dashboard_connectors)
     
@@ -136,7 +136,7 @@ def main():
     
     config_options = {
         'test_mode': args.test_mode,        
-        'manage_products': args.manage_products,
+        'manage_groups': args.manage_groups,
         'update_user_info': args.update_user_info,        
     }
 
