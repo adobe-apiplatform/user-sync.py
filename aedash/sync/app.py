@@ -105,7 +105,7 @@ def begin_work(config_loader):
     directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])    
     directory_connector = aedash.sync.connector.directory.DirectoryConnector(directory_connector_module)
     
-    directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
+    directory_connector_options = config_loader.get_directory_connector_config(directory_connector.name)
     directory_connector.initialize(directory_connector_options)
     
     dashboard_config = config_loader.get_dashboard_config()

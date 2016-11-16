@@ -4,6 +4,7 @@ import re
 import types
 import yaml
 
+from aedash.sync import credential_manager
 import aedash.sync.error
 import aedash.sync.rules
 
@@ -96,8 +97,8 @@ class ConfigLoader(object):
             'test_mode': self.options['test_mode'],
             'logger_name': 'dashboard.owning'
         })
-        dashboard_config['owning'] = self.get_dict_config(owning_config_sources)
-                
+        dashboard_config['owning'] = self.create_dashboard_connector_config(owning_config_sources) 
+        
         trustees_config = dashboard_config.get('trustees')
         if (not isinstance(trustees_config, dict)):
             trustees_config = {}
@@ -115,8 +116,7 @@ class ConfigLoader(object):
                 'test_mode': self.options['test_mode'],
                 'logger_name': 'dashboard.trustee.%s' % organization_name
             })
-            combined_trustee_config = self.get_dict_config(trustee_config_sources)
-            new_trustees_config[organization_name] = combined_trustee_config
+            new_trustees_config[organization_name] = self.create_dashboard_connector_config(trustee_config_sources)
         
         return dashboard_config
     
@@ -185,9 +185,8 @@ class ConfigLoader(object):
         '''
         options = self.options
         return options['directory_connector_module_name']
-        #return __import__(directory_connector_module_name, fromlist=[''])    
     
-    def get_directory_connector_options(self, connector_name):
+    def get_directory_connector_config(self, connector_name):
         '''
         :rtype dict
         '''
@@ -195,7 +194,12 @@ class ConfigLoader(object):
         directory_config = self.get_directory_config()        
         configs.append(directory_config['connectors'].get(connector_name))
         configs.append(self.options['directory_connector_overridden_options'])
-        return self.combine_dicts(configs)
+        
+        result = self.combine_dicts(configs)
+        credential_config = credential_manager.get_credentials(credential_manager.DIRECTORY_CREDENTIAL_TYPE, connector_name, config = result, config_loader = self)
+        if (isinstance(credential_config, dict)):
+            result.update(credential_config)
+        return result
     
     def get_directory_groups(self):
         '''
@@ -323,3 +327,14 @@ class ConfigLoader(object):
         if (new_account_type == None):
             new_account_type = aedash.sync.rules.ENTERPRISE_IDENTITY_TYPE
         return new_account_type
+
+    def create_dashboard_connector_config(self, connector_config_sources):
+        connector_config = self.get_dict_config(connector_config_sources)
+        enterprise_section = connector_config.get('enterprise')
+        if (isinstance(enterprise_section, dict)):
+            org_id = enterprise_section.get('org_id')
+            if (org_id != None):                    
+                credential_config = credential_manager.get_credentials(credential_manager.UMAPI_CREDENTIAL_TYPE, org_id, config = enterprise_section, config_loader = self)
+                if (isinstance(credential_config, dict)):
+                    enterprise_section.update(credential_config)
+        return connector_config
