@@ -165,7 +165,9 @@ class ConfigLoader(object):
                     elif (adobe_groups == None or len(adobe_groups) == 0):
                         pass
                     else:
-                        new_groups_config[directory_group] = groups = []
+                        groups = new_groups_config.get(directory_group)
+                        if (groups == None):
+                            new_groups_config[directory_group] = groups = []
                         for adobe_group in adobe_groups:
                             parts = adobe_group.split(GROUP_NAME_DELIMITER)
                             group_name = parts.pop()

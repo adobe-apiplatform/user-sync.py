@@ -61,9 +61,9 @@ class RuleProcessor(object):
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
         remove_user_key_list = self.remove_user_key_list
 
-        directory_groups = mappings.keys()
+        directory_groups = set(mappings.iterkeys())
         if (directory_group_filter != None):
-            directory_groups.extend(directory_group_filter)
+            directory_groups.union(directory_group_filter)
         all_loaded, directory_users = directory_connector.load_users_and_groups(directory_groups) 
         if (not all_loaded and self.find_orphaned_dashboard_users):
             self.logger.warn('Not all users loaded.  Cannot check orphaned users...')
@@ -137,18 +137,17 @@ class RuleProcessor(object):
             self.add_dashboard_user(user_key, dashboard_connectors)
             added_dashboard_user_keys.add(user_key)
 
-        if (self.find_orphaned_dashboard_users or manage_groups):
-            for organization_name, dashboard_connector in dashboard_connectors.get_trustee_connectors().iteritems():
-                self.logger.info('Syncing trustee %s...', organization_name) 
-                trustee_dashboard_users, trustee_orphaned_dashboard_users, trustee_unprocessed_groups_by_user_key = self.update_dashboard_users_for_connector(organization_name, dashboard_connector)
-                dashboard_users_by_organization[organization_name] = trustee_dashboard_users
-                orphaned_dashboard_users_by_organization[organization_name] = trustee_orphaned_dashboard_users 
-                if (manage_groups):
-                    for user_key, desired_groups in trustee_unprocessed_groups_by_user_key.iteritems():
-                        if (user_key in added_dashboard_user_keys):
-                            continue
-                        directory_user = self.directory_user_by_user_key[user_key]
-                        self.add_groups_for_connector(directory_user, desired_groups, dashboard_connector)
+        for organization_name, dashboard_connector in dashboard_connectors.get_trustee_connectors().iteritems():
+            self.logger.info('Syncing trustee %s...', organization_name) 
+            trustee_dashboard_users, trustee_orphaned_dashboard_users, trustee_unprocessed_groups_by_user_key = self.update_dashboard_users_for_connector(organization_name, dashboard_connector)
+            dashboard_users_by_organization[organization_name] = trustee_dashboard_users
+            orphaned_dashboard_users_by_organization[organization_name] = trustee_orphaned_dashboard_users 
+            if (manage_groups):
+                for user_key, desired_groups in trustee_unprocessed_groups_by_user_key.iteritems():
+                    if (user_key in added_dashboard_user_keys):
+                        continue
+                    directory_user = self.directory_user_by_user_key[user_key]
+                    self.add_groups_for_connector(directory_user, desired_groups, dashboard_connector)
                     
     def iter_orphaned_federated_dashboard_users(self):
         owning_orphaned_dashboard_users = self.orphaned_dashboard_users_by_organization[OWNING_ORGANIZATION_NAME]
