@@ -100,7 +100,23 @@ def init_log(caller_options):
 def begin_work(config_loader):
     '''
     :type config_loader: config.ConfigLoader
-    '''    
+    '''
+
+    directory_groups = config_loader.get_directory_groups()
+    dashboard_config = config_loader.get_dashboard_config()
+    
+    referenced_organization_names = set()
+    for groups in directory_groups.itervalues():
+        for group in groups:
+            organization_name = group.organization_name
+            if (organization_name != aedash.sync.rules.OWNING_ORGANIZATION_NAME):
+                referenced_organization_names.add(organization_name)
+    trustee_dashboard_configs = dashboard_config['trustees']
+    referenced_organization_names.difference_update(trustee_dashboard_configs.iterkeys())
+    
+    if (len(referenced_organization_names) > 0):
+        logger.warn('No config for referenced dashboard: %s', referenced_organization_names) 
+        
     directory_connector_module_name = config_loader.get_directory_connector_module_name()
     directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])    
     directory_connector = aedash.sync.connector.directory.DirectoryConnector(directory_connector_module)
@@ -108,17 +124,16 @@ def begin_work(config_loader):
     directory_connector_options = config_loader.get_directory_connector_config(directory_connector.name)
     directory_connector.initialize(directory_connector_options)
     
-    dashboard_config = config_loader.get_dashboard_config()
     dashboard_owning_connector = aedash.sync.connector.dashboard.DashboardConnector(dashboard_config['owning'])
     dashboard_trustee_connectors = {}    
-    for trustee_organization_name, trustee_config in dashboard_config['trustees'].iteritems():
+    for trustee_organization_name, trustee_config in trustee_dashboard_configs.iteritems():
         dashboard_trustee_conector = aedash.sync.connector.dashboard.DashboardConnector(trustee_config)
         dashboard_trustee_connectors[trustee_organization_name] = dashboard_trustee_conector 
     dashboard_connectors = aedash.sync.rules.DashboardConnectors(dashboard_owning_connector, dashboard_trustee_connectors)
 
     rule_config = config_loader.get_rule_config()
     rule_processor = aedash.sync.rules.RuleProcessor(rule_config)
-    rule_processor.read_desired_user_groups(config_loader.get_directory_groups(), directory_connector)
+    rule_processor.read_desired_user_groups(directory_groups, directory_connector)
     rule_processor.process_dashboard_users(dashboard_connectors)
     rule_processor.clean_dashboard_users(dashboard_connectors)
     

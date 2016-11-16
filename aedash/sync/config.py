@@ -204,7 +204,7 @@ class ConfigLoader(object):
     
     def get_directory_groups(self):
         '''
-        :rtype dict
+        :rtype dict(str, list(aedash.sync.rules.Group))
         '''
         directory_config = self.get_directory_config()
         return directory_config['groups']        
