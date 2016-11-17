@@ -13,6 +13,7 @@ from umapi.error import UMAPIError, UMAPIRetryError, UMAPIRequestError
 from umapi.helper import iter_paginate
 
 import aedash.sync.error
+import aedash.sync.helper
 
 try:
     from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
@@ -71,11 +72,7 @@ class DashboardConnector(object):
         
         # the JWT object build the JSON Web Token
         logger.info('Creating jwt for org id: "%s" using private key file: "%s"', org_id, private_key_file_path)
-        try:
-            private_key_file = open(private_key_file_path, 'r')
-        except IOError as e:
-            raise aedash.sync.error.AssertionException(repr(e))
-        with private_key_file:
+        with aedash.sync.helper.open_file(private_key_file_path, 'r') as private_key_file:
             adobe_jwt_request = JWT(
                 org_id,
                 enterprise_options['tech_acct'],

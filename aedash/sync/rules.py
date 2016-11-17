@@ -2,7 +2,7 @@ import csv
 import logging
 
 import aedash.sync.connector.dashboard
-import aedash.sync.error
+import aedash.sync.helper
 
 ENTERPRISE_IDENTITY_TYPE = 'enterpriseID'
 FEDERATED_IDENTITY_TYPE = 'federatedID'
@@ -393,11 +393,7 @@ class RuleProcessor(object):
         :type delimiter: str
         '''
         result = []
-        try:
-            input_file = open(file_path, 'r', 1)
-        except IOError as e:
-            raise aedash.sync.error.AssertionException(repr(e))
-        with input_file:
+        with aedash.sync.helper.open_file(file_path, 'r', 1) as input_file:
             reader = csv.DictReader(input_file, delimiter = delimiter)
             for row in reader:
                 user = row.get('user')

@@ -1,7 +1,7 @@
 import csv
 
-import aedash.sync.error
 import aedash.sync.connector.helper
+import aedash.sync.helper
 
 def connector_metadata():
     metadata = {
@@ -55,11 +55,7 @@ class CSVDirectoryConnector(object):
         options = self.options
         file_path = options['file_path']
         self.logger.info('Reading from: %s', file_path)
-        try:
-            input_file = open(file_path, 'r', 1)
-        except IOError as e:
-            raise aedash.sync.error.AssertionException(repr(e))
-        with input_file:
+        with aedash.sync.helper.open_file(file_path, 'r', 1) as input_file:
             reader = csv.DictReader(input_file, delimiter = options['delimiter'])
             self.users = users = self.read_users(reader)
                         
