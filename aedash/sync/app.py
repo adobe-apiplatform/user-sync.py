@@ -180,7 +180,7 @@ def main():
     remove_list_input_path = args.remove_list_input_path
     if (remove_list_input_path != None):
         logger.info('Reading remove list from: %s', remove_list_input_path)
-        remove_user_key_list = aedash.sync.rules.RuleProcessor.read_remove_list(remove_list_input_path, config_loader.get_remove_list_delimiter())
+        remove_user_key_list = aedash.sync.rules.RuleProcessor.read_remove_list(remove_list_input_path)
         logger.info('Total users in remove list: %d', len(remove_user_key_list))
         config_options['remove_user_key_list'] = remove_user_key_list
          

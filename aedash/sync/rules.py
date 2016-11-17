@@ -23,7 +23,6 @@ class RuleProcessor(object):
             'manage_groups': True,
             'update_user_info': True,
             
-            'remove_list_delimiter': '\t',
             'remove_user_key_list': None,
             'remove_list_output_path': None,
             'remove_nonexistent_users': False
@@ -345,13 +344,6 @@ class RuleProcessor(object):
         return differences        
 
     @staticmethod
-    def normalize_string(string_value):
-        '''
-        :type string_value: str
-        '''
-        return string_value.strip().lower() if string_value != None else None
-    
-    @staticmethod
     def get_directory_user_key(directory_user):
         '''
         :type directory_user: dict
@@ -367,9 +359,9 @@ class RuleProcessor(object):
     
     @staticmethod
     def get_user_key(username, domain, email):
-        username = RuleProcessor.normalize_string(username)
-        domain = RuleProcessor.normalize_string(domain)
-        email = RuleProcessor.normalize_string(email)
+        username = aedash.sync.helper.normalize_string(username)
+        domain = aedash.sync.helper.normalize_string(domain)
+        email = aedash.sync.helper.normalize_string(email)
 
         if (username == None):
             return email
@@ -387,13 +379,15 @@ class RuleProcessor(object):
         return RuleProcessor.parse_user_key(user_key)[0]
     
     @staticmethod
-    def read_remove_list(file_path, delimiter):
+    def read_remove_list(file_path, delimiter = None):
         '''
         :type file_path: str
         :type delimiter: str
         '''
         result = []
         with aedash.sync.helper.open_file(file_path, 'r', 1) as input_file:
+            if (delimiter == None):
+                delimiter = aedash.sync.helper.guess_delimiter_from_filename(file_path)            
             reader = csv.DictReader(input_file, delimiter = delimiter)
             for row in reader:
                 user = row.get('user')
@@ -404,11 +398,10 @@ class RuleProcessor(object):
         return result
     
     def write_remove_list(self, file_path, dashboard_users):
-        options = self.options
-        
         total_users = 0
-        with open(file_path, 'w', 1) as output_file:                
-            writer = csv.DictWriter(output_file, fieldnames = ['user', 'domain'], delimiter = options['remove_list_delimiter'])
+        with open(file_path, 'w', 1) as output_file:
+            delimiter = aedash.sync.helper.guess_delimiter_from_filename(file_path)            
+            writer = csv.DictWriter(output_file, fieldnames = ['user', 'domain'], delimiter = delimiter)
             writer.writeheader()
             for dashboard_user in dashboard_users:
                 user_key = self.get_dashboard_user_key(dashboard_user)

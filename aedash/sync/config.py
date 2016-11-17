@@ -15,8 +15,6 @@ DEFAULT_DASHBOARD_TRUSTEE_CONFIG_FILENAME_FORMAT = 'dashboard-trustee-{organizat
 
 GROUP_NAME_DELIMITER = '::'
 
-DEFAULT_REMOVE_LIST_DELIMITER = '\t'
-
 class ConfigLoader(object):
     def __init__(self, caller_options):
         '''
@@ -307,7 +305,6 @@ class ConfigLoader(object):
             'new_account_type': self.get_new_account_type(),
             'manage_groups': options['manage_groups'],
             'update_user_info': options['update_user_info'],
-            'remove_list_delimiter': self.get_remove_list_delimiter(),
             'remove_user_key_list': options['remove_user_key_list'],
             'remove_list_output_path': options['remove_list_output_path'],
             'remove_nonexistent_users': options['remove_nonexistent_users']
@@ -315,13 +312,6 @@ class ConfigLoader(object):
         }
         return result
 
-    def get_remove_list_delimiter(self):
-        dashboard_config = self.get_config_section('dashboard') 
-        delimiter = dashboard_config.get('remove_list_delimiter')
-        if (delimiter == None):
-            delimiter = DEFAULT_REMOVE_LIST_DELIMITER
-        return delimiter
-    
     def get_new_account_type(self):
         directory_config = self.get_config_section('directory') 
         new_account_type = directory_config.get('type')

@@ -30,7 +30,7 @@ class CSVDirectoryConnector(object):
     
     def __init__(self, caller_options):
         options = {
-            'delimiter': '\t',
+            'delimiter': None,
             'first_name_column_name': 'firstname',
             'last_name_column_name': 'lastname',
             'email_column_name': 'email',
@@ -56,7 +56,10 @@ class CSVDirectoryConnector(object):
         file_path = options['file_path']
         self.logger.info('Reading from: %s', file_path)
         with aedash.sync.helper.open_file(file_path, 'r', 1) as input_file:
-            reader = csv.DictReader(input_file, delimiter = options['delimiter'])
+            delimiter = options['delimiter']
+            if (delimiter == None):
+                delimiter = aedash.sync.helper.guess_delimiter_from_filename(file_path)
+            reader = csv.DictReader(input_file, delimiter = delimiter)
             self.users = users = self.read_users(reader)
                         
         self.logger.info('Number of users loaded: %d', len(users))
