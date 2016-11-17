@@ -1,5 +1,4 @@
 pycrypto
 PyYAML
-python-ldap==2.4.25
 psutil
 misc/lib/umapi-1.0.1.tar.gz
