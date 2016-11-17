@@ -1,6 +1,7 @@
 import csv
 
-from aedash.sync.connector import helper
+import aedash.sync.error
+import aedash.sync.connector.helper
 
 def connector_metadata():
     metadata = {
@@ -43,7 +44,7 @@ class CSVDirectoryConnector(object):
         options.update(caller_options)
 
         self.options = options
-        self.logger = helper.create_logger(options)
+        self.logger = aedash.sync.connector.helper.create_logger(options)
         
 
     def load_users_and_groups(self, groups):
@@ -54,7 +55,11 @@ class CSVDirectoryConnector(object):
         options = self.options
         file_path = options['file_path']
         self.logger.info('Reading from: %s', file_path)
-        with open(file_path, 'r', 1) as input_file:
+        try:
+            input_file = open(file_path, 'r', 1)
+        except IOError as e:
+            raise aedash.sync.error.AssertionException(repr(e))
+        with input_file:
             reader = csv.DictReader(input_file, delimiter = options['delimiter'])
             self.users = users = self.read_users(reader)
                         
@@ -90,7 +95,7 @@ class CSVDirectoryConnector(object):
             
             user = users.get(email)
             if (user == None):
-                user = helper.create_blank_user()
+                user = aedash.sync.connector.helper.create_blank_user()
                 user['email'] = email
                 users[email] = user
             

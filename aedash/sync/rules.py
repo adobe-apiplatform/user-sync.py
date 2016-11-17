@@ -1,8 +1,8 @@
 import csv
 import logging
 
-from aedash.sync.connector.dashboard import Commands
-
+import aedash.sync.connector.dashboard
+import aedash.sync.error
 
 ENTERPRISE_IDENTITY_TYPE = 'enterpriseID'
 FEDERATED_IDENTITY_TYPE = 'federatedID'
@@ -198,7 +198,7 @@ class RuleProcessor(object):
                 for user_key in remove_user_key_list:
                     if (dashboard_users == None) or (user_key in dashboard_users):
                         username, domain = self.parse_user_key(user_key)
-                        commands = Commands(username, domain)
+                        commands = aedash.sync.connector.dashboard.Commands(username, domain)
                         commands.remove_all_groups()
                         dashboard_connector.send_commands(commands)
 
@@ -206,7 +206,7 @@ class RuleProcessor(object):
             for user_key in remove_user_key_list:
                 if (user_key in dashboard_users):
                     username, domain = self.parse_user_key(user_key)
-                    commands = Commands(username, domain)
+                    commands = aedash.sync.connector.dashboard.Commands(username, domain)
                     commands.remove_from_org()
                     dashboard_connectors.get_owning_connector().send_commands(commands)
         
@@ -242,7 +242,7 @@ class RuleProcessor(object):
         if (account_type == None):
             account_type = default_new_account_type
         
-        commands = Commands(directory_user['username'], directory_user['domain'])
+        commands = aedash.sync.connector.dashboard.Commands(directory_user['username'], directory_user['domain'])
         if (account_type == FEDERATED_IDENTITY_TYPE):
             commands.add_federated_user(attributes)
         else:
@@ -278,7 +278,7 @@ class RuleProcessor(object):
         :type desired_groups: set(str)
         :type dashboard_connector: aedash.sync.connector.dashboard.DashboardConnector
         '''
-        commands = Commands(directory_user['username'], directory_user['domain'])
+        commands = aedash.sync.connector.dashboard.Commands(directory_user['username'], directory_user['domain'])
         commands.add_groups(desired_groups)
         dashboard_connector.send_commands(commands)
             
@@ -327,7 +327,7 @@ class RuleProcessor(object):
                 groups_to_add = desired_groups - current_groups
                 groups_to_remove = current_groups - desired_groups
 
-            commands = Commands(directory_user['username'], directory_user['domain'])
+            commands = aedash.sync.connector.dashboard.Commands(directory_user['username'], directory_user['domain'])
             commands.update_user(user_attribute_difference)
             commands.add_groups(groups_to_add)
             commands.remove_groups(groups_to_remove)
@@ -393,7 +393,11 @@ class RuleProcessor(object):
         :type delimiter: str
         '''
         result = []
-        with open(file_path, 'r', 1) as input_file:
+        try:
+            input_file = open(file_path, 'r', 1)
+        except IOError as e:
+            raise aedash.sync.error.AssertionException(repr(e))
+        with input_file:
             reader = csv.DictReader(input_file, delimiter = delimiter)
             for row in reader:
                 user = row.get('user')

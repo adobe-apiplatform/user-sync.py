@@ -70,8 +70,12 @@ class DashboardConnector(object):
         um_endpoint = "https://" + server_options['host'] + server_options['endpoint']    
         
         # the JWT object build the JSON Web Token
-        logger.info('Creating jwt for org id: "%s" using private key file: "%s"', org_id, private_key_file_path)            
-        with open(private_key_file_path, 'r') as private_key_file:
+        logger.info('Creating jwt for org id: "%s" using private key file: "%s"', org_id, private_key_file_path)
+        try:
+            private_key_file = open(private_key_file_path, 'r')
+        except IOError as e:
+            raise aedash.sync.error.AssertionException(repr(e))
+        with private_key_file:
             adobe_jwt_request = JWT(
                 org_id,
                 enterprise_options['tech_acct'],
@@ -99,7 +103,7 @@ class DashboardConnector(object):
         logger.info('API initialized on: %s', um_endpoint)
         
         self.action_manager = ActionManager(api_delegate, org_id, logger)
-        
+    
     def get_users(self):
         return list(self.iter_users())
 
