@@ -32,7 +32,7 @@ class LDAPDirectoryConnector(object):
     def __init__(self, caller_options):
         options = {
             'group_filter_format': '(&(|(objectCategory=group)(objectClass=groupOfNames))(cn={group}))',
-            'all_users_filter': '(&(objectClass=person)(|(objectClass=top)(objectClass=user)))',
+            'all_users_filter': '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))',
             'require_tls_cert': False,
             'user_email_format': '{mail}',
             'user_username_format': None,

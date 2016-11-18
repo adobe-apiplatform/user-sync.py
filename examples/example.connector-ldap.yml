@@ -4,15 +4,21 @@ host: [LDAP HOST URL.  e.g. ldap://ldap.example.com]
 base_dn: [defines the base DN. e.g. DC=example,DC=com]
 
 # specifies the string format used to construct a group query.
-# {group} is replaced with the name of the group to find.
+# {group} is replaced with the name of the group to find.  Default is:
+# group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames))(cn={group}))"
 #
-# example:
-# group_filter_format': "(&(|(objectCategory=group)(objectClass=groupOfNames))(cn={group}))"
+# example for AD 
+# group_filter_format: "(&(objectCategory=group)(cn={group}))"
+#
+# example for OpenLDAP
+# group_filter_format: "(&(objectClass=groupOfNames)(cn={group}))"
 
 # specifies the string filter used to find all users in the directory.
+# Default, intending for AD, is:
+# all_users_filter = "(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
 #
-# example:
-# all_users_filter': "(&(objectClass=person)(|(objectClass=top)(objectClass=user)))"
+# example for OpenLDAP
+# all_users_filter: "(&(objectClass=person)(objectClass=top))"
 
 # specifies how an email address is retrieved in the system.
 # the string is a string format, with names enclosed by curly brackets replaced
