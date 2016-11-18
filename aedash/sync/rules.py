@@ -42,7 +42,13 @@ class RuleProcessor(object):
         self.find_orphaned_dashboard_users = options['remove_list_output_path'] != None or options['remove_nonexistent_users']
                 
         self.logger = logger = logging.getLogger('processor')
-        logger.debug('Initialized with options: %s', options)
+        
+        if (logger.isEnabledFor(logging.DEBUG)):
+            options_to_report = options.copy()
+            username_filter_regex = options_to_report['username_filter_regex']
+            if (username_filter_regex != None):
+                options_to_report['username_filter_regex'] = "%s: %s" % (type(username_filter_regex), username_filter_regex.pattern)
+            logger.debug('Initialized with options: %s', options_to_report)            
     
     def read_desired_user_groups(self, mappings, directory_connector):
         '''
