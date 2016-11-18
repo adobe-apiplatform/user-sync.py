@@ -115,7 +115,7 @@ def begin_work(config_loader):
     referenced_organization_names.difference_update(trustee_dashboard_configs.iterkeys())
     
     if (len(referenced_organization_names) > 0):
-        logger.warn('No config for referenced dashboard: %s', referenced_organization_names) 
+        raise aedash.sync.error.AssertionException('dashboard_groups have references to unknown trustee dashboards: %s' % referenced_organization_names) 
         
     directory_connector_module_name = config_loader.get_directory_connector_module_name()
     directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])    

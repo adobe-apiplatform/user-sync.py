@@ -94,7 +94,7 @@ class ConfigLoader(object):
             'test_mode': self.options['test_mode'],
             'logger_name': 'dashboard.owning'
         })
-        dashboard_config['owning'] = self.create_dashboard_connector_config(owning_config_sources) 
+        dashboard_config['owning'] = self.create_dashboard_connector_config(owning_config_sources, 'owning_dashboard') 
         
         trustees_config = dashboard_config.get('trustees')
         if (not isinstance(trustees_config, dict)):
@@ -113,7 +113,7 @@ class ConfigLoader(object):
                 'test_mode': self.options['test_mode'],
                 'logger_name': 'dashboard.trustee.%s' % organization_name
             })
-            new_trustees_config[organization_name] = self.create_dashboard_connector_config(trustee_config_sources)
+            new_trustees_config[organization_name] = self.create_dashboard_connector_config(trustee_config_sources, 'trustee_dashboard[%s]' % organization_name)
         
         return dashboard_config
     
@@ -131,7 +131,7 @@ class ConfigLoader(object):
         if (isinstance(connectors_config, dict)):
             for key, item in connectors_config.iteritems():
                 config_sources = self.get_config_sources(item)
-                new_connectors_config[key] = self.get_dict_config(config_sources)
+                new_connectors_config[key] = self.get_dict_config(config_sources, 'directory[%s]' % key)
                 
         connector_names = set(new_connectors_config.iterkeys())
         if (directory_source_filters != None):
@@ -145,7 +145,7 @@ class ConfigLoader(object):
                 new_connectors_config[connector_name] = connector_config = {}
             if (directory_source_filters != None):
                 source_filter_sources.append(directory_source_filters.get(connector_name))
-            connector_config['source_filters'] = self.get_dict_config(source_filter_sources)
+            connector_config['source_filters'] = self.get_dict_config(source_filter_sources, 'directory[%s].source_filters' % key)
                 
         groups_config = directory_config.get('groups')
         directory_config['groups'] = new_groups_config = {}                
@@ -211,7 +211,7 @@ class ConfigLoader(object):
         values = value if (isinstance(value, types.ListType)) else [value]
         return values
         
-    def get_configs(self, sources):
+    def get_configs(self, sources, owner):
         '''
         :type sources: list
         '''        
@@ -222,15 +222,17 @@ class ConfigLoader(object):
                 if (os.path.isfile(absolute_path)):
                     config = self.load_from_yaml(absolute_path)
                     configs.append(config)
+                else:
+                    raise aedash.sync.error.AssertionException('Cannot find file: %s for: %s' % (absolute_path, owner))
             else:
                 configs.append(source)
         return configs
     
-    def get_dict_config(self, sources):
+    def get_dict_config(self, sources, owner):
         '''
         :type sources: list
         '''        
-        configs = self.get_configs(sources)
+        configs = self.get_configs(sources, owner)
         return self.combine_dicts(configs)
 
     def get_absolute_file_path(self, value):
@@ -319,8 +321,8 @@ class ConfigLoader(object):
             new_account_type = aedash.sync.rules.ENTERPRISE_IDENTITY_TYPE
         return new_account_type
 
-    def create_dashboard_connector_config(self, connector_config_sources):
-        connector_config = self.get_dict_config(connector_config_sources)
+    def create_dashboard_connector_config(self, connector_config_sources, owner):
+        connector_config = self.get_dict_config(connector_config_sources, owner)
         enterprise_section = connector_config.get('enterprise')
         if (isinstance(enterprise_section, dict)):
             org_id = enterprise_section.get('org_id')
