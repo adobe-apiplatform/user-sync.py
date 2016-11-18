@@ -156,18 +156,18 @@ def main():
     }
 
     users_args = args.users
-    users_action = users_args.pop(0)
+    users_action = aedash.sync.helper.normalize_string(users_args.pop(0))
     if (users_action == 'file'):
         if (len(users_args) == 0):
-            logger.error('Missing file path for --users %s [file_path]' % users_action)
-            return
+            raise aedash.sync.error.AssertionException('Missing file path for --users %s [file_path]' % users_action)
         config_options['directory_connector_module_name'] = 'aedash.sync.connector.directory_csv'
         config_options['directory_connector_overridden_options'] = {'file_path': users_args.pop(0)}
     elif (users_action == 'group'):            
         if (len(users_args) == 0):
-            logger.error('Missing groups for --users %s [groups]' % users_action)
-            return
+            raise aedash.sync.error.AssertionException('Missing groups for --users %s [groups]' % users_action)
         config_options['directory_group_filter'] = users_args.pop(0).split(',')
+    elif (users_action != 'all'):
+        raise aedash.sync.error.AssertionException('Unknown argument --users %s' % users_action)
     
     username_filter_pattern = args.username_filter_pattern 
     if (username_filter_pattern):
@@ -201,7 +201,7 @@ def main():
                 connector_name: source_filter_file_path
             } 
         else:
-            logger.warn("Invalid arg for --source-filter: %s", source_filter_args)
+            raise aedash.sync.error.AssertionException("Invalid arg for --source-filter: %s" % source_filter_args)
     
     config_loader.set_options(config_options)
     

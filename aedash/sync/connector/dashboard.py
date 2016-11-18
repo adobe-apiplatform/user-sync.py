@@ -195,6 +195,7 @@ class Commands(object):
     
 class ActionManager(object):
     max_actions = 10
+    next_request_id = 1
 
     def __init__(self, api_delegate, org_id, logger):
         '''
@@ -206,15 +207,14 @@ class ActionManager(object):
         self.api_delegate = api_delegate
         self.org_id = org_id
         self.logger = logger.getChild('action')
-        self.next_request_id = 1;
 
     def add_action(self, action, callback = None):
         '''
         :type action: umapi.Action
         :type callback: callable(umapi.Action, bool, dict)
         '''
-        action.data['requestID'] = request_id = 'action_%d' % self.next_request_id
-        self.next_request_id += 1
+        action.data['requestID'] = request_id = 'action_%d' % ActionManager.next_request_id
+        ActionManager.next_request_id += 1
         
         item = {
             'request_id': request_id,
@@ -222,8 +222,8 @@ class ActionManager(object):
             'callback': callback
         }
         self.items.append(item)
-        self.logger.log(logging.INFO, 'Added request: %s', json.dumps(action.data))
-        if len(self.items) >= self.max_actions:
+        self.logger.log(logging.INFO, 'Added action: %s', json.dumps(action.data))
+        if len(self.items) >= ActionManager.max_actions:
             self.execute()
     
     def has_work(self):
@@ -235,7 +235,7 @@ class ActionManager(object):
 
         items = self.items
         self.items = []
-        self.logger.info('Executing total number of actions: %d', len(items))
+        self.logger.info('Executing actions: %s', [item['request_id'] for item in items])
         while True:
             num_attempts += 1
 

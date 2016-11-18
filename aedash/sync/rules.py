@@ -186,12 +186,14 @@ class RuleProcessor(object):
             remove_list_output_path = options['remove_list_output_path']
             remove_nonexistent_users = options['remove_nonexistent_users']
             
+            orphaned_federated_dashboard_users = list(self.iter_orphaned_federated_dashboard_users())
+            self.logger.info('Federated orphaned users to be removed: %s', [self.get_dashboard_user_key(dashboard_user) for dashboard_user in orphaned_federated_dashboard_users])        
+            
             if (remove_list_output_path != None):
                 self.logger.info('Writing remove list to: %s', remove_list_output_path)
-                self.write_remove_list(remove_list_output_path, self.iter_orphaned_federated_dashboard_users())
+                self.write_remove_list(remove_list_output_path, orphaned_federated_dashboard_users)
             elif (remove_nonexistent_users):
-                self.logger.info('Registering federated orphaned users to be removed...')        
-                for dashboard_user in self.iter_orphaned_federated_dashboard_users():
+                for dashboard_user in orphaned_federated_dashboard_users:
                     user_key = self.get_dashboard_user_key(dashboard_user)
                     remove_user_key_list.add(user_key)
             
@@ -202,6 +204,7 @@ class RuleProcessor(object):
                 dashboard_users = dashboard_users_by_organization.get(organization_name)
                 for user_key in remove_user_key_list:
                     if (dashboard_users == None) or (user_key in dashboard_users):
+                        self.logger.info('Removing all groups for user key: %s', user_key)
                         username, domain = self.parse_user_key(user_key)
                         commands = aedash.sync.connector.dashboard.Commands(username, domain)
                         commands.remove_all_groups()
@@ -210,6 +213,7 @@ class RuleProcessor(object):
             dashboard_users = dashboard_users_by_organization[OWNING_ORGANIZATION_NAME]
             for user_key in remove_user_key_list:
                 if (user_key in dashboard_users):
+                    self.logger.info('Removing user for user key: %s', user_key)
                     username, domain = self.parse_user_key(user_key)
                     commands = aedash.sync.connector.dashboard.Commands(username, domain)
                     commands.remove_from_org()
@@ -322,6 +326,8 @@ class RuleProcessor(object):
             user_attribute_difference = None
             if (update_user_info and organization_name == OWNING_ORGANIZATION_NAME):
                 user_attribute_difference = self.get_user_attribute_difference(directory_user, dashboard_user)
+                if (len(user_attribute_difference) > 0):
+                    self.logger.info('Updating info for user key: %s changes: %s', user_key, user_attribute_difference)
             
             groups_to_add = None
             groups_to_remove = None    
@@ -331,6 +337,8 @@ class RuleProcessor(object):
 
                 groups_to_add = desired_groups - current_groups
                 groups_to_remove = current_groups - desired_groups
+                if (len(groups_to_add) > 0 or len(groups_to_remove) > 0):
+                    self.logger.info('Managing groups for user key: %s added: %s removed: %s', user_key, groups_to_add, groups_to_remove)
 
             commands = aedash.sync.connector.dashboard.Commands(directory_user['username'], directory_user['domain'])
             commands.update_user(user_attribute_difference)
