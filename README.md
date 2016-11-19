@@ -82,10 +82,10 @@ optional arguments:
 
 # Configuration
 
-See `examples/example.user-sync-config.yml` for the main configuration template.  The main configuation file user-sync-config.yml must exist in the configuration path.
+See `examples/example.user-sync-config.yml` for the main configuration template.  The main configuration file user-sync-config.yml must exist in the configuration path.
 
-See `examples/example.dashboard-config.yml` for the dashboard configuration template.  
+See `examples/example.dashboard-config.yml` for the dashboard configuration template.  The tool would try and find dashboard-owning-config.yml in the configuration path.
 
-See `examples/example.connector-ldap.yml` for the ldap configuration template.  
+See `examples/example.connector-ldap.yml` for the ldap configuration template.  The main configuration file can be configured to reference this file.
 
 # Supported Workflows

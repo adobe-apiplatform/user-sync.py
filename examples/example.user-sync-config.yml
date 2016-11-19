@@ -13,12 +13,28 @@ dashboard:
   # trustees:
   #   org1: example.dashboard-config.yml    
 
+  # specifies the filename for the owning org configuration.  Default is:
+  # owning_config_filename: "dashboard-owning-config.yml"
+  
+  # specifies the filename format for the trustee org configurations.  
+  # a filename that matches the format will have the organization name extracted 
+  # from the filename. Default is:
+  # trustee_config_filename_format: "dashboard-trustee-{organization_name}-config.yml"
+
 directory:
   connectors:
     # specifies the configurations for the difference directory connectors
-    # [name_of_connector] : dictionary itself for the configuration or string
-    # or list of strings to the files containing the configurations   
-    ldap: example.connector-ldap.yml
+    # The format is name : value, where value can be:
+    # a dictionary for the actual configuration, or 
+    # a string for the file containing the configuration, or
+    # a list containing a mixture of dictionaries and strings
+    #
+    # examples:   
+    # ldap: example.connector-ldap.yml
+    # ldap: 
+    #   - host: [LDAP host URL]
+    #     base_dn: [base DN]
+    #   - connector-ldap-credentials.yml
  
   groups:
     # specifies the list of group mappings, with each group mapping consisting
@@ -30,16 +46,16 @@ directory:
     # the trustee organization name.
     # e.g. org1::Default Acrobat Pro DC configuration
     #
-    # example group mappings:
-    - directory_group: AdobeCC-All #Group CN
-      dashboard_groups:
-        - All Apps
-    - directory_group: AdobeCC-Photoshop
-      dashboard_groups:
-        - Photoshop Users
-    - directory_group: acrobat
-      dashboard_groups:
-        - org1::Default Acrobat Pro DC configuration
+    # examples:
+    # - directory_group: AdobeCC-All #Group CN
+    #   dashboard_groups:
+    #     - All Apps
+    # - directory_group: AdobeCC-Photoshop
+    #   dashboard_groups:
+    #     - Photoshop Users
+    # - directory_group: acrobat
+    #   dashboard_groups:
+    #     - org1::Default Acrobat Pro DC configuration
 
 logging:
   # specifies whether you wish to generate a log file

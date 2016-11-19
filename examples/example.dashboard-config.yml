@@ -1,6 +1,5 @@
 server:
-  # These are the defaults.
-  #
+  # This section describes the location of the servers used for the dashboard. Default is:
   # host: usermanagement.adobe.io
   # endpoint: /v2/usermanagement
   # ims_host: ims-na1.adobelogin.com

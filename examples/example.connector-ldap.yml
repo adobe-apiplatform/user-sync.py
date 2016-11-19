@@ -22,12 +22,16 @@ base_dn: [defines the base DN. e.g. DC=example,DC=com]
 
 # specifies how an email address is retrieved in the system.
 # the string is a string format, with names enclosed by curly brackets replaced
-# by the corresponding attributes for a user.
+# by the corresponding attributes for a user. Default is:
+# user_email_format: "{mail}"
 #
-# example:
-# user_email_format: {mail}
+# other example: 
+# user_email_format: "{sAMAccountName}@example.com"
 
-# set to True if you want to validate SSL cert
+# specifies the result page size.  Default is:
+# search_page_size: 200
+
+# set to True if you want to validate SSL cert.  Default is:
 # require_tls_cert: False
 
 
