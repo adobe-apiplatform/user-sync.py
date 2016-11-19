@@ -1,4 +1,4 @@
 pycrypto
 PyYAML
 psutil
-misc/lib/umapi-1.0.1.tar.gz
+git+http://stash.ensemble.com/scm/adobe/adobe-creative-cloud-enterprise-user-management-python-api.git@v2
