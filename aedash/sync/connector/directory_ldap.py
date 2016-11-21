@@ -54,7 +54,8 @@ class LDAPDirectoryConnector(object):
         require_tls_cert = options['require_tls_cert']
         host = options['host']
         username = options['username']
-        password = options['password']
+        password = options.pop('password')
+        logger.debug('Initialized with options: %s', options)            
 
         logger.info('Connecting to: %s using username: %s', host, username)            
         if not require_tls_cert:

@@ -44,8 +44,8 @@ class CSVDirectoryConnector(object):
         options.update(caller_options)
 
         self.options = options
-        self.logger = aedash.sync.connector.helper.create_logger(options)
-        
+        self.logger = logger = aedash.sync.connector.helper.create_logger(options)
+        logger.debug('Initialized with options: %s', options)            
 
     def load_users_and_groups(self, groups):
         '''
