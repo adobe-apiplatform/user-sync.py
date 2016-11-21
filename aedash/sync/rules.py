@@ -93,7 +93,8 @@ class RuleProcessor(object):
                     for dashboard_group in dashboard_groups:
                         organization_name = dashboard_group.organization_name
                         user_desired_groups = self.get_user_desired_groups(organization_name, user_key)
-                        user_desired_groups.add(dashboard_group.group_name)
+                        normalized_group_name = aedash.sync.helper.normalize_string(dashboard_group.group_name)
+                        user_desired_groups.add(normalized_group_name)
     
         self.logger.info('Total directory users after filtering: %d', len(filtered_directory_user_by_user_key))
         self.logger.debug('Group work list: %s', self.desired_groups_by_organization)
@@ -332,8 +333,12 @@ class RuleProcessor(object):
             groups_to_add = None
             groups_to_remove = None    
             if (manage_groups):        
-                current_groups = dashboard_user.get('groups')
-                current_groups = set() if current_groups == None else set(current_groups)            
+                current_groups = set()
+                dashboard_current_groups = dashboard_user.get('groups')
+                if (dashboard_current_groups != None):
+                    for dashboard_current_group in dashboard_current_groups:
+                        normalized_group_name = aedash.sync.helper.normalize_string(dashboard_current_group)
+                        current_groups.add(normalized_group_name)
 
                 groups_to_add = desired_groups - current_groups
                 groups_to_remove = current_groups - desired_groups
