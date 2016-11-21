@@ -89,7 +89,8 @@ class ConfigLoader(object):
              
         owning_config = dashboard_config.get('owning', {})
         owning_config_sources = self.get_config_sources(owning_config)
-        owning_config_sources.append(owning_config_filename)
+        if (os.path.isfile(owning_config_filename)):
+            owning_config_sources.append(owning_config_filename)
         owning_config_sources.append({
             'test_mode': self.options['test_mode'],
             'logger_name': 'dashboard.owning'
