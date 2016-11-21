@@ -195,11 +195,9 @@ class ConfigLoader(object):
         configs.append(directory_config['connectors'].get(connector_name))
         configs.append(self.options['directory_connector_overridden_options'])
         
-        result = self.combine_dicts(configs)
-        credential_config = credential_manager.get_credentials(credential_manager.DIRECTORY_CREDENTIAL_TYPE, connector_name, config = result, config_loader = self)
-        if (isinstance(credential_config, dict)):
-            result.update(credential_config)
-        return result
+        current_config = self.combine_dicts(configs)
+        credential_config_source = credential_manager.get_credentials(credential_manager.DIRECTORY_CREDENTIAL_TYPE, connector_name, config = current_config, config_loader = self)
+        return self.get_dict_config([current_config, credential_config_source], "directory_credential_manager")
     
     def get_directory_groups(self):
         '''
@@ -328,7 +326,8 @@ class ConfigLoader(object):
         if (isinstance(enterprise_section, dict)):
             org_id = enterprise_section.get('org_id')
             if (org_id != None):                    
-                credential_config = credential_manager.get_credentials(credential_manager.UMAPI_CREDENTIAL_TYPE, org_id, config = enterprise_section, config_loader = self)
-                if (isinstance(credential_config, dict)):
-                    enterprise_section.update(credential_config)
+                credential_config_source = credential_manager.get_credentials(credential_manager.UMAPI_CREDENTIAL_TYPE, org_id, config = enterprise_section, config_loader = self)
+                new_enterprise_section = self.get_dict_config([enterprise_section, credential_config_source], "dashboard_credential_manager[%s]" % org_id)
+                connector_config['enterprise'] = new_enterprise_section
+
         return connector_config
