@@ -23,3 +23,5 @@ pex:
 		--not-zip-safe .
 	$(RM) wheelhouse
 
+test:
+	nosetests --no-byte-compile tests
