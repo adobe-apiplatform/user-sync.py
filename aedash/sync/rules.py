@@ -1,3 +1,4 @@
+import collections
 import csv
 import logging
 
@@ -117,7 +118,7 @@ class RuleProcessor(object):
         desired_groups_by_organization = self.desired_groups_by_organization
         organization_desired_groups = desired_groups_by_organization.get(organization_name)
         if (organization_desired_groups == None):
-            desired_groups_by_organization[organization_name] = organization_desired_groups = {}
+            desired_groups_by_organization[organization_name] = organization_desired_groups = collections.OrderedDict()
         user_desired_groups = organization_desired_groups.get(user_key)
         if (user_desired_groups == None):
             organization_desired_groups[user_key] = user_desired_groups = set()

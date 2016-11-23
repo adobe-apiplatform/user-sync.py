@@ -1,5 +1,7 @@
 import csv
 
+import aedash.sync.connector.dashboard
+
 def write_to_separated_value_file(field_names, delimiter, items, output_file_path):
     with open(output_file_path, 'w', 1) as output_file:
         writer = csv.DictWriter(output_file, fieldnames = field_names, delimiter = delimiter)
@@ -36,5 +38,17 @@ def assert_equal_users(unit_test, expected_users, actual_users):
         assert_equal_field_values(unit_test, expected_user, actual_user, ['firstname', 'lastname', 'email', 'country'])
         unit_test.assertSetEqual(set(expected_user['groups']), set(actual_user['groups']))
 
+def assert_equal_dashboard_commands(unit_test, expected_commands, actual_commands):
+    unit_test.assertEqual(expected_commands.__dict__, actual_commands.__dict__)
 
-    
+def assert_equal_dashboard_commands_list(unit_test, expected_commands_list, actual_commands_list):
+    unit_test.assertEqual(len(expected_commands_list), len(actual_commands_list))    
+    for i in range(0, len(expected_commands_list) - 1):
+        expected_commands = expected_commands_list[i]
+        actual_commands = actual_commands_list[i]
+        assert_equal_dashboard_commands(unit_test, expected_commands, actual_commands)
+        
+def create_dashboard_commands(user):
+    commands = aedash.sync.connector.dashboard.Commands(user['username'], user['domain'])
+    return commands
+

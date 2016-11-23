@@ -6,12 +6,9 @@ import aedash.sync.connector.directory
 import aedash.sync.connector.directory_csv
 import tests.helper
 
-import logging
-
 class CSVDirectoryTest(unittest.TestCase):
 
     def test_normal(self):
-        logging.debug("Hello")
         _, file_path = tempfile.mkstemp(".csv")
         
         field_names = ['firstname', 'lastname', 'email', 'country', 'groups']
