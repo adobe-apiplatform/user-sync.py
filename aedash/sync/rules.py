@@ -32,15 +32,13 @@ class RuleProcessor(object):
         self.options = options        
         self.directory_user_by_user_key = {}
         self.filtered_directory_user_by_user_key = {}
-        self.desired_groups_by_organization = {}
-        self.dashboard_users_by_organization = {}
-        self.orphaned_dashboard_users_by_organization = {}
+        self.organization_info_by_organization = {}
         
         remove_user_key_list = options['remove_user_key_list']
         remove_user_key_list = set(remove_user_key_list) if (remove_user_key_list != None) else set()
         self.remove_user_key_list = remove_user_key_list
         
-        self.find_orphaned_dashboard_users = options['remove_list_output_path'] != None or options['remove_nonexistent_users']
+        self.need_to_find_orphaned_dashboard_users = options['remove_list_output_path'] != None or options['remove_nonexistent_users']
                 
         self.logger = logger = logging.getLogger('processor')
         
@@ -50,6 +48,12 @@ class RuleProcessor(object):
             if (username_filter_regex != None):
                 options_to_report['username_filter_regex'] = "%s: %s" % (type(username_filter_regex), username_filter_regex.pattern)
             logger.debug('Initialized with options: %s', options_to_report)            
+    
+    def get_organization_info(self, organization_name):
+        organization_info = self.organization_info_by_organization.get(organization_name)
+        if (organization_info == None):
+            self.organization_info_by_organization[organization_name] = organization_info = OrganizationInfo(organization_name)
+        return organization_info
     
     def read_desired_user_groups(self, mappings, directory_connector):
         '''
@@ -71,10 +75,10 @@ class RuleProcessor(object):
         if (directory_group_filter != None):
             directory_groups.union(directory_group_filter)
         all_loaded, directory_users = directory_connector.load_users_and_groups(directory_groups) 
-        if (not all_loaded and self.find_orphaned_dashboard_users):
+        if (not all_loaded and self.need_to_find_orphaned_dashboard_users):
             self.logger.warn('Not all users loaded.  Cannot check orphaned users...')
-            self.find_orphaned_dashboard_users = False
-                                       
+            self.need_to_find_orphaned_dashboard_users = False
+        
         for directory_user in directory_users:
             user_key = RuleProcessor.get_directory_user_key(directory_user)
             directory_user_by_user_key[user_key] = directory_user            
@@ -86,20 +90,18 @@ class RuleProcessor(object):
             if (user_key in remove_user_key_list):
                 continue
             
-            filtered_directory_user_by_user_key[user_key] = directory_user            
-            self.get_user_desired_groups(OWNING_ORGANIZATION_NAME, user_key)                         
+            filtered_directory_user_by_user_key[user_key] = directory_user
+            self.get_organization_info(OWNING_ORGANIZATION_NAME).add_desired_group_for(user_key, None)
             for group in directory_user['groups']:
                 dashboard_groups = mappings.get(group)
                 if (dashboard_groups != None):
                     for dashboard_group in dashboard_groups:
                         organization_name = dashboard_group.organization_name
-                        user_desired_groups = self.get_user_desired_groups(organization_name, user_key)
-                        normalized_group_name = aedash.sync.helper.normalize_string(dashboard_group.group_name)
-                        user_desired_groups.add(normalized_group_name)
+                        self.get_organization_info(organization_name).add_desired_group_for(user_key, dashboard_group.group_name)
     
-        self.logger.info('Total directory users after filtering: %d', len(filtered_directory_user_by_user_key))
-        self.logger.debug('Group work list: %s', self.desired_groups_by_organization)
-
+        self.logger.info('Total directory users after filtering: %d', len(filtered_directory_user_by_user_key))        
+        if (self.logger.isEnabledFor(logging.DEBUG)):        
+            self.logger.debug('Group work list: %s', dict([(organization_name, organization_info.get_desired_groups_by_user_key()) for organization_name, organization_info in self.organization_info_by_organization.iteritems()]))
     
     def is_directory_user_in_groups(self, directory_user, groups):
         '''
@@ -114,16 +116,6 @@ class RuleProcessor(object):
                 return True
         return False
     
-    def get_user_desired_groups(self, organization_name, user_key):
-        desired_groups_by_organization = self.desired_groups_by_organization
-        organization_desired_groups = desired_groups_by_organization.get(organization_name)
-        if (organization_desired_groups == None):
-            desired_groups_by_organization[organization_name] = organization_desired_groups = collections.OrderedDict()
-        user_desired_groups = organization_desired_groups.get(user_key)
-        if (user_desired_groups == None):
-            organization_desired_groups[user_key] = user_desired_groups = set()
-        return user_desired_groups     
-    
     def process_dashboard_users(self, dashboard_connectors):
         '''
         :type dashboard_connectors: DashboardConnectors
@@ -131,24 +123,19 @@ class RuleProcessor(object):
         options = self.options
         manage_groups = options['manage_groups'] 
         
-        dashboard_users_by_organization = self.dashboard_users_by_organization
-        orphaned_dashboard_users_by_organization = self.orphaned_dashboard_users_by_organization
-        
         added_dashboard_user_keys = set()
 
         self.logger.info('Syncing owning...') 
-        owning_dashboard_users, owning_orphaned_dashboard_users, owning_unprocessed_groups_by_user_key = self.update_dashboard_users_for_connector(OWNING_ORGANIZATION_NAME, dashboard_connectors.get_owning_connector())
-        dashboard_users_by_organization[OWNING_ORGANIZATION_NAME] = owning_dashboard_users
-        orphaned_dashboard_users_by_organization[OWNING_ORGANIZATION_NAME] = owning_orphaned_dashboard_users 
+        owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
+        owning_unprocessed_groups_by_user_key = self.update_dashboard_users_for_connector(owning_organization_info, dashboard_connectors.get_owning_connector())
         for user_key in owning_unprocessed_groups_by_user_key.iterkeys():
             self.add_dashboard_user(user_key, dashboard_connectors)
             added_dashboard_user_keys.add(user_key)
 
         for organization_name, dashboard_connector in dashboard_connectors.get_trustee_connectors().iteritems():
             self.logger.info('Syncing trustee %s...', organization_name) 
-            trustee_dashboard_users, trustee_orphaned_dashboard_users, trustee_unprocessed_groups_by_user_key = self.update_dashboard_users_for_connector(organization_name, dashboard_connector)
-            dashboard_users_by_organization[organization_name] = trustee_dashboard_users
-            orphaned_dashboard_users_by_organization[organization_name] = trustee_orphaned_dashboard_users 
+            trustee_organization_info = self.get_organization_info(organization_name)
+            trustee_unprocessed_groups_by_user_key = self.update_dashboard_users_for_connector(trustee_organization_info, dashboard_connector)
             if (manage_groups):
                 for user_key, desired_groups in trustee_unprocessed_groups_by_user_key.iteritems():
                     if (user_key in added_dashboard_user_keys):
@@ -157,8 +144,8 @@ class RuleProcessor(object):
                     self.add_groups_for_connector(directory_user, desired_groups, dashboard_connector)
                     
     def iter_orphaned_federated_dashboard_users(self):
-        owning_orphaned_dashboard_users = self.orphaned_dashboard_users_by_organization[OWNING_ORGANIZATION_NAME]
-        for user_key, dashboard_user in owning_orphaned_dashboard_users.iteritems():
+        owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
+        for user_key, dashboard_user in owning_organization_info.iter_orphaned_dashboard_users():
             if not self.is_selected_user_key(user_key):
                 continue
             if (dashboard_user.get('type') != 'federatedID'):
@@ -183,7 +170,7 @@ class RuleProcessor(object):
         '''
         remove_user_key_list = self.remove_user_key_list
             
-        if (self.find_orphaned_dashboard_users):
+        if (self.need_to_find_orphaned_dashboard_users):
             options = self.options
             remove_list_output_path = options['remove_list_output_path']
             remove_nonexistent_users = options['remove_nonexistent_users']
@@ -201,20 +188,19 @@ class RuleProcessor(object):
             
         if (len(remove_user_key_list)):
             self.logger.info('Removing users: %s', remove_user_key_list)
-            dashboard_users_by_organization = self.dashboard_users_by_organization
             for organization_name, dashboard_connector in dashboard_connectors.get_trustee_connectors().iteritems():
-                dashboard_users = dashboard_users_by_organization.get(organization_name)
+                organization_info = self.get_organization_info(organization_name)
                 for user_key in remove_user_key_list:
-                    if (dashboard_users == None) or (user_key in dashboard_users):
+                    if (not organization_info.are_dashboard_users_retrieved()) or (organization_info.get_dashboard_user(user_key) != None):
                         self.logger.info('Removing all groups for user key: %s', user_key)
                         username, domain = self.parse_user_key(user_key)
                         commands = aedash.sync.connector.dashboard.Commands(username, domain)
                         commands.remove_all_groups()
                         dashboard_connector.send_commands(commands)
 
-            dashboard_users = dashboard_users_by_organization[OWNING_ORGANIZATION_NAME]
+            organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
             for user_key in remove_user_key_list:
-                if (user_key in dashboard_users):
+                if (organization_info.get_dashboard_user(user_key) != None):
                     self.logger.info('Removing user for user key: %s', user_key)
                     username, domain = self.parse_user_key(user_key)
                     commands = aedash.sync.connector.dashboard.Commands(username, domain)
@@ -259,10 +245,8 @@ class RuleProcessor(object):
         else:
             commands.add_enterprise_user(attributes)
         if (manage_groups):
-            desired_groups_by_user_key = self.desired_groups_by_organization.get(OWNING_ORGANIZATION_NAME)
-            if (desired_groups_by_user_key != None):
-                desired_groups = desired_groups_by_user_key.get(user_key)
-                commands.add_groups(desired_groups)
+            desired_groups = self.get_organization_info(OWNING_ORGANIZATION_NAME).get_desired_groups(user_key)
+            commands.add_groups(desired_groups)
 
         def callback(create_action, is_success, error):
             if is_success:
@@ -275,13 +259,10 @@ class RuleProcessor(object):
         :type directory_user: dict
         :type trustee_dashboard_connectors: dict(str, aedash.sync.connector.dashboard.DashboardConnector)
         '''
-        desired_groups_by_organization = self.desired_groups_by_organization    
         for organization_name, dashboard_connector in trustee_dashboard_connectors.iteritems():
-            desired_groups_by_user_key = desired_groups_by_organization.get(organization_name)
-            if desired_groups_by_user_key != None:
-                user_key = RuleProcessor.get_directory_user_key(directory_user)
-                desired_groups = desired_groups_by_user_key.get(user_key)
-                self.add_groups_for_connector(directory_user, desired_groups, dashboard_connector)
+            user_key = RuleProcessor.get_directory_user_key(directory_user)
+            desired_groups = self.get_organization_info(organization_name).get_desired_groups(user_key)
+            self.add_groups_for_connector(directory_user, desired_groups, dashboard_connector)
 
     def add_groups_for_connector(self, directory_user, desired_groups, dashboard_connector):
         '''
@@ -293,30 +274,30 @@ class RuleProcessor(object):
         commands.add_groups(desired_groups)
         dashboard_connector.send_commands(commands)
             
-    def update_dashboard_users_for_connector(self, organization_name, dashboard_connector):
+    def update_dashboard_users_for_connector(self, organization_info, dashboard_connector):
         '''
-        :type organization_name: str
+        :type organization_info: OrganizationInfo
         :type dashboard_connector: aedash.sync.connector.dashboard.DashboardConnector
         '''
         directory_user_by_user_key = self.directory_user_by_user_key
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
         
-        desired_groups_by_user_key = self.desired_groups_by_organization.get(organization_name)
+        desired_groups_by_user_key = organization_info.get_desired_groups_by_user_key()
         desired_groups_by_user_key = {} if desired_groups_by_user_key == None else desired_groups_by_user_key.copy()        
-        all_dashboard_users = {}
-        orphaned_dashboard_users = {}
         
         options = self.options
         update_user_info = options['update_user_info']
         manage_groups = options['manage_groups'] 
         
+        organization_info.prepare_for_dashboard_users()
+        
         for dashboard_user in dashboard_connector.iter_users():
             user_key = RuleProcessor.get_dashboard_user_key(dashboard_user)
-            all_dashboard_users[user_key] = dashboard_user
+            organization_info.add_dashboard_user(user_key, dashboard_user)
 
             directory_user = directory_user_by_user_key.get(user_key)
             if (directory_user == None):
-                orphaned_dashboard_users[user_key] = dashboard_user
+                organization_info.add_orphaned_dashboard_user(user_key, dashboard_user)
                 continue     
 
             desired_groups = desired_groups_by_user_key.pop(user_key, None)
@@ -326,7 +307,7 @@ class RuleProcessor(object):
                 desired_groups = set()
             
             user_attribute_difference = None
-            if (update_user_info and organization_name == OWNING_ORGANIZATION_NAME):
+            if (update_user_info and organization_info.get_name() == OWNING_ORGANIZATION_NAME):
                 user_attribute_difference = self.get_user_attribute_difference(directory_user, dashboard_user)
                 if (len(user_attribute_difference) > 0):
                     self.logger.info('Updating info for user key: %s changes: %s', user_key, user_attribute_difference)
@@ -351,8 +332,8 @@ class RuleProcessor(object):
             commands.add_groups(groups_to_add)
             commands.remove_groups(groups_to_remove)
             dashboard_connector.send_commands(commands)
-                
-        return (all_dashboard_users, orphaned_dashboard_users, desired_groups_by_user_key)
+        
+        return desired_groups_by_user_key
     
     def get_user_attribute_difference(self, directory_user, dashboard_user):
         differences = {}
@@ -482,4 +463,70 @@ class Group(object):
     
     def __str__(self):
         return str(self.__dict__)
+        
+class OrganizationInfo(object):
+    def __init__(self, name):
+        '''
+        :type name: str
+        '''
+        self.name = name
+        self.desired_groups_by_user_key = collections.OrderedDict()
+
+    def get_name(self):
+        return self.name
+    
+    def prepare_for_dashboard_users(self):
+        self.dashboard_user_by_user_key = collections.OrderedDict()
+        self.orphaned_dashboard_user_by_user_key = collections.OrderedDict()
+        
+    def are_dashboard_users_retrieved(self):
+        return self.dashboard_user_by_user_key != None
+    
+    def get_desired_groups_by_user_key(self):
+        return self.desired_groups_by_user_key
+
+    def get_desired_groups(self, user_key):
+        '''
+        :type user_key: str
+        '''
+        desired_groups = self.desired_groups_by_user_key.get(user_key)
+        return desired_groups     
+
+    def add_desired_group_for(self, user_key, group):
+        '''
+        :type user_key: str
+        :type group: str
+        '''
+        desired_groups = self.get_desired_groups(user_key)
+        if (desired_groups == None):
+            self.desired_groups_by_user_key[user_key] = desired_groups = set()
+        if (group != None):
+            normalized_group_name = aedash.sync.helper.normalize_string(group)
+            desired_groups.add(normalized_group_name)
+
+    def add_dashboard_user(self, user_key, user):
+        '''
+        :type user_key: str
+        :type user: dict
+        '''
+        self.dashboard_user_by_user_key[user_key] = user
+        
+    def iter_dashboard_users(self):
+        dashboard_user_by_user_key = self.dashboard_user_by_user_key
+        return [] if dashboard_user_by_user_key == None else dashboard_user_by_user_key.iteritems()
+    
+    def get_dashboard_user(self, user_key):
+        dashboard_user_by_user_key = self.dashboard_user_by_user_key
+        return None if dashboard_user_by_user_key == None else dashboard_user_by_user_key.get(user_key)
+    
+    def add_orphaned_dashboard_user(self, user_key, user):
+        '''
+        :type user_key: str
+        :type user: dict
+        '''
+        self.orphaned_dashboard_user_by_user_key[user_key] = user
+        
+    def iter_orphaned_dashboard_users(self):
+        orphaned_dashboard_user_by_user_key = self.orphaned_dashboard_user_by_user_key
+        return [] if orphaned_dashboard_user_by_user_key == None else orphaned_dashboard_user_by_user_key.iteritems() 
         
