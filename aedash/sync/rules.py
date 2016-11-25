@@ -522,7 +522,7 @@ class OrganizationInfo(object):
         '''
         self.name = name
         self.mapped_groups = set()
-        self.desired_groups_by_user_key = collections.OrderedDict()
+        self.desired_groups_by_user_key = {}
         self.dashboard_user_by_user_key = {}
         self.orphaned_dashboard_user_by_user_key = {}
         self.groups_added_by_user_key = {}

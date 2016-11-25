@@ -2,6 +2,7 @@ import csv
 
 import aedash.sync.connector.dashboard
 
+
 def write_to_separated_value_file(field_names, delimiter, items, output_file_path):
     with open(output_file_path, 'w', 1) as output_file:
         writer = csv.DictWriter(output_file, fieldnames = field_names, delimiter = delimiter)
@@ -43,9 +44,11 @@ def assert_equal_dashboard_commands(unit_test, expected_commands, actual_command
 
 def assert_equal_dashboard_commands_list(unit_test, expected_commands_list, actual_commands_list):
     unit_test.assertEqual(len(expected_commands_list), len(actual_commands_list))    
-    for i in range(0, len(expected_commands_list) - 1):
-        expected_commands = expected_commands_list[i]
-        actual_commands = actual_commands_list[i]
+    expected_list = sorted(expected_commands_list, key=lambda commands: commands.username)
+    actual_list = sorted(actual_commands_list, key=lambda commands: commands.username)    
+    for i in range(0, len(expected_list) - 1):
+        expected_commands = expected_list[i]
+        actual_commands = actual_list[i]
         assert_equal_dashboard_commands(unit_test, expected_commands, actual_commands)
         
 def create_dashboard_commands(user):
