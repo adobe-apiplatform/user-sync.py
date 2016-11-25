@@ -1,4 +1,3 @@
-import collections
 import csv
 import logging
 
@@ -220,8 +219,7 @@ class RuleProcessor(object):
                     commands = aedash.sync.connector.dashboard.Commands(username, domain)
                     commands.remove_from_org()
                     dashboard_connectors.get_owning_connector().send_commands(commands)
-        
-    
+     
     def get_user_attributes(self, directory_user):
         attributes = {}
         attributes['email'] = directory_user['email']
@@ -280,7 +278,7 @@ class RuleProcessor(object):
         :type desired_groups: set(str)
         :type dashboard_connector: aedash.sync.connector.dashboard.DashboardConnector
         '''
-        self.logger.info('Adding groups for user key: %s groups: %s', user_key, desired_groups)
+        self.logger.info('Adding groups for user key: %s organization: %s groups: %s', user_key, organization_info.get_name(), desired_groups)
         groups_to_add = self.calculate_groups_to_add(organization_info, user_key, desired_groups)        
 
         username, domain = self.parse_user_key(user_key)
@@ -288,16 +286,6 @@ class RuleProcessor(object):
         commands.add_groups(groups_to_add)
         dashboard_connector.send_commands(commands)
 
-    def add_groups_for_connector(self, directory_user, desired_groups, dashboard_connector):
-        '''
-        :type directory_user: dict
-        :type desired_groups: set(str)
-        :type dashboard_connector: aedash.sync.connector.dashboard.DashboardConnector
-        '''
-        commands = aedash.sync.connector.dashboard.Commands(directory_user['username'], directory_user['domain'])
-        commands.add_groups(desired_groups)
-        dashboard_connector.send_commands(commands)
-            
     def update_dashboard_users_for_connector(self, organization_info, dashboard_connector):
         '''
         :type organization_info: OrganizationInfo
