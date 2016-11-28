@@ -75,14 +75,24 @@ class CSVDirectoryConnector(object):
         options = self.options
         logger = self.logger
         
-        email_column_name = options['email_column_name']
-        first_name_column_name = options['first_name_column_name']
-        last_name_column_name = options['last_name_column_name']
-        country_column_name = options['country_column_name']
-        groups_column_name = options['groups_column_name']
-        identity_type_column_name = options['identity_type_column_name']
-        username_column_name = options['username_column_name']
-        domain_column_name = options['domain_column_name']
+        recognized_column_names = []
+        def get_column_name(key):
+            column_name = options[key]
+            recognized_column_names.append(column_name)
+            return column_name
+
+        email_column_name = get_column_name('email_column_name')
+        first_name_column_name = get_column_name('first_name_column_name')
+        last_name_column_name = get_column_name('last_name_column_name')
+        country_column_name = get_column_name('country_column_name')
+        groups_column_name = get_column_name('groups_column_name')
+        identity_type_column_name = get_column_name('identity_type_column_name')
+        username_column_name = get_column_name('username_column_name')
+        domain_column_name = get_column_name('domain_column_name')
+        
+        unrecognized_column_names = [column_name for column_name in reader.fieldnames if column_name not in recognized_column_names] 
+        if (len(unrecognized_column_names) > 0):
+            logger.warn("Unrecognized column names: %s", unrecognized_column_names)
     
         line_read = 0
         for row in reader:
