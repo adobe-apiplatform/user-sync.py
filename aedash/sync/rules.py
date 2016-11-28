@@ -46,7 +46,10 @@ class RuleProcessor(object):
             username_filter_regex = options_to_report['username_filter_regex']
             if (username_filter_regex != None):
                 options_to_report['username_filter_regex'] = "%s: %s" % (type(username_filter_regex), username_filter_regex.pattern)
-            logger.debug('Initialized with options: %s', options_to_report)            
+            logger.debug('Initialized with options: %s', options_to_report)
+            
+    def will_manage_groups(self):
+        return self.options['manage_groups']
     
     def get_organization_info(self, organization_name):
         organization_info = self.organization_info_by_organization.get(organization_name)
@@ -124,8 +127,7 @@ class RuleProcessor(object):
         '''
         :type dashboard_connectors: DashboardConnectors
         '''        
-        options = self.options
-        manage_groups = options['manage_groups'] 
+        manage_groups = self.will_manage_groups()
         
         self.logger.info('Syncing owning...') 
         owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
@@ -237,7 +239,7 @@ class RuleProcessor(object):
         options = self.options
         default_new_account_type = options['new_account_type']
         update_user_info = options['update_user_info'] 
-        manage_groups = options['manage_groups'] 
+        manage_groups = self.will_manage_groups()
 
         directory_user = self.directory_user_by_user_key[user_key]
 
@@ -299,7 +301,7 @@ class RuleProcessor(object):
         
         options = self.options
         update_user_info = options['update_user_info']
-        manage_groups = options['manage_groups'] 
+        manage_groups = self.will_manage_groups() 
         
         for dashboard_user in dashboard_connector.iter_users():
             user_key = RuleProcessor.get_dashboard_user_key(dashboard_user)

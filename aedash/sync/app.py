@@ -133,6 +133,9 @@ def begin_work(config_loader):
 
     rule_config = config_loader.get_rule_config()
     rule_processor = aedash.sync.rules.RuleProcessor(rule_config)
+    if (len(directory_groups) == 0 and rule_processor.will_manage_groups()):
+        logger.warn('no groups mapped in config file')
+    
     rule_processor.read_desired_user_groups(directory_groups, directory_connector)
     rule_processor.process_dashboard_users(dashboard_connectors)
     rule_processor.clean_dashboard_users(dashboard_connectors)
