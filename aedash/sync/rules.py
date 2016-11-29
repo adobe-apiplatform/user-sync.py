@@ -421,22 +421,26 @@ class RuleProcessor(object):
         return RuleProcessor.parse_user_key(user_key)[0]
     
     @staticmethod
-    def read_remove_list(file_path, delimiter = None):
+    def read_remove_list(file_path, delimiter = None, logger = None):
         '''
         :type file_path: str
         :type delimiter: str
+        :type logger: logging.Logger
         '''
         result = []
-        with aedash.sync.helper.open_file(file_path, 'r', 1) as input_file:
-            if (delimiter == None):
-                delimiter = aedash.sync.helper.guess_delimiter_from_filename(file_path)            
-            reader = csv.DictReader(input_file, delimiter = delimiter)
-            for row in reader:
-                user = row.get('user')
-                domain = row.get('domain')
-                user_key = RuleProcessor.get_user_key(user, domain, None)
-                if (user_key != None):
-                    result.append(user_key)
+        
+        user_column_name = 'user'
+        domain_column_name = 'domain'        
+        rows = aedash.sync.helper.iter_csv_rows(file_path, 
+                                                delimiter = delimiter, 
+                                                recognized_column_names = [user_column_name, domain_column_name], 
+                                                logger = logger)
+        for row in rows:
+            user = row.get(user_column_name)
+            domain = row.get(domain_column_name)
+            user_key = RuleProcessor.get_user_key(user, domain, None)
+            if (user_key != None):
+                result.append(user_key)
         return result
     
     def write_remove_list(self, file_path, dashboard_users):

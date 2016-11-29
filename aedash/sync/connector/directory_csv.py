@@ -1,5 +1,3 @@
-import csv
-
 import aedash.sync.connector.helper
 import aedash.sync.helper
 
@@ -55,19 +53,13 @@ class CSVDirectoryConnector(object):
         options = self.options
         file_path = options['file_path']
         self.logger.info('Reading from: %s', file_path)
-        with aedash.sync.helper.open_file(file_path, 'r', 1) as input_file:
-            delimiter = options['delimiter']
-            if (delimiter == None):
-                delimiter = aedash.sync.helper.guess_delimiter_from_filename(file_path)
-            reader = csv.DictReader(input_file, delimiter = delimiter)
-            self.users = users = self.read_users(reader)
-                        
+        self.users = users = self.read_users(file_path)                        
         self.logger.info('Number of users loaded: %d', len(users))
         return (True, users.itervalues())
 
-    def read_users(self, reader):
+    def read_users(self, file_path):
         '''
-        :type reader: csv.DictReader
+        :type file_path
         :rtype dict
         '''
         users = {}
@@ -90,12 +82,12 @@ class CSVDirectoryConnector(object):
         username_column_name = get_column_name('username_column_name')
         domain_column_name = get_column_name('domain_column_name')
         
-        unrecognized_column_names = [column_name for column_name in reader.fieldnames if column_name not in recognized_column_names] 
-        if (len(unrecognized_column_names) > 0):
-            logger.warn("Unrecognized column names: %s", unrecognized_column_names)
-    
         line_read = 0
-        for row in reader:
+        rows = aedash.sync.helper.iter_csv_rows(file_path, 
+                                                delimiter = options['delimiter'], 
+                                                recognized_column_names = recognized_column_names, 
+                                                logger = logger)
+        for row in rows:
             line_read += 1
             email = self.get_column_value(row, email_column_name)
             if (email == None):

@@ -1,4 +1,5 @@
 
+import csv
 import os
 
 import aedash.sync.error
@@ -32,3 +33,23 @@ def guess_delimiter_from_filename(filename):
     if (normalized_extension == '.tsv'):
         return '\t'
     return '\t'
+
+def iter_csv_rows(file_path, delimiter = None, recognized_column_names = None, logger = None):
+    '''
+    :type file_path: str
+    :type delimiter: str
+    :type recognized_column_names: list(str)
+    :type logger: logging.Logger
+    '''
+    with open_file(file_path, 'r', 1) as input_file:
+        if (delimiter == None):
+            delimiter = guess_delimiter_from_filename(file_path)
+        reader = csv.DictReader(input_file, delimiter = delimiter)
+
+        if (recognized_column_names != None):
+            unrecognized_column_names = [column_name for column_name in reader.fieldnames if column_name not in recognized_column_names] 
+            if (len(unrecognized_column_names) > 0 and logger != None):
+                logger.warn("Unrecognized column names: %s", unrecognized_column_names)
+
+        for row in reader:
+            yield row
