@@ -19,13 +19,6 @@ LOG_DATE_FORMAT ='%Y-%m-%d %H:%M:%S'
 logging.basicConfig(format=LOG_STRING_FORMAT, datefmt=LOG_DATE_FORMAT, level=logging.DEBUG)
 logger = logging.getLogger('main')
 
-def error_hook(exctype, value, tb):
-    """Set up the Error Hook (default exception handler)"""
-    try:
-        logger.error('Unhandled exception', exc_info=(exctype, value, tb))
-    except:
-        pass
-
 def process_args():    
     parser = argparse.ArgumentParser(description='Adobe Enterprise Dashboard User Sync')
     parser.add_argument('-v', '--version',
@@ -136,22 +129,28 @@ def begin_work(config_loader):
     if (len(directory_groups) == 0 and rule_processor.will_manage_groups()):
         logger.warn('no groups mapped in config file')
     
+    load_directory_stats = aedash.sync.helper.JobStats("Load from Directory", divider = "-")
+    load_directory_stats.log_start(logger)
     rule_processor.read_desired_user_groups(directory_groups, directory_connector)
-    rule_processor.process_dashboard_users(dashboard_connectors)
-    rule_processor.clean_dashboard_users(dashboard_connectors)
-    
-    dashboard_connectors.execute_actions()
-    
-def main():    
-    args = process_args()
+    load_directory_stats.log_end(logger)
 
+    dashboard_stats = aedash.sync.helper.JobStats("Sync Dashboard", divider = "-")
+    dashboard_stats.log_start(logger)
+    rule_processor.process_dashboard_users(dashboard_connectors)
+    rule_processor.clean_dashboard_users(dashboard_connectors)    
+    dashboard_connectors.execute_actions()
+    dashboard_stats.log_end(logger)
+    
+    
+def create_config_loader(args):
     config_bootstrap_options = {
         'config_directory': args.config_path,
         'main_config_filename': args.config_filename,
     }
     config_loader = config.ConfigLoader(config_bootstrap_options)
-    init_log(config_loader.get_logging_config())
-    
+    return config_loader
+            
+def create_config_loader_options(args):
     config_options = {
         'test_mode': args.test_mode,        
         'manage_groups': args.manage_groups,
@@ -206,27 +205,47 @@ def main():
         else:
             raise aedash.sync.error.AssertionException("Invalid arg for --source-filter: %s" % source_filter_args)
     
-    config_loader.set_options(config_options)
-    
-    script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
-    lock_path = os.path.join(script_dir, 'lockfile')
-    lock = aedash.sync.lockfile.ProcessLock(lock_path)
-    if lock.set_lock():
-        try:
-            begin_work(config_loader)
-        finally:
-            lock.unlock()
-    else:
-        logger.info("Process is already locked")
+    return config_options
 
-
-if __name__ == '__main__':
-    #set up exception hook
-    sys.excepthook = error_hook
-    
+def main():   
+    run_stats = None 
     try:
-        main()
+        args = process_args()
+        
+        config_loader = create_config_loader(args)
+        init_log(config_loader.get_logging_config())
+        
+        run_stats = aedash.sync.helper.JobStats("Run", divider = "=")
+        run_stats.log_start(logger)
+
+        script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
+        lock_path = os.path.join(script_dir, 'lockfile')
+        lock = aedash.sync.lockfile.ProcessLock(lock_path)
+        if lock.set_lock():
+            try:                
+                config_options = create_config_loader_options(args)
+                config_loader.set_options(config_options)
+                
+                begin_work(config_loader)
+            finally:
+                lock.unlock()
+        else:
+            logger.info("Process is already locked")
+        
     except aedash.sync.error.AssertionException as e:
         logger.error(e.message)
-    
+                
+    except:
+        try:
+            logger.error('Unhandled exception', exc_info=sys.exc_info())
+        except:        
+            pass
+        
+    finally:
+        if (run_stats != None):
+            run_stats.log_end(logger)
+        
+if __name__ == '__main__':
+    main()
+        
     

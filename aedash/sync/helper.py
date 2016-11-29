@@ -1,5 +1,6 @@
 
 import csv
+import datetime
 import os
 
 import aedash.sync.error
@@ -53,3 +54,36 @@ def iter_csv_rows(file_path, delimiter = None, recognized_column_names = None, l
 
         for row in reader:
             yield row
+            
+class JobStats(object):
+    line_left_count = 10
+    line_width = 80
+    
+    def __init__(self, name, divider = '-'):
+        self.name = name
+        self.divider = divider
+        self.start_time = datetime.datetime.now()
+        
+    def create_divider(self, header):        
+        divider = self.divider 
+
+        left_count = JobStats.line_left_count
+        left_side = left_count * divider        
+        right_count = (JobStats.line_width - len(header)) / len(divider) - left_count
+        if (right_count < 0):
+            right_count = 0
+        right_side = right_count * divider
+        line = left_side + header + right_side
+        return line        
+    
+    def log_start(self, logger):
+        header = " Start %s " % self.name
+        line = self.create_divider(header)        
+        logger.info(line)
+        
+    def log_end(self, logger):
+        end_time = datetime.datetime.now()
+        rounded_time = datetime.timedelta(seconds=(end_time - self.start_time).seconds)
+        header = " End %s (Total time: %s) " % (self.name, rounded_time)        
+        line = self.create_divider(header)
+        logger.info(line)
