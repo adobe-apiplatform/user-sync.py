@@ -32,8 +32,8 @@ directory:
     # examples:   
     # ldap: example.connector-ldap.yml
     # ldap: 
-    #   - host: [LDAP host URL]
-    #     base_dn: [base DN]
+    #   - host: LDAP_host_URL_goes_here
+    #     base_dn: base_DN_goes_here
     #   - connector-ldap-credentials.yml
  
   groups:

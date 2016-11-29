@@ -1,7 +1,7 @@
-username: [LDAP USER]
-password: [LDAP PASSWORD]
-host: [LDAP HOST URL.  e.g. ldap://ldap.example.com]
-base_dn: [defines the base DN. e.g. DC=example,DC=com]
+username: "LDAP user goes here"
+password: "LDAP password goes here"
+host: "LDAP host URL goes here.  e.g. ldap://ldap.example.com"
+base_dn: "defines the base DN. e.g. DC=example,DC=com"
 
 # specifies the string format used to construct a group query.
 # {group} is replaced with the name of the group to find.  Default is:

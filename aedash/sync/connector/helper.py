@@ -35,7 +35,10 @@ def validate_options(options, required_option_names):
         names = required_option_name.split(".")
         scope = options
         for name in names:
-            if (not isinstance(scope, dict)) or (not (name in scope)):
-                return (False, ('Setting not defined: "%s"' % required_option_name))
-            scope = scope[name]
+            if isinstance(scope, dict) and (name in scope):
+                scope = scope[name]
+                if (scope != None):
+                    continue
+            return (False, ('Setting not defined: "%s"' % required_option_name))
+            
     return (True, None)

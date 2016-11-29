@@ -6,8 +6,8 @@ server:
   # ims_endpoint_jwt: /ims/exchange/jwt
 
 enterprise:
-  org_id: [ORG ID]
-  api_key: [API KEY]
-  client_secret: [CLIENT SECRET]
-  tech_acct: [TECH ACCT ID]
-  priv_key_path: [path to private.key]
+  org_id: "Org ID goes here"
+  api_key: "API key goes here"
+  client_secret: "Client secret goes here"
+  tech_acct: "Tech account ID goes here"
+  priv_key_path: "Path to private.key goes here"

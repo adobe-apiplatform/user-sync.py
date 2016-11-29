@@ -11,7 +11,7 @@ def open_file(name, mode, buffering = -1):
     :type buffering: int
     '''
     try:
-        return open(name, mode, buffering)
+        return open(str(name), mode, buffering)
     except IOError as e:
         raise aedash.sync.error.AssertionException(str(e))
 
