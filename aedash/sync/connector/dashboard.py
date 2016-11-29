@@ -12,8 +12,8 @@ from umapi.auth import Auth, JWT, AccessRequest
 from umapi.error import UMAPIError, UMAPIRetryError, UMAPIRequestError
 from umapi.helper import iter_paginate
 
-import aedash.sync.error
 import aedash.sync.helper
+import aedash.sync.connector.helper
 
 try:
     from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
@@ -56,9 +56,7 @@ class DashboardConnector(object):
         self.options = options;        
         self.logger = logger = helper.create_logger(options)
         
-        validation_result, validation_issue = helper.validate_options(options, required_options)
-        if not validation_result:
-            raise aedash.sync.error.AssertionException('%s for connector: %s' % (validation_issue, DashboardConnector.name))
+        aedash.sync.connector.helper.validate_options(options, required_options, '%%s for connector: %s' % DashboardConnector.name)
 
         server_options = options['server']
         enterprise_options = options['enterprise']

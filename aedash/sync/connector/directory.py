@@ -21,9 +21,7 @@ class DirectoryConnector(object):
         '''
         required_options = self.metadata.get('required_options')
         if (required_options != None):
-            validation_result, validation_issue = aedash.sync.connector.helper.validate_options(options, required_options)
-            if not validation_result:
-                raise aedash.sync.error.AssertionException('%s for connector: %s' % (validation_issue, self.metadata['name']))
+            aedash.sync.connector.helper.validate_options(options, required_options, '%%s for connector: %s' % self.metadata['name'])
         self.state = self.implementation.connector_initialize(options)
         
     def load_users_and_groups(self, groups):
