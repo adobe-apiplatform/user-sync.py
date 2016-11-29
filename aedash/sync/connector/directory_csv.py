@@ -1,5 +1,6 @@
 import aedash.sync.connector.helper
 import aedash.sync.helper
+import aedash.sync.identity_type
 
 def connector_metadata():
     metadata = {
@@ -40,7 +41,7 @@ class CSVDirectoryConnector(object):
             'logger_name': 'connector.' + CSVDirectoryConnector.name
         }
         options.update(caller_options)
-
+        
         self.options = options
         self.logger = logger = aedash.sync.connector.helper.create_logger(options)
         logger.debug('Initialized with options: %s', options)            
@@ -120,16 +121,21 @@ class CSVDirectoryConnector(object):
             if (groups != None):
                 user['groups'].extend(groups.split(','))
                 
-            identity_type = self.get_column_value(row, identity_type_column_name)
-            if (identity_type != None):
-                user['identitytype'] = identity_type
-
             username = self.get_column_value(row, username_column_name)
             if (username == None):
                 username = email
             if (username != None):
                 user['username'] = username
                 
+            identity_type = self.get_column_value(row, identity_type_column_name)
+            if (identity_type != None):
+                try:
+                    user['identitytype'] = aedash.sync.identity_type.parse_identity_type(identity_type) 
+                except aedash.sync.error.AssertionException as e:
+                    logger.error('%s for user: %s', e.message, username)
+                    e.set_reported()
+                    raise e
+
             domain = self.get_column_value(row, domain_column_name)
             if (domain != None):
                 user['domain'] = domain

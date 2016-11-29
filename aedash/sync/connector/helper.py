@@ -1,7 +1,7 @@
 import logging
 
 import aedash.sync.error
-
+         
 def create_logger(options):
     '''
     :type options: dict
@@ -27,7 +27,7 @@ def create_blank_user():
     }
     return user;
 
-def validate_options(options, required_option_names, message_format = '%s'):
+def validate_options(options, required_option_names, message_format = None):
     '''
     :type options: dict
     :type required_option_names: list(str)
@@ -41,5 +41,6 @@ def validate_options(options, required_option_names, message_format = '%s'):
                 if (scope != None):
                     continue
             validation_message = 'Setting not defined: "%s"' % required_option_name
-            raise aedash.sync.error.AssertionException(message_format % validation_message)
+            message = validation_message if message_format == None else message_format % validation_message
+            raise aedash.sync.error.AssertionException(message)
             

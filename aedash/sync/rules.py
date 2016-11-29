@@ -3,9 +3,7 @@ import logging
 
 import aedash.sync.connector.dashboard
 import aedash.sync.helper
-
-ENTERPRISE_IDENTITY_TYPE = 'enterpriseID'
-FEDERATED_IDENTITY_TYPE = 'federatedID'
+import aedash.sync.identity_type
 
 OWNING_ORGANIZATION_NAME = None
 
@@ -19,7 +17,7 @@ class RuleProcessor(object):
             'directory_group_filter': None,
             'username_filter_regex': None,
             
-            'new_account_type': ENTERPRISE_IDENTITY_TYPE,
+            'new_account_type': aedash.sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
             'manage_groups': True,
             'update_user_info': True,
             
@@ -254,7 +252,7 @@ class RuleProcessor(object):
             account_type = default_new_account_type
         
         commands = aedash.sync.connector.dashboard.Commands(directory_user['username'], directory_user['domain'])
-        if (account_type == FEDERATED_IDENTITY_TYPE):
+        if (account_type == aedash.sync.identity_type.FEDERATED_IDENTITY_TYPE):
             commands.add_federated_user(attributes)
         else:
             commands.add_enterprise_user(attributes)

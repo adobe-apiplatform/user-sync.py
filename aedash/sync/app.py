@@ -233,8 +233,9 @@ def main():
             logger.info("Process is already locked")
         
     except aedash.sync.error.AssertionException as e:
-        logger.error(e.message)
-                
+        if (not e.is_reported()):
+            logger.error(e.message)
+            e.set_reported()    
     except:
         try:
             logger.error('Unhandled exception', exc_info=sys.exc_info())

@@ -6,6 +6,7 @@ import yaml
 
 from aedash.sync import credential_manager
 import aedash.sync.error
+import aedash.sync.identity_type
 import aedash.sync.rules
 
 DEFAULT_CONFIG_DIRECTORY = ''
@@ -316,8 +317,9 @@ class ConfigLoader(object):
     def get_new_account_type(self):
         directory_config = self.get_config_section('directory') 
         new_account_type = directory_config.get('type')
+        new_account_type = aedash.sync.identity_type.parse_identity_type(new_account_type)
         if (new_account_type == None):
-            new_account_type = aedash.sync.rules.ENTERPRISE_IDENTITY_TYPE
+            new_account_type = aedash.sync.identity_type.ENTERPRISE_IDENTITY_TYPE
         return new_account_type
 
     def create_dashboard_connector_config(self, connector_config_sources, owner):
