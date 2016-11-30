@@ -210,7 +210,10 @@ def create_config_loader_options(args):
 def main():   
     run_stats = None 
     try:
-        args = process_args()
+        try:
+            args = process_args()
+        except SystemExit:
+            return
         
         config_loader = create_config_loader(args)
         init_log(config_loader.get_logging_config())
