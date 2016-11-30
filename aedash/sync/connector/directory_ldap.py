@@ -3,6 +3,7 @@ import string
 
 import aedash.sync.connector.helper
 import aedash.sync.error
+import aedash.sync.identity_type
 
 def connector_metadata():
     metadata = {
@@ -50,6 +51,13 @@ class LDAPDirectoryConnector(object):
         
         self.options = options
         self.logger = logger = aedash.sync.connector.helper.create_logger(options)
+        
+        try:
+            options['user_identity_type'] = aedash.sync.identity_type.parse_identity_type(options['user_identity_type'])
+        except aedash.sync.error.AssertionException as e:
+            logger.error(e.message)
+            e.set_reported()
+            raise e
         
         require_tls_cert = options['require_tls_cert']
         host = options['host']

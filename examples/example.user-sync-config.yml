@@ -57,6 +57,13 @@ directory:
     #   dashboard_groups:
     #     - org1::Default Acrobat Pro DC configuration
 
+  # specifies the default identity type of the dashboard user to create,
+  # when the identity type of a user is missing.  
+  # valid values are: enterpriseID, federatedID
+  # 
+  # Default is:
+  # user_identity_type: enterpriseID
+
 logging:
   # specifies whether you wish to generate a log file
   # 'True' or 'False'

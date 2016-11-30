@@ -28,6 +28,14 @@ base_dn: "defines the base DN. e.g. DC=example,DC=com"
 # other example: 
 # user_email_format: "{sAMAccountName}@example.com"
 
+# specifies the identity type of the dashboard user to create.  
+# the valid values are: enterpriseID, federatedID
+# 
+# If not specified, the default identity type from the main config file is used.
+# 
+# example for enterprise ID:
+# user_identity_type: enterpriseID
+
 # specifies the result page size.  Default is:
 # search_page_size: 200
 
