@@ -78,7 +78,7 @@ class RuleProcessor(object):
 
         directory_groups = set(mappings.iterkeys())
         if (directory_group_filter != None):
-            directory_groups.union(directory_group_filter)
+            directory_groups.update(directory_group_filter)
         all_loaded, directory_users = directory_connector.load_users_and_groups(directory_groups) 
         if (not all_loaded and self.need_to_find_orphaned_dashboard_users):
             self.logger.warn('Not all users loaded.  Cannot check orphaned users...')

@@ -30,9 +30,12 @@ def connector_load_users_and_groups(state, groups):
 class LDAPDirectoryConnector(object):
     name = 'ldap'
     
+    group_member_uid_attribute = "memberUid"
+    group_member_attribute = "member"
+    
     def __init__(self, caller_options):
         options = {
-            'group_filter_format': '(&(|(objectCategory=group)(objectClass=groupOfNames))(cn={group}))',
+            'group_filter_format': '(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))',
             'all_users_filter': '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))',
             'require_tls_cert': False,
             'user_email_format': '{mail}',
@@ -96,22 +99,36 @@ class LDAPDirectoryConnector(object):
         else:
             users_filter = all_users_filter
 
-        self.user_by_dn = user_by_dn = dict(self.iter_users(users_filter))
+        self.logger.info('Loading users...')
+
+        self.user_by_dn = user_by_dn = {}
+        self.user_by_uid = user_by_uid = {}
+        for user_dn, user in self.iter_users(users_filter):
+            for dn_part_name, dn_part_value in self.iter_dn_parts(user_dn):
+                map_to_register = None
+                if (dn_part_name == 'uid'):
+                    map_to_register = user_by_uid
+                if (map_to_register != None):
+                    map_to_register[dn_part_value] = user
+            user_by_dn[user_dn] = user
+        
         self.logger.info('Total users loaded: %d', len(user_by_dn))
 
         for group in groups:
-            group_members = self.get_ldap_group_members(group)
             total_group_members = 0
             total_group_users = 0            
-            if group_members != None:
-                for group_member in group_members:
-                    total_group_members += 1
+            group_members = self.iter_ldap_group_members(group)
+            for group_member_attribute, group_member in group_members:
+                total_group_members += 1
+                if group_member_attribute == self.group_member_uid_attribute:
+                    user = user_by_uid.get(group_member)
+                else:
                     user = user_by_dn.get(group_member)
-                    if (user != None):
-                        total_group_users += 1
-                        user_groups = user['groups']
-                        if not group in user_groups:
-                            user_groups.append(group)
+                if (user != None):
+                    total_group_users += 1
+                    user_groups = user['groups']
+                    if not group in user_groups:
+                        user_groups.append(group)
             self.logger.debug('Group %s members: %d users: %d', group, total_group_members, total_group_users)
         
         return (not is_using_source_filter, user_by_dn.itervalues())    
@@ -144,7 +161,7 @@ class LDAPDirectoryConnector(object):
         
         return group_tuple
 
-    def get_attribute_values(self, dn, attribute_name, attributes=None):
+    def iter_attribute_values(self, dn, attribute_name, attributes=None):
         '''
         :type group_dn: str
         :type attribute_name: str
@@ -198,23 +215,22 @@ class LDAPDirectoryConnector(object):
                     result = range_parts[1] 
         return result
 
-    def get_ldap_group_members(self, group):
+    def iter_ldap_group_members(self, group):
         '''
         :type group: str
-        :rtype iterator
+        :rtype iterator(str, str)
         '''
-    
-        logger = self.logger
-    
-        result = None
-        group_tuple = self.find_ldap_group(group)
+        attributes = [self.group_member_attribute, self.group_member_uid_attribute]
+        group_tuple = self.find_ldap_group(group, attributes)
         if (group_tuple == None):
-            logger.warning("No group found for: %s", group)
+            self.logger.warning("No group found for: %s", group)
         else:
             group_dn, group_attributes = group_tuple;
-            result = self.get_attribute_values(group_dn, 'member', group_attributes)
-        return result
-    
+            for attribute in attributes:
+                attribute_values = self.iter_attribute_values(group_dn, attribute, group_attributes)
+                for attribute_value in attribute_values:
+                    yield (attribute, attribute_value)
+                    
     def iter_users(self, users_filter):
         options = self.options
         base_dn = options['base_dn']
@@ -300,6 +316,16 @@ class LDAPDirectoryConnector(object):
                 connection.abandon(msgid)
                 msgid = None
             raise
+        
+    @staticmethod
+    def iter_dn_parts(dn):
+        dn_parts = ldap.dn.str2dn(dn)
+        for dn_part_items in dn_parts:
+            if (len(dn_part_items) > 0):
+                dn_part_item = dn_part_items[0] 
+                if (len(dn_part_item) > 2):
+                    yield dn_part_item[0:2]
+
     
 class LDAPValueFormatter(object):
     def __init__(self, string_format):

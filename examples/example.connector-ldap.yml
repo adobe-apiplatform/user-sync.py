@@ -5,13 +5,13 @@ base_dn: "defines the base DN. e.g. DC=example,DC=com"
 
 # specifies the string format used to construct a group query.
 # {group} is replaced with the name of the group to find.  Default is:
-# group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames))(cn={group}))"
+# group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
 #
 # example for AD 
 # group_filter_format: "(&(objectCategory=group)(cn={group}))"
 #
 # example for OpenLDAP
-# group_filter_format: "(&(objectClass=groupOfNames)(cn={group}))"
+# group_filter_format: "(&(objectClass=groupOfNames)(objectClass=posixGroup)(cn={group}))"
 
 # specifies the string filter used to find all users in the directory.
 # Default, intending for AD, is:

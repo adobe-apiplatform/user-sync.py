@@ -57,7 +57,7 @@ def iter_csv_rows(file_path, delimiter = None, recognized_column_names = None, l
             
 class JobStats(object):
     line_left_count = 10
-    line_width = 80
+    line_width = 60
     
     def __init__(self, name, divider = '-'):
         self.name = name
