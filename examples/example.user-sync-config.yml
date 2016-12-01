@@ -70,5 +70,9 @@ logging:
   log_to_file: True
   # output path for logs
   file_log_directory: logs
-  #Logging Level: Can be "debug", "info", "warning", "error", or "critical".  This is in ascending order, meaning "debug" < "critical".  Will only be used on file log, console log is always "debug"
+  # File Logging Level: Can be "debug", "info", "warning", "error", or "critical".  
+  # This is in ascending order, meaning "debug" < "critical".
   file_log_level: debug
+  # Console Logging Level: Can be "debug", "info", "warning", "error", or "critical".  
+  # This is in ascending order, meaning "debug" < "critical".  Default is:
+  # console_log_level: debug

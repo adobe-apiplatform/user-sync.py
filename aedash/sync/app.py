@@ -16,8 +16,6 @@ APP_VERSION = "0.6.0"
 
 LOG_STRING_FORMAT = '%(asctime)s %(process)d %(levelname)s %(name)s - %(message)s'
 LOG_DATE_FORMAT ='%Y-%m-%d %H:%M:%S'
-logging.basicConfig(format=LOG_STRING_FORMAT, datefmt=LOG_DATE_FORMAT, level=logging.DEBUG)
-logger = logging.getLogger('main')
 
 def process_args():    
     parser = argparse.ArgumentParser(description='Adobe Enterprise Dashboard User Sync')
@@ -59,6 +57,14 @@ def process_args():
                         metavar='input_path', dest='remove_list_input_path')
     return parser.parse_args()
 
+def init_console_log():
+    console_log_handler = logging.StreamHandler(sys.stdout)
+    console_log_handler.setFormatter(logging.Formatter(LOG_STRING_FORMAT, LOG_DATE_FORMAT))
+    root_logger = logging.getLogger()
+    root_logger.addHandler(console_log_handler)
+    root_logger.setLevel(logging.DEBUG)
+    return console_log_handler
+
 def init_log(caller_options):
     '''
     :type caller_options:dict
@@ -66,27 +72,33 @@ def init_log(caller_options):
     options = {
         'log_to_file': False,
         'file_log_directory': 'logs',
-        'file_log_level': 'debug'
+        'file_log_level': 'debug',
+        'console_log_level': None
     }
     if (caller_options != None):
         options.update(caller_options)
+        
+    level_lookup = {
+        'debug': logging.DEBUG,
+        'info': logging.INFO,
+        'warning': logging.WARNING,
+        'error': logging.ERROR,
+        'critical': logging.CRITICAL
+    }
+    
+    console_log_level = level_lookup.get(options['console_log_level'])
+    if (console_log_level != None):
+        console_log_handler.setLevel(console_log_level)
     
     if options['log_to_file'] == True:
-        level_lookup = {
-            'debug': logging.DEBUG,
-            'info': logging.INFO,
-            'warning': logging.WARNING,
-            'error': logging.ERROR,
-            'critical': logging.CRITICAL
-        }
-        file_logging_level = level_lookup.get('file_log_level', logging.NOTSET)
+        file_log_level = level_lookup.get(options['file_log_level'], logging.NOTSET)
         file_log_directory = options['file_log_directory']
         if not os.path.exists(file_log_directory):
             os.makedirs(file_log_directory)
         
         file_path = os.path.join(file_log_directory, datetime.date.today().isoformat() + ".log")
         fileHandler = logging.FileHandler(file_path)
-        fileHandler.setLevel(file_logging_level)
+        fileHandler.setLevel(file_log_level)
         fileHandler.setFormatter(logging.Formatter(LOG_STRING_FORMAT, LOG_DATE_FORMAT))        
         logging.getLogger().addHandler(fileHandler)
         
@@ -249,6 +261,9 @@ def main():
         if (run_stats != None):
             run_stats.log_end(logger)
         
+console_log_handler = init_console_log()
+logger = logging.getLogger('main')
+
 if __name__ == '__main__':
     main()
         
