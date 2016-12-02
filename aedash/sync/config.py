@@ -77,7 +77,7 @@ class ConfigLoader(object):
     def load_dashboard_config(self):
         dashboard_config = self.get_config_section('dashboard') 
 
-        owning_config_filename = dashboard_config.get('owning_config_filename', DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME)
+        owning_config_filename = DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME
         trustee_config_filename_format = dashboard_config.get('trustee_config_filename_format', DEFAULT_DASHBOARD_TRUSTEE_CONFIG_FILENAME_FORMAT)
         
         trustee_config_file_paths = {}
