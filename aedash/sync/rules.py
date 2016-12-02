@@ -443,7 +443,7 @@ class RuleProcessor(object):
     
     def write_remove_list(self, file_path, dashboard_users):
         total_users = 0
-        with open(file_path, 'w', 1) as output_file:
+        with open(file_path, 'wb') as output_file:
             delimiter = aedash.sync.helper.guess_delimiter_from_filename(file_path)            
             writer = csv.DictWriter(output_file, fieldnames = ['user', 'domain'], delimiter = delimiter)
             writer.writeheader()
