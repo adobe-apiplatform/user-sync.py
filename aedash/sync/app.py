@@ -33,7 +33,7 @@ def process_args():
                         default=config.DEFAULT_MAIN_CONFIG_FILENAME, metavar='filename', dest='config_filename')
     parser.add_argument('--users', 
                         help="specify the users to be considered for sync. Legal values are 'all' (the default), 'group name or names' (one or more specified AD groups), 'file f' (a specified input file).", 
-                        nargs="+", default=['all'], metavar=('all|file|group', 'arg1'), dest='users')
+                        nargs="*", metavar=('all|file|group', 'arg1'), dest='users')
     parser.add_argument('--user-filter',
                         help='limit the selected set of users that may be examined for syncing, with the pattern being a regular expression.',
                         metavar='pattern', dest='username_filter_pattern')
@@ -109,7 +109,7 @@ def begin_work(config_loader):
 
     directory_groups = config_loader.get_directory_groups()
     dashboard_config = config_loader.get_dashboard_config()
-    
+
     referenced_organization_names = set()
     for groups in directory_groups.itervalues():
         for group in groups:
@@ -121,13 +121,15 @@ def begin_work(config_loader):
     
     if (len(referenced_organization_names) > 0):
         raise aedash.sync.error.AssertionException('dashboard_groups have references to unknown trustee dashboards: %s' % referenced_organization_names) 
-        
+                
+    directory_connector = None
     directory_connector_module_name = config_loader.get_directory_connector_module_name()
-    directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])    
-    directory_connector = aedash.sync.connector.directory.DirectoryConnector(directory_connector_module)
-    
-    directory_connector_options = config_loader.get_directory_connector_config(directory_connector.name)
-    directory_connector.initialize(directory_connector_options)
+    if (directory_connector_module_name != None):
+        directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])    
+        directory_connector = aedash.sync.connector.directory.DirectoryConnector(directory_connector_module)
+        
+        directory_connector_options = config_loader.get_directory_connector_config(directory_connector.name)
+        directory_connector.initialize(directory_connector_options)
     
     dashboard_owning_connector = aedash.sync.connector.dashboard.DashboardConnector(dashboard_config['owning'])
     dashboard_trustee_connectors = {}    
@@ -140,18 +142,7 @@ def begin_work(config_loader):
     rule_processor = aedash.sync.rules.RuleProcessor(rule_config)
     if (len(directory_groups) == 0 and rule_processor.will_manage_groups()):
         logger.warn('no groups mapped in config file')
-    
-    load_directory_stats = aedash.sync.helper.JobStats("Load from Directory", divider = "-")
-    load_directory_stats.log_start(logger)
-    rule_processor.read_desired_user_groups(directory_groups, directory_connector)
-    load_directory_stats.log_end(logger)
-
-    dashboard_stats = aedash.sync.helper.JobStats("Sync Dashboard", divider = "-")
-    dashboard_stats.log_start(logger)
-    rule_processor.process_dashboard_users(dashboard_connectors)
-    rule_processor.clean_dashboard_users(dashboard_connectors)    
-    dashboard_connectors.execute_actions()
-    dashboard_stats.log_end(logger)
+    rule_processor.run(directory_groups, directory_connector, dashboard_connectors)
     
     
 def create_config_loader(args):
@@ -170,18 +161,22 @@ def create_config_loader_options(args):
     }
 
     users_args = args.users
-    users_action = aedash.sync.helper.normalize_string(users_args.pop(0))
-    if (users_action == 'file'):
-        if (len(users_args) == 0):
-            raise aedash.sync.error.AssertionException('Missing file path for --users %s [file_path]' % users_action)
-        config_options['directory_connector_module_name'] = 'aedash.sync.connector.directory_csv'
-        config_options['directory_connector_overridden_options'] = {'file_path': users_args.pop(0)}
-    elif (users_action == 'group'):            
-        if (len(users_args) == 0):
-            raise aedash.sync.error.AssertionException('Missing groups for --users %s [groups]' % users_action)
-        config_options['directory_group_filter'] = users_args.pop(0).split(',')
-    elif (users_action != 'all'):
-        raise aedash.sync.error.AssertionException('Unknown argument --users %s' % users_action)
+    if (users_args != None):
+        users_action = None if len(users_args) == 0 else aedash.sync.helper.normalize_string(users_args.pop(0))
+        if (users_action == None or users_action == 'all'):
+            config_options['directory_connector_module_name'] = 'aedash.sync.connector.directory_ldap'
+        elif (users_action == 'file'):
+            if (len(users_args) == 0):
+                raise aedash.sync.error.AssertionException('Missing file path for --users %s [file_path]' % users_action)
+            config_options['directory_connector_module_name'] = 'aedash.sync.connector.directory_csv'
+            config_options['directory_connector_overridden_options'] = {'file_path': users_args.pop(0)}
+        elif (users_action == 'group'):            
+            if (len(users_args) == 0):
+                raise aedash.sync.error.AssertionException('Missing groups for --users %s [groups]' % users_action)
+            config_options['directory_connector_module_name'] = 'aedash.sync.connector.directory_ldap'
+            config_options['directory_group_filter'] = users_args.pop(0).split(',')
+        else:
+            raise aedash.sync.error.AssertionException('Unknown argument --users %s' % users_action)
     
     username_filter_pattern = args.username_filter_pattern 
     if (username_filter_pattern):

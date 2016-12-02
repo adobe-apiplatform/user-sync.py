@@ -25,7 +25,7 @@ class ConfigLoader(object):
             'config_directory': DEFAULT_CONFIG_DIRECTORY,
             'main_config_filename': DEFAULT_MAIN_CONFIG_FILENAME,            
 
-            'directory_connector_module_name': 'aedash.sync.connector.directory_ldap',
+            'directory_connector_module_name': None,
             'directory_connector_overridden_options': None,
             'directory_group_filter': None,
             'username_filter_regex': None,

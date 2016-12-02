@@ -49,9 +49,7 @@ class RulesTest(unittest.TestCase):
         })
         
         rule_processor = aedash.sync.rules.RuleProcessor({})
-        rule_processor.read_desired_user_groups(directory_groups, mock_directory_connector)
-        rule_processor.process_dashboard_users(dashboard_connectors)
-        rule_processor.clean_dashboard_users(dashboard_connectors)
+        rule_processor.run(directory_groups, mock_directory_connector, dashboard_connectors)
 
         rule_options = rule_processor.options
 
@@ -95,15 +93,17 @@ class RulesTest(unittest.TestCase):
         
     @staticmethod
     def create_mock_dashboard_connector(users_to_return, commands_list_output):
-        def mock_iter_users():
-            return list(users_to_return)
         def mock_send_commands(commands, callback = None):
             if (len(commands) > 0):
                 commands_list_output.append(commands)
             if (callback != None):
                 callback(None, True, None)
+
+        action_manager = mock.mock.create_autospec(aedash.sync.connector.dashboard.ActionManager)
+        action_manager.has_work = lambda: False
         mock_connector = mock.mock.create_autospec(aedash.sync.connector.dashboard)
-        mock_connector.iter_users = mock_iter_users
+        mock_connector.iter_users = lambda: list(users_to_return)
         mock_connector.send_commands = mock_send_commands
+        mock_connector.get_action_manager = lambda: action_manager
         return mock_connector
 
