@@ -1,11 +1,12 @@
+import aedash.sync.config
 import aedash.sync.connector.helper
+import aedash.sync.error
 import aedash.sync.helper
 import aedash.sync.identity_type
 
 def connector_metadata():
     metadata = {
-        'name': CSVDirectoryConnector.name,
-        'required_options': ['file_path']
+        'name': CSVDirectoryConnector.name
     }
     return metadata
 
@@ -28,22 +29,25 @@ class CSVDirectoryConnector(object):
     name = 'csv'
     
     def __init__(self, caller_options):
-        options = {
-            'delimiter': None,
-            'first_name_column_name': 'firstname',
-            'last_name_column_name': 'lastname',
-            'email_column_name': 'email',
-            'country_column_name': 'country',
-            'groups_column_name': 'groups',
-            'username_column_name': 'user',
-            'domain_column_name': 'domain',
-            'identity_type_column_name': 'type',
-            'logger_name': 'connector.' + CSVDirectoryConnector.name
-        }
-        options.update(caller_options)
-        
+        caller_config = aedash.sync.config.DictConfig('"%s options"' % CSVDirectoryConnector.name, caller_options)
+        builder = aedash.sync.config.OptionsBuilder(caller_config)
+        builder.set_string_value('delimiter', None)
+        builder.set_string_value('first_name_column_name', 'firstname')
+        builder.set_string_value('last_name_column_name', 'lastname')
+        builder.set_string_value('email_column_name', 'email')
+        builder.set_string_value('country_column_name', 'country')
+        builder.set_string_value('groups_column_name', 'groups')
+        builder.set_string_value('username_column_name', 'user')
+        builder.set_string_value('domain_column_name', 'domain')
+        builder.set_string_value('identity_type_column_name', 'type')
+        builder.set_string_value('logger_name', 'connector.' + CSVDirectoryConnector.name)
+        builder.require_string_value('file_path')
+        options = builder.get_options()        
+
         self.options = options
-        self.logger = logger = aedash.sync.connector.helper.create_logger(options)
+        self.logger = logger = aedash.sync.connector.helper.create_logger(options)        
+        caller_config.report_unused_values(logger)
+
         logger.debug('Initialized with options: %s', options)            
 
     def load_users_and_groups(self, groups):

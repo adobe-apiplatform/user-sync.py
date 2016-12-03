@@ -7,8 +7,7 @@ import aedash.sync.identity_type
 
 def connector_metadata():
     metadata = {
-        'name': LDAPDirectoryConnector.name,
-        'required_options': ['host', 'username', 'password', 'base_dn']
+        'name': LDAPDirectoryConnector.name
     }
     return metadata
 
@@ -34,26 +33,31 @@ class LDAPDirectoryConnector(object):
     group_member_attribute = "member"
     
     def __init__(self, caller_options):
-        options = {
-            'group_filter_format': '(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))',
-            'all_users_filter': '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))',
-            'require_tls_cert': False,
-            'user_email_format': '{mail}',
-            'user_username_format': None,
-            'user_domain_format': None,
-            'user_identity_type': None,
-            'search_page_size': 200,
-            'logger_name': 'connector.' + LDAPDirectoryConnector.name,
-            'source_filters': {}
-        }
-        options.update(caller_options)
-    
+        caller_config = aedash.sync.config.DictConfig('"%s options"' % LDAPDirectoryConnector.name, caller_options)
+        builder = aedash.sync.config.OptionsBuilder(caller_config)
+        builder.set_string_value('group_filter_format', '(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))')
+        builder.set_string_value('all_users_filter', '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))')
+        builder.set_bool_value('require_tls_cert', False)
+        builder.set_string_value('user_email_format', '{mail}')
+        builder.set_string_value('user_username_format', None)
+        builder.set_string_value('user_domain_format', None)
+        builder.set_string_value('user_identity_type', None)
+        builder.set_int_value('search_page_size', 200)
+        builder.set_string_value('logger_name', 'connector.' + LDAPDirectoryConnector.name)
+        builder.set_dict_value('source_filters', {})
+        host = builder.require_string_value('host')
+        username = builder.require_string_value('username')
+        builder.require_string_value('base_dn')
+        options = builder.get_options()        
+        password = caller_config.get_string('password')
+            
         self.user_email_formatter = LDAPValueFormatter(options['user_email_format'])
         self.user_username_formatter = LDAPValueFormatter(options['user_username_format'])
         self.user_domain_formatter = LDAPValueFormatter(options['user_domain_format'])
         
         self.options = options
         self.logger = logger = aedash.sync.connector.helper.create_logger(options)
+        caller_config.report_unused_values(logger)
         
         try:
             options['user_identity_type'] = aedash.sync.identity_type.parse_identity_type(options['user_identity_type'])
@@ -63,9 +67,6 @@ class LDAPDirectoryConnector(object):
             raise e
         
         require_tls_cert = options['require_tls_cert']
-        host = options['host']
-        username = options['username']
-        password = options.pop('password')
         logger.debug('Initialized with options: %s', options)            
 
         logger.info('Connecting to: %s using username: %s', host, username)            

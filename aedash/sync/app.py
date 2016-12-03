@@ -6,6 +6,7 @@ import os
 import re
 import sys
 
+import aedash.sync.config
 import aedash.sync.error
 import aedash.sync.lockfile
 import aedash.sync.rules
@@ -65,18 +66,16 @@ def init_console_log():
     root_logger.setLevel(logging.DEBUG)
     return console_log_handler
 
-def init_log(caller_options):
+def init_log(logging_config):
     '''
-    :type caller_options:dict
+    :type logging_config: aedash.sync.config.DictConfig
     '''
-    options = {
-        'log_to_file': False,
-        'file_log_directory': 'logs',
-        'file_log_level': 'debug',
-        'console_log_level': None
-    }
-    if (caller_options != None):
-        options.update(caller_options)
+    builder = aedash.sync.config.OptionsBuilder(logging_config)
+    builder.set_bool_value('log_to_file', False)
+    builder.set_string_value('file_log_directory', 'logs')
+    builder.set_string_value('file_log_level', 'debug')
+    builder.set_string_value('console_log_level', None)    
+    options = builder.get_options()
         
     level_lookup = {
         'debug': logging.DEBUG,
@@ -104,11 +103,10 @@ def init_log(caller_options):
         
 def begin_work(config_loader):
     '''
-    :type config_loader: config.ConfigLoader
+    :type config_loader: aedash.sync.config.ConfigLoader
     '''
 
     directory_groups = config_loader.get_directory_groups()
-    dashboard_config = config_loader.get_dashboard_config()
 
     referenced_organization_names = set()
     for groups in directory_groups.itervalues():
@@ -116,7 +114,7 @@ def begin_work(config_loader):
             organization_name = group.organization_name
             if (organization_name != aedash.sync.rules.OWNING_ORGANIZATION_NAME):
                 referenced_organization_names.add(organization_name)
-    trustee_dashboard_configs = dashboard_config['trustees']
+    trustee_dashboard_configs = config_loader.get_dashboard_options_for_trustees()
     referenced_organization_names.difference_update(trustee_dashboard_configs.iterkeys())
     
     if (len(referenced_organization_names) > 0):
@@ -128,18 +126,22 @@ def begin_work(config_loader):
         directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])    
         directory_connector = aedash.sync.connector.directory.DirectoryConnector(directory_connector_module)
         
-        directory_connector_options = config_loader.get_directory_connector_config(directory_connector.name)
+        directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
         directory_connector.initialize(directory_connector_options)
     
-    dashboard_owning_connector = aedash.sync.connector.dashboard.DashboardConnector(dashboard_config['owning'])
+    owning_dashboard_config = config_loader.get_dashboard_options_for_owning()
+    dashboard_owning_connector = aedash.sync.connector.dashboard.DashboardConnector("owning", owning_dashboard_config)
     dashboard_trustee_connectors = {}    
     for trustee_organization_name, trustee_config in trustee_dashboard_configs.iteritems():
-        dashboard_trustee_conector = aedash.sync.connector.dashboard.DashboardConnector(trustee_config)
+        dashboard_trustee_conector = aedash.sync.connector.dashboard.DashboardConnector("trustee.%s" % trustee_organization_name, trustee_config)
         dashboard_trustee_connectors[trustee_organization_name] = dashboard_trustee_conector 
     dashboard_connectors = aedash.sync.rules.DashboardConnectors(dashboard_owning_connector, dashboard_trustee_connectors)
 
-    rule_config = config_loader.get_rule_config()
+    rule_config = config_loader.get_rule_options()
     rule_processor = aedash.sync.rules.RuleProcessor(rule_config)
+
+    config_loader.check_unused_config_keys()
+    
     if (len(directory_groups) == 0 and rule_processor.will_manage_groups()):
         logger.warn('no groups mapped in config file')
     rule_processor.run(directory_groups, directory_connector, dashboard_connectors)
@@ -150,7 +152,7 @@ def create_config_loader(args):
         'config_directory': args.config_path,
         'main_config_filename': args.config_filename,
     }
-    config_loader = config.ConfigLoader(config_bootstrap_options)
+    config_loader = aedash.sync.config.ConfigLoader(config_bootstrap_options)
     return config_loader
             
 def create_config_loader_options(args):
@@ -261,5 +263,4 @@ logger = logging.getLogger('main')
 
 if __name__ == '__main__':
     main()
-        
     

@@ -1,4 +1,3 @@
-import aedash.sync.connector.helper
 import aedash.sync.error
 
 class DirectoryConnector(object):    
@@ -19,9 +18,6 @@ class DirectoryConnector(object):
         '''
         :type options: dict
         '''
-        required_options = self.metadata.get('required_options')
-        if (required_options != None):
-            aedash.sync.connector.helper.validate_options(options, required_options, '%%s for connector: %s' % self.metadata['name'])
         self.state = self.implementation.connector_initialize(options)
         
     def load_users_and_groups(self, groups):
