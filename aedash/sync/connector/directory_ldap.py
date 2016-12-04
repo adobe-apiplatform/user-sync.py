@@ -105,12 +105,9 @@ class LDAPDirectoryConnector(object):
         self.user_by_dn = user_by_dn = {}
         self.user_by_uid = user_by_uid = {}
         for user_dn, user in self.iter_users(users_filter):
-            for dn_part_name, dn_part_value in self.iter_dn_parts(user_dn):
-                map_to_register = None
-                if (dn_part_name == 'uid'):
-                    map_to_register = user_by_uid
-                if (map_to_register != None):
-                    map_to_register[dn_part_value] = user
+            uid = user.get('uid')
+            if (uid != None):
+                user_by_uid[uid] = user
             user_by_dn[user_dn] = user
         
         self.logger.info('Total users loaded: %d', len(user_by_dn))
@@ -236,7 +233,7 @@ class LDAPDirectoryConnector(object):
         options = self.options
         base_dn = options['base_dn']
         
-        user_attribute_names = ["givenName", "sn", "c"]    
+        user_attribute_names = ["givenName", "sn", "c", "uid"]    
         user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
@@ -275,6 +272,11 @@ class LDAPDirectoryConnector(object):
             c_value = LDAPValueFormatter.get_attribute_value(record, 'c')
             if c_value != None:
                 user['country'] = c_value
+                
+            uid = LDAPValueFormatter.get_attribute_value(record, 'uid')
+            if (uid != None):
+                user['uid'] = uid
+            
             yield (dn, user)
     
     def iter_search_result(self, base_dn, scope, filter_string, attributes):
@@ -318,16 +320,6 @@ class LDAPDirectoryConnector(object):
                 msgid = None
             raise
         
-    @staticmethod
-    def iter_dn_parts(dn):
-        dn_parts = ldap.dn.str2dn(dn)
-        for dn_part_items in dn_parts:
-            if (len(dn_part_items) > 0):
-                dn_part_item = dn_part_items[0] 
-                if (len(dn_part_item) > 2):
-                    yield dn_part_item[0:2]
-
-    
 class LDAPValueFormatter(object):
     def __init__(self, string_format):
         '''
