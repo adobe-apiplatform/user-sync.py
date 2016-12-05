@@ -13,7 +13,6 @@ from umapi.error import UMAPIError, UMAPIRetryError, UMAPIRequestError
 from umapi.helper import iter_paginate
 
 import aedash.sync.helper
-import aedash.sync.connector.helper
 
 try:
     from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
@@ -22,45 +21,38 @@ except:
     pass
 
 class DashboardConnector(object):
-    name = 'connector.dashboard'
-    
-    def __init__(self, caller_options):
+    def __init__(self, name, caller_options):
         '''
+        :type name: str
         :type caller_options: dict
         '''
-        options = {
-            'server': {
-                'host': 'usermanagement.adobe.io',
-                'endpoint': '/v2/usermanagement',
-                'ims_host': 'ims-na1.adobelogin.com',
-                'ims_endpoint_jwt': '/ims/exchange/jwt'
-            },
-            'logger_name': DashboardConnector.name,
-            'test_mode': False,
-        }
-        for key, value in caller_options.iteritems():
-            if (key == 'server'):
-                if (isinstance(value, dict)):
-                    options[key].update(value)
-            else:
-                options[key] = value
+        caller_config = aedash.sync.config.DictConfig('"%s dashboard options"' % name, caller_options)
+        builder = aedash.sync.config.OptionsBuilder(caller_config)
+        builder.set_string_value('logger_name', 'dashboard.' + name)
+        builder.set_bool_value('test_mode', False)
+        options = builder.get_options()        
+
+        server_config = caller_config.get_dict_config('server', True)
+        server_builder = aedash.sync.config.OptionsBuilder(server_config)
+        server_builder.set_string_value('host', 'usermanagement.adobe.io')
+        server_builder.set_string_value('endpoint', '/v2/usermanagement')
+        server_builder.set_string_value('ims_host', 'ims-na1.adobelogin.com')
+        server_builder.set_string_value('ims_endpoint_jwt', '/ims/exchange/jwt')
+        options['server'] = server_options = server_builder.get_options() 
         
-        required_options = [
-            'enterprise.org_id',
-            'enterprise.api_key',
-            'enterprise.client_secret',
-            'enterprise.tech_acct',
-            'enterprise.priv_key_path'
-        ]
+        enterprise_config = caller_config.get_dict_config('enterprise', True)
+        enterprise_builder = aedash.sync.config.OptionsBuilder(enterprise_config)
+        enterprise_builder.require_string_value('org_id')
+        enterprise_builder.require_string_value('api_key')
+        enterprise_builder.require_string_value('client_secret')
+        enterprise_builder.require_string_value('tech_acct')
+        enterprise_builder.require_string_value('priv_key_path')
+        options['enterprise'] = enterprise_options = enterprise_builder.get_options() 
 
         self.options = options;        
         self.logger = logger = helper.create_logger(options)
+        caller_config.report_unused_values(logger)
         
-        aedash.sync.connector.helper.validate_options(options, required_options, '%%s for connector: %s' % DashboardConnector.name)
-
-        server_options = options['server']
-        enterprise_options = options['enterprise']
-                
         ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
         api_key = enterprise_options['api_key']

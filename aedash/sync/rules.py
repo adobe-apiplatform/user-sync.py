@@ -35,7 +35,7 @@ class RuleProcessor(object):
         remove_user_key_list = set(remove_user_key_list) if (remove_user_key_list != None) else set()
         self.remove_user_key_list = remove_user_key_list
         
-        self.need_to_find_orphaned_dashboard_users = options['remove_list_output_path'] != None or options['remove_nonexistent_users']
+        self.need_to_process_orphaned_dashboard_users = options['remove_list_output_path'] != None or options['remove_nonexistent_users']
                 
         self.logger = logger = logging.getLogger('processor')
         
@@ -45,6 +45,35 @@ class RuleProcessor(object):
             if (username_filter_regex != None):
                 options_to_report['username_filter_regex'] = "%s: %s" % (type(username_filter_regex), username_filter_regex.pattern)
             logger.debug('Initialized with options: %s', options_to_report)
+    
+    def run(self, directory_groups, directory_connector, dashboard_connectors):
+        '''
+        :type directory_groups: dict(str, list(Group)
+        :type directory_connector: aedash.sync.connector.directory.DirectoryConnector
+        :type dashboard_connectors: DashboardConnectors
+        '''
+        logger = self.logger
+
+        self.prepare_organization_infos(directory_groups)
+
+        if (directory_connector != None):
+            load_directory_stats = aedash.sync.helper.JobStats("Load from Directory", divider = "-")
+            load_directory_stats.log_start(logger)
+            self.read_desired_user_groups(directory_groups, directory_connector)
+            load_directory_stats.log_end(logger)
+            should_sync_dashboard_users = True
+        else:
+            should_sync_dashboard_users = False
+        
+        dashboard_stats = aedash.sync.helper.JobStats("Sync Dashboard", divider = "-")
+        dashboard_stats.log_start(logger)
+        if (should_sync_dashboard_users):
+            self.process_dashboard_users(dashboard_connectors)
+            if self.need_to_process_orphaned_dashboard_users:
+                self.process_orphaned_dashboard_users()                            
+        self.clean_dashboard_users(dashboard_connectors)    
+        dashboard_connectors.execute_actions()
+        dashboard_stats.log_end(logger)
             
     def will_manage_groups(self):
         return self.options['manage_groups']
@@ -55,18 +84,22 @@ class RuleProcessor(object):
             self.organization_info_by_organization[organization_name] = organization_info = OrganizationInfo(organization_name)
         return organization_info
     
+    def prepare_organization_infos(self, mappings):
+        '''
+        :type mappings: dict(str, list(Group)
+        '''                   
+        for dashboard_groups in mappings.itervalues():
+            for dashboard_group in dashboard_groups:
+                organization_info = self.get_organization_info(dashboard_group.organization_name)
+                organization_info.add_mapped_group(dashboard_group.group_name)
+
     def read_desired_user_groups(self, mappings, directory_connector):
         '''
         :type mappings: dict(str, list(Group)
         :type directory_connector: aedash.sync.connector.directory.DirectoryConnector
         '''
         self.logger.info('Building work list...')
-        
-        for dashboard_groups in mappings.itervalues():
-            for dashboard_group in dashboard_groups:
-                organization_info = self.get_organization_info(dashboard_group.organization_name)
-                organization_info.add_mapped_group(dashboard_group.group_name)
-        
+                
         options = self.options
         directory_group_filter = options['directory_group_filter']
         if (directory_group_filter != None):
@@ -78,11 +111,11 @@ class RuleProcessor(object):
 
         directory_groups = set(mappings.iterkeys())
         if (directory_group_filter != None):
-            directory_groups.union(directory_group_filter)
+            directory_groups.update(directory_group_filter)
         all_loaded, directory_users = directory_connector.load_users_and_groups(directory_groups) 
-        if (not all_loaded and self.need_to_find_orphaned_dashboard_users):
+        if (not all_loaded and self.need_to_process_orphaned_dashboard_users):
             self.logger.warn('Not all users loaded.  Cannot check orphaned users...')
-            self.need_to_find_orphaned_dashboard_users = False
+            self.need_to_process_orphaned_dashboard_users = False
         
         for directory_user in directory_users:
             user_key = RuleProcessor.get_directory_user_key(directory_user)
@@ -165,60 +198,63 @@ class RuleProcessor(object):
             if (search_result == None):
                 return False
         return True
+    
+    def process_orphaned_dashboard_users(self):
+        remove_user_key_list = self.remove_user_key_list
+            
+        options = self.options
+        remove_list_output_path = options['remove_list_output_path']
+        remove_nonexistent_users = options['remove_nonexistent_users']
+        
+        orphaned_federated_dashboard_users = list(self.iter_orphaned_federated_dashboard_users())
+        self.logger.info('Federated orphaned users to be removed: %s', [self.get_dashboard_user_key(dashboard_user) for dashboard_user in orphaned_federated_dashboard_users])        
+        
+        if (remove_list_output_path != None):
+            self.logger.info('Writing remove list to: %s', remove_list_output_path)
+            self.write_remove_list(remove_list_output_path, orphaned_federated_dashboard_users)
+        elif (remove_nonexistent_users):
+            for dashboard_user in orphaned_federated_dashboard_users:
+                user_key = self.get_dashboard_user_key(dashboard_user)
+                remove_user_key_list.add(user_key)
                     
     def clean_dashboard_users(self, dashboard_connectors):
         '''
         :type dashboard_connectors: DashboardConnectors
         '''
         remove_user_key_list = self.remove_user_key_list
-            
-        if (self.need_to_find_orphaned_dashboard_users):
-            options = self.options
-            remove_list_output_path = options['remove_list_output_path']
-            remove_nonexistent_users = options['remove_nonexistent_users']
-            
-            orphaned_federated_dashboard_users = list(self.iter_orphaned_federated_dashboard_users())
-            self.logger.info('Federated orphaned users to be removed: %s', [self.get_dashboard_user_key(dashboard_user) for dashboard_user in orphaned_federated_dashboard_users])        
-            
-            if (remove_list_output_path != None):
-                self.logger.info('Writing remove list to: %s', remove_list_output_path)
-                self.write_remove_list(remove_list_output_path, orphaned_federated_dashboard_users)
-            elif (remove_nonexistent_users):
-                for dashboard_user in orphaned_federated_dashboard_users:
-                    user_key = self.get_dashboard_user_key(dashboard_user)
-                    remove_user_key_list.add(user_key)
-            
-        if (len(remove_user_key_list)):
-            self.logger.info('Removing users: %s', remove_user_key_list)
-            for organization_name, dashboard_connector in dashboard_connectors.get_trustee_connectors().iteritems():
-                organization_info = self.get_organization_info(organization_name)
-                mapped_groups = organization_info.get_mapped_groups()
-                if (len(mapped_groups) == 0):
-                    self.logger.info('No mapped groups for trustee: %s', organization_name) 
-                    continue
-                                
-                for user_key in remove_user_key_list:
-                    dashboard_user = organization_info.get_dashboard_user(user_key)
-                    if (dashboard_user != None):
-                        groups_to_remove = self.normalize_groups(dashboard_user.get('groups')) & mapped_groups
-                    else:
-                        groups_to_remove = mapped_groups
-
-                    if (len(groups_to_remove) > 0):
-                        self.logger.info('Removing groups for user key: %s removed: %s', user_key, groups_to_remove)
-                        username, domain = self.parse_user_key(user_key)
-                        commands = aedash.sync.connector.dashboard.Commands(username, domain)
-                        commands.remove_groups(groups_to_remove)
-                        dashboard_connector.send_commands(commands)
-
-            organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
+        if (len(remove_user_key_list) == 0):
+            return
+        
+        self.logger.info('Removing users: %s', remove_user_key_list)
+        for organization_name, dashboard_connector in dashboard_connectors.get_trustee_connectors().iteritems():
+            organization_info = self.get_organization_info(organization_name)
+            mapped_groups = organization_info.get_mapped_groups()
+            if (len(mapped_groups) == 0):
+                self.logger.info('No mapped groups for trustee: %s', organization_name) 
+                continue
+                            
             for user_key in remove_user_key_list:
-                if (organization_info.get_dashboard_user(user_key) != None):
-                    self.logger.info('Removing user for user key: %s', user_key)
+                dashboard_user = organization_info.get_dashboard_user(user_key)
+                if (dashboard_user != None):
+                    groups_to_remove = self.normalize_groups(dashboard_user.get('groups')) & mapped_groups
+                else:
+                    groups_to_remove = mapped_groups
+
+                if (len(groups_to_remove) > 0):
+                    self.logger.info('Removing groups for user key: %s removed: %s', user_key, groups_to_remove)
                     username, domain = self.parse_user_key(user_key)
                     commands = aedash.sync.connector.dashboard.Commands(username, domain)
-                    commands.remove_from_org()
-                    dashboard_connectors.get_owning_connector().send_commands(commands)
+                    commands.remove_groups(groups_to_remove)
+                    dashboard_connector.send_commands(commands)
+
+        organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
+        for user_key in remove_user_key_list:
+            if (not organization_info.is_dashboard_users_loaded() or organization_info.get_dashboard_user(user_key) != None):
+                self.logger.info('Removing user for user key: %s', user_key)
+                username, domain = self.parse_user_key(user_key)
+                commands = aedash.sync.connector.dashboard.Commands(username, domain)
+                commands.remove_from_org()
+                dashboard_connectors.get_owning_connector().send_commands(commands)
      
     def get_user_attributes(self, directory_user):
         attributes = {}
@@ -244,7 +280,11 @@ class RuleProcessor(object):
         attributes = self.get_user_attributes(directory_user)
         country = directory_user['country']
         if (country != None):
-            attributes['country'] = country                
+            attributes['country'] = country    
+        if (attributes.get('firstname') == None):
+            attributes.pop('firstname', None)
+        if (attributes.get('lastname') == None):
+            attributes.pop('lastname', None)
         attributes['option'] = "updateIfAlreadyExists" if update_user_info else 'ignoreIfAlreadyExists'
         
         account_type = directory_user.get('identitytype')
@@ -337,6 +377,8 @@ class RuleProcessor(object):
             commands.add_groups(groups_to_add)
             commands.remove_groups(groups_to_remove)
             dashboard_connector.send_commands(commands)
+        
+        organization_info.set_dashboard_users_loaded()
         
         return desired_groups_by_user_key
     
@@ -443,7 +485,7 @@ class RuleProcessor(object):
     
     def write_remove_list(self, file_path, dashboard_users):
         total_users = 0
-        with open(file_path, 'w', 1) as output_file:
+        with open(file_path, 'wb') as output_file:
             delimiter = aedash.sync.helper.guess_delimiter_from_filename(file_path)            
             writer = csv.DictWriter(output_file, fieldnames = ['user', 'domain'], delimiter = delimiter)
             writer.writeheader()
@@ -516,6 +558,7 @@ class OrganizationInfo(object):
         self.mapped_groups = set()
         self.desired_groups_by_user_key = {}
         self.dashboard_user_by_user_key = {}
+        self.dashboard_users_loaded = False
         self.orphaned_dashboard_user_by_user_key = {}
         self.groups_added_by_user_key = {}
 
@@ -562,12 +605,19 @@ class OrganizationInfo(object):
         self.dashboard_user_by_user_key[user_key] = user
         
     def iter_dashboard_users(self):
-        dashboard_user_by_user_key = self.dashboard_user_by_user_key
-        return [] if dashboard_user_by_user_key == None else dashboard_user_by_user_key.iteritems()
+        return self.dashboard_user_by_user_key.iteritems()
     
     def get_dashboard_user(self, user_key):
-        dashboard_user_by_user_key = self.dashboard_user_by_user_key
-        return None if dashboard_user_by_user_key == None else dashboard_user_by_user_key.get(user_key)
+        '''
+        :type user_key: str
+        '''
+        return self.dashboard_user_by_user_key.get(user_key)
+    
+    def set_dashboard_users_loaded(self):
+        self.dashboard_users_loaded = True
+        
+    def is_dashboard_users_loaded(self):
+        return self.dashboard_users_loaded
     
     def add_orphaned_dashboard_user(self, user_key, user):
         '''

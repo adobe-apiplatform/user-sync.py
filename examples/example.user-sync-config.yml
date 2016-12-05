@@ -13,9 +13,6 @@ dashboard:
   # trustees:
   #   org1: example.dashboard-config.yml    
 
-  # specifies the filename for the owning org configuration.  Default is:
-  # owning_config_filename: "dashboard-owning-config.yml"
-  
   # specifies the filename format for the trustee org configurations.  
   # a filename that matches the format will have the organization name extracted 
   # from the filename. Default is:
@@ -70,5 +67,9 @@ logging:
   log_to_file: True
   # output path for logs
   file_log_directory: logs
-  #Logging Level: Can be "debug", "info", "warning", "error", or "critical".  This is in ascending order, meaning "debug" < "critical".  Will only be used on file log, console log is always "debug"
+  # File Logging Level: Can be "debug", "info", "warning", "error", or "critical".  
+  # This is in ascending order, meaning "debug" < "critical".
   file_log_level: debug
+  # Console Logging Level: Can be "debug", "info", "warning", "error", or "critical".  
+  # This is in ascending order, meaning "debug" < "critical".  Default is:
+  # console_log_level: debug

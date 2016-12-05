@@ -7,8 +7,7 @@ import aedash.sync.identity_type
 
 def connector_metadata():
     metadata = {
-        'name': LDAPDirectoryConnector.name,
-        'required_options': ['host', 'username', 'password', 'base_dn']
+        'name': LDAPDirectoryConnector.name
     }
     return metadata
 
@@ -30,27 +29,35 @@ def connector_load_users_and_groups(state, groups):
 class LDAPDirectoryConnector(object):
     name = 'ldap'
     
-    def __init__(self, caller_options):
-        options = {
-            'group_filter_format': '(&(|(objectCategory=group)(objectClass=groupOfNames))(cn={group}))',
-            'all_users_filter': '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))',
-            'require_tls_cert': False,
-            'user_email_format': '{mail}',
-            'user_username_format': None,
-            'user_domain_format': None,
-            'user_identity_type': None,
-            'search_page_size': 200,
-            'logger_name': 'connector.' + LDAPDirectoryConnector.name,
-            'source_filters': {}
-        }
-        options.update(caller_options)
+    group_member_uid_attribute = "memberUid"
+    group_member_attribute = "member"
     
+    def __init__(self, caller_options):
+        caller_config = aedash.sync.config.DictConfig('"%s options"' % LDAPDirectoryConnector.name, caller_options)
+        builder = aedash.sync.config.OptionsBuilder(caller_config)
+        builder.set_string_value('group_filter_format', '(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))')
+        builder.set_string_value('all_users_filter', '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))')
+        builder.set_bool_value('require_tls_cert', False)
+        builder.set_string_value('user_email_format', '{mail}')
+        builder.set_string_value('user_username_format', None)
+        builder.set_string_value('user_domain_format', None)
+        builder.set_string_value('user_identity_type', None)
+        builder.set_int_value('search_page_size', 200)
+        builder.set_string_value('logger_name', 'connector.' + LDAPDirectoryConnector.name)
+        builder.set_dict_value('source_filters', {})
+        host = builder.require_string_value('host')
+        username = builder.require_string_value('username')
+        builder.require_string_value('base_dn')
+        options = builder.get_options()        
+        password = caller_config.get_string('password')
+            
         self.user_email_formatter = LDAPValueFormatter(options['user_email_format'])
         self.user_username_formatter = LDAPValueFormatter(options['user_username_format'])
         self.user_domain_formatter = LDAPValueFormatter(options['user_domain_format'])
         
         self.options = options
         self.logger = logger = aedash.sync.connector.helper.create_logger(options)
+        caller_config.report_unused_values(logger)
         
         try:
             options['user_identity_type'] = aedash.sync.identity_type.parse_identity_type(options['user_identity_type'])
@@ -60,9 +67,6 @@ class LDAPDirectoryConnector(object):
             raise e
         
         require_tls_cert = options['require_tls_cert']
-        host = options['host']
-        username = options['username']
-        password = options.pop('password')
         logger.debug('Initialized with options: %s', options)            
 
         logger.info('Connecting to: %s using username: %s', host, username)            
@@ -96,22 +100,33 @@ class LDAPDirectoryConnector(object):
         else:
             users_filter = all_users_filter
 
-        self.user_by_dn = user_by_dn = dict(self.iter_users(users_filter))
+        self.logger.info('Loading users...')
+
+        self.user_by_dn = user_by_dn = {}
+        self.user_by_uid = user_by_uid = {}
+        for user_dn, user in self.iter_users(users_filter):
+            uid = user.get('uid')
+            if (uid != None):
+                user_by_uid[uid] = user
+            user_by_dn[user_dn] = user
+        
         self.logger.info('Total users loaded: %d', len(user_by_dn))
 
         for group in groups:
-            group_members = self.get_ldap_group_members(group)
             total_group_members = 0
             total_group_users = 0            
-            if group_members != None:
-                for group_member in group_members:
-                    total_group_members += 1
+            group_members = self.iter_ldap_group_members(group)
+            for group_member_attribute, group_member in group_members:
+                total_group_members += 1
+                if group_member_attribute == self.group_member_uid_attribute:
+                    user = user_by_uid.get(group_member)
+                else:
                     user = user_by_dn.get(group_member)
-                    if (user != None):
-                        total_group_users += 1
-                        user_groups = user['groups']
-                        if not group in user_groups:
-                            user_groups.append(group)
+                if (user != None):
+                    total_group_users += 1
+                    user_groups = user['groups']
+                    if not group in user_groups:
+                        user_groups.append(group)
             self.logger.debug('Group %s members: %d users: %d', group, total_group_members, total_group_users)
         
         return (not is_using_source_filter, user_by_dn.itervalues())    
@@ -144,7 +159,7 @@ class LDAPDirectoryConnector(object):
         
         return group_tuple
 
-    def get_attribute_values(self, dn, attribute_name, attributes=None):
+    def iter_attribute_values(self, dn, attribute_name, attributes=None):
         '''
         :type group_dn: str
         :type attribute_name: str
@@ -198,28 +213,27 @@ class LDAPDirectoryConnector(object):
                     result = range_parts[1] 
         return result
 
-    def get_ldap_group_members(self, group):
+    def iter_ldap_group_members(self, group):
         '''
         :type group: str
-        :rtype iterator
+        :rtype iterator(str, str)
         '''
-    
-        logger = self.logger
-    
-        result = None
-        group_tuple = self.find_ldap_group(group)
+        attributes = [self.group_member_attribute, self.group_member_uid_attribute]
+        group_tuple = self.find_ldap_group(group, attributes)
         if (group_tuple == None):
-            logger.warning("No group found for: %s", group)
+            self.logger.warning("No group found for: %s", group)
         else:
             group_dn, group_attributes = group_tuple;
-            result = self.get_attribute_values(group_dn, 'member', group_attributes)
-        return result
-    
+            for attribute in attributes:
+                attribute_values = self.iter_attribute_values(group_dn, attribute, group_attributes)
+                for attribute_value in attribute_values:
+                    yield (attribute, attribute_value)
+                    
     def iter_users(self, users_filter):
         options = self.options
         base_dn = options['base_dn']
         
-        user_attribute_names = ["givenName", "sn", "c"]    
+        user_attribute_names = ["givenName", "sn", "c", "uid"]    
         user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
@@ -258,6 +272,11 @@ class LDAPDirectoryConnector(object):
             c_value = LDAPValueFormatter.get_attribute_value(record, 'c')
             if c_value != None:
                 user['country'] = c_value
+                
+            uid = LDAPValueFormatter.get_attribute_value(record, 'uid')
+            if (uid != None):
+                user['uid'] = uid
+            
             yield (dn, user)
     
     def iter_search_result(self, base_dn, scope, filter_string, attributes):
@@ -300,7 +319,7 @@ class LDAPDirectoryConnector(object):
                 connection.abandon(msgid)
                 msgid = None
             raise
-    
+        
 class LDAPValueFormatter(object):
     def __init__(self, string_format):
         '''
