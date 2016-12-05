@@ -107,6 +107,9 @@ def begin_work(config_loader):
     '''
 
     directory_groups = config_loader.get_directory_groups()
+    owning_dashboard_config = config_loader.get_dashboard_options_for_owning()
+    trustee_dashboard_configs = config_loader.get_dashboard_options_for_trustees()
+    rule_config = config_loader.get_rule_options()
 
     referenced_organization_names = set()
     for groups in directory_groups.itervalues():
@@ -114,22 +117,24 @@ def begin_work(config_loader):
             organization_name = group.organization_name
             if (organization_name != aedash.sync.rules.OWNING_ORGANIZATION_NAME):
                 referenced_organization_names.add(organization_name)
-    trustee_dashboard_configs = config_loader.get_dashboard_options_for_trustees()
     referenced_organization_names.difference_update(trustee_dashboard_configs.iterkeys())
     
     if (len(referenced_organization_names) > 0):
         raise aedash.sync.error.AssertionException('dashboard_groups have references to unknown trustee dashboards: %s' % referenced_organization_names) 
                 
     directory_connector = None
+    directory_connector_options = None
     directory_connector_module_name = config_loader.get_directory_connector_module_name()
     if (directory_connector_module_name != None):
         directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])    
-        directory_connector = aedash.sync.connector.directory.DirectoryConnector(directory_connector_module)
-        
+        directory_connector = aedash.sync.connector.directory.DirectoryConnector(directory_connector_module)        
         directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
+
+    config_loader.check_unused_config_keys()
+        
+    if (directory_connector != None and directory_connector_options != None):
         directory_connector.initialize(directory_connector_options)
     
-    owning_dashboard_config = config_loader.get_dashboard_options_for_owning()
     dashboard_owning_connector = aedash.sync.connector.dashboard.DashboardConnector("owning", owning_dashboard_config)
     dashboard_trustee_connectors = {}    
     for trustee_organization_name, trustee_config in trustee_dashboard_configs.iteritems():
@@ -137,11 +142,7 @@ def begin_work(config_loader):
         dashboard_trustee_connectors[trustee_organization_name] = dashboard_trustee_conector 
     dashboard_connectors = aedash.sync.rules.DashboardConnectors(dashboard_owning_connector, dashboard_trustee_connectors)
 
-    rule_config = config_loader.get_rule_options()
     rule_processor = aedash.sync.rules.RuleProcessor(rule_config)
-
-    config_loader.check_unused_config_keys()
-    
     if (len(directory_groups) == 0 and rule_processor.will_manage_groups()):
         logger.warn('no groups mapped in config file')
     rule_processor.run(directory_groups, directory_connector, dashboard_connectors)
