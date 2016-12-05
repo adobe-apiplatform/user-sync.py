@@ -62,5 +62,6 @@ def create_dashboard_commands(user):
 def create_logger():
     return helper.create_logger({"logger_name" : "connector.dashboard"})
 
-
+def create_action_manager():
+    return aedash.sync.connector.dashboard.ActionManager({}, "test org id", create_logger())
 

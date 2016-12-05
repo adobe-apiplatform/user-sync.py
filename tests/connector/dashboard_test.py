@@ -31,7 +31,7 @@ class MockSuccessResult:
         self.status_code = 200
 
 
-class APICallTests(unittest.TestCase):
+class APIDelegateTest(unittest.TestCase):
     def test_retry(self):
         # Ensure that if the method fails, we retry 4 times
         mock_result = MockRetryResult(2)
@@ -59,3 +59,50 @@ class APICallTests(unittest.TestCase):
         result = delegate.make_api_call(mock_api_call, {});
 
         self.assertEquals(result, success_result, "Successful api call")
+
+
+class ActionManagerTest(unittest.TestCase):
+
+    def setUp(self):
+        # setup for each test
+        self.action_man = tests.helper.create_action_manager()
+        aedash.sync.connector.dashboard.ActionManager.next_request_id = 1
+
+        self.mock_action1 = Action("testUserName1",{})
+        self.mock_action2 = Action("testUserName2",{})
+
+    def test_start_with_1_request(self):
+        self.assertEquals(self.action_man.next_request_id, 1,"We start with 1 request")
+
+    def test_add_two_actions(self):
+        self.action_man.add_action(self.mock_action1,{})
+        self.assertEquals(self.action_man.next_request_id,2,"We have added an action and the count has been increased")
+
+        self.action_man.add_action(self.mock_action2,{})
+        self.assertEquals(self.action_man.next_request_id,3,"We have added another action and the count increased")
+
+    def test_has_no_work(self):
+        self.assertEquals(self.action_man.has_work(),False,"No actions added, therefore hasWork is false")
+
+    def test_has_work(self):
+        self.action_man.add_action(self.mock_action1,{})
+        self.assertEquals(self.action_man.has_work(), True, "An action was added, therefore hasWork is true")
+
+    # Boundary Tests for execute method invocation
+    @mock.patch('aedash.sync.connector.dashboard.ActionManager.execute')
+    def test_add_9_actions(self,mock_execute):
+        for x in range(9):
+            self.action_man.add_action(self.mock_action1, {})
+        self.assertEquals(mock_execute.call_count,0,"execute not called when there are 9 items")
+
+    @mock.patch('aedash.sync.connector.dashboard.ActionManager.execute')
+    def test_add_10_actions(self, mock_execute):
+        for x in range(10):
+            self.action_man.add_action(self.mock_action1, {})
+        self.assertEquals(mock_execute.call_count, 1, "execute called when there are 10 items")
+
+    @mock.patch('aedash.sync.connector.dashboard.ActionManager.execute')
+    def test_add_11_actions(self, mock_execute):
+        for x in range(11):
+            self.action_man.add_action(self.mock_action1, {})
+        self.assertEquals(mock_execute.call_count, 2, "execute called twice (for items 10 and 11)")
