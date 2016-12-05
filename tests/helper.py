@@ -1,6 +1,10 @@
 import csv
 
+import time
+import email.utils
+
 import aedash.sync.connector.dashboard
+from aedash.sync.connector import helper
 
 
 def write_to_separated_value_file(field_names, delimiter, items, output_file_path):
@@ -54,4 +58,9 @@ def assert_equal_dashboard_commands_list(unit_test, expected_commands_list, actu
 def create_dashboard_commands(user):
     commands = aedash.sync.connector.dashboard.Commands(user['username'], user['domain'])
     return commands
+
+def create_logger():
+    return helper.create_logger({"logger_name" : "connector.dashboard"})
+
+
 
