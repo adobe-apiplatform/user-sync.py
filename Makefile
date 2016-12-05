@@ -20,13 +20,13 @@ pex:
 	pip install --upgrade pip
 	pip install pex requests wheel
 	pip wheel -w wheelhouse -r misc/build/requirements.txt -r $(python_ldap_requirements)
-	$(RM) $(output_dir)
+	-$(RM) $(output_dir)
 	pex \
 		-v -o $(output_dir)/$(output_filename)$(output_file_extension) -m aedash.sync.app \
 		-f wheelhouse \
 		--disable-cache \
 		--not-zip-safe .
-	$(RM) wheelhouse
+	-$(RM) wheelhouse
 
 test:
 	nosetests --no-byte-compile tests
