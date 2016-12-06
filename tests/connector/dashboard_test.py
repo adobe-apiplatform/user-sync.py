@@ -6,13 +6,12 @@ import mock
 import time
 
 from umapi import UMAPI
-from umapi.error import UMAPIRetryError
+from umapi.error import UMAPIRetryError, UMAPIError, UMAPIRequestError
 import email.utils
 
 import aedash
 import tests.helper
 from aedash.sync.connector.dashboard import ApiDelegate
-
 
 class MockRetryResult:
     count = 0
@@ -33,7 +32,7 @@ class MockSuccessResult:
 
 class APIDelegateTest(unittest.TestCase):
     def test_retry(self):
-        # Ensure that if the method fails, we retry 4 times
+        # 2 second delay between retries
         mock_result = MockRetryResult(2)
 
         def mock_send_retry():
@@ -68,7 +67,7 @@ class ActionManagerTest(unittest.TestCase):
         self.action_man = tests.helper.create_action_manager()
         aedash.sync.connector.dashboard.ActionManager.next_request_id = 1
 
-        self.mock_action1 = Action("testUserName1",{})
+        self.mock_action1 = Action("testUserName1",{'action':'action'})
         self.mock_action2 = Action("testUserName2",{})
 
     def test_start_with_1_request(self):
@@ -106,3 +105,24 @@ class ActionManagerTest(unittest.TestCase):
         for x in range(11):
             self.action_man.add_action(self.mock_action1, {})
         self.assertEquals(mock_execute.call_count, 2, "execute called twice (for items 10 and 11)")
+
+    # Execute tests
+    @mock.patch('aedash.sync.connector.dashboard.ApiDelegate.action')
+    def test_execute_retry_error(self,mock_delegate):
+        mock_delegate.side_effect = UMAPIRetryError(mock.Mock(status_code=2))
+        self.action_man.execute()
+
+    @mock.patch('aedash.sync.connector.dashboard.ApiDelegate.action')
+    def test_execute_umapi_error(self, mock_delegate):
+        mock_delegate.side_effect = UMAPIError(mock.Mock(status_code=2,res_text='expected error'))
+        self.action_man.execute()
+
+    @mock.patch('aedash.sync.connector.dashboard.ApiDelegate.action')
+    def test_execute_request_error(self, mock_delegate):
+
+        mock_delegate.side_effect = UMAPIRequestError({'result':'success',
+                                                       'completed':'1',
+                                                       'completedInTestMode':'2',
+                                                       'notCompleted':'3','errors':{}})
+        # mock_delegate.return_value = None
+        self.action_man.execute()
