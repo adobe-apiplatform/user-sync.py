@@ -1,9 +1,11 @@
+import types
 import unittest
 
 import mock
 
 from aedash.sync.error import AssertionException
 from aedash.sync.config import ConfigLoader
+from aedash.sync.config import ObjectConfig
 
 
 class ConfigLoaderTest(unittest.TestCase):
@@ -12,6 +14,7 @@ class ConfigLoaderTest(unittest.TestCase):
     def setUp(self, mock_yaml, mock_isfile):
         mock_isfile.return_value = True
         self.conf_load = ConfigLoader({'options': 'testOpt'})
+        self.object_conf = ObjectConfig(self)
 
     @mock.patch('aedash.sync.config.DictConfig.get_value')
     @mock.patch('aedash.sync.config.ConfigLoader.get_dict_from_sources')
@@ -63,3 +66,7 @@ class ConfigLoaderTest(unittest.TestCase):
         mock_dict.side_effect = [{'enterprise': {'org_id': 'test1'}}, 'test2']
         self.assertEquals(self.conf_load.create_dashboard_options('', ''), {'enterprise': 'test2'},
                           'enterprise section is processed')
+
+    def test_describe_types(self):
+        self.assertEquals(self.object_conf.describe_types(types.StringTypes),['str'],'strings are handeled')
+        self.assertEquals(self.object_conf.describe_types(types.TupleType),['tuple'],'tuples are handeled')
