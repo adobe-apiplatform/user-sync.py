@@ -111,7 +111,9 @@ class ActionManagerTest(unittest.TestCase):
     @mock.patch('aedash.sync.connector.dashboard.ApiDelegate.action')
     def test_execute_retry_error(self,mock_delegate):
         mock_delegate.side_effect = UMAPIRetryError(mock.Mock(status_code=2))
+        self.action_man.logger.warn = mock.Mock()
         self.action_man.execute()
+        self.action_man.logger.warn.assert_called_with('FAILURE NO MORE RETRIES, SKIPPING...')
 
     @mock.patch('aedash.sync.connector.dashboard.ApiDelegate.action')
     def test_execute_umapi_error(self, mock_delegate):
