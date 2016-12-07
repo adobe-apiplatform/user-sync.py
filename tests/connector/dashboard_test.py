@@ -115,8 +115,10 @@ class ActionManagerTest(unittest.TestCase):
 
     @mock.patch('aedash.sync.connector.dashboard.ApiDelegate.action')
     def test_execute_umapi_error(self, mock_delegate):
-        mock_delegate.side_effect = UMAPIError(mock.Mock(status_code=2,res_text='expected error'))
+        mock_delegate.side_effect = UMAPIError(mock.Mock(status_code=2,text='expected error'))
+        self.action_man.logger.warn = mock.Mock()
         self.action_man.execute()
+        self.action_man.logger.warn.assert_called_with('ERROR -- %s - %s', 2, 'expected error')
 
     @mock.patch('aedash.sync.connector.dashboard.ApiDelegate.action')
     def test_execute_request_error(self, mock_delegate):
@@ -127,6 +129,6 @@ class ActionManagerTest(unittest.TestCase):
                                                        'notCompleted':0,'errors':{}})
         self.action_man.logger.log = mock.Mock()
         self.action_man.execute()
-        # request error was logged correctly
+        # check request error was logged correctly
         self.action_man.logger.log.assert_called_with(10,'Result %s -- %d completed, %d completedInTestMode, %d failed',
                                                       'success', 1, 1, 0)
