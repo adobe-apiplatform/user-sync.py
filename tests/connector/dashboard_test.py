@@ -1,4 +1,5 @@
 import unittest
+import logging
 from umapi import UMAPI, Action
 
 import mock
@@ -124,4 +125,8 @@ class ActionManagerTest(unittest.TestCase):
                                                        'completed':1,
                                                        'completedInTestMode':1,
                                                        'notCompleted':0,'errors':{}})
+        self.action_man.logger.log = mock.Mock()
         self.action_man.execute()
+        # request error was logged correctly
+        self.action_man.logger.log.assert_called_with(10,'Result %s -- %d completed, %d completedInTestMode, %d failed',
+                                                      'success', 1, 1, 0)
