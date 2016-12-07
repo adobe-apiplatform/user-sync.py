@@ -69,4 +69,4 @@ class ConfigLoaderTest(unittest.TestCase):
 
     def test_describe_types(self):
         self.assertEquals(self.object_conf.describe_types(types.StringTypes),['str'],'strings are handeled')
-        self.assertEquals(self.object_conf.describe_types(types.TupleType),['tuple'],'tuples are handeled')
+        self.assertEquals(self.object_conf.describe_types(types.BooleanType),['bool'],'other types are handeled')
