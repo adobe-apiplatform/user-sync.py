@@ -121,8 +121,7 @@ class ActionManagerTest(unittest.TestCase):
     def test_execute_request_error(self, mock_delegate):
 
         mock_delegate.side_effect = UMAPIRequestError({'result':'success',
-                                                       'completed':'1',
-                                                       'completedInTestMode':'2',
-                                                       'notCompleted':'3','errors':{}})
-        # mock_delegate.return_value = None
+                                                       'completed':1,
+                                                       'completedInTestMode':1,
+                                                       'notCompleted':0,'errors':{}})
         self.action_man.execute()
