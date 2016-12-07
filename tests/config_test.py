@@ -6,7 +6,6 @@ import mock
 from aedash.sync.error import AssertionException
 from aedash.sync.config import ConfigLoader
 from aedash.sync.config import ObjectConfig
-from aedash.sync.config import DictConfig
 
 
 class ConfigLoaderTest(unittest.TestCase):
@@ -87,6 +86,20 @@ class ConfigLoaderTest(unittest.TestCase):
         self.assertEquals(self.conf_load.parse_string('{1}', 'abcde'),
                           {'1': 'abc', '3': 'e', '2': 'd'}, 'test parsing 2')
 
+    @mock.patch('aedash.sync.config.ConfigLoader.get_directory_connector_configs')
+    def test_check_unused_config_keys_unused(self,mock_connector_conf):
+        self.conf_load.options = {'directory_source_filters': {'filter':'test1'}}
+        self.conf_load.directory_source_filters_accessed = set({'another_filter':'test2'})
+        # Assertion Exception is raised for unused keys
+        self.assertRaises(AssertionException,lambda : self.conf_load.check_unused_config_keys())
+
+    @mock.patch('aedash.sync.config.ConfigLoader.get_directory_connector_configs')
+    def test_check_unused_config_keys_used(self,mock_connector_conf):
+        self.conf_load.options = {'directory_source_filters': {'filter':'test1'}}
+        self.conf_load.directory_source_filters_accessed = set({'filter':'test2'})
+
+        self.assertEquals(self.conf_load.check_unused_config_keys(),None,'no unused keys')
+
 
 class ObjectConfigTest(unittest.TestCase):
     def setUp(self):
@@ -95,8 +108,3 @@ class ObjectConfigTest(unittest.TestCase):
     def test_describe_types(self):
         self.assertEquals(self.object_conf.describe_types(types.StringTypes), ['str'], 'strings are handeled')
         self.assertEquals(self.object_conf.describe_types(types.BooleanType), ['bool'], 'other types are handeled')
-
-        # class DictConfigTest(unittest.TestCase):
-        #     def setUp(self):
-        #         self.dict_conf = DictConfig(self,{})
-        #
