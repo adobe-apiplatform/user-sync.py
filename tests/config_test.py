@@ -44,5 +44,6 @@ class ConfigLoaderTest(unittest.TestCase):
         self.assertEquals(mock_create_dash.call_count, 1, 'create dashboard options was called')
 
 
-    if __name__ == "__main__":
-        unittest.main()
+    def test_get_dict_from_sources_dict(self):
+        self.assertEquals(self.conf_load.get_dict_from_sources([{'test1':'test2'},{'test1':'test3'}],'')
+                          ,{'test1': 'test3'},'the two dictionaries are combined')
