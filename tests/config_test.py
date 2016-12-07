@@ -6,6 +6,7 @@ import mock
 from aedash.sync.error import AssertionException
 from aedash.sync.config import ConfigLoader
 from aedash.sync.config import ObjectConfig
+from aedash.sync.config import DictConfig
 
 
 class ConfigLoaderTest(unittest.TestCase):
@@ -14,7 +15,6 @@ class ConfigLoaderTest(unittest.TestCase):
     def setUp(self, mock_yaml, mock_isfile):
         mock_isfile.return_value = True
         self.conf_load = ConfigLoader({'options': 'testOpt'})
-        self.object_conf = ObjectConfig(self)
 
     @mock.patch('aedash.sync.config.DictConfig.get_value')
     @mock.patch('aedash.sync.config.ConfigLoader.get_dict_from_sources')
@@ -67,6 +67,32 @@ class ConfigLoaderTest(unittest.TestCase):
         self.assertEquals(self.conf_load.create_dashboard_options('', ''), {'enterprise': 'test2'},
                           'enterprise section is processed')
 
+    @mock.patch('aedash.sync.config.DictConfig.get_dict_config')
+    @mock.patch('aedash.sync.identity_type.parse_identity_type')
+    def test_get_rule_options(self, mock_id_type, mock_dict_config):
+        mock_id_type.return_value = 'new_acc'
+        self.assertEquals(self.conf_load.get_rule_options(), {'username_filter_regex': None,
+                                                              'update_user_info': True,
+                                                              'manage_groups': True,
+                                                              'new_account_type': 'new_acc',
+                                                              'directory_group_filter': None,
+                                                              'remove_user_key_list': None,
+                                                              'remove_list_output_path': None,
+                                                              'remove_nonexistent_users': False},
+                          'rule options are returned')
+
+
+class ObjectConfigTest(unittest.TestCase):
+    def setUp(self):
+        self.object_conf = ObjectConfig(self)
+
     def test_describe_types(self):
-        self.assertEquals(self.object_conf.describe_types(types.StringTypes),['str'],'strings are handeled')
-        self.assertEquals(self.object_conf.describe_types(types.BooleanType),['bool'],'other types are handeled')
+        self.assertEquals(self.object_conf.describe_types(types.StringTypes), ['str'], 'strings are handeled')
+        self.assertEquals(self.object_conf.describe_types(types.BooleanType), ['bool'], 'other types are handeled')
+
+        # class DictConfigTest(unittest.TestCase):
+        #     def setUp(self):
+        #         self.dict_conf = DictConfig(self,{})
+        #
+        #     def test_get_rule_options(self):
+        #         self.dict_conf.get_rule_options()
