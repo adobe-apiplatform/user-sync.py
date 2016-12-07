@@ -40,7 +40,7 @@ class DashboardConnector(object):
         server_builder.set_string_value('ims_endpoint_jwt', '/ims/exchange/jwt')
         options['server'] = server_options = server_builder.get_options() 
         
-        enterprise_config = caller_config.get_dict_config('enterprise', True)
+        enterprise_config = caller_config.get_dict_config('enterprise')
         enterprise_builder = aedash.sync.config.OptionsBuilder(enterprise_config)
         enterprise_builder.require_string_value('org_id')
         enterprise_builder.require_string_value('api_key')
