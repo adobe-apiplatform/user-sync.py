@@ -14,7 +14,7 @@ class ConfigLoaderTest(unittest.TestCase):
     @mock.patch('aedash.sync.config.ConfigLoader.load_from_yaml')
     def setUp(self,mock_yaml,mock_isfile):
         mock_isfile.return_value = True
-        self.conf_load = ConfigLoader({})
+        self.conf_load = ConfigLoader({'options':'testOpt'})
 
 
     @mock.patch('aedash.sync.config.DictConfig.get_value')
@@ -30,6 +30,7 @@ class ConfigLoaderTest(unittest.TestCase):
     @mock.patch('aedash.sync.config.ConfigLoader.get_directory_connector_configs')
     @mock.patch('aedash.sync.config.ConfigLoader.get_dict_from_sources')
     def test_get_directory_connector_options(self,mock_dict, mock_connector_conf):
+        self.conf_load.get_directory_connector_options('dummy_connector')
         self.assertEquals(mock_dict.call_count, 3, "connector options, source filters and credentials are loaded")
 
 
