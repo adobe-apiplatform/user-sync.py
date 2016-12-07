@@ -2,6 +2,7 @@ import unittest
 
 import mock
 
+from aedash.sync.error import AssertionException
 from aedash.sync.config import ConfigLoader
 
 
@@ -45,5 +46,17 @@ class ConfigLoaderTest(unittest.TestCase):
 
 
     def test_get_dict_from_sources_dict(self):
-        self.assertEquals(self.conf_load.get_dict_from_sources([{'test1':'test2'},{'test1':'test3'}],'')
-                          ,{'test1': 'test3'},'the two dictionaries are combined')
+        self.assertEquals(self.conf_load.get_dict_from_sources([{'test1':'test2'},{'test1':'test3'}],''),
+                          {'test1': 'test3'},'the two dictionaries are combined')
+
+    @mock.patch('os.path.isfile')
+    def test_get_dict_from_sources_str_not_found(self,mock_isfile):
+        # AssertionException when file is not found
+        mock_isfile.return_value = False
+        self.assertRaises(AssertionException,lambda :self.conf_load.get_dict_from_sources(['test'], ''))
+
+    @mock.patch('os.path.isfile')
+    def test_get_dict_from_sources_str_found(self, mock_isfile):
+        # IOError when file is found, but not loaded by load_from_yaml
+        mock_isfile.return_value = True
+        self.assertRaises(IOError, lambda: self.conf_load.get_dict_from_sources(['test'], ''))
