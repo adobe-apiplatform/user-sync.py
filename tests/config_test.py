@@ -81,6 +81,12 @@ class ConfigLoaderTest(unittest.TestCase):
                                                               'remove_nonexistent_users': False},
                           'rule options are returned')
 
+    def test_parse_string(self):
+        self.assertEquals(self.conf_load.parse_string('{1}{2}{3}', 'abcde'),
+                          {'1': 'abc', '3': 'e', '2': 'd'}, 'test parsing 1')
+        self.assertEquals(self.conf_load.parse_string('{1}', 'abcde'),
+                          {'1': 'abc', '3': 'e', '2': 'd'}, 'test parsing 2')
+
 
 class ObjectConfigTest(unittest.TestCase):
     def setUp(self):
@@ -94,5 +100,3 @@ class ObjectConfigTest(unittest.TestCase):
         #     def setUp(self):
         #         self.dict_conf = DictConfig(self,{})
         #
-        #     def test_get_rule_options(self):
-        #         self.dict_conf.get_rule_options()
