@@ -1,12 +1,10 @@
 import unittest
-import logging
 from umapi import UMAPI, Action
 
 import mock
 
 import time
 
-from umapi import UMAPI
 from umapi.error import UMAPIRetryError, UMAPIError, UMAPIRequestError
 import email.utils
 
