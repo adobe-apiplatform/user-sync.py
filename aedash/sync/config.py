@@ -9,7 +9,6 @@ from aedash.sync import credential_manager
 import aedash.sync.error
 import aedash.sync.identity_type
 import aedash.sync.rules
-from mock.mock import self
 
 DEFAULT_CONFIG_DIRECTORY = ''
 DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
@@ -104,7 +103,7 @@ class ConfigLoader(object):
         trustees_options = {}
         organization_names = set(trustee_config_file_paths.iterkeys())
         if (trustees_config != None):
-            organization_names.update(trustees_config.iterkeys)
+            organization_names.update(trustees_config.iter_keys())
         for organization_name in organization_names:
             trustee_config = None
             if (trustees_config != None): 
