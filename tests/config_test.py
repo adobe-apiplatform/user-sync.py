@@ -83,8 +83,7 @@ class ConfigLoaderTest(unittest.TestCase):
     def test_parse_string(self):
         self.assertEquals(self.conf_load.parse_string('{1}{2}{3}', 'abcde'),
                           {'1': 'abc', '3': 'e', '2': 'd'}, 'test parsing 1')
-        self.assertEquals(self.conf_load.parse_string('{1}', 'abcde'),
-                          {'1': 'abc', '3': 'e', '2': 'd'}, 'test parsing 2')
+        self.assertEquals(self.conf_load.parse_string('{1}', 'abcde'),{'1': 'abcde'}, 'test parsing 2')
 
     @mock.patch('aedash.sync.config.ConfigLoader.get_directory_connector_configs')
     def test_check_unused_config_keys_unused(self,mock_connector_conf):
