@@ -66,13 +66,14 @@ class ConfigLoader(object):
 
     def get_dashboard_options_for_owning(self):
         owning_config_filename = DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME
+        owning_config_path = self.get_file_path(owning_config_filename)
         
         owning_config = None
         dashboard_config = self.main_config.get_dict_config('dashboard', True)
         if (dashboard_config != None):
             owning_config = dashboard_config.get_list('owning', True)
         owning_config_sources = self.as_list(owning_config)
-        if (os.path.isfile(owning_config_filename)):
+        if (os.path.isfile(owning_config_path)):
             owning_config_sources.append(owning_config_filename)
         owning_config_sources.append({
             'test_mode': self.options['test_mode']
@@ -107,7 +108,7 @@ class ConfigLoader(object):
         for organization_name in organization_names:
             trustee_config = None
             if (trustees_config != None): 
-                trustee_config = trustees_config.get_dict(organization_name, True) 
+                trustee_config = trustees_config.get_list(organization_name, True) 
             trustee_config_sources = self.as_list(trustee_config)
             trustee_config_file_path = trustee_config_file_paths.get(organization_name, None)
             if (trustee_config_file_path != None):
