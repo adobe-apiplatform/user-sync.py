@@ -14,7 +14,7 @@ endif
 endif
 
 output_dir = dist
-output_filename = aed_sync
+output_filename = user-sync
 
 pex:
 	pip install --upgrade pip
@@ -22,7 +22,7 @@ pex:
 	pip wheel -w wheelhouse -r misc/build/requirements.txt -r $(python_ldap_requirements)
 	-$(RM) $(output_dir)
 	pex \
-		-v -o $(output_dir)/$(output_filename)$(output_file_extension) -m aedash.sync.app \
+		-v -o $(output_dir)/$(output_filename)$(output_file_extension) -m user_sync.app \
 		-f wheelhouse \
 		--disable-cache \
 		--not-zip-safe .

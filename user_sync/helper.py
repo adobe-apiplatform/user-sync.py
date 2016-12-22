@@ -3,7 +3,7 @@ import csv
 import datetime
 import os
 
-import aedash.sync.error
+import user_sync.error
 
 def open_file(name, mode, buffering = -1):
     '''
@@ -14,7 +14,7 @@ def open_file(name, mode, buffering = -1):
     try:
         return open(str(name), mode, buffering)
     except IOError as e:
-        raise aedash.sync.error.AssertionException(str(e))
+        raise user_sync.error.AssertionException(str(e))
 
 def normalize_string(string_value):
     '''

@@ -1,15 +1,15 @@
 import mock.mock
 import unittest
 
-import aedash.sync.connector.dashboard
-import aedash.sync.connector.directory
-import aedash.sync.rules
+import user_sync.connector.dashboard
+import user_sync.connector.directory
+import user_sync.rules
 import tests.helper
 
 class RulesTest(unittest.TestCase):
     
     def test_normal(self):
-        owning_organization_name = aedash.sync.rules.OWNING_ORGANIZATION_NAME
+        owning_organization_name = user_sync.rules.OWNING_ORGANIZATION_NAME
         trustee_1_organization_name = "trustee1"
         directory_group_1 = 'acrobat1' 
         directory_group_2 = 'acrobat2' 
@@ -17,8 +17,8 @@ class RulesTest(unittest.TestCase):
         owning_group_12 = 'acrobat12' 
         owning_group_21 = 'acrobat21' 
         directory_groups = {
-            directory_group_1: [aedash.sync.rules.Group(owning_group_11, owning_organization_name), aedash.sync.rules.Group('acrobat12', trustee_1_organization_name)],
-            directory_group_2: [aedash.sync.rules.Group(owning_group_21, owning_organization_name)]
+            directory_group_1: [user_sync.rules.Group(owning_group_11, owning_organization_name), user_sync.rules.Group('acrobat12', trustee_1_organization_name)],
+            directory_group_2: [user_sync.rules.Group(owning_group_21, owning_organization_name)]
         }
         all_users = [tests.helper.create_test_user([directory_group_1]), 
             tests.helper.create_test_user([directory_group_2]),
@@ -35,7 +35,7 @@ class RulesTest(unittest.TestCase):
         
         def mock_load_users_and_groups(groups):
             return (True, list(all_users))
-        mock_directory_connector = mock.mock.create_autospec(aedash.sync.connector.directory.DirectoryConnector)
+        mock_directory_connector = mock.mock.create_autospec(user_sync.connector.directory.DirectoryConnector)
         mock_directory_connector.load_users_and_groups = mock_load_users_and_groups
         
         owning_commands_list = []    
@@ -44,11 +44,11 @@ class RulesTest(unittest.TestCase):
         trustee_commands_list = []    
         mock_trustee_dashboard_connector = self.create_mock_dashboard_connector([], trustee_commands_list)
         
-        dashboard_connectors = aedash.sync.rules.DashboardConnectors(mock_owning_dashboard_connector, {
+        dashboard_connectors = user_sync.rules.DashboardConnectors(mock_owning_dashboard_connector, {
             trustee_1_organization_name: mock_trustee_dashboard_connector
         })
         
-        rule_processor = aedash.sync.rules.RuleProcessor({})
+        rule_processor = user_sync.rules.RuleProcessor({})
         rule_processor.run(directory_groups, mock_directory_connector, dashboard_connectors)
 
         rule_options = rule_processor.options
@@ -99,9 +99,9 @@ class RulesTest(unittest.TestCase):
             if (callback != None):
                 callback(None, True, None)
 
-        action_manager = mock.mock.create_autospec(aedash.sync.connector.dashboard.ActionManager)
+        action_manager = mock.mock.create_autospec(user_sync.connector.dashboard.ActionManager)
         action_manager.has_work = lambda: False
-        mock_connector = mock.mock.create_autospec(aedash.sync.connector.dashboard)
+        mock_connector = mock.mock.create_autospec(user_sync.connector.dashboard)
         mock_connector.iter_users = lambda: list(users_to_return)
         mock_connector.send_commands = mock_send_commands
         mock_connector.get_action_manager = lambda: action_manager

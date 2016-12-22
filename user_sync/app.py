@@ -6,12 +6,12 @@ import os
 import re
 import sys
 
-import aedash.sync.config
-import aedash.sync.error
-import aedash.sync.lockfile
-import aedash.sync.rules
-import aedash.sync.connector.directory
-import aedash.sync.connector.dashboard
+import user_sync.config
+import user_sync.error
+import user_sync.lockfile
+import user_sync.rules
+import user_sync.connector.directory
+import user_sync.connector.dashboard
 
 APP_VERSION = "0.6.0"
 
@@ -68,9 +68,9 @@ def init_console_log():
 
 def init_log(logging_config):
     '''
-    :type logging_config: aedash.sync.config.DictConfig
+    :type logging_config: user_sync.config.DictConfig
     '''
-    builder = aedash.sync.config.OptionsBuilder(logging_config)
+    builder = user_sync.config.OptionsBuilder(logging_config)
     builder.set_bool_value('log_to_file', False)
     builder.set_string_value('file_log_directory', 'logs')
     builder.set_string_value('file_log_level', 'debug')
@@ -103,7 +103,7 @@ def init_log(logging_config):
         
 def begin_work(config_loader):
     '''
-    :type config_loader: aedash.sync.config.ConfigLoader
+    :type config_loader: user_sync.config.ConfigLoader
     '''
 
     directory_groups = config_loader.get_directory_groups()
@@ -115,19 +115,19 @@ def begin_work(config_loader):
     for groups in directory_groups.itervalues():
         for group in groups:
             organization_name = group.organization_name
-            if (organization_name != aedash.sync.rules.OWNING_ORGANIZATION_NAME):
+            if (organization_name != user_sync.rules.OWNING_ORGANIZATION_NAME):
                 referenced_organization_names.add(organization_name)
     referenced_organization_names.difference_update(trustee_dashboard_configs.iterkeys())
     
     if (len(referenced_organization_names) > 0):
-        raise aedash.sync.error.AssertionException('dashboard_groups have references to unknown trustee dashboards: %s' % referenced_organization_names) 
+        raise user_sync.error.AssertionException('dashboard_groups have references to unknown trustee dashboards: %s' % referenced_organization_names) 
                 
     directory_connector = None
     directory_connector_options = None
     directory_connector_module_name = config_loader.get_directory_connector_module_name()
     if (directory_connector_module_name != None):
         directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])    
-        directory_connector = aedash.sync.connector.directory.DirectoryConnector(directory_connector_module)        
+        directory_connector = user_sync.connector.directory.DirectoryConnector(directory_connector_module)        
         directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
 
     config_loader.check_unused_config_keys()
@@ -135,14 +135,14 @@ def begin_work(config_loader):
     if (directory_connector != None and directory_connector_options != None):
         directory_connector.initialize(directory_connector_options)
     
-    dashboard_owning_connector = aedash.sync.connector.dashboard.DashboardConnector("owning", owning_dashboard_config)
+    dashboard_owning_connector = user_sync.connector.dashboard.DashboardConnector("owning", owning_dashboard_config)
     dashboard_trustee_connectors = {}    
     for trustee_organization_name, trustee_config in trustee_dashboard_configs.iteritems():
-        dashboard_trustee_conector = aedash.sync.connector.dashboard.DashboardConnector("trustee.%s" % trustee_organization_name, trustee_config)
+        dashboard_trustee_conector = user_sync.connector.dashboard.DashboardConnector("trustee.%s" % trustee_organization_name, trustee_config)
         dashboard_trustee_connectors[trustee_organization_name] = dashboard_trustee_conector 
-    dashboard_connectors = aedash.sync.rules.DashboardConnectors(dashboard_owning_connector, dashboard_trustee_connectors)
+    dashboard_connectors = user_sync.rules.DashboardConnectors(dashboard_owning_connector, dashboard_trustee_connectors)
 
-    rule_processor = aedash.sync.rules.RuleProcessor(rule_config)
+    rule_processor = user_sync.rules.RuleProcessor(rule_config)
     if (len(directory_groups) == 0 and rule_processor.will_manage_groups()):
         logger.warn('no groups mapped in config file')
     rule_processor.run(directory_groups, directory_connector, dashboard_connectors)
@@ -153,7 +153,7 @@ def create_config_loader(args):
         'config_directory': args.config_path,
         'main_config_filename': args.config_filename,
     }
-    config_loader = aedash.sync.config.ConfigLoader(config_bootstrap_options)
+    config_loader = user_sync.config.ConfigLoader(config_bootstrap_options)
     return config_loader
             
 def create_config_loader_options(args):
@@ -165,34 +165,34 @@ def create_config_loader_options(args):
 
     users_args = args.users
     if (users_args != None):
-        users_action = None if len(users_args) == 0 else aedash.sync.helper.normalize_string(users_args.pop(0))
+        users_action = None if len(users_args) == 0 else user_sync.helper.normalize_string(users_args.pop(0))
         if (users_action == None or users_action == 'all'):
-            config_options['directory_connector_module_name'] = 'aedash.sync.connector.directory_ldap'
+            config_options['directory_connector_module_name'] = 'user_sync.connector.directory_ldap'
         elif (users_action == 'file'):
             if (len(users_args) == 0):
-                raise aedash.sync.error.AssertionException('Missing file path for --users %s [file_path]' % users_action)
-            config_options['directory_connector_module_name'] = 'aedash.sync.connector.directory_csv'
+                raise user_sync.error.AssertionException('Missing file path for --users %s [file_path]' % users_action)
+            config_options['directory_connector_module_name'] = 'user_sync.connector.directory_csv'
             config_options['directory_connector_overridden_options'] = {'file_path': users_args.pop(0)}
         elif (users_action == 'group'):            
             if (len(users_args) == 0):
-                raise aedash.sync.error.AssertionException('Missing groups for --users %s [groups]' % users_action)
-            config_options['directory_connector_module_name'] = 'aedash.sync.connector.directory_ldap'
+                raise user_sync.error.AssertionException('Missing groups for --users %s [groups]' % users_action)
+            config_options['directory_connector_module_name'] = 'user_sync.connector.directory_ldap'
             config_options['directory_group_filter'] = users_args.pop(0).split(',')
         else:
-            raise aedash.sync.error.AssertionException('Unknown argument --users %s' % users_action)
+            raise user_sync.error.AssertionException('Unknown argument --users %s' % users_action)
     
     username_filter_pattern = args.username_filter_pattern 
     if (username_filter_pattern):
         try:
             compiled_expression = re.compile(username_filter_pattern, re.IGNORECASE)
         except Exception as e:
-            raise aedash.sync.error.AssertionException("Bad regular expression for --user-filter: %s reason: %s" % (username_filter_pattern, e.message))
+            raise user_sync.error.AssertionException("Bad regular expression for --user-filter: %s reason: %s" % (username_filter_pattern, e.message))
         config_options['username_filter_regex'] = compiled_expression
     
     remove_list_input_path = args.remove_list_input_path
     if (remove_list_input_path != None):
         logger.info('Reading remove list from: %s', remove_list_input_path)
-        remove_user_key_list = aedash.sync.rules.RuleProcessor.read_remove_list(remove_list_input_path, logger = logger)
+        remove_user_key_list = user_sync.rules.RuleProcessor.read_remove_list(remove_list_input_path, logger = logger)
         logger.info('Total users in remove list: %d', len(remove_user_key_list))
         config_options['remove_user_key_list'] = remove_user_key_list
          
@@ -213,7 +213,7 @@ def create_config_loader_options(args):
                 connector_name: source_filter_file_path
             } 
         else:
-            raise aedash.sync.error.AssertionException("Invalid arg for --source-filter: %s" % source_filter_args)
+            raise user_sync.error.AssertionException("Invalid arg for --source-filter: %s" % source_filter_args)
     
     return config_options
 
@@ -228,12 +228,12 @@ def main():
         config_loader = create_config_loader(args)
         init_log(config_loader.get_logging_config())
         
-        run_stats = aedash.sync.helper.JobStats("Run", divider = "=")
+        run_stats = user_sync.helper.JobStats("Run", divider = "=")
         run_stats.log_start(logger)
 
         script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
         lock_path = os.path.join(script_dir, 'lockfile')
-        lock = aedash.sync.lockfile.ProcessLock(lock_path)
+        lock = user_sync.lockfile.ProcessLock(lock_path)
         if lock.set_lock():
             try:                
                 config_options = create_config_loader_options(args)
@@ -245,7 +245,7 @@ def main():
         else:
             logger.info("Process is already locked")
         
-    except aedash.sync.error.AssertionException as e:
+    except user_sync.error.AssertionException as e:
         if (not e.is_reported()):
             logger.error(e.message)
             e.set_reported()    

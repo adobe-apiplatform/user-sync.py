@@ -1,8 +1,8 @@
-import aedash.sync.config
-import aedash.sync.connector.helper
-import aedash.sync.error
-import aedash.sync.helper
-import aedash.sync.identity_type
+import user_sync.config
+import user_sync.connector.helper
+import user_sync.error
+import user_sync.helper
+import user_sync.identity_type
 
 def connector_metadata():
     metadata = {
@@ -29,8 +29,8 @@ class CSVDirectoryConnector(object):
     name = 'csv'
     
     def __init__(self, caller_options):
-        caller_config = aedash.sync.config.DictConfig('"%s options"' % CSVDirectoryConnector.name, caller_options)
-        builder = aedash.sync.config.OptionsBuilder(caller_config)
+        caller_config = user_sync.config.DictConfig('"%s options"' % CSVDirectoryConnector.name, caller_options)
+        builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('delimiter', None)
         builder.set_string_value('first_name_column_name', 'firstname')
         builder.set_string_value('last_name_column_name', 'lastname')
@@ -45,7 +45,7 @@ class CSVDirectoryConnector(object):
         options = builder.get_options()        
 
         self.options = options
-        self.logger = logger = aedash.sync.connector.helper.create_logger(options)        
+        self.logger = logger = user_sync.connector.helper.create_logger(options)        
         caller_config.report_unused_values(logger)
 
         logger.debug('Initialized with options: %s', options)            
@@ -88,7 +88,7 @@ class CSVDirectoryConnector(object):
         domain_column_name = get_column_name('domain_column_name')
         
         line_read = 0
-        rows = aedash.sync.helper.iter_csv_rows(file_path, 
+        rows = user_sync.helper.iter_csv_rows(file_path, 
                                                 delimiter = options['delimiter'], 
                                                 recognized_column_names = recognized_column_names, 
                                                 logger = logger)
@@ -101,7 +101,7 @@ class CSVDirectoryConnector(object):
             
             user = users.get(email)
             if (user == None):
-                user = aedash.sync.connector.helper.create_blank_user()
+                user = user_sync.connector.helper.create_blank_user()
                 user['email'] = email
                 users[email] = user
             
@@ -134,8 +134,8 @@ class CSVDirectoryConnector(object):
             identity_type = self.get_column_value(row, identity_type_column_name)
             if (identity_type != None):
                 try:
-                    user['identitytype'] = aedash.sync.identity_type.parse_identity_type(identity_type) 
-                except aedash.sync.error.AssertionException as e:
+                    user['identitytype'] = user_sync.identity_type.parse_identity_type(identity_type) 
+                except user_sync.error.AssertionException as e:
                     logger.error('%s for user: %s', e.message, username)
                     e.set_reported()
                     raise e

@@ -5,10 +5,10 @@ import re
 import types
 import yaml
 
-from aedash.sync import credential_manager
-import aedash.sync.error
-import aedash.sync.identity_type
-import aedash.sync.rules
+from user_sync import credential_manager
+import user_sync.error
+import user_sync.identity_type
+import user_sync.rules
 
 DEFAULT_CONFIG_DIRECTORY = ''
 DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
@@ -46,7 +46,7 @@ class ConfigLoader(object):
         self.main_config_path = main_config_path = self.get_file_path(main_config_filename)
         
         if (not os.path.isfile(main_config_path)):
-            raise aedash.sync.error.AssertionException('Config file does not exist: %s' % (main_config_path))  
+            raise user_sync.error.AssertionException('Config file does not exist: %s' % (main_config_path))  
         
         self.directory_source_filters_accessed = set()        
         
@@ -159,7 +159,7 @@ class ConfigLoader(object):
     
     def get_directory_groups(self):
         '''
-        :rtype dict(str, list(aedash.sync.rules.Group))
+        :rtype dict(str, list(user_sync.rules.Group))
         '''
         adobe_groups_by_directory_group = {}
         
@@ -182,11 +182,11 @@ class ConfigLoader(object):
                 group_name = parts.pop()
                 organization_name = GROUP_NAME_DELIMITER.join(parts)
                 if (len(organization_name) == 0):
-                    organization_name = aedash.sync.rules.OWNING_ORGANIZATION_NAME
+                    organization_name = user_sync.rules.OWNING_ORGANIZATION_NAME
                 if (len(group_name) == 0):
                     validation_message = 'Bad dashboard group: "%s" in directory group: "%s"' % (dashboard_group, directory_group)
-                    raise aedash.sync.error.AssertionException(validation_message)                    
-                group = aedash.sync.rules.Group(group_name, organization_name)
+                    raise user_sync.error.AssertionException(validation_message)                    
+                group = user_sync.rules.Group(group_name, organization_name)
                 groups.append(group)
 
         return adobe_groups_by_directory_group
@@ -214,11 +214,11 @@ class ConfigLoader(object):
                     config = self.load_from_yaml(absolute_path)
                     options.append(config)
                 else:
-                    raise aedash.sync.error.AssertionException('Cannot find file: %s for: %s' % (absolute_path, owner))
+                    raise user_sync.error.AssertionException('Cannot find file: %s for: %s' % (absolute_path, owner))
             elif (isinstance(source, dict)):
                 options.append(source)
             elif (source != None):
-                raise aedash.sync.error.AssertionException('Source should be a filename or a dictionary for: %s' % owner)
+                raise user_sync.error.AssertionException('Source should be a filename or a dictionary for: %s' % owner)
         return self.combine_dicts(options)
     
     def get_absolute_file_path(self, value):
@@ -286,9 +286,9 @@ class ConfigLoader(object):
         directory_config = self.main_config.get_dict_config('directory', True)
         if (directory_config != None): 
             new_account_type = directory_config.get_string('user_identity_type', True)
-            new_account_type = aedash.sync.identity_type.parse_identity_type(new_account_type)
+            new_account_type = user_sync.identity_type.parse_identity_type(new_account_type)
         if (new_account_type == None):
-            new_account_type = aedash.sync.identity_type.ENTERPRISE_IDENTITY_TYPE
+            new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
             self.logger.warning("Assuming the identity type for users is: %s", new_account_type)
         
         options = self.options
@@ -324,7 +324,7 @@ class ConfigLoader(object):
         if (directory_source_filters != None):
             unused_keys = set(directory_source_filters.iterkeys()) - self.directory_source_filters_accessed
             if (len(unused_keys) > 0):
-                raise aedash.sync.error.AssertionException("Unused source filters for: %s" % list(unused_keys))
+                raise user_sync.error.AssertionException("Unused source filters for: %s" % list(unused_keys))
         
     
 class ObjectConfig(object):
@@ -367,7 +367,7 @@ class ObjectConfig(object):
         return '.'.join(scopes)
     
     def create_assertion_error(self, message):
-        return aedash.sync.error.AssertionException("%s in: %s" % (message, self.get_full_scope()))
+        return user_sync.error.AssertionException("%s in: %s" % (message, self.get_full_scope()))
     
     def describe_types(self, types_to_describe):
         if (types_to_describe == types.StringTypes):
@@ -394,7 +394,7 @@ class ObjectConfig(object):
                     logger.log(log_level, message)
         
         if (has_error):
-            raise aedash.sync.error.AssertionException('Detected unused keys that are not ignorable.')
+            raise user_sync.error.AssertionException('Detected unused keys that are not ignorable.')
     
     def describe_unused_values(self):
         return []
@@ -578,6 +578,6 @@ class OptionsBuilder(object):
         '''
         config = self.default_config
         if (config == None):
-            raise aedash.sync.error.AssertionException("No config found.")
+            raise user_sync.error.AssertionException("No config found.")
         self.options[key] = value = config.get_value(key, allowed_types)
         return value

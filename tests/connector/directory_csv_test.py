@@ -2,8 +2,8 @@ import string
 import tempfile
 import unittest
 
-import aedash.sync.connector.directory
-import aedash.sync.connector.directory_csv
+import user_sync.connector.directory
+import user_sync.connector.directory_csv
 import tests.helper
 
 class CSVDirectoryTest(unittest.TestCase):
@@ -26,7 +26,7 @@ class CSVDirectoryTest(unittest.TestCase):
             csv_users.append(csv_user)
         tests.helper.write_to_separated_value_file(field_names, ',', csv_users, file_path);
         
-        directory_connector = aedash.sync.connector.directory.DirectoryConnector(aedash.sync.connector.directory_csv)
+        directory_connector = user_sync.connector.directory.DirectoryConnector(user_sync.connector.directory_csv)
         options = {
             'file_path': file_path
         }

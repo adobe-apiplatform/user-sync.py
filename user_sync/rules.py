@@ -1,9 +1,9 @@
 import csv
 import logging
 
-import aedash.sync.connector.dashboard
-import aedash.sync.helper
-import aedash.sync.identity_type
+import user_sync.connector.dashboard
+import user_sync.helper
+import user_sync.identity_type
 
 OWNING_ORGANIZATION_NAME = None
 
@@ -17,7 +17,7 @@ class RuleProcessor(object):
             'directory_group_filter': None,
             'username_filter_regex': None,
             
-            'new_account_type': aedash.sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
+            'new_account_type': user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
             'manage_groups': True,
             'update_user_info': True,
             
@@ -49,7 +49,7 @@ class RuleProcessor(object):
     def run(self, directory_groups, directory_connector, dashboard_connectors):
         '''
         :type directory_groups: dict(str, list(Group)
-        :type directory_connector: aedash.sync.connector.directory.DirectoryConnector
+        :type directory_connector: user_sync.connector.directory.DirectoryConnector
         :type dashboard_connectors: DashboardConnectors
         '''
         logger = self.logger
@@ -57,7 +57,7 @@ class RuleProcessor(object):
         self.prepare_organization_infos(directory_groups)
 
         if (directory_connector != None):
-            load_directory_stats = aedash.sync.helper.JobStats("Load from Directory", divider = "-")
+            load_directory_stats = user_sync.helper.JobStats("Load from Directory", divider = "-")
             load_directory_stats.log_start(logger)
             self.read_desired_user_groups(directory_groups, directory_connector)
             load_directory_stats.log_end(logger)
@@ -65,7 +65,7 @@ class RuleProcessor(object):
         else:
             should_sync_dashboard_users = False
         
-        dashboard_stats = aedash.sync.helper.JobStats("Sync Dashboard", divider = "-")
+        dashboard_stats = user_sync.helper.JobStats("Sync Dashboard", divider = "-")
         dashboard_stats.log_start(logger)
         if (should_sync_dashboard_users):
             self.process_dashboard_users(dashboard_connectors)
@@ -96,7 +96,7 @@ class RuleProcessor(object):
     def read_desired_user_groups(self, mappings, directory_connector):
         '''
         :type mappings: dict(str, list(Group)
-        :type directory_connector: aedash.sync.connector.directory.DirectoryConnector
+        :type directory_connector: user_sync.connector.directory.DirectoryConnector
         '''
         self.logger.info('Building work list...')
                 
@@ -243,7 +243,7 @@ class RuleProcessor(object):
                 if (len(groups_to_remove) > 0):
                     self.logger.info('Removing groups for user key: %s removed: %s', user_key, groups_to_remove)
                     username, domain = self.parse_user_key(user_key)
-                    commands = aedash.sync.connector.dashboard.Commands(username, domain)
+                    commands = user_sync.connector.dashboard.Commands(username, domain)
                     commands.remove_groups(groups_to_remove)
                     dashboard_connector.send_commands(commands)
 
@@ -252,7 +252,7 @@ class RuleProcessor(object):
             if (not organization_info.is_dashboard_users_loaded() or organization_info.get_dashboard_user(user_key) != None):
                 self.logger.info('Removing user for user key: %s', user_key)
                 username, domain = self.parse_user_key(user_key)
-                commands = aedash.sync.connector.dashboard.Commands(username, domain)
+                commands = user_sync.connector.dashboard.Commands(username, domain)
                 commands.remove_from_org()
                 dashboard_connectors.get_owning_connector().send_commands(commands)
      
@@ -291,8 +291,8 @@ class RuleProcessor(object):
         if (account_type == None):
             account_type = default_new_account_type
         
-        commands = aedash.sync.connector.dashboard.Commands(directory_user['username'], directory_user['domain'])
-        if (account_type == aedash.sync.identity_type.FEDERATED_IDENTITY_TYPE):
+        commands = user_sync.connector.dashboard.Commands(directory_user['username'], directory_user['domain'])
+        if (account_type == user_sync.identity_type.FEDERATED_IDENTITY_TYPE):
             commands.add_federated_user(attributes)
         else:
             commands.add_enterprise_user(attributes)
@@ -316,20 +316,20 @@ class RuleProcessor(object):
         :type user_key: dict
         :type organization_info: OrganizationInfo
         :type desired_groups: set(str)
-        :type dashboard_connector: aedash.sync.connector.dashboard.DashboardConnector
+        :type dashboard_connector: user_sync.connector.dashboard.DashboardConnector
         '''
         self.logger.info('Adding groups for user key: %s organization: %s groups: %s', user_key, organization_info.get_name(), desired_groups)
         groups_to_add = self.calculate_groups_to_add(organization_info, user_key, desired_groups)        
 
         username, domain = self.parse_user_key(user_key)
-        commands = aedash.sync.connector.dashboard.Commands(username, domain)
+        commands = user_sync.connector.dashboard.Commands(username, domain)
         commands.add_groups(groups_to_add)
         dashboard_connector.send_commands(commands)
 
     def update_dashboard_users_for_connector(self, organization_info, dashboard_connector):
         '''
         :type organization_info: OrganizationInfo
-        :type dashboard_connector: aedash.sync.connector.dashboard.DashboardConnector
+        :type dashboard_connector: user_sync.connector.dashboard.DashboardConnector
         '''
         directory_user_by_user_key = self.directory_user_by_user_key
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
@@ -372,7 +372,7 @@ class RuleProcessor(object):
                 if (len(groups_to_add) > 0 or len(groups_to_remove) > 0):
                     self.logger.info('Managing groups for user key: %s added: %s removed: %s', user_key, groups_to_add, groups_to_remove)
 
-            commands = aedash.sync.connector.dashboard.Commands(directory_user['username'], directory_user['domain'])
+            commands = user_sync.connector.dashboard.Commands(directory_user['username'], directory_user['domain'])
             commands.update_user(user_attribute_difference)
             commands.add_groups(groups_to_add)
             commands.remove_groups(groups_to_remove)
@@ -391,7 +391,7 @@ class RuleProcessor(object):
         result = set()
         if (group_names != None):
             for group_name in group_names:
-                normalized_group_name = aedash.sync.helper.normalize_string(group_name)
+                normalized_group_name = user_sync.helper.normalize_string(group_name)
                 result.add(normalized_group_name)
         return result
 
@@ -441,9 +441,9 @@ class RuleProcessor(object):
     
     @staticmethod
     def get_user_key(username, domain, email):
-        username = aedash.sync.helper.normalize_string(username)
-        domain = aedash.sync.helper.normalize_string(domain)
-        email = aedash.sync.helper.normalize_string(email)
+        username = user_sync.helper.normalize_string(username)
+        domain = user_sync.helper.normalize_string(domain)
+        email = user_sync.helper.normalize_string(email)
 
         if (username == None):
             return email
@@ -471,7 +471,7 @@ class RuleProcessor(object):
         
         user_column_name = 'user'
         domain_column_name = 'domain'        
-        rows = aedash.sync.helper.iter_csv_rows(file_path, 
+        rows = user_sync.helper.iter_csv_rows(file_path, 
                                                 delimiter = delimiter, 
                                                 recognized_column_names = [user_column_name, domain_column_name], 
                                                 logger = logger)
@@ -486,7 +486,7 @@ class RuleProcessor(object):
     def write_remove_list(self, file_path, dashboard_users):
         total_users = 0
         with open(file_path, 'wb') as output_file:
-            delimiter = aedash.sync.helper.guess_delimiter_from_filename(file_path)            
+            delimiter = user_sync.helper.guess_delimiter_from_filename(file_path)            
             writer = csv.DictWriter(output_file, fieldnames = ['user', 'domain'], delimiter = delimiter)
             writer.writeheader()
             for dashboard_user in dashboard_users:
@@ -501,8 +501,8 @@ class RuleProcessor(object):
 class DashboardConnectors(object):
     def __init__(self, owning_connector, trustee_connectors):
         '''
-        :type owning_connector: aedash.sync.connector.dashboard.DashboardConnector
-        :type trustee_connectors: dict(str, aedash.sync.connector.dashboard.DashboardConnector)
+        :type owning_connector: user_sync.connector.dashboard.DashboardConnector
+        :type trustee_connectors: dict(str, user_sync.connector.dashboard.DashboardConnector)
         '''
         self.owning_connector = owning_connector
         self.trustee_connectors = trustee_connectors
@@ -569,7 +569,7 @@ class OrganizationInfo(object):
         '''
         :type group: str
         '''
-        normalized_group_name = aedash.sync.helper.normalize_string(group)
+        normalized_group_name = user_sync.helper.normalize_string(group)
         self.mapped_groups.add(normalized_group_name)
 
     def get_mapped_groups(self):
@@ -594,7 +594,7 @@ class OrganizationInfo(object):
         if (desired_groups == None):
             self.desired_groups_by_user_key[user_key] = desired_groups = set()
         if (group != None):
-            normalized_group_name = aedash.sync.helper.normalize_string(group)
+            normalized_group_name = user_sync.helper.normalize_string(group)
             desired_groups.add(normalized_group_name)
 
     def add_dashboard_user(self, user_key, user):

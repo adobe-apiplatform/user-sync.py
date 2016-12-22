@@ -3,8 +3,8 @@ import csv
 import time
 import email.utils
 
-import aedash.sync.connector.dashboard
-from aedash.sync.connector import helper
+import user_sync.connector.dashboard
+from user_sync.connector import helper
 
 
 def write_to_separated_value_file(field_names, delimiter, items, output_file_path):
@@ -56,12 +56,12 @@ def assert_equal_dashboard_commands_list(unit_test, expected_commands_list, actu
         assert_equal_dashboard_commands(unit_test, expected_commands, actual_commands)
         
 def create_dashboard_commands(user):
-    commands = aedash.sync.connector.dashboard.Commands(user['username'], user['domain'])
+    commands = user_sync.connector.dashboard.Commands(user['username'], user['domain'])
     return commands
 
 def create_logger():
     return helper.create_logger({"logger_name" : "connector.dashboard"})
 
 def create_action_manager():
-    return aedash.sync.connector.dashboard.ActionManager({}, "test org id", create_logger())
+    return user_sync.connector.dashboard.ActionManager({}, "test org id", create_logger())
 
