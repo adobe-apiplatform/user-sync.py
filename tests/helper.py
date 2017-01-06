@@ -3,8 +3,10 @@ import csv
 import time
 import email.utils
 
-import aedash.sync.connector.dashboard
 from aedash.sync.connector import helper
+from aedash.sync.connector.dashboard import ApiDelegate
+from aedash.sync.connector.dashboard import ActionManager
+from aedash.sync.connector.dashboard import Commands
 
 
 def write_to_separated_value_file(field_names, delimiter, items, output_file_path):
@@ -56,12 +58,12 @@ def assert_equal_dashboard_commands_list(unit_test, expected_commands_list, actu
         assert_equal_dashboard_commands(unit_test, expected_commands, actual_commands)
         
 def create_dashboard_commands(user):
-    commands = aedash.sync.connector.dashboard.Commands(user['username'], user['domain'])
+    commands = Commands(user['username'], user['domain'])
     return commands
 
 def create_logger():
     return helper.create_logger({"logger_name" : "connector.dashboard"})
 
 def create_action_manager():
-    return aedash.sync.connector.dashboard.ActionManager({}, "test org id", create_logger())
+    return ActionManager(ApiDelegate(None, create_logger()), "test org id", create_logger())
 
