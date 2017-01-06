@@ -2,8 +2,8 @@ import mock.mock
 import re
 import unittest
 
-import aedash.sync.connector.directory
-import aedash.sync.connector.directory_ldap
+import user_sync.connector.directory
+import user_sync.connector.directory_ldap
 import tests.helper
 
 class LDAPDirectoryTest(unittest.TestCase):
@@ -79,7 +79,7 @@ class LDAPDirectoryTest(unittest.TestCase):
         connection.search = mock_search
         connection.result = mock_result
 
-        directory_connector = aedash.sync.connector.directory.DirectoryConnector(aedash.sync.connector.directory_ldap)
+        directory_connector = user_sync.connector.directory.DirectoryConnector(user_sync.connector.directory_ldap)
         directory_connector.initialize(ldap_options)
  
         all_loaded, actual_users = directory_connector.load_users_and_groups(users_by_group.iterkeys())

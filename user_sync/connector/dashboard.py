@@ -12,7 +12,7 @@ from umapi.auth import Auth, JWT, AccessRequest
 from umapi.error import UMAPIError, UMAPIRetryError, UMAPIRequestError
 from umapi.helper import iter_paginate
 
-import aedash.sync.helper
+import user_sync.helper
 
 try:
     from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
@@ -26,14 +26,14 @@ class DashboardConnector(object):
         :type name: str
         :type caller_options: dict
         '''
-        caller_config = aedash.sync.config.DictConfig('"%s dashboard options"' % name, caller_options)
-        builder = aedash.sync.config.OptionsBuilder(caller_config)
+        caller_config = user_sync.config.DictConfig('"%s dashboard options"' % name, caller_options)
+        builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('logger_name', 'dashboard.' + name)
         builder.set_bool_value('test_mode', False)
         options = builder.get_options()        
 
         server_config = caller_config.get_dict_config('server', True)
-        server_builder = aedash.sync.config.OptionsBuilder(server_config)
+        server_builder = user_sync.config.OptionsBuilder(server_config)
         server_builder.set_string_value('host', 'usermanagement.adobe.io')
         server_builder.set_string_value('endpoint', '/v2/usermanagement')
         server_builder.set_string_value('ims_host', 'ims-na1.adobelogin.com')
@@ -41,7 +41,7 @@ class DashboardConnector(object):
         options['server'] = server_options = server_builder.get_options() 
         
         enterprise_config = caller_config.get_dict_config('enterprise')
-        enterprise_builder = aedash.sync.config.OptionsBuilder(enterprise_config)
+        enterprise_builder = user_sync.config.OptionsBuilder(enterprise_config)
         enterprise_builder.require_string_value('org_id')
         enterprise_builder.require_string_value('api_key')
         enterprise_builder.require_string_value('client_secret')
@@ -62,7 +62,7 @@ class DashboardConnector(object):
         
         # the JWT object build the JSON Web Token
         logger.info('Creating jwt for org id: "%s" using private key file: "%s"', org_id, private_key_file_path)
-        with aedash.sync.helper.open_file(private_key_file_path, 'r') as private_key_file:
+        with user_sync.helper.open_file(private_key_file_path, 'r') as private_key_file:
             adobe_jwt_request = JWT(
                 org_id,
                 enterprise_options['tech_acct'],

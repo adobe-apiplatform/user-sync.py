@@ -1,8 +1,8 @@
 from setuptools import setup
 
-setup(name='aedash_user_sync',
+setup(name='user_sync',
       version='0.6.0',
-      packages=['aedash', 'aedash.sync', 'aedash.sync.connector'],
+      packages=['user_sync', 'user_sync.connector'],
       install_requires=[
           'pycrypto',
           'python-ldap==2.4.25',
@@ -12,7 +12,7 @@ setup(name='aedash_user_sync',
       ],
       entry_points={
           'console_scripts': [
-              'aed_sync = aedash.sync.app:main'
+              'user_sync = user_sync.app:main'
           ]
       },
 )

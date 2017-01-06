@@ -1,9 +1,9 @@
 import ldap.controls.libldap
 import string
 
-import aedash.sync.connector.helper
-import aedash.sync.error
-import aedash.sync.identity_type
+import user_sync.connector.helper
+import user_sync.error
+import user_sync.identity_type
 
 def connector_metadata():
     metadata = {
@@ -33,8 +33,8 @@ class LDAPDirectoryConnector(object):
     group_member_attribute = "member"
     
     def __init__(self, caller_options):
-        caller_config = aedash.sync.config.DictConfig('"%s options"' % LDAPDirectoryConnector.name, caller_options)
-        builder = aedash.sync.config.OptionsBuilder(caller_config)
+        caller_config = user_sync.config.DictConfig('"%s options"' % LDAPDirectoryConnector.name, caller_options)
+        builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('group_filter_format', '(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))')
         builder.set_string_value('all_users_filter', '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))')
         builder.set_bool_value('require_tls_cert', False)
@@ -56,12 +56,12 @@ class LDAPDirectoryConnector(object):
         self.user_domain_formatter = LDAPValueFormatter(options['user_domain_format'])
         
         self.options = options
-        self.logger = logger = aedash.sync.connector.helper.create_logger(options)
+        self.logger = logger = user_sync.connector.helper.create_logger(options)
         caller_config.report_unused_values(logger)
         
         try:
-            options['user_identity_type'] = aedash.sync.identity_type.parse_identity_type(options['user_identity_type'])
-        except aedash.sync.error.AssertionException as e:
+            options['user_identity_type'] = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
+        except user_sync.error.AssertionException as e:
             logger.error(e.message)
             e.set_reported()
             raise e
@@ -78,7 +78,7 @@ class LDAPDirectoryConnector(object):
         try:
             connection.simple_bind_s(username, password)
         except Exception as e:
-            raise aedash.sync.error.AssertionException(repr(e))
+            raise user_sync.error.AssertionException(repr(e))
         self.connection = connection
         logger.info('Connected')            
         
@@ -154,7 +154,7 @@ class LDAPDirectoryConnector(object):
         for current_tuple in res:
             if (current_tuple[0] != None):
                 if (group_tuple != None):
-                    raise aedash.sync.error.AssertionException("Multiple LDAP groups found for: %s" % group)
+                    raise user_sync.error.AssertionException("Multiple LDAP groups found for: %s" % group)
                 group_tuple = current_tuple
         
         return group_tuple
@@ -249,7 +249,7 @@ class LDAPDirectoryConnector(object):
                     self.logger.warn('No email attribute: %s for dn: %s', last_attribute_name, dn)
                 continue
             
-            user = aedash.sync.connector.helper.create_blank_user()
+            user = user_sync.connector.helper.create_blank_user()
             user['email'] = email
                 
             username, last_attribute_name = self.user_username_formatter.generate_value(record)

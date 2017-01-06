@@ -3,10 +3,10 @@ import csv
 import time
 import email.utils
 
-from aedash.sync.connector import helper
-from aedash.sync.connector.dashboard import ApiDelegate
-from aedash.sync.connector.dashboard import ActionManager
-from aedash.sync.connector.dashboard import Commands
+from user_sync.connector import helper
+from user_sync.connector.dashboard import ApiDelegate
+from user_sync.connector.dashboard import ActionManager
+from user_sync.connector.dashboard import Commands
 
 
 def write_to_separated_value_file(field_names, delimiter, items, output_file_path):
