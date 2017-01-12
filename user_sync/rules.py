@@ -23,7 +23,8 @@ class RuleProcessor(object):
             
             'remove_user_key_list': None,
             'remove_list_output_path': None,
-            'remove_nonexistent_users': False
+            'remove_nonexistent_users': False,
+            'default_country_code': None
         }
         options.update(caller_options)        
         self.options = options        
@@ -278,7 +279,15 @@ class RuleProcessor(object):
         directory_user = self.directory_user_by_user_key[user_key]
 
         attributes = self.get_user_attributes(directory_user)
-        country = directory_user['country']
+        account_type = directory_user.get('identitytype')
+        if (account_type == None):
+            account_type = default_new_account_type
+        # check whether the country is set in the directory, use default if not
+        default_country = options['default_country_code']
+        country = directory_user['country'] if directory_user['country'] else default_country
+        if account_type == user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE and not country:
+            # Enterprise users are allowed to have undefined country
+            country = 'UD'
         if (country != None):
             attributes['country'] = country    
         if (attributes.get('firstname') == None):
@@ -286,10 +295,7 @@ class RuleProcessor(object):
         if (attributes.get('lastname') == None):
             attributes.pop('lastname', None)
         attributes['option'] = "updateIfAlreadyExists" if update_user_info else 'ignoreIfAlreadyExists'
-        
-        account_type = directory_user.get('identitytype')
-        if (account_type == None):
-            account_type = default_new_account_type
+
         
         commands = user_sync.connector.dashboard.Commands(directory_user['username'], directory_user['domain'])
         if (account_type == user_sync.identity_type.FEDERATED_IDENTITY_TYPE):

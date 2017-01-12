@@ -38,7 +38,8 @@ class ConfigLoader(object):
             
             'remove_user_key_list': None,
             'remove_list_output_path': None,
-            'remove_nonexistent_users': False
+            'remove_nonexistent_users': False,
+            'default_country_code': None
         }
         options.update(caller_options)     
 
@@ -300,7 +301,8 @@ class ConfigLoader(object):
             'update_user_info': options['update_user_info'],
             'remove_user_key_list': options['remove_user_key_list'],
             'remove_list_output_path': options['remove_list_output_path'],
-            'remove_nonexistent_users': options['remove_nonexistent_users']
+            'remove_nonexistent_users': options['remove_nonexistent_users'],
+            'default_country_code': directory_config.get_string('default_country_code', True)
         }
         return result
 
