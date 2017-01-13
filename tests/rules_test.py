@@ -87,130 +87,114 @@ class RulesTest(unittest.TestCase):
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_federatedId_no_country_no_default(self, mock_dashboard_commands, mock_connectors):
-        options = {'default_country_code': None,
-                   'new_account_type': 'federatedID'}
+        def_country = None
+        user_country = None
+        ident_type = 'federatedID'
 
         expected_result = {'lastname': 'User1', 'email': 'cceuser1@ensemble.ca', 'firstname': '!Openldap CCE',
                            'option': 'updateIfAlreadyExists'}
-        mock_rules = user_sync.rules.RuleProcessor(options)
-        mock_rules.directory_user_by_user_key = {
-            'cceuser1@ensemble.ca': {'username': 'cceuser1@ensemble.ca', 'domain': None, 'groups': ['CCE Group 1'],
-                                     'firstname': '!Openldap CCE', 'country': None, 'lastname': 'User1',
-                                     'identitytype': None, 'email': 'cceuser1@ensemble.ca', 'uid': '001'}}
-        mock_rules.add_dashboard_user('cceuser1@ensemble.ca', mock_connectors)
+
+        options = tests.helper.default_country_options(def_country,ident_type)
+        tests.helper.default_country_exec(options, user_country, mock_connectors)
         mock_dashboard_commands.return_value.add_federated_user.assert_called_with(expected_result)
 
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_federatedId_country_supplied_no_default(self, mock_dashboard_commands, mock_connectors):
-        options = {'default_country_code': None,
-                   'new_account_type': 'federatedID'}
+        def_country = None
+        user_country = 'UK'
+        ident_type = 'federatedID'
 
         expected_result = {'lastname': 'User1', 'option': 'updateIfAlreadyExists', 'email': 'cceuser1@ensemble.ca',
                            'firstname': '!Openldap CCE', 'country': 'UK'}
-        mock_rules = user_sync.rules.RuleProcessor(options)
-        mock_rules.directory_user_by_user_key = {
-            'cceuser1@ensemble.ca': {'username': 'cceuser1@ensemble.ca', 'domain': None, 'groups': ['CCE Group 1'],
-                                     'firstname': '!Openldap CCE', 'country': 'UK', 'lastname': 'User1',
-                                     'identitytype': None, 'email': 'cceuser1@ensemble.ca', 'uid': '001'}}
-        mock_rules.add_dashboard_user('cceuser1@ensemble.ca', mock_connectors)
+
+        options = tests.helper.default_country_options(def_country,ident_type)
+        tests.helper.default_country_exec(options, user_country, mock_connectors)
         mock_dashboard_commands.return_value.add_federated_user.assert_called_with(expected_result)
 
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_federatedId_country_supplied_with_default(self, mock_dashboard_commands, mock_connectors):
-        options = {'default_country_code': 'US',
-                   'new_account_type': 'federatedID'}
+        def_country = 'US'
+        user_country = 'UK'
+        ident_type = 'federatedID'
 
         expected_result = {'lastname': 'User1', 'option': 'updateIfAlreadyExists', 'email': 'cceuser1@ensemble.ca',
                            'firstname': '!Openldap CCE', 'country': 'UK'}
-        mock_rules = user_sync.rules.RuleProcessor(options)
-        mock_rules.directory_user_by_user_key = {
-            'cceuser1@ensemble.ca': {'username': 'cceuser1@ensemble.ca', 'domain': None, 'groups': ['CCE Group 1'],
-                                     'firstname': '!Openldap CCE', 'country': 'UK', 'lastname': 'User1',
-                                     'identitytype': None, 'email': 'cceuser1@ensemble.ca', 'uid': '001'}}
-        mock_rules.add_dashboard_user('cceuser1@ensemble.ca', mock_connectors)
+
+        options = tests.helper.default_country_options(def_country,ident_type)
+        tests.helper.default_country_exec(options, user_country, mock_connectors)
         mock_dashboard_commands.return_value.add_federated_user.assert_called_with(expected_result)
 
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_federatedId_no_country_with_default(self, mock_dashboard_commands, mock_connectors):
-        options = {'default_country_code': 'US',
-                   'new_account_type': 'federatedID'}
+        def_country = 'US'
+        user_country = None
+        ident_type = 'federatedID'
 
         expected_result = {'lastname': 'User1', 'option': 'updateIfAlreadyExists', 'email': 'cceuser1@ensemble.ca',
                            'firstname': '!Openldap CCE', 'country': 'US'}
-        mock_rules = user_sync.rules.RuleProcessor(options)
-        mock_rules.directory_user_by_user_key = {
-            'cceuser1@ensemble.ca': {'username': 'cceuser1@ensemble.ca', 'domain': None, 'groups': ['CCE Group 1'],
-                                     'firstname': '!Openldap CCE', 'country': None, 'lastname': 'User1',
-                                     'identitytype': None, 'email': 'cceuser1@ensemble.ca', 'uid': '001'}}
-        mock_rules.add_dashboard_user('cceuser1@ensemble.ca', mock_connectors)
+
+        options = tests.helper.default_country_options(def_country,ident_type)
+        tests.helper.default_country_exec(options, user_country, mock_connectors)
         mock_dashboard_commands.return_value.add_federated_user.assert_called_with(expected_result)
 
     # enterpriseId
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_enterpriseID_no_country_no_default(self, mock_dashboard_commands, mock_connectors):
-        options = {'default_country_code': None,
-                   'new_account_type': 'enterpriseID'}
+        def_country = None
+        user_country = None
+        ident_type = 'enterpriseID'
 
         expected_result = {'lastname': 'User1', 'option': 'updateIfAlreadyExists', 'email': 'cceuser1@ensemble.ca',
                            'firstname': '!Openldap CCE', 'country': 'UD'}
-        mock_rules = user_sync.rules.RuleProcessor(options)
-        mock_rules.directory_user_by_user_key = {
-            'cceuser1@ensemble.ca': {'username': 'cceuser1@ensemble.ca', 'domain': None, 'groups': ['CCE Group 1'],
-                                     'firstname': '!Openldap CCE', 'country': None, 'lastname': 'User1',
-                                     'identitytype': None, 'email': 'cceuser1@ensemble.ca', 'uid': '001'}}
-        mock_rules.add_dashboard_user('cceuser1@ensemble.ca', mock_connectors)
+
+        options = tests.helper.default_country_options(def_country,ident_type)
+        tests.helper.default_country_exec(options, user_country, mock_connectors)
         mock_dashboard_commands.return_value.add_enterprise_user.assert_called_with(expected_result)
 
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_enterpriseID_country_supplied_no_default(self, mock_dashboard_commands, mock_connectors):
-        options = {'default_country_code': None,
-                   'new_account_type': 'enterpriseID'}
+        def_country = None
+        user_country = 'UK'
+        ident_type = 'enterpriseID'
 
         expected_result = {'lastname': 'User1', 'option': 'updateIfAlreadyExists', 'email': 'cceuser1@ensemble.ca',
                            'firstname': '!Openldap CCE', 'country': 'UK'}
-        mock_rules = user_sync.rules.RuleProcessor(options)
-        mock_rules.directory_user_by_user_key = {
-            'cceuser1@ensemble.ca': {'username': 'cceuser1@ensemble.ca', 'domain': None, 'groups': ['CCE Group 1'],
-                                     'firstname': '!Openldap CCE', 'country': 'UK', 'lastname': 'User1',
-                                     'identitytype': None, 'email': 'cceuser1@ensemble.ca', 'uid': '001'}}
-        mock_rules.add_dashboard_user('cceuser1@ensemble.ca', mock_connectors)
+
+        options = tests.helper.default_country_options(def_country,ident_type)
+        tests.helper.default_country_exec(options, user_country, mock_connectors)
         mock_dashboard_commands.return_value.add_enterprise_user.assert_called_with(expected_result)
 
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_enterpriseID_country_supplied_with_default(self, mock_dashboard_commands, mock_connectors):
-        options = {'default_country_code': 'US',
-                   'new_account_type': 'enterpriseID'}
+        def_country = 'US'
+        user_country = 'UK'
+        ident_type = 'enterpriseID'
 
         expected_result = {'lastname': 'User1', 'option': 'updateIfAlreadyExists', 'email': 'cceuser1@ensemble.ca',
                            'firstname': '!Openldap CCE', 'country': 'UK'}
-        mock_rules = user_sync.rules.RuleProcessor(options)
-        mock_rules.directory_user_by_user_key = {
-            'cceuser1@ensemble.ca': {'username': 'cceuser1@ensemble.ca', 'domain': None, 'groups': ['CCE Group 1'],
-                                     'firstname': '!Openldap CCE', 'country': 'UK', 'lastname': 'User1',
-                                     'identitytype': None, 'email': 'cceuser1@ensemble.ca', 'uid': '001'}}
-        mock_rules.add_dashboard_user('cceuser1@ensemble.ca', mock_connectors)
+
+        options = tests.helper.default_country_options(def_country,ident_type)
+        tests.helper.default_country_exec(options, user_country, mock_connectors)
         mock_dashboard_commands.return_value.add_enterprise_user.assert_called_with(expected_result)
 
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_enterpriseID_no_country_with_default(self, mock_dashboard_commands, mock_connectors):
-        options = {'default_country_code': 'US',
-                   'new_account_type': 'enterpriseID'}
+        def_country = 'US'
+        user_country = None
+        ident_type = 'enterpriseID'
 
         expected_result = {'lastname': 'User1', 'option': 'updateIfAlreadyExists', 'email': 'cceuser1@ensemble.ca',
                            'firstname': '!Openldap CCE', 'country': 'US'}
-        mock_rules = user_sync.rules.RuleProcessor(options)
-        mock_rules.directory_user_by_user_key = {
-            'cceuser1@ensemble.ca': {'username': 'cceuser1@ensemble.ca', 'domain': None, 'groups': ['CCE Group 1'],
-                                     'firstname': '!Openldap CCE', 'country': None, 'lastname': 'User1',
-                                     'identitytype': None, 'email': 'cceuser1@ensemble.ca', 'uid': '001'}}
-        mock_rules.add_dashboard_user('cceuser1@ensemble.ca', mock_connectors)
+
+        options = tests.helper.default_country_options(def_country,ident_type)
+        tests.helper.default_country_exec(options, user_country, mock_connectors)
         mock_dashboard_commands.return_value.add_enterprise_user.assert_called_with(expected_result)
 
     @staticmethod

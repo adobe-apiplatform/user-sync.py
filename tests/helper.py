@@ -3,6 +3,7 @@ import csv
 import time
 import email.utils
 
+import user_sync
 from user_sync.connector import helper
 from user_sync.connector.dashboard import ApiDelegate
 from user_sync.connector.dashboard import ActionManager
@@ -67,3 +68,28 @@ def create_logger():
 def create_action_manager():
     return ActionManager(ApiDelegate(None, create_logger()), "test org id", create_logger())
 
+def default_country_options(default_country_code, identity_type):
+    return {'default_country_code': default_country_code,
+            'new_account_type': identity_type}
+
+def default_country_user(country):
+    return {
+        'cceuser1@ensemble.ca': {'username': 'cceuser1@ensemble.ca',
+                                 'domain': None, 'groups': ['CCE Group 1'],
+                                 'firstname': '!Openldap CCE',
+                                 'country': country,
+                                 'lastname': 'User1',
+                                 'identitytype': None,
+                                 'email': 'cceuser1@ensemble.ca',
+                                 'uid': '001'}}
+
+def default_country_exec(options,country,mock_connectors):
+    mock_rules = user_sync.rules.RuleProcessor(options)
+
+    mock_rules.directory_user_by_user_key = default_country_user(country)
+
+    mock_rules.add_dashboard_user('cceuser1@ensemble.ca', mock_connectors)
+
+class MockGetString():
+    def get_string(self,test1,test2):
+        return 'test'

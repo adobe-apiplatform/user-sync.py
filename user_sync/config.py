@@ -38,8 +38,7 @@ class ConfigLoader(object):
             
             'remove_user_key_list': None,
             'remove_list_output_path': None,
-            'remove_nonexistent_users': False,
-            'default_country_code': None
+            'remove_nonexistent_users': False
         }
         options.update(caller_options)     
 
@@ -288,6 +287,9 @@ class ConfigLoader(object):
         if (directory_config != None): 
             new_account_type = directory_config.get_string('user_identity_type', True)
             new_account_type = user_sync.identity_type.parse_identity_type(new_account_type)
+            default_country_code = directory_config.get_string('default_country_code', True)
+            if (default_country_code == None):
+                default_country_code = ''
         if (new_account_type == None):
             new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
             self.logger.warning("Assuming the identity type for users is: %s", new_account_type)
@@ -302,7 +304,7 @@ class ConfigLoader(object):
             'remove_user_key_list': options['remove_user_key_list'],
             'remove_list_output_path': options['remove_list_output_path'],
             'remove_nonexistent_users': options['remove_nonexistent_users'],
-            'default_country_code': directory_config.get_string('default_country_code', True)
+            'default_country_code': default_country_code
         }
         return result
 
