@@ -283,13 +283,12 @@ class ConfigLoader(object):
         Return a dict representing options for RuleProcessor.
         '''
         new_account_type = None
+        default_country_code = None
         directory_config = self.main_config.get_dict_config('directory', True)
         if (directory_config != None): 
             new_account_type = directory_config.get_string('user_identity_type', True)
             new_account_type = user_sync.identity_type.parse_identity_type(new_account_type)
             default_country_code = directory_config.get_string('default_country_code', True)
-            if (default_country_code == None):
-                default_country_code = ''
         if (new_account_type == None):
             new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
             self.logger.warning("Assuming the identity type for users is: %s", new_account_type)

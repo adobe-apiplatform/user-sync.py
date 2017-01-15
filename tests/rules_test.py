@@ -82,120 +82,71 @@ class RulesTest(unittest.TestCase):
         tests.helper.assert_equal_dashboard_commands_list(self, expected_trustee_commands_list, trustee_commands_list)
 
     # default country code tests
+    
+    def do_country_code_test(self, mock_dashboard_commands, mock_connectors, identity_type, default_country_code, user_country_code, expected_country_code):
+        expected_result = {'lastname': 'User1', 'email': 'cceuser1@ensemble.ca', 'firstname': '!Openldap CCE', 'option': 'updateIfAlreadyExists'}
+        if (expected_country_code):
+            expected_result['country'] = expected_country_code
+
+        options = {'default_country_code': default_country_code, 'new_account_type': identity_type}         
+        mock_rules = user_sync.rules.RuleProcessor(options)
+        mock_rules.directory_user_by_user_key = {
+            'cceuser1@ensemble.ca': {'username': 'cceuser1@ensemble.ca',
+                                     'domain': None, 'groups': ['CCE Group 1'],
+                                     'firstname': '!Openldap CCE',
+                                     'country': user_country_code,
+                                     'lastname': 'User1',
+                                     'identitytype': None,
+                                     'email': 'cceuser1@ensemble.ca',
+                                     'uid': '001'}
+        }
+        mock_rules.add_dashboard_user('cceuser1@ensemble.ca', mock_connectors)
+        if (identity_type == 'federatedID'):
+            mock_dashboard_commands.return_value.add_federated_user.assert_called_with(expected_result)
+        else:
+            mock_dashboard_commands.return_value.add_enterprise_user.assert_called_with(expected_result)
 
     # federatedId
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_federatedId_no_country_no_default(self, mock_dashboard_commands, mock_connectors):
-        def_country = None
-        user_country = None
-        ident_type = 'federatedID'
-
-        expected_result = {'lastname': 'User1', 'email': 'cceuser1@ensemble.ca', 'firstname': '!Openldap CCE',
-                           'option': 'updateIfAlreadyExists'}
-
-        options = tests.helper.default_country_options(def_country,ident_type)
-        tests.helper.default_country_exec(options, user_country, mock_connectors)
-        mock_dashboard_commands.return_value.add_federated_user.assert_called_with(expected_result)
+        self.do_country_code_test(mock_dashboard_commands, mock_connectors, 'federatedID', None, None, None)
 
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_federatedId_country_supplied_no_default(self, mock_dashboard_commands, mock_connectors):
-        def_country = None
-        user_country = 'UK'
-        ident_type = 'federatedID'
-
-        expected_result = {'lastname': 'User1', 'option': 'updateIfAlreadyExists', 'email': 'cceuser1@ensemble.ca',
-                           'firstname': '!Openldap CCE', 'country': 'UK'}
-
-        options = tests.helper.default_country_options(def_country,ident_type)
-        tests.helper.default_country_exec(options, user_country, mock_connectors)
-        mock_dashboard_commands.return_value.add_federated_user.assert_called_with(expected_result)
+        self.do_country_code_test(mock_dashboard_commands, mock_connectors, 'federatedID', None, 'UK', 'UK')
 
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_federatedId_country_supplied_with_default(self, mock_dashboard_commands, mock_connectors):
-        def_country = 'US'
-        user_country = 'UK'
-        ident_type = 'federatedID'
-
-        expected_result = {'lastname': 'User1', 'option': 'updateIfAlreadyExists', 'email': 'cceuser1@ensemble.ca',
-                           'firstname': '!Openldap CCE', 'country': 'UK'}
-
-        options = tests.helper.default_country_options(def_country,ident_type)
-        tests.helper.default_country_exec(options, user_country, mock_connectors)
-        mock_dashboard_commands.return_value.add_federated_user.assert_called_with(expected_result)
+        self.do_country_code_test(mock_dashboard_commands, mock_connectors, 'federatedID', 'US', 'UK', 'UK')
 
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_federatedId_no_country_with_default(self, mock_dashboard_commands, mock_connectors):
-        def_country = 'US'
-        user_country = None
-        ident_type = 'federatedID'
-
-        expected_result = {'lastname': 'User1', 'option': 'updateIfAlreadyExists', 'email': 'cceuser1@ensemble.ca',
-                           'firstname': '!Openldap CCE', 'country': 'US'}
-
-        options = tests.helper.default_country_options(def_country,ident_type)
-        tests.helper.default_country_exec(options, user_country, mock_connectors)
-        mock_dashboard_commands.return_value.add_federated_user.assert_called_with(expected_result)
+        self.do_country_code_test(mock_dashboard_commands, mock_connectors, 'federatedID', 'US', None, 'US')
 
     # enterpriseId
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_enterpriseID_no_country_no_default(self, mock_dashboard_commands, mock_connectors):
-        def_country = None
-        user_country = None
-        ident_type = 'enterpriseID'
-
-        expected_result = {'lastname': 'User1', 'option': 'updateIfAlreadyExists', 'email': 'cceuser1@ensemble.ca',
-                           'firstname': '!Openldap CCE', 'country': 'UD'}
-
-        options = tests.helper.default_country_options(def_country,ident_type)
-        tests.helper.default_country_exec(options, user_country, mock_connectors)
-        mock_dashboard_commands.return_value.add_enterprise_user.assert_called_with(expected_result)
+        self.do_country_code_test(mock_dashboard_commands, mock_connectors, 'enterpriseID', None, None, 'UD')
 
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_enterpriseID_country_supplied_no_default(self, mock_dashboard_commands, mock_connectors):
-        def_country = None
-        user_country = 'UK'
-        ident_type = 'enterpriseID'
-
-        expected_result = {'lastname': 'User1', 'option': 'updateIfAlreadyExists', 'email': 'cceuser1@ensemble.ca',
-                           'firstname': '!Openldap CCE', 'country': 'UK'}
-
-        options = tests.helper.default_country_options(def_country,ident_type)
-        tests.helper.default_country_exec(options, user_country, mock_connectors)
-        mock_dashboard_commands.return_value.add_enterprise_user.assert_called_with(expected_result)
+        self.do_country_code_test(mock_dashboard_commands, mock_connectors, 'enterpriseID', None, 'UK', 'UK')
 
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_enterpriseID_country_supplied_with_default(self, mock_dashboard_commands, mock_connectors):
-        def_country = 'US'
-        user_country = 'UK'
-        ident_type = 'enterpriseID'
-
-        expected_result = {'lastname': 'User1', 'option': 'updateIfAlreadyExists', 'email': 'cceuser1@ensemble.ca',
-                           'firstname': '!Openldap CCE', 'country': 'UK'}
-
-        options = tests.helper.default_country_options(def_country,ident_type)
-        tests.helper.default_country_exec(options, user_country, mock_connectors)
-        mock_dashboard_commands.return_value.add_enterprise_user.assert_called_with(expected_result)
+        self.do_country_code_test(mock_dashboard_commands, mock_connectors, 'enterpriseID', 'US', 'UK', 'UK')
 
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_enterpriseID_no_country_with_default(self, mock_dashboard_commands, mock_connectors):
-        def_country = 'US'
-        user_country = None
-        ident_type = 'enterpriseID'
-
-        expected_result = {'lastname': 'User1', 'option': 'updateIfAlreadyExists', 'email': 'cceuser1@ensemble.ca',
-                           'firstname': '!Openldap CCE', 'country': 'US'}
-
-        options = tests.helper.default_country_options(def_country,ident_type)
-        tests.helper.default_country_exec(options, user_country, mock_connectors)
-        mock_dashboard_commands.return_value.add_enterprise_user.assert_called_with(expected_result)
+        self.do_country_code_test(mock_dashboard_commands, mock_connectors, 'enterpriseID', 'US', None, 'US')
 
     @staticmethod
     def create_user_attributes_for_commands(user, update_user_info):
