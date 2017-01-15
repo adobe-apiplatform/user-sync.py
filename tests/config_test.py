@@ -2,7 +2,7 @@ import types
 import unittest
 
 import mock
-
+import tests.helper
 from user_sync.error import AssertionException
 from user_sync.config import ConfigLoader
 from user_sync.config import ObjectConfig
@@ -66,15 +66,18 @@ class ConfigLoaderTest(unittest.TestCase):
         self.assertEquals(self.conf_load.create_dashboard_options('', ''), {'enterprise': 'test2'},
                           'enterprise section is processed')
 
+    @mock.patch('user_sync.config.DictConfig.get_string')
     @mock.patch('user_sync.config.DictConfig.get_dict_config')
     @mock.patch('user_sync.identity_type.parse_identity_type')
-    def test_get_rule_options(self, mock_id_type, mock_dict_config):
+    def test_get_rule_options(self, mock_id_type,mock_get_dict,mock_get_string):
         mock_id_type.return_value = 'new_acc'
+        mock_get_dict.return_value = tests.helper.MockGetString()
         self.assertEquals(self.conf_load.get_rule_options(), {'username_filter_regex': None,
                                                               'update_user_info': True,
                                                               'manage_groups': True,
                                                               'new_account_type': 'new_acc',
                                                               'directory_group_filter': None,
+                                                              'default_country_code': 'test',
                                                               'remove_user_key_list': None,
                                                               'remove_list_output_path': None,
                                                               'remove_nonexistent_users': False},

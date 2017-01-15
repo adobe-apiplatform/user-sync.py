@@ -19,6 +19,11 @@ dashboard:
   # trustee_config_filename_format: "dashboard-trustee-{organization_name}-config.yml"
 
 directory:
+  # (optional) Default country code to use if directory doesn't provide one for a user [Must be two-letter ISO-3166 code - see https://en.wikipedia.org/wiki/ISO_3166-1]
+  #
+  # example:
+  # default_country_code: US
+  
   connectors:
     # specifies the configurations for the difference directory connectors
     # The format is name : value, where value can be:

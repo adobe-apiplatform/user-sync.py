@@ -3,6 +3,7 @@ import csv
 import time
 import email.utils
 
+import user_sync
 from user_sync.connector import helper
 from user_sync.connector.dashboard import ApiDelegate
 from user_sync.connector.dashboard import ActionManager
@@ -67,3 +68,6 @@ def create_logger():
 def create_action_manager():
     return ActionManager(ApiDelegate(None, create_logger()), "test org id", create_logger())
 
+class MockGetString():
+    def get_string(self,test1,test2):
+        return 'test'
