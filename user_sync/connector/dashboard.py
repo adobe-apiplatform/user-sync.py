@@ -247,11 +247,17 @@ class ActionManager(object):
             sent_items = self.items[0:total_sent]
             self.items = self.items[total_sent:]        
             for sent_item in sent_items:
+                action = sent_item['action']
+                action_errors = action.execution_errors()
+                is_success = not action_errors or len(action_errors) == 0
+                
+                if (not is_success):
+                    for error in action_errors:
+                        self.logger.warn('Error requestID: %s code: "%s" message: "%s"', action.frame.get("requestID"), error.get('errorCode'), error.get('message'));
+                
                 item_callback = sent_item['callback']
                 if (callable(item_callback)):
-                    action = sent_item['action']
-                    action_errors = action.execution_errors()
-                    item_callback(action, len(action_errors) == 0, action_errors)
+                    item_callback(action, is_success, action_errors)
 
     def flush(self):
         _, sent, _ = self.connection.execute_queued()
