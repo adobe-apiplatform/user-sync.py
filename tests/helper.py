@@ -1,14 +1,9 @@
 import csv
 
-import time
-import email.utils
-
-import user_sync
 from user_sync.connector import helper
-from user_sync.connector.dashboard import ApiDelegate
 from user_sync.connector.dashboard import ActionManager
 from user_sync.connector.dashboard import Commands
-
+import user_sync.identity_type
 
 def write_to_separated_value_file(field_names, delimiter, items, output_file_path):
     with open(output_file_path, 'w', 1) as output_file:
@@ -58,15 +53,15 @@ def assert_equal_dashboard_commands_list(unit_test, expected_commands_list, actu
         actual_commands = actual_list[i]
         assert_equal_dashboard_commands(unit_test, expected_commands, actual_commands)
         
-def create_dashboard_commands(user):
-    commands = Commands(user['username'], user['domain'])
+def create_dashboard_commands(user, identity_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE):
+    commands = Commands(identity_type=identity_type, email=user['email'], username=user['username'], domain=user['domain'])
     return commands
 
 def create_logger():
     return helper.create_logger({"logger_name" : "connector.dashboard"})
 
 def create_action_manager():
-    return ActionManager(ApiDelegate(None, create_logger()), "test org id", create_logger())
+    return ActionManager(None, "test org id", create_logger())
 
 class MockGetString():
     def get_string(self,test1,test2):

@@ -1,4 +1,4 @@
 pycrypto
 PyYAML
 psutil
-git+http://stash.ensemble.com/scm/adobe/adobe-creative-cloud-enterprise-user-management-python-api.git@v2
+git+https://github.com/adobe-apiplatform/umapi-client.py

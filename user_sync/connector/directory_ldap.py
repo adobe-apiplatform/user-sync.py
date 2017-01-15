@@ -1,6 +1,7 @@
 import ldap.controls.libldap
 import string
 
+import user_sync.config
 import user_sync.connector.helper
 import user_sync.error
 import user_sync.identity_type

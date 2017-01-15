@@ -1,18 +1,11 @@
-import email.utils
 import helper
 import json
 import jwt
 import logging
-import math
-import random
-import time
 
-from umapi import UMAPI, Action
-from umapi.auth import Auth, JWT, AccessRequest
-from umapi.error import UMAPIError, UMAPIRetryError, UMAPIRequestError
-from umapi.helper import iter_paginate
+import umapi_client
 
-import user_sync.helper
+import user_sync.identity_type
 
 try:
     from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
@@ -57,46 +50,34 @@ class DashboardConnector(object):
         self.org_id = org_id = enterprise_options['org_id']
         api_key = enterprise_options['api_key']
         private_key_file_path = enterprise_options['priv_key_path']
-        ims_url = "https://" + ims_host + server_options['ims_endpoint_jwt']
         um_endpoint = "https://" + server_options['host'] + server_options['endpoint']    
         
-        # the JWT object build the JSON Web Token
-        logger.info('Creating jwt for org id: "%s" using private key file: "%s"', org_id, private_key_file_path)
-        with user_sync.helper.open_file(private_key_file_path, 'r') as private_key_file:
-            adobe_jwt_request = JWT(
-                org_id,
-                enterprise_options['tech_acct'],
-                ims_host,
-                api_key,
-                private_key_file
-            )
-        adobe_jwt = adobe_jwt_request();
-        logger.info('Created jwt with length: %d', len(adobe_jwt))            
-
-        # when called, the AccessRequest object retrieves an access token from IMS
-        logger.info('Requesting access from: "%s" for api_key: "%s"', ims_url, api_key)            
-        access_request = AccessRequest(
-            ims_url,
-            api_key,
-            enterprise_options['client_secret'],
-            adobe_jwt
-        )        
-        access_token = access_request()
-        logger.info('Received access token with length: %d', len(access_token))            
-    
-        # initialize Auth object for API requests
-        auth = Auth(api_key, access_token)
-        self.api_delegate = api_delegate = ApiDelegate(UMAPI(um_endpoint, auth, options['test_mode']), logger)
+        logger.info('Creating connection for org id: "%s" using private key file: "%s"', org_id, private_key_file_path)
+        auth_dict = {
+            "org_id": org_id,
+            "tech_acct_id": enterprise_options['tech_acct'],
+            "api_key": api_key,
+            "client_secret": enterprise_options['client_secret'],
+            "private_key_file": private_key_file_path
+        }
+        self.connection = connection = umapi_client.Connection(
+            org_id=org_id, 
+            auth_dict=auth_dict, 
+            ims_host=ims_host,
+            ims_endpoint_jwt=server_options['ims_endpoint_jwt'],
+            user_management_endpoint=um_endpoint,
+            test_mode=options['test_mode']
+        )
         logger.info('API initialized on: %s', um_endpoint)
         
-        self.action_manager = ActionManager(api_delegate, org_id, logger)
+        self.action_manager = ActionManager(connection, org_id, logger)
     
     def get_users(self):
         return list(self.iter_users())
 
     def iter_users(self):
         users = {}
-        for u in iter_paginate(self.api_delegate.users, self.org_id):
+        for u in umapi_client.UsersQuery(self.connection):
             email = u['email'] 
             if not (email in users):
                 users[email] = u            
@@ -111,22 +92,20 @@ class DashboardConnector(object):
         :type callback: callable(umapi.Action, bool, dict)
         '''
         if (len(commands) > 0):
-            username = commands.username
-            domain = commands.domain
-            action_options = {
-            }
-            if (domain != None):
-                action_options['domain'] = domain        
-            action = Action(username, **action_options)
-            action.do(**dict(commands.do_list))                
-            self.get_action_manager().add_action(action, callback)
+            action_manager = self.get_action_manager()            
+            action = action_manager.create_action(commands)
+            action_manager.add_action(action, callback)
 
 class Commands(object):
-    def __init__(self, username, domain):
+    def __init__(self, identity_type = None, email = None, username = None, domain = None):
         '''
+        :type identity_type: str
+        :type email: str
         :type username: str
         :type domain: str
         '''
+        self.identity_type = identity_type;
+        self.email = email;
         self.username = username
         self.domain = domain
         self.do_list = []
@@ -136,193 +115,146 @@ class Commands(object):
         :type attributes: dict
         '''
         if (attributes != None and len(attributes) > 0):
-            self.do_list.append(('update', attributes))
+            params = self.convert_user_attributes_to_params(attributes)
+            self.do_list.append(('update', params))
 
     def add_groups(self, groups_to_add):
         '''
         :type groups_to_add: set(str)
         '''
         if (groups_to_add != None and len(groups_to_add) > 0):
-            groups = Commands.get_json_serializable(groups_to_add)
-            self.do_list.append(('add', groups))
+            params = {
+                "groups": groups_to_add
+            }
+            self.do_list.append(('add_to_groups', params))
 
     def remove_groups(self, groups_to_remove):
         '''
         :type groups_to_remove: set(str)
         '''
         if (groups_to_remove != None and len(groups_to_remove) > 0):
-            groups = Commands.get_json_serializable(groups_to_remove)
-            self.do_list.append(('remove', groups))
+            params = {
+                "groups": groups_to_remove
+            }
+            self.do_list.append(('remove_from_groups', params))
     
     def remove_all_groups(self):
-        self.do_list.append(('remove', 'all'))
+        params = {
+            "all_groups": True
+        }
+        self.do_list.append(('remove_from_groups', params))
     
-    def add_federated_user(self, attributes):
+    def add_user(self, attributes):
         '''
         :type attributes: dict
         '''
-        self.do_list.append(('createFederatedID', attributes))
+        params = self.convert_user_attributes_to_params(attributes)
 
-    def add_enterprise_user(self, attributes):
-        '''
-        :type attributes: dict
-        '''
-        self.do_list.append(('createEnterpriseID', attributes))
-        
+        onConflictValue = None
+        option = params.pop('option', None)
+        if (option == "updateIfAlreadyExists"):
+            onConflictValue = umapi_client.IfAlreadyExistsOptions.updateIfAlreadyExists
+        elif (option == "ignoreIfAlreadyExists"):
+            onConflictValue = umapi_client.IfAlreadyExistsOptions.ignoreIfAlreadyExists
+        if (onConflictValue != None):
+            params['on_conflict'] = onConflictValue
+            
+        self.do_list.append(('create', params))
+
     def remove_from_org(self):
-        self.do_list.append(('removeFromOrg', {}))
+        self.do_list.append(('remove_from_organization', {}))
 
     def __len__(self):
         return len(self.do_list)
             
-    @staticmethod
-    def get_json_serializable(value):
-        result = value
-        if isinstance(value, set):
-            result = list(value)
-        return result
+    def convert_user_attributes_to_params(self, attributes):
+        params = {} 
+        for key, value in attributes.iteritems():
+            if (key == 'firstname'):
+                key = 'first_name'
+            elif (key == 'lastname'):
+                key = 'last_name'
+            params[key] = value
+        return params
     
     
 class ActionManager(object):
-    max_actions = 10
     next_request_id = 1
 
-    def __init__(self, api_delegate, org_id, logger):
+    def __init__(self, connection, org_id, logger):
         '''
-        :type api_delegate: ApiDelegate
+        :type connection: umapi_client.Connection
         :type org_id: str
         :type logger: logging.Logger
         '''
         self.items = []
-        self.api_delegate = api_delegate
+        self.connection = connection
         self.org_id = org_id
         self.logger = logger.getChild('action')
+        
+    def get_next_request_id(self):
+        request_id = 'action_%d' % ActionManager.next_request_id
+        ActionManager.next_request_id += 1
+        return request_id
+
+    def create_action(self, commands):
+        identity_type = commands.identity_type
+        email = commands.email
+        username = commands.username
+        domain = commands.domain
+
+        if (username.find('@') > 0):
+            if (email == None):
+                email = username
+            if (identity_type == None):
+                identity_type = user_sync.identity_type.FEDERATED_IDENTITY_TYPE if username != user_sync.helper.normalize_string(email) else user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
+        elif (identity_type == None):
+            identity_type = user_sync.identity_type.FEDERATED_IDENTITY_TYPE
+        umapi_identity_type = umapi_client.IdentityTypes.federatedID if identity_type == user_sync.identity_type.FEDERATED_IDENTITY_TYPE else umapi_client.IdentityTypes.enterpriseID
+        
+        action = umapi_client.UserAction(umapi_identity_type, email, username, domain, requestID=self.get_next_request_id()) 
+        for command in commands.do_list:
+            command_name, command_param = command
+            command_function = getattr(action, command_name) 
+            command_function(**command_param)
+        return action
 
     def add_action(self, action, callback = None):
         '''
-        :type action: umapi.Action
-        :type callback: callable(umapi.Action, bool, dict)
+        :type action: umapi_client.UserAction
+        :type callback: callable(umapi_client.UserAction, bool, dict)
         '''
-        action.data['requestID'] = request_id = 'action_%d' % ActionManager.next_request_id
-        ActionManager.next_request_id += 1
-        
         item = {
-            'request_id': request_id,
             'action': action,
             'callback': callback
         }
         self.items.append(item)
-        self.logger.log(logging.INFO, 'Added action: %s', json.dumps(action.data))
-        if len(self.items) >= ActionManager.max_actions:
-            self.execute()
+        self.logger.log(logging.INFO, 'Added action: %s', json.dumps(action.wire_dict()))
+        self._execute_action(action)
     
     def has_work(self):
-        return len(self.items) > 0        
+        return len(self.items) > 0  
+    
+    def _execute_action(self, action):      
+        '''
+        :type action: umapi_client.UserAction
+        '''
+        _, sent, _ = self.connection.execute_single(action)
+        self.process_sent_items(sent)
 
-    def execute(self):
-        num_attempts = 0
-        num_attempts_max = 4
-
-        items = self.items
-        self.items = []
-        self.logger.info('Executing actions: %s', [item['request_id'] for item in items])
-        while True:
-            num_attempts += 1
-
-            if num_attempts > num_attempts_max:
-                self.logger.warn("FAILURE NO MORE RETRIES, SKIPPING...")
-                break
-
-            is_request_error = False
-            try:
-                res = self.api_delegate.action(self.org_id, [item['action'] for item in items])
-            except UMAPIRequestError as e:
-                is_request_error = True
-                res = e.result
-            except UMAPIRetryError as e:
-                num_attempts = num_attempts_max
-                continue
-            except UMAPIError as e:
-                self.logger.warn("ERROR -- %s - %s", e.res.status_code, e.res.text)
-                break
-
-            error_by_request_id = None
-            if (res != None):
-                log_level = logging.DEBUG if res['result'] == 'success' else logging.WARN 
-                self.logger.log(log_level, 'Result %s -- %d completed, %d completedInTestMode, %d failed', res['result'], res['completed'], res.get('completedInTestMode'), res['notCompleted'])
-
-                if ('errors' in res):
-                    error_by_request_id = {}
-                    for error in res['errors']:
-                        if ('message' in error or 'errorCode' in error):
-                            self.logger.warn('Error requestID: %s code: "%s" message: "%s"', error.get('requestID'), error.get('errorCode'), error.get('message'))
-                        if ('requestID' in error):
-                            request_id = error['requestID']
-                            error_by_request_id[request_id] = error
-            elif is_request_error:
-                self.logger.warn("Unknown result")
-
-            
-            for item in items:
-                item_callback = item['callback']
-                item_error = error_by_request_id.get(item['request_id']) if  error_by_request_id != None else None
-                item_is_success = (not is_request_error) and item_error == None 
+    def process_sent_items(self, total_sent):
+        if (total_sent > 0):
+            sent_items = self.items[0:total_sent]
+            self.items = self.items[total_sent:]        
+            for sent_item in sent_items:
+                item_callback = sent_item['callback']
                 if (callable(item_callback)):
-                    item_callback(item['action'], item_is_success, item_error)
-            break
+                    action = sent_item['action']
+                    action_errors = action.execution_errors()
+                    item_callback(action, len(action_errors) == 0, action_errors)
+
+    def flush(self):
+        _, sent, _ = self.connection.execute_queued()
+        self.process_sent_items(sent)
         
-class ApiDelegate(object):
-    num_attempts_max = 4
-    backoff_exponential_factor = 15  # seconds
-    backoff_random_delay_max = 5  # seconds
-
-    def __init__(self, api, logger):
-        '''
-        :type api: umapi.Api
-        :type logger: logging.Logger
-        '''
-        self.api = api
-        self.logger = logger.getChild('api')
-    
-    def users(self, *args):
-        return self.make_api_call(self.api.users, args)
-    
-    def action(self, *args): 
-        return self.make_api_call(self.api.action, args)
-    
-    def make_api_call(self, api_call, args):
-        '''
-        :type api_call: callable
-        :type args: list
-        '''
-        num_attempts = 0
-        while True:
-            num_attempts += 1
-            try:
-                res = api_call(*args)
-                break
-            except UMAPIRetryError as e:
-                self.logger.info("Retry error: %s", e.res.status_code)
-                if num_attempts >= self.num_attempts_max:
-                    self.logger.info("Retry max attempts reached")
-                    raise e
-                
-                if "Retry-After" in e.res.headers:
-                    retry_after_date = email.utils.parsedate_tz(e.res.headers["Retry-After"])
-                    if retry_after_date is not None:
-                        # header contains date
-                        time_backoff = int(email.utils.mktime_tz(retry_after_date) - time.time())
-                    else:
-                        # header contains delta seconds
-                        time_backoff = int(e.res.headers["Retry-After"])
-                else:
-                    # use exponential backoff with random delay
-                    time_backoff = int(math.pow(2, num_attempts - 1)) * \
-                                   self.backoff_exponential_factor + \
-                                   random.randint(0, self.backoff_random_delay_max)
-    
-                self.logger.info("Retrying in %d seconds...", time_backoff)
-                time.sleep(time_backoff)
-
-        return res
 

@@ -57,25 +57,25 @@ class RulesTest(unittest.TestCase):
         
         user = all_users[1]
         commands = tests.helper.create_dashboard_commands(user)
-        commands.add_groups([owning_group_21])
-        commands.remove_groups([owning_group_11])
+        commands.add_groups(set([owning_group_21]))
+        commands.remove_groups(set([owning_group_11]))
         expected_owning_commands_list.append(commands)
         
         user = all_users[0]
         commands = tests.helper.create_dashboard_commands(user)
-        commands.add_enterprise_user(self.create_user_attributes_for_commands(user, rule_options['update_user_info']))
-        commands.add_groups([owning_group_11])        
+        commands.add_user(self.create_user_attributes_for_commands(user, rule_options['update_user_info']))
+        commands.add_groups(set([owning_group_11]))        
         expected_owning_commands_list.append(commands)
         
         user = all_users[2]
         commands = tests.helper.create_dashboard_commands(user)
-        commands.add_enterprise_user(self.create_user_attributes_for_commands(user, rule_options['update_user_info']))
+        commands.add_user(self.create_user_attributes_for_commands(user, rule_options['update_user_info']))
         expected_owning_commands_list.append(commands)
                 
         expected_trustee_commands_list = []
         user = all_users[0]
         commands = tests.helper.create_dashboard_commands(user)
-        commands.add_groups([owning_group_12])
+        commands.add_groups(set([owning_group_12]))
         expected_trustee_commands_list.append(commands)
 
         tests.helper.assert_equal_dashboard_commands_list(self, expected_owning_commands_list, owning_commands_list)
@@ -101,10 +101,7 @@ class RulesTest(unittest.TestCase):
                                      'uid': '001'}
         }
         mock_rules.add_dashboard_user('cceuser1@ensemble.ca', mock_connectors)
-        if (identity_type == 'federatedID'):
-            mock_dashboard_commands.return_value.add_federated_user.assert_called_with(expected_result)
-        else:
-            mock_dashboard_commands.return_value.add_enterprise_user.assert_called_with(expected_result)
+        mock_dashboard_commands.return_value.add_user.assert_called_with(expected_result)
 
     # federatedId
     @mock.patch('user_sync.rules.DashboardConnectors')

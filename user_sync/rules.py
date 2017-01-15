@@ -244,7 +244,7 @@ class RuleProcessor(object):
                 if (len(groups_to_remove) > 0):
                     self.logger.info('Removing groups for user key: %s removed: %s', user_key, groups_to_remove)
                     username, domain = self.parse_user_key(user_key)
-                    commands = user_sync.connector.dashboard.Commands(username, domain)
+                    commands = user_sync.connector.dashboard.Commands(username=username, domain=domain)
                     commands.remove_groups(groups_to_remove)
                     dashboard_connector.send_commands(commands)
 
@@ -253,7 +253,7 @@ class RuleProcessor(object):
             if (not organization_info.is_dashboard_users_loaded() or organization_info.get_dashboard_user(user_key) != None):
                 self.logger.info('Removing user for user key: %s', user_key)
                 username, domain = self.parse_user_key(user_key)
-                commands = user_sync.connector.dashboard.Commands(username, domain)
+                commands = user_sync.connector.dashboard.Commands(username=username, domain=domain)
                 commands.remove_from_org()
                 dashboard_connectors.get_owning_connector().send_commands(commands)
      
@@ -263,7 +263,24 @@ class RuleProcessor(object):
         attributes['firstname'] = directory_user['firstname']
         attributes['lastname'] = directory_user['lastname']
         return attributes
+    
+    def get_identity_type_from_directory_user(self, directory_user):
+        identity_type = directory_user.get('identitytype')
+        if (identity_type == None):
+            identity_type = self.options['new_account_type']
+        return identity_type
             
+    def create_commands_from_directory_user(self, directory_user, identity_type = None):
+        '''
+        :type user_key: str
+        :type identity_type: str
+        :type directory_user: dict
+        '''
+        if (identity_type == None):
+            identity_type = self.get_identity_type_from_directory_user(directory_user)
+        commands = user_sync.connector.dashboard.Commands(identity_type, directory_user['email'], directory_user['username'], directory_user['domain'])
+        return commands
+    
     def add_dashboard_user(self, user_key, dashboard_connectors):
         '''
         :type user_key: str
@@ -272,20 +289,19 @@ class RuleProcessor(object):
         self.logger.info('Adding user with user key: %s', user_key)
 
         options = self.options
-        default_new_account_type = options['new_account_type']
         update_user_info = options['update_user_info'] 
         manage_groups = self.will_manage_groups()
 
         directory_user = self.directory_user_by_user_key[user_key]
+        identity_type = self.get_identity_type_from_directory_user(directory_user)
+        commands = self.create_commands_from_directory_user(directory_user, identity_type)
 
         attributes = self.get_user_attributes(directory_user)
-        account_type = directory_user.get('identitytype')
-        if (account_type == None):
-            account_type = default_new_account_type
         # check whether the country is set in the directory, use default if not
-        default_country = options['default_country_code']
-        country = directory_user['country'] if directory_user['country'] else default_country
-        if account_type == user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE and not country:
+        country = directory_user['country']
+        if not country:
+            country = options['default_country_code']
+        if identity_type == user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE and not country:
             # Enterprise users are allowed to have undefined country
             country = 'UD'
         if (country != None):
@@ -295,13 +311,8 @@ class RuleProcessor(object):
         if (attributes.get('lastname') == None):
             attributes.pop('lastname', None)
         attributes['option'] = "updateIfAlreadyExists" if update_user_info else 'ignoreIfAlreadyExists'
-
         
-        commands = user_sync.connector.dashboard.Commands(directory_user['username'], directory_user['domain'])
-        if (account_type == user_sync.identity_type.FEDERATED_IDENTITY_TYPE):
-            commands.add_federated_user(attributes)
-        else:
-            commands.add_enterprise_user(attributes)
+        commands.add_user(attributes)
         if (manage_groups):
             owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
             desired_groups = owning_organization_info.get_desired_groups(user_key)
@@ -328,7 +339,7 @@ class RuleProcessor(object):
         groups_to_add = self.calculate_groups_to_add(organization_info, user_key, desired_groups)        
 
         username, domain = self.parse_user_key(user_key)
-        commands = user_sync.connector.dashboard.Commands(username, domain)
+        commands = user_sync.connector.dashboard.Commands(username=username, domain=domain)
         commands.add_groups(groups_to_add)
         dashboard_connector.send_commands(commands)
 
@@ -378,7 +389,7 @@ class RuleProcessor(object):
                 if (len(groups_to_add) > 0 or len(groups_to_remove) > 0):
                     self.logger.info('Managing groups for user key: %s added: %s removed: %s', user_key, groups_to_add, groups_to_remove)
 
-            commands = user_sync.connector.dashboard.Commands(directory_user['username'], directory_user['domain'])
+            commands = self.create_commands_from_directory_user(directory_user)
             commands.update_user(user_attribute_difference)
             commands.add_groups(groups_to_add)
             commands.remove_groups(groups_to_remove)
@@ -502,7 +513,6 @@ class RuleProcessor(object):
                 total_users += 1
         self.logger.info('Total users in remove list: %d', total_users)
                 
-
         
 class DashboardConnectors(object):
     def __init__(self, owning_connector, trustee_connectors):
@@ -529,7 +539,7 @@ class DashboardConnectors(object):
             for connector in self.connectors:
                 action_manager = connector.get_action_manager()
                 if action_manager.has_work():
-                    action_manager.execute()
+                    action_manager.flush()
                     had_work = True
             if not had_work:
                 break
