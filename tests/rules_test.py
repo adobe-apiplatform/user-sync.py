@@ -83,7 +83,7 @@ class RulesTest(unittest.TestCase):
 
     # default country code tests
     
-    def do_country_code_test(self, mock_dashboard_commands, mock_connectors, identity_type, default_country_code, user_country_code, expected_country_code):
+    def _do_country_code_test(self, mock_dashboard_commands, mock_connectors, identity_type, default_country_code, user_country_code, expected_country_code):
         expected_result = {'lastname': 'User1', 'email': 'cceuser1@ensemble.ca', 'firstname': '!Openldap CCE', 'option': 'updateIfAlreadyExists'}
         if (expected_country_code):
             expected_result['country'] = expected_country_code
@@ -107,43 +107,43 @@ class RulesTest(unittest.TestCase):
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_federatedId_no_country_no_default(self, mock_dashboard_commands, mock_connectors):
-        self.do_country_code_test(mock_dashboard_commands, mock_connectors, 'federatedID', None, None, None)
+        self._do_country_code_test(mock_dashboard_commands, mock_connectors, 'federatedID', None, None, None)
 
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_federatedId_country_supplied_no_default(self, mock_dashboard_commands, mock_connectors):
-        self.do_country_code_test(mock_dashboard_commands, mock_connectors, 'federatedID', None, 'UK', 'UK')
+        self._do_country_code_test(mock_dashboard_commands, mock_connectors, 'federatedID', None, 'UK', 'UK')
 
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_federatedId_country_supplied_with_default(self, mock_dashboard_commands, mock_connectors):
-        self.do_country_code_test(mock_dashboard_commands, mock_connectors, 'federatedID', 'US', 'UK', 'UK')
+        self._do_country_code_test(mock_dashboard_commands, mock_connectors, 'federatedID', 'US', 'UK', 'UK')
 
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_federatedId_no_country_with_default(self, mock_dashboard_commands, mock_connectors):
-        self.do_country_code_test(mock_dashboard_commands, mock_connectors, 'federatedID', 'US', None, 'US')
+        self._do_country_code_test(mock_dashboard_commands, mock_connectors, 'federatedID', 'US', None, 'US')
 
     # enterpriseId
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_enterpriseID_no_country_no_default(self, mock_dashboard_commands, mock_connectors):
-        self.do_country_code_test(mock_dashboard_commands, mock_connectors, 'enterpriseID', None, None, 'UD')
+        self._do_country_code_test(mock_dashboard_commands, mock_connectors, 'enterpriseID', None, None, 'UD')
 
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_enterpriseID_country_supplied_no_default(self, mock_dashboard_commands, mock_connectors):
-        self.do_country_code_test(mock_dashboard_commands, mock_connectors, 'enterpriseID', None, 'UK', 'UK')
+        self._do_country_code_test(mock_dashboard_commands, mock_connectors, 'enterpriseID', None, 'UK', 'UK')
 
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_enterpriseID_country_supplied_with_default(self, mock_dashboard_commands, mock_connectors):
-        self.do_country_code_test(mock_dashboard_commands, mock_connectors, 'enterpriseID', 'US', 'UK', 'UK')
+        self._do_country_code_test(mock_dashboard_commands, mock_connectors, 'enterpriseID', 'US', 'UK', 'UK')
 
     @mock.patch('user_sync.rules.DashboardConnectors')
     @mock.patch('user_sync.connector.dashboard.Commands')
     def test_default_country_enterpriseID_no_country_with_default(self, mock_dashboard_commands, mock_connectors):
-        self.do_country_code_test(mock_dashboard_commands, mock_connectors, 'enterpriseID', 'US', None, 'US')
+        self._do_country_code_test(mock_dashboard_commands, mock_connectors, 'enterpriseID', 'US', None, 'US')
 
     @staticmethod
     def create_user_attributes_for_commands(user, update_user_info):
