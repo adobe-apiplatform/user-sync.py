@@ -89,7 +89,7 @@ class DashboardConnector(object):
     def send_commands(self, commands, callback = None):
         '''
         :type commands: Commands
-        :type callback: callable(umapi.Action, bool, dict)
+        :type callback: callable(dict)
         '''
         if (len(commands) > 0):
             action_manager = self.get_action_manager()            
@@ -257,7 +257,11 @@ class ActionManager(object):
                 
                 item_callback = sent_item['callback']
                 if (callable(item_callback)):
-                    item_callback(action, is_success, action_errors)
+                    item_callback({
+                        "action": action, 
+                        "is_success": is_success, 
+                        "errors": action_errors
+                    })
 
     def flush(self):
         _, sent, _ = self.connection.execute_queued()

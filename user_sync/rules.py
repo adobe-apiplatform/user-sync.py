@@ -225,8 +225,39 @@ class RuleProcessor(object):
         remove_user_key_list = self.remove_user_key_list
         if (len(remove_user_key_list) == 0):
             return
+
+        owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
         
-        self.logger.info('Removing users: %s', remove_user_key_list)
+        self.logger.info('Removing users: %s', remove_user_key_list)                
+        ready_to_remove_from_org = False
+
+        total_waiting_by_user_key = {}
+        for user_key in remove_user_key_list:
+            total_waiting_by_user_key[user_key] = 0
+
+        def try_and_remove_from_org(user_key):
+            total_waiting = total_waiting_by_user_key[user_key]
+            if total_waiting == 0:    
+                if (not owning_organization_info.is_dashboard_users_loaded() or owning_organization_info.get_dashboard_user(user_key) != None):
+                    self.logger.info('Removing user for user key: %s', user_key)
+                    username, domain = self.parse_user_key(user_key)
+                    commands = user_sync.connector.dashboard.Commands(username=username, domain=domain)
+                    commands.remove_from_org()
+                    dashboard_connectors.get_owning_connector().send_commands(commands)
+
+        def on_remove_groups_callback(user_key):
+            total_waiting = total_waiting_by_user_key[user_key]     
+            total_waiting -= 1
+            total_waiting_by_user_key[user_key] = total_waiting
+            if ready_to_remove_from_org:
+                try_and_remove_from_org(user_key)
+
+        def create_remove_groups_callback(user_key):
+            total_waiting = total_waiting_by_user_key[user_key]     
+            total_waiting += 1
+            total_waiting_by_user_key[user_key] = total_waiting
+            return lambda response: on_remove_groups_callback(user_key)
+        
         for organization_name, dashboard_connector in dashboard_connectors.get_trustee_connectors().iteritems():
             organization_info = self.get_organization_info(organization_name)
             mapped_groups = organization_info.get_mapped_groups()
@@ -238,24 +269,21 @@ class RuleProcessor(object):
                 dashboard_user = organization_info.get_dashboard_user(user_key)
                 if (dashboard_user != None):
                     groups_to_remove = self.normalize_groups(dashboard_user.get('groups')) & mapped_groups
-                else:
+                elif not organization_info.is_dashboard_users_loaded():
                     groups_to_remove = mapped_groups
+                else:
+                    groups_to_remove = None
 
-                if (len(groups_to_remove) > 0):
+                if (groups_to_remove != None and len(groups_to_remove) > 0):
                     self.logger.info('Removing groups for user key: %s removed: %s', user_key, groups_to_remove)
                     username, domain = self.parse_user_key(user_key)
                     commands = user_sync.connector.dashboard.Commands(username=username, domain=domain)
                     commands.remove_groups(groups_to_remove)
-                    dashboard_connector.send_commands(commands)
+                    dashboard_connector.send_commands(commands, create_remove_groups_callback(user_key))
 
-        organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
+        ready_to_remove_from_org = True
         for user_key in remove_user_key_list:
-            if (not organization_info.is_dashboard_users_loaded() or organization_info.get_dashboard_user(user_key) != None):
-                self.logger.info('Removing user for user key: %s', user_key)
-                username, domain = self.parse_user_key(user_key)
-                commands = user_sync.connector.dashboard.Commands(username=username, domain=domain)
-                commands.remove_from_org()
-                dashboard_connectors.get_owning_connector().send_commands(commands)
+            try_and_remove_from_org(user_key)
      
     def get_user_attributes(self, directory_user):
         attributes = {}
@@ -319,7 +347,8 @@ class RuleProcessor(object):
             groups_to_add = self.calculate_groups_to_add(owning_organization_info, user_key, desired_groups)
             commands.add_groups(groups_to_add)
 
-        def callback(create_action, is_success, error):
+        def callback(response):
+            is_success = response.get("is_success")            
             if is_success:
                 if (manage_groups):
                     for organization_name, dashboard_connector in dashboard_connectors.trustee_connectors.iteritems():
