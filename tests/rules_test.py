@@ -161,7 +161,11 @@ class RulesTest(unittest.TestCase):
             if (len(commands) > 0):
                 commands_list_output.append(commands)
             if (callback != None):
-                callback(None, True, None)
+                callback({
+                    "action": None, 
+                    "is_success": True, 
+                    "errors": None
+                })
 
         action_manager = mock.mock.create_autospec(user_sync.connector.dashboard.ActionManager)
         action_manager.has_work = lambda: False
