@@ -1,0 +1,45 @@
+username: "LDAP user goes here"
+password: "LDAP password goes here"
+host: "LDAP host URL goes here.  e.g. ldap://ldap.example.com"
+base_dn: "defines the base DN. e.g. DC=example,DC=com"
+
+# specifies the string format used to construct a group query.
+# {group} is replaced with the name of the group to find.  Default is:
+# group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
+#
+# example for AD 
+# group_filter_format: "(&(objectCategory=group)(cn={group}))"
+#
+# example for OpenLDAP
+# group_filter_format: "(&(objectClass=groupOfNames)(objectClass=posixGroup)(cn={group}))"
+
+# specifies the string filter used to find all users in the directory.
+# Default, intending for AD, is:
+# all_users_filter = "(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
+#
+# example for OpenLDAP
+# all_users_filter: "(&(objectClass=person)(objectClass=top))"
+
+# specifies how an email address is retrieved in the system.
+# the string is a string format, with names enclosed by curly brackets replaced
+# by the corresponding attributes for a user. Default is:
+# user_email_format: "{mail}"
+#
+# other example: 
+# user_email_format: "{sAMAccountName}@example.com"
+
+# specifies the identity type of the dashboard user to create.  
+# the valid values are: enterpriseID, federatedID
+# 
+# If not specified, the default identity type from the main config file is used.
+# 
+# example for enterprise ID:
+# user_identity_type: enterpriseID
+
+# specifies the result page size.  Default is:
+# search_page_size: 200
+
+# set to True if you want to validate SSL cert.  Default is:
+# require_tls_cert: False
+
+

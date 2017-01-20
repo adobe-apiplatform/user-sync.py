@@ -1,0 +1,4 @@
+pycrypto
+PyYAML
+psutil
+git+https://github.com/adobe-apiplatform/umapi-client.py
