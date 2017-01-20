@@ -178,7 +178,7 @@ class RuleProcessor(object):
             trustee_unprocessed_groups_by_user_key = self.update_dashboard_users_for_connector(trustee_organization_info, dashboard_connector)
             if (manage_groups):
                 for user_key, desired_groups in trustee_unprocessed_groups_by_user_key.iteritems():
-                    self.update_dashboard_user_for_trustee(trustee_organization_info, user_key, dashboard_connector, groups_to_add=desired_groups)
+                    self.try_and_update_dashboard_user(trustee_organization_info, user_key, dashboard_connector, groups_to_add=desired_groups)
                     
     def iter_orphaned_federated_dashboard_users(self):
         owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
@@ -388,9 +388,11 @@ class RuleProcessor(object):
         commands.remove_groups(groups_to_remove)
         dashboard_connector.send_commands(commands)
 
-    def update_dashboard_user_for_trustee(self, organization_info, user_key, dashboard_connector, attributes_to_update = None, groups_to_add = None, groups_to_remove = None):
+    def try_and_update_dashboard_user(self, organization_info, user_key, dashboard_connector, attributes_to_update = None, groups_to_add = None, groups_to_remove = None):
         '''
-        Send the user update action while working on a trustee.
+        Send the user update action smartly.   
+        If the user is being added, the action is postponed.  
+        If a group is already added or removed, the group is excluded.
         :type organization_info: OrganizationInfo
         :type user_key: str
         :type dashboard_connector: user_sync.connector.dashboard.DashboardConnector
@@ -448,7 +450,7 @@ class RuleProcessor(object):
                 groups_to_add = desired_groups - current_groups 
                 groups_to_remove =  (current_groups - desired_groups) & organization_info.get_mapped_groups()                
 
-            self.update_dashboard_user_for_trustee(organization_info, user_key, dashboard_connector, user_attribute_difference, groups_to_add, groups_to_remove)
+            self.try_and_update_dashboard_user(organization_info, user_key, dashboard_connector, user_attribute_difference, groups_to_add, groups_to_remove)
         
         organization_info.set_dashboard_users_loaded()
         
