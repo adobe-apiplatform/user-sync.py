@@ -31,6 +31,7 @@ class RuleProcessor(object):
         self.directory_user_by_user_key = {}
         self.filtered_directory_user_by_user_key = {}
         self.organization_info_by_organization = {}
+        self.adding_dashboard_user_key = set()
         
         remove_user_key_list = options['remove_user_key_list']
         remove_user_key_list = set(remove_user_key_list) if (remove_user_key_list != None) else set()
@@ -177,7 +178,7 @@ class RuleProcessor(object):
             trustee_unprocessed_groups_by_user_key = self.update_dashboard_users_for_connector(trustee_organization_info, dashboard_connector)
             if (manage_groups):
                 for user_key, desired_groups in trustee_unprocessed_groups_by_user_key.iteritems():
-                    self.add_groups_for_trustee(user_key, trustee_organization_info, desired_groups, dashboard_connector)
+                    self.update_dashboard_user_for_trustee(trustee_organization_info, user_key, dashboard_connector, groups_to_add=desired_groups)
                     
     def iter_orphaned_federated_dashboard_users(self):
         owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
@@ -311,6 +312,8 @@ class RuleProcessor(object):
     
     def add_dashboard_user(self, user_key, dashboard_connectors):
         '''
+        Send the action to add a user to the dashboard.  
+        After the user is created, the trustees will be updated.
         :type user_key: str
         :type dashboard_connectors: DashboardConnectors
         '''
@@ -342,35 +345,65 @@ class RuleProcessor(object):
         
         commands.add_user(attributes)
         if (manage_groups):
-            owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
+            owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)        
             desired_groups = owning_organization_info.get_desired_groups(user_key)
             groups_to_add = self.calculate_groups_to_add(owning_organization_info, user_key, desired_groups)
             commands.add_groups(groups_to_add)
 
         def callback(response):
+            self.adding_dashboard_user_key.discard(user_key)
             is_success = response.get("is_success")            
             if is_success:
                 if (manage_groups):
                     for organization_name, dashboard_connector in dashboard_connectors.trustee_connectors.iteritems():
                         trustee_organization_info = self.get_organization_info(organization_name)
-                        desired_groups = trustee_organization_info.get_desired_groups(user_key)
-                        self.add_groups_for_trustee(user_key, trustee_organization_info, desired_groups, dashboard_connector)
+                        if (trustee_organization_info.get_dashboard_user(user_key) == None):
+                            # We manually inject the groups if the dashboard user has not been loaded. 
+                            self.calculate_groups_to_add(trustee_organization_info, user_key, trustee_organization_info.get_desired_groups(user_key))
+                        
+                        trustee_groups_to_add = trustee_organization_info.groups_added_by_user_key.get(user_key)
+                        trustee_groups_to_remove = trustee_organization_info.groups_removed_by_user_key.get(user_key)                                                
+                        self.update_dashboard_user(trustee_organization_info, user_key, dashboard_connector, groups_to_add=trustee_groups_to_add, groups_to_remove=trustee_groups_to_remove)
+
+        self.adding_dashboard_user_key.add(user_key)
         dashboard_connectors.get_owning_connector().send_commands(commands, callback)
 
-    def add_groups_for_trustee(self, user_key, organization_info, desired_groups, dashboard_connector):
+    def update_dashboard_user(self, organization_info, user_key, dashboard_connector, attributes_to_update = None, groups_to_add = None, groups_to_remove = None):
         '''
-        :type user_key: dict
+        Send the action to update aspects of an dashboard user, like info and groups
         :type organization_info: OrganizationInfo
-        :type desired_groups: set(str)
+        :type user_key: str
         :type dashboard_connector: user_sync.connector.dashboard.DashboardConnector
-        '''
-        self.logger.info('Adding groups for user key: %s organization: %s groups: %s', user_key, organization_info.get_name(), desired_groups)
-        groups_to_add = self.calculate_groups_to_add(organization_info, user_key, desired_groups)        
+        :type attributes_to_update: dict
+        :type groups_to_add: set(str)
+        :type groups_to_remove: set(str)
+        '''        
+        if ((groups_to_add and len(groups_to_add) > 0) or (groups_to_remove and len(groups_to_remove) > 0)):
+            self.logger.info('Managing groups for user key: %s organization: %s added: %s removed: %s', user_key, organization_info.get_name(), groups_to_add, groups_to_remove)
 
-        username, domain = self.parse_user_key(user_key)
-        commands = user_sync.connector.dashboard.Commands(username=username, domain=domain)
+        directory_user = self.directory_user_by_user_key[user_key]
+        commands = self.create_commands_from_directory_user(directory_user)
+        commands.update_user(attributes_to_update)
         commands.add_groups(groups_to_add)
+        commands.remove_groups(groups_to_remove)
         dashboard_connector.send_commands(commands)
+
+    def update_dashboard_user_for_trustee(self, organization_info, user_key, dashboard_connector, attributes_to_update = None, groups_to_add = None, groups_to_remove = None):
+        '''
+        Send the user update action while working on a trustee.
+        :type organization_info: OrganizationInfo
+        :type user_key: str
+        :type dashboard_connector: user_sync.connector.dashboard.DashboardConnector
+        :type attributes_to_update: dict
+        :type groups_to_add: set(str)
+        :type groups_to_remove: set(str)
+        '''        
+        groups_to_add = self.calculate_groups_to_add(organization_info, user_key, groups_to_add) 
+        groups_to_remove = self.calculate_groups_to_remove(organization_info, user_key, groups_to_remove)
+        if (user_key not in self.adding_dashboard_user_key):
+            self.update_dashboard_user(organization_info, user_key, dashboard_connector, attributes_to_update, groups_to_add, groups_to_remove)
+        elif (attributes_to_update != None or groups_to_add != None or groups_to_remove != None):
+            self.logger.info("Delay user update for user: %s organization: %s", user_key, organization_info.get_name())
 
     def update_dashboard_users_for_connector(self, organization_info, dashboard_connector):
         '''
@@ -412,17 +445,10 @@ class RuleProcessor(object):
             groups_to_remove = None    
             if (manage_groups):        
                 current_groups = self.normalize_groups(dashboard_user.get('groups'))
-                groups_to_add = self.calculate_groups_to_add(organization_info, user_key, desired_groups - current_groups)
-                groups_to_remove = (current_groups - desired_groups) & organization_info.get_mapped_groups()
-                
-                if (len(groups_to_add) > 0 or len(groups_to_remove) > 0):
-                    self.logger.info('Managing groups for user key: %s added: %s removed: %s', user_key, groups_to_add, groups_to_remove)
+                groups_to_add = desired_groups - current_groups 
+                groups_to_remove =  (current_groups - desired_groups) & organization_info.get_mapped_groups()                
 
-            commands = self.create_commands_from_directory_user(directory_user)
-            commands.update_user(user_attribute_difference)
-            commands.add_groups(groups_to_add)
-            commands.remove_groups(groups_to_remove)
-            dashboard_connector.send_commands(commands)
+            self.update_dashboard_user_for_trustee(organization_info, user_key, dashboard_connector, user_attribute_difference, groups_to_add, groups_to_remove)
         
         organization_info.set_dashboard_users_loaded()
         
@@ -443,24 +469,52 @@ class RuleProcessor(object):
 
     def calculate_groups_to_add(self, organization_info, user_key, desired_groups):
         '''
+        Return a set of groups that have not been registered to be added.
         :type organization_info: OrganizationInfo
         :type user_key: str
-        :type desired_groups: iterator(str) 
+        :type desired_groups: set(str) 
         '''
-        groups_to_add = None
-        if (desired_groups != None):
-            groups_added = organization_info.get_groups_added_for(user_key)
-            if (groups_added != None):
-                groups_to_add = desired_groups - groups_added
-                if (self.logger.isEnabledFor(logging.DEBUG)):
-                    groups_already_added = desired_groups & groups_added
-                    if (len(groups_already_added) > 0):
-                        self.logger.debug('Skipped added groups for user: %s groups: %s', user_key, groups_already_added)
-            else:
-                groups_to_add = desired_groups
-            if (len(groups_to_add) > 0):
-                organization_info.add_groups_added_for(user_key, groups_to_add)                
+        groups_to_add = self.get_new_groups(organization_info.groups_added_by_user_key, user_key, desired_groups)
+        if (desired_groups != None and self.logger.isEnabledFor(logging.DEBUG)):
+            groups_already_added = desired_groups - groups_to_add
+            if (len(groups_already_added) > 0):
+                self.logger.debug('Skipped added groups for user: %s groups: %s', user_key, groups_already_added)
         return groups_to_add
+
+    def calculate_groups_to_remove(self, organization_info, user_key, desired_groups):
+        '''
+        Return a set of groups that have not been registered to be removed.
+        :type organization_info: OrganizationInfo
+        :type user_key: str
+        :type desired_groups: set(str) 
+        '''
+        groups_to_remove = self.get_new_groups(organization_info.groups_removed_by_user_key, user_key, desired_groups)
+        if (desired_groups != None and self.logger.isEnabledFor(logging.DEBUG)):
+            groups_already_removed = desired_groups - groups_to_remove
+            if (len(groups_already_removed) > 0):
+                self.logger.debug('Skipped removed groups for user: %s groups: %s', user_key, groups_already_removed)
+        return groups_to_remove
+
+    def get_new_groups(self, current_groups_by_user_key, user_key, desired_groups):
+        '''
+        Return a set of groups that have not been registered in the dictionary for the specified user.        
+        :type current_groups_by_user_key: dict(str, set(str))
+        :type user_key: str
+        :type desired_groups: set(str) 
+        '''
+        new_groups = None
+        if (desired_groups != None):
+            current_groups = current_groups_by_user_key.get(user_key)
+            if (current_groups != None):
+                new_groups = desired_groups - current_groups
+            else:
+                new_groups = desired_groups
+            if (len(new_groups) > 0):
+                if (current_groups == None):
+                    current_groups_by_user_key[user_key] = current_groups = set()
+                current_groups |= new_groups
+        return new_groups
+
 
     def get_user_attribute_difference(self, directory_user, dashboard_user):
         differences = {}
@@ -606,6 +660,7 @@ class OrganizationInfo(object):
         self.dashboard_users_loaded = False
         self.orphaned_dashboard_user_by_user_key = {}
         self.groups_added_by_user_key = {}
+        self.groups_removed_by_user_key = {}
 
     def get_name(self):
         return self.name
@@ -675,22 +730,5 @@ class OrganizationInfo(object):
         orphaned_dashboard_user_by_user_key = self.orphaned_dashboard_user_by_user_key
         return [] if orphaned_dashboard_user_by_user_key == None else orphaned_dashboard_user_by_user_key.iteritems() 
             
-    def get_groups_added_for(self, user_key):
-        '''
-        :type user_key: str
-        '''
-        groups_added = self.groups_added_by_user_key.get(user_key)
-        return groups_added
-        
-    def add_groups_added_for(self, user_key, groups):
-        '''
-        :type user_key: str
-        :type groups: iterator(str)
-        '''
-        groups_added = self.get_groups_added_for(user_key)
-        if (groups_added == None):
-            self.groups_added_by_user_key[user_key] = groups_added = set()
-        groups_added |= groups
-        
     def __repr__(self):
         return "OrganizationInfo('name': %s)" % self.name
