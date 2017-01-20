@@ -42,9 +42,10 @@ setup(name='user-sync',
           'umapi-client>=2',
           'psutil',
       ],
+      setup_requires=['nose>=1.0'],
       tests_require=[
           'mock',
-          'nose',
+          'nose>=1.0',
       ],
       entry_points={
           'console_scripts': [
