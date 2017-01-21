@@ -21,7 +21,7 @@
 from setuptools import setup
 
 setup(name='user-sync',
-      version='0.7.0',
+      version='1.0rc1',
       description='Application for synchronizing customer directories with the Adobe Enterprise Admin Console',
       classifiers=[
           'Development Status :: 5 - Production/Stable',
