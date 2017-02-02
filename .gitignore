@@ -35,6 +35,7 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Unit test / coverage reports
+cover/
 htmlcov/
 .tox/
 .coverage
@@ -42,7 +43,7 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
-*,cover
+*.cover
 .hypothesis/
 
 # Translations
@@ -52,10 +53,6 @@ coverage.xml
 # Django stuff:
 *.log
 local_settings.py
-
-# Flask stuff:
-instance/
-.webassets-cache
 
 # Scrapy stuff:
 .scrapy
@@ -87,3 +84,6 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# JetBrains
+.idea/
