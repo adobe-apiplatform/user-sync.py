@@ -18,14 +18,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import helper
 import json
-import jwt
 import logging
 
+import jwt
 import umapi_client
 
+import helper
+import user_sync.config
+import user_sync.helper
 import user_sync.identity_type
+from user_sync.version import __version__ as APP_VERSION
 
 try:
     from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
@@ -86,7 +89,8 @@ class DashboardConnector(object):
             ims_host=ims_host,
             ims_endpoint_jwt=server_options['ims_endpoint_jwt'],
             user_management_endpoint=um_endpoint,
-            test_mode=options['test_mode']
+            test_mode=options['test_mode'],
+            user_agent="user-sync/" + APP_VERSION
         )
         logger.info('API initialized on: %s', um_endpoint)
         
