@@ -1,4 +1,4 @@
 pycrypto
 PyYAML
 psutil
-umapi-client>=2.0.1
+umapi-client>=2.0.2

@@ -20,8 +20,12 @@
 
 from setuptools import setup
 
+version_namespace = {}
+with open('user_sync/version.py') as f:
+    exec(f.read(), version_namespace)
+
 setup(name='user-sync',
-      version='1.0rc1',
+      version=version_namespace['__version__'],
       description='Application for synchronizing customer directories with the Adobe Enterprise Admin Console',
       classifiers=[
           'Development Status :: 5 - Production/Stable',
@@ -39,7 +43,7 @@ setup(name='user-sync',
           'pycrypto',
           'python-ldap==2.4.25',
           'PyYAML',
-          'umapi-client>=2',
+          'umapi-client>=2.0.2',
           'psutil',
       ],
       setup_requires=['nose>=1.0'],
@@ -52,4 +56,4 @@ setup(name='user-sync',
               'user_sync = user_sync.app:main'
           ]
       },
-)
+      zip_safe=False)

@@ -32,8 +32,7 @@ import user_sync.lockfile
 import user_sync.rules
 import user_sync.connector.directory
 import user_sync.connector.dashboard
-
-APP_VERSION = "1.0rc1"
+from user_sync.version import __version__ as APP_VERSION
 
 LOG_STRING_FORMAT = '%(asctime)s %(process)d %(levelname)s %(name)s - %(message)s'
 LOG_DATE_FORMAT ='%Y-%m-%d %H:%M:%S'
