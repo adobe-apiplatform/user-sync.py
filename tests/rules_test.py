@@ -102,8 +102,8 @@ class RulesTest(unittest.TestCase):
         tests.helper.assert_equal_dashboard_commands_list(self, expected_trustee_commands_list, trustee_commands_list)
 
     # default country code tests
-    
-    def _do_country_code_test(self, mock_dashboard_commands, mock_connectors, identity_type, default_country_code, user_country_code, expected_country_code):
+    @mock.patch('logging.getLogger')
+    def _do_country_code_test(self, mock_dashboard_commands, mock_connectors, identity_type, default_country_code, user_country_code, expected_country_code, mock_logger):
         expected_result = {'lastname': 'User1', 'email': 'cceuser1@ensemble.ca', 'firstname': '!Openldap CCE', 'option': 'updateIfAlreadyExists'}
         if (expected_country_code):
             expected_result['country'] = expected_country_code
@@ -121,7 +121,11 @@ class RulesTest(unittest.TestCase):
                                      'uid': '001'}
         }
         mock_rules.add_dashboard_user('cceuser1@ensemble.ca', mock_connectors)
-        mock_dashboard_commands.return_value.add_user.assert_called_with(expected_result)
+
+        if (identity_type == 'federatedID' and default_country_code == None and user_country_code == None):
+            mock_rules.logger.error.assert_called_with('User %s cannot be added as it has a blank country code and no default has been specified.','cceuser1@ensemble.ca')
+        else:
+            mock_dashboard_commands.return_value.add_user.assert_called_with(expected_result)
 
     # federatedId
     @mock.patch('user_sync.rules.DashboardConnectors')
