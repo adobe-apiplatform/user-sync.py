@@ -114,7 +114,7 @@ def init_log(logging_config):
         file_log_level = level_lookup.get(options['file_log_level'])
         if (file_log_level == None):
             file_log_level = logging.DEBUG
-            logger.log(logging.INFO, 'Unknown file log level: %s setting to debug' % options['file_log_level'])
+            logger.log(logging.WARNING, 'Unknown file log level: %s setting to debug' % options['file_log_level'])
         file_log_directory = options['file_log_directory']
         if not os.path.exists(file_log_directory):
             os.makedirs(file_log_directory)
