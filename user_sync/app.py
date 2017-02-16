@@ -92,8 +92,8 @@ def init_log(logging_config):
     builder = user_sync.config.OptionsBuilder(logging_config)
     builder.set_bool_value('log_to_file', False)
     builder.set_string_value('file_log_directory', 'logs')
-    builder.set_string_value('file_log_level', 'debug')
-    builder.set_string_value('console_log_level', None)    
+    builder.set_string_value('file_log_level', 'info')
+    builder.set_string_value('console_log_level', 'info')
     options = builder.get_options()
         
     level_lookup = {
@@ -105,11 +105,18 @@ def init_log(logging_config):
     }
     
     console_log_level = level_lookup.get(options['console_log_level'])
-    if (console_log_level != None):
-        console_log_handler.setLevel(console_log_level)
-    
+    if (console_log_level == None):
+        console_log_level = logging.INFO
+        logger.log(logging.WARNING, 'Unknown console log level: %s setting to info' % options['console_log_level'])
+    console_log_handler.setLevel(console_log_level)
+
+
     if options['log_to_file'] == True:
-        file_log_level = level_lookup.get(options['file_log_level'], logging.NOTSET)
+        unknown_file_log_level = False
+        file_log_level = level_lookup.get(options['file_log_level'])
+        if (file_log_level == None):
+            file_log_level = logging.INFO
+            unknown_file_log_level = True
         file_log_directory = options['file_log_directory']
         if not os.path.exists(file_log_directory):
             os.makedirs(file_log_directory)
@@ -119,6 +126,8 @@ def init_log(logging_config):
         fileHandler.setLevel(file_log_level)
         fileHandler.setFormatter(logging.Formatter(LOG_STRING_FORMAT, LOG_DATE_FORMAT))        
         logging.getLogger().addHandler(fileHandler)
+        if (unknown_file_log_level == True):
+            logger.log(logging.WARNING, 'Unknown file log level: %s setting to info' % options['file_log_level'])
         
 def begin_work(config_loader):
     '''
