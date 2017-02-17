@@ -127,7 +127,7 @@ def begin_work(config_loader):
 
     directory_groups = config_loader.get_directory_groups()
     owning_dashboard_config = config_loader.get_dashboard_options_for_owning()
-    trustee_dashboard_configs = config_loader.get_dashboard_options_for_trustees()
+    accessor_dashboard_configs = config_loader.get_dashboard_options_for_accessors()
     rule_config = config_loader.get_rule_options()
 
     referenced_organization_names = set()
@@ -136,10 +136,10 @@ def begin_work(config_loader):
             organization_name = group.organization_name
             if (organization_name != user_sync.rules.OWNING_ORGANIZATION_NAME):
                 referenced_organization_names.add(organization_name)
-    referenced_organization_names.difference_update(trustee_dashboard_configs.iterkeys())
+    referenced_organization_names.difference_update(accessor_dashboard_configs.iterkeys())
     
     if (len(referenced_organization_names) > 0):
-        raise user_sync.error.AssertionException('dashboard_groups have references to unknown trustee dashboards: %s' % referenced_organization_names) 
+        raise user_sync.error.AssertionException('dashboard_groups have references to unknown accessor dashboards: %s' % referenced_organization_names) 
                 
     directory_connector = None
     directory_connector_options = None
@@ -155,11 +155,11 @@ def begin_work(config_loader):
         directory_connector.initialize(directory_connector_options)
     
     dashboard_owning_connector = user_sync.connector.dashboard.DashboardConnector("owning", owning_dashboard_config)
-    dashboard_trustee_connectors = {}    
-    for trustee_organization_name, trustee_config in trustee_dashboard_configs.iteritems():
-        dashboard_trustee_conector = user_sync.connector.dashboard.DashboardConnector("trustee.%s" % trustee_organization_name, trustee_config)
-        dashboard_trustee_connectors[trustee_organization_name] = dashboard_trustee_conector 
-    dashboard_connectors = user_sync.rules.DashboardConnectors(dashboard_owning_connector, dashboard_trustee_connectors)
+    dashboard_accessor_connectors = {}    
+    for accessor_organization_name, accessor_config in accessor_dashboard_configs.iteritems():
+        dashboard_accessor_conector = user_sync.connector.dashboard.DashboardConnector("accessor.%s" % accessor_organization_name, accessor_config)
+        dashboard_accessor_connectors[accessor_organization_name] = dashboard_accessor_conector 
+    dashboard_connectors = user_sync.rules.DashboardConnectors(dashboard_owning_connector, dashboard_accessor_connectors)
 
     rule_processor = user_sync.rules.RuleProcessor(rule_config)
     if (len(directory_groups) == 0 and rule_processor.will_manage_groups()):

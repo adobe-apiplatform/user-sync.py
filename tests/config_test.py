@@ -55,13 +55,13 @@ class ConfigLoaderTest(unittest.TestCase):
     @mock.patch('user_sync.config.ConfigLoader.create_dashboard_options')
     @mock.patch('glob.glob1')
     @mock.patch('user_sync.config.ConfigLoader.parse_string')
-    def test_get_dashboard_options_for_trustees(self, mock_parse, mock_glob, mock_create_dash, mock_get_dict):
+    def test_get_dashboard_options_for_accessors(self, mock_parse, mock_glob, mock_create_dash, mock_get_dict):
         mock_create_dash.return_value = {'create_dash'}
         mock_glob.return_value = {''}
         mock_parse.return_value = {'organization_name': 'testOrgName'}
 
-        self.assertEquals(self.conf_load.get_dashboard_options_for_trustees(), {'testOrgName': set(['create_dash'])},
-                          'We return with trustee option in the expected format')
+        self.assertEquals(self.conf_load.get_dashboard_options_for_accessors(), {'testOrgName': set(['create_dash'])},
+                          'We return with accessor option in the expected format')
         self.assertEquals(mock_create_dash.call_count, 1, 'create dashboard options was called')
 
     def test_get_dict_from_sources_dict(self):

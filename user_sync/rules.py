@@ -188,17 +188,17 @@ class RuleProcessor(object):
         for user_key in owning_unprocessed_groups_by_user_key.iterkeys():
             self.add_dashboard_user(user_key, dashboard_connectors)
 
-        for organization_name, dashboard_connector in dashboard_connectors.get_trustee_connectors().iteritems():
-            self.logger.info('Syncing trustee %s...', organization_name) 
-            trustee_organization_info = self.get_organization_info(organization_name)
-            if (len(trustee_organization_info.get_mapped_groups()) == 0):
-                self.logger.info('No mapped groups for trustee: %s', organization_name) 
+        for organization_name, dashboard_connector in dashboard_connectors.get_accessor_connectors().iteritems():
+            self.logger.info('Syncing accessor %s...', organization_name) 
+            accessor_organization_info = self.get_organization_info(organization_name)
+            if (len(accessor_organization_info.get_mapped_groups()) == 0):
+                self.logger.info('No mapped groups for accessor: %s', organization_name) 
                 continue
 
-            trustee_unprocessed_groups_by_user_key = self.update_dashboard_users_for_connector(trustee_organization_info, dashboard_connector)
+            accessor_unprocessed_groups_by_user_key = self.update_dashboard_users_for_connector(accessor_organization_info, dashboard_connector)
             if (manage_groups):
-                for user_key, desired_groups in trustee_unprocessed_groups_by_user_key.iteritems():
-                    self.try_and_update_dashboard_user(trustee_organization_info, user_key, dashboard_connector, groups_to_add=desired_groups)
+                for user_key, desired_groups in accessor_unprocessed_groups_by_user_key.iteritems():
+                    self.try_and_update_dashboard_user(accessor_organization_info, user_key, dashboard_connector, groups_to_add=desired_groups)
                     
     def iter_orphaned_federated_dashboard_users(self):
         owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
@@ -279,11 +279,11 @@ class RuleProcessor(object):
             total_waiting_by_user_key[user_key] = total_waiting
             return lambda response: on_remove_groups_callback(user_key)
         
-        for organization_name, dashboard_connector in dashboard_connectors.get_trustee_connectors().iteritems():
+        for organization_name, dashboard_connector in dashboard_connectors.get_accessor_connectors().iteritems():
             organization_info = self.get_organization_info(organization_name)
             mapped_groups = organization_info.get_mapped_groups()
             if (len(mapped_groups) == 0):
-                self.logger.info('No mapped groups for trustee: %s', organization_name) 
+                self.logger.info('No mapped groups for accessor: %s', organization_name) 
                 continue
                             
             for user_key in remove_user_key_list:
@@ -333,7 +333,7 @@ class RuleProcessor(object):
     def add_dashboard_user(self, user_key, dashboard_connectors):
         '''
         Send the action to add a user to the dashboard.  
-        After the user is created, the trustees will be updated.
+        After the user is created, the accessors will be updated.
         :type user_key: str
         :type dashboard_connectors: DashboardConnectors
         '''
@@ -375,15 +375,15 @@ class RuleProcessor(object):
             is_success = response.get("is_success")            
             if is_success:
                 if (manage_groups):
-                    for organization_name, dashboard_connector in dashboard_connectors.trustee_connectors.iteritems():
-                        trustee_organization_info = self.get_organization_info(organization_name)
-                        if (trustee_organization_info.get_dashboard_user(user_key) == None):
+                    for organization_name, dashboard_connector in dashboard_connectors.accessor_connectors.iteritems():
+                        accessor_organization_info = self.get_organization_info(organization_name)
+                        if (accessor_organization_info.get_dashboard_user(user_key) == None):
                             # We manually inject the groups if the dashboard user has not been loaded. 
-                            self.calculate_groups_to_add(trustee_organization_info, user_key, trustee_organization_info.get_desired_groups(user_key))
+                            self.calculate_groups_to_add(accessor_organization_info, user_key, accessor_organization_info.get_desired_groups(user_key))
                         
-                        trustee_groups_to_add = trustee_organization_info.groups_added_by_user_key.get(user_key)
-                        trustee_groups_to_remove = trustee_organization_info.groups_removed_by_user_key.get(user_key)                                                
-                        self.update_dashboard_user(trustee_organization_info, user_key, dashboard_connector, groups_to_add=trustee_groups_to_add, groups_to_remove=trustee_groups_to_remove)
+                        accessor_groups_to_add = accessor_organization_info.groups_added_by_user_key.get(user_key)
+                        accessor_groups_to_remove = accessor_organization_info.groups_removed_by_user_key.get(user_key)                                                
+                        self.update_dashboard_user(accessor_organization_info, user_key, dashboard_connector, groups_to_add=accessor_groups_to_add, groups_to_remove=accessor_groups_to_remove)
 
         self.adding_dashboard_user_key.add(user_key)
         dashboard_connectors.get_owning_connector().send_commands(commands, callback)
@@ -620,23 +620,23 @@ class RuleProcessor(object):
                 
         
 class DashboardConnectors(object):
-    def __init__(self, owning_connector, trustee_connectors):
+    def __init__(self, owning_connector, accessor_connectors):
         '''
         :type owning_connector: user_sync.connector.dashboard.DashboardConnector
-        :type trustee_connectors: dict(str, user_sync.connector.dashboard.DashboardConnector)
+        :type accessor_connectors: dict(str, user_sync.connector.dashboard.DashboardConnector)
         '''
         self.owning_connector = owning_connector
-        self.trustee_connectors = trustee_connectors
+        self.accessor_connectors = accessor_connectors
         
         connectors = [owning_connector]
-        connectors.extend(trustee_connectors.itervalues())
+        connectors.extend(accessor_connectors.itervalues())
         self.connectors = connectors
         
     def get_owning_connector(self):
         return self.owning_connector
     
-    def get_trustee_connectors(self):
-        return self.trustee_connectors
+    def get_accessor_connectors(self):
+        return self.accessor_connectors
      
     def execute_actions(self):
         while True:
