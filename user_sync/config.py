@@ -167,7 +167,14 @@ class ConfigLoader(object):
         directory_source_filters = self.options['directory_source_filters']
         if (directory_source_filters != None):
             self.directory_source_filters_accessed.add(connector_name)
-            source_filter_sources.append(directory_source_filters.get(connector_name))
+            # get the dictionary for the source filter file
+            directory_source_list = self.as_list(directory_source_filters.get(connector_name))
+            source_filter_dict = self.get_dict_from_sources(directory_source_list,'directory[%s].source_filters' % connector_name)
+            # ensure it contains an 'all_users_filter'
+            if (source_filter_dict.get('all_users_filter') == None):
+                self.logger.warn('Ignoring source filter for directory[%s] as "all_users_filter" was not specified' % connector_name)
+            else:
+                source_filter_sources.append(directory_source_filters.get(connector_name))
         source_filters =  self.get_dict_from_sources(source_filter_sources, 'directory[%s].source_filters' % connector_name)
         if (len(source_filters) > 0):   
             connector_options['source_filters'] = source_filters
