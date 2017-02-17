@@ -33,7 +33,7 @@ import user_sync.rules
 DEFAULT_CONFIG_DIRECTORY = ''
 DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
 DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME = 'dashboard-owning-config.yml'
-DEFAULT_DASHBOARD_TRUSTEE_CONFIG_FILENAME_FORMAT = 'dashboard-trustee-{organization_name}-config.yml'
+DEFAULT_DASHBOARD_ACCESSOR_CONFIG_FILENAME_FORMAT = 'dashboard-accessor-{organization_name}-config.yml'
 
 GROUP_NAME_DELIMITER = '::'
 
@@ -100,44 +100,44 @@ class ConfigLoader(object):
         })
         return self.create_dashboard_options(owning_config_sources, 'owning_dashboard') 
     
-    def get_dashboard_options_for_trustees(self):
+    def get_dashboard_options_for_accessors(self):
         dashboard_config = self.main_config.get_dict_config('dashboard', True)
 
-        trustee_config_filename_format = None        
+        accessor_config_filename_format = None        
         if (dashboard_config != None):
-            trustee_config_filename_format = dashboard_config.get_string('trustee_config_filename_format', True)                        
-        if (trustee_config_filename_format == None):
-            trustee_config_filename_format = DEFAULT_DASHBOARD_TRUSTEE_CONFIG_FILENAME_FORMAT
+            accessor_config_filename_format = dashboard_config.get_string('accessor_config_filename_format', True)                        
+        if (accessor_config_filename_format == None):
+            accessor_config_filename_format = DEFAULT_DASHBOARD_ACCESSOR_CONFIG_FILENAME_FORMAT
             
-        trustee_config_file_paths = {}
-        trustee_config_filename_wildcard = trustee_config_filename_format.format(**{'organization_name': '*'})
-        for file_path in glob.glob1(self.options.get('config_directory'), trustee_config_filename_wildcard):
-            parse_result = self.parse_string(trustee_config_filename_format, file_path)
+        accessor_config_file_paths = {}
+        accessor_config_filename_wildcard = accessor_config_filename_format.format(**{'organization_name': '*'})
+        for file_path in glob.glob1(self.options.get('config_directory'), accessor_config_filename_wildcard):
+            parse_result = self.parse_string(accessor_config_filename_format, file_path)
             organization_name = parse_result.get('organization_name')
             if (organization_name != None):
-                trustee_config_file_paths[organization_name] = file_path
+                accessor_config_file_paths[organization_name] = file_path
              
-        trustees_config = None
+        accessors_config = None
         if (dashboard_config != None):
-            trustees_config = dashboard_config.get_dict_config('trustees', True)
+            accessors_config = dashboard_config.get_dict_config('accessors', True)
                 
-        trustees_options = {}
-        organization_names = set(trustee_config_file_paths.iterkeys())
-        if (trustees_config != None):
-            organization_names.update(trustees_config.iter_keys())
+        accessors_options = {}
+        organization_names = set(accessor_config_file_paths.iterkeys())
+        if (accessors_config != None):
+            organization_names.update(accessors_config.iter_keys())
         for organization_name in organization_names:
-            trustee_config = None
-            if (trustees_config != None): 
-                trustee_config = trustees_config.get_list(organization_name, True) 
-            trustee_config_sources = self.as_list(trustee_config)
-            trustee_config_file_path = trustee_config_file_paths.get(organization_name, None)
-            if (trustee_config_file_path != None):
-                trustee_config_sources.append(trustee_config_file_path)
-            trustee_config_sources.append({            
+            accessor_config = None
+            if (accessors_config != None): 
+                accessor_config = accessors_config.get_list(organization_name, True) 
+            accessor_config_sources = self.as_list(accessor_config)
+            accessor_config_file_path = accessor_config_file_paths.get(organization_name, None)
+            if (accessor_config_file_path != None):
+                accessor_config_sources.append(accessor_config_file_path)
+            accessor_config_sources.append({            
                 'test_mode': self.options['test_mode']
             })
-            trustees_options[organization_name] = self.create_dashboard_options(trustee_config_sources, 'trustee_dashboard[%s]' % organization_name)
-        return trustees_options
+            accessors_options[organization_name] = self.create_dashboard_options(accessor_config_sources, 'accessor_dashboard[%s]' % organization_name)
+        return accessors_options
     
     def get_directory_connector_module_name(self):
         '''
