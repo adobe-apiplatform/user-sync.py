@@ -352,11 +352,14 @@ class RuleProcessor(object):
         country = directory_user['country']
         if not country:
             country = options['default_country_code']
-        if identity_type == user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE and not country:
-            # Enterprise users are allowed to have undefined country
-            country = 'UD'
-        if (country != None):
-            attributes['country'] = country    
+        if not country:
+            if identity_type == user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE:
+                # Enterprise users are allowed to have undefined country
+                country = 'UD'
+            else:
+                self.logger.error("User %s cannot be added as it has a blank country code and no default has been specified.", user_key)
+                return
+        attributes['country'] = country
         if (attributes.get('firstname') == None):
             attributes.pop('firstname', None)
         if (attributes.get('lastname') == None):
