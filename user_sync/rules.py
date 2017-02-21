@@ -230,14 +230,32 @@ class RuleProcessor(object):
         remove_list_output_path = options['remove_list_output_path']
         remove_nonexistent_users = options['remove_nonexistent_users']
         
+        max_deletions_per_run = options['max_deletions_per_run']
+        max_missing_users = options['max_missing_users']
+
         orphaned_federated_dashboard_users = list(self.iter_orphaned_federated_dashboard_users())
         self.logger.info('Federated orphaned users to be removed: %s', [self.get_dashboard_user_key(dashboard_user) for dashboard_user in orphaned_federated_dashboard_users])        
         
+        number_of_orphaned_dashboard_users = len(orphaned_federated_dashboard_users)
+
         if (remove_list_output_path != None):
             self.logger.info('Writing remove list to: %s', remove_list_output_path)
             self.write_remove_list(remove_list_output_path, orphaned_federated_dashboard_users)
         elif (remove_nonexistent_users):
+            if number_of_orphaned_dashboard_users > max_missing_users:
+                message = 'Unable to process orphaned users, as number of users (' + \
+                          str(number_of_orphaned_dashboard_users) + \
+                          ') is larger than max_missing_users setting'
+                self.logger.critical(message)
+                raise user_sync.error.AssertionException(message)
+            orphan_count = 0
             for dashboard_user in orphaned_federated_dashboard_users:
+                orphan_count += 1
+                if orphan_count > max_deletions_per_run:
+                    self.logger.critical('Only processing %d of the %d orphaned users ' +
+                                         'due to max_deletions_per_run setting', max_deletions_per_run,
+                                         len(orphaned_federated_dashboard_users))
+                    break
                 user_key = self.get_dashboard_user_key(dashboard_user)
                 remove_user_key_list.add(user_key)
                     
