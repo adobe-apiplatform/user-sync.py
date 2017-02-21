@@ -95,6 +95,8 @@ class ConfigLoaderTest(unittest.TestCase):
         self.assertEquals(self.conf_load.get_rule_options(), {'username_filter_regex': None,
                                                               'update_user_info': True,
                                                               'manage_groups': True,
+                                                              'max_deletions_per_run': None,
+                                                              'max_missing_users': None,
                                                               'new_account_type': 'new_acc',
                                                               'directory_group_filter': None,
                                                               'default_country_code': 'test',
