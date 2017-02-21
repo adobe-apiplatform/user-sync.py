@@ -44,7 +44,9 @@ class RuleProcessor(object):
             'remove_user_key_list': None,
             'remove_list_output_path': None,
             'remove_nonexistent_users': False,
-            'default_country_code': None
+            'default_country_code': None,
+            'max_deletions_per_run': None,
+            'max_missing_users': None
         }
         options.update(caller_options)        
         self.options = options        

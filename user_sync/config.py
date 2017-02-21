@@ -58,7 +58,10 @@ class ConfigLoader(object):
             
             'remove_user_key_list': None,
             'remove_list_output_path': None,
-            'remove_nonexistent_users': False
+            'remove_nonexistent_users': False,
+
+            'max_deletions_per_run': None,
+            'max_missing_users': None
         }
         options.update(caller_options)     
 
@@ -83,6 +86,24 @@ class ConfigLoader(object):
         
     def get_logging_config(self):
         return self.main_config.get_dict_config('logging', True)
+
+    def validate_limits_config(self):
+        ''' Ensure that we have limits set for max deletions per run and max missing users
+        '''
+        limits_config = self.main_config.get_dict_config('limits', True)
+        if limits_config == None:
+            raise user_sync.error.AssertionException("Limits configuration must be specified.")
+
+        max_deletions_per_run = limits_config.get_int('max_deletions_per_run',True)
+        if not max_deletions_per_run:
+            raise user_sync.error.AssertionException("max_deletions_per_run must be specified.")
+
+        max_missing_users = limits_config.get_int('max_missing_users',True)
+        if not max_missing_users:
+            raise user_sync.error.AssertionException("max_missing_users must be specified.")
+
+        self.options['max_deletions_per_run'] = max_deletions_per_run
+        self.options['max_missing_users'] = max_missing_users
 
     def get_dashboard_options_for_owning(self):
         owning_config_filename = DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME
@@ -323,7 +344,9 @@ class ConfigLoader(object):
             'remove_user_key_list': options['remove_user_key_list'],
             'remove_list_output_path': options['remove_list_output_path'],
             'remove_nonexistent_users': options['remove_nonexistent_users'],
-            'default_country_code': default_country_code
+            'default_country_code': default_country_code,
+            'max_deletions_per_run': options['max_deletions_per_run'],
+            'max_missing_users': options['max_missing_users']
         }
         return result
 
@@ -494,7 +517,10 @@ class DictConfig(ObjectConfig):
 
     def get_string(self, key, none_allowed = False):
         return self.get_value(key, types.StringTypes, none_allowed)
-    
+
+    def get_int(self, key, none_allowed = False):
+        return self.get_value(key, types.IntType, none_allowed)
+
     def get_bool(self, key, none_allowed = False):
         return self.get_value(key, types.BooleanType, none_allowed)
 
