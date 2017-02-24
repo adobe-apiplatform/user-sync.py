@@ -44,7 +44,10 @@ class RuleProcessor(object):
             'remove_user_key_list': None,
             'remove_list_output_path': None,
             'remove_nonexistent_users': False,
-            'default_country_code': None
+            'default_country_code': None,
+
+            'extended_attributes': None,
+            'after_mapping_hook': None
         }
         options.update(caller_options)        
         self.options = options        
@@ -126,6 +129,7 @@ class RuleProcessor(object):
         directory_group_filter = options['directory_group_filter']
         if (directory_group_filter != None):
             directory_group_filter = set(directory_group_filter)
+        extended_attributes = options.get('extended_attributes')
         
         directory_user_by_user_key = self.directory_user_by_user_key        
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
@@ -134,7 +138,7 @@ class RuleProcessor(object):
         directory_groups = set(mappings.iterkeys())
         if (directory_group_filter != None):
             directory_groups.update(directory_group_filter)
-        all_loaded, directory_users = directory_connector.load_users_and_groups(directory_groups) 
+        all_loaded, directory_users = directory_connector.load_users_and_groups(directory_groups, extended_attributes)
         if (not all_loaded and self.need_to_process_orphaned_dashboard_users):
             self.logger.warn('Not all users loaded.  Cannot check orphaned users...')
             self.need_to_process_orphaned_dashboard_users = False

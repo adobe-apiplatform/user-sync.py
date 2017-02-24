@@ -103,9 +103,10 @@ class LDAPDirectoryConnector(object):
         self.connection = connection
         logger.info('Connected')            
         
-    def load_users_and_groups(self, groups):
+    def load_users_and_groups(self, groups, extended_attributes):
         '''
         :type groups: list(str)
+        :type extended_attributes: list(str)
         :rtype (bool, iterable(dict))
         '''
         options = self.options
@@ -125,11 +126,12 @@ class LDAPDirectoryConnector(object):
 
         self.user_by_dn = user_by_dn = {}
         self.user_by_uid = user_by_uid = {}
-        for user_dn, user in self.iter_users(users_filter):
+        for user_dn, user in self.iter_users(users_filter, extended_attributes):
             uid = user.get('uid')
             if (uid != None):
                 user_by_uid[uid] = user
             user_by_dn[user_dn] = user
+            self.logger.debug("User loaded: %s", user.repr())
         
         self.logger.info('Total users loaded: %d', len(user_by_dn))
 
@@ -250,7 +252,7 @@ class LDAPDirectoryConnector(object):
                 for attribute_value in attribute_values:
                     yield (attribute, attribute_value)
                     
-    def iter_users(self, users_filter):
+    def iter_users(self, users_filter, extended_attributes):
         options = self.options
         base_dn = options['base_dn']
         
@@ -258,6 +260,7 @@ class LDAPDirectoryConnector(object):
         user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
+        user_attribute_names.extend(extended_attributes)
 
         result_iter = self.iter_search_result(base_dn, ldap.SCOPE_SUBTREE, users_filter, user_attribute_names)
         for dn, record in result_iter:
