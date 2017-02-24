@@ -312,6 +312,21 @@ class ConfigLoader(object):
         if (new_account_type == None):
             new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
             self.logger.warning("Assuming the identity type for users is: %s", new_account_type)
+
+        extended_attributes = None
+        after_mapping_hook = None
+        extensions_config = self.main_config.get_list_config('extensions', True)
+        if (extensions_config != None):
+            for extension_config in extensions_config.iter_dict_configs():
+                context = extension_config.get_string('context')
+                if context == 'per-user':
+                    if (extended_attributes == None and after_mapping_hook == None):
+                        extended_attributes = extension_config.get_list('extended_attributes')
+                        after_mapping_hook = extension_config.get_string('after_mapping_hook')
+                    else:
+                        self.logger.warning("Duplicate extension context '%s' ignored", context)
+                else:
+                    self.logger.warning("Unrecognized extension context '%s' ignored", context)
         
         options = self.options
         result = {
@@ -323,7 +338,9 @@ class ConfigLoader(object):
             'remove_user_key_list': options['remove_user_key_list'],
             'remove_list_output_path': options['remove_list_output_path'],
             'remove_nonexistent_users': options['remove_nonexistent_users'],
-            'default_country_code': default_country_code
+            'default_country_code': default_country_code,
+            'extended_attributes': extended_attributes,
+            'after_mapping_hook': after_mapping_hook
         }
         return result
 
