@@ -39,13 +39,14 @@ def connector_initialize(options):
     connector = LDAPDirectoryConnector(options)
     return connector
 
-def connector_load_users_and_groups(state, groups):
+def connector_load_users_and_groups(state, groups, extended_attributes):
     '''
     :type state: LDAPDirectoryConnector
     :type groups: list(str)
+    :type extended_attributes: list(str)
     :rtype (bool, iterable(dict))
     '''
-    return state.load_users_and_groups(groups)
+    return state.load_users_and_groups(groups, extended_attributes)
 
 class LDAPDirectoryConnector(object):
     name = 'ldap'
@@ -131,8 +132,7 @@ class LDAPDirectoryConnector(object):
             if (uid != None):
                 user_by_uid[uid] = user
             user_by_dn[user_dn] = user
-            self.logger.debug("User loaded: %s", user.repr())
-        
+
         self.logger.info('Total users loaded: %d', len(user_by_dn))
 
         for group in groups:
@@ -300,7 +300,13 @@ class LDAPDirectoryConnector(object):
             uid = LDAPValueFormatter.get_attribute_value(record, 'uid')
             if (uid != None):
                 user['uid'] = uid
-            
+
+            if extended_attributes is not None:
+                for extended_attribute in extended_attributes:
+                    extended_attribute_value = LDAPValueFormatter.get_attribute_value(record, extended_attribute)
+                    if (extended_attribute_value is not None):
+                        user[extended_attribute] = extended_attribute_value
+
             yield (dn, user)
     
     def iter_search_result(self, base_dn, scope, filter_string, attributes):
