@@ -255,12 +255,14 @@ class LDAPDirectoryConnector(object):
     def iter_users(self, users_filter, extended_attributes):
         options = self.options
         base_dn = options['base_dn']
-        
-        user_attribute_names = ["givenName", "sn", "c", "uid"]    
+
+        user_attribute_names = ["givenName", "sn", "c", "uid"]
         user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
         user_attribute_names.extend(extended_attributes)
+
+        source_attributes = {}
 
         result_iter = self.iter_search_result(base_dn, ldap.SCOPE_SUBTREE, users_filter, user_attribute_names)
         for dn, record in result_iter:
@@ -275,37 +277,48 @@ class LDAPDirectoryConnector(object):
             
             user = user_sync.connector.helper.create_blank_user()
             user['email'] = email
+            source_attributes['email'] = email
                 
             username, last_attribute_name = self.user_username_formatter.generate_value(record)
             if (username == None and last_attribute_name != None):
                 self.logger.info('No username attribute: %s for dn: %s', last_attribute_name, dn)    
             user['username'] = username if username != None else email
+            if (username != None):
+                source_attributes['username'] = username
                     
             domain, last_attribute_name = self.user_domain_formatter.generate_value(record)
             if (domain != None):
                 user['domain'] = domain
+                source_attributes['domain'] = domain
             elif (last_attribute_name != None):
                 self.logger.info('No domain attribute: %s for dn: %s', last_attribute_name, dn)    
                                                 
             given_name_value = LDAPValueFormatter.get_attribute_value(record, 'givenName')
             if (given_name_value != None):   
                 user['firstname'] = given_name_value
+                source_attributes['givenName'] = given_name_value
             sn_value = LDAPValueFormatter.get_attribute_value(record, 'sn')
             if sn_value != None:
                 user['lastname'] = sn_value
+                source_attributes['sn'] = sn_value
             c_value = LDAPValueFormatter.get_attribute_value(record, 'c')
             if c_value != None:
                 user['country'] = c_value
+                source_attributes['c'] = c_value
                 
             uid = LDAPValueFormatter.get_attribute_value(record, 'uid')
             if (uid != None):
                 user['uid'] = uid
+                source_attributes['uid'] = uid
 
             if extended_attributes is not None:
                 for extended_attribute in extended_attributes:
                     extended_attribute_value = LDAPValueFormatter.get_attribute_value(record, extended_attribute)
                     if (extended_attribute_value is not None):
-                        user[extended_attribute] = extended_attribute_value
+                        source_attributes[extended_attribute] = extended_attribute_value
+
+            # [NOTE morr 2017-02-26]: Could be omitted if no hook; worth considering?
+            user['source_attributes'] = source_attributes
 
             yield (dn, user)
     
