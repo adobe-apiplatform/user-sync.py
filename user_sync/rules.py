@@ -157,11 +157,12 @@ class RuleProcessor(object):
             filtered_directory_user_by_user_key[user_key] = directory_user
             self.get_organization_info(OWNING_ORGANIZATION_NAME).add_desired_group_for(user_key, None)
 
-            source_attributes = user['source_attributes'].copy()
+            source_attributes = directory_user['source_attributes'].copy()
 
             # [TODO morr 2017-02-26]: Need a more robust way to assemble the target attributes
-            target_attributes = user.copy()
+            target_attributes = directory_user.copy()
             target_attributes.pop('groups', None)
+            target_attributes.pop('identitytype', None)
             target_attributes.pop('source_attributes', None)
 
             source_groups = set()
@@ -174,11 +175,11 @@ class RuleProcessor(object):
                     for dashboard_group in dashboard_groups:
                         target_groups.add(  (dashboard_group.group_name, dashboard_group.organization_name)  )
 
-            self.logger.debug('After-mapping hook point; code would be: %s', self.options['after_mapping_hook'])
-            self.logger.debug('Source attributes: %s', repr(source_attributes))
-            self.logger.debug('Target attributes: %s', repr(target_attributes))
-            self.logger.debug('Source groups: %s', repr(source_groups))
-            self.logger.debug('Target groups: %s', repr(target_groups))
+            self.logger.debug('After-mapping hook point; code would be called with these values...])
+            self.logger.debug('  Source attributes: %s', repr(source_attributes))
+            self.logger.debug('  Target attributes: %s', repr(target_attributes))
+            self.logger.debug('  Source groups: %s', repr(source_groups))
+            self.logger.debug('  Target groups: %s', repr(target_groups))
 
             for target_group_name, target_organization_name in target_groups:
                 target_group = Group.get_dashboard_group(target_group_name, target_organization_name)
