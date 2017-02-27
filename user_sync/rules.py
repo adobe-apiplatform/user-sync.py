@@ -55,6 +55,19 @@ class RuleProcessor(object):
         self.filtered_directory_user_by_user_key = {}
         self.organization_info_by_organization = {}
         self.adding_dashboard_user_key = set()
+
+        # in/out variables for per-user after-mapping-hook code
+        self.after_mapping_hook_scope = {
+            'hook_storage': None,           # for exclusive use by hook code; persists across calls
+            'source_attributes': None,      # in: attributes retrieved from customer directory system (eg 'c', 'givenName')
+                                            # out: N/A
+            'source_groups': None,          # in: customer-side directory groups found for user
+                                            # out: N/A
+            'target_attributes': None,      # in: user's attributes for UMAPI calls as defined by usual rules (eg 'country', 'firstname')
+                                            # out: user's attributes for UMAPI calls as potentially changed by hook code
+            'target_groups': None,          # in: Adobe-side dashboard groups mapped for user by usual rules
+                                            # out: Adobe-side dashboard groups as potentially changed by hook code
+        }
         
         remove_user_key_list = options['remove_user_key_list']
         remove_user_key_list = set(remove_user_key_list) if (remove_user_key_list != None) else set()
@@ -157,31 +170,34 @@ class RuleProcessor(object):
             filtered_directory_user_by_user_key[user_key] = directory_user
             self.get_organization_info(OWNING_ORGANIZATION_NAME).add_desired_group_for(user_key, None)
 
-            source_attributes = directory_user['source_attributes'].copy()
-
-            # [TODO morr 2017-02-26]: Need a more robust way to assemble the target attributes
-            target_attributes = directory_user.copy()
-            target_attributes.pop('groups', None)
-            target_attributes.pop('identitytype', None)
-            target_attributes.pop('source_attributes', None)
-
-            source_groups = set()
-            target_groups = set()
-
+            # set up groups in hook scope; the target groups will be used whether or not there's customer hook code
+            self.after_mapping_hook_scope['source_groups'] = set()
+            self.after_mapping_hook_scope['target_groups'] = set()
             for group in directory_user['groups']:
-                source_groups.add(group) # directory group name
+                self.after_mapping_hook_scope['source_groups'].add(group) # this is a directory group name
                 dashboard_groups = mappings.get(group)
                 if (dashboard_groups != None):
                     for dashboard_group in dashboard_groups:
-                        target_groups.add(  (dashboard_group.group_name, dashboard_group.organization_name)  )
+                        self.after_mapping_hook_scope['target_groups'].add(  (dashboard_group.group_name, dashboard_group.organization_name)  )
 
-            self.logger.debug('After-mapping hook point; code would be called with these values...')
-            self.logger.debug('  Source attributes: %s', repr(source_attributes))
-            self.logger.debug('  Target attributes: %s', repr(target_attributes))
-            self.logger.debug('  Source groups: %s', repr(source_groups))
-            self.logger.debug('  Target groups: %s', repr(target_groups))
+            # only if there actually is hook code: set up rest of hook scope, invoke hook, update user attributes
+            if (options['after_mapping_hook'] is not None):
+                self.after_mapping_hook_scope['source_attributes'] = directory_user['source_attributes'].copy()
 
-            for target_group_name, target_organization_name in target_groups:
+                # [TODO morr 2017-02-26]: Is there a more robust way to assemble the target attributes?
+                self.after_mapping_hook_scope['target_attributes'] = directory_user.copy()
+                self.after_mapping_hook_scope['target_attributes'].pop('groups', None)
+                self.after_mapping_hook_scope['target_attributes'].pop('identitytype', None)
+                self.after_mapping_hook_scope['target_attributes'].pop('source_attributes', None)
+
+                # invoke the customer's hook code
+                # [TODO morr 2017-02-27: Not putting any guardrails around the customer's code, which is treated as
+                # friendly. Is there anything we should be doing?
+                self.log_after_mapping_hook_scope(True)
+                exec(options['after_mapping_hook'], self.after_mapping_hook_scope)
+                self.log_after_mapping_hook_scope(False)
+
+            for target_group_name, target_organization_name in self.after_mapping_hook_scope['target_attributes']:
                 target_group = Group.get_dashboard_group(target_group_name, target_organization_name)
                 if (target_group is not None):
                     organization_info = self.get_organization_info(target_organization_name)
@@ -650,8 +666,16 @@ class RuleProcessor(object):
                 writer.writerow({'user': username, 'domain': domain})
                 total_users += 1
         self.logger.info('Total users in remove list: %d', total_users)
-                
-        
+
+    def log_after_mapping_hook_scope(self, before_call):
+        when = 'before' if before_call else 'after'
+        if (before_call):
+            self.logger.debug('.')
+            self.logger.debug('Source attrs, %s: %s', when, self.after_mapping_hook_scope['source_attributes'])
+            self.logger.debug('Source groups, %s: %s', when, self.after_mapping_hook_scope['source_groups'])
+        self.logger.debug('Target attrs, %s: %s', when, self.after_mapping_hook_scope['target_attributes'])
+        self.logger.debug('Target groups, %s: %s', when, self.after_mapping_hook_scope['target_groups'])
+
 class DashboardConnectors(object):
     def __init__(self, owning_connector, trustee_connectors):
         '''
