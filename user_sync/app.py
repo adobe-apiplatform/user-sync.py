@@ -128,7 +128,6 @@ def begin_work(config_loader):
     directory_groups = config_loader.get_directory_groups()
     owning_dashboard_config = config_loader.get_dashboard_options_for_owning()
     trustee_dashboard_configs = config_loader.get_dashboard_options_for_trustees()
-    config_loader.validate_limits_config()
     rule_config = config_loader.get_rule_options()
 
     referenced_organization_names = set()
@@ -267,7 +266,7 @@ def main():
         
     except user_sync.error.AssertionException as e:
         if (not e.is_reported()):
-            logger.error(e.message)
+            logger.critical(e.message)
             e.set_reported()    
     except:
         try:

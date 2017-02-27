@@ -243,11 +243,8 @@ class RuleProcessor(object):
             self.write_remove_list(remove_list_output_path, orphaned_federated_dashboard_users)
         elif (remove_nonexistent_users):
             if number_of_orphaned_dashboard_users > max_missing_users:
-                message = 'Unable to process orphaned users, as number of users (' + \
-                          str(number_of_orphaned_dashboard_users) + \
-                          ') is larger than max_missing_users setting'
-                self.logger.critical(message)
-                raise user_sync.error.AssertionException(message)
+                raise user_sync.error.AssertionException(
+                    'Unable to process orphaned users, as number of users (%s) is larger than max_missing_users setting' % number_of_orphaned_dashboard_users)
             orphan_count = 0
             for dashboard_user in orphaned_federated_dashboard_users:
                 orphan_count += 1
