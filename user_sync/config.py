@@ -313,12 +313,9 @@ class ConfigLoader(object):
             new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
             self.logger.warning("Assuming the identity type for users is: %s", new_account_type)
 
-        max_deletions_per_run = 10
-        max_missing_users = 200
-        if self.options['remove_nonexistent_users'] == True:
-            limits_config = self.main_config.get_dict_config('limits')
-            max_deletions_per_run = limits_config.get_int('max_deletions_per_run')
-            max_missing_users = limits_config.get_int('max_missing_users')
+        limits_config = self.main_config.get_dict_config('limits')
+        max_deletions_per_run = limits_config.get_int('max_deletions_per_run')
+        max_missing_users = limits_config.get_int('max_missing_users')
 
         options = self.options
         result = {
