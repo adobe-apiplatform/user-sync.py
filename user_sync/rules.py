@@ -46,8 +46,8 @@ class RuleProcessor(object):
             'remove_nonexistent_users': False,
             'default_country_code': None,
 
-            'extended_attributes': None,
-            'after_mapping_hook': None
+            'after_mapping_hook': None,
+            'extended_attributes': None
         }
         options.update(caller_options)        
         self.options = options        
