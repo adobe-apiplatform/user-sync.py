@@ -175,7 +175,7 @@ class RuleProcessor(object):
                     for dashboard_group in dashboard_groups:
                         target_groups.add(  (dashboard_group.group_name, dashboard_group.organization_name)  )
 
-            self.logger.debug('After-mapping hook point; code would be called with these values...])
+            self.logger.debug('After-mapping hook point; code would be called with these values...')
             self.logger.debug('  Source attributes: %s', repr(source_attributes))
             self.logger.debug('  Target attributes: %s', repr(target_attributes))
             self.logger.debug('  Source groups: %s', repr(source_groups))
