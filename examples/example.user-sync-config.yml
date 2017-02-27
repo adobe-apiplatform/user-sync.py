@@ -66,6 +66,10 @@ directory:
   # Default is:
   # user_identity_type: enterpriseID
 
+limits:
+    max_deletions_per_run: 10    # if --remove-nonexistent-users is specified, this is the most users that will be removed.  Others will be left for a later run.  A critical message will be logged.
+    max_missing_users: 200       # if more than this number of user accounts are not found in the directory, user sync will abort with an error and a critical message will be logged.
+
 logging:
   # specifies whether you wish to generate a log file
   # 'True' or 'False'

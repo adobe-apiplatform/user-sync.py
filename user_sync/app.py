@@ -275,7 +275,7 @@ def main():
         
     except user_sync.error.AssertionException as e:
         if (not e.is_reported()):
-            logger.error(e.message)
+            logger.critical(e.message)
             e.set_reported()    
     except:
         try:
