@@ -251,7 +251,7 @@ class RuleProcessor(object):
                 if orphan_count > max_deletions_per_run:
                     self.logger.critical('Only processing %d of the %d orphaned users ' +
                                          'due to max_deletions_per_run setting', max_deletions_per_run,
-                                         len(orphaned_federated_dashboard_users))
+                                         number_of_orphaned_dashboard_users)
                     break
                 user_key = self.get_dashboard_user_key(dashboard_user)
                 remove_user_key_list.add(user_key)
