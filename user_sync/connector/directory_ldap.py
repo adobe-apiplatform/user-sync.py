@@ -318,7 +318,7 @@ class LDAPDirectoryConnector(object):
                         source_attributes[extended_attribute] = extended_attribute_value
 
             # [NOTE morr 2017-02-26]: Could be omitted if no hook; worth considering?
-            user['source_attributes'] = source_attributes
+            user['source_attributes'] = source_attributes.copy()
 
             yield (dn, user)
     
