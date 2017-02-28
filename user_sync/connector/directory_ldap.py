@@ -262,8 +262,6 @@ class LDAPDirectoryConnector(object):
         user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
         user_attribute_names.extend(extended_attributes)
 
-        source_attributes = {}
-
         result_iter = self.iter_search_result(base_dn, ldap.SCOPE_SUBTREE, users_filter, user_attribute_names)
         for dn, record in result_iter:
             if (dn == None):
@@ -274,6 +272,8 @@ class LDAPDirectoryConnector(object):
                 if (last_attribute_name != None):
                     self.logger.warn('No email attribute: %s for dn: %s', last_attribute_name, dn)
                 continue
+
+            source_attributes = {}
             
             user = user_sync.connector.helper.create_blank_user()
             user['email'] = email
