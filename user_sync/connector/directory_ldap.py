@@ -317,7 +317,8 @@ class LDAPDirectoryConnector(object):
                     if (extended_attribute_value is not None):
                         source_attributes[extended_attribute] = extended_attribute_value
 
-            # [NOTE morr 2017-02-26]: Could be omitted if no hook; worth considering?
+            # [TODO morr 2017-02-26]: Could be omitted if no hook; worth considering?
+            # [TODO morr 2017-02-28]: Is the copy necessary? Could just assign I think
             user['source_attributes'] = source_attributes.copy()
 
             yield (dn, user)
