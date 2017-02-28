@@ -196,6 +196,7 @@ class RuleProcessor(object):
                 self.log_after_mapping_hook_scope(True)
                 exec(options['after_mapping_hook'], self.after_mapping_hook_scope)
                 self.log_after_mapping_hook_scope(False)
+                directory_user.update(self.after_mapping_hook_scope['target_attributes'])
 
             for target_group_qualified_name in self.after_mapping_hook_scope['target_groups']:
                 target_group_name, target_organization_name = self.parse_dashboard_group_qualified_name(target_group_qualified_name)
