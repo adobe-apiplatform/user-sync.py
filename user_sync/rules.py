@@ -178,7 +178,7 @@ class RuleProcessor(object):
                 dashboard_groups = mappings.get(group)
                 if (dashboard_groups != None):
                     for dashboard_group in dashboard_groups:
-                        self.after_mapping_hook_scope['target_groups'].add(  (dashboard_group.group_name, dashboard_group.organization_name)  )
+                        self.after_mapping_hook_scope['target_groups'].add(self.make_dashboard_group_qualified_name(dashboard_group.group_name, dashboard_group.organization_name))
 
             # only if there actually is hook code: set up rest of hook scope, invoke hook, update user attributes
             if (options['after_mapping_hook'] is not None):
@@ -197,15 +197,13 @@ class RuleProcessor(object):
                 exec(options['after_mapping_hook'], self.after_mapping_hook_scope)
                 self.log_after_mapping_hook_scope(False)
 
-            for target_group_name, target_organization_name in self.after_mapping_hook_scope['target_attributes']:
+            for target_group_qualified_name in self.after_mapping_hook_scope['target_groups']:
+                target_group_name, target_organization_name = self.parse_dashboard_group_qualified_name(target_group_qualified_name)
                 target_group = Group.get_dashboard_group(target_group_name, target_organization_name)
                 if (target_group is not None):
                     organization_info = self.get_organization_info(target_organization_name)
                     organization_info.add_desired_group_for(user_key, target_group_name)
                 else:
-                    target_group_qualified_name = target_group_name
-                    if (target_organization_name is not None):
-                        target_group_qualified_name = target_organization_name + '::' + target_group_name
                     self.logger.error('Target dashboard group %s is not known; ignored', target_group_qualified_name)
 
         self.logger.info('Total directory users after filtering: %d', len(filtered_directory_user_by_user_key))
@@ -653,7 +651,21 @@ class RuleProcessor(object):
             if (user_key != None):
                 result.append(user_key)
         return result
-    
+
+    def make_dashboard_group_qualified_name(self, group_name, organization_name):
+        prefix = ""
+        if (organization_name is not None and organization_name != OWNING_ORGANIZATION_NAME):
+            prefix = organization_name + user_sync.config.GROUP_NAME_DELIMITER
+        return prefix + group_name
+
+    def parse_dashboard_group_qualified_name(self, qualified_name):
+        parts = qualified_name.split(user_sync.config.GROUP_NAME_DELIMITER)
+        group_name = parts.pop()
+        organization_name = user_sync.config.GROUP_NAME_DELIMITER.join(parts)
+        if (len(organization_name) == 0):
+            organization_name = user_sync.rules.OWNING_ORGANIZATION_NAME
+        return group_name, organization_name
+
     def write_remove_list(self, file_path, dashboard_users):
         total_users = 0
         with open(file_path, 'wb') as output_file:
