@@ -319,7 +319,11 @@ class ConfigLoader(object):
         if (new_account_type == None):
             new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
             self.logger.warning("Assuming the identity type for users is: %s", new_account_type)
-        
+
+        limits_config = self.main_config.get_dict_config('limits')
+        max_deletions_per_run = limits_config.get_int('max_deletions_per_run')
+        max_missing_users = limits_config.get_int('max_missing_users')
+
         options = self.options
         result = {
             'directory_group_filter': options['directory_group_filter'],
@@ -330,7 +334,9 @@ class ConfigLoader(object):
             'remove_user_key_list': options['remove_user_key_list'],
             'remove_list_output_path': options['remove_list_output_path'],
             'remove_nonexistent_users': options['remove_nonexistent_users'],
-            'default_country_code': default_country_code
+            'default_country_code': default_country_code,
+            'max_deletions_per_run': max_deletions_per_run,
+            'max_missing_users': max_missing_users
         }
         return result
 
@@ -501,7 +507,10 @@ class DictConfig(ObjectConfig):
 
     def get_string(self, key, none_allowed = False):
         return self.get_value(key, types.StringTypes, none_allowed)
-    
+
+    def get_int(self, key, none_allowed = False):
+        return self.get_value(key, types.IntType, none_allowed)
+
     def get_bool(self, key, none_allowed = False):
         return self.get_value(key, types.BooleanType, none_allowed)
 
