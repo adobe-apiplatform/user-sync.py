@@ -44,8 +44,8 @@ def connector_load_users_and_groups(state, groups, extended_attributes):
     :type extended_attributes: list(str)
     :rtype (bool, iterable(dict))
     '''
-    if (extended_attributes is not None):
-        self.logger.warning("CSV directory connector doesn't support extended_attributes; ignored")
+
+    # CSV supports arbitrary aka "extended" attrs by default, so the value of extended_attributes has no impact on this particular connector
 
     return state.load_users_and_groups(groups)
 

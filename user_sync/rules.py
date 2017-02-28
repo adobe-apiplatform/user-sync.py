@@ -184,18 +184,17 @@ class RuleProcessor(object):
             if (options['after_mapping_hook'] is not None):
                 self.after_mapping_hook_scope['source_attributes'] = directory_user['source_attributes'].copy()
 
-                # [TODO morr 2017-02-26]: Is there a more robust way to assemble the target attributes?
                 self.after_mapping_hook_scope['target_attributes'] = directory_user.copy()
                 self.after_mapping_hook_scope['target_attributes'].pop('groups', None)
                 self.after_mapping_hook_scope['target_attributes'].pop('identitytype', None)
                 self.after_mapping_hook_scope['target_attributes'].pop('source_attributes', None)
 
                 # invoke the customer's hook code
-                # [TODO morr 2017-02-27: Not putting any guardrails around the customer's code, which is treated as
-                # friendly. Is there anything we should be doing?
                 self.log_after_mapping_hook_scope(True)
                 exec(options['after_mapping_hook'], self.after_mapping_hook_scope)
                 self.log_after_mapping_hook_scope(False)
+
+                # copy modified attributes back to the user object
                 directory_user.update(self.after_mapping_hook_scope['target_attributes'])
 
             for target_group_qualified_name in self.after_mapping_hook_scope['target_groups']:
