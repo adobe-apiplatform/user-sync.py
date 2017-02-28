@@ -177,6 +177,8 @@ class RuleProcessor(object):
         return False
     
     def process_dashboard_users(self, dashboard_connectors):
+        # Called from Main rules processor.
+        # Drives main updating of main organizations users, and then groups in organizations this run has access to.
         '''
         :type dashboard_connectors: DashboardConnectors
         '''        
@@ -184,7 +186,11 @@ class RuleProcessor(object):
         
         self.logger.info('Syncing owning...') 
         owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
+
+        # Loop over users and comapre then and process differences
         owning_unprocessed_groups_by_user_key = self.update_dashboard_users_for_connector(owning_organization_info, dashboard_connectors.get_owning_connector())
+
+        # Handle creates for new users.  This also drives adding the new user to groups in other organizations.
         for user_key in owning_unprocessed_groups_by_user_key.iterkeys():
             self.add_dashboard_user(user_key, dashboard_connectors)
 
@@ -240,6 +246,7 @@ class RuleProcessor(object):
                 remove_user_key_list.add(user_key)
                     
     def clean_dashboard_users(self, dashboard_connectors):
+        # Process removal of users.  The remove_user_key list is generated earlier in processing.
         '''
         :type dashboard_connectors: DashboardConnectors
         '''
@@ -391,7 +398,10 @@ class RuleProcessor(object):
         self.adding_dashboard_user_key.add(user_key)
         dashboard_connectors.get_owning_connector().send_commands(commands, callback)
 
-    def update_dashboard_user(self, organization_info, user_key, dashboard_connector, attributes_to_update = None, groups_to_add = None, groups_to_remove = None):
+    def update_dashboard_user(self, organization_info, user_key, dashboard_connector, attributes_to_update = None, groups_to_add = None, groups_to_remove = None, dashboard_user = None):
+        # Note that the user may exist only in the directory, only in the dashboard, or both at this point.
+        # When we are updating an Adobe user who has been removed from the directory, we have to be careful to use
+        # data from the dashboard_user parameter and not try to get information from the directory.
         '''
         Send the action to update aspects of an dashboard user, like info and groups
         :type organization_info: OrganizationInfo
@@ -400,18 +410,25 @@ class RuleProcessor(object):
         :type attributes_to_update: dict
         :type groups_to_add: set(str)
         :type groups_to_remove: set(str)
+        :type dashboard_user: dictionary # with username, domain, and email entries
         '''        
         if ((groups_to_add and len(groups_to_add) > 0) or (groups_to_remove and len(groups_to_remove) > 0)):
             self.logger.info('Managing groups for user key: %s organization: %s added: %s removed: %s', user_key, organization_info.get_name(), groups_to_add, groups_to_remove)
 
-        directory_user = self.directory_user_by_user_key[user_key]
-        commands = self.create_commands_from_directory_user(directory_user)
+        if user_key in self.directory_user_by_user_key:
+            directory_user = self.directory_user_by_user_key[user_key]
+            identity_type = self.get_identity_type_from_directory_user(directory_user)
+        else:
+            directory_user = dashboard_user
+            identity_type = dashboard_user.get('type')
+
+        commands = self.create_commands_from_directory_user(directory_user, identity_type=identity_type)
         commands.update_user(attributes_to_update)
         commands.add_groups(groups_to_add)
         commands.remove_groups(groups_to_remove)
         dashboard_connector.send_commands(commands)
 
-    def try_and_update_dashboard_user(self, organization_info, user_key, dashboard_connector, attributes_to_update = None, groups_to_add = None, groups_to_remove = None):
+    def try_and_update_dashboard_user(self, organization_info, user_key, dashboard_connector, attributes_to_update = None, groups_to_add = None, groups_to_remove = None, dashboard_user = None):
         '''
         Send the user update action smartly.   
         If the user is being added, the action is postponed.  
@@ -426,11 +443,12 @@ class RuleProcessor(object):
         groups_to_add = self.calculate_groups_to_add(organization_info, user_key, groups_to_add) 
         groups_to_remove = self.calculate_groups_to_remove(organization_info, user_key, groups_to_remove)
         if (user_key not in self.adding_dashboard_user_key):
-            self.update_dashboard_user(organization_info, user_key, dashboard_connector, attributes_to_update, groups_to_add, groups_to_remove)
+            self.update_dashboard_user(organization_info, user_key, dashboard_connector, attributes_to_update, groups_to_add, groups_to_remove, dashboard_user)
         elif (attributes_to_update != None or groups_to_add != None or groups_to_remove != None):
             self.logger.info("Delay user update for user: %s organization: %s", user_key, organization_info.get_name())
 
     def update_dashboard_users_for_connector(self, organization_info, dashboard_connector):
+        # This is the main function that goes over all users and looks for and processes differences.
         '''
         :type organization_info: OrganizationInfo
         :type dashboard_connector: user_sync.connector.dashboard.DashboardConnector
@@ -451,9 +469,23 @@ class RuleProcessor(object):
 
             directory_user = directory_user_by_user_key.get(user_key)
             if (directory_user == None):
+                # Found an Adobe dashboard user not in the directory.  Add to list of possible users to delete.
                 organization_info.add_orphaned_dashboard_user(user_key, dashboard_user)
+
+                if (manage_groups):
+                    # Next, check if that user is in mapped groups and if so, remove from those groups
+                    current_groups = self.normalize_groups(dashboard_user.get('groups'))
+                    groups_to_remove = current_groups & organization_info.get_mapped_groups()
+                    if groups_to_remove != None and len(groups_to_remove) > 0:
+                        self.logger.info("Adobe User not in Directory: %s", user_key)
+                        self.logger.info("Removed from Groups: %s", groups_to_remove)
+
+                        self.try_and_update_dashboard_user(organization_info, user_key, dashboard_connector,
+                                                   None, None, groups_to_remove, dashboard_user)
+
                 continue     
 
+            # User is in directory so look for differences
             desired_groups = desired_groups_by_user_key.pop(user_key, None)
             if (desired_groups == None):
                 if (user_key not in filtered_directory_user_by_user_key):
@@ -473,7 +505,7 @@ class RuleProcessor(object):
                 groups_to_add = desired_groups - current_groups 
                 groups_to_remove =  (current_groups - desired_groups) & organization_info.get_mapped_groups()                
 
-            self.try_and_update_dashboard_user(organization_info, user_key, dashboard_connector, user_attribute_difference, groups_to_add, groups_to_remove)
+            self.try_and_update_dashboard_user(organization_info, user_key, dashboard_connector, user_attribute_difference, groups_to_add, groups_to_remove, dashboard_user)
         
         organization_info.set_dashboard_users_loaded()
         
