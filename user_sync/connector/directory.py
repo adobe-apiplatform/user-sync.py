@@ -46,5 +46,7 @@ class DirectoryConnector(object):
         :type extended_attributes: list(str)
         :rtype (bool, iterable(dict))
         '''
+        if extended_attributes is None:
+            extended_attributes = []
         return self.implementation.connector_load_users_and_groups(self.state, groups, extended_attributes)
 

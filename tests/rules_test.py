@@ -53,7 +53,7 @@ class RulesTest(unittest.TestCase):
         owning_user_1['groups'] = [owning_group_11]
         owning_users.append(owning_user_1)
         
-        def mock_load_users_and_groups(groups):
+        def mock_load_users_and_groups(groups, extended_attributes=None):
             return (True, list(all_users))
         mock_directory_connector = mock.mock.create_autospec(user_sync.connector.directory.DirectoryConnector)
         mock_directory_connector.load_users_and_groups = mock_load_users_and_groups
