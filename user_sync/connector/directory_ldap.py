@@ -39,13 +39,14 @@ def connector_initialize(options):
     connector = LDAPDirectoryConnector(options)
     return connector
 
-def connector_load_users_and_groups(state, groups):
+def connector_load_users_and_groups(state, groups, extended_attributes):
     '''
     :type state: LDAPDirectoryConnector
     :type groups: list(str)
+    :type extended_attributes: list(str)
     :rtype (bool, iterable(dict))
     '''
-    return state.load_users_and_groups(groups)
+    return state.load_users_and_groups(groups, extended_attributes)
 
 class LDAPDirectoryConnector(object):
     name = 'ldap'
@@ -103,9 +104,10 @@ class LDAPDirectoryConnector(object):
         self.connection = connection
         logger.info('Connected')            
         
-    def load_users_and_groups(self, groups):
+    def load_users_and_groups(self, groups, extended_attributes):
         '''
         :type groups: list(str)
+        :type extended_attributes: list(str)
         :rtype (bool, iterable(dict))
         '''
         options = self.options
@@ -125,12 +127,12 @@ class LDAPDirectoryConnector(object):
 
         self.user_by_dn = user_by_dn = {}
         self.user_by_uid = user_by_uid = {}
-        for user_dn, user in self.iter_users(users_filter):
+        for user_dn, user in self.iter_users(users_filter, extended_attributes):
             uid = user.get('uid')
             if (uid != None):
                 user_by_uid[uid] = user
             user_by_dn[user_dn] = user
-        
+
         self.logger.info('Total users loaded: %d', len(user_by_dn))
 
         for group in groups:
@@ -250,14 +252,17 @@ class LDAPDirectoryConnector(object):
                 for attribute_value in attribute_values:
                     yield (attribute, attribute_value)
                     
-    def iter_users(self, users_filter):
+    def iter_users(self, users_filter, extended_attributes):
         options = self.options
         base_dn = options['base_dn']
-        
-        user_attribute_names = ["givenName", "sn", "c", "uid"]    
+
+        user_attribute_names = ["givenName", "sn", "c", "uid"]
         user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
+
+        extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
+        user_attribute_names.extend(extended_attributes)
 
         result_iter = self.iter_search_result(base_dn, ldap.SCOPE_SUBTREE, users_filter, user_attribute_names)
         for dn, record in result_iter:
@@ -269,35 +274,53 @@ class LDAPDirectoryConnector(object):
                 if (last_attribute_name != None):
                     self.logger.warn('No email attribute: %s for dn: %s', last_attribute_name, dn)
                 continue
+
+            source_attributes = {}
             
             user = user_sync.connector.helper.create_blank_user()
+            source_attributes['email'] = email
             user['email'] = email
-                
+
             username, last_attribute_name = self.user_username_formatter.generate_value(record)
+            source_attributes['username'] = username
             if (username == None and last_attribute_name != None):
                 self.logger.info('No username attribute: %s for dn: %s', last_attribute_name, dn)    
             user['username'] = username if username != None else email
-                    
+
             domain, last_attribute_name = self.user_domain_formatter.generate_value(record)
+            source_attributes['domain'] = domain
             if (domain != None):
                 user['domain'] = domain
             elif (last_attribute_name != None):
                 self.logger.info('No domain attribute: %s for dn: %s', last_attribute_name, dn)    
                                                 
             given_name_value = LDAPValueFormatter.get_attribute_value(record, 'givenName')
-            if (given_name_value != None):   
+            source_attributes['givenName'] = given_name_value
+            if (given_name_value != None):
                 user['firstname'] = given_name_value
             sn_value = LDAPValueFormatter.get_attribute_value(record, 'sn')
+            source_attributes['sn'] = sn_value
             if sn_value != None:
                 user['lastname'] = sn_value
             c_value = LDAPValueFormatter.get_attribute_value(record, 'c')
+            source_attributes['c'] = c_value
             if c_value != None:
                 user['country'] = c_value
-                
+
             uid = LDAPValueFormatter.get_attribute_value(record, 'uid')
+            source_attributes['uid'] = uid
             if (uid != None):
                 user['uid'] = uid
-            
+
+            if extended_attributes is not None:
+                for extended_attribute in extended_attributes:
+                    extended_attribute_value = LDAPValueFormatter.get_attribute_value(record, extended_attribute)
+                    source_attributes[extended_attribute] = extended_attribute_value
+
+            # [TODO morr 2017-02-26]: Could be omitted if no hook; worth considering?
+            # [TODO morr 2017-02-28]: Is the copy necessary? Could just assign I think
+            user['source_attributes'] = source_attributes.copy()
+
             yield (dn, user)
     
     def iter_search_result(self, base_dn, scope, filter_string, attributes):
