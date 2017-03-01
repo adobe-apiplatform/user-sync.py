@@ -259,6 +259,9 @@ class LDAPDirectoryConnector(object):
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
 
+        extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
+        user_attribute_names.extend(extended_attributes)
+
         result_iter = self.iter_search_result(base_dn, ldap.SCOPE_SUBTREE, users_filter, user_attribute_names)
         for dn, record in result_iter:
             if (dn == None):

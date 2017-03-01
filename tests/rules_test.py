@@ -30,14 +30,14 @@ class RulesTest(unittest.TestCase):
     
     def test_normal(self):
         owning_organization_name = user_sync.rules.OWNING_ORGANIZATION_NAME
-        trustee_1_organization_name = "trustee1"
+        accessor_1_organization_name = "accessor1"
         directory_group_1 = 'acrobat1' 
         directory_group_2 = 'acrobat2' 
         owning_group_11 = 'acrobat11' 
         owning_group_12 = 'acrobat12' 
         owning_group_21 = 'acrobat21' 
         directory_groups = {
-            directory_group_1: [user_sync.rules.Group(owning_group_11, owning_organization_name), user_sync.rules.Group('acrobat12', trustee_1_organization_name)],
+            directory_group_1: [user_sync.rules.Group(owning_group_11, owning_organization_name), user_sync.rules.Group('acrobat12', accessor_1_organization_name)],
             directory_group_2: [user_sync.rules.Group(owning_group_21, owning_organization_name)]
         }
         all_users = [tests.helper.create_test_user([directory_group_1]), 
@@ -61,11 +61,11 @@ class RulesTest(unittest.TestCase):
         owning_commands_list = []    
         mock_owning_dashboard_connector = self.create_mock_dashboard_connector(owning_users, owning_commands_list)
 
-        trustee_commands_list = []    
-        mock_trustee_dashboard_connector = self.create_mock_dashboard_connector([], trustee_commands_list)
+        accessor_commands_list = []    
+        mock_accessor_dashboard_connector = self.create_mock_dashboard_connector([], accessor_commands_list)
         
         dashboard_connectors = user_sync.rules.DashboardConnectors(mock_owning_dashboard_connector, {
-            trustee_1_organization_name: mock_trustee_dashboard_connector
+            accessor_1_organization_name: mock_accessor_dashboard_connector
         })
         
         rule_processor = user_sync.rules.RuleProcessor({})
@@ -92,18 +92,18 @@ class RulesTest(unittest.TestCase):
         commands.add_user(self.create_user_attributes_for_commands(user, rule_options['update_user_info']))
         expected_owning_commands_list.append(commands)
                 
-        expected_trustee_commands_list = []
+        expected_accessor_commands_list = []
         user = all_users[0]
         commands = tests.helper.create_dashboard_commands(user)
         commands.add_groups(set([owning_group_12]))
-        expected_trustee_commands_list.append(commands)
+        expected_accessor_commands_list.append(commands)
 
         tests.helper.assert_equal_dashboard_commands_list(self, expected_owning_commands_list, owning_commands_list)
-        tests.helper.assert_equal_dashboard_commands_list(self, expected_trustee_commands_list, trustee_commands_list)
+        tests.helper.assert_equal_dashboard_commands_list(self, expected_accessor_commands_list, accessor_commands_list)
 
     # default country code tests
-    
-    def _do_country_code_test(self, mock_dashboard_commands, mock_connectors, identity_type, default_country_code, user_country_code, expected_country_code):
+    @mock.patch('logging.getLogger')
+    def _do_country_code_test(self, mock_dashboard_commands, mock_connectors, identity_type, default_country_code, user_country_code, expected_country_code, mock_logger):
         expected_result = {'lastname': 'User1', 'email': 'cceuser1@ensemble.ca', 'firstname': '!Openldap CCE', 'option': 'updateIfAlreadyExists'}
         if (expected_country_code):
             expected_result['country'] = expected_country_code
@@ -121,7 +121,11 @@ class RulesTest(unittest.TestCase):
                                      'uid': '001'}
         }
         mock_rules.add_dashboard_user('cceuser1@ensemble.ca', mock_connectors)
-        mock_dashboard_commands.return_value.add_user.assert_called_with(expected_result)
+
+        if (identity_type == 'federatedID' and default_country_code == None and user_country_code == None):
+            mock_rules.logger.error.assert_called_with('User %s cannot be added as it has a blank country code and no default has been specified.','cceuser1@ensemble.ca')
+        else:
+            mock_dashboard_commands.return_value.add_user.assert_called_with(expected_result)
 
     # federatedId
     @mock.patch('user_sync.rules.DashboardConnectors')
