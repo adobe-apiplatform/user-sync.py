@@ -322,37 +322,40 @@ class ConfigLoader(object):
         after_mapping_hook = None
         extended_attributes = None
         extensions_config = self.main_config.get_list_config('extensions', True)
-        if (extensions_config != None):
+        if (extensions_config is not None):
             for extension_config in extensions_config.iter_dict_configs():
                 context = extension_config.get_string('context')
-                if context == 'per-user':
-                    if (after_mapping_hook == None):
-                        after_mapping_hook_text = extension_config.get_string('after_mapping_hook')
-                        if (after_mapping_hook_text is not None):
-                            after_mapping_hook = compile(after_mapping_hook_text, '<per-user after-mapping-hook>', 'exec')
-                            extended_attributes = extension_config.get_list('extended_attributes')
 
-                            # [TODO morr 2017-02-27]: Do we really need to pre-create extended dashboard groups here? Or
-                            # could it be done on the fly, when they're encountered in values returned from hook code? If
-                            # the latter, we could do the customer a big favor by not requiring them to be declared in the
-                            # extension config.
-                            #
-                            # This should be revisited once the Complex Mapping feature as a whole is working and has been
-                            # thoroughly tested.
-                            #
-                            for extended_dashboard_group in extension_config.get_list('extended_dashboard_groups'):
-                                group = self.create_dashboard_group(extended_dashboard_group)
-                                if (group is None):
-                                    validation_message = 'Bad dashboard group: "%s" in extension with context "%s"' % (extended_dashboard_group, context)
-                                    raise user_sync.error.AssertionException(validation_message)
-
-                        else:
-                            self.logger.warning("No valid hook found in extension with context '%s'; extension ignored")
-                    else:
-                        self.logger.warning("Duplicate extension context '%s' ignored", context)
-                else:
+                if context != 'per-user':
                     self.logger.warning("Unrecognized extension context '%s' ignored", context)
-        
+                    continue
+                if (after_mapping_hook is not None):
+                    self.logger.warning("Duplicate extension context '%s' ignored", context)
+                    continue
+
+                after_mapping_hook_text = extension_config.get_string('after_mapping_hook')
+
+                if (after_mapping_hook_text is None):
+                    self.logger.warning("No valid hook found in extension with context '%s'; extension ignored")
+                    continue
+
+                after_mapping_hook = compile(after_mapping_hook_text, '<per-user after-mapping-hook>', 'exec')
+                extended_attributes = extension_config.get_list('extended_attributes')
+
+                # [TODO morr 2017-02-27]: Do we really need to pre-create extended dashboard groups here? Or
+                # could it be done on the fly, when they're encountered in values returned from hook code? If
+                # the latter, we could do the customer a big favor by not requiring them to be declared in the
+                # extension config.
+                #
+                # This should be revisited once the Complex Mapping feature as a whole is working and has been
+                # thoroughly tested.
+                #
+                for extended_dashboard_group in extension_config.get_list('extended_dashboard_groups'):
+                    group = self.create_dashboard_group(extended_dashboard_group)
+                    if (group is None):
+                        validation_message = 'Bad dashboard group: "%s" in extension with context "%s"' % (extended_dashboard_group, context)
+                        raise user_sync.error.AssertionException(validation_message)
+
         options = self.options
         result = {
             'directory_group_filter': options['directory_group_filter'],

@@ -68,7 +68,7 @@ class RuleProcessor(object):
 
         # in/out variables for per-user after-mapping-hook code
         self.after_mapping_hook_scope = {
-            'logger': logger
+            'logger': logger,
             'hook_storage': None,               # for exclusive use by hook code; persists across calls
             'source_attributes': None,          # in: attributes retrieved from customer directory system (eg 'c', 'givenName')
                                                 # out: N/A
