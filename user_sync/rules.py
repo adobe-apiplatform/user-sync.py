@@ -44,10 +44,7 @@ class RuleProcessor(object):
             'remove_user_key_list': None,
             'remove_list_output_path': None,
             'remove_nonexistent_users': False,
-            'default_country_code': None,
-
-            'after_mapping_hook': None,
-            'extended_attributes': None
+            'default_country_code': None
         }
         options.update(caller_options)        
         self.options = options        
@@ -55,19 +52,6 @@ class RuleProcessor(object):
         self.filtered_directory_user_by_user_key = {}
         self.organization_info_by_organization = {}
         self.adding_dashboard_user_key = set()
-
-        # in/out variables for per-user after-mapping-hook code
-        self.after_mapping_hook_scope = {
-            'hook_storage': None,           # for exclusive use by hook code; persists across calls
-            'source_attributes': None,      # in: attributes retrieved from customer directory system (eg 'c', 'givenName')
-                                            # out: N/A
-            'source_groups': None,          # in: customer-side directory groups found for user
-                                            # out: N/A
-            'target_attributes': None,      # in: user's attributes for UMAPI calls as defined by usual rules (eg 'country', 'firstname')
-                                            # out: user's attributes for UMAPI calls as potentially changed by hook code
-            'target_groups': None,          # in: Adobe-side dashboard groups mapped for user by usual rules
-                                            # out: Adobe-side dashboard groups as potentially changed by hook code
-        }
         
         remove_user_key_list = options['remove_user_key_list']
         remove_user_key_list = set(remove_user_key_list) if (remove_user_key_list != None) else set()
@@ -142,7 +126,6 @@ class RuleProcessor(object):
         directory_group_filter = options['directory_group_filter']
         if (directory_group_filter != None):
             directory_group_filter = set(directory_group_filter)
-        extended_attributes = options.get('extended_attributes')
         
         directory_user_by_user_key = self.directory_user_by_user_key        
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
@@ -151,7 +134,7 @@ class RuleProcessor(object):
         directory_groups = set(mappings.iterkeys())
         if (directory_group_filter != None):
             directory_groups.update(directory_group_filter)
-        all_loaded, directory_users = directory_connector.load_users_and_groups(directory_groups, extended_attributes)
+        all_loaded, directory_users = directory_connector.load_users_and_groups(directory_groups) 
         if (not all_loaded and self.need_to_process_orphaned_dashboard_users):
             self.logger.warn('Not all users loaded.  Cannot check orphaned users...')
             self.need_to_process_orphaned_dashboard_users = False
@@ -169,49 +152,14 @@ class RuleProcessor(object):
             
             filtered_directory_user_by_user_key[user_key] = directory_user
             self.get_organization_info(OWNING_ORGANIZATION_NAME).add_desired_group_for(user_key, None)
-
-            # set up groups in hook scope; the target groups will be used whether or not there's customer hook code
-            self.after_mapping_hook_scope['source_groups'] = set()
-            self.after_mapping_hook_scope['target_groups'] = set()
             for group in directory_user['groups']:
-                self.after_mapping_hook_scope['source_groups'].add(group) # this is a directory group name
                 dashboard_groups = mappings.get(group)
                 if (dashboard_groups != None):
                     for dashboard_group in dashboard_groups:
-                        self.after_mapping_hook_scope['target_groups'].add(self.make_dashboard_group_qualified_name(dashboard_group.group_name, dashboard_group.organization_name))
-
-            # only if there actually is hook code: set up rest of hook scope, invoke hook, update user attributes
-            if (options['after_mapping_hook'] is not None):
-                self.after_mapping_hook_scope['source_attributes'] = directory_user['source_attributes'].copy()
-
-                target_attributes = dict()
-                target_attributes['email'] = directory_user.get('email')
-                target_attributes['username'] = directory_user.get('username')
-                target_attributes['domain'] = directory_user.get('domain)
-                target_attributes['firstname'] = directory_user.get('firstname')
-                target_attributes['lastname'] = directory_user.get('lastname')
-                target_attributes['country'] = directory_user.get('country')
-                target_attributes['uid'] = directory_user.get('uid')
-                self.after_mapping_hook_scope['target_attributes'] = target_attributes
-
-                # invoke the customer's hook code
-                self.log_after_mapping_hook_scope(before_call: True)
-                exec(options['after_mapping_hook'], self.after_mapping_hook_scope)
-                self.log_after_mapping_hook_scope(after_call: True)
-
-                # copy modified attributes back to the user object
-                directory_user.update(self.after_mapping_hook_scope['target_attributes'])
-
-            for target_group_qualified_name in self.after_mapping_hook_scope['target_groups']:
-                target_group_name, target_organization_name = self.parse_dashboard_group_qualified_name(target_group_qualified_name)
-                target_group = Group.get_dashboard_group(target_group_name, target_organization_name)
-                if (target_group is not None):
-                    organization_info = self.get_organization_info(target_organization_name)
-                    organization_info.add_desired_group_for(user_key, target_group_name)
-                else:
-                    self.logger.error('Target dashboard group %s is not known; ignored', target_group_qualified_name)
-
-        self.logger.info('Total directory users after filtering: %d', len(filtered_directory_user_by_user_key))
+                        organization_info = self.get_organization_info(dashboard_group.organization_name)
+                        organization_info.add_desired_group_for(user_key, dashboard_group.group_name)
+    
+        self.logger.info('Total directory users after filtering: %d', len(filtered_directory_user_by_user_key))        
         if (self.logger.isEnabledFor(logging.DEBUG)):        
             self.logger.debug('Group work list: %s', dict([(organization_name, organization_info.get_desired_groups_by_user_key()) for organization_name, organization_info in self.organization_info_by_organization.iteritems()]))
     
@@ -656,21 +604,7 @@ class RuleProcessor(object):
             if (user_key != None):
                 result.append(user_key)
         return result
-
-    def make_dashboard_group_qualified_name(self, group_name, organization_name):
-        prefix = ""
-        if (organization_name is not None and organization_name != OWNING_ORGANIZATION_NAME):
-            prefix = organization_name + user_sync.config.GROUP_NAME_DELIMITER
-        return prefix + group_name
-
-    def parse_dashboard_group_qualified_name(self, qualified_name):
-        parts = qualified_name.split(user_sync.config.GROUP_NAME_DELIMITER)
-        group_name = parts.pop()
-        organization_name = user_sync.config.GROUP_NAME_DELIMITER.join(parts)
-        if (len(organization_name) == 0):
-            organization_name = user_sync.rules.OWNING_ORGANIZATION_NAME
-        return group_name, organization_name
-
+    
     def write_remove_list(self, file_path, dashboard_users):
         total_users = 0
         with open(file_path, 'wb') as output_file:
@@ -683,18 +617,8 @@ class RuleProcessor(object):
                 writer.writerow({'user': username, 'domain': domain})
                 total_users += 1
         self.logger.info('Total users in remove list: %d', total_users)
-
-    def log_after_mapping_hook_scope(self, before_call=None, after_call=None):
-        if ((before_call is None and after_call is None) or (before_call is not None and after_call is not None)):
-            raise ValueError("Exactly one of 'before_call', 'after_call' must be passed (and not None)")
-        when = 'before' if before_call is not None else 'after'
-        if (before_call is not None):
-            self.logger.debug('.')
-            self.logger.debug('Source attrs, %s: %s', when, self.after_mapping_hook_scope['source_attributes'])
-            self.logger.debug('Source groups, %s: %s', when, self.after_mapping_hook_scope['source_groups'])
-        self.logger.debug('Target attrs, %s: %s', when, self.after_mapping_hook_scope['target_attributes'])
-        self.logger.debug('Target groups, %s: %s', when, self.after_mapping_hook_scope['target_groups'])
-
+                
+        
 class DashboardConnectors(object):
     def __init__(self, owning_connector, trustee_connectors):
         '''
@@ -726,9 +650,6 @@ class DashboardConnectors(object):
                 break
     
 class Group(object):
-
-    dashboard_groups = {}
-
     def __init__(self, group_name, organization_name):
         '''
         :type group_name: str
@@ -736,7 +657,6 @@ class Group(object):
         '''
         self.group_name = group_name
         self.organization_name = organization_name
-        Group.dashboard_groups[(group_name, organization_name)] = self
     
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
@@ -749,15 +669,7 @@ class Group(object):
     
     def __str__(self):
         return str(self.__dict__)
-
-    @classmethod
-    def get_dashboard_group(cls, group_name, organization_name):
-        '''
-        :type group_name: str
-        :type organization_name: str
-        '''
-        return Group.dashboard_groups.get((group_name, organization_name))
-
+        
 class OrganizationInfo(object):
     def __init__(self, name):
         '''
