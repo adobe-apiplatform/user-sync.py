@@ -663,7 +663,7 @@ class RuleProcessor(object):
         '''
         :type dashboard_user: dict
         '''
-        return RuleProcessor.get_user_key(None, None, dashboard_user['email'])
+        return RuleProcessor.get_user_key(dashboard_user['username'], dashboard_user['domain'], dashboard_user['email'])
     
     @staticmethod
     def get_user_key(username, domain, email):
