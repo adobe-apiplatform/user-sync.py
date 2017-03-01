@@ -86,3 +86,9 @@ def create_action_manager():
 class MockGetString():
     def get_string(self,test1,test2):
         return 'test'
+
+    def get_int(self,test1):
+        return 1
+
+    def iter_dict_configs(self):
+        return iter([])
