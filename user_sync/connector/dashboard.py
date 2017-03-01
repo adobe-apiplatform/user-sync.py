@@ -277,7 +277,7 @@ class ActionManager(object):
                 
                 if (not is_success):
                     for error in action_errors:
-                        self.logger.error('Error requestID: %s code: "%s" message: "%s"', action.frame.get("requestID"), error.get('errorCode'), error.get('message'));
+                        self.logger.warn('Error requestID: %s code: "%s" message: "%s"', action.frame.get("requestID"), error.get('errorCode'), error.get('message'));
                 
                 item_callback = sent_item['callback']
                 if (callable(item_callback)):
