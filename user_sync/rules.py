@@ -197,9 +197,9 @@ class RuleProcessor(object):
                 self.after_mapping_hook_scope['target_attributes'] = target_attributes
 
                 # invoke the customer's hook code
-                self.log_after_mapping_hook_scope(before_call: True)
+                self.log_after_mapping_hook_scope(before_call=True)
                 exec(options['after_mapping_hook'], self.after_mapping_hook_scope)
-                self.log_after_mapping_hook_scope(after_call: True)
+                self.log_after_mapping_hook_scope(after_call=True)
 
                 # copy modified attributes back to the user object
                 directory_user.update(self.after_mapping_hook_scope['target_attributes'])
