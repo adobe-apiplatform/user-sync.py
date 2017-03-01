@@ -184,15 +184,20 @@ class RuleProcessor(object):
             if (options['after_mapping_hook'] is not None):
                 self.after_mapping_hook_scope['source_attributes'] = directory_user['source_attributes'].copy()
 
-                self.after_mapping_hook_scope['target_attributes'] = directory_user.copy()
-                self.after_mapping_hook_scope['target_attributes'].pop('groups', None)
-                self.after_mapping_hook_scope['target_attributes'].pop('identitytype', None)
-                self.after_mapping_hook_scope['target_attributes'].pop('source_attributes', None)
+                target_attributes = dict()
+                target_attributes['email'] = directory_user.get('email')
+                target_attributes['username'] = directory_user.get('username')
+                target_attributes['domain'] = directory_user.get('domain)
+                target_attributes['firstname'] = directory_user.get('firstname')
+                target_attributes['lastname'] = directory_user.get('lastname')
+                target_attributes['country'] = directory_user.get('country')
+                target_attributes['uid'] = directory_user.get('uid')
+                self.after_mapping_hook_scope['target_attributes'] = target_attributes
 
                 # invoke the customer's hook code
-                self.log_after_mapping_hook_scope(True)
+                self.log_after_mapping_hook_scope(before_call: True)
                 exec(options['after_mapping_hook'], self.after_mapping_hook_scope)
-                self.log_after_mapping_hook_scope(False)
+                self.log_after_mapping_hook_scope(after_call: True)
 
                 # copy modified attributes back to the user object
                 directory_user.update(self.after_mapping_hook_scope['target_attributes'])
@@ -679,9 +684,11 @@ class RuleProcessor(object):
                 total_users += 1
         self.logger.info('Total users in remove list: %d', total_users)
 
-    def log_after_mapping_hook_scope(self, before_call):
-        when = 'before' if before_call else 'after'
-        if (before_call):
+    def log_after_mapping_hook_scope(self, before_call=None, after_call=None):
+        if ((before_call is None and after_call is None) or (before_call is not None and after_call is not None)):
+            raise ValueError("Exactly one of 'before_call', 'after_call' must be passed (and not None)")
+        when = 'before' if before_call is not None else 'after'
+        if (before_call is not None):
             self.logger.debug('.')
             self.logger.debug('Source attrs, %s: %s', when, self.after_mapping_hook_scope['source_attributes'])
             self.logger.debug('Source groups, %s: %s', when, self.after_mapping_hook_scope['source_groups'])
