@@ -189,7 +189,7 @@ class RuleProcessor(object):
                 target_attributes = dict()
                 target_attributes['email'] = directory_user.get('email')
                 target_attributes['username'] = directory_user.get('username')
-                target_attributes['domain'] = directory_user.get('domain)
+                target_attributes['domain'] = directory_user.get('domain')
                 target_attributes['firstname'] = directory_user.get('firstname')
                 target_attributes['lastname'] = directory_user.get('lastname')
                 target_attributes['country'] = directory_user.get('country')
