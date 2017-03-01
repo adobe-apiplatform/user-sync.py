@@ -33,7 +33,7 @@ import user_sync.rules
 DEFAULT_CONFIG_DIRECTORY = ''
 DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
 DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME = 'dashboard-owning-config.yml'
-DEFAULT_DASHBOARD_TRUSTEE_CONFIG_FILENAME_FORMAT = 'dashboard-trustee-{organization_name}-config.yml'
+DEFAULT_DASHBOARD_ACCESSOR_CONFIG_FILENAME_FORMAT = 'dashboard-accessor-{organization_name}-config.yml'
 
 GROUP_NAME_DELIMITER = '::'
 
@@ -100,44 +100,44 @@ class ConfigLoader(object):
         })
         return self.create_dashboard_options(owning_config_sources, 'owning_dashboard') 
     
-    def get_dashboard_options_for_trustees(self):
+    def get_dashboard_options_for_accessors(self):
         dashboard_config = self.main_config.get_dict_config('dashboard', True)
 
-        trustee_config_filename_format = None        
+        accessor_config_filename_format = None        
         if (dashboard_config != None):
-            trustee_config_filename_format = dashboard_config.get_string('trustee_config_filename_format', True)                        
-        if (trustee_config_filename_format == None):
-            trustee_config_filename_format = DEFAULT_DASHBOARD_TRUSTEE_CONFIG_FILENAME_FORMAT
+            accessor_config_filename_format = dashboard_config.get_string('accessor_config_filename_format', True)                        
+        if (accessor_config_filename_format == None):
+            accessor_config_filename_format = DEFAULT_DASHBOARD_ACCESSOR_CONFIG_FILENAME_FORMAT
             
-        trustee_config_file_paths = {}
-        trustee_config_filename_wildcard = trustee_config_filename_format.format(**{'organization_name': '*'})
-        for file_path in glob.glob1(self.options.get('config_directory'), trustee_config_filename_wildcard):
-            parse_result = self.parse_string(trustee_config_filename_format, file_path)
+        accessor_config_file_paths = {}
+        accessor_config_filename_wildcard = accessor_config_filename_format.format(**{'organization_name': '*'})
+        for file_path in glob.glob1(self.options.get('config_directory'), accessor_config_filename_wildcard):
+            parse_result = self.parse_string(accessor_config_filename_format, file_path)
             organization_name = parse_result.get('organization_name')
             if (organization_name != None):
-                trustee_config_file_paths[organization_name] = file_path
+                accessor_config_file_paths[organization_name] = file_path
              
-        trustees_config = None
+        accessors_config = None
         if (dashboard_config != None):
-            trustees_config = dashboard_config.get_dict_config('trustees', True)
+            accessors_config = dashboard_config.get_dict_config('accessors', True)
                 
-        trustees_options = {}
-        organization_names = set(trustee_config_file_paths.iterkeys())
-        if (trustees_config != None):
-            organization_names.update(trustees_config.iter_keys())
+        accessors_options = {}
+        organization_names = set(accessor_config_file_paths.iterkeys())
+        if (accessors_config != None):
+            organization_names.update(accessors_config.iter_keys())
         for organization_name in organization_names:
-            trustee_config = None
-            if (trustees_config != None): 
-                trustee_config = trustees_config.get_list(organization_name, True) 
-            trustee_config_sources = self.as_list(trustee_config)
-            trustee_config_file_path = trustee_config_file_paths.get(organization_name, None)
-            if (trustee_config_file_path != None):
-                trustee_config_sources.append(trustee_config_file_path)
-            trustee_config_sources.append({            
+            accessor_config = None
+            if (accessors_config != None): 
+                accessor_config = accessors_config.get_list(organization_name, True) 
+            accessor_config_sources = self.as_list(accessor_config)
+            accessor_config_file_path = accessor_config_file_paths.get(organization_name, None)
+            if (accessor_config_file_path != None):
+                accessor_config_sources.append(accessor_config_file_path)
+            accessor_config_sources.append({            
                 'test_mode': self.options['test_mode']
             })
-            trustees_options[organization_name] = self.create_dashboard_options(trustee_config_sources, 'trustee_dashboard[%s]' % organization_name)
-        return trustees_options
+            accessors_options[organization_name] = self.create_dashboard_options(accessor_config_sources, 'accessor_dashboard[%s]' % organization_name)
+        return accessors_options
     
     def get_directory_connector_module_name(self):
         '''
@@ -167,7 +167,14 @@ class ConfigLoader(object):
         directory_source_filters = self.options['directory_source_filters']
         if (directory_source_filters != None):
             self.directory_source_filters_accessed.add(connector_name)
-            source_filter_sources.append(directory_source_filters.get(connector_name))
+            # get the dictionary for the source filter file
+            directory_source_list = self.as_list(directory_source_filters.get(connector_name))
+            source_filter_dict = self.get_dict_from_sources(directory_source_list,'directory[%s].source_filters' % connector_name)
+            # ensure it contains an 'all_users_filter'
+            if (source_filter_dict.get('all_users_filter') == None):
+                self.logger.warn('Ignoring source filter for directory[%s] as "all_users_filter" was not specified' % connector_name)
+            else:
+                source_filter_sources.append(directory_source_filters.get(connector_name))
         source_filters =  self.get_dict_from_sources(source_filter_sources, 'directory[%s].source_filters' % connector_name)
         if (len(source_filters) > 0):   
             connector_options['source_filters'] = source_filters
@@ -308,6 +315,10 @@ class ConfigLoader(object):
             new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
             self.logger.warning("Assuming the identity type for users is: %s", new_account_type)
 
+        limits_config = self.main_config.get_dict_config('limits')
+        max_deletions_per_run = limits_config.get_int('max_deletions_per_run')
+        max_missing_users = limits_config.get_int('max_missing_users')
+
         after_mapping_hook = None
         extended_attributes = None
         extensions_config = self.main_config.get_list_config('extensions', True)
@@ -353,8 +364,10 @@ class ConfigLoader(object):
             'remove_list_output_path': options['remove_list_output_path'],
             'remove_nonexistent_users': options['remove_nonexistent_users'],
             'default_country_code': default_country_code,
+            'max_deletions_per_run': max_deletions_per_run,
+            'max_missing_users': max_missing_users,
             'after_mapping_hook': after_mapping_hook,
-            'extended_attributes': extended_attributes
+            'extended_attributes': extended_attributes,
         }
         return result
 
@@ -541,7 +554,10 @@ class DictConfig(ObjectConfig):
 
     def get_string(self, key, none_allowed = False):
         return self.get_value(key, types.StringTypes, none_allowed)
-    
+
+    def get_int(self, key, none_allowed = False):
+        return self.get_value(key, types.IntType, none_allowed)
+
     def get_bool(self, key, none_allowed = False):
         return self.get_value(key, types.BooleanType, none_allowed)
 
