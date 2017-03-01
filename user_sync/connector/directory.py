@@ -40,11 +40,10 @@ class DirectoryConnector(object):
         '''
         self.state = self.implementation.connector_initialize(options)
         
-    def load_users_and_groups(self, groups, extended_attributes=None):
+    def load_users_and_groups(self, groups):
         '''
         :type groups: list(str)
-        :type extended_attributes: list(str)
         :rtype (bool, iterable(dict))
         '''
-        return self.implementation.connector_load_users_and_groups(self.state, groups, extended_attributes)
+        return self.implementation.connector_load_users_and_groups(self.state, groups)        
 
