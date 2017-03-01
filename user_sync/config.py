@@ -393,7 +393,7 @@ class ConfigLoader(object):
         group = None
         if (len(group_name) > 0):
             # check for existing group in case someone mistakenly declared an extended group that's already a mapping target
-            group = user_sync.rules.get_dashboard_group(group_name, organization_name)
+            group = user_sync.rules.Group.get_dashboard_group(group_name, organization_name)
             if group is None:
                 group = user_sync.rules.Group(group_name, organization_name)
 
