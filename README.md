@@ -24,6 +24,7 @@ Admin Console.
 * Python 2.7+
 * User Management API Credentials (see [the official documentation](https://www.adobe.io/products/usermanagement/docs/gettingstarted))
 * Accessible LDAP server (optional)
+* If running on Windows, a 64 bit version of Windows is required.
 
 # Installation
 
@@ -41,6 +42,8 @@ Requirements:
 To build, run `make pex` from the command line in the main repo directory.
 
 ## Build Instructions for local execution and debugging on Windows
+
+Builds and execution are setup for 64 bit windows versions.
 
 First, there are several projects that do not have good 64 bit builds for Windows platforms.  These are enum34, python_ldap, and pyYaml.  Acceptable builds are in the misc/build/Win64 folder and these can be used directly.  You can also check http://www.lfd.uci.edu/~gohlke/pythonlibs/
 
