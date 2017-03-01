@@ -89,3 +89,6 @@ class MockGetString():
 
     def get_int(self,test1):
         return 1
+
+    def iter_dict_configs(self):
+        return iter([])
