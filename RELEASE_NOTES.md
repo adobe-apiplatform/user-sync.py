@@ -1,5 +1,5 @@
 # Release Notes for User Sync Tool Version 1.1 
-2017-03-03.
+**2017-03-03.**
 
 ## Updating from prior versions
 
@@ -13,15 +13,17 @@ To update your installation, download the release for your platform and replace 
 
 Because this version contains a more aggressive --process-groups function (a bug fix) you may want to run with --test-only first and make sure nothing unexpected is happening.
 
-## New Features
+## New Features / Bugs Fixed
 
-1. Ability to specify additional directory attributes to load and specify a code snippet to implement complex mappings from directory information to Adobe user information and group membership.  This is covered in more detail in the updated documentastion.
+1. Ability to specify additional directory attributes to load and specify a code snippet to implement complex mappings from directory information to Adobe user information and group membership.  This is covered in more detail in the updated documentation.
 
 2. Releases for different platforms are packaged separately so you only have to download the platform(s) you want.  You do have to download the example configuration files and documentation separately.
 
 3. User removal limits and guards.  There are some new features to prevent user sync from accidentally removing large numbers of users in the event of misconfiguration or changes in the directory which result in users not being returned from queries.
 
+4. A bug preventing sync from working properly with Federated domains with username rather than email based logins is fixed.
 
+5. A bug in --process-groups was fixed.  Details below.
 
 ## Changes in Behavior
 
