@@ -198,15 +198,10 @@ class ConfigLoader(object):
 
             dashboard_groups_config = item.get_list_config('dashboard_groups')
             for dashboard_group in dashboard_groups_config.iter_values(types.StringTypes):
-                parts = dashboard_group.split(GROUP_NAME_DELIMITER)
-                group_name = parts.pop()
-                organization_name = GROUP_NAME_DELIMITER.join(parts)
-                if (len(organization_name) == 0):
-                    organization_name = user_sync.rules.OWNING_ORGANIZATION_NAME
-                if (len(group_name) == 0):
+                group = self.create_dashboard_group(dashboard_group)
+                if (group is None):
                     validation_message = 'Bad dashboard group: "%s" in directory group: "%s"' % (dashboard_group, directory_group)
-                    raise user_sync.error.AssertionException(validation_message)                    
-                group = user_sync.rules.Group(group_name, organization_name)
+                    raise user_sync.error.AssertionException(validation_message)
                 groups.append(group)
 
         return adobe_groups_by_directory_group
@@ -312,6 +307,40 @@ class ConfigLoader(object):
         if (new_account_type == None):
             new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
             self.logger.warning("Assuming the identity type for users is: %s", new_account_type)
+
+        after_mapping_hook = None
+        extended_attributes = None
+        extensions_config = self.main_config.get_list_config('extensions', True)
+        if (extensions_config != None):
+            for extension_config in extensions_config.iter_dict_configs():
+                context = extension_config.get_string('context')
+                if context == 'per-user':
+                    if (after_mapping_hook == None):
+                        after_mapping_hook_text = extension_config.get_string('after_mapping_hook')
+                        if (after_mapping_hook_text is not None):
+                            after_mapping_hook = compile(after_mapping_hook_text, '<per-user after-mapping-hook>', 'exec')
+                            extended_attributes = extension_config.get_list('extended_attributes')
+
+                            # [TODO morr 2017-02-27]: Do we really need to pre-create extended dashboard groups here? Or
+                            # could it be done on the fly, when they're encountered in values returned from hook code? If
+                            # the latter, we could do the customer a big favor by not requiring them to be declared in the
+                            # extension config.
+                            #
+                            # This should be revisited once the Complex Mapping feature as a whole is working and has been
+                            # thoroughly tested.
+                            #
+                            for extended_dashboard_group in extension_config.get_list('extended_dashboard_groups'):
+                                group = self.create_dashboard_group(extended_dashboard_group)
+                                if (group is None):
+                                    validation_message = 'Bad dashboard group: "%s" in extension with context "%s"' % (extended_dashboard_group, context)
+                                    raise user_sync.error.AssertionException(validation_message)
+
+                        else:
+                            self.logger.warning("No valid hook found in extension with context '%s'; extension ignored")
+                    else:
+                        self.logger.warning("Duplicate extension context '%s' ignored", context)
+                else:
+                    self.logger.warning("Unrecognized extension context '%s' ignored", context)
         
         options = self.options
         result = {
@@ -323,7 +352,9 @@ class ConfigLoader(object):
             'remove_user_key_list': options['remove_user_key_list'],
             'remove_list_output_path': options['remove_list_output_path'],
             'remove_nonexistent_users': options['remove_nonexistent_users'],
-            'default_country_code': default_country_code
+            'default_country_code': default_country_code,
+            'after_mapping_hook': after_mapping_hook,
+            'extended_attributes': extended_attributes
         }
         return result
 
@@ -338,7 +369,23 @@ class ConfigLoader(object):
                 connector_config['enterprise'] = new_enterprise_section
 
         return connector_config
-    
+
+    def create_dashboard_group(self, dashboard_group_qualified_name):
+        parts = dashboard_group_qualified_name.split(GROUP_NAME_DELIMITER)
+        group_name = parts.pop()
+        organization_name = GROUP_NAME_DELIMITER.join(parts)
+        if (len(organization_name) == 0):
+            organization_name = user_sync.rules.OWNING_ORGANIZATION_NAME
+
+        group = None
+        if (len(group_name) > 0):
+            # check for existing group in case someone mistakenly declared an extended group that's already a mapping target
+            group = user_sync.rules.get_dashboard_group(group_name, organization_name)
+            if group is None:
+                group = user_sync.rules.Group(group_name, organization_name)
+
+        return group
+
     def check_unused_config_keys(self):
         directory_connectors_config = self.get_directory_connector_configs()
         self.main_config.report_unused_values(self.logger, [directory_connectors_config])
