@@ -58,19 +58,6 @@ class RuleProcessor(object):
         self.organization_info_by_organization = {}
         self.adding_dashboard_user_key = set()
 
-        # in/out variables for per-user after-mapping-hook code
-        self.after_mapping_hook_scope = {
-            'hook_storage': None,           # for exclusive use by hook code; persists across calls
-            'source_attributes': None,      # in: attributes retrieved from customer directory system (eg 'c', 'givenName')
-                                            # out: N/A
-            'source_groups': None,          # in: customer-side directory groups found for user
-                                            # out: N/A
-            'target_attributes': None,      # in: user's attributes for UMAPI calls as defined by usual rules (eg 'country', 'firstname')
-                                            # out: user's attributes for UMAPI calls as potentially changed by hook code
-            'target_groups': None,          # in: Adobe-side dashboard groups mapped for user by usual rules
-                                            # out: Adobe-side dashboard groups as potentially changed by hook code
-        }
-        
         remove_user_key_list = options['remove_user_key_list']
         remove_user_key_list = set(remove_user_key_list) if (remove_user_key_list != None) else set()
         self.remove_user_key_list = remove_user_key_list
@@ -78,14 +65,28 @@ class RuleProcessor(object):
         self.need_to_process_orphaned_dashboard_users = options['remove_list_output_path'] != None or options['remove_nonexistent_users']
                 
         self.logger = logger = logging.getLogger('processor')
-        
+
+        # in/out variables for per-user after-mapping-hook code
+        self.after_mapping_hook_scope = {
+            'logger': logger
+            'hook_storage': None,               # for exclusive use by hook code; persists across calls
+            'source_attributes': None,          # in: attributes retrieved from customer directory system (eg 'c', 'givenName')
+                                                # out: N/A
+            'source_groups': None,              # in: customer-side directory groups found for user
+                                                # out: N/A
+            'target_attributes': None,          # in: user's attributes for UMAPI calls as defined by usual rules (eg 'country', 'firstname')
+                                                # out: user's attributes for UMAPI calls as potentially changed by hook code
+            'target_groups': None,              # in: Adobe-side dashboard groups mapped for user by usual rules
+                                                # out: Adobe-side dashboard groups as potentially changed by hook code
+        }
+
         if (logger.isEnabledFor(logging.DEBUG)):
             options_to_report = options.copy()
             username_filter_regex = options_to_report['username_filter_regex']
             if (username_filter_regex != None):
                 options_to_report['username_filter_regex'] = "%s: %s" % (type(username_filter_regex), username_filter_regex.pattern)
             logger.debug('Initialized with options: %s', options_to_report)
-    
+
     def run(self, directory_groups, directory_connector, dashboard_connectors):
         '''
         :type directory_groups: dict(str, list(Group)
@@ -746,6 +747,9 @@ class RuleProcessor(object):
             self.logger.debug('Source groups, %s: %s', when, self.after_mapping_hook_scope['source_groups'])
         self.logger.debug('Target attrs, %s: %s', when, self.after_mapping_hook_scope['target_attributes'])
         self.logger.debug('Target groups, %s: %s', when, self.after_mapping_hook_scope['target_groups'])
+        if (after_call is not None):
+            self.logger.debug('Hook storage, %s: %s', when, self.after_mapping_hook_scope['hook_storage'])
+
 
 class DashboardConnectors(object):
     def __init__(self, owning_connector, accessor_connectors):
