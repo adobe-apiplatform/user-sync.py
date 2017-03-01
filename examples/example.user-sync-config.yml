@@ -1,22 +1,22 @@
 dashboard:
   # specifies the configurations for the Adobe Enterprise Dashboards.  
   # By default, it would look for dashboard-owning-config.yml and
-  # dashboard-accessor-*-config.yml in the configuration path,
-  # with the yml's identifying the owning organization and accessor organizations
+  # dashboard-trustee-*-config.yml in the configuration path,
+  # with the yml's identifying the owning organization and trustee organizations
   # respectively.
   #  
   # You can also specify the configurations under this section too,
-  # with keys owning and accessors.
+  # with keys owning and trustees.
   #
   # Examples:
   # owning: example.dashboard-config.yml
-  # accessors:
+  # trustees:
   #   org1: example.dashboard-config.yml    
 
-  # specifies the filename format for the accessor org configurations.  
+  # specifies the filename format for the trustee org configurations.  
   # a filename that matches the format will have the organization name extracted 
   # from the filename. Default is:
-  # accessor_config_filename_format: "dashboard-accessor-{organization_name}-config.yml"
+  # trustee_config_filename_format: "dashboard-trustee-{organization_name}-config.yml"
 
 directory:
   # (optional) Default country code to use if directory doesn't provide one for a user [Must be two-letter ISO-3166 code - see https://en.wikipedia.org/wiki/ISO_3166-1]
@@ -45,7 +45,7 @@ directory:
     # dashboard_groups: a list of strings identifying the dashboard groups.
     #
     # a group in dashboard_groups can be qualified with, the first part being
-    # the accessor organization name.
+    # the trustee organization name.
     # e.g. org1::Default Acrobat Pro DC configuration
     #
     # examples:
@@ -65,10 +65,6 @@ directory:
   # 
   # Default is:
   # user_identity_type: enterpriseID
-
-limits:
-    max_deletions_per_run: 10    # if --remove-nonexistent-users is specified, this is the most users that will be removed.  Others will be left for a later run.  A critical message will be logged.
-    max_missing_users: 200       # if more than this number of user accounts are not found in the directory, user sync will abort with an error and a critical message will be logged.
 
 logging:
   # specifies whether you wish to generate a log file
