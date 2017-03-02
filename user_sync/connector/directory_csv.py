@@ -47,7 +47,7 @@ def connector_load_users_and_groups(state, groups, extended_attributes):
 
     # CSV supports arbitrary aka "extended" attrs by default, so the value of extended_attributes has no impact on this particular connector
 
-    return state.load_users_and_groups(groups)
+    return state.load_users_and_groups(groups, extended_attributes)
 
 class CSVDirectoryConnector(object):
     name = 'csv'
@@ -74,7 +74,7 @@ class CSVDirectoryConnector(object):
 
         logger.debug('Initialized with options: %s', options)            
 
-    def load_users_and_groups(self, groups):
+    def load_users_and_groups(self, groups, extended_attributes):
         '''
         :type groups: list(str)
         :rtype (bool, iterable(dict))
@@ -82,11 +82,11 @@ class CSVDirectoryConnector(object):
         options = self.options
         file_path = options['file_path']
         self.logger.info('Reading from: %s', file_path)
-        self.users = users = self.read_users(file_path)                        
+        self.users = users = self.read_users(file_path, extended_attributes)
         self.logger.info('Number of users loaded: %d', len(users))
         return (True, users.itervalues())
 
-    def read_users(self, file_path):
+    def read_users(self, file_path, extended_attributes):
         '''
         :type file_path
         :rtype dict
@@ -97,6 +97,7 @@ class CSVDirectoryConnector(object):
         logger = self.logger
         
         recognized_column_names = []
+
         def get_column_name(key):
             column_name = options[key]
             recognized_column_names.append(column_name)
@@ -110,6 +111,9 @@ class CSVDirectoryConnector(object):
         identity_type_column_name = get_column_name('identity_type_column_name')
         username_column_name = get_column_name('username_column_name')
         domain_column_name = get_column_name('domain_column_name')
+
+        # extended attributes appear after the standard ones (if no header row)
+        recognized_column_names += extended_attributes
         
         line_read = 0
         rows = user_sync.helper.iter_csv_rows(file_path, 
@@ -167,6 +171,11 @@ class CSVDirectoryConnector(object):
             domain = self.get_column_value(row, domain_column_name)
             if (domain != None):
                 user['domain'] = domain
+
+            sa = {}
+            for col in recognized_column_names:
+                sa[col] = self.get_column_value(row, col)
+            user['source_attributes'] = sa
 
         return users
     
