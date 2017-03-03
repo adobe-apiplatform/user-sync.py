@@ -243,7 +243,6 @@ class RuleProcessor(object):
         
         self.logger.info('Syncing owning...') 
         owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
-        print('desired groups by user key: %s' % owning_organization_info.get_desired_groups_by_user_key())
 
         # Loop over users and comapre then and process differences
         owning_unprocessed_groups_by_user_key = self.update_dashboard_users_for_connector(owning_organization_info, dashboard_connectors.get_owning_connector())
@@ -369,7 +368,8 @@ class RuleProcessor(object):
             for user_key in remove_user_key_list:
                 dashboard_user = organization_info.get_dashboard_user(user_key)
                 if (dashboard_user != None):
-                    groups_to_remove = self.normalize_groups(dashboard_user.get('groups')) & mapped_groups
+                    dashboard_user_groups = self.convert_groups(dashboard_user.get('groups'))
+                    groups_to_remove = self.normalize_groups(dashboard_user_groups) & mapped_groups
                 elif not organization_info.is_dashboard_users_loaded():
                     groups_to_remove = mapped_groups
                 else:
@@ -505,24 +505,19 @@ class RuleProcessor(object):
         commands = self.create_commands_from_directory_user(directory_user, identity_type=identity_type)
         commands.update_user(attributes_to_update)
 
-        print("adding groups: %s" % groups_to_add)
-
-        # separate
+        # add groups and products seprately
         if (groups_to_add):
             user_groups_to_add = self.get_user_groups(groups_to_add)
             commands.add_groups(user_groups_to_add)
             products_to_add = self.get_products(groups_to_add)
             commands.add_groups(products_to_add, True)
-            # commands.add_groups(groups_to_add)
 
-        print("removing groups: %s" % groups_to_remove)
-
+        # remove groups and products separately
         if (groups_to_remove):
             user_groups_to_remove = self.get_user_groups(groups_to_remove)
             commands.remove_groups(user_groups_to_remove)
             products_to_remove = self.get_products(groups_to_remove)
             commands.remove_groups(products_to_remove, True)
-            # commands.remove_groups(groups_to_remove)
 
         dashboard_connector.send_commands(commands)
 
@@ -537,12 +532,10 @@ class RuleProcessor(object):
         :type attributes_to_update: dict
         :type groups_to_add: set(str)
         :type groups_to_remove: set(str)
-        '''        
+        '''
+
         groups_to_add = self.calculate_groups_to_add(organization_info, user_key, groups_to_add) 
         groups_to_remove = self.calculate_groups_to_remove(organization_info, user_key, groups_to_remove)
-
-        # print('groups_to_add: %s' % groups_to_add)
-        # print('groups_to_remove: %s' % groups_to_remove)
 
         if (user_key not in self.adding_dashboard_user_key):
             self.update_dashboard_user(organization_info, user_key, dashboard_connector, attributes_to_update, groups_to_add, groups_to_remove, dashboard_user)
@@ -559,7 +552,7 @@ class RuleProcessor(object):
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
         
         desired_groups_by_user_key = organization_info.get_desired_groups_by_user_key()
-        desired_groups_by_user_key = {} if desired_groups_by_user_key == None else desired_groups_by_user_key.copy()        
+        desired_groups_by_user_key = {} if desired_groups_by_user_key == None else desired_groups_by_user_key.copy()
         
         options = self.options
         update_user_info = options['update_user_info']
@@ -576,7 +569,8 @@ class RuleProcessor(object):
 
                 if (manage_groups):
                     # Next, check if that user is in mapped groups and if so, remove from those groups
-                    current_groups = self.normalize_groups(dashboard_user.get('groups'))
+                    dashboard_user_groups = self.convert_groups(dashboard_user.get('groups'))
+                    current_groups = self.normalize_groups(dashboard_user_groups)
                     groups_to_remove = current_groups & organization_info.get_mapped_groups()
                     if groups_to_remove != None and len(groups_to_remove) > 0:
                         self.logger.info("Adobe User not in Directory: %s", user_key)
@@ -603,8 +597,8 @@ class RuleProcessor(object):
             groups_to_add = None
             groups_to_remove = None
             if (manage_groups):
-                print("desired_groups: %s" % desired_groups)
-                current_groups = self.normalize_groups(dashboard_user.get('groups'))
+                dashboard_user_groups = self.convert_groups(dashboard_user.get('groups'))
+                current_groups = self.normalize_groups(dashboard_user_groups)
                 groups_to_add = desired_groups - current_groups
                 groups_to_remove =  (current_groups - desired_groups) & organization_info.get_mapped_groups()
 
@@ -799,6 +793,14 @@ class RuleProcessor(object):
             self.logger.debug('Source groups, %s: %s', when, self.after_mapping_hook_scope['source_groups'])
         self.logger.debug('Target attrs, %s: %s', when, self.after_mapping_hook_scope['target_attributes'])
         self.logger.debug('Target groups, %s: %s', when, self.after_mapping_hook_scope['target_groups'])
+
+    def convert_groups(self, dashboard_groups):
+        groups = set()
+        if (dashboard_groups != None):
+            for dashboard_group in dashboard_groups:
+                groups.add(dashboard_group + DESIGNATION_DELIMITER + DESIGNATION_PRODUCT)
+                groups.add(dashboard_group + DESIGNATION_DELIMITER + DESIGNATION_GROUP)
+        return groups
 
 class DashboardConnectors(object):
     def __init__(self, owning_connector, accessor_connectors):

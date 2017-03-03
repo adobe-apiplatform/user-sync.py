@@ -205,14 +205,11 @@ class ConfigLoader(object):
 
             dashboard_groups_config = item.get_list_config('dashboard_groups')
             for dashboard_group in dashboard_groups_config.iter_values(types.StringTypes):
-
                 group = self.create_dashboard_group(dashboard_group)
                 if (group is None):
                     validation_message = 'Bad dashboard group: "%s" in directory group: "%s"' % (dashboard_group, directory_group)
                     raise user_sync.error.AssertionException(validation_message)
                 groups.append(group)
-
-                print('adding to directory group "%s" dashboard group "%s"' % (directory_group, group_name))
 
         return adobe_groups_by_directory_group
 

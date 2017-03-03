@@ -104,7 +104,7 @@ class DashboardConnector(object):
         for u in umapi_client.UsersQuery(self.connection):
             email = u['email'] 
             if not (email in users):
-                users[email] = u            
+                users[email] = u
                 yield u
     
     def get_action_manager(self):
@@ -244,7 +244,6 @@ class ActionManager(object):
             command_function = getattr(action, command_name) 
             command_function(**command_param)
 
-            # print('%s, %s', command_function, command_param)
         return action
 
     def add_action(self, action, callback = None):
