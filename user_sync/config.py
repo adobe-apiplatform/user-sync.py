@@ -33,7 +33,7 @@ import user_sync.rules
 DEFAULT_CONFIG_DIRECTORY = ''
 DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
 DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME = 'dashboard-owning-config.yml'
-DEFAULT_DASHBOARD_TRUSTEE_CONFIG_FILENAME_FORMAT = 'dashboard-trustee-{organization_name}-config.yml'
+DEFAULT_DASHBOARD_ACCESSOR_CONFIG_FILENAME_FORMAT = 'dashboard-accessor-{organization_name}-config.yml'
 
 GROUP_NAME_DELIMITER = '::'
 
@@ -100,44 +100,44 @@ class ConfigLoader(object):
         })
         return self.create_dashboard_options(owning_config_sources, 'owning_dashboard') 
     
-    def get_dashboard_options_for_trustees(self):
+    def get_dashboard_options_for_accessors(self):
         dashboard_config = self.main_config.get_dict_config('dashboard', True)
 
-        trustee_config_filename_format = None        
+        accessor_config_filename_format = None        
         if (dashboard_config != None):
-            trustee_config_filename_format = dashboard_config.get_string('trustee_config_filename_format', True)                        
-        if (trustee_config_filename_format == None):
-            trustee_config_filename_format = DEFAULT_DASHBOARD_TRUSTEE_CONFIG_FILENAME_FORMAT
+            accessor_config_filename_format = dashboard_config.get_string('accessor_config_filename_format', True)                        
+        if (accessor_config_filename_format == None):
+            accessor_config_filename_format = DEFAULT_DASHBOARD_ACCESSOR_CONFIG_FILENAME_FORMAT
             
-        trustee_config_file_paths = {}
-        trustee_config_filename_wildcard = trustee_config_filename_format.format(**{'organization_name': '*'})
-        for file_path in glob.glob1(self.options.get('config_directory'), trustee_config_filename_wildcard):
-            parse_result = self.parse_string(trustee_config_filename_format, file_path)
+        accessor_config_file_paths = {}
+        accessor_config_filename_wildcard = accessor_config_filename_format.format(**{'organization_name': '*'})
+        for file_path in glob.glob1(self.options.get('config_directory'), accessor_config_filename_wildcard):
+            parse_result = self.parse_string(accessor_config_filename_format, file_path)
             organization_name = parse_result.get('organization_name')
             if (organization_name != None):
-                trustee_config_file_paths[organization_name] = file_path
+                accessor_config_file_paths[organization_name] = file_path
              
-        trustees_config = None
+        accessors_config = None
         if (dashboard_config != None):
-            trustees_config = dashboard_config.get_dict_config('trustees', True)
+            accessors_config = dashboard_config.get_dict_config('accessors', True)
                 
-        trustees_options = {}
-        organization_names = set(trustee_config_file_paths.iterkeys())
-        if (trustees_config != None):
-            organization_names.update(trustees_config.iter_keys())
+        accessors_options = {}
+        organization_names = set(accessor_config_file_paths.iterkeys())
+        if (accessors_config != None):
+            organization_names.update(accessors_config.iter_keys())
         for organization_name in organization_names:
-            trustee_config = None
-            if (trustees_config != None): 
-                trustee_config = trustees_config.get_list(organization_name, True) 
-            trustee_config_sources = self.as_list(trustee_config)
-            trustee_config_file_path = trustee_config_file_paths.get(organization_name, None)
-            if (trustee_config_file_path != None):
-                trustee_config_sources.append(trustee_config_file_path)
-            trustee_config_sources.append({            
+            accessor_config = None
+            if (accessors_config != None): 
+                accessor_config = accessors_config.get_list(organization_name, True) 
+            accessor_config_sources = self.as_list(accessor_config)
+            accessor_config_file_path = accessor_config_file_paths.get(organization_name, None)
+            if (accessor_config_file_path != None):
+                accessor_config_sources.append(accessor_config_file_path)
+            accessor_config_sources.append({            
                 'test_mode': self.options['test_mode']
             })
-            trustees_options[organization_name] = self.create_dashboard_options(trustee_config_sources, 'trustee_dashboard[%s]' % organization_name)
-        return trustees_options
+            accessors_options[organization_name] = self.create_dashboard_options(accessor_config_sources, 'accessor_dashboard[%s]' % organization_name)
+        return accessors_options
     
     def get_directory_connector_module_name(self):
         '''
@@ -167,7 +167,14 @@ class ConfigLoader(object):
         directory_source_filters = self.options['directory_source_filters']
         if (directory_source_filters != None):
             self.directory_source_filters_accessed.add(connector_name)
-            source_filter_sources.append(directory_source_filters.get(connector_name))
+            # get the dictionary for the source filter file
+            directory_source_list = self.as_list(directory_source_filters.get(connector_name))
+            source_filter_dict = self.get_dict_from_sources(directory_source_list,'directory[%s].source_filters' % connector_name)
+            # ensure it contains an 'all_users_filter'
+            if (source_filter_dict.get('all_users_filter') == None):
+                self.logger.warn('Ignoring source filter for directory[%s] as "all_users_filter" was not specified' % connector_name)
+            else:
+                source_filter_sources.append(directory_source_filters.get(connector_name))
         source_filters =  self.get_dict_from_sources(source_filter_sources, 'directory[%s].source_filters' % connector_name)
         if (len(source_filters) > 0):   
             connector_options['source_filters'] = source_filters
@@ -198,28 +205,11 @@ class ConfigLoader(object):
 
             dashboard_groups_config = item.get_list_config('dashboard_groups')
             for dashboard_group in dashboard_groups_config.iter_values(types.StringTypes):
-                # determine the designation
-                designation = user_sync.rules.DESIGNATION_PRODUCT
-                parts = dashboard_group.split(user_sync.rules.DESIGNATION_DELIMITER)
-                if (len(parts) == 2):
-                    designation = parts.pop().strip()
 
-                # separate the string into parts, this time without the designation portion
-                parts = parts.pop().strip().split(GROUP_NAME_DELIMITER)
-
-                # re-add the designation into the group name, separated by the delimiter, to ensure there are no spaces
-                # between the name and designation
-                group_name = parts.pop().strip() + user_sync.rules.DESIGNATION_DELIMITER + designation
-
-                # finally extract the org name
-                organization_name = GROUP_NAME_DELIMITER.join(parts)
-
-                if (len(organization_name) == 0):
-                    organization_name = user_sync.rules.OWNING_ORGANIZATION_NAME
-                if (len(group_name) == 0):
+                group = self.create_dashboard_group(dashboard_group)
+                if (group is None):
                     validation_message = 'Bad dashboard group: "%s" in directory group: "%s"' % (dashboard_group, directory_group)
-                    raise user_sync.error.AssertionException(validation_message)                    
-                group = user_sync.rules.Group(group_name, organization_name, designation)
+                    raise user_sync.error.AssertionException(validation_message)
                 groups.append(group)
 
                 print('adding to directory group "%s" dashboard group "%s"' % (directory_group, group_name))
@@ -327,6 +317,44 @@ class ConfigLoader(object):
         if (new_account_type == None):
             new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
             self.logger.warning("Assuming the identity type for users is: %s", new_account_type)
+
+        limits_config = self.main_config.get_dict_config('limits')
+        max_deletions_per_run = limits_config.get_int('max_deletions_per_run')
+        max_missing_users = limits_config.get_int('max_missing_users')
+
+        after_mapping_hook = None
+        extended_attributes = None
+        extensions_config = self.main_config.get_list_config('extensions', True)
+        if (extensions_config != None):
+            for extension_config in extensions_config.iter_dict_configs():
+                context = extension_config.get_string('context')
+                if context == 'per-user':
+                    if (after_mapping_hook == None):
+                        after_mapping_hook_text = extension_config.get_string('after_mapping_hook')
+                        if (after_mapping_hook_text is not None):
+                            after_mapping_hook = compile(after_mapping_hook_text, '<per-user after-mapping-hook>', 'exec')
+                            extended_attributes = extension_config.get_list('extended_attributes')
+
+                            # [TODO morr 2017-02-27]: Do we really need to pre-create extended dashboard groups here? Or
+                            # could it be done on the fly, when they're encountered in values returned from hook code? If
+                            # the latter, we could do the customer a big favor by not requiring them to be declared in the
+                            # extension config.
+                            #
+                            # This should be revisited once the Complex Mapping feature as a whole is working and has been
+                            # thoroughly tested.
+                            #
+                            for extended_dashboard_group in extension_config.get_list('extended_dashboard_groups'):
+                                group = self.create_dashboard_group(extended_dashboard_group)
+                                if (group is None):
+                                    validation_message = 'Bad dashboard group: "%s" in extension with context "%s"' % (extended_dashboard_group, context)
+                                    raise user_sync.error.AssertionException(validation_message)
+
+                        else:
+                            self.logger.warning("No valid hook found in extension with context '%s'; extension ignored")
+                    else:
+                        self.logger.warning("Duplicate extension context '%s' ignored", context)
+                else:
+                    self.logger.warning("Unrecognized extension context '%s' ignored", context)
         
         options = self.options
         result = {
@@ -338,7 +366,11 @@ class ConfigLoader(object):
             'remove_user_key_list': options['remove_user_key_list'],
             'remove_list_output_path': options['remove_list_output_path'],
             'remove_nonexistent_users': options['remove_nonexistent_users'],
-            'default_country_code': default_country_code
+            'default_country_code': default_country_code,
+            'max_deletions_per_run': max_deletions_per_run,
+            'max_missing_users': max_missing_users,
+            'after_mapping_hook': after_mapping_hook,
+            'extended_attributes': extended_attributes,
         }
         return result
 
@@ -353,7 +385,39 @@ class ConfigLoader(object):
                 connector_config['enterprise'] = new_enterprise_section
 
         return connector_config
-    
+
+    def create_dashboard_group(self, dashboard_group_qualified_name):
+        # determine the designation
+        designation = user_sync.rules.DESIGNATION_PRODUCT
+        parts = dashboard_group_qualified_name.split(user_sync.rules.DESIGNATION_DELIMITER)
+        if (len(parts) == 2):
+            designation = parts.pop().strip()
+
+        # separate the string into parts, this time without the designation portion
+        parts = parts.pop().strip().split(GROUP_NAME_DELIMITER)
+
+        # re-add the designation into the group name, separated by the delimiter, to ensure there are no spaces
+        # between the name and designation
+        group_name = parts.pop().strip() + user_sync.rules.DESIGNATION_DELIMITER + designation
+
+        # finally extract the org name
+        organization_name = GROUP_NAME_DELIMITER.join(parts)
+
+        # parts = dashboard_group_qualified_name.split(GROUP_NAME_DELIMITER)
+        # group_name = parts.pop()
+        # organization_name = GROUP_NAME_DELIMITER.join(parts)
+        if (len(organization_name) == 0):
+            organization_name = user_sync.rules.OWNING_ORGANIZATION_NAME
+
+        group = None
+        if (len(group_name) > 0):
+            # check for existing group in case someone mistakenly declared an extended group that's already a mapping target
+            group = user_sync.rules.Group.get_dashboard_group(group_name, organization_name)
+            if group is None:
+                group = user_sync.rules.Group(group_name, organization_name)
+
+        return group
+
     def check_unused_config_keys(self):
         directory_connectors_config = self.get_directory_connector_configs()
         self.main_config.report_unused_values(self.logger, [directory_connectors_config])
@@ -509,7 +573,10 @@ class DictConfig(ObjectConfig):
 
     def get_string(self, key, none_allowed = False):
         return self.get_value(key, types.StringTypes, none_allowed)
-    
+
+    def get_int(self, key, none_allowed = False):
+        return self.get_value(key, types.IntType, none_allowed)
+
     def get_bool(self, key, none_allowed = False):
         return self.get_value(key, types.BooleanType, none_allowed)
 

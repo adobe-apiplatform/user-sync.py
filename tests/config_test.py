@@ -55,13 +55,13 @@ class ConfigLoaderTest(unittest.TestCase):
     @mock.patch('user_sync.config.ConfigLoader.create_dashboard_options')
     @mock.patch('glob.glob1')
     @mock.patch('user_sync.config.ConfigLoader.parse_string')
-    def test_get_dashboard_options_for_trustees(self, mock_parse, mock_glob, mock_create_dash, mock_get_dict):
+    def test_get_dashboard_options_for_accessors(self, mock_parse, mock_glob, mock_create_dash, mock_get_dict):
         mock_create_dash.return_value = {'create_dash'}
         mock_glob.return_value = {''}
         mock_parse.return_value = {'organization_name': 'testOrgName'}
 
-        self.assertEquals(self.conf_load.get_dashboard_options_for_trustees(), {'testOrgName': set(['create_dash'])},
-                          'We return with trustee option in the expected format')
+        self.assertEquals(self.conf_load.get_dashboard_options_for_accessors(), {'testOrgName': set(['create_dash'])},
+                          'We return with accessor option in the expected format')
         self.assertEquals(mock_create_dash.call_count, 1, 'create dashboard options was called')
 
     def test_get_dict_from_sources_dict(self):
@@ -88,19 +88,26 @@ class ConfigLoaderTest(unittest.TestCase):
 
     @mock.patch('user_sync.config.DictConfig.get_string')
     @mock.patch('user_sync.config.DictConfig.get_dict_config')
+    @mock.patch('user_sync.config.DictConfig.get_list_config')
     @mock.patch('user_sync.identity_type.parse_identity_type')
-    def test_get_rule_options(self, mock_id_type,mock_get_dict,mock_get_string):
+    def test_get_rule_options(self, mock_id_type,mock_get_dict,mock_get_list,mock_get_string):
         mock_id_type.return_value = 'new_acc'
         mock_get_dict.return_value = tests.helper.MockGetString()
+        mock_get_list.return_value = tests.helper.MockGetString()
         self.assertEquals(self.conf_load.get_rule_options(), {'username_filter_regex': None,
                                                               'update_user_info': True,
                                                               'manage_groups': True,
+                                                              'max_deletions_per_run': 1,
+                                                              'max_missing_users': 1,
                                                               'new_account_type': 'new_acc',
                                                               'directory_group_filter': None,
                                                               'default_country_code': 'test',
                                                               'remove_user_key_list': None,
                                                               'remove_list_output_path': None,
-                                                              'remove_nonexistent_users': False},
+                                                              'remove_nonexistent_users': False,
+                                                              'after_mapping_hook': None,
+                                                              'extended_attributes': None,
+                                                              },
                           'rule options are returned')
 
     def test_parse_string(self):
