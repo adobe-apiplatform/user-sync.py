@@ -198,16 +198,31 @@ class ConfigLoader(object):
 
             dashboard_groups_config = item.get_list_config('dashboard_groups')
             for dashboard_group in dashboard_groups_config.iter_values(types.StringTypes):
-                parts = dashboard_group.split(GROUP_NAME_DELIMITER)
-                group_name = parts.pop()
+                # determine the designation
+                designation = user_sync.rules.DESIGNATION_PRODUCT
+                parts = dashboard_group.split(user_sync.rules.DESIGNATION_DELIMITER)
+                if (len(parts) == 2):
+                    designation = parts.pop().strip()
+
+                # separate the string into parts, this time without the designation portion
+                parts = parts.pop().strip().split(GROUP_NAME_DELIMITER)
+
+                # re-add the designation into the group name, separated by the delimiter, to ensure there are no spaces
+                # between the name and designation
+                group_name = parts.pop().strip() + user_sync.rules.DESIGNATION_DELIMITER + designation
+
+                # finally extract the org name
                 organization_name = GROUP_NAME_DELIMITER.join(parts)
+
                 if (len(organization_name) == 0):
                     organization_name = user_sync.rules.OWNING_ORGANIZATION_NAME
                 if (len(group_name) == 0):
                     validation_message = 'Bad dashboard group: "%s" in directory group: "%s"' % (dashboard_group, directory_group)
                     raise user_sync.error.AssertionException(validation_message)                    
-                group = user_sync.rules.Group(group_name, organization_name)
+                group = user_sync.rules.Group(group_name, organization_name, designation)
                 groups.append(group)
+
+                print('adding to directory group "%s" dashboard group "%s"' % (directory_group, group_name))
 
         return adobe_groups_by_directory_group
 

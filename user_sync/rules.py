@@ -26,6 +26,9 @@ import user_sync.helper
 import user_sync.identity_type
 
 OWNING_ORGANIZATION_NAME = None
+DESIGNATION_DELIMITER = ','
+DESIGNATION_PRODUCT = 'productconfiguration'
+DESIGNATION_GROUP = 'usergroup'
 
 class RuleProcessor(object):
     
@@ -184,6 +187,7 @@ class RuleProcessor(object):
         
         self.logger.info('Syncing owning...') 
         owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
+        print('desired groups by user key: %s' % owning_organization_info.get_desired_groups_by_user_key())
         owning_unprocessed_groups_by_user_key = self.update_dashboard_users_for_connector(owning_organization_info, dashboard_connectors.get_owning_connector())
         for user_key in owning_unprocessed_groups_by_user_key.iterkeys():
             self.add_dashboard_user(user_key, dashboard_connectors)
@@ -198,6 +202,7 @@ class RuleProcessor(object):
             trustee_unprocessed_groups_by_user_key = self.update_dashboard_users_for_connector(trustee_organization_info, dashboard_connector)
             if (manage_groups):
                 for user_key, desired_groups in trustee_unprocessed_groups_by_user_key.iteritems():
+                    print("user_key: %s, desired_groups: %s" % (user_key, desired_groups))
                     self.try_and_update_dashboard_user(trustee_organization_info, user_key, dashboard_connector, groups_to_add=desired_groups)
                     
     def iter_orphaned_federated_dashboard_users(self):
@@ -299,7 +304,11 @@ class RuleProcessor(object):
                     self.logger.info('Removing groups for user key: %s removed: %s', user_key, groups_to_remove)
                     username, domain = self.parse_user_key(user_key)
                     commands = user_sync.connector.dashboard.Commands(username=username, domain=domain)
-                    commands.remove_groups(groups_to_remove)
+                    user_groups_to_remove = self.get_user_groups(groups_to_remove)
+                    commands.remove_groups(user_groups_to_remove)
+                    products_to_remove = self.get_products(groups_to_remove)
+                    commands.remove_groups(products_to_remove, True)
+                    # commands.remove_groups(groups_to_remove)
                     dashboard_connector.send_commands(commands, create_remove_groups_callback(user_key))
 
         ready_to_remove_from_org = True
@@ -368,7 +377,10 @@ class RuleProcessor(object):
             owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)        
             desired_groups = owning_organization_info.get_desired_groups(user_key)
             groups_to_add = self.calculate_groups_to_add(owning_organization_info, user_key, desired_groups)
-            commands.add_groups(groups_to_add)
+            user_groups_to_add = self.get_user_groups(groups_to_add)
+            commands.add_groups(user_groups_to_add)
+            products_to_add = self.get_products(groups_to_add)
+            commands.add_groups(products_to_add, True)
 
         def callback(response):
             self.adding_dashboard_user_key.discard(user_key)
@@ -382,7 +394,11 @@ class RuleProcessor(object):
                             self.calculate_groups_to_add(trustee_organization_info, user_key, trustee_organization_info.get_desired_groups(user_key))
                         
                         trustee_groups_to_add = trustee_organization_info.groups_added_by_user_key.get(user_key)
-                        trustee_groups_to_remove = trustee_organization_info.groups_removed_by_user_key.get(user_key)                                                
+                        trustee_groups_to_remove = trustee_organization_info.groups_removed_by_user_key.get(user_key)
+
+                        # print('trustree_groups_to_add: %s' % trustee_groups_to_add)
+                        # print('trustree_groups_to_remove: %s' % trustee_groups_to_remove)
+
                         self.update_dashboard_user(trustee_organization_info, user_key, dashboard_connector, groups_to_add=trustee_groups_to_add, groups_to_remove=trustee_groups_to_remove)
 
         self.adding_dashboard_user_key.add(user_key)
@@ -404,8 +420,26 @@ class RuleProcessor(object):
         directory_user = self.directory_user_by_user_key[user_key]
         commands = self.create_commands_from_directory_user(directory_user)
         commands.update_user(attributes_to_update)
-        commands.add_groups(groups_to_add)
-        commands.remove_groups(groups_to_remove)
+
+        print("adding groups: %s" % groups_to_add)
+
+        # separate
+        if (groups_to_add):
+            user_groups_to_add = self.get_user_groups(groups_to_add)
+            commands.add_groups(user_groups_to_add)
+            products_to_add = self.get_products(groups_to_add)
+            commands.add_groups(products_to_add, True)
+            # commands.add_groups(groups_to_add)
+
+        print("removing groups: %s" % groups_to_remove)
+
+        if (groups_to_remove):
+            user_groups_to_remove = self.get_user_groups(groups_to_remove)
+            commands.remove_groups(user_groups_to_remove)
+            products_to_remove = self.get_products(groups_to_remove)
+            commands.remove_groups(products_to_remove, True)
+            # commands.remove_groups(groups_to_remove)
+
         dashboard_connector.send_commands(commands)
 
     def try_and_update_dashboard_user(self, organization_info, user_key, dashboard_connector, attributes_to_update = None, groups_to_add = None, groups_to_remove = None):
@@ -422,6 +456,10 @@ class RuleProcessor(object):
         '''        
         groups_to_add = self.calculate_groups_to_add(organization_info, user_key, groups_to_add) 
         groups_to_remove = self.calculate_groups_to_remove(organization_info, user_key, groups_to_remove)
+
+        # print('groups_to_add: %s' % groups_to_add)
+        # print('groups_to_remove: %s' % groups_to_remove)
+
         if (user_key not in self.adding_dashboard_user_key):
             self.update_dashboard_user(organization_info, user_key, dashboard_connector, attributes_to_update, groups_to_add, groups_to_remove)
         elif (attributes_to_update != None or groups_to_add != None or groups_to_remove != None):
@@ -464,12 +502,13 @@ class RuleProcessor(object):
                     self.logger.info('Updating info for user key: %s changes: %s', user_key, user_attribute_difference)
             
             groups_to_add = None
-            groups_to_remove = None    
-            if (manage_groups):        
+            groups_to_remove = None
+            if (manage_groups):
+                print("desired_groups: %s" % desired_groups)
                 current_groups = self.normalize_groups(dashboard_user.get('groups'))
-                groups_to_add = desired_groups - current_groups 
-                groups_to_remove =  (current_groups - desired_groups) & organization_info.get_mapped_groups()                
-
+                groups_to_add = desired_groups - current_groups
+                groups_to_remove =  (current_groups - desired_groups) & organization_info.get_mapped_groups()
+            
             self.try_and_update_dashboard_user(organization_info, user_key, dashboard_connector, user_attribute_difference, groups_to_add, groups_to_remove)
         
         organization_info.set_dashboard_users_loaded()
@@ -537,6 +576,25 @@ class RuleProcessor(object):
                 current_groups |= new_groups
         return new_groups
 
+    def get_products(self, groups):
+        products = []
+        for group in groups:
+            parts = group.split(DESIGNATION_DELIMITER)
+            if (len(parts) != 2):
+                raise user_sync.error.AssertionException("group name is not formatted as [name,designation]")
+            if (parts[1] == DESIGNATION_PRODUCT):
+                products.append(parts[0])
+        return products
+
+    def get_user_groups(self, groups):
+        user_groups = []
+        for group in groups:
+            parts = group.split(DESIGNATION_DELIMITER)
+            if (len(parts) != 2):
+                raise user_sync.error.AssertionException("group name is not formatted as [name,designation]")
+            if (parts[1] == DESIGNATION_GROUP):
+                user_groups.append(parts[0])
+        return user_groups
 
     def get_user_attribute_difference(self, directory_user, dashboard_user):
         differences = {}
@@ -650,13 +708,14 @@ class DashboardConnectors(object):
                 break
     
 class Group(object):
-    def __init__(self, group_name, organization_name):
+    def __init__(self, group_name, organization_name, designation):
         '''
         :type group_name: str
         :type organization_name: str        
         '''
         self.group_name = group_name
         self.organization_name = organization_name
+        self.designation = designation
     
     def __eq__(self, other):
         return self.__dict__ == other.__dict__

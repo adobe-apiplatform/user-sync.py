@@ -53,7 +53,7 @@ def process_args():
                         default=config.DEFAULT_MAIN_CONFIG_FILENAME, metavar='filename', dest='config_filename')
     parser.add_argument('--users', 
                         help="specify the users to be considered for sync. Legal values are 'all' (the default), 'group name or names' (one or more specified AD groups), 'file f' (a specified input file).", 
-                        nargs="*", metavar=('all|file|group', 'arg1'), dest='users')
+                        nargs="*", metavar=('all|file|group|mapped', 'arg1'), dest='users')
     parser.add_argument('--user-filter',
                         help='limit the selected set of users that may be examined for syncing, with the pattern being a regular expression.',
                         metavar='pattern', dest='username_filter_pattern')

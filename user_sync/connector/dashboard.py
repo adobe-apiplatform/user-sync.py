@@ -142,23 +142,25 @@ class Commands(object):
             params = self.convert_user_attributes_to_params(attributes)
             self.do_list.append(('update', params))
 
-    def add_groups(self, groups_to_add):
+    def add_groups(self, groups_to_add, product = False):
         '''
         :type groups_to_add: set(str)
         '''
         if (groups_to_add != None and len(groups_to_add) > 0):
             params = {
-                "groups": groups_to_add
+                "groups": groups_to_add,
+                "group_type": umapi_client.GroupTypes.product if product else umapi_client.GroupTypes.usergroup
             }
             self.do_list.append(('add_to_groups', params))
 
-    def remove_groups(self, groups_to_remove):
+    def remove_groups(self, groups_to_remove, product = False):
         '''
         :type groups_to_remove: set(str)
         '''
         if (groups_to_remove != None and len(groups_to_remove) > 0):
             params = {
-                "groups": groups_to_remove
+                "groups": groups_to_remove,
+                "group_type": umapi_client.GroupTypes.product if product else umapi_client.GroupTypes.usergroup
             }
             self.do_list.append(('remove_from_groups', params))
     
@@ -241,6 +243,8 @@ class ActionManager(object):
             command_name, command_param = command
             command_function = getattr(action, command_name) 
             command_function(**command_param)
+
+            # print('%s, %s', command_function, command_param)
         return action
 
     def add_action(self, action, callback = None):
