@@ -25,7 +25,7 @@ directory:
   # default_country_code: US
   
   connectors:
-    # specifies the configurations for the difference directory connectors
+    # specifies the configurations for the different directory connectors
     # The format is name : value, where value can be:
     # a dictionary for the actual configuration, or 
     # a string for the file containing the configuration, or
@@ -61,7 +61,7 @@ directory:
 
   # specifies the default identity type of the dashboard user to create,
   # when the identity type of a user is missing.  
-  # valid values are: enterpriseID, federatedID
+  # valid values are: adobeID, enterpriseID, federatedID
   # 
   # Default is:
   # user_identity_type: enterpriseID

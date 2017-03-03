@@ -123,44 +123,43 @@ class CSVDirectoryConnector(object):
         for row in rows:
             line_read += 1
             email = self.get_column_value(row, email_column_name)
-            if (email == None):
-                logger.warning('No email found at row: %d', line_read)
+            if email is None or email.find('@') < 0:
+                logger.warning('Missing or invalid email at row: %d; skipping', line_read)
                 continue;
             
             user = users.get(email)
-            if (user == None):
+            if user is None:
                 user = user_sync.connector.helper.create_blank_user()
                 user['email'] = email
                 users[email] = user
             
             first_name = self.get_column_value(row, first_name_column_name)
-            if (first_name != None):    
+            if first_name is not None:
                 user['firstname'] = first_name
             else:
                 logger.debug('No value firstname for: %s', email)
                 
             last_name = self.get_column_value(row, last_name_column_name)
-            if (last_name != None):    
+            if last_name is not None:    
                 user['lastname'] = last_name
             else:
                 logger.debug('No value lastname for: %s', email)
     
             country = self.get_column_value(row, country_column_name)
-            if (country != None):    
+            if country is not None:    
                 user['country'] = country
                 
             groups = self.get_column_value(row, groups_column_name)
-            if (groups != None):
+            if groups is not None:
                 user['groups'].extend(groups.split(','))
                 
             username = self.get_column_value(row, username_column_name)
-            if (username == None):
+            if username is None:
                 username = email
-            if (username != None):
-                user['username'] = username
+            user['username'] = username
                 
             identity_type = self.get_column_value(row, identity_type_column_name)
-            if (identity_type != None):
+            if identity_type is not None:
                 try:
                     user['identitytype'] = user_sync.identity_type.parse_identity_type(identity_type) 
                 except user_sync.error.AssertionException as e:
@@ -169,8 +168,10 @@ class CSVDirectoryConnector(object):
                     raise e
 
             domain = self.get_column_value(row, domain_column_name)
-            if (domain != None):
+            if domain:
                 user['domain'] = domain
+            elif username != email:
+                user['domain'] = email[email.find('@')+1:]
 
             sa = {}
             for col in recognized_column_names:
