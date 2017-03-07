@@ -92,8 +92,8 @@ def init_log(logging_config):
     builder = user_sync.config.OptionsBuilder(logging_config)
     builder.set_bool_value('log_to_file', False)
     builder.set_string_value('file_log_directory', 'logs')
-    builder.set_string_value('file_log_level', 'debug')
-    builder.set_string_value('console_log_level', None)    
+    builder.set_string_value('file_log_level', 'info')
+    builder.set_string_value('console_log_level', 'info')
     options = builder.get_options()
         
     level_lookup = {
@@ -105,11 +105,18 @@ def init_log(logging_config):
     }
     
     console_log_level = level_lookup.get(options['console_log_level'])
-    if (console_log_level != None):
-        console_log_handler.setLevel(console_log_level)
-    
+    if (console_log_level == None):
+        console_log_level = logging.INFO
+        logger.log(logging.WARNING, 'Unknown console log level: %s setting to info' % options['console_log_level'])
+    console_log_handler.setLevel(console_log_level)
+
+
     if options['log_to_file'] == True:
-        file_log_level = level_lookup.get(options['file_log_level'], logging.NOTSET)
+        unknown_file_log_level = False
+        file_log_level = level_lookup.get(options['file_log_level'])
+        if (file_log_level == None):
+            file_log_level = logging.INFO
+            unknown_file_log_level = True
         file_log_directory = options['file_log_directory']
         if not os.path.exists(file_log_directory):
             os.makedirs(file_log_directory)
@@ -119,6 +126,8 @@ def init_log(logging_config):
         fileHandler.setLevel(file_log_level)
         fileHandler.setFormatter(logging.Formatter(LOG_STRING_FORMAT, LOG_DATE_FORMAT))        
         logging.getLogger().addHandler(fileHandler)
+        if (unknown_file_log_level == True):
+            logger.log(logging.WARNING, 'Unknown file log level: %s setting to info' % options['file_log_level'])
         
 def begin_work(config_loader):
     '''
@@ -127,7 +136,7 @@ def begin_work(config_loader):
 
     directory_groups = config_loader.get_directory_groups()
     owning_dashboard_config = config_loader.get_dashboard_options_for_owning()
-    trustee_dashboard_configs = config_loader.get_dashboard_options_for_trustees()
+    accessor_dashboard_configs = config_loader.get_dashboard_options_for_accessors()
     rule_config = config_loader.get_rule_options()
 
     referenced_organization_names = set()
@@ -136,10 +145,10 @@ def begin_work(config_loader):
             organization_name = group.organization_name
             if (organization_name != user_sync.rules.OWNING_ORGANIZATION_NAME):
                 referenced_organization_names.add(organization_name)
-    referenced_organization_names.difference_update(trustee_dashboard_configs.iterkeys())
+    referenced_organization_names.difference_update(accessor_dashboard_configs.iterkeys())
     
     if (len(referenced_organization_names) > 0):
-        raise user_sync.error.AssertionException('dashboard_groups have references to unknown trustee dashboards: %s' % referenced_organization_names) 
+        raise user_sync.error.AssertionException('dashboard_groups have references to unknown accessor dashboards: %s' % referenced_organization_names) 
                 
     directory_connector = None
     directory_connector_options = None
@@ -155,11 +164,11 @@ def begin_work(config_loader):
         directory_connector.initialize(directory_connector_options)
     
     dashboard_owning_connector = user_sync.connector.dashboard.DashboardConnector("owning", owning_dashboard_config)
-    dashboard_trustee_connectors = {}    
-    for trustee_organization_name, trustee_config in trustee_dashboard_configs.iteritems():
-        dashboard_trustee_conector = user_sync.connector.dashboard.DashboardConnector("trustee.%s" % trustee_organization_name, trustee_config)
-        dashboard_trustee_connectors[trustee_organization_name] = dashboard_trustee_conector 
-    dashboard_connectors = user_sync.rules.DashboardConnectors(dashboard_owning_connector, dashboard_trustee_connectors)
+    dashboard_accessor_connectors = {}    
+    for accessor_organization_name, accessor_config in accessor_dashboard_configs.iteritems():
+        dashboard_accessor_conector = user_sync.connector.dashboard.DashboardConnector("accessor.%s" % accessor_organization_name, accessor_config)
+        dashboard_accessor_connectors[accessor_organization_name] = dashboard_accessor_conector 
+    dashboard_connectors = user_sync.rules.DashboardConnectors(dashboard_owning_connector, dashboard_accessor_connectors)
 
     rule_processor = user_sync.rules.RuleProcessor(rule_config)
     if (len(directory_groups) == 0 and rule_processor.will_manage_groups()):
@@ -266,7 +275,7 @@ def main():
         
     except user_sync.error.AssertionException as e:
         if (not e.is_reported()):
-            logger.error(e.message)
+            logger.critical(e.message)
             e.set_reported()    
     except:
         try:

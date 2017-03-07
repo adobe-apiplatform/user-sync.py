@@ -24,6 +24,7 @@ Admin Console.
 * Python 2.7+
 * User Management API Credentials (see [the official documentation](https://www.adobe.io/products/usermanagement/docs/gettingstarted))
 * Accessible LDAP server (optional)
+* If running on Windows, a 64 bit version of Windows is required.
 
 # Installation
 
@@ -39,6 +40,24 @@ Requirements:
 * GNU Make
 
 To build, run `make pex` from the command line in the main repo directory.
+
+## Build Instructions for local execution and debugging on Windows
+
+Builds and execution are setup for 64 bit windows versions.
+
+First, there are several projects that do not have good 64 bit builds for Windows platforms.  These are enum34, python_ldap, and pyYaml.  Acceptable builds are in the misc/build/Win64 folder and these can be used directly.  You can also check http://www.lfd.uci.edu/~gohlke/pythonlibs/
+
+Load dependencies into interpreter directory:
+    
+	pip install -r misc\build\Win64\python-ldap-requirements.txt
+  pip install -r misc\build\requirements.txt
+
+The requirements will usually be loaded into C:\Python27\lib\site-packages if C:\Python27 is your install directory and you aren't specifying any options that send things elsewhere.
+
+To set up PyCharm for debugging, 
+1. Make sure you are using 64 bit python interpreter.  File Settings Project Interpreter
+2. Make sure interprter isn't overridden in run configuration
+3. Set up a run configuration based on Python that references the user_sync\app.py file as the script, and has the command line parameters you want to test with (e.g. --users file test.csv).  Working directory works best as the folder with your config files.
 
 # Basic Usage
 
