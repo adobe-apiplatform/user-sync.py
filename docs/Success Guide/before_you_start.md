@@ -1,6 +1,6 @@
 ## What You Need To Know Before You Start
 
-[Back to Contents](setup_config_files.md) |  [Next Section](layout_orgs.md)
+[Back to Contents](Contents.md) |  [Next Section](layout_orgs.md)
 
 ### Introduction to User Sync
 

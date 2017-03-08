@@ -3,6 +3,8 @@
 
 In this step, you will need to create a picture of your directory, Adobe organization, and user configuration.  This should include the LDAP query for selecting the users, and list of domains where the users are based.  (If a user has email n@d.com, d.com is the domain of the user.)
 
+&#9744; In this section, there are several alternate configurations shown.  You'll be doing the steps for only one of them.
+
 ### Simplest Case
 
 &#9744; You’ll need the LDAP query that selects the set of users to be sync’d with Adobe.  This will go into one of the user sync configuration files in a later step.

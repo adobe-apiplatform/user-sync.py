@@ -3,6 +3,8 @@ Version 1.1 2017-03-06
 
 This guide walks you trough the steps needed to understand and setup the User Sync Tool.
 
+&#9744; Throughout this guide, steps you need to complete are marked with the box symbol.  These steps require you to gather some information for a later step, or to take some specific action.
+
 ## Table of Contents
 
 1. [What you need to know before you start](before_you_start.md)
