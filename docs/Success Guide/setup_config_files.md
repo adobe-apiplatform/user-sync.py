@@ -1,7 +1,8 @@
 ## Setup Configuration Files
 
 
-[Back to Contents](Contents.md)
+[Previous Section](install_sync.md) | [Back to Contents](Contents.md) |  [Next Section](test_run.md)
+
 
 Now comes the step where we put everything together.  You’ll need:
 
@@ -105,3 +106,5 @@ These are optional items in the main configuration file
 - Note that Federated accounts that are not in the directory cannot log in anyway (because login is handled by the ID provider where the user is no longer listed)
 
 \*  Future feature
+
+[Previous Section](install_sync.md) | [Back to Contents](Contents.md) |  [Next Section](test_run.md)

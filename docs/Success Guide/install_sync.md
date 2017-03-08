@@ -1,5 +1,7 @@
 ## Install user sync
 
+[Previous Section](identify_server.md) | [Back to Contents](Contents.md) |  [Next Section](setup_config_files.md)
+
 Once you have access to the server where user sync will run, pick a directory where you will install and operate user sync.
 
 On Windows, you will need to install Python.  As of this writing, version 2.7.13 is recommended.  Windows and Python need to be 64 bit versions.
@@ -29,3 +31,6 @@ Windows only: You’ll need to install Python (2.7.13 or later, 64 bit) on the m
 Copy in the example config files, also.
 
 ![install2](images/install_config_files.png)
+
+
+[Previous Section](identify_server.md) | [Back to Contents](Contents.md) |  [Next Section](setup_config_files.md)

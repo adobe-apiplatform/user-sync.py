@@ -1,6 +1,8 @@
 # User Sync Tool - Setup and Success Guide
 Version 1.1 2017-03-06
 
+This guide walks you trough the steps needed to understand and setup the User Sync Tool.
+
 ## Table of Contents
 
 1. [What you need to know before you start](before_you_start.md)

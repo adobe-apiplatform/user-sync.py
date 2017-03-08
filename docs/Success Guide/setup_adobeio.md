@@ -1,5 +1,7 @@
 ## Setup an Adobe.io integration
 
+[Previous Section](decide_deletion_policy.md) | [Back to Contents](Contents.md) |  [Next Section](identify_server.md)
+
 - Adobe has designed a secure protocol for applications to integrate with Adobe Apis and user sync is such an application.
 - Setup steps are pretty well documented:
   - For complete information about the integration setup process and certificate requirements, see  https://www.adobe.io/products/usermanagement/docs/setup
@@ -9,3 +11,5 @@
   - You will need a public key certificate file and a private key file.
   - You’ll want to protect the private key file as you would a root password.
 - Once setup, the Adobe.io console displays all needed values.  You’ll copy these into the user sync configuration file.
+
+[Previous Section](decide_deletion_policy.md) | [Back to Contents](Contents.md) |  [Next Section](identify_server.md)
