@@ -8,7 +8,15 @@ On Windows, you will need to install Python.  As of this writing, version 2.7.13
 
 On Windows, you also are very likely to need to set an environment variable PEX_ROOT to C:\user_sync\.pex.  This is needed to work around Windows pathname length limits.
 
-The next few slides show the installation process.
+Initial steps:
+
+&#9744; Setup a user and directory for installing and running sync.  For example, we'll create a folder /home/user_sync and a user user_sync.  On Windows an example would be C:\Users\user_sync\user_sync_tool.
+
+&#9744; Windows only: set the environment variable **PEX\_ROOT** to **C:\user_sync\.pex**.
+
+&#9744; Windows only: Install python 2.7.13 (or later in the 2.7 series), 64 bit. 
+
+The next few sections show the installation process.
 
 To find the latest release:  Start here: 
 https://github.com/adobe-apiplatform/user-sync.py
@@ -18,17 +26,17 @@ https://github.com/adobe-apiplatform/user-sync.py
 Select “release”
 
 
-Download the the examples.config.tar.gz, User Sync Guide, and build for your platform, osx, ubuntu, windows, or centos.
-
 ![install2](images/install_release_screen.png)
 
-Setup a folder to contain the user sync tool and config files.
+&#9744; Download the examples.config.tar.gz, User Sync Guide, and build for your platform, osx, ubuntu, windows, or centos.
 
-Place the user-sync file for your OS in the folder.
+&#9744; Extract the user-sync (or user-sync.pex) file from the archive and place the file for your OS in the folder.  In our example, this would be /home/user_sync/user-sync or C:\Users\user_sync\user_sync_tool\user-sync.pex.
 
-Windows only: You’ll need to install Python (2.7.13 or later, 64 bit) on the machine also.
+&#9744; In the examples.config.tar.gz file there is a directory **config files - basic**.  From this folder extract the first 3 files and place in the user_sync folder.  
 
-Copy in the example config files, also.
+&#9744; Next, rename the 3 config example files by removing the leading "1 ", "2 ", and "3 " from the names.  We will edit these files to create the real user sync configuration files.
+
+
 
 ![install2](images/install_config_files.png)
 

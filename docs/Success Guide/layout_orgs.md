@@ -14,6 +14,8 @@ Most configurations look like this.  There is a single directory and a single Ad
 
 &#9744; You need to claim each domain on the Adobe Admon Console for the Adobe Organization in which it will be managed.
 
+&#9744; Gather the credential information you need to access the directory.  We recommend creating a read-only directory access account and using that to access the AD or LDAP, or other directory system.
+
 ![Simple Configuration](images/layout_orgs_simple.PNG)
 
 ### Multiple Adobe Organizations
@@ -32,6 +34,9 @@ You'll need:
 
 -  Be prepared to set up multiple user sync installs in later steps.
 
+-  &#9744; Gather the credential information you need to access the directory.  We recommend creating a read-only directory access account and using that to access the AD or LDAP, or other directory system.
+
+
 
 
 ![Multi Configuration](images/layout_orgs_multi.png)
@@ -41,6 +46,9 @@ You'll need:
 This are basically two instances of everything; You’ll need to run two sync configurations; one for each directory and organization
 
 If licenses in one org are to be used by users in the other org, setup is more complex.
+
+&#9744; Gather the credential information you need to access the directories.  We recommend creating a read-only directory access account and using that to access the AD or LDAP, or other directory system.  Note that you may need different credentials to access each directory instance.
+
 
 ![Multi orgs and multiple directories](images/layout_orgs_multi_dir_multi_org.png)
 
@@ -53,6 +61,9 @@ You’ll need to run two sync configurations; one for each directory.
 User Groups (UG) and Product License Configurations (PLC) must not overlap.  That is, each user group and PLC and be managed by only a single instance of user sync.
 
 You cannot have user sync delete users when configured this way.
+
+&#9744; Gather the credential information you need to access the directories.  We recommend creating a read-only directory access account and using that to access the AD or LDAP, or other directory system.  Note that you may need different credentials to access each directory instance.
+
 
 ![Multi directories and single org](images/layout_orgs_multi_dir_single_org.png)
 
