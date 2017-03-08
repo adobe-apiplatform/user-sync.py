@@ -1,6 +1,6 @@
 ##Make a test run to check configuration
 
-[Previous Section](before_you_start.md) | [Back to Contents](Contents.md) |  [Next Section](monitoring.md)
+[Previous Section](setup_config_files.md) | [Back to Contents](Contents.md) |  [Next Section](monitoring.md)
 
 To invoke user sync:
 
@@ -28,5 +28,5 @@ This may run for a really long time.  **Need simpler test.**
 ![img](images/test_run_screen.png)
 
 
-[Previous Section](before_you_start.md) | [Back to Contents](Contents.md) |  [Next Section](monitoring.md)
+[Previous Section](setup_config_files.md) | [Back to Contents](Contents.md) |  [Next Section](monitoring.md)
 

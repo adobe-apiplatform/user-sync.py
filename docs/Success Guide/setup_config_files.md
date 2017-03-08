@@ -84,12 +84,17 @@ You shouldn't need to make any changes here.  The ldap line is used if you are u
 
 If you are not managing licenses via user-sync, you can skip the group mapping parts.
 
-	dashboard:
-	  owning: dashboard-config.yml
-	directory:
-	  default_country_code: US
-	  connectors:
-	     ldap: connector-ldap.yml
+You can provision user accounts by adding them to an enterprise directory group using LDAP/AD tools rather than the Adobe Admin Console.  Then, the config file defines a mapping from directory groups to Adobe PLCs.  If a user is a member of a directory group, user-sync will add them to the corresponding PLC.  Same for removal.
+
+
+&#9744; Edit the group mapping part of the file.  For each directory groups D that should map to an Adobe PLC or user group P, add an entry after "groups:" of the form
+
+	    - directory_group: D
+	      dashboard_groups: 
+	        - P
+
+A more realistic example is:
+
 	  groups:
 	    - directory_group: acrobat_pro_dc
 	      dashboard_groups: 
@@ -98,39 +103,32 @@ If you are not managing licenses via user-sync, you can skip the group mapping p
 	      dashboard_groups:
 	        - All Apps
 	  user_identity_type: enterpriseID
-	logging:
-	  log_to_file: True
-	  file_log_directory: logs
-	  file_log_level: info
-	# limits and user_removal discussed later
 
 
 
-Some customers want to provision user accounts by adding them to an enterprise directory group using LDAP/AD tools rather than the Adobe Admin Console.
 
-To support this, the config file defines a mapping from directory groups to Adobe PLCs.
-
-If a user is a member of a directory group, user-sync will add them to the corresponding PLC.
-
-Same for removal.
 
 ![](images/setup_config_group_map.png)
 
 ##### Delete Limits 
 
-Prevention for accidental account deletion
+Limits on deletion prevent accidental account deletion in the event of misconfiguration or some other problem that results in user sync not getting proper data from the directory system.
+
+&#9744; If you expect higher churn in accounts, you will need to raise the max\_deletions\_per\_run item to a value around your expected number of deletions per run of sync.
+
+&#9744; If you expect the number of directory users to drop by more than 200 between user sync runs, then you will need to raise the max\_missing\_users value.  These config file entries are to prevent runaway deletion in case of misconfiguration or other problems.
 
 	limits:
 	    max_deletions_per_run: 10   # ceiling on disable/remove/delete
 	    max_missing_users: 200      # abort if this many directory users disappear
 
-These config file entries are to prevent runaway deletion in case of misconfiguration or other problems.
 
-Raise these values if you will routinely delete more than 10 users per run, or if the size of the directory routinely fluctuates by more than 200 users.
 
 ##### Delete Protection*
 
-If you want to drive account creation and removal through User Sync, and want to manually create a few accounts then you may need this feature to keep User Sync from deleting your manually created accounts
+If you want to drive account creation and removal through User Sync, and want to manually create a few accounts then you may need this feature to keep User Sync from deleting your manually created accounts.
+
+&#9744; If you need to use this feature, add the lines such as below to the config file at the top level.  Note that this feature is not available at this point in time.
 
 	user_removal:
 	    - exclude_group: special_users   
@@ -144,7 +142,15 @@ These are optional items in the main configuration file
 - These apply to the disable/removal/or deletion of accounts by User Sync
 - Note that Federated accounts that are not in the directory cannot log in anyway (because login is handled by the ID provider where the user is no longer listed)
 
+\*  Future feature
+
 ##### Logging
+
+User sync produces log entries that are printed to standard output and also written to a log file.  The logging set of configuration settings control details of where and how much log information is output.
+
+log\_to\_file turns the file log on or off.  Messages can be on one of 5 level of importance and you can choose the lowest importance that will be included for either the file log or standard output log to the console.  The defaults are to produce the file log and to include messages of level "info" or higher.  This is the recommended setting.
+
+&#9744; Review the settings for logs and make any desired changes.
 
 	logging:
 	  # specifies whether you wish to generate a log file
@@ -161,7 +167,5 @@ These are optional items in the main configuration file
 
 
 
-
-\*  Future feature
 
 [Previous Section](install_sync.md) | [Back to Contents](Contents.md) |  [Next Section](test_run.md)
