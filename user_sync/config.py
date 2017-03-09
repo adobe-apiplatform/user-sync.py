@@ -49,6 +49,7 @@ class ConfigLoader(object):
             'directory_connector_module_name': None,
             'directory_connector_overridden_options': None,
             'directory_group_filter': None,
+            'directory_group_mapped': False,
             'username_filter_regex': None,
             'directory_source_filters': None,
 
@@ -356,6 +357,7 @@ class ConfigLoader(object):
         options = self.options
         result = {
             'directory_group_filter': options['directory_group_filter'],
+            'directory_group_mapped': options['directory_group_mapped'],
             'username_filter_regex': options['username_filter_regex'],
             'new_account_type': new_account_type,
             'manage_groups': options['manage_groups'],
