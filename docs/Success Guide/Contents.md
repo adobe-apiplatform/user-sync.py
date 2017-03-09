@@ -9,7 +9,7 @@ This guide walks you through the steps needed to understand and setup the User S
 
 1. [What you need to know before you start](before_you_start.md)
 2. [Layout your organization, groups, and directories](layout_orgs.md)
-3. [Layout your Adobe products, PLCs, and user groups](layout_products.md)
+3. [Layout your Adobe products, Product Configurations, and user groups](layout_products.md)
 4. [Decide how you will handle account deletion](decide_deletion_policy.md)
 5. [Setup an Adobe.io integration](setup_adobeio.md)
 6. [Identify and setup the server where user sync will run. ](identify_server.md)
