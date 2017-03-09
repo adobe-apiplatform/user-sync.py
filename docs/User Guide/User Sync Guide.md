@@ -1,7 +1,4 @@
-<img src="./media/adobe-logo.png"
-	 width="60" height="60"
-	 style="float: right;"
-	 />
+![Adobe Logo](media/adobe-logo.png)
 
 # Introduction
 
@@ -87,7 +84,7 @@ information from the task of removing users or memberships. There
 are a number of options for handling the removal task.
 
 For more information about usage models and how to implement
-them, see the [Usage Scenarios](#_Usage_Scenarios) section below.
+them, see the [Usage Scenarios](#Usage-Scenarios) section below.
 
 # Setup and Installation
 
@@ -97,7 +94,7 @@ Console. For more information about how to do this, see the
 [Configure Services](https://helpx.adobe.com/enterprise/help/configure-services.html#configure_services_for_group)
 help page.
 
-## Set up a User Management API integration on adobe.io
+## Set up a User Management API integration on Adobe I/O
 
 The User Sync tool is a client of the User Management API. Before
 you install the tool, you must register it as a client of the API
@@ -107,19 +104,15 @@ to add an Enterprise Key integration in order to obtain the
 credentials the tool needs to access the Adobe User Management
 system.
 
-The steps required for integration are described in the
+The steps required for creating an integration are described in
+detail in the
 [Setting up Access](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/setup.html)
-section of the Adobe I/O User Management API website.
-
-- The registration process requires that you create a
-certificate.  Instructions are included in the documentation on
-Adobe I/O.
-- For complete information about the integration setup process
-and certificate requirements, see
-<https://www.adobe.io/products/usermanagement/docs/setup>.
-
-When the process is complete, you will get an **API key**, a
-**client ID**, and a **client secret** that the tool will use to
+section of the Adobe I/O User Management API website.  The
+process requires that you create an integration-specific
+certificate, which may self-signed.  When the process is
+complete, you will be assigned an **API key**, a **Technical
+account ID**, an **Organization ID**, and a **client secret**
+that the tool will use, along with your cerficate information, to
 communicate securely with the Admin Console. When you install the
 User Sync tool, you must provide these as initial configuration
 values that the tool requires to access your organization's user
@@ -182,7 +175,7 @@ might be called “all_apps”.
 Make a note of the names you choose for these groups, and which
 Adobe groups they correspond to. You will use this to set up a
 mapping in the main User Sync configuration file. See details in
-the [Configure group mapping](#_Configure_group_mapping) section
+the [Configure group mapping](#Configure-group-mapping) section
 below.
 
 ![Figure 2: Group Mapping Overview](media/group-mapping.png)
@@ -212,9 +205,9 @@ tool.
 
 ### Installation
 
-The User Sync Tool is available on github at
-<https://github.com/adobe-apiplatform/user-sync.py>. To install
-the tool:
+The User Sync Tool is available from the
+[User Sync repository on GitHub](https://github.com/adobe-apiplatform/user-sync.py). To
+install the tool:
 
 1. Click the **Releases** link to locate the latest release,
 which contains the release notes, this documentation, sample
@@ -238,7 +231,7 @@ files in the package are optional and/or alternate versions for
 specific purposes. You can copy these to your root folder, then
 rename and edit them to make your own configuration files. (See
 the following section,
-[Configuring the User Sync Tool](#_Configuring_the_User).)
+[Configuring the User Sync Tool](#Configuring-the-User-Sync-Tool).)
 
 5. **In Windows only:**
 
@@ -271,11 +264,13 @@ should be take to keep these files save from unauthorized access.
 #### Configuration files
 
 Configuration files must include sensitive information, such as
-your Adobe UM API key, the path to your private certificate, and
-the credentials for your enterprise directory (if you have
-one). You must take necessary steps to protect all configuration
-files and ensure that only authorized users are able to access
-them.
+your Adobe User Management API key, the path to your certificate
+private key, and the credentials for your enterprise directory
+(if you have one). You must take necessary steps to protect all
+configuration files and ensure that only authorized users are
+able to access them. In particular: do not allow read access to
+any file containing sensitive information except from the user
+account that runs the sync process.
 
 If you are having User Sync access your corporate directory, it
 must be configured to read from the directory server using a
@@ -345,8 +340,8 @@ folder as the command-line executable.
 
 If you need to set up access to users in other organizations that
 have granted you access, you can include additional configuration
-files. For details, see
-[Advanced Configuration: Accessing Other Domains](#_Advance_Configuration:_Accessing)
+files. For details, see the
+[advanced configuration instructions](#Accessing-Groups-in-Other-Organizations)
 below.
 
 ## Setting up configuration files
@@ -399,16 +394,10 @@ The two connection configuration files store the credentials that
 give User Sync access to the Adobe Admin Console and to your
 enterprise LDAP directory. In order to isolate the sensitive
 information needed to connect to the two systems, all actual
-credential details are confined to these two files.
-
-<div style="border: 1px solid red; padding: 6px;">
-
-<font color="red">**Important Security Notes:**</font>
-
-- The connection configuration files contain sensitive information that must be kept secure. These credentials are used to access your Adobe organization and your enterprise LDAP directory on your behalf. Limit  access to authorized individuals or store the data in a credential management system.
-- The service account used to access your LDAP should be limited to read-only access. The account should not have write permission in the enterprise directory
-
-</div>
+credential details are confined to these two files. **Be sure to
+secure them properly**, as described in the
+[Security Considerations](#Security-Considerations) section of
+this document.
 
 ### Configure connection to the Adobe Admin Console
 
@@ -506,7 +495,7 @@ Before you can synchronize user groups and entitlements, you must
 create User Groups and Product License Configurations in the
 Adobe Admin Console, and corresponding groups in your enterprise
 directory, as described above in
-[Set up product-access synchronization](#_Set_up_product-access).
+[Set up product-access synchronization](#Set-up-product-access-synchronization).
 
 **NOTE:** All groups must exist and have the specified names on
 both sides. The tool does not create any groups on either side;
@@ -789,25 +778,23 @@ specific behavior in various situations.
 There are various ways to integrate the User Sync tool into
 your enterprise processes, such as:
 
-<dl>
-	<dt>Update users and group memberships</dt>
-	<dd>Sync users and group memberships by adding, updating,
-	and deleting users in Adobe User Management system.
-	This is the most general and common use case.</dd>
-	<dt>Sync only user information</dt>
-	<dd>Sync only user information. Product access is to be
-    handled using the Admin Console.</dd>
-	<dt>Filter users to sync</dt>
-	<dd>You can choose to limit user-information sync to users in
-    given groups, or limit sync to users that match a given
-    pattern. You can also sync against a CSV file rather than an
-    LDAP directory system.</dd>
-	<dt>Update users and group memberships, but handle deletions separately</dt>
-	<dd>Sync users and group memberships by adding and updating
-    users, but do not delete users in the initial call. Instead
-    keep a list of users to be deleted, then perform the
-    deletions in a separate call.</dd>
-</dl>
+* Update users and group memberships
+	Sync users and group memberships by adding, updating,
+and deleting users in Adobe User Management system.
+This is the most general and common use case.
+* Sync only user information 
+	Sync only user information. Product access is to be
+handled using the Admin Console.
+* Filter users to sync
+	You can choose to limit user-information sync to users in
+given groups, or limit sync to users that match a given
+pattern. You can also sync against a CSV file rather than an
+LDAP directory system.
+* Update users and group memberships, but handle deletions separately
+	Sync users and group memberships by adding and updating
+users, but do not delete users in the initial call. Instead
+keep a list of users to be deleted, then perform the
+deletions in a separate call.
 
 This section provides detailed instructions for each of these scenarios.
 
@@ -1176,10 +1163,10 @@ extensions:
 	  - Acrobat_Sunday_Special
 	  - Group for Test 011 TCP
 	after_mapping_hook: |
-	  bc = source_attributes\['bc'\]
-	  subco = source_attributes\['subco'\]
+	  bc = source_attributes['bc']
+	  subco = source_attributes['subco']
 	  if bc is not None:
-		  target_attributes\['country'\] = bc\[0:2\]
+		  target_attributes['country'] = bc[0:2]
 		  target_groups.add(bc)
 	  if subco is not None:
 		  target_groups.add(subco)
@@ -1210,7 +1197,7 @@ section of the main configuration file, they are listed under
 **extended_dashboard_groups**. This list effectively extends the
 set of dashboard groups that are considered on the Adobe
 side. See
-[Advanced Group and Product Management](#advanced-group-and-product-management)
+[Advanced Group and Product Management](#Advanced-Group-and-Product-Management)
 for more information.
 
 ### Hook code variables
@@ -1326,7 +1313,7 @@ to update user data as needed. The frequency with which you
 choose to execute the application depends on how often your
 enterprise directory changes.
 
-## Security considerations
+## Security recommendations
 
 Given the nature of the data in the configuration and log files,
 a server should be dedicated for this task and locked down with
