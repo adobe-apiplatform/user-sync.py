@@ -10,22 +10,23 @@ Now comes the step where we put everything together.  You’ll need:
 - Private key file
 - Directory system access credentials and information about how users are organized
 - Decision of whether you are managing product access via user sync
-  - Product License Configuration names and user group names for how you want licenses organized on the Adobe side
+  - Product Configuration names and user group names for how you want licenses organized on the Adobe side
+  - Product Configurations and user groups need to have been already created on the Adobe Admin Console.
 
 Be sure to use a text editor, not a word processing editor.
 
 Be sure to use spaces, not tabs in .yml files.
 
 
-### Let’s setup the configuration files.
+### Let’s Setup the Configuration Files
 
-In previous steps, you set up a file system directory for the user sync tool Python code and configuration files.  There are three configuration files to set up now.  One is for accessing the directory system, one is for accessing the Adobe organization, and one defines the group mapping and configures other user sync features. 
+In previous steps, you set up a file system directory for the user sync tool Python code and configuration files.  There are three configuration files to set up now.  One is for accessing the directory system, one is for accessing your Adobe organization, and one defines the group mapping and configures other User Sync features. 
 
 #### Directory Access Configuration File
 
-If you are driving user sync file a file, you can skip this step.  Setup a csv file with your entire user list following the "csv inputs - user and remove lists/1 users-file.csv" file example.  This file is in the examples.config.tar.gz download from the release.
+If you are driving User Sync from a file, you can skip this step.  Setup a csv file with your entire user list following the "csv inputs - user and remove lists/1 users-file.csv" file example.  This file is in the examples.config.tar.gz download from the release.
 
-&#9744; Edit the file connector-ldap.yml.  This file has access information to the directory.  Put in username, password, host, and base_dn values
+&#9744; Edit the file connector-ldap.yml.  This file has access information to the directory system.  Put in username, password, host, and base_dn values.
 
 &#9744; Read through the rest of the file to see what else could be specified which might apply in your installation.  Usually, nothing else is required.
 
@@ -38,7 +39,7 @@ If you need a non-default LDAP query to select the desired set of users, it is s
 
 &#9744; Edit the dashboard-config.yml.  Put in the information from the adobe.io integration you created earlier.  This would be the org\_id, api\_key, client\_secret, and tech\_acct.
 
-&#9744; Place the private key file in the user-sync folder The priv\_key\_path config file items is then set to the name of this file.
+&#9744; Place the private key file in the user_sync_tool folder The priv\_key\_path config file items is then set to the name of this file.
 
 ![](images/setup_config_umapi.png)
 
@@ -82,12 +83,12 @@ You shouldn't need to make any changes here.  The ldap line is used if you are u
 
 ##### Group Map
 
-If you are not managing licenses via user-sync, you can skip the group mapping parts.
+If you are not managing licenses via User Sync, you can skip this section where we set the group mapping.
 
-You can provision user accounts by adding them to an enterprise directory group using LDAP/AD tools rather than the Adobe Admin Console.  Then, the config file defines a mapping from directory groups to Adobe PLCs.  If a user is a member of a directory group, user-sync will add them to the corresponding PLC.  Same for removal.
+You can provision user accounts by adding them to an enterprise directory group using LDAP/AD tools rather than the Adobe Admin Console.  Then, the config file defines a mapping from directory groups to Adobe PCs.  If a user is a member of a directory group, user-sync will add them to the corresponding PC.  Same for removal.
 
 
-&#9744; Edit the group mapping part of the file.  For each directory groups D that should map to an Adobe PLC or user group P, add an entry after "groups:" of the form
+&#9744; Edit the group mapping part of the file.  For each directory groups D that should map to an Adobe PC or user group P, add an entry after "groups:" of the form
 
 	    - directory_group: D
 	      dashboard_groups: 
@@ -102,9 +103,6 @@ A more realistic example is:
 	    - directory_group: all_apps
 	      dashboard_groups:
 	        - All Apps
-	  user_identity_type: enterpriseID
-
-
 
 
 
@@ -112,11 +110,11 @@ A more realistic example is:
 
 ##### Delete Limits 
 
-Limits on deletion prevent accidental account deletion in the event of misconfiguration or some other problem that results in user sync not getting proper data from the directory system.
+Limits on deletion prevent accidental account deletion in the event of misconfiguration or some other problem that results in User Sync not getting proper data from the directory system.
 
 &#9744; If you expect higher churn in accounts, you will need to raise the max\_deletions\_per\_run item to a value around your expected number of deletions per run of sync.
 
-&#9744; If you expect the number of directory users to drop by more than 200 between user sync runs, then you will need to raise the max\_missing\_users value.  These config file entries are to prevent runaway deletion in case of misconfiguration or other problems.
+&#9744; If you expect the number of directory users to drop by more than 200 between User Sync runs, then you will need to raise the max\_missing\_users value.  These config file entries are to prevent runaway deletion in case of misconfiguration or other problems.
 
 	limits:
 	    max_deletions_per_run: 10   # ceiling on disable/remove/delete
@@ -140,15 +138,17 @@ These are optional items in the main configuration file
 - exclude: a user name or pattern.  Any matching users are not removed
 - exclude_adobe_id:  this causes any account of type AdobeId to not be removed
 - These apply to the disable/removal/or deletion of accounts by User Sync
-- Note that Federated accounts that are not in the directory cannot log in anyway (because login is handled by the ID provider where the user is no longer listed)
+- Note that Federated accounts that are not in the directory cannot log in anyway (because login is handled by the ID provider and the user is no longer listed there)
 
 \*  Future feature
 
 ##### Logging
 
-User sync produces log entries that are printed to standard output and also written to a log file.  The logging set of configuration settings control details of where and how much log information is output.
+User Sync produces log entries that are printed to standard output and also written to a log file.  The logging set of configuration settings control details of where and how much log information is output.
 
-log\_to\_file turns the file log on or off.  Messages can be on one of 5 level of importance and you can choose the lowest importance that will be included for either the file log or standard output log to the console.  The defaults are to produce the file log and to include messages of level "info" or higher.  This is the recommended setting.
+log\_to\_file turns the file log on or off.  
+
+Messages can be on one of 5 level of importance and you can choose the lowest importance that will be included for either the file log or standard output log to the console.  The defaults are to produce the file log and to include messages of level "info" or higher.  This is the recommended setting.
 
 &#9744; Review the settings for logs and make any desired changes.
 

@@ -1,4 +1,4 @@
-## Decide how you will handle account deletion
+## Decide How You Will Handle Account Deletion
 
 [Previous Section](layout_products.md) | [Back to Contents](Contents.md) |  [Next Section](setup_adobeio.md)
 
@@ -8,11 +8,11 @@ When accounts are disabled or deleted from the directory you often want the corr
 
 
 
-Choices available for handling Adobe account deletion via user sync:
+Choices available for handling Adobe account deletion via User Sync:
 
   - Take no action.  Account cleanup must be handled manually.
 
-  - Generate list of accounts to be deleted, but no action is taken now.  The list can be edited and later used to drive account deletion through user sync.
+  - Generate list of accounts to be deleted, but no action is taken now.  The list can be edited and later used to drive account deletion through User Sync.
 
   - Recover all licenses given by your org to the account, but leave the account active. *
 
@@ -22,12 +22,12 @@ Choices available for handling Adobe account deletion via user sync:
 
 \*  feature coming late March, 2017
 
-Some account deletion things to know:
+Some things to know about account deletion:
 
   - Removing the Adobe account may delete assets, settings, etc. that are later needed
  
   - You can only “delete” accounts if they are in a domain that your org owns.
-  - You may have users in your org that are owned by other orgs.  This happens by way of requesting access to another domain owned by a different org which then allows you to add users from that domain to your own org and grant those users licenses that you own.
+  - You may have users in your org that are in domains owned by other orgs.  This happens by way of requesting access to another domain owned by a different org which then allows you to add users from that domain to your own org and grant those users licenses that you own.
     - You can recover licenses you granted such users
     - You can remove them from your org, but you cannot delete such accounts because they are owned by a different org.
     - If you try to delete such an account, it has the same effect as removing the user from your org
