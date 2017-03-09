@@ -778,23 +778,20 @@ specific behavior in various situations.
 There are various ways to integrate the User Sync tool into
 your enterprise processes, such as:
 
-* Update users and group memberships
-	Sync users and group memberships by adding, updating,
-and deleting users in Adobe User Management system.
-This is the most general and common use case.
-* Sync only user information 
-	Sync only user information. Product access is to be
-handled using the Admin Console.
-* Filter users to sync
-	You can choose to limit user-information sync to users in
-given groups, or limit sync to users that match a given
-pattern. You can also sync against a CSV file rather than an
-LDAP directory system.
-* Update users and group memberships, but handle deletions separately
-	Sync users and group memberships by adding and updating
-users, but do not delete users in the initial call. Instead
-keep a list of users to be deleted, then perform the
-deletions in a separate call.
+* **Update users and group memberships.** Sync users and group
+memberships by adding, updating, and deleting users in Adobe User
+Management system.  This is the most general and common use case.
+* **Sync only user information.** Use this approach if product
+access is to be handled using the Admin Console.
+* **Filter users to sync.** You can choose to limit user-information
+sync to users in given groups, or limit sync to users that match
+a given pattern. You can also sync against a CSV file rather than
+a directory system.
+* **Update users and group memberships, but handle deletions
+separately.** Sync users and group memberships by adding and
+updating users, but do not delete users in the initial
+call. Instead keep a list of users to be deleted, then perform
+the deletions in a separate call.
 
 This section provides detailed instructions for each of these scenarios.
 
