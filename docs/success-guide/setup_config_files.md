@@ -1,7 +1,11 @@
-## Setup Configuration Files
+---
+layout: default
+---
+
+# Setup Configuration Files
 
 
-[Previous Section](install_sync.md) | [Back to Contents](Contents.md) |  [Next Section](test_run.md)
+[Previous Section](install_sync.md) \| [Back to Contents](index.md) \| [Next Section](test_run.md)
 
 
 Now comes the step where we put everything together.  You’ll need:
@@ -18,11 +22,11 @@ Be sure to use a text editor, not a word processing editor.
 Be sure to use spaces, not tabs in .yml files.
 
 
-### Let’s Setup the Configuration Files
+## Let’s Setup the Configuration Files
 
 In previous steps, you set up a file system directory for the user sync tool Python code and configuration files.  There are three configuration files to set up now.  One is for accessing the directory system, one is for accessing your Adobe organization, and one defines the group mapping and configures other User Sync features. 
 
-#### Directory Access Configuration File
+### Directory Access Configuration File
 
 If you are driving User Sync from a file, you can skip this step.  Setup a csv file with your entire user list following the "csv inputs - user and remove lists/1 users-file.csv" file example.  This file is in the examples.config.tar.gz download from the release.
 
@@ -35,7 +39,7 @@ If you are driving User Sync from a file, you can skip this step.  Setup a csv f
 If you need a non-default LDAP query to select the desired set of users, it is setup in this file as part of the all\_users\_filter config parameter.
 
 
-#### Adobe UMAPI Credentials 
+### Adobe UMAPI Credentials 
 
 &#9744; Edit the dashboard-config.yml.  Put in the information from the adobe.io integration you created earlier.  This would be the org\_id, api\_key, client\_secret, and tech\_acct.
 
@@ -43,11 +47,11 @@ If you need a non-default LDAP query to select the desired set of users, it is s
 
 ![](images/setup_config_umapi.png)
 
-#### Main User Sync config file 
+### Main User Sync config file 
 
 Edit the user-sync-config.yml file.
 
-##### Default Country Code
+#### Default Country Code
 
 	directory:
 	  # (optional) Default country code to use if directory doesn't provide one for a user [Must be two-letter ISO-3166 code - see https://en.wikipedia.org/wiki/ISO_3166-1]
@@ -63,7 +67,7 @@ and set the code to the appropriate country.  Don't change the indent level of t
 
 A country code is **REQUIRED** for Federated Ids and recommended for Enterprise Ids.  If not supplied for Enterprise Ids, the user will be prompted to choose a country when they first log in.
 
-#### Connectors
+### Connectors
 
 	  connectors:
 	    # specifies the configurations for the difference directory connectors
@@ -81,7 +85,7 @@ A country code is **REQUIRED** for Federated Ids and recommended for Enterprise 
 
 You shouldn't need to make any changes here.  The ldap line is used if you are using a non-default name for the ldap directory access config file.
 
-##### Group Map
+#### Group Map
 
 If you are not managing licenses via User Sync, you can skip this section where we set the group mapping.
 
@@ -108,7 +112,7 @@ A more realistic example is:
 
 ![](images/setup_config_group_map.png)
 
-##### Delete Limits 
+#### Delete Limits 
 
 Limits on deletion prevent accidental account deletion in the event of misconfiguration or some other problem that results in User Sync not getting proper data from the directory system.
 
@@ -122,7 +126,7 @@ Limits on deletion prevent accidental account deletion in the event of misconfig
 
 
 
-##### Delete Protection*
+#### Delete Protection*
 
 If you want to drive account creation and removal through User Sync, and want to manually create a few accounts then you may need this feature to keep User Sync from deleting your manually created accounts.
 
@@ -142,7 +146,7 @@ These are optional items in the main configuration file
 
 \*  Future feature
 
-##### Logging
+#### Logging
 
 User Sync produces log entries that are printed to standard output and also written to a log file.  The logging set of configuration settings control details of where and how much log information is output.
 
@@ -168,4 +172,4 @@ Messages can be on one of 5 level of importance and you can choose the lowest im
 
 
 
-[Previous Section](install_sync.md) | [Back to Contents](Contents.md) |  [Next Section](test_run.md)
+[Previous Section](install_sync.md) \| [Back to Contents](index.md) \| [Next Section](test_run.md)

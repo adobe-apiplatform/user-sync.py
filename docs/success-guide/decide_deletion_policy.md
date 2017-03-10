@@ -1,6 +1,10 @@
-## Decide How You Will Handle Account Deletion
+---
+layout: default
+---
 
-[Previous Section](layout_products.md) | [Back to Contents](Contents.md) |  [Next Section](setup_adobeio.md)
+# Decide How You Will Handle Account Deletion
+
+[Previous Section](layout_products.md) \| [Back to Contents](index.md) \|  [Next Section](setup_adobeio.md)
 
 
 When accounts are disabled or deleted from the directory you often want the corresponding Adobe account removed, but removing the Adobe account may delete assets, settings, etc. that are later needed.  Also, Adobe Id accounts that may be in your organization cannot be deleted because the account belongs to the end user.  However, licenses you granted to the Adobe Id user can be recovered when you want to remove that user from your organization.
@@ -39,5 +43,5 @@ Some things to know about account deletion:
 Note that Federated Id users cannot login once they have been removed from the directory because login and access are controlled by the company-run identity provider rather than Adobe.  Enterprise Id users can still login unless the account is actually deleted even though they  may not have licenses granted for any products.  Adobe Id users can always login since the user owns the account.  If they have been removed from your organization, they will no longer have any licenses that you may have granted them.
 
 
-[Previous Section](layout_products.md) | [Back to Contents](Contents.md) |  [Next Section](setup_adobeio.md)
+[Previous Section](layout_products.md) \| [Back to Contents](index.md) \|  [Next Section](setup_adobeio.md)
 

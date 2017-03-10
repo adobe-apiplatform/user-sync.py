@@ -1,11 +1,16 @@
-## Layout Your Organization, Groups, and Directories
-[Previous Section](before_you_start.md) | [Back to Contents](Contents.md) |  [Next Section](layout_products.md)
+---
+layout: default
+---
+
+# Layout Your Organization, Groups, and Directories
+
+[Previous Section](before_you_start.md) \| [Back to Contents](index.md) \| [Next Section](layout_products.md)
 
 In this step, you will need to create a picture of your directory, Adobe organization, and user configuration.  This should include the LDAP query for selecting the users, and list of domains where the users are based.  (If a user has email n@d.com, d.com is the domain of the user.)
 
 &#9744; In this section, there are several alternate configurations shown.  You'll be doing the steps for only one of them.
 
-### Simplest and Most Common Case
+## Simplest and Most Common Case
 
 Most configurations look like this.  There is a single directory and a single Adobe organization. All user might be selected as users to go into Adobe, or only a subset such as members of a particular directory group.  You will have to decide how this should be set up for your organization and have the LDAP query that selected the right users.
 
@@ -18,7 +23,7 @@ Most configurations look like this.  There is a single directory and a single Ad
 
 &#9744; Gather the credential information you need to access the directory.  We recommend creating a read-only directory access account and using that to access the AD or LDAP, or other directory system.
 
-### Multiple Adobe Organizations
+## Multiple Adobe Organizations
 
 You’ll need to run two sync instances, one for each organization.  This basically involves installing user sync twice with each install in a different file directory.
 
@@ -40,7 +45,7 @@ You'll need:
 
 ![Multi Configuration](images/layout_orgs_multi.png)
 
-### Multi-Directory and Multi-Organization
+## Multi-Directory and Multi-Organization
 
 This are basically two instances of everything; You’ll need to run two sync configurations; one for each directory and organization
 
@@ -63,7 +68,7 @@ You'll need:
  Note that you may need different credentials to access each directory instance.
 
 
-### Multi-Directory and Single Orgaanization
+## Multi-Directory and Single Orgaanization
 
 You’ll need to run two sync configurations; one for each directory.
 
@@ -86,4 +91,4 @@ You'll need:
  Note that you may need different credentials to access each directory instance.
 
 
-[Previous Section](before_you_start.md) | [Back to Contents](Contents.md) |  [Next Section](layout_products.md)
+[Previous Section](before_you_start.md) \| [Back to Contents](index.md) \| [Next Section](layout_products.md)
