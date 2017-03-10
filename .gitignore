@@ -69,6 +69,9 @@ target/
 # pyenv
 .python-version
 
+# rbenv
+.ruby-version
+
 # celery beat schedule file
 celerybeat-schedule
 
@@ -87,3 +90,8 @@ ENV/
 
 # JetBrains
 .idea/
+
+# Jekyll
+_site
+.sass-cache
+.jekyll-metadata
