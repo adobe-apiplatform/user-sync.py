@@ -1,17 +1,31 @@
-![Adobe Logo](media/adobe-logo.png)
-
-# Introduction
+---
+layout: page
+title: User Sync Guide
+---
 
 User Sync, from Adobe, is a command-line tool that moves user and
-group information from your organization's enterprise directory
-system (such as Active Directory or other LDAP system) to the
+group information from your organization's LDAP-compatible
+enterprise directory system (such as Active Directory) to the
 Adobe User Management system.
 
-Each time you run the tool it looks for differences between the
-user information in the two systems, and updates the Adobe system
-to match the enterprise directory.
+Each time you run User Sync it looks for differences between the
+user information in the two systems, and updates the Adobe
+directory to match your directory.
 
-## Prerequisites
+### Table of Contents
+{: .no-toc}
+
+* Table of Contents
+{:toc}
+
+## Introduction
+
+This guide has all the information you need to get up and running
+with User Sync. It presumes familiarity with the use of command
+line tools on your local operating system, as well as a general
+understanding of the operation of enterprise directory systems.
+
+### Prerequisites
 
 You run User Sync on the command line or from a script, from a
 server that your enterprise operates, which must have Python
@@ -38,7 +52,7 @@ User Groups and Product License Configurations. Membership in
 these groups controls which users in your organization can access
 which products.
 
-## Operation overview
+### Operation overview
 
 User Sync communicates with your enterprise directory through
 LDAP protocols. It communicates with Adobe's Admin Console
@@ -62,7 +76,7 @@ the User Sync configuration files.
 - User Sync makes the required changes to the Adobe Admin Console
 through the User Management API.
 
-## Usage models
+### Usage models
 
 The User Sync tool can fit into your business model in various
 ways, to help you automate the process of tracking and
@@ -86,7 +100,7 @@ are a number of options for handling the removal task.
 For more information about usage models and how to implement
 them, see the [Usage Scenarios](#Usage-Scenarios) section below.
 
-# Setup and Installation
+## Setup and Installation
 
 The use of the User Sync tool depends on your enterprise having
 set up Product License Configurations in the Adobe Admin
@@ -94,7 +108,7 @@ Console. For more information about how to do this, see the
 [Configure Services](https://helpx.adobe.com/enterprise/help/configure-services.html#configure_services_for_group)
 help page.
 
-## Set up a User Management API integration on Adobe I/O
+### Set up a User Management API integration on Adobe I/O
 
 The User Sync tool is a client of the User Management API. Before
 you install the tool, you must register it as a client of the API
@@ -118,7 +132,7 @@ User Sync tool, you must provide these as initial configuration
 values that the tool requires to access your organization's user
 information store in Adobe.
 
-## Set up product-access synchronization
+### Set up product-access synchronization
 
 If you plan to use the User Sync tool to update user access to
 Adobe products, you must create groups in your own enterprise
@@ -142,7 +156,7 @@ in the main configuration file. To do this, you must ensure that
 the groups exist on both sides, and that you know the exact
 corresponding names.
 
-### Check your products and product configurations
+#### Check your products and product configurations
 
 Before you start configuring User Sync, you must know what Adobe
 products your enterprise uses, and what Product License
@@ -164,7 +178,7 @@ products that are enabled for your enterprise. Click a product to
 see the details of Product License Configurations that have been
 defined for that product.
 
-### Create corresponding groups in your enterprise directory
+#### Create corresponding groups in your enterprise directory
 
 Once you have defined user groups and product configurations in
 the Adobe Admin Console, you must create and name corresponding
@@ -180,9 +194,9 @@ below.
 
 ![Figure 2: Group Mapping Overview](media/group-mapping.png)
 
-## Installing the User Sync tool
+### Installing the User Sync tool
 
-### System requirements
+#### System requirements
 
 The User Sync tool is implemented using Python, and requires
 Python version 2.7.9 or higher. For each environment in which you
@@ -203,7 +217,7 @@ installed before running the script. If it is not present in your
 system, you must install it before you install the User Sync
 tool.
 
-### Installation
+#### Installation
 
 The User Sync Tool is available from the
 [User Sync repository on GitHub](https://github.com/adobe-apiplatform/user-sync.py). To
@@ -254,14 +268,14 @@ the cache location, which prevents the path from exceeding the
 6. To run the User Sync tool, run the Python executable file,
 `user-sync` (or execute `python user-sync.pex` on Windows).
 
-### Security Considerations
+#### Security Considerations
 
 Because the User Sync application accesses sensitive information
 on both the customer and Adobe sides, its use involves a number
 of different files that contain sensitive information. Great care
 should be take to keep these files save from unauthorized access.
 
-#### Configuration files
+##### Configuration files
 
 Configuration files must include sensitive information, such as
 your Adobe User Management API key, the path to your certificate
@@ -279,7 +293,7 @@ it is recommended that it _not_ be given write access (so that
 unauthorized disclousre of the credential does not allow write
 access to whomever receives it).
 
-#### Certificate files
+##### Certificate files
 
 The files that contains the public and private keys, but
 especially the private key, contain sensitive information. You
@@ -292,7 +306,7 @@ and password. The best practice is to store the key files in a
 credential management system or use file system protection so
 that it can only be accessed by authorized users.
 
-#### Log files
+##### Log files
 
 Logging is enabled by default, and outputs all transactions
 against the User Management API to the console. You can configure
@@ -315,7 +329,7 @@ tool to disable logging to file. The tool continues to output the
 log transactions to the console, where the data is stored
 temporarily in memory during execution.
 
-## Support for the User Sync tool
+### Support for the User Sync tool
 
 For additional support for this utility, please open an issue in
 GitHub.  To help with the debugging process, include any log
@@ -326,15 +340,15 @@ information).
 Note that Adobe Customer Support is currently unable to provide
 support for the User Sync tool.
 
-# Configuring the User Sync Tool
+## Configuring the User Sync Tool
 
 The operation of the User Sync tool is controlled by a set of
 configuration files with these file names, located in the same
 folder as the command-line executable.
 
 | Configuration File | Purpose |
-|------|---------|
-| dashboard&#x2011;config.yml | Required. Contains credentials and access information for calling the Adobe User Management API. |
+|:------|:---------|
+| dashboard&#x2011;config.yml&nbsp;&nbsp; | Required. Contains credentials and access information for calling the Adobe User Management API. |
 | connector-ldap.yml | Required. Contains credentials and access information for accessing the enterprise LDAP directory. |
 | user-sync-config.yml | Required. Contains configuration options that define the mapping of directory groups to Adobe product configurations and user groups, and that control the update behavior. |
 
@@ -344,7 +358,7 @@ files. For details, see the
 [advanced configuration instructions](#Accessing-Groups-in-Other-Organizations)
 below.
 
-## Setting up configuration files
+### Setting up configuration files
 
 Examples of the three required files are provided in the `config
 files - basic` folder in the release artifact
@@ -388,7 +402,7 @@ dashboard_groups:
   - Photoshop Users
 ```
 
-## Create and secure connection configuration files
+### Create and secure connection configuration files
 
 The two connection configuration files store the credentials that
 give User Sync access to the Adobe Admin Console and to your
@@ -399,7 +413,7 @@ secure them properly**, as described in the
 [Security Considerations](#Security-Considerations) section of
 this document.
 
-### Configure connection to the Adobe Admin Console
+#### Configure connection to the Adobe Admin Console
 
 When you have obtained access and set up an integration with User
 Management in the Adobe I/O
@@ -429,7 +443,7 @@ enterprise:
 specified in `priv_key_path`, and that it is readable only to the
 user account that runs the tool.
 
-### Configure connection to your enterprise directory
+#### Configure connection to your enterprise directory
 
 Open your copy of the connector-ldap.yml file in a plain-text
 editor, and set these values to enable access to your enterprise
@@ -442,7 +456,7 @@ host: "FQDN.of.host"
 base_dn: "base_dn.of.directory"
 ```
 
-## Configuration options
+### Configuration options
 
 The main configuration file, user-sync-config.yml, is divided
 into several main sections: **dashboard**, **directory**,
@@ -470,7 +484,7 @@ in case of misconfiguration or other errors.
 - The **logging** section specifies an audit trail path and
 controls how much information is written to the log.
 
-### Configure connection files
+#### Configure connection files
 
 The main User Sync configuration file contains only the names of
 the connection configuration files that actually contain the
@@ -489,7 +503,7 @@ directory:
     ldap: connector-ldap.yml
 ```
 
-### Configure group mapping
+#### Configure group mapping
 
 Before you can synchronize user groups and entitlements, you must
 create User Groups and Product License Configurations in the
@@ -534,7 +548,7 @@ groups:
 	  - Accounting_Department
 ```
 
-### Configure limits
+#### Configure limits
 
 User accounts are removed from the Adobe dashboard when
 corresponding users are not present in the directory and the tool
@@ -576,7 +590,7 @@ users in one run. Others are left for a later run. If more than
 200 user accounts are not found in the enterprise directory, the
 run halts with an error.
 
-###  Configure logging
+####  Configure logging
 
 Log entries are written to the console from which the tool was
 invoked, and optionally to a log file that you specify. A new
@@ -644,12 +658,12 @@ the warning message. In this case, User Sync attempted to add the
 user "cceuser2@ensemble.ca". The add action failed because the
 user was not found.
 
-## Example configurations
+### Example configurations
 
 These examples show the configuration file structures and
 illustrate possible configuration values.
 
-#### user-sync-config.yml
+##### user-sync-config.yml
 
 ```YAML
 dashboard:
@@ -678,7 +692,7 @@ logging:
   console_log_level: debug
 ```
 
-#### connector-ldap.yml
+##### connector-ldap.yml
 
 ```YAML
 username: "LDAP_username"
@@ -690,7 +704,7 @@ group_filter_format: "(&(objectClass=posixGroup)(cn={group}))"
 all_users_filter: "(&(objectClass=person)(objectClass=top))"
 ```
 
-#### dashboard-config.yml
+##### dashboard-config.yml
 
 ```YAML
 server:
@@ -708,7 +722,7 @@ enterprise:
   priv_key_path: "Path to private.key goes here"
 ```
 
-## Testing your configuration
+### Testing your configuration
 
 Use these test cases to ensure that your configuration is working
 correctly, and that the product configurations are correctly
@@ -716,7 +730,7 @@ mapped to your enterprise directory security groups . Run the
 tool in test mode first (by supplying the -t parameter), so that
 you can see the result before running live.
 
-####  User Creation
+#####  User Creation
 
 1. Create one or more test users in enterprise directory.
 
@@ -726,7 +740,7 @@ you can see the result before running live.
 
 4. Check that test users were created in Adobe Admin Console.
 
-#### User Update
+##### User Update
 
 1. Modify product group membership of one or more test user.
 
@@ -735,7 +749,7 @@ you can see the result before running live.
 2. Check that test users in Adobe Admin Console were updated to
 reflect new product configuration membership.
 
-####  User Disable
+#####  User Disable
 
 1. Remove or disable one or more existing test users in your
 enterprise directory.
@@ -745,7 +759,7 @@ enterprise directory.
 3. Check that users were removed from configured product
 configurations in the Adobe Admin Console.
 
-# Command Parameters
+## Command Parameters
 
 Once the configuration files are set up, you can run the User
 Sync tool on the command line or in a script. To run the tool,
@@ -763,17 +777,19 @@ specific behavior in various situations.
 | `-h`<br />`--help` | Show this help message and exit.  |
 | `-v`<br />`--version` | Show program's version number and exit.  |
 | `-t`<br />`--test-mode` | Run API action calls in test mode (does not execute changes). Logs what would have been executed.  |
-| `-c` _filename_*<br />`--config-filename` _filename_* | The complete path to the main configuration file, absolute or relative to the working folder. Default filename is "user-sync-config.yml" |
-| `--users` `all`\|`file`\|`group` \[_arg1 ..._\] | Specify the users to be considered for sync. One of: <ul><li>`all` (Default)</li><li>`file` _filename_ (Input file with user names)</li><li>`group` *names* (comma-separated name list)</li></ul> |
+| `-c` _filename_<br />`--config-filename` _filename_ | The complete path to the main configuration file, absolute or relative to the working folder. Default filename is "user-sync-config.yml" |
+| `--users` `all`<br />`--users` `file` _input_path_<br />`--users` `group` _grp1,grp2_ | Specify the users to be selected for sync. The default is `all` meaning all users found in the directory. Specifying `file` means to take input user specifications from the CSV file named by the argument.  Specifying `group` interprets the argument as a comma-separated list of groups in the enterprise directory, and only users in those groups are selected. |
 | `--user-filter` _regex\_pattern_ | Limit the set of users that are examined for syncing to those matching a pattern specified with a regular expression. See the [Python regular expression documentation](https://docs.python.org/2/library/re.html) for information on constructing regular expressions in Python. |
-| `--source-filter` _connector_&colon;_file_ | Names a file containing LDAP filter settings. The filter is an LDAP query string that is passed directly to the LDAP server.  See the [sample above](#connector_ldap.yml) and others in the archive of examples. |
+| `--source-filter` _connector_:_file_ | Names a file containing LDAP filter settings. The filter is an LDAP query string that is passed directly to the LDAP server.  See the [sample above](#connector_ldap.yml) and others in the archive of examples. |
 | `--update-user-info` | When supplied, synchronizes user information. If the information differs between the customer side and the Adobe side, the Adobe side is updated to match. This includes the firstname and lastname fields. |
 | `--process-groups` | When supplied, synchronizes group membership information. If the membership in mapped groups differs between the customer side and the Adobe side, the group membership is updated on the Adobe side to match. |
 | `--remove-nonexistent-users` | When supplied, if Federated users are found on the Adobe side that are not in the customer-side directory, removes those user accounts from the organization. |
 | `--generate-remove-list` _output\_path_ | When supplied, if Federated users are found on the Adobe side that are not in the enterprise directory, lists those users to the given file. You can then pass this file to the `remove-list` argument in a subsequent run. |
 | `-d` _input\_path_<br>`--remove-list` _input\_path_ | Removes a list of users contained in the given file from the Adobe organization. |
+{: .bordertablestyle }
 
-# Usage Scenarios
+
+## Usage Scenarios
 
 There are various ways to integrate the User Sync tool into
 your enterprise processes, such as:
@@ -795,7 +811,7 @@ the deletions in a separate call.
 
 This section provides detailed instructions for each of these scenarios.
 
-## Update users and group memberships
+### Update users and group memberships
 
 This is the most typical and common type of invocation. The tool
 finds all changes to user information and to user-group and
@@ -812,7 +828,7 @@ user-sync-config.yml, contains a mapping from a directory group
 to an Adobe product configuration named **Default Acrobat Pro DC
 configuration**.
 
-### Command
+#### Command
 
 This invocation supplies both the users and process-groups
 parameters, and allows deletion with the remove-nonexistent-users
@@ -822,7 +838,7 @@ parameter.
 ./user-sync –c user-sync-config.yml --users all --process-groups --remove-nonexistent-users
 ```
 
-### Log output during operation
+#### Log output during operation
 
 ```text
 2017-01-20 16:51:02 6840 INFO main - ========== Start Run ==========
@@ -837,7 +853,7 @@ parameter.
 2017-01-20 16:51:07 6840 INFO main - ========== End Run (Total time: 0:00:05) ==========
 ```
 
-### View result
+#### View result
 
 When the synchronization succeeds, the Adobe Admin Console is
 updated.  After this command is executed, your dashboard in the
@@ -846,7 +862,7 @@ been added to the “Default Acrobat Pro DC configuration.”
 
 ![Figure 3: Admin Console Screenshot](media/edit-product-config.png)
 
-## Sync only users
+### Sync only users
 
 If you supply only the users parameter to the command, the action
 finds changes to user information in the enterprise directory and
@@ -859,7 +875,7 @@ membership. If you use the tool in this way, it is expected you
 will control access to Adobe products by updating user-group and
 product configuration memberships in the Adobe Admin Console.
 
-### Sync all users
+#### Sync all users
 
 This action finds changes in user information for all the users
 from the enterprise side, and updates that information on the
@@ -871,7 +887,7 @@ configuration or user group management.
 ./user-sync –c user-sync-config.yml --users all
 ```
 
-## Filter users to sync
+### Filter users to sync
 
 Whether or not you choose to sync group membership information,
 you can supply arguments to the users parameter that filter which
@@ -879,7 +895,7 @@ users are considered on the enterprise directory side, or that
 get user information from a CSV file instead of directly from the
 enterprise LDAP directory.
 
-### Sync only users in given groups
+#### Sync only users in given groups
 
 This action only looks for changes to user information for users
 in the specified groups from. It does not look at any other users
@@ -890,7 +906,7 @@ configuration or user group management.
 ./user-sync –c user-sync-config.yml --users groups "group1, group2, group3"
 ```
 
-### Sync only matching users
+#### Sync only matching users
 
 This action only looks for changes to user information for users
 whose user ID matches a pattern. The pattern is specified with a
@@ -901,7 +917,7 @@ user-sync --users all --user-filter 'bill@forxampl.com' --process-groups
 user-sync --users all --user-filter 'b.*@forxampl.com' --process-groups
 ```
 
-### Sync from a file
+#### Sync from a file
 
 This action syncs to user information supplied from a CSV file,
 instead of looking at the enterprise directory. An example of
@@ -911,7 +927,7 @@ such a file, example.users-file.csv, is provided with the tool.
 ./user-sync –c user-sync-config.yml --users file user_list.csv
 ```
 
-### Update users and group memberships, but handle deletions separately
+#### Update users and group memberships, but handle deletions separately
 
 If you do not supply the remove-nonexistent-users parameter,
 you can sync user and group memberships without removing any
@@ -929,7 +945,7 @@ can pass a CSV file of users that you have generated by some
 other means An example of such a file, example.users-file.csv,
 is provided with the tool.
 
-### Add users and generate a list of users to delete
+#### Add users and generate a list of users to delete
 
 This action synchronizes all users from the customer side with
 the Adobe side and also generates a list of users that no longer
@@ -940,7 +956,7 @@ side.
 ./user-sync –c user-sync-config.yml --users all --generate-remove-list users-to-remove.csv
 ```
 
-### Delete users from separate list
+#### Delete users from separate list
 
 This action takes a CSV file containing a list of users that have
 been flagged for deletion, and removes those users from the Adobe
@@ -956,7 +972,7 @@ Adobe side by the next sync action that adds users.
 ./user-sync –c user-sync-config.yml --remove-list users-to-remove.csv
 ```
 
-# Advanced Configuration
+## Advanced Configuration
 
 User Sync requires additional configuration to synchronize user
 data in environments with more complex data structuring.
@@ -968,7 +984,7 @@ groups defined in other organizations.
 and mappings, you must configure the tool to be able to recognize
 those customizations.
 
-## Accessing Groups in Other Organizations
+### Accessing Groups in Other Organizations
 
 A large enterprise can include multiple Adobe organizations. For
 example, suppose a company, Geometrixx, has multiple departments,
@@ -1009,7 +1025,7 @@ Sync root folder.
 - Tell the tool how to access these files.
 - Identify groups that are defined in an external organization.
 
-#### 1. Include additional configuration files
+##### 1. Include additional configuration files
 
 For each external organization to which you require access, you
 must add a configuration file that provides the access
@@ -1022,7 +1038,7 @@ according to the following convention:
 For the _OrgName_ element, use a short identifier that you choose
 to represent the organization.
 
-#### 2. Configure the tool to access the additional files
+##### 2. Configure the tool to access the additional files
 
 Your main configuration file must define the filename format of
 these additional configuration file names.
@@ -1051,7 +1067,7 @@ external organization.  Note that, like your own connection
 configuration file, they contain sensitive information that must
 be protected.
 
-#### 3. Identify groups defined externally
+##### 3. Identify groups defined externally
 
 When you specify your group mappings, you can map an enterprise
 directory group to a dashboard group defined in an external
@@ -1066,7 +1082,7 @@ group name. For example:
     - "org1::Default Adobe Enterprise Support Program configuration"
 ```
 
-## Custom Attributes and Mappings
+### Custom Attributes and Mappings
 
 You must configure User Sync to recognize any non-standard
 mappings between your enterprise-directory user data and Adobe
@@ -1103,7 +1119,7 @@ extensions:
 		pass # custom python code goes here
 ```
 
-### Adding custom attributes
+#### Adding custom attributes
 
 By default, User Sync captures these standard attributes for each
 user from the enterprise directory system:
@@ -1139,7 +1155,7 @@ directory information for a user, those attributes are
 ignored. Code references to such attributes will return the
 Python `None` value, which is normal and not an error.
 
-### Adding custom mappings
+#### Adding custom mappings
 
 Custom mapping code is configured using an extensions section in
 the main (user sync) config file. Within extensions, a per-user
@@ -1197,12 +1213,12 @@ side. See
 [Advanced Group and Product Management](#Advanced-Group-and-Product-Management)
 for more information.
 
-### Hook code variables
+#### Hook code variables
 
 The code in the `after_mapping_hook` is isolated from the rest of
 the User Sync program except for the following variables.
 
-#### Input values
+##### Input values
 
 The following variables can be read in the custom code.  They
 should not be written, and writes tot them have no effect; they
@@ -1216,7 +1232,7 @@ exist to express the source directory data about the user.
 * `source_groups`: A frozen set of directory groups found for a
 specific user while traversing configured directory groups.
 
-#### Input/output values
+##### Input/output values
 
 The following variables can be read and written by the custom
 code. They come in carrying data set by the default attribute and
@@ -1252,7 +1268,7 @@ place to store the code objects created by compiling these files.
 * `logger`: An object of type `logging.logger` which outputs to
 the console and/or file log (as per the logging configuration).
 
-## Advanced Group and Product Management
+### Advanced Group and Product Management
 
 The **group** section of the main configuration file defines a
 mapping of directory groups to Adobe user groups and product
@@ -1273,7 +1289,7 @@ configuration and they are removed from the enterprise directory,
 you would expect them to be removed from the group so that they
 are no longer allocated a license.
 
-![Figure 4: Group Mapping Example](media/group-mapping.png")
+![Figure 4: Group Mapping Example](media/group-mapping.png)
 
 This workflow can present difficulties if you want to divide the
 sync process into multiple runs in order to reduce the number of
@@ -1293,7 +1309,7 @@ group in its group map.  It updates membership in the user group,
 which indirectly updates the membership in the product
 configuration.
 
-# Deployment Best Practices
+## Deployment Best Practices
 
 The User Sync tool is designed to run with limited or no human
 interaction, once it is properly configured. You can use a
@@ -1310,7 +1326,7 @@ to update user data as needed. The frequency with which you
 choose to execute the application depends on how often your
 enterprise directory changes.
 
-## Security recommendations
+### Security recommendations
 
 Given the nature of the data in the configuration and log files,
 a server should be dedicated for this task and locked down with
@@ -1338,7 +1354,7 @@ reaches the rate limit. It is normal to see messages in the
 console indicating that the script has paused for a short amount
 of time before trying to execute again.
 
-## Scheduled task examples
+### Scheduled task examples
 
 You can use a scheduler provided by your operating system to run
 the User Sync tool periodically, as required by your
@@ -1355,7 +1371,7 @@ logging:
   console_log_level: info
 ```
 
-### Run with log analysis in Windows
+#### Run with log analysis in Windows
 
 The following example shows how to set up a batch file `run_sync.bat` in
 Windows.
@@ -1370,7 +1386,7 @@ sendmail -s “Adobe User Sync Report for today” UserSyncAdmins@example.com < 
 is no standard email command-line tool in Windows.  Several are
 available commercially.
 
-### Run with log analysis on Unix platforms
+#### Run with log analysis on Unix platforms
 
 The following example shows how to set up a shell file
 `run_sync.sh` on Linux or Mac OS X:
@@ -1379,9 +1395,9 @@ The following example shows how to set up a shell file
 user-sync --users file example.users-file.csv --process-groups | grep "CRITICAL\|WARNING\|ERROR\|=====\|-----" | mail -s “Adobe User Sync Report for `date +%F-%a`” UserSyncAdmins@example.com
 ```
 
-### Schedule a UserSync task
+#### Schedule a UserSync task
 
-#### Cron
+##### Cron
 
 This entry in the Unix crontab will run the User Sync tool at 4
 AM each day:
@@ -1394,7 +1410,7 @@ Cron can also be setup to email results to a specified user or
 mailing list. Check the documentation on cron for your system
 for more details.
 
-#### Windows Task Scheduler
+##### Windows Task Scheduler
 
 This code uses the Windows task scheduler to run the User Sync
 tool every day starting at 4:00 PM:
