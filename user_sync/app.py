@@ -205,7 +205,7 @@ def create_config_loader_options(args):
         elif (users_action == 'mapped'):
             config_options['directory_connector_module_name'] = 'user_sync.connector.directory_ldap'
             config_options['directory_group_mapped'] = True
-        elif (users_action == 'group'):            
+        elif (users_action == 'group'):
             if (len(users_args) == 0):
                 raise user_sync.error.AssertionException('Missing groups for --users %s [groups]' % users_action)
             config_options['directory_connector_module_name'] = 'user_sync.connector.directory_ldap'

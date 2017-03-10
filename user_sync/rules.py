@@ -139,27 +139,21 @@ class RuleProcessor(object):
         :type directory_connector: user_sync.connector.directory.DirectoryConnector
         '''
         self.logger.info('Building work list...')
-                
+        
         options = self.options
-
-        directory_group_names = set(mappings.iterkeys())
-        directory_group_filter = None
-
-        if (options['directory_group_mapped'] == True):
-            directory_group_filter = directory_group_names
-        else:
-            directory_group_filter = options['directory_group_filter']
-            if (directory_group_filter != None):
-                directory_group_filter = set(directory_group_filter)
-                directory_group_names.update(directory_group_filter)
-            
+        directory_group_filter = options['directory_group_filter']
+        if (directory_group_filter != None):
+            directory_group_filter = set(directory_group_filter)
         extended_attributes = options.get('extended_attributes')
         
         directory_user_by_user_key = self.directory_user_by_user_key        
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
         remove_user_key_list = self.remove_user_key_list
 
-        all_loaded, directory_users = directory_connector.load_users_and_groups(directory_group_names, extended_attributes)
+        directory_groups = set(mappings.iterkeys())
+        if (directory_group_filter != None):
+            directory_groups.update(directory_group_filter)
+            all_loaded, directory_users = directory_connector.load_users_and_groups(directory_groups, extended_attributes)
         if (not all_loaded and self.need_to_process_orphaned_dashboard_users):
             self.logger.warn('Not all users loaded.  Cannot check orphaned users...')
             self.need_to_process_orphaned_dashboard_users = False
