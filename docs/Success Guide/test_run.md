@@ -1,4 +1,4 @@
-##Make a test run to check configuration
+## Make a Test Run To Check Configuration
 
 [Previous Section](setup_config_files.md) | [Back to Contents](Contents.md) |  [Next Section](monitoring.md)
 
