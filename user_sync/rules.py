@@ -24,6 +24,7 @@ import logging
 import user_sync.connector.dashboard
 import user_sync.helper
 import user_sync.identity_type
+from CodeWarrior.CodeWarrior_suite import target
 
 OWNING_ORGANIZATION_NAME = None
 DESIGNATION_DELIMITER = ','
@@ -134,7 +135,7 @@ class RuleProcessor(object):
         for dashboard_groups in mappings.itervalues():
             for dashboard_group in dashboard_groups:
                 organization_info = self.get_organization_info(dashboard_group.organization_name)
-                organization_info.add_mapped_group(TargetGroup(dashboard_group))
+                organization_info.add_mapped_group(create_target_group_from_config_group(dashboard_group))
 
     def read_desired_user_groups(self, mappings, directory_connector):
         '''
@@ -212,7 +213,7 @@ class RuleProcessor(object):
                 target_group = ConfigGroup.get_dashboard_group(target_group_name, target_organization_name)
                 if (target_group is not None):
                     organization_info = self.get_organization_info(target_organization_name)
-                    organization_info.add_desired_group_for(user_key, TargetGroup(target_group))
+                    organization_info.add_desired_group_for(user_key, create_target_group_from_config_group(target_group))
                 else:
                     self.logger.error('Target dashboard group %s is not known; ignored', target_group_qualified_name)
 
@@ -624,24 +625,14 @@ class RuleProcessor(object):
             groups_to_add = None
             groups_to_remove = None
             if (manage_groups):
-                # generate a list of current groups to determine what to delete
                 current_group_names = self.normalize_groups(dashboard_user.get('groups'))
-                current_groups = set()
-                for current_group_name in current_group_names:
-                    current_groups.add(TargetGroup(current_group_name))
                 
-                groups_to_add = desired_groups - current_groups
-
-                # generate a list of what to delete. We can't use a union of current_groups_to_remove and groups,
-                # as it can't guarantee that it will return entries from groups rather than current_groups_to_remove
-                current_groups_to_remove = current_groups - desired_groups
-                target_groups = organization_info.get_mapped_groups()
-                groups_to_remove = set()
-                for current_group_to_remove in current_groups_to_remove:
-                    for target_group in target_groups:
-                        if (current_group_to_remove.group_name == target_group.group_name):
-                            groups_to_remove.add(target_group)
-                            break
+                # determine groups to add by excluding the current group names from desired groups
+                groups_to_add = filter_target_groups_by_excluding_names(desired_groups, current_group_names)
+                
+                # determine groups to remove
+                group_names_to_remove = filter_names_by_excluding_target_groups(current_group_names, desired_groups)
+                groups_to_remove = filter_target_groups_by_names(organization_info.get_mapped_groups(), group_names_to_remove)
 
             self.try_and_update_dashboard_user(organization_info, user_key, dashboard_connector, user_attribute_difference, groups_to_add, groups_to_remove, dashboard_user)
         
@@ -907,22 +898,37 @@ class ConfigGroup(object):
         '''
         return ConfigGroup.dashboard_groups.get((group_name, organization_name))
 
+def filter_target_groups_by_names(target_groups, target_group_names):
+    filtered_target_groups = set()
+    for target_group in target_groups:
+        if (target_group.group_name in target_group_names):
+            filtered_target_groups.add(target_group)
+    return filtered_target_groups
+
+def filter_target_groups_by_excluding_names(target_groups, target_group_excluded_names):
+    filtered_target_groups = set()
+    for target_group in target_groups:
+        if (target_group.group_name not in target_group_excluded_names):
+            filtered_target_groups.add(target_group)
+    return filtered_target_groups
+
+def filter_names_by_excluding_target_groups(target_group_names, target_groups_excluded):
+    target_group_excluded_names = set()
+    for target_group_excluded in target_groups_excluded:
+        target_group_excluded_names.add(target_group_excluded.group_name)
+    return target_group_names - target_group_excluded_names
+
+def create_target_group_from_config_group(config_group):
+    return TargetGroup(config_group.group_name, config_group.designation)
+
 class TargetGroup(object):
-    def __init__(self, group_name_or_config_group, organization_name=None, designation=None):
+    def __init__(self, group_name, designation=None):
         '''
         :type group_name: str
         :type organization_name: str
         '''
-        if isinstance(group_name_or_config_group, ConfigGroup):
-            config_group = group_name_or_config_group
-
-            self.group_name = user_sync.helper.normalize_string(config_group.group_name)
-            self.organization_name = config_group.organization_name
-            self.designation = config_group.designation
-        else:
-            self.group_name = user_sync.helper.normalize_string(group_name_or_config_group)
-            self.organization_name = organization_name
-            self.designation = designation
+        self.group_name = user_sync.helper.normalize_string(group_name)
+        self.designation = designation
 
     def __eq__(self, other):
         return self.group_name == other.group_name if other != None else False

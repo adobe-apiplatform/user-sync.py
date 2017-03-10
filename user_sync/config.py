@@ -385,20 +385,14 @@ class ConfigLoader(object):
         return connector_config
 
     @staticmethod
-    def create_dashboard_groups(dashboard_group_qualified_names):
-        dashboard_groups = []
-        for dashboard_group_qualified_name in dashboard_group_qualified_names:
-            dashboard_group = ConfigLoader.create_dashboard_group(dashboard_group_qualified_name)
-            dashboard_groups.append(dashboard_group)
-        return dashboard_groups
-
-    @staticmethod
     def create_dashboard_group(dashboard_group_qualified_name):
         # determine the designation
         designation = user_sync.rules.DESIGNATION_PRODUCT
         parts = dashboard_group_qualified_name.split(user_sync.rules.DESIGNATION_DELIMITER)
         if (len(parts) == 2):
             designation = parts.pop().strip()
+            if (not (designation == user_sync.rules.DESIGNATION_GROUP or designation == user_sync.rules.DESIGNATION_PRODUCT)):
+                raise user_sync.error.AssertionException("Unrecognized designation: %s" % designation)
 
         # separate the string into parts, this time without the designation portion
         parts = parts.pop().strip().split(GROUP_NAME_DELIMITER)
