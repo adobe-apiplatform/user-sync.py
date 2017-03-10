@@ -1,7 +1,24 @@
 ---
 layout: page
-title: User Sync Guide
+title: User Manual
+advertise: User Manual
 ---
+
+Version 1.1, released 2017-03-06
+
+This document has all the information you need to get up and
+running with User Sync. It presumes familiarity with the use of
+command line tools on your local operating system, as well as a
+general understanding of the operation of enterprise directory
+systems.
+
+### Table of Contents
+{:."no_toc"}
+
+* TOC Placeholder
+{:toc}
+
+## Introduction
 
 User Sync, from Adobe, is a command-line tool that moves user and
 group information from your organization's LDAP-compatible
@@ -11,19 +28,6 @@ Adobe User Management system.
 Each time you run User Sync it looks for differences between the
 user information in the two systems, and updates the Adobe
 directory to match your directory.
-
-### Table of Contents
-{: .no-toc}
-
-* Table of Contents
-{:toc}
-
-## Introduction
-
-This guide has all the information you need to get up and running
-with User Sync. It presumes familiarity with the use of command
-line tools on your local operating system, as well as a general
-understanding of the operation of enterprise directory systems.
 
 ### Prerequisites
 

@@ -1,9 +1,18 @@
-# User Sync Tool - Setup and Success Guide
-Version 1.1 2017-03-06
+---
+layout: page
+title: Setup and Success Guide
+advertise: Setup and Success Guide
+---
 
-This guide walks you through the steps needed to understand and setup the User Sync Tool.
+Version 1.1, released 2017-03-06
 
-&#9744; Throughout this guide, steps you need to complete are marked with the box symbol.  These steps require you to gather some information for a later step, or to take some specific action.
+This document walks you through the steps needed to understand
+and setup the User Sync Tool.
+
+Throughout this document, steps you need to complete are
+marked with the box symbol &#9744;.  These steps require you to gather
+some information for a later step, or to take some specific
+action.
 
 ## Table of Contents
 

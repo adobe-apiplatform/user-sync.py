@@ -1,9 +1,13 @@
-## Setup Scheduled Ongoing Execution of User Sync
+---
+layout: default
+---
+
+# Setup Scheduled Ongoing Execution of User Sync
 
 
-[Previous Section](command_line_options.md) | [Back to Contents](Contents.md) 
+[Previous Section](command_line_options.md) \| [Back to Contents](index.md) 
 
-### Setting Up Scheduled Run on Windows
+## Setting Up Scheduled Run on Windows
 
 First, create a batch file with the invocation of user-sync piped to a scan to pull out relevant log entries for a summary.  Create the file run_sync.bat for this with contents like:
 
@@ -25,7 +29,7 @@ Check the documentation on the windows task scheduler (help schtasks) for more d
 Note that often when setting up scheduled tasks, commands that work from the command line do not work in the scheduled task because the current directory or user id is different.  It is a good idea to run one of the test mode commands (described in the "Make a Test Run" section) the first time you try the scheduled task.
 
 
-### Setting Up Scheduled Run on Unix-Based Systems
+## Setting Up Scheduled Run on Unix-Based Systems
 
 First, create a shell script with the invocation of user-sync piped to a scan to pull out relevant log entries for a summary.  Create the file run_sync.sh for this with contents like:
 
@@ -44,5 +48,5 @@ Cron can also be setup to email results to a specified user or mailing list.  Ch
 Note that often when setting up scheduled tasks, commands that work from the command line do not work in the scheduled task because the current directory or user id is different.  It is a good idea to run one of the test mode commands (described in the "Make a Test Run" section) the first time you try the scheduled task.
 
 
-[Previous Section](command_line_options.md) | [Back to Contents](Contents.md) 
+[Previous Section](command_line_options.md) \| [Back to Contents](index.md) 
 

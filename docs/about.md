@@ -2,6 +2,7 @@
 layout: page
 title: About
 permalink: /about/
+advertise: About
 ---
 
 User Sync, from Adobe, is a command-line tool that moves user and
