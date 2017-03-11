@@ -26,6 +26,8 @@ import user_sync.helper
 import user_sync.identity_type
 from CodeWarrior.CodeWarrior_suite import target
 
+import umapi_client
+
 OWNING_ORGANIZATION_NAME = None
 DESIGNATION_DELIMITER = ','
 DESIGNATION_PRODUCT = 'productconfiguration'
@@ -163,7 +165,7 @@ class RuleProcessor(object):
             self.need_to_process_orphaned_dashboard_users = False
         
         for directory_user in directory_users:
-            user_key = RuleProcessor.get_directory_user_key(directory_user)
+            user_key = self.get_directory_user_key(directory_user)
             directory_user_by_user_key[user_key] = directory_user
             
             if not self.is_directory_user_in_groups(directory_user, directory_group_filter):
@@ -279,7 +281,7 @@ class RuleProcessor(object):
         '''
         username_filter_regex = self.options['username_filter_regex']
         if (username_filter_regex != None):
-            username = RuleProcessor.get_username_from_user_key(user_key)
+            username = self.get_username_from_user_key(user_key)
             search_result = username_filter_regex.search(username)
             if (search_result == None):
                 return False
@@ -369,13 +371,8 @@ class RuleProcessor(object):
             for user_key in remove_user_key_list:
                 dashboard_user = organization_info.get_dashboard_user(user_key)
                 if (dashboard_user != None):
-                    groups_to_remove = set()
                     dashboard_group_names = self.normalize_groups(self.dashboard_user.get('groups'))
-                    for dashboard_group_name in dashboard_group_names:
-                        for target_group in target_groups:
-                            if target_group.group_name == dashboard_group_name:
-                                groups_to_remove.add(target_group)
-                                break
+                    groups_to_remove = filter_target_groups_by_names(target_groups, dashboard_group_names)
                 elif not organization_info.is_dashboard_users_loaded():
                     groups_to_remove = target_groups
                 else:
@@ -386,13 +383,7 @@ class RuleProcessor(object):
                     username, domain = self.parse_user_key(user_key)
                     commands = user_sync.connector.dashboard.Commands(username=username, domain=domain)
 
-                    user_groups_to_remove = RuleProcessor.filter_dashboard_groups_by_type(groups_to_remove, DESIGNATION_GROUP)
-                    user_group_names_to_remove = RuleProcessor.get_dashboard_group_names(user_groups_to_remove)
-                    commands.remove_user_groups(user_group_names_to_remove)
-
-                    product_configs_to_remove = RuleProcessor.filter_dashboard_groups_by_type(groups_to_remove, DESIGNATION_PRODUCT)
-                    product_config_names_to_remove = RuleProcessor.get_dashboard_group_names(product_configs_to_remove)
-                    commands.remove_product_configs(product_config_names_to_remove)
+                    self.remove_groups(commands, groups_to_remove)
 
                     dashboard_connector.send_commands(commands, create_remove_groups_callback(user_key))
 
@@ -466,13 +457,7 @@ class RuleProcessor(object):
             desired_groups = owning_organization_info.get_desired_groups(user_key)
             groups_to_add = self.calculate_groups_to_add(owning_organization_info, user_key, desired_groups)
 
-            user_groups_to_add = RuleProcessor.filter_dashboard_groups_by_type(groups_to_add, DESIGNATION_GROUP)
-            user_group_names_to_add = RuleProcessor.get_dashboard_group_names(user_groups_to_add)
-            commands.add_user_groups(user_group_names_to_add)
-
-            product_configs_to_add = RuleProcessor.filter_dashboard_groups_by_type(groups_to_add, DESIGNATION_PRODUCT)
-            product_config_names_to_add = RuleProcessor.get_dashboard_group_names(product_configs_to_add)
-            commands.add_product_configs(product_config_names_to_add)
+            self.add_groups(commands, groups_to_add)
 
         def callback(response):
             self.adding_dashboard_user_key.discard(user_key)
@@ -521,23 +506,11 @@ class RuleProcessor(object):
 
         # add groups and products separately
         if (groups_to_add):
-            user_groups_to_add = RuleProcessor.filter_dashboard_groups_by_type(groups_to_add, DESIGNATION_GROUP)
-            user_group_names_to_add = RuleProcessor.get_dashboard_group_names(user_groups_to_add)
-            commands.add_user_groups(user_group_names_to_add)
-
-            product_configs_to_add = RuleProcessor.filter_dashboard_groups_by_type(groups_to_add, DESIGNATION_PRODUCT)
-            product_config_names_to_add = RuleProcessor.get_dashboard_group_names(product_configs_to_add)
-            commands.add_product_configs(product_config_names_to_add)
+            self.add_groups(commands, groups_to_add)
 
         # remove groups and products separately
         if (groups_to_remove):
-            user_groups_to_remove = RuleProcessor.filter_dashboard_groups_by_type(groups_to_remove, DESIGNATION_GROUP)
-            user_group_names_to_remove = RuleProcessor.get_dashboard_group_names(user_groups_to_remove)
-            commands.remove_user_groups(user_group_names_to_remove)
-
-            product_configs_to_remove = RuleProcessor.filter_dashboard_groups_by_type(groups_to_remove, DESIGNATION_PRODUCT)
-            product_config_names_to_remove = RuleProcessor.get_dashboard_group_names(product_configs_to_remove)
-            commands.remove_product_configs(product_config_names_to_remove)
+            self.remove_groups(commands, groups_to_remove)
 
         dashboard_connector.send_commands(commands)
 
@@ -591,13 +564,7 @@ class RuleProcessor(object):
                     # Next, check if that user is in mapped groups and if so, remove from those groups
                     dashboard_user_groups = dashboard_user.get('groups')
                     current_group_names = self.normalize_groups(dashboard_user_groups)
-
-                    # cycle through dashboard group names, and add target groups sharing those names to remove list
-                    groups_to_remove = set()
-                    for current_group_name in current_group_names:
-                        for target_group in organization_info.get_mapped_groups():
-                            if (target_group.group_name == current_group_name):
-                                groups_to_remove.add(target_group)
+                    groups_to_remove = filter_target_groups_by_names(organization_info.get_mapped_groups(), current_group_names)
 
                     # do actual removing
                     if len(groups_to_remove) > 0:
@@ -652,6 +619,26 @@ class RuleProcessor(object):
                 normalized_group_name = user_sync.helper.normalize_string(group_name)
                 result.add(normalized_group_name)
         return result
+
+    @staticmethod
+    def add_groups(commands, target_groups):
+        def add_groups_by_designation(target_group_designation, target_group_type):
+            sub_target_groups = filter_target_groups_by_designation(target_groups, target_group_designation)
+            sub_target_group_names = get_target_group_names(sub_target_groups)
+            commands.add_groups(sub_target_group_names, target_group_type)
+
+        add_groups_by_designation(DESIGNATION_GROUP, umapi_client.GroupTypes.usergroup)
+        add_groups_by_designation(DESIGNATION_PRODUCT, umapi_client.GroupTypes.product)
+
+    @staticmethod
+    def remove_groups(commands, target_groups):
+        def remove_groups_by_designation(target_group_designation, target_group_type):
+            sub_target_groups = filter_target_groups_by_designation(target_groups, target_group_designation)
+            sub_target_group_names = get_target_group_names(sub_target_groups)
+            commands.remove_groups(sub_target_group_names, target_group_type)
+
+        remove_groups_by_designation(DESIGNATION_GROUP, umapi_client.GroupTypes.usergroup)
+        remove_groups_by_designation(DESIGNATION_PRODUCT, umapi_client.GroupTypes.product)
 
     def calculate_groups_to_add(self, organization_info, user_key, desired_groups):
         '''
@@ -709,31 +696,6 @@ class RuleProcessor(object):
             if (value != dashboard_value):
                 differences[key] = value
         return differences        
-
-    @staticmethod
-    def filter_dashboard_groups_by_type(dashboard_groups, dashboard_group_type):
-        '''
-        Return a set of groups having the given group type.        
-        :type dashboard_groups: set(TargetGroup)
-        :type dashboard_group_type: str
-        '''
-        filtered_dashboard_groups = set()
-        for dashboard_group in dashboard_groups:
-            if (dashboard_group.designation == dashboard_group_type):
-                filtered_dashboard_groups.add(dashboard_group)
-        return filtered_dashboard_groups
-
-    @staticmethod
-    def get_dashboard_group_names(dashboard_groups):
-        '''
-        Return a set of groups having the given group type.        
-        :type dashboard_groups: set(TargetGroup)
-        :type dashboard_group_type: str
-        '''
-        dashboard_group_names = set()
-        for dashboard_group in dashboard_groups:
-            dashboard_group_names.add(dashboard_group.group_name)
-        return dashboard_group_names
 
     @staticmethod
     def get_directory_user_key(directory_user):
@@ -872,23 +834,26 @@ class ConfigGroup(object):
         self.group_name = group_name
         self.organization_name = organization_name
         self.designation = designation
+        self.key = None
+        
+        self.regenerate_key()
 
         ConfigGroup.dashboard_groups[(group_name, organization_name)] = self
     
-    def key(self):
-        return { 'group_name': self.group_name, 'organization_name': self.organization_name }
+    def regenerate_key(self):
+        self.key = { 'group_name': self.group_name, 'organization_name': self.organization_name }
 
     def __eq__(self, other):
-        return self.key() == other.key() if other != None else False
+        return self.key == other.key if other != None else False
 
     def __ne__(self, other):
-        return self.key() != other.key() if other != None else True
+        return self.key != other.key if other != None else True
     
     def __hash__(self):
-        return hash(frozenset(self.key()))
+        return hash(frozenset(self.key))
     
     def __str__(self):
-        return str(self.key())
+        return str(self.key)
 
     @classmethod
     def get_dashboard_group(cls, group_name, organization_name):
@@ -899,24 +864,61 @@ class ConfigGroup(object):
         return ConfigGroup.dashboard_groups.get((group_name, organization_name))
 
 def filter_target_groups_by_names(target_groups, target_group_names):
-    filtered_target_groups = set()
+    '''
+    Return a set of groups with names that are members of target_group_names.
+    :type target_groups: set(TargetGroup)
+    :type target_group_names: set(str)
+    '''
+    target_groups_filtered = set()
     for target_group in target_groups:
         if (target_group.group_name in target_group_names):
-            filtered_target_groups.add(target_group)
-    return filtered_target_groups
+            target_groups_filtered.add(target_group)
+    return target_groups_filtered
 
 def filter_target_groups_by_excluding_names(target_groups, target_group_excluded_names):
-    filtered_target_groups = set()
+    '''
+    Return a set of groups with names that are not a member of target_group_excluded_names.
+    :type target_groups: set(TargetGroup)
+    :type target_group_excluded_names: set(str)
+    '''
+    target_groups_filtered = set()
     for target_group in target_groups:
         if (target_group.group_name not in target_group_excluded_names):
-            filtered_target_groups.add(target_group)
-    return filtered_target_groups
+            target_groups_filtered.add(target_group)
+    return target_groups_filtered
+
+def filter_target_groups_by_designation(target_groups, target_group_designation):
+    '''
+    Return a set of groups having the given designation.        
+    :type target_groups: set(TargetGroup)
+    :type target_group_designation: str
+    '''
+    target_groups_filtered = set()
+    for target_group in target_groups:
+        if (target_group.designation == target_group_designation):
+            target_groups_filtered.add(target_group)
+    return target_groups_filtered
 
 def filter_names_by_excluding_target_groups(target_group_names, target_groups_excluded):
+    '''
+    Return a set of names from target_group_names with group names from target_groups_excluded removed.        
+    :type target_groups: set(TargetGroup)
+    :type target_group_designation: str
+    '''
     target_group_excluded_names = set()
     for target_group_excluded in target_groups_excluded:
         target_group_excluded_names.add(target_group_excluded.group_name)
     return target_group_names - target_group_excluded_names
+
+def get_target_group_names(target_groups):
+    '''
+    Return a set of group names given the target_groups.        
+    :type target_groups: set(TargetGroup)
+    '''
+    target_group_names = set()
+    for target_group in target_groups:
+        target_group_names.add(target_group.group_name)
+    return target_group_names
 
 def create_target_group_from_config_group(config_group):
     return TargetGroup(config_group.group_name, config_group.designation)

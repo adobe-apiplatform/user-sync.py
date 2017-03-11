@@ -244,7 +244,7 @@ def create_config_loader_options(args):
     
     return config_options
 
-def main():   
+def main():
     run_stats = None 
     try:
         try:

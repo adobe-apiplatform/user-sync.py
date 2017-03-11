@@ -142,12 +142,6 @@ class Commands(object):
             params = self.convert_user_attributes_to_params(attributes)
             self.do_list.append(('update', params))
 
-    def add_user_groups(self, groups_to_add):
-        self.add_groups(groups_to_add, umapi_client.GroupTypes.usergroup)
-
-    def add_product_configs(self, groups_to_add):
-        self.add_groups(groups_to_add, umapi_client.GroupTypes.product)
-
     def add_groups(self, groups_to_add, group_type):
         '''
         :type groups_to_add: set(str)
@@ -158,12 +152,6 @@ class Commands(object):
                 "group_type": group_type
             }
             self.do_list.append(('add_to_groups', params))
-
-    def remove_user_groups(self, groups_to_remove):
-        self.remove_groups(groups_to_remove, umapi_client.GroupTypes.usergroup)
-
-    def remove_product_configs(self, groups_to_remove):
-        self.remove_groups(groups_to_remove, umapi_client.GroupTypes.product)
 
     def remove_groups(self, groups_to_remove, group_type):
         '''
