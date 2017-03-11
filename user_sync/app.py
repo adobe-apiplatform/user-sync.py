@@ -139,6 +139,10 @@ def begin_work(config_loader):
     accessor_dashboard_configs = config_loader.get_dashboard_options_for_accessors()
     rule_config = config_loader.get_rule_options()
 
+    # process mapped configuration after the directory groups have been loaded, as mapped setting depends on this.
+    if (rule_config['directory_group_mapped']):
+        rule_config['directory_group_filter'] = set(directory_groups.iterkeys())
+
     referenced_organization_names = set()
     for groups in directory_groups.itervalues():
         for group in groups:
