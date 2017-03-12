@@ -231,9 +231,15 @@ class RuleProcessor(object):
         return False
     
     def process_dashboard_users(self, dashboard_connectors):
-        # Called from Main rules processor.
-        # Drives main updating of main organizations users, and then groups in organizations this run has access to.
         '''
+        This is where we actually "do the sync"; that is, where we match users on the two sides.
+        When we get here, we have loaded all the directory users *and* we have loaded all the dashboard users,
+        and (conceptually) we match them up, updating the dashboard users that match, marking the dashboard
+        users that don't match for deletion, and adding dashboard users for the directory users that didn't match.
+        What makes the code here more complex is that, instead of looping over users just once and
+        updating each user in all of the dashboard connectors at that time, we instead loop over users
+        once per org for which we have a dashboard connector, and we do the matching logic for each of
+        those orgs.
         :type dashboard_connectors: DashboardConnectors
         '''        
         manage_groups = self.will_manage_groups()
@@ -525,67 +531,79 @@ class RuleProcessor(object):
 
     def update_dashboard_users_for_connector(self, organization_info, dashboard_connector):
         '''
-        This is the main function that goes over all users and looks for and processes differences.
+        This is the main function that goes over dashboard users and looks for and processes differences.
+        It is called with a particular organization that it should manage groups against.
+        It returns a map from user keys to dashboard groups:
+            the keys are the user keys of all the selected directory users that don't exist in the target dashboard;
+            the value for each key is the set of dashboard groups in this org that the created user should be put into.
+        The use of this return value by the caller is to create the user and add him to the right groups.
         :type organization_info: OrganizationInfo
         :type dashboard_connector: user_sync.connector.dashboard.DashboardConnector
+        :rtype: map(string, set)
         '''
         directory_user_by_user_key = self.directory_user_by_user_key
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
-        
-        desired_groups_by_user_key = organization_info.get_desired_groups_by_user_key()
-        desired_groups_by_user_key = {} if desired_groups_by_user_key == None else desired_groups_by_user_key.copy()        
-        
+
+        # the way we construct the return vaue is to start with a map from all directory users
+        # to their groups in this org, make a copy, and pop off any dashboard users we find.
+        # That way, and key/value pairs left in the map are the unmatched dashboard users and their groups.
+        user_to_group_map = organization_info.get_desired_groups_by_user_key()
+        user_to_group_map = {} if user_to_group_map == None else user_to_group_map.copy()
+
+        # check to see if we should update dashboard user attributes and groups.
         options = self.options
         update_user_info = options['update_user_info']
         manage_groups = self.will_manage_groups() 
-        
+
+        # Walk all the dashboard users, getting their group data, matching them with directory users,
+        # and adjusting their attribute and group data accordingly.
         for dashboard_user in dashboard_connector.iter_users():
             user_key = self.get_dashboard_user_key(dashboard_user)
             organization_info.add_dashboard_user(user_key, dashboard_user)
+            attribute_differences = {}
+            current_groups = self.normalize_groups(dashboard_user.get('groups'))
+            groups_to_add = set()
+            groups_to_remove = set()
 
-            directory_user = directory_user_by_user_key.get(user_key)
-            if (directory_user == None):
-                # Found an Adobe dashboard user not in the directory.  Add to list of possible users to delete.
+            # If this dashboard user matches any directory user, pop them out of the
+            # map because we know they don't need to be created.
+            # Also, keep track of the mapped groups for the directory user
+            # so we can update the dashboard user's groups as needed.
+            desired_groups = user_to_group_map.pop(user_key, None) or set()
+
+            directory_user = filtered_directory_user_by_user_key.get(user_key)
+            if directory_user is None:
+                # There's no selected directory user matching this dashboard user,
+                # so we mark this dashboard user as an orphan, and we mark him
+                # for removal from any mapped groups.
                 organization_info.add_orphaned_dashboard_user(user_key, dashboard_user)
-
-                if (manage_groups):
-                    # Next, check if that user is in mapped groups and if so, remove from those groups
-                    current_groups = self.normalize_groups(dashboard_user.get('groups'))
+                self.logger.info("Adobe user not in input user set: %s", user_key)
+                if manage_groups:
                     groups_to_remove = current_groups & organization_info.get_mapped_groups()
-                    if groups_to_remove != None and len(groups_to_remove) > 0:
-                        self.logger.info("Adobe User not in Directory: %s", user_key)
+                    if len(groups_to_remove) > 0:
+                        self.logger.info("Removed from Groups: %s", groups_to_remove)
+            else:
+                # There is a selected directory user who matches this dashboard user,
+                # so mark any changed dashboard attributes,
+                # and mark him for addition and removal of the appropriate mapped groups
+                if update_user_info and organization_info.get_name() == OWNING_ORGANIZATION_NAME:
+                    attribute_differences = self.get_user_attribute_difference(directory_user, dashboard_user)
+                    if (len(attribute_differences) > 0):
+                        self.logger.info('Updating info for user key: %s changes: %s', user_key, attribute_differences)
+                if manage_groups:
+                    groups_to_add = desired_groups - current_groups
+                    if len(groups_to_add) > 0:
+                        self.logger.info("Added to Groups: %s", groups_to_add)
+                    groups_to_remove =  (current_groups - desired_groups) & organization_info.get_mapped_groups()
+                    if len(groups_to_remove) > 0:
                         self.logger.info("Removed from Groups: %s", groups_to_remove)
 
-                        self.try_and_update_dashboard_user(organization_info, user_key, dashboard_connector,
-                                                   None, None, groups_to_remove, dashboard_user)
+            # Finally, execute the attribute and group adjustments
+            self.try_and_update_dashboard_user(organization_info, user_key, dashboard_connector, attribute_differences, groups_to_add, groups_to_remove, dashboard_user)
 
-                continue     
-
-            # User is in directory so look for differences
-            desired_groups = desired_groups_by_user_key.pop(user_key, None)
-            if (desired_groups == None):
-                if (user_key not in filtered_directory_user_by_user_key):
-                    continue
-                desired_groups = set()
-            
-            user_attribute_difference = None
-            if (update_user_info and organization_info.get_name() == OWNING_ORGANIZATION_NAME):
-                user_attribute_difference = self.get_user_attribute_difference(directory_user, dashboard_user)
-                if (len(user_attribute_difference) > 0):
-                    self.logger.info('Updating info for user key: %s changes: %s', user_key, user_attribute_difference)
-            
-            groups_to_add = None
-            groups_to_remove = None    
-            if (manage_groups):        
-                current_groups = self.normalize_groups(dashboard_user.get('groups'))
-                groups_to_add = desired_groups - current_groups 
-                groups_to_remove =  (current_groups - desired_groups) & organization_info.get_mapped_groups()                
-
-            self.try_and_update_dashboard_user(organization_info, user_key, dashboard_connector, user_attribute_difference, groups_to_add, groups_to_remove, dashboard_user)
-        
+        # mark the org's dashboard users as processed and return the remaining ones in the map
         organization_info.set_dashboard_users_loaded()
-        
-        return desired_groups_by_user_key
+        return user_to_group_map
     
     @staticmethod
     def normalize_groups(group_names):
