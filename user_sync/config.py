@@ -355,7 +355,9 @@ class ConfigLoader(object):
                     self.logger.warning("Unrecognized extension context '%s' ignored", context)
         
         options = self.options
+        
         result = {
+            'directory_group_mapped': options['directory_group_mapped'],
             'directory_group_filter': options['directory_group_filter'],
             'username_filter_regex': options['username_filter_regex'],
             'new_account_type': new_account_type,

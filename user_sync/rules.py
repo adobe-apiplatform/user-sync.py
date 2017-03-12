@@ -145,7 +145,7 @@ class RuleProcessor(object):
         :type directory_connector: user_sync.connector.directory.DirectoryConnector
         '''
         self.logger.info('Building work list...')
-                
+        
         options = self.options
         directory_group_filter = options['directory_group_filter']
         if (directory_group_filter != None):
