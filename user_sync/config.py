@@ -186,32 +186,33 @@ class ConfigLoader(object):
     
     def get_directory_groups(self):
         '''
-        :rtype dict(str, list(user_sync.rules.Group))
+        :rtype dict(str, list(user_sync.rules.ConfigGroup))
         '''
-        adobe_groups_by_directory_group = {}
+        directory_groups_map = {}
         
         groups_config = None
         directory_config = self.main_config.get_dict_config('directory', True)
         if (directory_config != None):
-            groups_config = directory_config.get_list_config('groups', True)         
+            groups_config = directory_config.get_list_config('groups', True)
+
         if (groups_config == None):
-            return adobe_groups_by_directory_group
+            return directory_groups_map
         
         for item in groups_config.iter_dict_configs():
-            directory_group = item.get_string('directory_group')            
-            groups = adobe_groups_by_directory_group.get(directory_group)
-            if (groups == None):
-                adobe_groups_by_directory_group[directory_group] = groups = []
+            directory_group_name = item.get_string('directory_group')
+            dashboard_groups = directory_groups_map.get(directory_group_name)
+            if (dashboard_groups == None):
+                directory_groups_map[directory_group_name] = dashboard_groups = []
 
             dashboard_groups_config = item.get_list_config('dashboard_groups')
-            for dashboard_group in dashboard_groups_config.iter_values(types.StringTypes):
-                group = self.create_dashboard_group(dashboard_group)
-                if (group is None):
-                    validation_message = 'Bad dashboard group: "%s" in directory group: "%s"' % (dashboard_group, directory_group)
+            for dashboard_group_name in dashboard_groups_config.iter_values(types.StringTypes):
+                dashboard_group = ConfigLoader.create_dashboard_group(dashboard_group_name)
+                if (dashboard_group is None):
+                    validation_message = 'Bad dashboard group: "%s" in directory group: "%s"' % (dashboard_group_name, directory_group_name)
                     raise user_sync.error.AssertionException(validation_message)
-                groups.append(group)
+                dashboard_groups.append(dashboard_group)
 
-        return adobe_groups_by_directory_group
+        return directory_groups_map
 
     @staticmethod    
     def as_list(value):
@@ -341,8 +342,8 @@ class ConfigLoader(object):
                             # thoroughly tested.
                             #
                             for extended_dashboard_group in extension_config.get_list('extended_dashboard_groups'):
-                                group = self.create_dashboard_group(extended_dashboard_group)
-                                if (group is None):
+                                dashboard_group = ConfigLoader.create_dashboard_group(extended_dashboard_group)
+                                if (dashboard_group is None):
                                     validation_message = 'Bad dashboard group: "%s" in extension with context "%s"' % (extended_dashboard_group, context)
                                     raise user_sync.error.AssertionException(validation_message)
 
@@ -385,19 +386,35 @@ class ConfigLoader(object):
 
         return connector_config
 
-    def create_dashboard_group(self, dashboard_group_qualified_name):
-        parts = dashboard_group_qualified_name.split(GROUP_NAME_DELIMITER)
-        group_name = parts.pop()
+    @staticmethod
+    def create_dashboard_group(dashboard_group_qualified_name):
+        # determine the designation
+        designation = user_sync.rules.DESIGNATION_PRODUCT
+        parts = dashboard_group_qualified_name.split(user_sync.rules.DESIGNATION_DELIMITER)
+        if (len(parts) == 2):
+            designation = parts.pop().strip()
+            if (not (designation == user_sync.rules.DESIGNATION_GROUP or designation == user_sync.rules.DESIGNATION_PRODUCT)):
+                raise user_sync.error.AssertionException("Unrecognized designation: %s" % designation)
+
+        # separate the string into parts, this time without the designation portion
+        parts = parts.pop().strip().split(GROUP_NAME_DELIMITER)
+
+        # group name is just before designation
+        group_name = parts.pop().strip()
+
+        # finally extract the org name
         organization_name = GROUP_NAME_DELIMITER.join(parts)
         if (len(organization_name) == 0):
             organization_name = user_sync.rules.OWNING_ORGANIZATION_NAME
 
+        # create groups from 
         group = None
         if (len(group_name) > 0):
-            # check for existing group in case someone mistakenly declared an extended group that's already a mapping target
-            group = user_sync.rules.Group.get_dashboard_group(group_name, organization_name)
-            if group is None:
-                group = user_sync.rules.Group(group_name, organization_name)
+            # check for existing group in case someone mistakenly declared an extended group that's already a mapping
+            # target
+            group = user_sync.rules.ConfigGroup.get_dashboard_group(group_name, organization_name)
+            if (group is None):
+                group = user_sync.rules.ConfigGroup(group_name, organization_name, designation)
 
         return group
 
