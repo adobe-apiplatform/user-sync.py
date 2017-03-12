@@ -52,8 +52,8 @@ def process_args():
                         help='main config filename. (default: "%(default)s")',
                         default=config.DEFAULT_MAIN_CONFIG_FILENAME, metavar='filename', dest='config_filename')
     parser.add_argument('--users', 
-                        help="specify the users to be considered for sync. Legal values are 'all' (the default), 'group name or names' (one or more specified AD groups), 'file f' (a specified input file).", 
-                        nargs="*", metavar=('all|file|group', 'arg1'), dest='users')
+                        help="specify the users to be considered for sync. Legal values are 'all' (the default), 'group name or names' (one or more specified AD groups), 'mapped' (all AD groups listed in configuration file), 'file f' (a specified input file).", 
+                        nargs="*", metavar=('all|file|mapped|group', 'arg1'), dest='users')
     parser.add_argument('--user-filter',
                         help='limit the selected set of users that may be examined for syncing, with the pattern being a regular expression.',
                         metavar='pattern', dest='username_filter_pattern')
@@ -139,6 +139,10 @@ def begin_work(config_loader):
     accessor_dashboard_configs = config_loader.get_dashboard_options_for_accessors()
     rule_config = config_loader.get_rule_options()
 
+    # process mapped configuration after the directory groups have been loaded, as mapped setting depends on this.
+    if (rule_config['directory_group_mapped']):
+        rule_config['directory_group_filter'] = set(directory_groups.iterkeys())
+
     referenced_organization_names = set()
     for groups in directory_groups.itervalues():
         for group in groups:
@@ -191,6 +195,7 @@ def create_config_loader_options(args):
         'update_user_info': args.update_user_info,        
     }
 
+    config_options['directory_group_mapped'] = False
     users_args = args.users
     if (users_args != None):
         users_action = None if len(users_args) == 0 else user_sync.helper.normalize_string(users_args.pop(0))
@@ -201,7 +206,10 @@ def create_config_loader_options(args):
                 raise user_sync.error.AssertionException('Missing file path for --users %s [file_path]' % users_action)
             config_options['directory_connector_module_name'] = 'user_sync.connector.directory_csv'
             config_options['directory_connector_overridden_options'] = {'file_path': users_args.pop(0)}
-        elif (users_action == 'group'):            
+        elif (users_action == 'mapped'):
+            config_options['directory_connector_module_name'] = 'user_sync.connector.directory_ldap'
+            config_options['directory_group_mapped'] = True
+        elif (users_action == 'group'):
             if (len(users_args) == 0):
                 raise user_sync.error.AssertionException('Missing groups for --users %s [groups]' % users_action)
             config_options['directory_connector_module_name'] = 'user_sync.connector.directory_ldap'

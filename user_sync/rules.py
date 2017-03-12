@@ -139,7 +139,7 @@ class RuleProcessor(object):
         :type directory_connector: user_sync.connector.directory.DirectoryConnector
         '''
         self.logger.info('Building work list...')
-                
+        
         options = self.options
         directory_group_filter = options['directory_group_filter']
         if (directory_group_filter != None):
@@ -153,7 +153,7 @@ class RuleProcessor(object):
         directory_groups = set(mappings.iterkeys())
         if (directory_group_filter != None):
             directory_groups.update(directory_group_filter)
-        all_loaded, directory_users = directory_connector.load_users_and_groups(directory_groups, extended_attributes)
+            all_loaded, directory_users = directory_connector.load_users_and_groups(directory_groups, extended_attributes)
         if (not all_loaded and self.need_to_process_orphaned_dashboard_users):
             self.logger.warn('Not all users loaded.  Cannot check orphaned users...')
             self.need_to_process_orphaned_dashboard_users = False
