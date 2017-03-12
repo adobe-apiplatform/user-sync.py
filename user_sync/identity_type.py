@@ -23,10 +23,12 @@ import user_sync.helper
 
 ENTERPRISE_IDENTITY_TYPE = 'enterpriseID'
 FEDERATED_IDENTITY_TYPE = 'federatedID'
+ADOBEID_IDENTITY_TYPE = 'adobeID'
 
 NORMALIZED_IDENTITY_TYPE_MAP = {
+    user_sync.helper.normalize_string(ADOBEID_IDENTITY_TYPE): ADOBEID_IDENTITY_TYPE,
     user_sync.helper.normalize_string(ENTERPRISE_IDENTITY_TYPE): ENTERPRISE_IDENTITY_TYPE,
-    user_sync.helper.normalize_string(FEDERATED_IDENTITY_TYPE): FEDERATED_IDENTITY_TYPE
+    user_sync.helper.normalize_string(FEDERATED_IDENTITY_TYPE): FEDERATED_IDENTITY_TYPE,
 }
 
 def parse_identity_type(value, message_format = None):

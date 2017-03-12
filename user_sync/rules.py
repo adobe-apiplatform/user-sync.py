@@ -28,10 +28,12 @@ from CodeWarrior.CodeWarrior_suite import target
 
 import umapi_client
 
+GROUP_NAME_DELIMITER = '::'
 OWNING_ORGANIZATION_NAME = None
 DESIGNATION_DELIMITER = ','
 DESIGNATION_PRODUCT = 'productconfiguration'
 DESIGNATION_GROUP = 'usergroup'
+DESIGNATION_TYPES = set([DESIGNATION_PRODUCT, DESIGNATION_GROUP])
 
 class RuleProcessor(object):
     
@@ -64,19 +66,6 @@ class RuleProcessor(object):
         self.organization_info_by_organization = {}
         self.adding_dashboard_user_key = set()
 
-        # in/out variables for per-user after-mapping-hook code
-        self.after_mapping_hook_scope = {
-            'hook_storage': None,           # for exclusive use by hook code; persists across calls
-            'source_attributes': None,      # in: attributes retrieved from customer directory system (eg 'c', 'givenName')
-                                            # out: N/A
-            'source_groups': None,          # in: customer-side directory groups found for user
-                                            # out: N/A
-            'target_attributes': None,      # in: user's attributes for UMAPI calls as defined by usual rules (eg 'country', 'firstname')
-                                            # out: user's attributes for UMAPI calls as potentially changed by hook code
-            'target_groups': None,          # in: Adobe-side dashboard groups mapped for user by usual rules
-                                            # out: Adobe-side dashboard groups as potentially changed by hook code
-        }
-        
         remove_user_key_list = options['remove_user_key_list']
         remove_user_key_list = set(remove_user_key_list) if (remove_user_key_list != None) else set()
         self.remove_user_key_list = remove_user_key_list
@@ -84,28 +73,42 @@ class RuleProcessor(object):
         self.need_to_process_orphaned_dashboard_users = options['remove_list_output_path'] != None or options['remove_nonexistent_users']
                 
         self.logger = logger = logging.getLogger('processor')
-        
+
+        # in/out variables for per-user after-mapping-hook code
+        self.after_mapping_hook_scope = {
+            'source_attributes': None,          # in: attributes retrieved from customer directory system (eg 'c', 'givenName')
+                                                # out: N/A
+            'source_groups': None,              # in: customer-side directory groups found for user
+                                                # out: N/A
+            'target_attributes': None,          # in: user's attributes for UMAPI calls as defined by usual rules (eg 'country', 'firstname')
+                                                # out: user's attributes for UMAPI calls as potentially changed by hook code
+            'target_groups': None,              # in: Adobe-side dashboard groups mapped for user by usual rules
+                                                # out: Adobe-side dashboard groups as potentially changed by hook code
+            'logger': logger,                   # make loging available to hook code
+            'hook_storage': None,               # for exclusive use by hook code; persists across calls
+        }
+
         if (logger.isEnabledFor(logging.DEBUG)):
             options_to_report = options.copy()
             username_filter_regex = options_to_report['username_filter_regex']
             if (username_filter_regex != None):
                 options_to_report['username_filter_regex'] = "%s: %s" % (type(username_filter_regex), username_filter_regex.pattern)
             logger.debug('Initialized with options: %s', options_to_report)
-    
-    def run(self, directory_groups_map, directory_connector, dashboard_connectors):
+
+    def run(self, directory_groups, directory_connector, dashboard_connectors):
         '''
-        :type directory_groups_map: dict(str, list(ConfigGroup)
+        :type directory_groups: dict(str, list(DashboardGroup)
         :type directory_connector: user_sync.connector.directory.DirectoryConnector
         :type dashboard_connectors: DashboardConnectors
         '''
         logger = self.logger
 
-        self.prepare_organization_infos(directory_groups_map)
+        self.prepare_organization_infos()
 
         if (directory_connector != None):
             load_directory_stats = user_sync.helper.JobStats("Load from Directory", divider = "-")
             load_directory_stats.log_start(logger)
-            self.read_desired_user_groups(directory_groups_map, directory_connector)
+            self.read_desired_user_groups(directory_groups, directory_connector)
             load_directory_stats.log_end(logger)
             should_sync_dashboard_users = True
         else:
@@ -130,18 +133,17 @@ class RuleProcessor(object):
             self.organization_info_by_organization[organization_name] = organization_info = OrganizationInfo(organization_name)
         return organization_info
     
-    def prepare_organization_infos(self, mappings):
+    def prepare_organization_infos(self):
         '''
-        :type mappings: dict(str, list(ConfigGroup)
-        '''
-        for dashboard_groups in mappings.itervalues():
-            for dashboard_group in dashboard_groups:
-                organization_info = self.get_organization_info(dashboard_group.organization_name)
-                organization_info.add_mapped_group(create_target_group_from_config_group(dashboard_group))
+        Make sure we have prepared organizations for all the mapped groups, including extensions
+        '''                   
+        for dashboard_group in DashboardGroup.iter_groups():
+            organization_info = self.get_organization_info(dashboard_group.get_organization_name())
+            organization_info.add_mapped_group(create_target_group_from_config_group(dashboard_group))
 
     def read_desired_user_groups(self, mappings, directory_connector):
         '''
-        :type mappings: dict(str, list(ConfigGroup)
+        :type mappings: dict(str, list(DashboardGroup))
         :type directory_connector: user_sync.connector.directory.DirectoryConnector
         '''
         self.logger.info('Building work list...')
@@ -172,7 +174,7 @@ class RuleProcessor(object):
                 continue
             if not self.is_selected_user_key(user_key):
                 continue
-            if (user_key in remove_user_key_list):
+            if user_key in remove_user_key_list:
                 continue
             
             filtered_directory_user_by_user_key[user_key] = directory_user
@@ -184,12 +186,12 @@ class RuleProcessor(object):
             for dir_group in directory_user['groups']:
                 self.after_mapping_hook_scope['source_groups'].add(dir_group) # this is a directory group name
                 dashboard_groups = mappings.get(dir_group)
-                if (dashboard_groups != None):
+                if (dashboard_groups is not None):
                     for dashboard_group in dashboard_groups:
-                        self.after_mapping_hook_scope['target_groups'].add(self.make_dashboard_group_qualified_name(dashboard_group.group_name, dashboard_group.organization_name))
+                        self.after_mapping_hook_scope['target_groups'].add(dashboard_group.get_qualified_name())
 
             # only if there actually is hook code: set up rest of hook scope, invoke hook, update user attributes
-            if (options['after_mapping_hook'] is not None):
+            if options['after_mapping_hook'] is not None:
                 self.after_mapping_hook_scope['source_attributes'] = directory_user['source_attributes'].copy()
 
                 target_attributes = dict()
@@ -211,10 +213,9 @@ class RuleProcessor(object):
                 directory_user.update(self.after_mapping_hook_scope['target_attributes'])
 
             for target_group_qualified_name in self.after_mapping_hook_scope['target_groups']:
-                target_group_name, target_organization_name = self.parse_dashboard_group_qualified_name(target_group_qualified_name)
-                target_group = ConfigGroup.get_dashboard_group(target_group_name, target_organization_name)
+                target_group = DashboardGroup.lookup(target_group_qualified_name)
                 if (target_group is not None):
-                    organization_info = self.get_organization_info(target_organization_name)
+                    organization_info = self.get_organization_info(target_group.get_organization_name())
                     organization_info.add_desired_group_for(user_key, create_target_group_from_config_group(target_group))
                 else:
                     self.logger.error('Target dashboard group %s is not known; ignored', target_group_qualified_name)
@@ -247,7 +248,7 @@ class RuleProcessor(object):
         self.logger.info('Syncing owning...') 
         owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
 
-        # Loop over users and comapre then and process differences
+        # Loop over users and compare then and process differences
         owning_unprocessed_groups_by_user_key = self.update_dashboard_users_for_connector(owning_organization_info, dashboard_connectors.get_owning_connector())
 
         # Handle creates for new users.  This also drives adding the new user to groups in other organizations.
@@ -403,7 +404,14 @@ class RuleProcessor(object):
         if (identity_type == None):
             identity_type = self.options['new_account_type']
         return identity_type
-            
+
+    def get_identity_type_from_dashboard_user(self, dashboard_user):
+        identity_type = dashboard_user.get('type')
+        if (identity_type == None):
+            identity_type = self.options['new_account_type']
+            self.logger.warning('Dashboard user has no identity type, using %s: %s', identity_type, dashboard_user)
+        return identity_type
+
     def create_commands_from_directory_user(self, directory_user, identity_type = None):
         '''
         :type user_key: str
@@ -536,8 +544,8 @@ class RuleProcessor(object):
             self.logger.info("Delay user update for user: %s organization: %s", user_key, organization_info.get_name())
 
     def update_dashboard_users_for_connector(self, organization_info, dashboard_connector):
-        # This is the main function that goes over all users and looks for and processes differences.
         '''
+        This is the main function that goes over all users and looks for and processes differences.
         :type organization_info: OrganizationInfo
         :type dashboard_connector: user_sync.connector.dashboard.DashboardConnector
         '''
@@ -552,7 +560,7 @@ class RuleProcessor(object):
         manage_groups = self.will_manage_groups() 
         
         for dashboard_user in dashboard_connector.iter_users():
-            user_key = RuleProcessor.get_dashboard_user_key(dashboard_user)
+            user_key = self.get_dashboard_user_key(dashboard_user)
             organization_info.add_dashboard_user(user_key, dashboard_user)
 
             directory_user = directory_user_by_user_key.get(user_key)
@@ -697,26 +705,32 @@ class RuleProcessor(object):
                 differences[key] = value
         return differences        
 
-    @staticmethod
-    def get_directory_user_key(directory_user):
+    def get_directory_user_key(self, directory_user):
         '''
+        Identity-type aware user key management for directory users
         :type directory_user: dict
         '''
-        return RuleProcessor.get_user_key(directory_user['username'], directory_user['domain'], directory_user['email'])
+        idType = self.get_identity_type_from_directory_user(directory_user)
+        return self.get_user_key(directory_user['username'], directory_user['domain'], directory_user['email'],
+                                 idType == user_sync.identity_type.ADOBEID_IDENTITY_TYPE)
     
-    @staticmethod
-    def get_dashboard_user_key(dashboard_user):
+    def get_dashboard_user_key(self, dashboard_user):
         '''
+        Identity-type aware user key management for dashboard users
         :type dashboard_user: dict
         '''
-        return RuleProcessor.get_user_key(dashboard_user['username'], dashboard_user['domain'], dashboard_user['email'])
-    
+        idType = self.get_identity_type_from_dashboard_user(dashboard_user)
+        return self.get_user_key(dashboard_user['username'], dashboard_user['domain'], dashboard_user['email'],
+                                 idType == user_sync.identity_type.ADOBEID_IDENTITY_TYPE)
+
     @staticmethod
-    def get_user_key(username, domain, email):
+    def get_user_key(username, domain, email, isAdobeID=False):
         username = user_sync.helper.normalize_string(username)
         domain = user_sync.helper.normalize_string(domain)
         email = user_sync.helper.normalize_string(email)
 
+        if isAdobeID:
+            return '<AdobeID>' + email
         if (username == None):
             return email
         if (username.find('@') >= 0):
@@ -725,6 +739,8 @@ class RuleProcessor(object):
     
     @staticmethod
     def parse_user_key(user_key):
+        if user_key.startswith('<AdobeID>'):
+            return (user_key[len('<AdobeID>'):], None)
         index = user_key.find(',')
         return (user_key, None) if index < 0 else (user_key[:index], user_key[index + 1:])
 
@@ -755,20 +771,6 @@ class RuleProcessor(object):
                 result.append(user_key)
         return result
 
-    def make_dashboard_group_qualified_name(self, group_name, organization_name):
-        prefix = ""
-        if (organization_name is not None and organization_name != OWNING_ORGANIZATION_NAME):
-            prefix = organization_name + user_sync.config.GROUP_NAME_DELIMITER
-        return prefix + group_name
-
-    def parse_dashboard_group_qualified_name(self, qualified_name):
-        parts = qualified_name.split(user_sync.config.GROUP_NAME_DELIMITER)
-        group_name = parts.pop()
-        organization_name = user_sync.config.GROUP_NAME_DELIMITER.join(parts)
-        if (len(organization_name) == 0):
-            organization_name = user_sync.rules.OWNING_ORGANIZATION_NAME
-        return group_name, organization_name
-
     def write_remove_list(self, file_path, dashboard_users):
         total_users = 0
         with open(file_path, 'wb') as output_file:
@@ -792,6 +794,9 @@ class RuleProcessor(object):
             self.logger.debug('Source groups, %s: %s', when, self.after_mapping_hook_scope['source_groups'])
         self.logger.debug('Target attrs, %s: %s', when, self.after_mapping_hook_scope['target_attributes'])
         self.logger.debug('Target groups, %s: %s', when, self.after_mapping_hook_scope['target_groups'])
+        if (after_call is not None):
+            self.logger.debug('Hook storage, %s: %s', when, self.after_mapping_hook_scope['hook_storage'])
+
 
 class DashboardConnectors(object):
     def __init__(self, owning_connector, accessor_connectors):
@@ -823,13 +828,14 @@ class DashboardConnectors(object):
             if not had_work:
                 break
     
-class ConfigGroup(object):
-    dashboard_groups = {}
+class DashboardGroup(object):
+
+    index_map = {}
 
     def __init__(self, group_name, organization_name, designation):
         '''
         :type group_name: str
-        :type organization_name: str        
+        :type organization_name: str
         '''
         self.group_name = group_name
         self.organization_name = organization_name
@@ -838,7 +844,7 @@ class ConfigGroup(object):
         
         self.regenerate_key()
 
-        ConfigGroup.dashboard_groups[(group_name, organization_name)] = self
+        DashboardGroup.index_map[(group_name, organization_name)] = self
     
     def regenerate_key(self):
         self.key = { 'group_name': self.group_name, 'organization_name': self.organization_name }
@@ -855,13 +861,59 @@ class ConfigGroup(object):
     def __str__(self):
         return str(self.key)
 
+    def get_qualified_name(self):
+        prefix = ""
+        if (self.organization_name is not None and self.organization_name != OWNING_ORGANIZATION_NAME):
+            prefix = self.organization_name + GROUP_NAME_DELIMITER
+        return prefix + self.group_name
+
+    def get_organization_name(self):
+        return self.organization_name
+
+    def get_group_name(self):
+        return self.group_name
+
+    @staticmethod
+    def _parse(qualified_name):
+        '''
+        :type qualified_name: str
+        :rtype: str, str
+        '''
+        # first determine designation
+        designation = DESIGNATION_PRODUCT
+        parts = qualified_name.split(DESIGNATION_DELIMITER)
+        if (len(parts) == 2):
+            designation = parts.pop().strip()
+            if (designation not in DESIGNATION_TYPES):
+                raise user_sync.error.AssertionException("Unrecognized designation: %s" % designation)
+        
+        # determine org/group
+        parts = parts.pop().strip().split(GROUP_NAME_DELIMITER)
+        group_name = parts.pop().strip()
+        organization_name = GROUP_NAME_DELIMITER.join(parts)
+        if (len(organization_name) == 0):
+            organization_name = OWNING_ORGANIZATION_NAME
+        return group_name, organization_name, designation
+
     @classmethod
-    def get_dashboard_group(cls, group_name, organization_name):
-        '''
-        :type group_name: str
-        :type organization_name: str
-        '''
-        return ConfigGroup.dashboard_groups.get((group_name, organization_name))
+    def lookup(cls, qualified_name):
+        group_name, organization_name, designation = cls._parse(qualified_name)
+        return cls.index_map.get((group_name, organization_name))
+
+    @classmethod
+    def create(cls, qualified_name):
+        group_name, organization_name, designation = cls._parse(qualified_name)
+        existing = cls.index_map.get((group_name, organization_name))
+        if existing:
+            return existing
+        elif len(group_name) > 0:
+            return cls(group_name, organization_name, designation)
+        else:
+            return None
+
+    @classmethod
+    def iter_groups(cls):
+        return cls.index_map.itervalues()
 
 def filter_target_groups_by_names(target_groups, target_group_names):
     '''

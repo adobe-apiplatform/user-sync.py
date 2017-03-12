@@ -134,7 +134,7 @@ def begin_work(config_loader):
     :type config_loader: user_sync.config.ConfigLoader
     '''
 
-    directory_groups_map = config_loader.get_directory_groups()
+    directory_groups = config_loader.get_directory_groups()
     owning_dashboard_config = config_loader.get_dashboard_options_for_owning()
     accessor_dashboard_configs = config_loader.get_dashboard_options_for_accessors()
     rule_config = config_loader.get_rule_options()
@@ -144,7 +144,7 @@ def begin_work(config_loader):
         rule_config['directory_group_filter'] = set(directory_groups.iterkeys())
 
     referenced_organization_names = set()
-    for groups in directory_groups_map.itervalues():
+    for groups in directory_groups.itervalues():
         for group in groups:
             organization_name = group.organization_name
             if (organization_name != user_sync.rules.OWNING_ORGANIZATION_NAME):
@@ -175,9 +175,9 @@ def begin_work(config_loader):
     dashboard_connectors = user_sync.rules.DashboardConnectors(dashboard_owning_connector, dashboard_accessor_connectors)
 
     rule_processor = user_sync.rules.RuleProcessor(rule_config)
-    if (len(directory_groups_map) == 0 and rule_processor.will_manage_groups()):
+    if (len(directory_groups) == 0 and rule_processor.will_manage_groups()):
         logger.warn('no groups mapped in config file')
-    rule_processor.run(directory_groups_map, directory_connector, dashboard_connectors)
+    rule_processor.run(directory_groups, directory_connector, dashboard_connectors)
     
 def create_config_loader(args):
     config_bootstrap_options = {
