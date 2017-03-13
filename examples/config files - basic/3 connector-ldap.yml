@@ -15,7 +15,7 @@ base_dn: "defines the base DN. e.g. DC=example,DC=com"
 
 # specifies the string filter used to find all users in the directory.
 # Default, intending for AD, is:
-# all_users_filter = "(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
+# all_users_filter: "(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
 #
 # example for OpenLDAP
 # all_users_filter: "(&(objectClass=person)(objectClass=top))"

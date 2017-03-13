@@ -13,8 +13,8 @@ dashboard:
   # accessors:
   #   org1: example.dashboard-config.yml    
 
-  # specifies the filename format for the accessor org configurations.  
-  # a filename that matches the format will have the organization name extracted 
+  # specifies the filename format for the accessor org configurations.
+  # a filename that matches the format will have the organization name extracted
   # from the filename. Default is:
   # accessor_config_filename_format: "dashboard-accessor-{organization_name}-config.yml"
 
@@ -23,24 +23,24 @@ directory:
   #
   # example:
   # default_country_code: US
-  
+
   connectors:
-    # specifies the configurations for the different directory connectors
+    # specifies the configurations for the difference directory connectors
     # The format is name : value, where value can be:
-    # a dictionary for the actual configuration, or 
+    # a dictionary for the actual configuration, or
     # a string for the file containing the configuration, or
     # a list containing a mixture of dictionaries and strings
     #
-    # examples:   
+    # examples:
     # ldap: example.connector-ldap.yml
-    # ldap: 
+    # ldap:
     #   - host: LDAP_host_URL_goes_here
     #     base_dn: base_DN_goes_here
     #   - connector-ldap-credentials.yml
- 
+
   groups:
     # specifies the list of group mappings, with each group mapping consisting
-    # of a dictionary with keys: directory_group and dashboard_groups.    
+    # of a dictionary with keys: directory_group and dashboard_groups.
     # directory_group: string identifying the group in the directory
     # dashboard_groups: a list of strings identifying the dashboard groups.
     #
@@ -60,11 +60,46 @@ directory:
     #     - org1::Default Acrobat Pro DC configuration
 
   # specifies the default identity type of the dashboard user to create,
-  # when the identity type of a user is missing.  
+  # when the identity type of a user is missing.
   # valid values are: adobeID, enterpriseID, federatedID
-  # 
+  #
   # Default is:
   # user_identity_type: enterpriseID
+
+
+extensions:
+  # specifies custom Python code to be executed for each user after mappings are computed, but before actions are generated.
+  # 'context' must be present and (currently) must have the value 'per-user'.
+  #
+  # hook code executes in a scope containing the following global variables:
+  #
+  #     source_attributes   # in: attributes retrieved from customer directory system (eg 'c', 'givenName')
+  #                         # out: N/A
+  #     source_groups       # in: customer-side directory groups found for user
+  #                         # out: N/A
+  #     target_attributes   # in: user's attributes for UMAPI calls as defined by usual rules (eg 'country', 'firstname')
+  #                         # out: user's attributes for UMAPI calls as potentially changed by hook code
+  #     target_groups       # in: Adobe-side dashboard groups mapped for user by usual rules
+  #                         # out: Adobe-side dashboard groups as potentially changed by hook code
+  #     hook_storage        # for exclusive use by hook code: initialized to None; persists across per-user calls
+  #     logger              # an object of type logging.logger which outputs to the console and/or file log
+  #
+  - context: per-user
+    extended_attributes:
+      - bc
+      - subco
+    extended_dashboard_groups:
+      - Company 1 Users
+      - Company 2 Users
+    after_mapping_hook: |
+      bc = source_attributes.get('bc')
+      subco = source_attributes.get('subco')
+      if bc is not None:
+        target_attributes['country'] = bc[0:2]
+      if subco == 'Company 1':
+        target_groups.add('Company 1 Users')
+      elif subco == 'Company 2':
+        target_groups.add('Company 2 Users')
 
 limits:
     max_deletions_per_run: 10    # if --remove-nonexistent-users is specified, this is the most users that will be removed.  Others will be left for a later run.  A critical message will be logged.

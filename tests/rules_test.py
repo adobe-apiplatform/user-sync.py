@@ -37,8 +37,8 @@ class RulesTest(unittest.TestCase):
         owning_group_12 = 'acrobat12' 
         owning_group_21 = 'acrobat21' 
         directory_groups = {
-            directory_group_1: [user_sync.rules.Group(owning_group_11, owning_organization_name), user_sync.rules.Group('acrobat12', accessor_1_organization_name)],
-            directory_group_2: [user_sync.rules.Group(owning_group_21, owning_organization_name)]
+            directory_group_1: [user_sync.rules.DashboardGroup(owning_group_11, owning_organization_name), user_sync.rules.DashboardGroup('acrobat12', accessor_1_organization_name)],
+            directory_group_2: [user_sync.rules.DashboardGroup(owning_group_21, owning_organization_name)]
         }
         all_users = [tests.helper.create_test_user([directory_group_1]), 
             tests.helper.create_test_user([directory_group_2]),
