@@ -66,6 +66,26 @@ directory:
   # Default is:
   # user_identity_type: enterpriseID
 
+  # specifies the identity types that User Sync will create, manage,
+  # or remove on the Adobe side. This is a list of values,
+  # each of which must be: adobeID, enterpriseID, or federatedID
+  #
+  # NOTE 1: if you specify that adobeID users should be removed from
+  # your organization, you will have to re-invite them (and have them
+  # re-accept) if you ever want to add them back in.  A much safer
+  # practice, with such users, is simply to remove them from all
+  # user groups and product configurations, but to leave them in
+  # the organization so they can later be re-enabled.
+  #
+  # NOTE 2: since sysadmins are often of type adobeID, it can be
+  # *very dangerous* to specify that adobeID users should be removed
+  # from the dashboard: you may accidentally remove yourself or
+  # other sysadmins that you weren't aware of.
+  #
+  # Default is:
+  # managed_identity_types:
+  #   - enterpriseID
+  #   - federatedID
 
 extensions:
   # specifies custom Python code to be executed for each user after mappings are computed, but before actions are generated.

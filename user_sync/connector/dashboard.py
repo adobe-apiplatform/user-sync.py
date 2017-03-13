@@ -26,6 +26,7 @@ import umapi_client
 
 import helper
 import user_sync.config
+import user_sync.error
 import user_sync.helper
 import user_sync.identity_type
 from user_sync.version import __version__ as APP_VERSION
@@ -139,7 +140,7 @@ class Commands(object):
         :type attributes: dict
         '''
         if self.identity_type == user_sync.identity_type.ADOBEID_IDENTITY_TYPE:
-            # TODO: log a warning that you can't update Adobe IDs and we are ignoring the request
+            # shouldn't happen, but ignore it if it does
             return
         if (attributes != None and len(attributes) > 0):
             params = self.convert_user_attributes_to_params(attributes)
@@ -178,8 +179,8 @@ class Commands(object):
         if self.identity_type == user_sync.identity_type.ADOBEID_IDENTITY_TYPE:
             email = self.email if self.email else self.username
             if not email:
-                # TODO: raise an error
-                email = "ERROR: you must specify an email with an Adobe ID"
+                errorMessage = "ERROR: you must specify an email with an Adobe ID"
+                raise user_sync.error.AssertionException(errorMessage)
             params = self.convert_user_attributes_to_params({'email': email})
         else:
             params = self.convert_user_attributes_to_params(attributes)

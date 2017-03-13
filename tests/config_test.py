@@ -23,6 +23,7 @@ import unittest
 
 import mock
 import tests.helper
+import user_sync.identity_type
 from user_sync.error import AssertionException
 from user_sync.config import ConfigLoader
 from user_sync.config import ObjectConfig
@@ -94,20 +95,23 @@ class ConfigLoaderTest(unittest.TestCase):
         mock_id_type.return_value = 'new_acc'
         mock_get_dict.return_value = tests.helper.MockGetString()
         mock_get_list.return_value = tests.helper.MockGetString()
-        self.assertEquals(self.conf_load.get_rule_options(), {'username_filter_regex': None,
-                                                              'update_user_info': True,
-                                                              'manage_groups': True,
-                                                              'max_deletions_per_run': 1,
-                                                              'max_missing_users': 1,
-                                                              'new_account_type': 'new_acc',
-                                                              'directory_group_filter': None,
-                                                              'default_country_code': 'test',
-                                                              'remove_user_key_list': None,
-                                                              'remove_list_output_path': None,
-                                                              'remove_nonexistent_users': False,
-                                                              'after_mapping_hook': None,
-                                                              'extended_attributes': None,
-                                                              },
+        self.assertEquals(self.conf_load.get_rule_options(),
+                          {'username_filter_regex': None,
+                           'update_user_info': True,
+                           'manage_groups': True,
+                           'max_deletions_per_run': 1,
+                           'max_missing_users': 1,
+                           'new_account_type': 'new_acc',
+                           'managed_identity_types': [user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
+                                                      user_sync.identity_type.FEDERATED_IDENTITY_TYPE],
+                           'directory_group_filter': None,
+                           'default_country_code': 'test',
+                           'remove_user_key_list': None,
+                           'remove_list_output_path': None,
+                           'remove_nonexistent_users': False,
+                           'after_mapping_hook': None,
+                           'extended_attributes': None,
+                           },
                           'rule options are returned')
 
     def test_parse_string(self):
