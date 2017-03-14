@@ -782,7 +782,7 @@ specific behavior in various situations.
 | `-v`<br />`--version` | Show program's version number and exit.  |
 | `-t`<br />`--test-mode` | Run API action calls in test mode (does not execute changes). Logs what would have been executed.  |
 | `-c` _filename_<br />`--config-filename` _filename_ | The complete path to the main configuration file, absolute or relative to the working folder. Default filename is "user-sync-config.yml" |
-| `--users` `all`<br />`--users` `file` _input_path_<br />`--users` `mapped`<br />`--users` `group` _grp1,grp2_ | Specify the users to be selected for sync. The default is `all` meaning all users found in the directory. Specifying `file` means to take input user specifications from the CSV file named by the argument. Specifying `group` interprets the argument as a comma-separated list of groups in the enterprise directory, and only users in those groups are selected. Specifying `mapped` is the same as specifying `group` with all groups listed in the group mapping in the configuration file. |
+| `--users` `all`<br />`--users` `file` _input_path_<br />`--users` `group` _grp1,grp2_<br />`--users` `mapped` | Specify the users to be selected for sync. The default is `all` meaning all users found in the directory. Specifying `file` means to take input user specifications from the CSV file named by the argument. Specifying `group` interprets the argument as a comma-separated list of groups in the enterprise directory, and only users in those groups are selected. Specifying `mapped` is the same as specifying `group` with all groups listed in the group mapping in the configuration file. |
 | `--user-filter` _regex\_pattern_ | Limit the set of users that are examined for syncing to those matching a pattern specified with a regular expression. See the [Python regular expression documentation](https://docs.python.org/2/library/re.html) for information on constructing regular expressions in Python. |
 | `--source-filter` _connector_:_file_ | Names a file containing LDAP filter settings. The filter is an LDAP query string that is passed directly to the LDAP server.  See the [sample above](#connector_ldap.yml) and others in the archive of examples. |
 | `--update-user-info` | When supplied, synchronizes user information. If the information differs between the customer side and the Adobe side, the Adobe side is updated to match. This includes the firstname and lastname fields. |
@@ -914,10 +914,10 @@ configuration or user group management.
 ./user-sync –c user-sync-config.yml --users groups "group1, group2, group3"
 ```
 
-#### Sync only users listed in the group mapping in the configuration file
+#### Sync only users in mapped groups
 
-This action is the same as specifying `--users groups "..."`, but adds all the
-groups in the group mapping in the configuration file.
+This action is the same as specifying `--users groups "..."`, where `...` is all
+the groups in the group mapping in the configuration file.
 
 ```sh
 ./user-sync –c user-sync-config.yml --users mapped
