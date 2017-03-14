@@ -15,6 +15,7 @@ The command line for user sync selects the set of users to be processed, specifi
 | ------------- |:-------------| 
 |   `--users all` |    All users listed in the directory are included.  |
 |   `--users group "g1,g2,g3"`  |    The named directory groups are used to form the user selection. <br>Users that are members of any of the groups are included.  |
+|   `--users mapped`  |    The same as --users group [...], but includes all directory groups defined in the configuration file. |
 |   `--users file f`  |    The file f is read to form the selected set of users.  The LDAP directory is not used in this case. |
 |   `--user-filter pattern`    |  Can be combined with the above options to further filter and reduce the user selection. <br>`pattern` is a string in Python regular expression format.  <br>The user name must match the pattern in order to be included.  <br>Writing patterns can be somewhat of an art.  See examples below or refer to the Python documentation [here](https://docs.python.org/2/library/re.html). |
 
