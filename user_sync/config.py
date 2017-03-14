@@ -191,7 +191,7 @@ class ConfigLoader(object):
         groups_config = None
         directory_config = self.main_config.get_dict_config('directory', True)
         if (directory_config != None):
-            groups_config = directory_config.get_list_config('groups', True)         
+            groups_config = directory_config.get_list_config('groups', True)          
         if (groups_config == None):
             return adobe_groups_by_directory_group
         
@@ -334,7 +334,6 @@ class ConfigLoader(object):
         if (extensions_config is not None):
             for extension_config in extensions_config.iter_dict_configs():
                 context = extension_config.get_string('context')
-
                 if context != 'per-user':
                     self.logger.warning("Unrecognized extension context '%s' ignored", context)
                     continue
@@ -361,7 +360,9 @@ class ConfigLoader(object):
                         raise user_sync.error.AssertionException(validation_message)
 
         options = self.options
+        
         result = {
+            'directory_group_mapped': options['directory_group_mapped'],
             'directory_group_filter': options['directory_group_filter'],
             'username_filter_regex': options['username_filter_regex'],
             'new_account_type': new_account_type,
