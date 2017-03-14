@@ -18,7 +18,7 @@ It takes a list of enterprise directory users,
 either from an LDAP connection or from a tab-separated file, 
 and creates, updates, or removes user accounts in the
 Admin Console.
-
+/Users/imak/github-adobe/user-sync.py/docs/success-guide/index.md
 # Requirements
 
 * Python 2.7+
@@ -77,7 +77,7 @@ optional arguments:
   --users all|file|mapped|group [arg1 ...]
                         specify the users to be considered for sync. Legal
                         values are 'all' (the default), 'group name or names'
-                        (one or more specified AD groups), 'mapped' (all groups
+                        (one or more specified groups), 'mapped' (all groups
                         listed in configuration file), 'file f' (a specified
                         input file).
   --user-filter pattern
