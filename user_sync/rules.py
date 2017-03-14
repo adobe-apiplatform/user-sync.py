@@ -443,7 +443,7 @@ class RuleProcessor(object):
         directory_user = self.directory_user_by_user_key[user_key]
         identity_type = self.get_identity_type_from_directory_user(directory_user)
         if identity_type not in managed_identity_types:
-            self.logger.info('Unmanaged directory user not in Adobe: %s', user_key)
+            self.logger.warning('Unmanaged directory user not in Adobe: %s', user_key)
             return
 
         # start the add process
@@ -721,14 +721,14 @@ class RuleProcessor(object):
     def get_user_key(username, domain, email, id_type):
         '''
         Construct the user key for a directory or dashboard user.
-        If the parameters are invalid, no user key is returned.
         The user key is the stringification of the tuple (id_type, username, domain)
         but the domain part is left empty if the username is an email address.
+        If the parameters are invalid, None is returned.
         :param username: (required) username of the user, can be his email
         :param domain: (optional) domain of the user
         :param email: (optional) email of the user
         :param id_type: (required) id_type of the user
-        :return: string "id_type,username,domain"
+        :return: string "id_type,username,domain" (or None)
         '''
         id_type = user_sync.identity_type.parse_identity_type(id_type)
         email = user_sync.helper.normalize_string(email)

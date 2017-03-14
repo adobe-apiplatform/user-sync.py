@@ -318,11 +318,11 @@ class ConfigLoader(object):
                 managed_identity_types.append(identity_type)
         if not new_account_type:
             new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
-            self.logger.warning("Assuming the identity type for new users is: %s", new_account_type)
+            self.logger.info("Using default for new_account_type: %s", new_account_type)
         if not managed_identity_types:
             managed_identity_types = [user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
                                      user_sync.identity_type.FEDERATED_IDENTITY_TYPE]
-            self.logger.warning("Assuming only Federated ID users can be removed.")
+            self.logger.info("Using default for managed_identity_types: %s", managed_identity_types)
 
         limits_config = self.main_config.get_dict_config('limits')
         max_deletions_per_run = limits_config.get_int('max_deletions_per_run')
