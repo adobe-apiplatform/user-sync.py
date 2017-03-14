@@ -52,7 +52,7 @@ options.
 The tool assumes that your enterprise has purchased Adobe product
 licenses. You must use the
 [Adobe Admin Console](https://www.adobe.io/console/) to define
-User Groups and Product License Configurations. Membership in
+user groups and product configurations. Membership in
 these groups controls which users in your organization can access
 which products.
 
@@ -74,7 +74,7 @@ directory system through LDAP.
 configurations from the Adobe Admin Console through the User
 Management API.
 - User Sync determines which users need to be created, deleted,
-or updated, and what user-group and product configuration
+or updated, and what user group and product configuration
 memberships they should have, based on rules you have defined in
 the User Sync configuration files.
 - User Sync makes the required changes to the Adobe Admin Console
@@ -107,7 +107,7 @@ them, see the [Usage Scenarios](#usage-scenarios) section below.
 ## Setup and Installation
 
 The use of the User Sync tool depends on your enterprise having
-set up Product License Configurations in the Adobe Admin
+set up product configurations in the Adobe Admin
 Console. For more information about how to do this, see the
 [Configure Services](https://helpx.adobe.com/enterprise/help/configure-services.html#configure_services_for_group)
 help page.
@@ -140,12 +140,12 @@ information store in Adobe.
 
 If you plan to use the User Sync tool to update user access to
 Adobe products, you must create groups in your own enterprise
-LDAP directory that correspond to the User Groups and Product
-License Configurations that you have defined in the
+LDAP directory that correspond to the user groups and product
+configurations that you have defined in the
 [Adobe Admin Console](https://www.adobe.io/console/). Membership
 in a product configuration grants access to particular set of
 Adobe products. You can grant or revoke access to users or to
-defined User Groups by adding or removing them from a product
+defined user groups by adding or removing them from a product
 configuration.
 
 The User Sync tool can grant product access to users by adding
@@ -163,8 +163,8 @@ corresponding names.
 #### Check your products and product configurations
 
 Before you start configuring User Sync, you must know what Adobe
-products your enterprise uses, and what Product License
-Configurations and User Groups are defined in the Adobe User
+products your enterprise uses, and what product
+configurations and user uroups are defined in the Adobe User
 Management system. For more information, see the help page for
 [configuring enterprise services](https://helpx.adobe.com/enterprise/help/configure-services.html#configure_services_for_group).
 
@@ -173,13 +173,13 @@ Console to create them. You must have some, and they must have
 corresponding groups in enterprise LDAP directory, in order to
 configure User Sync to update your user entitlement information.
 
-The names of Product License Configurations generally identify
+The names of product configurations generally identify
 the types of product access that users will need, such as All
 Access or Individual Product Access. To check the exact names, go
 to the Products section in the
 [Adobe Admin Console](https://www.adobe.io/console/) to see the
 products that are enabled for your enterprise. Click a product to
-see the details of Product License Configurations that have been
+see the details of product configurations that have been
 defined for that product.
 
 #### Create corresponding groups in your enterprise directory
@@ -510,7 +510,7 @@ directory:
 #### Configure group mapping
 
 Before you can synchronize user groups and entitlements, you must
-create User Groups and Product License Configurations in the
+create user groups and product configurations in the
 Adobe Admin Console, and corresponding groups in your enterprise
 directory, as described above in
 [Set up product-access synchronization](#set-up-product-access-synchronization).
