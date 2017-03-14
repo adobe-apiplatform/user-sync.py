@@ -37,8 +37,8 @@ class RulesTest(unittest.TestCase):
         owning_group_12 = 'acrobat12' 
         owning_group_21 = 'acrobat21' 
         directory_groups = {
-            directory_group_1: [user_sync.rules.Group(owning_group_11, owning_organization_name), user_sync.rules.Group('acrobat12', accessor_1_organization_name)],
-            directory_group_2: [user_sync.rules.Group(owning_group_21, owning_organization_name)]
+            directory_group_1: [user_sync.rules.DashboardGroup(owning_group_11, owning_organization_name), user_sync.rules.DashboardGroup('acrobat12', accessor_1_organization_name)],
+            directory_group_2: [user_sync.rules.DashboardGroup(owning_group_21, owning_organization_name)]
         }
         all_users = [tests.helper.create_test_user([directory_group_1]), 
             tests.helper.create_test_user([directory_group_2]),
@@ -104,6 +104,7 @@ class RulesTest(unittest.TestCase):
     # default country code tests
     @mock.patch('logging.getLogger')
     def _do_country_code_test(self, mock_dashboard_commands, mock_connectors, identity_type, default_country_code, user_country_code, expected_country_code, mock_logger):
+        user_key = identity_type + ',cceuser1@ensemble.ca,'
         expected_result = {'lastname': 'User1', 'email': 'cceuser1@ensemble.ca', 'firstname': '!Openldap CCE', 'option': 'updateIfAlreadyExists'}
         if (expected_country_code):
             expected_result['country'] = expected_country_code
@@ -111,19 +112,19 @@ class RulesTest(unittest.TestCase):
         options = {'default_country_code': default_country_code, 'new_account_type': identity_type}         
         mock_rules = user_sync.rules.RuleProcessor(options)
         mock_rules.directory_user_by_user_key = {
-            'cceuser1@ensemble.ca': {'username': 'cceuser1@ensemble.ca',
-                                     'domain': None, 'groups': ['CCE Group 1'],
-                                     'firstname': '!Openldap CCE',
-                                     'country': user_country_code,
-                                     'lastname': 'User1',
-                                     'identitytype': None,
-                                     'email': 'cceuser1@ensemble.ca',
-                                     'uid': '001'}
+            user_key: {'username': 'cceuser1@ensemble.ca',
+                       'domain': None, 'groups': ['CCE Group 1'],
+                       'firstname': '!Openldap CCE',
+                       'country': user_country_code,
+                       'lastname': 'User1',
+                       'identitytype': identity_type,
+                       'email': 'cceuser1@ensemble.ca',
+                       'uid': '001'}
         }
-        mock_rules.add_dashboard_user('cceuser1@ensemble.ca', mock_connectors)
+        mock_rules.add_dashboard_user(user_key, mock_connectors)
 
         if (identity_type == 'federatedID' and default_country_code == None and user_country_code == None):
-            mock_rules.logger.error.assert_called_with('User %s cannot be added as it has a blank country code and no default has been specified.','cceuser1@ensemble.ca')
+            mock_rules.logger.error.assert_called_with('User %s cannot be added as it has a blank country code and no default has been specified.', user_key)
         else:
             mock_dashboard_commands.return_value.add_user.assert_called_with(expected_result)
 

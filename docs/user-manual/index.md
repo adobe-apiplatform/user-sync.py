@@ -74,7 +74,7 @@ directory system through LDAP.
 configurations from the Adobe Admin Console through the User
 Management API.
 - User Sync determines which users need to be created, deleted,
-or updated, and what user-group and product configuration
+or updated, and what user group and product configuration
 memberships they should have, based on rules you have defined in
 the User Sync configuration files.
 - User Sync makes the required changes to the Adobe Admin Console
@@ -102,12 +102,12 @@ information from the task of removing users or memberships. There
 are a number of options for handling the removal task.
 
 For more information about usage models and how to implement
-them, see the [Usage Scenarios](#Usage-Scenarios) section below.
+them, see the [Usage Scenarios](#usage-scenarios) section below.
 
 ## Setup and Installation
 
 The use of the User Sync tool depends on your enterprise having
-set up Product License Configurations in the Adobe Admin
+set up product configurations in the Adobe Admin
 Console. For more information about how to do this, see the
 [Configure Services](https://helpx.adobe.com/enterprise/help/configure-services.html#configure_services_for_group)
 help page.
@@ -145,7 +145,7 @@ configurations that you have defined in the
 [Adobe Admin Console](https://www.adobe.io/console/). Membership
 in a product configuration grants access to particular set of
 Adobe products. You can grant or revoke access to users or to
-defined User Groups by adding or removing them from a product
+defined user groups by adding or removing them from a product
 configuration.
 
 The User Sync tool can grant product access to users by adding
@@ -163,8 +163,8 @@ corresponding names.
 #### Check your products and product configurations
 
 Before you start configuring User Sync, you must know what Adobe
-products your enterprise uses, and what product 
-configurations and user groups are defined in the Adobe User
+products your enterprise uses, and what product
+configurations and user uroups are defined in the Adobe User
 Management system. For more information, see the help page for
 [configuring enterprise services](https://helpx.adobe.com/enterprise/help/configure-services.html#configure_services_for_group).
 
@@ -193,7 +193,7 @@ might be called “all_apps”.
 Make a note of the names you choose for these groups, and which
 Adobe groups they correspond to. You will use this to set up a
 mapping in the main User Sync configuration file. See details in
-the [Configure group mapping](#Configure-group-mapping) section
+the [Configure group mapping](#configure-group-mapping) section
 below.
 
 ![Figure 2: Group Mapping Overview](media/group-mapping.png)
@@ -249,7 +249,7 @@ files in the package are optional and/or alternate versions for
 specific purposes. You can copy these to your root folder, then
 rename and edit them to make your own configuration files. (See
 the following section,
-[Configuring the User Sync Tool](#Configuring-the-User-Sync-Tool).)
+[Configuring the User Sync Tool](#configuring-the-user-sync-tool).)
 
 5. **In Windows only:**
 
@@ -359,7 +359,7 @@ folder as the command-line executable.
 If you need to set up access to users in other organizations that
 have granted you access, you can include additional configuration
 files. For details, see the
-[advanced configuration instructions](#Accessing-Groups-in-Other-Organizations)
+[advanced configuration instructions](#accessing-groups-in-other-organizations)
 below.
 
 ### Setting up configuration files
@@ -414,7 +414,7 @@ enterprise LDAP directory. In order to isolate the sensitive
 information needed to connect to the two systems, all actual
 credential details are confined to these two files. **Be sure to
 secure them properly**, as described in the
-[Security Considerations](#Security-Considerations) section of
+[Security Considerations](#security-considerations) section of
 this document.
 
 #### Configure connection to the Adobe Admin Console
@@ -510,10 +510,10 @@ directory:
 #### Configure group mapping
 
 Before you can synchronize user groups and entitlements, you must
-create User Groups and Product License Configurations in the
+create user groups and product configurations in the
 Adobe Admin Console, and corresponding groups in your enterprise
 directory, as described above in
-[Set up product-access synchronization](#Set-up-product-access-synchronization).
+[Set up product-access synchronization](#set-up-product-access-synchronization).
 
 **NOTE:** All groups must exist and have the specified names on
 both sides. The tool does not create any groups on either side;
@@ -820,12 +820,16 @@ This section provides detailed instructions for each of these scenarios.
 This is the most typical and common type of invocation. The tool
 finds all changes to user information and to user-group and
 product configuration membership information on the enterprise
-side. It syncs the Adobe side by adding, updating, and deleting
+side. It syncs the Adobe side by adding, updating, and removing
 users and memberships.
 
-For users that have a Federated identity type, this action
-deletes users that exist on the Adobe side, but no longer exist
-in the enterprise directory.
+By default, only users whose identity type is Enterprise ID or
+Federated ID will be created, removed, or have their group
+memberships managed by User Sync, because generally Adobe ID
+users are not managed in the customer directory. See the
+[description below](#managing-users-with-adobe-ids) under
+[Advanced Configuration](#advanced-configuration) if this is how
+your organization works.
 
 This example assumes that the configuration file,
 user-sync-config.yml, contains a mapping from a directory group
@@ -981,12 +985,42 @@ Adobe side by the next sync action that adds users.
 User Sync requires additional configuration to synchronize user
 data in environments with more complex data structuring.
 
+- When you manage your Adobe ID users out of spreadsheets or your
+enterprise directory, you can configure the tool not to ignore
+them.
 - When your enterprise includes several Adobe organizations, you
 can configure the tool to add users in your organization to
 groups defined in other organizations.
 - When your enterprise user data includes customized attributes
 and mappings, you must configure the tool to be able to recognize
 those customizations.
+
+### Managing Users with Adobe IDs
+
+There is a configuration option `managed_identity_types` which
+can be set so as to manage Adobe ID users (and also to exclude
+other types).  You will probably want to set up a separate sync
+job specifically for those users, possibly using CSV inputs
+rather than taking inputs from your enterprise directory. Be sure
+to configure this sync job to ignore Enterprise ID and Federated
+ID users, or those users are likely to be removed from the
+directory!
+
+Removal of Adobe ID users via User Sync is not generally a safe
+practice:
+
+* If you specify that adobeID users should be
+removed from your organization, you will have to re-invite them
+(and have them re-accept) if you ever want to add them back in.
+* System administrators often use Adobe IDs, so removing Adobe ID
+users may inadvertently remove system administrators (including
+yourself)
+
+A better practice, when managing Adobe ID users, is simply add
+them and manage their group memberships, but never to remove
+them.  By managing their group memberships you can disable their
+entitlements without the need for a new invitation if you later
+want to turn them back on.
 
 ### Accessing Groups in Other Organizations
 
@@ -1214,7 +1248,7 @@ section of the main configuration file, they are listed under
 **extended_dashboard_groups**. This list effectively extends the
 set of dashboard groups that are considered on the Adobe
 side. See
-[Advanced Group and Product Management](#Advanced-Group-and-Product-Management)
+[Advanced Group and Product Management](#advanced-group-and-product-management)
 for more information.
 
 #### Hook code variables
