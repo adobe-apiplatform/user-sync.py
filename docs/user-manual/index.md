@@ -168,7 +168,7 @@ configurations and user uroups are defined in the Adobe User
 Management system. For more information, see the help page for
 [configuring enterprise services](https://helpx.adobe.com/enterprise/help/configure-services.html#configure_services_for_group).
 
-If you do not yet have any configurations, you can use the
+If you do not yet have any product configurations, you can use the
 Console to create them. You must have some, and they must have
 corresponding groups in enterprise LDAP directory, in order to
 configure User Sync to update your user entitlement information.
