@@ -18,7 +18,7 @@ It takes a list of enterprise directory users,
 either from an LDAP connection or from a tab-separated file, 
 and creates, updates, or removes user accounts in the
 Admin Console.
-/Users/imak/github-adobe/user-sync.py/docs/success-guide/index.md
+
 # Requirements
 
 * Python 2.7+
