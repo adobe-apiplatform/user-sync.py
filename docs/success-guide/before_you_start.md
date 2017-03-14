@@ -1,8 +1,12 @@
-## What You Need To Know Before You Start
+---
+layout: default
+---
 
-[Back to Contents](Contents.md) |  [Next Section](layout_orgs.md)
+# What You Need To Know Before You Start
 
-### Introduction to User Sync
+[Back to Contents](index.md) \| [Next Section](layout_orgs.md)
+
+## Introduction to User Sync
 
 Adobe User Sync is a command-line tool that moves user and group information from your organization's  enterprise directory system (such as Active Directory or other LDAP system) or other sources to the Adobe User Management system.  User Sync is predicated on the notion that the enterprise directory system is the authoritative source of information on users and user information from it is moved into the Adobe User Management System under control of a set of user sync configuration files and command line options.
 
@@ -16,7 +20,7 @@ In addition to syncing with enterprise directory systems, it is also possible to
 
 Finally, for those with large directories, it is possible to drive user sync via push notifications of changes in the directory system, rather than doing comparisons of large numbers of user accounts.
 
-### Terminology
+## Terminology
 
 - User Group: a named group of users in the Adobe user management system
 - PC: a Product Configuration.  An Adobe group-like mechanism where, when users are added to the PC, they are granted access to a specific Adobe product.
@@ -25,7 +29,7 @@ Finally, for those with large directories, it is possible to drive user sync via
 
  
 
-### Range of Configurations
+## Range of Configurations
 User sync is a very general tool that can accommodate a wide variety of configurations and process needs.
 
 Depending on your organization size and what Adobe products you have purchased you will likely have one or more Administrative Consoles and organizations in your Adobe setup.  Each organization has an administrator or administrators and you must be one of them to set up access credentials for user sync.
@@ -47,19 +51,19 @@ User Sync can handle user creation and update as well as license management.  Us
 There are a variety of options available for handling account deletion.  You may wish Adobe accounts to be deleted immediately when the corresponding enterprise account is removed, or you may have some other process in place to leave the Adobe account until someone checks if there are assets in that account to be recovered.  User Sync can handle a range of deletion processes including these.
 
 
-### User Sync runs on your systems.  
+## User Sync runs on your systems.  
 You’ll need a server on which to host it.  User Sync is a Python application and is open source.  You can use a pre-build Python package or build it yourself from source.
 
-### What you will need to know and do
+## What you will need to know and do
 
 ----------
 
-#### Directory System
+### Directory System
 You’ll need to understand your directory and how to access it.
 
 You’ll need to understand which users in the directory should be Adobe users.
 
-#### Process Issues
+### Process Issues
 You’ll need to establish an ongoing process and have someone to monitor it.
 
 You’ll need to understand how products are to be managed (who gets access and how, for example) in your company
@@ -68,11 +72,11 @@ You’ll need to decide if you will manage just users, or users and product lice
 
 You’ll need to decide how you want to handle account deletion when users are removed from the directory.
 
-#### Adobe environment
+### Adobe environment
 You’ll need a good understanding of what Adobe products you have
 
 You’ll need to understand what Adobe organizations are setup and which users go into which organizations.
 
 You’ll need administrative access to your Adobe organization(s)
 
-[Back to Contents](Contents.md) |  [Next Section](layout_orgs.md)
+[Back to Contents](index.md) \|  [Next Section](layout_orgs.md)

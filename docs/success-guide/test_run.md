@@ -1,6 +1,10 @@
-## Make a Test Run To Check Configuration
+---
+layout: default
+---
 
-[Previous Section](setup_config_files.md) | [Back to Contents](Contents.md) |  [Next Section](monitoring.md)
+# Make a Test Run To Check Configuration
+
+[Previous Section](setup_config_files.md) \| [Back to Contents](index.md) \| [Next Section](monitoring.md)
 
 To invoke user sync:
 
@@ -45,5 +49,5 @@ If these are all working as expected, you are ready to make a full run (without 
 
 
 
-[Previous Section](setup_config_files.md) | [Back to Contents](Contents.md) |  [Next Section](monitoring.md)
+[Previous Section](setup_config_files.md) \| [Back to Contents](index.md) \| [Next Section](monitoring.md)
 

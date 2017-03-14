@@ -92,3 +92,6 @@ class MockGetString():
 
     def iter_dict_configs(self):
         return iter([])
+
+    def get_list(self,test1,test2):
+        return []

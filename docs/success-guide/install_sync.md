@@ -1,6 +1,10 @@
-## Install User Sync
+---
+layout: default
+---
 
-[Previous Section](identify_server.md) | [Back to Contents](Contents.md) |  [Next Section](setup_config_files.md)
+# Install User Sync
+
+[Previous Section](identify_server.md) \| [Back to Contents](index.md) \| [Next Section](setup_config_files.md)
 
 Once you have access to the server where User Sync will run, pick a directory where you will install and operate User Sync.
 
@@ -41,4 +45,4 @@ Select “release”
 ![install2](images/install_config_files.png)
 
 
-[Previous Section](identify_server.md) | [Back to Contents](Contents.md) |  [Next Section](setup_config_files.md)
+[Previous Section](identify_server.md) \| [Back to Contents](index.md) \| [Next Section](setup_config_files.md)

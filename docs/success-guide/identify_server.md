@@ -1,6 +1,10 @@
-## Identify and Setup the Server Where User Sync Will Run
+---
+layout: default
+---
 
-[Previous Section](setup_adobeio.md) | [Back to Contents](Contents.md) |  [Next Section](install_sync.md)
+# Identify and Setup the Server Where User Sync Will Run
+
+[Previous Section](setup_adobeio.md) \| [Back to Contents](index.md) \|  [Next Section](install_sync.md)
 
 
 User Sync can be run manually, but most companies will want to set up automation where User Sync runs once to a few times per day automatically.
@@ -24,5 +28,5 @@ Unix, OSX, or Windows are all supported by User Sync.
 
 
 
-[Previous Section](setup_adobeio.md) | [Back to Contents](Contents.md) |  [Next Section](install_sync.md)
+[Previous Section](setup_adobeio.md) \| [Back to Contents](index.md) \|  [Next Section](install_sync.md)
 
