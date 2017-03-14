@@ -149,6 +149,7 @@ class Commands(object):
     def add_groups(self, groups_to_add, group_type):
         '''
         :type groups_to_add: set(str)
+        :type group_type: umapi_client.GroupTypes
         '''
         if (groups_to_add != None and len(groups_to_add) > 0):
             params = {
@@ -160,7 +161,7 @@ class Commands(object):
     def remove_groups(self, groups_to_remove, group_type):
         '''
         :type groups_to_remove: set(str)
-        :type product_type: str
+        :type group_type: umapi_client.GroupTypes
         '''
         if (groups_to_remove != None and len(groups_to_remove) > 0):
             params = {
@@ -258,7 +259,6 @@ class ActionManager(object):
             command_name, command_param = command
             command_function = getattr(action, command_name) 
             command_function(**command_param)
-
         return action
 
     def add_action(self, action, callback = None):

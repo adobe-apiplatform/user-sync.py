@@ -25,7 +25,6 @@ import user_sync.connector.dashboard
 import user_sync.error
 import user_sync.helper
 import user_sync.identity_type
-from CodeWarrior.CodeWarrior_suite import target
 
 import umapi_client
 
