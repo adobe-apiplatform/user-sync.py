@@ -1,2 +1,5 @@
-user,domain
-jsmith@example.com,
+type,user,domain
+adobeID,jimbo@gmail.com,
+enterpriseID,jsmith1@ent-domain.com,
+federatedID,jsmith2,user-login-fed-domain.com
+federatedID,jsmith3@email-login-fed-domain.com,
