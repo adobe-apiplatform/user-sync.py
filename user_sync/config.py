@@ -254,8 +254,14 @@ class ConfigLoader(object):
         '''
         :type file_path: str
         '''        
-        with open(file_path, 'r', 1) as input_file:
-            return yaml.load(input_file)
+        try:
+            with open(file_path, 'r', 1) as input_file:
+                return yaml.load(input_file)
+        except yaml.error.MarkedYAMLError as e:
+            # if a parser error occured while loading the configuration file,
+            # swallow the error and re-raise it as a configuration loader
+            # exception
+            raise user_sync.error.AssertionException('Error loading configuration file: %s' % e)
         
     def get_file_path(self, filename):
         '''
