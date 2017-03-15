@@ -54,6 +54,10 @@ class ConfigLoader(object):
             'manage_groups': True,
             'update_user_info': True,
             
+            'delete_user_key_list': None,
+            'delete_list_output_path': None,
+            'delete_nonexistent_users': False,
+            
             'remove_user_key_list': None,
             'remove_list_output_path': None,
             'remove_nonexistent_users': False
@@ -372,6 +376,9 @@ class ConfigLoader(object):
             'remove_user_key_list': options['remove_user_key_list'],
             'remove_list_output_path': options['remove_list_output_path'],
             'remove_nonexistent_users': options['remove_nonexistent_users'],
+            'delete_user_key_list': options['delete_user_key_list'],
+            'delete_list_output_path': options['delete_list_output_path'],
+            'delete_nonexistent_users': options['delete_nonexistent_users'],
             'default_country_code': default_country_code,
             'max_deletions_per_run': max_deletions_per_run,
             'max_missing_users': max_missing_users,

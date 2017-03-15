@@ -112,6 +112,21 @@ optional arguments:
                         specifies the file containing the list of users to be
                         removed. Users on this list are removeFromOrg'd on the
                         Adobe side.
+  --delete-nonexistent-users
+                        Causes the user sync tool to delete users on the Adobe
+			side if they are not in the customer side AD. Adobe ID
+			user accounts are remove from org'd, but not deleted.
+  --generate-delete-list output_path
+                        processing similar to --delete-nonexistent-users
+                        except that rather than performing removals, a file is
+                        generated (with the given pathname) listing users who
+                        would be removed. This file can then be given in the
+                        --delete-list argument in a subsequent run.
+  --delete-list input_path
+                        specifies the file containing the list of users to be
+                        deleted. Enterprise and federated users on this list
+			are deleted on the Adobe side, and Adobe ID's are
+			removeFromOrg'd.
 ```
 
 # Configuration

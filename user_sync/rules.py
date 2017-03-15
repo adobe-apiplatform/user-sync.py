@@ -40,6 +40,9 @@ class RuleProcessor(object):
             'username_filter_regex': None,
             
             'new_account_type': user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
+            'all_identity_types': [user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
+                                   user_sync.identity_type.FEDERATED_IDENTITY_TYPE,
+                                   user_sync.identity_type.ADOBEID_IDENTITY_TYPE],
             'managed_identity_types': [user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
                                        user_sync.identity_type.FEDERATED_IDENTITY_TYPE],
             'manage_groups': True,
@@ -48,6 +51,9 @@ class RuleProcessor(object):
             'remove_user_key_list': None,
             'remove_list_output_path': None,
             'remove_nonexistent_users': False,
+            'delete_user_key_list': None,
+            'delete_list_output_path': None,
+            'delete_nonexistent_users': False,
             'default_country_code': None,
             'max_deletions_per_run': None,
             'max_missing_users': None,
@@ -62,11 +68,26 @@ class RuleProcessor(object):
         self.organization_info_by_organization = {}
         self.adding_dashboard_user_key = set()
 
+        '''
         remove_user_key_list = options['remove_user_key_list']
         remove_user_key_list = set(remove_user_key_list) if (remove_user_key_list != None) else set()
         self.remove_user_key_list = remove_user_key_list
         
-        self.need_to_process_orphaned_dashboard_users = options['remove_list_output_path'] != None or options['remove_nonexistent_users']
+        delete_user_key_list = options['delete_user_key_list']
+        delete_user_key_list = set(delete_user_key_list) if (delete_user_key_list != None) else set()
+        self.delete_user_key_list = delete_user_key_list
+        '''
+        
+        # we only need a reference to either the remove or delete key list,
+        # since you can't do both
+        remove_or_delete_user_key_list = options['remove_user_key_list'] if options['remove_user_key_list'] != None else options['delete_user_key_list']
+        remove_or_delete_user_key_list = set(remove_or_delete_user_key_list) if (remove_or_delete_user_key_list != None) else set()
+        self.remove_or_delete_user_key_list = remove_or_delete_user_key_list
+        
+        self.delete_after_remove_from_org = options['delete_nonexistent_users'] or options['delete_user_key_list']
+        self.need_to_process_orphaned_dashboard_users_for_remove = options['remove_list_output_path'] != None or options['remove_nonexistent_users']
+        self.need_to_process_orphaned_dashboard_users_for_delete = options['delete_list_output_path'] != None or options['delete_nonexistent_users']
+        self.need_to_process_orphaned_dashboard_users = self.need_to_process_orphaned_dashboard_users_for_remove or self.need_to_process_orphaned_dashboard_users_for_delete
                 
         self.logger = logger = logging.getLogger('processor')
 
@@ -152,7 +173,7 @@ class RuleProcessor(object):
         
         directory_user_by_user_key = self.directory_user_by_user_key        
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
-        remove_user_key_list = self.remove_user_key_list
+        remove_or_delete_user_key_list = self.remove_or_delete_user_key_list
 
         directory_groups = set(mappings.iterkeys())
         if (directory_group_filter != None):
@@ -170,7 +191,7 @@ class RuleProcessor(object):
                 continue
             if not self.is_selected_user_key(user_key):
                 continue
-            if user_key in remove_user_key_list:
+            if user_key in remove_or_delete_user_key_list:
                 continue
             
             filtered_directory_user_by_user_key[user_key] = directory_user
@@ -291,24 +312,35 @@ class RuleProcessor(object):
         return True
     
     def process_orphaned_dashboard_users(self):
-        remove_user_key_list = self.remove_user_key_list
+        remove_or_delete_user_key_list = self.remove_or_delete_user_key_list
             
         options = self.options
         remove_list_output_path = options['remove_list_output_path']
         remove_nonexistent_users = options['remove_nonexistent_users']
+        delete_list_output_path = options['delete_list_output_path']
+        delete_nonexistent_users = options['delete_nonexistent_users']
         
         max_deletions_per_run = options['max_deletions_per_run']
         max_missing_users = options['max_missing_users']
 
-        orphaned_dashboard_users = list(self.iter_orphaned_dashboard_users(self.options['managed_identity_types']))
-        self.logger.info('Orphaned users to be removed: %s', [self.get_dashboard_user_key(dashboard_user) for dashboard_user in orphaned_dashboard_users])
+        if self.need_to_process_orphaned_dashboard_users_for_remove:
+            orphaned_dashboard_users = list(self.iter_orphaned_dashboard_users(self.options['managed_identity_types']))
+            self.logger.info('Orphaned users to be removed: %s', [self.get_dashboard_user_key(dashboard_user) for dashboard_user in orphaned_dashboard_users])
+        elif self.need_to_process_orphaned_dashboard_users_for_delete:
+            orphaned_dashboard_users = list(self.iter_orphaned_dashboard_users(self.options['all_identity_types']))
+            self.logger.info('Orphaned users to be deleted: %s', [self.get_dashboard_user_key(dashboard_user) for dashboard_user in orphaned_dashboard_users])
+        else:
+            raise user_sync.error.AssertionException('User removal operation type invalid.')            
         
         number_of_orphaned_dashboard_users = len(orphaned_dashboard_users)
 
-        if (remove_list_output_path != None):
+        if remove_list_output_path != None:
             self.logger.info('Writing remove list to: %s', remove_list_output_path)
             self.write_remove_list(remove_list_output_path, orphaned_dashboard_users)
-        elif (remove_nonexistent_users):
+        elif delete_list_output_path != None:
+            self.logger.info('Writing delete list to: %s', delete_list_output_path)
+            self.write_remove_list(delete_list_output_path, orphaned_dashboard_users, True)
+        elif remove_nonexistent_users or delete_nonexistent_users:
             if number_of_orphaned_dashboard_users > max_missing_users:
                 raise user_sync.error.AssertionException(
                     'Unable to process orphaned users, as number of users (%s) is larger than max_missing_users setting' % number_of_orphaned_dashboard_users)
@@ -321,24 +353,24 @@ class RuleProcessor(object):
                                          number_of_orphaned_dashboard_users)
                     break
                 user_key = self.get_dashboard_user_key(dashboard_user)
-                remove_user_key_list.add(user_key)
+                remove_or_delete_user_key_list.add(user_key)
                     
     def clean_dashboard_users(self, dashboard_connectors):
         # Process removal of users.  The remove_user_key list is generated earlier in processing.
         '''
         :type dashboard_connectors: DashboardConnectors
         '''
-        remove_user_key_list = self.remove_user_key_list
-        if (len(remove_user_key_list) == 0):
+        remove_or_delete_user_key_list = self.remove_or_delete_user_key_list
+        if (len(remove_or_delete_user_key_list) == 0):
             return
 
         owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
         
-        self.logger.info('Removing users: %s', remove_user_key_list)                
+        self.logger.info('Removing users: %s', remove_or_delete_user_key_list)                
         ready_to_remove_from_org = False
 
         total_waiting_by_user_key = {}
-        for user_key in remove_user_key_list:
+        for user_key in remove_or_delete_user_key_list:
             total_waiting_by_user_key[user_key] = 0
 
         def try_and_remove_from_org(user_key):
@@ -347,9 +379,10 @@ class RuleProcessor(object):
                 if (not owning_organization_info.is_dashboard_users_loaded() or owning_organization_info.get_dashboard_user(user_key) != None):
                     self.logger.info('Removing user for user key: %s', user_key)
                     id_type, username, domain = self.parse_user_key(user_key)
+                    do_delete_user = self.delete_after_remove_from_org and id_type != user_sync.identity_type.ADOBEID_IDENTITY_TYPE
                     commands = user_sync.connector.dashboard.Commands(identity_type=id_type,
                                                                       username=username, domain=domain)
-                    commands.remove_from_org()
+                    commands.remove_from_org(do_delete_user)
                     dashboard_connectors.get_owning_connector().send_commands(commands)
 
         def on_remove_groups_callback(user_key):
@@ -372,7 +405,7 @@ class RuleProcessor(object):
                 self.logger.info('No mapped groups for accessor: %s', organization_name) 
                 continue
                             
-            for user_key in remove_user_key_list:
+            for user_key in remove_or_delete_user_key_list:
                 dashboard_user = organization_info.get_dashboard_user(user_key)
                 if (dashboard_user != None):
                     groups_to_remove = self.normalize_groups(dashboard_user.get('groups')) & mapped_groups
@@ -390,7 +423,7 @@ class RuleProcessor(object):
                     dashboard_connector.send_commands(commands, create_remove_groups_callback(user_key))
 
         ready_to_remove_from_org = True
-        for user_key in remove_user_key_list:
+        for user_key in remove_or_delete_user_key_list:
             try_and_remove_from_org(user_key)
      
     def get_user_attributes(self, directory_user):
@@ -558,7 +591,6 @@ class RuleProcessor(object):
         :type dashboard_connector: user_sync.connector.dashboard.DashboardConnector
         :rtype: map(string, set)
         '''
-        directory_user_by_user_key = self.directory_user_by_user_key
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
 
         # the way we construct the return vaue is to start with a map from all directory users
@@ -780,14 +812,14 @@ class RuleProcessor(object):
             id_type = row.get(id_type_column_name)
             user = row.get(user_column_name)
             domain = row.get(domain_column_name)
-            user_key = RuleProcessor.get_user_key(user, domain, id_type)
+            user_key = RuleProcessor.get_user_key(user, domain, None, id_type)
             if user_key:
                 result.append(user_key)
             elif logger:
                 logger.error("Invalid input line, ignored: %s", row)
         return result
 
-    def write_remove_list(self, file_path, dashboard_users):
+    def write_remove_list(self, file_path, dashboard_users, is_delete_list=False):
         total_users = 0
         with open(file_path, 'wb') as output_file:
             delimiter = user_sync.helper.guess_delimiter_from_filename(file_path)            
@@ -798,8 +830,11 @@ class RuleProcessor(object):
                 id_type, username, domain = self.parse_user_key(user_key)
                 writer.writerow({'type': id_type, 'user': username, 'domain': domain})
                 total_users += 1
-        self.logger.info('Total users in remove list: %d', total_users)
-
+        if is_delete_list:
+            self.logger.info('Total users in delete list: %d', total_users)
+        else:
+            self.logger.info('Total users in remove list: %d', total_users)
+            
     def log_after_mapping_hook_scope(self, before_call=None, after_call=None):
         if ((before_call is None and after_call is None) or (before_call is not None and after_call is not None)):
             raise ValueError("Exactly one of 'before_call', 'after_call' must be passed (and not None)")

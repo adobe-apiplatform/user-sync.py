@@ -73,7 +73,7 @@ directory system through LDAP.
 - User Sync requests current users and associated product
 configurations from the Adobe Admin Console through the User
 Management API.
-- User Sync determines which users need to be created, deleted,
+- User Sync determines which users need to be created, removed,
 or updated, and what user group and product configuration
 memberships they should have, based on rules you have defined in
 the User Sync configuration files.
@@ -480,10 +480,10 @@ your enterprise directory.
 directory groups and Adobe product configurations and user
 groups.
 - The **limits** section sets values that limit the number of
-user accounts that can be deleted from the dashboard in a single
+user accounts that can be removed from the dashboard in a single
 run, and the minimum number of users that must be in the
-directory for user-sync to proceed with account deletion. These
-limits prevent accidental deletion of a large number of accounts
+directory for user-sync to proceed with account removal. These
+limits prevent accidental removal of a large number of accounts
 in case of misconfiguration or other errors.
 - The **logging** section specifies an audit trail path and
 controls how much information is written to the log.
@@ -559,13 +559,13 @@ corresponding users are not present in the directory and the tool
 is invoked with the `--remove-nonexistent-users` option. The
 `max_deletions_per_run` and `max_missing_users` values in
 the `limits` section of the configuration file set limits on
-how many users can be deleted at any one time. These limits
-prevent accidental deletion of a large number of accounts in case
+how many users can be removed at any one time. These limits
+prevent accidental removal of a large number of accounts in case
 of misconfiguration or other errors:
 
 - The value of `max_deletions_per_run` sets a limit on the number
-of account deletions in a single run. If more users are flagged
-for deletion, they are left for the next run.
+of account removals in a single run. If more users are flagged
+for removal, they are left for the next run.
 
 	If you routinely remove a larger number of accounts, you can
 raise this value.
@@ -790,6 +790,9 @@ specific behavior in various situations.
 | `--remove-nonexistent-users` | When supplied, if Federated users are found on the Adobe side that are not in the customer-side directory, removes those user accounts from the organization. |
 | `--generate-remove-list` _output\_path_ | When supplied, if Federated users are found on the Adobe side that are not in the enterprise directory, lists those users to the given file. You can then pass this file to the `remove-list` argument in a subsequent run. |
 | `-d` _input\_path_<br>`--remove-list` _input\_path_ | Removes a list of users contained in the given file from the Adobe organization. |
+| `--delete-nonexistent-users` | When supplied, if Enterprise or Federated users are found on the Adobe side that are not in the customer-side directory, they are deleted from the Adobe side. Adobe ID's found that are not on the customer side are removed from the organization. |
+| `--generate-delete-list` _output\_path_ | When supplied, all users found on the Adobe side that are not in the enterprise directory, lists those users to the given file. You can then pass this file to the `delete-list` argument in a subsequent run. |
+| `--delete-list` _input\_path_ | Deletes a list of users contained in the given file from the Adobe organization. Adobe ID users are removed from the organization. |
 {: .bordertablestyle }
 
 
@@ -799,7 +802,7 @@ There are various ways to integrate the User Sync tool into
 your enterprise processes, such as:
 
 * **Update users and group memberships.** Sync users and group
-memberships by adding, updating, and deleting users in Adobe User
+memberships by adding, updating, and removing users in Adobe User
 Management system.  This is the most general and common use case.
 * **Sync only user information.** Use this approach if product
 access is to be handled using the Admin Console.
@@ -807,11 +810,11 @@ access is to be handled using the Admin Console.
 sync to users in given groups, or limit sync to users that match
 a given pattern. You can also sync against a CSV file rather than
 a directory system.
-* **Update users and group memberships, but handle deletions
+* **Update users and group memberships, but handle removals
 separately.** Sync users and group memberships by adding and
-updating users, but do not delete users in the initial
-call. Instead keep a list of users to be deleted, then perform
-the deletions in a separate call.
+updating users, but do not remove users in the initial
+call. Instead keep a list of users to be removed, then perform
+the removals in a separate call.
 
 This section provides detailed instructions for each of these scenarios.
 
@@ -839,7 +842,7 @@ configuration**.
 #### Command
 
 This invocation supplies both the users and process-groups
-parameters, and allows deletion with the remove-nonexistent-users
+parameters, and allows user removal with the remove-nonexistent-users
 parameter.
 
 ```sh
@@ -944,23 +947,60 @@ such a file, example.users-file.csv, is provided with the tool.
 ./user-sync –c user-sync-config.yml --users file user_list.csv
 ```
 
-#### Update users and group memberships, but handle deletions separately
+#### Update users and group memberships, but handle removals separately
 
 If you do not supply the remove-nonexistent-users parameter,
 you can sync user and group memberships without removing any
 users from the Adobe side.
 
-If you want to handle deletions separately, you can instruct
+If you want to handle removals separately, you can instruct
 the tool to flag users that no longer exist in the enterprise
 directory but still exist on the Adobe side. The
 generate-remove-list parameter writes out the list of user who
-are flagged for deletion to a CSV file.
+are flagged for removal to a CSV file.
 
-To perform the deletions in a separate call, you can pass the
+To perform the removals in a separate call, you can pass the
 file generated by the generate-remove-list parameter, or you
 can pass a CSV file of users that you have generated by some
 other means An example of such a file, example.users-file.csv,
 is provided with the tool.
+
+#### Add users and generate a list of users to remove
+
+This action synchronizes all users from the customer side with
+the Adobe side and also generates a list of federated users that no longer
+exist in the enterprise directory but still exist on the Adobe
+side.
+
+```sh
+./user-sync –c user-sync-config.yml --users all --generate-remove-list users-to-remove.csv
+```
+
+#### Remove users from separate list
+
+This action takes a CSV file containing a list of users that have
+been flagged for removal, and removes those users from the Adobe
+side. The CSV file is typically the one generated by a previous
+call that used the generate-remove-list parameter.
+
+You can create a CSV file of users to remove by some other means.
+However, if your list includes any users that still exist in your
+enterprise directory, those users will be added back in on the
+Adobe side by the next sync action that adds users.
+
+```sh
+./user-sync –c user-sync-config.yml --remove-list users-to-remove.csv
+```
+
+#### Delete non-existent users
+
+This invocation supplies both the users and process-groups
+parameters, and allows deletion with the delete-nonexistent-users
+parameter.
+
+```sh
+./user-sync –c user-sync-config.yml --users all --process-groups --delete-nonexistent-users
+```
 
 #### Add users and generate a list of users to delete
 
@@ -976,9 +1016,9 @@ side.
 #### Delete users from separate list
 
 This action takes a CSV file containing a list of users that have
-been flagged for deletion, and removes those users from the Adobe
+been flagged for deletion, and deletes those users from the Adobe
 side. The CSV file is typically the one generated by a previous
-call that used the generate-remove-list parameter.
+call that used the generate-delete-list parameter.
 
 You can create a CSV file of users to delete by some other means.
 However, if your list includes any users that still exist in your
@@ -986,7 +1026,7 @@ enterprise directory, those users will be added back in on the
 Adobe side by the next sync action that adds users.
 
 ```sh
-./user-sync –c user-sync-config.yml --remove-list users-to-remove.csv
+./user-sync –c user-sync-config.yml --delete-list users-to-delete.csv
 ```
 
 ## Advanced Configuration
