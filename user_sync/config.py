@@ -120,8 +120,12 @@ class ConfigLoader(object):
         :rtype str
         '''
         options = self.options
-        return options['directory_connector_module_name']
-    
+        if options['directory_get_config_name']:
+            module_type = self.main_config.child_configs['directory'].value['connectors'].keys()[0]
+            return 'user_sync.connector.directory_' + module_type
+        else:
+            return options['directory_connector_module_name']
+
     def get_directory_connector_configs(self):
         connectors_config = None
         directory_config = self.main_config.get_dict_config('directory_users', True)
