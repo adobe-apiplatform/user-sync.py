@@ -1375,7 +1375,7 @@ On the Adobe Admin Console, you can configure a domain to use email-based user l
 
 To configure User Sync to work with username logins, you need to set several additional configuration items.
 
-In the onnector-ldap.yml file:
+In the `connector-ldap.yml` file:
 
 - Set the value of `user_username_format` to a value like '{attrname}' where attrname names the directory attribute whose value is to be used for the user name.
 - Set the value of `user_domain_format` to a value like '{attrname}' if the domain name comes from the named directory attribute, or to a fixed string value like 'example.com'.
