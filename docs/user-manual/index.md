@@ -258,13 +258,13 @@ the following section,
     Before running the user-sync.pex executable in Windows, you might
 need to work around a Windows-only Python execution issue:
 
-	The Windows operating system enforces a file path length limit of
+    The Windows operating system enforces a file path length limit of
 260 characters. When executing a Python PEX file, it creates a
 temporary location to extract the contents of the package. If the
 path to that location exceeds 260 characters, the script does not
 execute properly.
 
-	By default, the temporary cache is in your home folder, which may
+    By default, the temporary cache is in your home folder, which may
 cause pathnames to exceed the limit. To work around this issue,
 create an environment variable in Windows called PEX\_ROOT, a set
 the path to C:\\user-sync\\.pex. The OS uses this variable for
@@ -475,9 +475,9 @@ connects to the Adobe Admin Console through the User Management
 API. It should point to the separate, secure configuration file
 that
 stores the access credentials.
-	- The **directory** subsection contains two subsections,
+    - The **directory** subsection contains two subsections,
 connectors and groups:
-	- The **connectors** subsection points to the separate,
+    - The **connectors** subsection points to the separate,
 secure configuration file that stores the access credentials for
 your enterprise directory.
 - The **groups** section defines the mapping between your
@@ -550,10 +550,10 @@ For example:
 groups:
   - directory_group: Acrobat
     dashboard_groups:
-	  - Default Acrobat Pro DC configuration
+      - Default Acrobat Pro DC configuration
   - directory_group: Acrobat_Accounting
-	dashboard_groups:
-	  - Accounting_Department
+    dashboard_groups:
+      - Accounting_Department
 ```
 
 #### Configure limits
@@ -571,7 +571,7 @@ of misconfiguration or other errors:
 of account deletions in a single run. If more users are flagged
 for deletion, they are left for the next run.
 
-	If you routinely remove a larger number of accounts, you can
+    If you routinely remove a larger number of accounts, you can
 raise this value.
 
 - If your organization has a large number of users in the
@@ -582,7 +582,7 @@ which causes the run to exit and report an error if there are
 this many fewer users in the enterprise directory than in the
 Adobe admin console.
 
-	Raise this value if you expect the number of users to drop by
+    Raise this value if you expect the number of users to drop by
 more than the value specified.
 
 For example:
@@ -683,13 +683,13 @@ directory:
   groups:
     - directory_group: Acrobat
       dashboard_groups:
-	    - Default Acrobat Pro DC configuration
-	- directory_group: Photoshop
-	  dashboard_groups:
-	    - "Default Photoshop CC - 100 GB configuration"
-		- "Default All Apps plan - 100 GB configuration"
-		- "Default Adobe Document Cloud for enterprise configuration"
-		- "Default Adobe Enterprise Support Program configuration"
+        - Default Acrobat Pro DC configuration
+    - directory_group: Photoshop
+      dashboard_groups:
+        - "Default Photoshop CC - 100 GB configuration"
+        - "Default All Apps plan - 100 GB configuration"
+        - "Default Adobe Document Cloud for enterprise configuration"
+        - "Default Adobe Enterprise Support Program configuration"
 limits:
   max_deletions_per_run: 10
   max_missing_users: 200
@@ -1167,13 +1167,13 @@ extensions section of the main User Sync configuration file.
 extensions:
   - context: per_user
     extended_attributes:
-	  - my-attribute-1
-	  - my-attribute-2
+      - my-attribute-1
+      - my-attribute-2
     extended_dashboard_groups:
       - my-dashboard-group-1
-	  - my-dashboard-group-2
+      - my-dashboard-group-2
     after_mapping_hook: |
-		pass # custom python code goes here
+        pass # custom python code goes here
 ```
 
 #### Adding custom attributes
@@ -1226,22 +1226,22 @@ generated.
 ```YAML
 extensions:
   - context: per-user
-	extended_attributes:
-	  - bc
-	  - subco
-	extended_dashboard_groups:
-	  - Acrobat_Sunday_Special
-	  - Group for Test 011 TCP
-	after_mapping_hook: |
-	  bc = source_attributes['bc']
-	  subco = source_attributes['subco']
-	  if bc is not None:
-		  target_attributes['country'] = bc[0:2]
-		  target_groups.add(bc)
-	  if subco is not None:
-		  target_groups.add(subco)
-	  else:
-		  target_groups.add('Undefined subco')
+    extended_attributes:
+      - bc
+      - subco
+    extended_dashboard_groups:
+      - Acrobat_Sunday_Special
+      - Group for Test 011 TCP
+    after_mapping_hook: |
+      bc = source_attributes['bc']
+      subco = source_attributes['subco']
+      if bc is not None:
+          target_attributes['country'] = bc[0:2]
+          target_groups.add(bc)
+      if subco is not None:
+          target_groups.add(subco)
+      else:
+          target_groups.add('Undefined subco')
 ```
 
 In this example, two custom attributes, bc, and subco, are
@@ -1251,14 +1251,14 @@ code processes the data for each user:
 - The country code is taken from the first 2 characters in the bc
 attribute.
 
-	This shows how you can use custom directory attributes to provide
+    This shows how you can use custom directory attributes to provide
 values for standard fields being sent to Adobe.
 
 - The user is added to groups that come from subco attribute and
 the bc attribute (in addition to any mapped groups from the group
 map in the configuration file).
 
-	This shows how to customize the group or product configuration
+    This shows how to customize the group or product configuration
 list to get users synced into additional groups.
 
 If the hook code references Adobe groups or product
@@ -1303,13 +1303,13 @@ value in this dictionary will change the value written on the
 Adobe side. Because Adobe pre-defines a fixed set of attributes,
 adding a key to this dictionary has no effect.  The keys in this
 dictionary are:
-	* `firstName` - ignored for AdobeID, used elsewhere
-	* `lastName` - ignored for AdobeID, used elsewhere
-	* `email` - used everywhere
-	* `country` - ignored for AdobeID, used elsewhere
-	* `username` - ignored for all but Federated ID
+    * `firstName` - ignored for AdobeID, used elsewhere
+    * `lastName` - ignored for AdobeID, used elsewhere
+    * `email` - used everywhere
+    * `country` - ignored for AdobeID, used elsewhere
+    * `username` - ignored for all but Federated ID
       [configured with username-based login](https://helpx.adobe.com/enterprise/help/configure-sso.html)
-	* `domain` - ignored for all but Federated ID [configured with username-based login](https://helpx.adobe.com/enterprise/help/configure-sso.html)
+    * `domain` - ignored for all but Federated ID [configured with username-based login](https://helpx.adobe.com/enterprise/help/configure-sso.html)
 * `target_groups`: A per-user Python set that collects the
 Adobe-side user groups and product configurations to which the
 user is added when `process-groups` is specified for the sync
