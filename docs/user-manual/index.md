@@ -969,7 +969,7 @@ is provided with the tool.
 
 This action synchronizes all users from the customer side with
 the Adobe side and also generates a list of users that no longer
-exist in the enterprise directory but still exist on the Adobe
+exist in the customer directory but still exist on the Adobe
 side.
 
 ```sh
@@ -985,7 +985,7 @@ previous call that used the generate-remove-list parameter.
 
 You can create a CSV file of users to remove by some other means.
 However, if your list includes any users that still exist in your
-enterprise directory, those users will be added back in on the
+customer directory, those users will be added back in on the
 Adobe side by the next sync action that adds users.
 
 ```sh

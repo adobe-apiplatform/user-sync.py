@@ -76,13 +76,13 @@ def process_args():
                         help='specifies the file containing the list of users to be removed. Users on this list are removed from the organization on the Adobe side.',
                         metavar='input_path', dest='remove_list_input_path')
     parser.add_argument('--delete-nonexistent-users',
-                        help='Causes the user sync tool to delete users that exist on the Adobe side if they are not in the customer side AD. If the account is an Adobe account, it is remove from org\'d, but not deleted.',
+                        help='Causes the user sync tool to delete user accounts that exist on the Adobe side if they are not in the customer side AD. If the account is an Adobe ID account, it is remove from the Adobe-side organization, but not deleted.',
                         action='store_true', dest='delete_nonexistent_users')
     parser.add_argument('--generate-delete-list',
                         help='processing similar to --delete-nonexistent-users except that rather than performing deletions, a file is generated (with the given pathname) listing users who would be deleted. This file can then be given in the --delete-list argument in a subsequent run.',
                         metavar='output_path', dest='delete_list_output_path')
     parser.add_argument('--delete-list',
-                        help='specifies the file containing the list of users to be deleted. Users in this list are removed from the organization on the Adobe side, and managed users are deleted on the Adobe side.',
+                        help='specifies the file containing the list of users to be deleted. Users in this list are removed from the organization on the Adobe side, and Enterprise and Federated user accounts are deleted on the Adobe side.',
                         metavar='input_path', dest='delete_list_input_path')
     return parser.parse_args()
 

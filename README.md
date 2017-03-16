@@ -123,7 +123,7 @@ optional arguments:
   --delete-list input_path
                         specifies the file containing the list of users to be
                         deleted. Enterprise and federated users on this list
-                        are deleted on the Adobe side, and Adobe ID's are
+                        are deleted on the Adobe side, and Adobe ID users are
                         removed from the organization but not deleted.
 ```
 

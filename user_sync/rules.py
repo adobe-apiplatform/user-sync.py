@@ -74,11 +74,8 @@ class RuleProcessor(object):
         # them
         self.delete_user_accounts = options['delete_nonexistent_users'] or options['delete_user_key_list']
         
-        # determine how we should treat orphaned accounts during processing
-        self.process_orphaned_accounts_for_delete = options['delete_list_output_path'] is not None or options['delete_nonexistent_users']
-        
         # determine whether we need to process orphaned users at all
-        self.need_to_process_orphaned_dashboard_users = options['remove_list_output_path'] is not None or options['remove_nonexistent_users'] or self.process_orphaned_accounts_for_delete
+        self.need_to_process_orphaned_dashboard_users = options['remove_list_output_path'] or options['remove_nonexistent_users'] or options['delete_list_output_path'] or options['delete_nonexistent_users']
         
         self.logger = logger = logging.getLogger('processor')
 
@@ -281,12 +278,12 @@ class RuleProcessor(object):
                 for user_key, desired_groups in accessor_unprocessed_groups_by_user_key.iteritems():
                     self.try_and_update_dashboard_user(accessor_organization_info, user_key, dashboard_connector, groups_to_add=desired_groups)
                     
-    def iter_orphaned_dashboard_users(self, orphan_account_types=None):
+    def iter_orphaned_dashboard_users(self, orphan_account_types):
         owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
         for user_key, dashboard_user in owning_organization_info.iter_orphaned_dashboard_users():
             if not self.is_selected_user_key(user_key):
                 continue
-            if orphan_account_types is not None and dashboard_user.get('type') not in orphan_account_types:
+            if dashboard_user.get('type') not in orphan_account_types:
                 continue
             yield dashboard_user
             
@@ -313,12 +310,8 @@ class RuleProcessor(object):
         max_deletions_per_run = options['max_deletions_per_run']
         max_missing_users = options['max_missing_users']
 
-        if self.process_orphaned_accounts_for_delete:
-            orphaned_dashboard_users = list(self.iter_orphaned_dashboard_users())
-            self.logger.info('Orphaned users to be deleted: %s', [self.get_dashboard_user_key(dashboard_user) for dashboard_user in orphaned_dashboard_users])
-        else:
-            orphaned_dashboard_users = list(self.iter_orphaned_dashboard_users(self.options['managed_identity_types']))
-            self.logger.info('Orphaned users to be removed: %s', [self.get_dashboard_user_key(dashboard_user) for dashboard_user in orphaned_dashboard_users])
+        orphaned_dashboard_users = list(self.iter_orphaned_dashboard_users())
+        self.logger.info('Orphaned users to be processed: %s', [self.get_dashboard_user_key(dashboard_user) for dashboard_user in orphaned_dashboard_users])
         
         number_of_orphaned_dashboard_users = len(orphaned_dashboard_users)
 
