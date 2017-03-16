@@ -257,11 +257,15 @@ class ConfigLoader(object):
         try:
             with open(file_path, 'r', 1) as input_file:
                 return yaml.load(input_file)
+        except IOError as e:
+            # if a file operation error occurred while loading the
+            # configuration file, swallow up the exception and re-raise this
+            # as an configuration loader exception.
+            raise user_sync.error.AssertionException('Error reading configuration file: %s' % e)
         except yaml.error.MarkedYAMLError as e:
-            # if a parser error occured while loading the configuration file,
-            # swallow the error and re-raise it as a configuration loader
-            # exception
-            raise user_sync.error.AssertionException('Error loading configuration file: %s' % e)
+            # same as above, but indicate this problem has to do with
+            # parsing the configuration file.
+            raise user_sync.error.AssertionException('Error parsing configuration file: %s' % e)
         
     def get_file_path(self, filename):
         '''
