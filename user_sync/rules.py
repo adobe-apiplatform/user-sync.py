@@ -796,6 +796,8 @@ class RuleProcessor(object):
             id_type = row.get(id_type_column_name)
             user = row.get(user_column_name)
             domain = row.get(domain_column_name)
+            
+            # specifying None for (optional) email, because we don't have it
             user_key = RuleProcessor.get_user_key(user, domain, None, id_type)
             if user_key:
                 result.append(user_key)
