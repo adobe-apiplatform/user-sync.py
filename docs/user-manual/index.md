@@ -676,8 +676,9 @@ illustrate possible configuration values.
 ```YAML
 dashboard:
   owning: dashboard-config.yml
-  user_identity_type: federatedID
+
 directory:
+  user_identity_type: federatedID
   connectors:
     ldap: connector-ldap.yml
   groups:
@@ -690,9 +691,11 @@ directory:
         - "Default All Apps plan - 100 GB configuration"
         - "Default Adobe Document Cloud for enterprise configuration"
         - "Default Adobe Enterprise Support Program configuration"
+
 limits:
   max_deletions_per_run: 10
   max_missing_users: 200
+
 logging:
   log_to_file: True
   file_log_directory: userSyncLog
