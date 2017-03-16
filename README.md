@@ -97,7 +97,8 @@ optional arguments:
                         in mapped groups matches the customer side.
   --remove-nonexistent-users
                         Causes the user sync tool to remove users that exist on
-                        the Adobe side if they are not in the customer side AD.
+                        the Adobe side if they are not in the customer side
+                        directory.
   --generate-remove-list output_path
                         processing similar to --remove-nonexistent-users
                         except that rather than performing removals, a file is
