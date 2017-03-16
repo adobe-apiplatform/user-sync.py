@@ -74,11 +74,12 @@ optional arguments:
   --config-filename filename
                         main config filename. (default: "user-sync-
                         config.yml")
-  --users all|file|group [arg1 ...]
+  --users all|file|mapped|group [arg1 ...]
                         specify the users to be considered for sync. Legal
                         values are 'all' (the default), 'group name or names'
-                        (one or more specified AD groups), 'file f' (a
-                        specified input file).
+                        (one or more specified groups), 'mapped' (all groups
+                        listed in configuration file), 'file f' (a specified
+                        input file).
   --user-filter pattern
                         limit the selected set of users that may be examined
                         for syncing, with the pattern being a regular
