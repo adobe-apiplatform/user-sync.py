@@ -995,6 +995,7 @@ Adobe side by the next sync action that adds users.
 ```sh
 ./user-sync –c user-sync-config.yml --remove-list users-to-remove.csv
 ```
+
 ---
 
 ## Advanced Configuration
@@ -1367,21 +1368,22 @@ configuration.
 
 ### Working with Non-Email-based Usernames
 
-On the Adobe Admin Console, you can configure a domain the use email-based user names or non-email-based usernames.  We often user the term Username based login to mean non-email-based-login.  Username-based login can be used when email addresses are expected to change often or your organization does not allow email addresses to be used for login.
+On the Adobe Admin Console, you can configure a domain to use email-based user login names or non-email-based usernames.  We often user the term Username based login to mean non-email-based-login.  Username-based login can be used when email addresses are expected to change often or your organization does not allow email addresses to be used for login.
 
 To configure User Sync to work with username logins, you need to set several additional configuration items.
 
 In the onnector-ldap.yml file:
-- Set the value of user_username_format to a value like '{attrname}' where attrname names the directory attribute whose value is to be used for the user name.
-- Set the value of user_domain_format to a value like '{attrname}' if the domain name comes from the named directory attribute, or to a fixed string value like 'example.com'.
+
+- Set the value of `user_username_format` to a value like '{attrname}' where attrname names the directory attribute whose value is to be used for the user name.
+- Set the value of `user_domain_format` to a value like '{attrname}' if the domain name comes from the named directory attribute, or to a fixed string value like 'example.com'.
 
 When processing the directory, User Sync will fill in the username and domain values from those fields (or values).
 
-The values given can be a mix of string characters and one or more attribute names enclosed in curly-braces "{}".  The fixed characters are combined with the attribute value to form the string used in processing the user.
+The values given for these configuration items can be a mix of string characters and one or more attribute names enclosed in curly-braces "{}".  The fixed characters are combined with the attribute value to form the string used in processing the user.
 
-Note that user_username_format will need to produce an email address if the federated domain is using email-based login. That can happen because the field itself contains an email, or because you set the format string to something like {attrname}@example.com.
+Note that `user_username_format` configuration item will need to produce an email address if the federated domain is using email-based login. That can happen because the field itself contains an email address, or because you set the format string to something like `{attrname}@example.com`.
 
-For domains that are username-based login, the user_username_format should not produce an email, and that happen because the attribute you choose likely doesn't have one.  Note that the "@" character is not allowed in usernames used in username-based login.
+For domains that use username-based login, the `user_username_format` configuration item should not produce an email address, and that happen because the attribute you choose likely doesn't contain one.  Note that the "@" character is not allowed in usernames used in username-based login.
 
 
 ---
