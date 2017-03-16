@@ -245,7 +245,6 @@ def create_config_loader_options(args):
         elif users_action == 'mapped':
             config_options['directory_get_config_name'] = True
             config_options['directory_group_mapped'] = True
-
         elif users_action == 'group':
             if len(users_args) == 0:
                 raise AssertionException('Missing groups for --users %s [groups]' % users_action)
