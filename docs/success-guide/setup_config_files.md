@@ -126,25 +126,43 @@ Limits on deletion prevent accidental account deletion in the event of misconfig
 
 
 
-#### Delete Protection*
+#### Delete Protection
 
 If you want to drive account creation and removal through User Sync, and want to manually create a few accounts then you may need this feature to keep User Sync from deleting your manually created accounts.
 
-&#9744; If you need to use this feature, add the lines such as below to the config file at the top level.  Note that this feature is not available at this point in time.
+&#9744; If you need to use this feature, add the lines such as below to the config file at the top level.  There may be commented out lines for these items already in your config file.  You can create user groups and add users to that user group on the Adobe Admin Console, and then list that user group as excluded from User Sync processing to protect that set of users.  You can list specific users and a pattern that matches specific user names to protect those users.  You can protect users based on their id type as well.  For example, often User Sync is used only to manage federated or enterprise user types and you can exclude Adobe Id type users from management by User Sync.  You only need to include configuration items for exclusions that you wish to use.
 
-	user_removal:
-	    - exclude_group: special_users   
-	    - exclude:   ".*@example.com"   
-	    - exclude_adobe_id              
+	dashboard_user_exclusions:
+        exclude_groups: 
+            - administrators   # Names an Adobe user group or product configuration whose members are not to be altered or removed by User Sync
+            - contractors      # You can have more than one group in a list
+        exclude_users:
+            - ".*@example.com"
+            - important_user@gmail.com
+        exclude_identity_types:
+            - adobeID              
 
-These are optional items in the main configuration file
-- exclude_group: names a user group.  Any users in this group are not removed
-- exclude: a user name or pattern.  Any matching users are not removed
-- exclude_adobe_id:  this causes any account of type AdobeId to not be removed
-- These apply to the disable/removal/or deletion of accounts by User Sync
-- Note that Federated accounts that are not in the directory cannot log in anyway (because login is handled by the ID provider and the user is no longer listed there)
+In the above, administrators, contractors, and the user names are example values.  You would use the names of Adobe user groups, product configurations, or users that you have created.
 
-\*  Future feature
+`exclude_groups` defines a list of Adobe user groups or product configurations. Adobe users who are members of such groups are neither removed, updated, nor have their group membership changed.
+
+`exclude_users` gives a list of patterns. Adobe users with usernames that match (default case-insensitive, unless the pattern specifies case-sensitive) any of the specified patterns (if there are more than one) are neither removed, updated, nor have their group membership changed.
+
+`exclude_identity_types` gives a list of identity types. Adobe users who have one of these identity types are neither removed, updated, nor have their group membership changed.
+
+Note that:
+
+- You generally wouldn't use all three exclude options.
+
+- Directory side users are still created on the Adobe side even if one of the exclude parameters would then exclude the user on the Adobe side from updates in successive runs. That is, these parameters apply only to Adobe users who exist when the Adobe directory is being matched against the customer directory.
+
+- The entire `dashboard_user_exclusions` configuration section is optional. 
+
+- Accounts that would have been removed or updated but were not because of this feature are listed as `info` level log entries.
+
+- Note that Federated accounts that are not in the directory cannot log in anyway (because login is handled by the ID provider and the user is no longer listed there) even if the account still exists in the Adobe dashboard.
+
+
 
 #### Logging
 
