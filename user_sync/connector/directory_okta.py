@@ -74,8 +74,8 @@ class OktaDirectoryConnector(object):
         builder.set_string_value('logger_name', 'connector.' + OktaDirectoryConnector.name)
         builder.set_dict_value('source_filters', {})
 
-        okta_url = builder.require_string_value('okta_url')
-        api_key = builder.require_string_value('api_key')
+        okta_url = "https://" + builder.require_string_value('okta_url')
+        api_token = builder.require_string_value('api_token')
 
         options = builder.get_options()
 
@@ -103,8 +103,8 @@ class OktaDirectoryConnector(object):
         logger.info('Connecting to: %s', okta_url)
 
         try:
-            self.users_client =  okta.UsersClient(okta_url,api_key)
-            self.groups_client = okta.UserGroupsClient(okta_url, api_key)
+            self.users_client =  okta.UsersClient(okta_url,api_token)
+            self.groups_client = okta.UserGroupsClient(okta_url, api_token)
         except Exception as e:
             raise user_sync.error.AssertionException(repr(e))
 
