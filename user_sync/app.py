@@ -301,14 +301,16 @@ def create_config_loader_options(args):
 
 def log_parameters(args):
     '''
-    Log the invocation parameters to make it easier to diagnose problem when customers
+    Log the invocation parameters to make it easier to diagnose problem with customers
     :param args: namespace
     :return: None
     '''
-    logger.info('----- Invocation Parameters -----')
+    logger.info('------- Invocation parameters -------')
+    logger.info(' '.join(sys.argv))
+    logger.info('-------- Internal parameters --------')
     for parameter_name, parameter_value in args.__dict__.iteritems():
         logger.info('  %s: %s', parameter_name, parameter_value)
-    logger.info('---------------------------------')
+    logger.info('-------------------------------------')
 
 def main():   
     run_stats = None 
@@ -322,7 +324,7 @@ def main():
         init_log(config_loader.get_logging_config())
 
         # add start divider, app version number, and invocation parameters to log
-        run_stats = user_sync.helper.JobStats('Run (Ver: ' + APP_VERSION + ')', divider='=')
+        run_stats = user_sync.helper.JobStats('Run (User Sync version: ' + APP_VERSION + ')', divider='=')
         run_stats.log_start(logger)
         log_parameters(args)
 
