@@ -104,6 +104,8 @@ are a number of options for handling the removal task.
 For more information about usage models and how to implement
 them, see the [Usage Scenarios](#usage-scenarios) section below.
 
+---
+
 ## Setup and Installation
 
 The use of the User Sync tool depends on your enterprise having
@@ -256,13 +258,13 @@ the following section,
     Before running the user-sync.pex executable in Windows, you might
 need to work around a Windows-only Python execution issue:
 
-	The Windows operating system enforces a file path length limit of
+    The Windows operating system enforces a file path length limit of
 260 characters. When executing a Python PEX file, it creates a
 temporary location to extract the contents of the package. If the
 path to that location exceeds 260 characters, the script does not
 execute properly.
 
-	By default, the temporary cache is in your home folder, which may
+    By default, the temporary cache is in your home folder, which may
 cause pathnames to exceed the limit. To work around this issue,
 create an environment variable in Windows called PEX\_ROOT, a set
 the path to C:\\user-sync\\.pex. The OS uses this variable for
@@ -343,6 +345,8 @@ information).
 
 Note that Adobe Customer Support is currently unable to provide
 support for the User Sync tool.
+
+---
 
 ## Configuring the User Sync Tool
 
@@ -471,9 +475,9 @@ connects to the Adobe Admin Console through the User Management
 API. It should point to the separate, secure configuration file
 that
 stores the access credentials.
-	- The **directory** subsection contains two subsections,
+    - The **directory** subsection contains two subsections,
 connectors and groups:
-	- The **connectors** subsection points to the separate,
+    - The **connectors** subsection points to the separate,
 secure configuration file that stores the access credentials for
 your enterprise directory.
 - The **groups** section defines the mapping between your
@@ -546,10 +550,10 @@ For example:
 groups:
   - directory_group: Acrobat
     dashboard_groups:
-	  - Default Acrobat Pro DC configuration
+      - Default Acrobat Pro DC configuration
   - directory_group: Acrobat_Accounting
-	dashboard_groups:
-	  - Accounting_Department
+    dashboard_groups:
+      - Accounting_Department
 ```
 
 #### Configure limits
@@ -567,7 +571,7 @@ of misconfiguration or other errors:
 of account removals in a single run. If more users are flagged
 for removal, they are left for the next run.
 
-	If you routinely remove a larger number of accounts, you can
+    If you routinely remove a larger number of accounts, you can
 raise this value.
 
 - If your organization has a large number of users in the
@@ -578,7 +582,7 @@ which causes the run to exit and report an error if there are
 this many fewer users in the enterprise directory than in the
 Adobe admin console.
 
-	Raise this value if you expect the number of users to drop by
+    Raise this value if you expect the number of users to drop by
 more than the value specified.
 
 For example:
@@ -672,23 +676,26 @@ illustrate possible configuration values.
 ```YAML
 dashboard:
   owning: dashboard-config.yml
-  user_identity_type: federatedID
+
 directory:
+  user_identity_type: federatedID
   connectors:
     ldap: connector-ldap.yml
   groups:
     - directory_group: Acrobat
       dashboard_groups:
-	    - Default Acrobat Pro DC configuration
-	- directory_group: Photoshop
-	  dashboard_groups:
-	    - "Default Photoshop CC - 100 GB configuration"
-		- "Default All Apps plan - 100 GB configuration"
-		- "Default Adobe Document Cloud for enterprise configuration"
-		- "Default Adobe Enterprise Support Program configuration"
+        - Default Acrobat Pro DC configuration
+    - directory_group: Photoshop
+      dashboard_groups:
+        - "Default Photoshop CC - 100 GB configuration"
+        - "Default All Apps plan - 100 GB configuration"
+        - "Default Adobe Document Cloud for enterprise configuration"
+        - "Default Adobe Enterprise Support Program configuration"
+
 limits:
   max_deletions_per_run: 10
   max_missing_users: 200
+
 logging:
   log_to_file: True
   file_log_directory: userSyncLog
@@ -763,6 +770,8 @@ enterprise directory.
 3. Check that users were removed from configured product
 configurations in the Adobe Admin Console.
 
+---
+
 ## Command Parameters
 
 Once the configuration files are set up, you can run the User
@@ -795,6 +804,7 @@ specific behavior in various situations.
 | `--delete-list` _input\_path_ | Deletes the user accounts listed in the given file from the Adobe-side directory. Adobe ID user accounts are removed from the organization but not deleted. |
 {: .bordertablestyle }
 
+---
 
 ## Usage Scenarios
 
@@ -1029,6 +1039,8 @@ Adobe side by the next sync action that adds users.
 ./user-sync –c user-sync-config.yml --delete-list users-to-delete.csv
 ```
 
+---
+
 ## Advanced Configuration
 
 User Sync requires additional configuration to synchronize user
@@ -1043,6 +1055,7 @@ groups defined in other organizations.
 - When your enterprise user data includes customized attributes
 and mappings, you must configure the tool to be able to recognize
 those customizations.
+- When you want to use username (rather than email) based logins.
 
 ### Managing Users with Adobe IDs
 
@@ -1197,13 +1210,13 @@ extensions section of the main User Sync configuration file.
 extensions:
   - context: per_user
     extended_attributes:
-	  - my-attribute-1
-	  - my-attribute-2
+      - my-attribute-1
+      - my-attribute-2
     extended_dashboard_groups:
       - my-dashboard-group-1
-	  - my-dashboard-group-2
+      - my-dashboard-group-2
     after_mapping_hook: |
-		pass # custom python code goes here
+        pass # custom python code goes here
 ```
 
 #### Adding custom attributes
@@ -1256,22 +1269,22 @@ generated.
 ```YAML
 extensions:
   - context: per-user
-	extended_attributes:
-	  - bc
-	  - subco
-	extended_dashboard_groups:
-	  - Acrobat_Sunday_Special
-	  - Group for Test 011 TCP
-	after_mapping_hook: |
-	  bc = source_attributes['bc']
-	  subco = source_attributes['subco']
-	  if bc is not None:
-		  target_attributes['country'] = bc[0:2]
-		  target_groups.add(bc)
-	  if subco is not None:
-		  target_groups.add(subco)
-	  else:
-		  target_groups.add('Undefined subco')
+    extended_attributes:
+      - bc
+      - subco
+    extended_dashboard_groups:
+      - Acrobat_Sunday_Special
+      - Group for Test 011 TCP
+    after_mapping_hook: |
+      bc = source_attributes['bc']
+      subco = source_attributes['subco']
+      if bc is not None:
+          target_attributes['country'] = bc[0:2]
+          target_groups.add(bc)
+      if subco is not None:
+          target_groups.add(subco)
+      else:
+          target_groups.add('Undefined subco')
 ```
 
 In this example, two custom attributes, bc, and subco, are
@@ -1281,14 +1294,14 @@ code processes the data for each user:
 - The country code is taken from the first 2 characters in the bc
 attribute.
 
-	This shows how you can use custom directory attributes to provide
+    This shows how you can use custom directory attributes to provide
 values for standard fields being sent to Adobe.
 
 - The user is added to groups that come from subco attribute and
 the bc attribute (in addition to any mapped groups from the group
 map in the configuration file).
 
-	This shows how to customize the group or product configuration
+    This shows how to customize the group or product configuration
 list to get users synced into additional groups.
 
 If the hook code references Adobe groups or product
@@ -1333,13 +1346,13 @@ value in this dictionary will change the value written on the
 Adobe side. Because Adobe pre-defines a fixed set of attributes,
 adding a key to this dictionary has no effect.  The keys in this
 dictionary are:
-	* `firstName` - ignored for AdobeID, used elsewhere
-	* `lastName` - ignored for AdobeID, used elsewhere
-	* `email` - used everywhere
-	* `country` - ignored for AdobeID, used elsewhere
-	* `username` - ignored for all but Federated ID
+    * `firstName` - ignored for AdobeID, used elsewhere
+    * `lastName` - ignored for AdobeID, used elsewhere
+    * `email` - used everywhere
+    * `country` - ignored for AdobeID, used elsewhere
+    * `username` - ignored for all but Federated ID
       [configured with username-based login](https://helpx.adobe.com/enterprise/help/configure-sso.html)
-	* `domain` - ignored for all but Federated ID [configured with username-based login](https://helpx.adobe.com/enterprise/help/configure-sso.html)
+    * `domain` - ignored for all but Federated ID [configured with username-based login](https://helpx.adobe.com/enterprise/help/configure-sso.html)
 * `target_groups`: A per-user Python set that collects the
 Adobe-side user groups and product configurations to which the
 user is added when `process-groups` is specified for the sync
@@ -1395,6 +1408,27 @@ not the product configurations. Each sync job targets one user
 group in its group map.  It updates membership in the user group,
 which indirectly updates the membership in the product
 configuration.
+
+### Working with Username-Based Login
+
+On the Adobe Admin Console, you can configure a federated domain to use email-based user login names or username-based (i.e., non-email-based) login.   Username-based login can be used when email addresses are expected to change often or your organization does not allow email addresses to be used for login.  Ultimately, whether to use username-based login or email-based login depends on a company's overall identity strategy.
+
+To configure User Sync to work with username logins, you need to set several additional configuration items.
+
+In the `connector-ldap.yml` file:
+
+- Set the value of `user_username_format` to a value like '{attrname}' where attrname names the directory attribute whose value is to be used for the user name.
+- Set the value of `user_domain_format` to a value like '{attrname}' if the domain name comes from the named directory attribute, or to a fixed string value like 'example.com'.
+
+When processing the directory, User Sync will fill in the username and domain values from those fields (or values).
+
+The values given for these configuration items can be a mix of string characters and one or more attribute names enclosed in curly-braces "{}".  The fixed characters are combined with the attribute value to form the string used in processing the user.
+
+For domains that use username-based login, the `user_username_format` configuration item should not produce an email address; the "@" character is not allowed in usernames used in username-based login.
+
+If you are using username-based login, you must still provide a unique email address for every user, and that email address must be in a domain that the organization has claimed and owns. User Sync will not add a user to the Adobe organization without an email address.
+
+---
 
 ## Deployment Best Practices
 
