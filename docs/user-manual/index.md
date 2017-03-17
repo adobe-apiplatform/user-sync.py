@@ -1369,9 +1369,9 @@ group in its group map.  It updates membership in the user group,
 which indirectly updates the membership in the product
 configuration.
 
-### Working with Non-Email-based Usernames
+### Working with Username-Based Login
 
-On the Adobe Admin Console, you can configure a domain to use email-based user login names or non-email-based usernames.  We often user the term Username based login to mean non-email-based-login.  Username-based login can be used when email addresses are expected to change often or your organization does not allow email addresses to be used for login.
+On the Adobe Admin Console, you can configure a federated domain to use email-based user login names or username-based (i.e., non-email-based) login.   Username-based login can be used when email addresses are expected to change often or your organization does not allow email addresses to be used for login.  Ultimately, whether to use username-based login or email-based login depends on a company's overall identity strategy.
 
 To configure User Sync to work with username logins, you need to set several additional configuration items.
 
@@ -1384,10 +1384,9 @@ When processing the directory, User Sync will fill in the username and domain va
 
 The values given for these configuration items can be a mix of string characters and one or more attribute names enclosed in curly-braces "{}".  The fixed characters are combined with the attribute value to form the string used in processing the user.
 
-Note that `user_username_format` configuration item will need to produce an email address if the federated domain is using email-based login. That can happen because the field itself contains an email address, or because you set the format string to something like `{attrname}@example.com`.
+For domains that use username-based login, the `user_username_format` configuration item should not produce an email address; the "@" character is not allowed in usernames used in username-based login.
 
-For domains that use username-based login, the `user_username_format` configuration item should not produce an email address, and that happen because the attribute you choose likely doesn't contain one.  Note that the "@" character is not allowed in usernames used in username-based login.
-
+If you are using username-based login, you must still provide a unique email address for every user, and that email address must be in a domain that the organization has claimed and owns. User Sync will not add a user to the Adobe organization without an email address.
 
 ---
 
