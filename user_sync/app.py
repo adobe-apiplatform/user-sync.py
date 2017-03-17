@@ -72,9 +72,18 @@ def process_args():
     parser.add_argument('--generate-remove-list',
                         help='processing similar to --remove-nonexistent-users except that rather than performing removals, a file is generated (with the given pathname) listing users who would be removed. This file can then be given in the --remove-list argument in a subsequent run.',
                         metavar='output_path', dest='remove_list_output_path')
-    parser.add_argument('-d', '--remove-list',
-                        help='specifies the file containing the list of users to be removed. Users on this list are removeFromOrg\'ed on the Adobe side.',
+    parser.add_argument('--remove-list',
+                        help='specifies the file containing the list of users to be removed. Users on this list are removed from the organization on the Adobe side.',
                         metavar='input_path', dest='remove_list_input_path')
+    parser.add_argument('--delete-nonexistent-users',
+                        help='Causes the user sync tool to delete user accounts that exist on the Adobe side if they are not in the customer side AD. If the account is an Adobe ID account, it is remove from the Adobe-side organization, but not deleted.',
+                        action='store_true', dest='delete_nonexistent_users')
+    parser.add_argument('--generate-delete-list',
+                        help='processing similar to --delete-nonexistent-users except that rather than performing deletions, a file is generated (with the given pathname) listing users who would be deleted. This file can then be given in the --delete-list argument in a subsequent run.',
+                        metavar='output_path', dest='delete_list_output_path')
+    parser.add_argument('--delete-list',
+                        help='specifies the file containing the list of users to be deleted. Users in this list are removed from the organization on the Adobe side, and Enterprise and Federated user accounts are deleted on the Adobe side.',
+                        metavar='input_path', dest='delete_list_input_path')
     return parser.parse_args()
 
 def init_console_log():
@@ -225,19 +234,56 @@ def create_config_loader_options(args):
             raise user_sync.error.AssertionException("Bad regular expression for --user-filter: %s reason: %s" % (username_filter_pattern, e.message))
         config_options['username_filter_regex'] = compiled_expression
     
+    # --remove-list
     remove_list_input_path = args.remove_list_input_path
     if (remove_list_input_path != None):
         logger.info('Reading remove list from: %s', remove_list_input_path)
         remove_user_key_list = user_sync.rules.RuleProcessor.read_remove_list(remove_list_input_path, logger = logger)
         logger.info('Total users in remove list: %d', len(remove_user_key_list))
         config_options['remove_user_key_list'] = remove_user_key_list
+    
+    # --delete-list
+    delete_list_input_path = args.delete_list_input_path
+    if (delete_list_input_path != None):
+        logger.info('Reading delete list from: %s', delete_list_input_path)
+        delete_user_key_list = user_sync.rules.RuleProcessor.read_remove_list(delete_list_input_path, logger = logger)
+        logger.info('Total users in delete list: %d', len(delete_user_key_list))
+        config_options['delete_user_key_list'] = delete_user_key_list
+    
+    # can't specify both --remove-list and --delete-list!
+    if (remove_list_input_path and delete_list_input_path):
+        raise user_sync.error.AssertionException("Please specify either --remove-list or --delete-list")
          
+    # keep track of the number user removal type commands
+    user_removal_command_count = 0
+
+    # --remove-nonexistent-users
     config_options['remove_list_output_path'] = remove_list_output_path = args.remove_list_output_path
     remove_nonexistent_users = args.remove_nonexistent_users
-    if (remove_nonexistent_users and remove_list_output_path):
-        remove_nonexistent_users = False
-        logger.warn('--remove-nonexistent-users ignored when --generate-remove-list is specified')    
+    if remove_nonexistent_users:
+        if remove_list_output_path:
+            remove_nonexistent_users = False
+            logger.warn('--remove-nonexistent-users ignored when --generate-remove-list is specified')
+        if delete_list_input_path != None:
+            raise user_sync.error.AssertionException("--remove-nonexistent-users cannot be used when --delete-list is specified")
+        user_removal_command_count += 1
     config_options['remove_nonexistent_users'] = remove_nonexistent_users
+                    
+    # --delete-nonexistent-users
+    config_options['delete_list_output_path'] = delete_list_output_path = args.delete_list_output_path
+    delete_nonexistent_users = args.delete_nonexistent_users
+    if delete_nonexistent_users:
+        if delete_list_output_path:
+            delete_nonexistent_users = False
+            logger.warn('--delete-nonexistent-users ignored when --generate-delete-list is specified')
+        if remove_list_input_path != None:
+            raise user_sync.error.AssertionException("--delete-nonexistent-users cannot be used when --remove-list is specified")
+        user_removal_command_count += 1
+    config_options['delete_nonexistent_users'] = delete_nonexistent_users
+
+    # ensure the user has only entered one "remove user" type command.    
+    if user_removal_command_count > 1:
+        raise user_sync.error.AssertionException("You may specify either --remove-nonexistent-users or --delete-nonexistent-users")
                     
     source_filter_args = args.source_filter_args
     if (source_filter_args != None):

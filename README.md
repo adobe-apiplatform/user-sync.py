@@ -96,22 +96,35 @@ optional arguments:
                         is updated on the Adobe side so that the memberships
                         in mapped groups matches the customer side.
   --remove-nonexistent-users
-                        Causes the user sync tool to remove Federated users
-                        that exist on the Adobe side if they are not in the
-                        customer side AD. This has the effect of deleting the
-                        user account if that account is owned by the
-                        organization under which the sync operation is being
-                        run.
+                        Causes the user sync tool to remove users that exist on
+                        the Adobe side if they are not in the customer side
+                        directory.
   --generate-remove-list output_path
                         processing similar to --remove-nonexistent-users
                         except that rather than performing removals, a file is
                         generated (with the given pathname) listing users who
                         would be removed. This file can then be given in the
                         --remove-list argument in a subsequent run.
-  -d input_path, --remove-list input_path
+  --remove-list input_path
                         specifies the file containing the list of users to be
-                        removed. Users on this list are removeFromOrg'd on the
-                        Adobe side.
+                        removed. Users on this list are removed from the 
+                        organization on the Adobe side.
+  --delete-nonexistent-users
+                        Causes the user sync tool to delete user accounts on
+                        the Adobe side if they are not in the customer side
+                        directory. Adobe ID user accounts are removed from the
+                        organization, but not deleted.
+  --generate-delete-list output_path
+                        processing similar to --delete-nonexistent-users
+                        except that rather than performing removals, a file is
+                        generated (with the given pathname) listing users who
+                        would be removed. This file can then be given in the
+                        --delete-list argument in a subsequent run.
+  --delete-list input_path
+                        specifies the file containing the list of users to be
+                        deleted. Enterprise and federated users on this list
+                        are deleted on the Adobe side, and Adobe ID users are
+                        removed from the organization but not deleted.
 ```
 
 # Configuration
