@@ -133,15 +133,15 @@ If you want to drive account creation and removal through User Sync, and want to
 &#9744; If you need to use this feature, add lines such as below to the config file at the top level.   You can create user groups and add users to that user group on the Adobe Admin Console, and then list that user group as excluded from User Sync processing to protect that set of users.  You can list specific users and/or a pattern that matches specific user names to protect those users.  You can protect users based on their identity type as well.  For example, often User Sync is used only to manage federatedID or enterpriseID user types and you can exclude adobeID type users from management by User Sync.  You only need to include configuration items for exclusions that you wish to use.
 
 ```YAML
-	dashboard_user_exclusions:
-        exclude_groups: 
-            - administrators   # Names an Adobe user group or product configuration whose members are not to be altered or removed by User Sync
-            - contractors      # You can have more than one group in a list
-        exclude_users:
-            - ".*@example.com"
-            - important_user@gmail.com
-        exclude_identity_types:
-            - adobeID          # adobeID, enterpriseID, and/or federatedID
+dashboard_user_exclusions:
+    exclude_groups: 
+        - administrators   # Names an Adobe user group or product configuration whose members are not to be altered or removed by User Sync
+        - contractors      # You can have more than one group in a list
+    exclude_users:
+        - ".*@example.com"
+        - important_user@gmail.com
+    exclude_identity_types:
+        - adobeID          # adobeID, enterpriseID, and/or federatedID
 ```                          
 
 In the above, administrators, contractors, and the user names are example values.  You would use the names of Adobe user groups, product configurations, or users that you have created.
