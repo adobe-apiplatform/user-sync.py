@@ -30,8 +30,10 @@ directory:
     # a dictionary for the actual configuration, or 
     # a string for the file containing the configuration, or
     # a list containing a mixture of dictionaries and strings
+    # okta example:
+    # okta: example.connector-okta.yml
     #
-    # examples:   
+    # ldap examples:
     # ldap: example.connector-ldap.yml
     # ldap: 
     #   - host: LDAP_host_URL_goes_here
