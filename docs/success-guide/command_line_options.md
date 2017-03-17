@@ -42,10 +42,11 @@ Note that only the users returned by the directory query and filter are consider
 | Command line option       ...........| Use when           |
 | ------------- |:-------------| 
 |   None                        |  No action desired on nonexistent users |
-|   `--disable-nonexistent-users`\* |    Adobe account to remain but licenses and group <br>memberships are removed.  |
+|   `--remove-entitlements-for-nonexistent-users`\* |    Adobe account to remain but licenses and group <br>memberships are removed.  |
 |   `--remove-nonexistent-users`  |    Adobe account to remain but licenses, group memberships, and membership in this org to be removed   |
 |   `--delete-nonexistent-users`\*  |    Adobe account to be deleted: remove from PLCs and user groups and <br>from the org; account deleted and all storage and settings freed. |
 |   `--generate-remove-list f`    |  No action to be taken on the account.  User name written to file for later action. |
+|   `--generate-delete-list f`    |  No action to be taken on the account.  User name written to file for later action. |
 
 \* These options will be available in a future release.
 
