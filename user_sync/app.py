@@ -299,6 +299,19 @@ def create_config_loader_options(args):
     
     return config_options
 
+def log_parameters(args):
+    '''
+    Log the invocation parameters to make it easier to diagnose problem with customers
+    :param args: namespace
+    :return: None
+    '''
+    logger.info('------- Invocation parameters -------')
+    logger.info(' '.join(sys.argv))
+    logger.info('-------- Internal parameters --------')
+    for parameter_name, parameter_value in args.__dict__.iteritems():
+        logger.info('  %s: %s', parameter_name, parameter_value)
+    logger.info('-------------------------------------')
+
 def main():   
     run_stats = None 
     try:
@@ -309,9 +322,11 @@ def main():
         
         config_loader = create_config_loader(args)
         init_log(config_loader.get_logging_config())
-        
-        run_stats = user_sync.helper.JobStats("Run", divider = "=")
+
+        # add start divider, app version number, and invocation parameters to log
+        run_stats = user_sync.helper.JobStats('Run (User Sync version: ' + APP_VERSION + ')', divider='=')
         run_stats.log_start(logger)
+        log_parameters(args)
 
         script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
         lock_path = os.path.join(script_dir, 'lockfile')
