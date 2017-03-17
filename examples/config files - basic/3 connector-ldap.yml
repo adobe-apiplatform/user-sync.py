@@ -42,4 +42,12 @@ base_dn: "defines the base DN. e.g. DC=example,DC=com"
 # set to True if you want to validate SSL cert.  Default is:
 # require_tls_cert: False
 
+# Definition of where in the directory to get the domain if that information 
+# is in a non-standard place.  The value can be a fixed string and/or one or
+# more directory attribute names enclosed in curly braces.
+# user_domain_format: {domain}
 
+# Definition of where in the directory to get the user name for a federated
+# domain using username-based login.  The value can be a string and/or one or
+# more directory attribute names enclosed in curly braces.  For example,
+# user_username_format: {user_id}_{department}

@@ -196,8 +196,16 @@ class Commands(object):
             
         self.do_list.append(('create', params))
 
-    def remove_from_org(self):
-        self.do_list.append(('remove_from_organization', {}))
+    def remove_from_org(self, delete_account):
+        '''
+        Removes a user from the organization. If delete_account is set, it
+        will delete the user on the Adobe side as well.
+        :type delete_account: bool
+        '''
+        params = {
+            "delete_account": delete_account
+        }
+        self.do_list.append(('remove_from_organization', params))
 
     def __len__(self):
         return len(self.do_list)

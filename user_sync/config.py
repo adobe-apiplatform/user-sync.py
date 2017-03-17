@@ -54,6 +54,10 @@ class ConfigLoader(object):
             'manage_groups': True,
             'update_user_info': True,
             
+            'delete_user_key_list': None,
+            'delete_list_output_path': None,
+            'delete_nonexistent_users': False,
+            
             'remove_user_key_list': None,
             'remove_list_output_path': None,
             'remove_nonexistent_users': False
@@ -258,8 +262,18 @@ class ConfigLoader(object):
         '''
         :type file_path: str
         '''        
-        with open(file_path, 'r', 1) as input_file:
-            return yaml.load(input_file)
+        try:
+            with open(file_path, 'r', 1) as input_file:
+                return yaml.load(input_file)
+        except IOError as e:
+            # if a file operation error occurred while loading the
+            # configuration file, swallow up the exception and re-raise this
+            # as an configuration loader exception.
+            raise user_sync.error.AssertionException('Error reading configuration file: %s' % e)
+        except yaml.error.MarkedYAMLError as e:
+            # same as above, but indicate this problem has to do with
+            # parsing the configuration file.
+            raise user_sync.error.AssertionException('Error parsing configuration file: %s' % e)
         
     def get_file_path(self, filename):
         '''
@@ -376,6 +390,9 @@ class ConfigLoader(object):
             'remove_user_key_list': options['remove_user_key_list'],
             'remove_list_output_path': options['remove_list_output_path'],
             'remove_nonexistent_users': options['remove_nonexistent_users'],
+            'delete_user_key_list': options['delete_user_key_list'],
+            'delete_list_output_path': options['delete_list_output_path'],
+            'delete_nonexistent_users': options['delete_nonexistent_users'],
             'default_country_code': default_country_code,
             'max_deletions_per_run': max_deletions_per_run,
             'max_missing_users': max_missing_users,
