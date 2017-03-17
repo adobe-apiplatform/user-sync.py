@@ -140,7 +140,8 @@ If you want to drive account creation and removal through User Sync, and want to
             - ".*@example.com"
             - important_user@gmail.com
         exclude_identity_types:
-            - adobeID              
+            - adobeID
+                          
 
 In the above, administrators, contractors, and the user names are example values.  You would use the names of Adobe user groups, product configurations, or users that you have created.
 
