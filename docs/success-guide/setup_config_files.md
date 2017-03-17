@@ -138,11 +138,12 @@ dashboard_user_exclusions:
         - administrators   # Names an Adobe user group or product configuration whose members are not to be altered or removed by User Sync
         - contractors      # You can have more than one group in a list
     exclude_users:
-        - ".*@example.com"
+        - ".\*@example.com"
         - important_user@gmail.com
     exclude_identity_types:
         - adobeID          # adobeID, enterpriseID, and/or federatedID
-```                          
+```
+
 
 In the above, administrators, contractors, and the user names are example values.  You would use the names of Adobe user groups, product configurations, or users that you have created.
 
