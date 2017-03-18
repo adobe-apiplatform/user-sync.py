@@ -201,10 +201,10 @@ def create_config_loader_options(args):
     config_options = {
         'test_mode': args.test_mode,        
         'manage_groups': args.manage_groups,
-        'update_user_info': args.update_user_info,        
+        'update_user_info': args.update_user_info,
+        'directory_group_mapped': False,
     }
 
-    config_options['directory_group_mapped'] = False
     users_args = args.users
     if (users_args != None):
         users_action = None if len(users_args) == 0 else user_sync.helper.normalize_string(users_args.pop(0))

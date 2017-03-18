@@ -49,6 +49,7 @@ class ConfigLoader(object):
             'directory_group_filter': None,
             'username_filter_regex': None,
             'directory_source_filters': None,
+            'directory_group_mapped': False,
 
             'test_mode': False,            
             'manage_groups': True,
@@ -316,27 +317,29 @@ class ConfigLoader(object):
         '''
         Return a dict representing options for RuleProcessor.
         '''
+        # process directory configuration options
         new_account_type = None
         default_country_code = None
-        managed_identity_types = []
         directory_config = self.main_config.get_dict_config('directory', True)
-        if (directory_config != None): 
+        if directory_config:
             new_account_type = directory_config.get_string('user_identity_type', True)
             new_account_type = user_sync.identity_type.parse_identity_type(new_account_type)
             default_country_code = directory_config.get_string('default_country_code', True)
-            for name in directory_config.get_list('managed_identity_types', True) or []:
-                identity_type = user_sync.identity_type.parse_identity_type(name)
-                if not identity_type:
-                    validation_message = "Unknown value for %s in config file: %s" % ('managed_identity_types', name)
-                    raise user_sync.error.AssertionException(validation_message)
-                managed_identity_types.append(identity_type)
         if not new_account_type:
             new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
             self.logger.info("Using default for new_account_type: %s", new_account_type)
-        if not managed_identity_types:
-            managed_identity_types = [user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
-                                     user_sync.identity_type.FEDERATED_IDENTITY_TYPE]
-            self.logger.info("Using default for managed_identity_types: %s", managed_identity_types)
+
+        # process exclusion configuration options
+        exclude_identity_types = exclude_identity_type_names = []
+        dashboard_config = self.main_config.get_dict_config('dashboard', True)
+        if dashboard_config:
+            exclude_identity_type_names = dashboard_config.get_list('exclude_identity_types', True) or []
+        for name in exclude_identity_type_names:
+            identity_type = user_sync.identity_type.parse_identity_type(name)
+            if not identity_type:
+                validation_message = "Illegal value for %s in config file: %s" % ('exclude_identity_types', name)
+                raise user_sync.error.AssertionException(validation_message)
+            exclude_identity_types.append(identity_type)
 
         limits_config = self.main_config.get_dict_config('limits')
         max_deletions_per_run = limits_config.get_int('max_deletions_per_run')
@@ -380,7 +383,7 @@ class ConfigLoader(object):
             'directory_group_filter': options['directory_group_filter'],
             'username_filter_regex': options['username_filter_regex'],
             'new_account_type': new_account_type,
-            'managed_identity_types': managed_identity_types,
+            'exclude_identity_types': exclude_identity_types,
             'manage_groups': options['manage_groups'],
             'update_user_info': options['update_user_info'],
             'remove_user_key_list': options['remove_user_key_list'],

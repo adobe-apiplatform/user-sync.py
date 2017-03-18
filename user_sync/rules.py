@@ -40,8 +40,7 @@ class RuleProcessor(object):
             'username_filter_regex': None,
             
             'new_account_type': user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
-            'managed_identity_types': [user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
-                                       user_sync.identity_type.FEDERATED_IDENTITY_TYPE],
+            'exclude_identity_types': [],
             'manage_groups': True,
             'update_user_info': True,
             
@@ -75,7 +74,10 @@ class RuleProcessor(object):
         self.delete_user_accounts = options['delete_nonexistent_users'] or options['delete_user_key_list']
         
         # determine whether we need to process orphaned users at all
-        self.need_to_process_orphaned_dashboard_users = options['remove_list_output_path'] or options['remove_nonexistent_users'] or options['delete_list_output_path'] or options['delete_nonexistent_users']
+        self.need_to_process_orphaned_dashboard_users = (
+            options['remove_list_output_path'] or options['remove_nonexistent_users'] or
+            options['delete_list_output_path'] or options['delete_nonexistent_users']
+        )
         
         self.logger = logger = logging.getLogger('processor')
 
@@ -278,15 +280,11 @@ class RuleProcessor(object):
                 for user_key, desired_groups in accessor_unprocessed_groups_by_user_key.iteritems():
                     self.try_and_update_dashboard_user(accessor_organization_info, user_key, dashboard_connector, groups_to_add=desired_groups)
                     
-    def iter_orphaned_dashboard_users(self, orphan_account_types):
+    def iter_orphaned_dashboard_users(self):
         owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
-        for user_key, dashboard_user in owning_organization_info.iter_orphaned_dashboard_users():
-            if not self.is_selected_user_key(user_key):
-                continue
-            if dashboard_user.get('type') not in orphan_account_types:
-                continue
+        for _, dashboard_user in owning_organization_info.iter_orphaned_dashboard_users():
             yield dashboard_user
-            
+
     def is_selected_user_key(self, user_key):
         '''
         :type user_key: str
@@ -303,7 +301,7 @@ class RuleProcessor(object):
         orphan_user_key_list = self.orphan_user_key_list
             
         options = self.options
-        orphan_list_output_path = options['orphan_list_output_path']
+        orphan_list_output_path = self.orphan_list_output_path
         remove_nonexistent_users = options['remove_nonexistent_users']
         delete_nonexistent_users = options['delete_nonexistent_users']
         
@@ -311,7 +309,8 @@ class RuleProcessor(object):
         max_missing_users = options['max_missing_users']
 
         orphaned_dashboard_users = list(self.iter_orphaned_dashboard_users())
-        self.logger.info('Orphaned users to be processed: %s', [self.get_dashboard_user_key(dashboard_user) for dashboard_user in orphaned_dashboard_users])
+        self.logger.info('Orphaned users to be processed: %s',
+                         [self.get_dashboard_user_key(dashboard_user) for dashboard_user in orphaned_dashboard_users])
         
         number_of_orphaned_dashboard_users = len(orphaned_dashboard_users)
 
@@ -321,7 +320,8 @@ class RuleProcessor(object):
         elif remove_nonexistent_users or delete_nonexistent_users:
             if number_of_orphaned_dashboard_users > max_missing_users:
                 raise user_sync.error.AssertionException(
-                    'Unable to process orphaned users, as number of users (%s) is larger than max_missing_users setting' % number_of_orphaned_dashboard_users)
+                    'Unable to process orphaned users, as their count (%s) is larger than max_missing_users setting' %
+                    number_of_orphaned_dashboard_users)
             orphan_count = 0
             for dashboard_user in orphaned_dashboard_users:
                 orphan_count += 1
@@ -334,8 +334,8 @@ class RuleProcessor(object):
                 orphan_user_key_list.add(user_key)
                     
     def clean_dashboard_users(self, dashboard_connectors):
-        # Process removal of users.  The remove_user_key list is generated earlier in processing.
         '''
+        Process removal of users.  The list of users to remove is generated earlier in processing.
         :type dashboard_connectors: DashboardConnectors
         '''
         orphan_user_key_list = self.orphan_user_key_list
@@ -443,21 +443,15 @@ class RuleProcessor(object):
         :type user_key: str
         :type dashboard_connectors: DashboardConnectors
         '''
-        # Check to see what we're updating, and who for
+        # Check to see what we're updating
         options = self.options
         update_user_info = options['update_user_info'] 
         manage_groups = self.will_manage_groups()
-        managed_identity_types = self.options['managed_identity_types']
-
-        # get identity type of directory user, and don't add if not a managed type
-        directory_user = self.directory_user_by_user_key[user_key]
-        identity_type = self.get_identity_type_from_directory_user(directory_user)
-        if identity_type not in managed_identity_types:
-            self.logger.warning('Unmanaged directory user not in Adobe: %s', user_key)
-            return
 
         # start the add process
         self.logger.info('Adding directory user to Adobe: %s', user_key)
+        directory_user = self.directory_user_by_user_key[user_key]
+        identity_type = self.get_identity_type_from_directory_user(directory_user)
         commands = self.create_commands_from_directory_user(directory_user, identity_type)
         attributes = self.get_user_attributes(directory_user)
         # check whether the country is set in the directory, use default if not
@@ -576,11 +570,19 @@ class RuleProcessor(object):
         user_to_group_map = organization_info.get_desired_groups_by_user_key()
         user_to_group_map = {} if user_to_group_map == None else user_to_group_map.copy()
 
-        # check to see if we should update dashboard user attributes and groups, and who for
+        # check to see if we should update dashboard users, and which ones are excluded
         options = self.options
         update_user_info = options['update_user_info']
         manage_groups = self.will_manage_groups()
-        managed_identity_types = self.options['managed_identity_types']
+        exclude_identity_types = self.options['exclude_identity_types']
+        will_process_orphans = self.need_to_process_orphaned_dashboard_users
+
+        # there are certain operations we only do in the owning org,
+        # such as logging excluded users.  We also own log them if there
+        # is a possibility that we will update or delete them.
+        in_owning_org = organization_info.get_name() == OWNING_ORGANIZATION_NAME
+        log_excluded_users = in_owning_org and (update_user_info or manage_groups or will_process_orphans)
+
 
         # Walk all the dashboard users, getting their group data, matching them with directory users,
         # and adjusting their attribute and group data accordingly.
@@ -599,10 +601,11 @@ class RuleProcessor(object):
             # so we can update the dashboard user's groups as needed.
             desired_groups = user_to_group_map.pop(user_key, None) or set()
 
-            # ignore users whose identity type we are not managing
+            # ignore excluded users
             identity_type = self.get_identity_type_from_dashboard_user(dashboard_user)
-            if identity_type not in managed_identity_types:
-                self.logger.info("Ignoring unmanaged dashboard user: %s", user_key)
+            if identity_type in exclude_identity_types:
+                if log_excluded_users:
+                    self.logger.info("Ignoring excluded dashboard user: %s", user_key)
                 continue
 
             directory_user = filtered_directory_user_by_user_key.get(user_key)
@@ -610,7 +613,8 @@ class RuleProcessor(object):
                 # There's no selected directory user matching this dashboard user,
                 # so we mark this dashboard user as an orphan, and we mark him
                 # for removal from any mapped groups.
-                organization_info.add_orphaned_dashboard_user(user_key, dashboard_user)
+                if will_process_orphans:
+                    organization_info.add_orphaned_dashboard_user(user_key, dashboard_user)
                 self.logger.info("Adobe user not in input user set: %s", user_key)
                 if manage_groups:
                     groups_to_remove = current_groups & organization_info.get_mapped_groups()
@@ -620,7 +624,7 @@ class RuleProcessor(object):
                 # There is a selected directory user who matches this dashboard user,
                 # so mark any changed dashboard attributes,
                 # and mark him for addition and removal of the appropriate mapped groups
-                if update_user_info and organization_info.get_name() == OWNING_ORGANIZATION_NAME:
+                if update_user_info and in_owning_org:
                     attribute_differences = self.get_user_attribute_difference(directory_user, dashboard_user)
                     if (len(attribute_differences) > 0):
                         self.logger.info('Updating info for user key: %s changes: %s', user_key, attribute_differences)
