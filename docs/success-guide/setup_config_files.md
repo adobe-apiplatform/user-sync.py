@@ -130,7 +130,7 @@ Limits on deletion prevent accidental account deletion in the event of misconfig
 
 If you want to drive account creation and removal through User Sync, and want to manually create a few accounts then you may need this feature to keep User Sync from deleting your manually created accounts.
 
-&#9744; If you need to use this feature, add lines such as below to the config file at the top level.   You can create user groups and add users to that user group on the Adobe Admin Console, and then list that user group as excluded from User Sync processing to protect that set of users.  You can list specific users and/or a pattern that matches specific user names to protect those users.  You can protect users based on their identity type as well.  For example, often User Sync is used only to manage federatedID or enterpriseID user types and you can exclude adobeID type users from management by User Sync.  You only need to include configuration items for exclusions that you wish to use.
+&#9744; If you need to use this feature, add lines such as below to the config file at the top level.   To protect users on the Admin Console from updates, create a user group and put the protected users into that group, then list that group as excluded from User Sync processing.  You can also list specific users and/or a pattern that matches specific user names to protect those users.  You can protect users based on their identity type as well.  For example, often User Sync is used only to manage federatedID or enterpriseID user types and you can exclude adobeID type users from management by User Sync.  You only need to include configuration items for exclusions that you wish to use.
 
 ```YAML
 dashboard_user_exclusions:
@@ -147,9 +147,9 @@ dashboard_user_exclusions:
 
 In the above, administrators, contractors, and the user names are example values.  You would use the names of Adobe user groups, product configurations, or users that you have created.
 
-`exclude_groups` defines a list of Adobe user groups or product configurations. Adobe users who are members of such groups are neither removed, updated, nor have their group membership changed.
+`exclude_groups` defines a list of Adobe user groups, product configurations, or both. Adobe users who are members of listed groups are neither removed, updated, nor have their group membership changed.
 
-`exclude_users` gives a list of patterns. Adobe users with usernames that match (default case-insensitive, unless the pattern specifies case-sensitive) any of the specified patterns (if there are more than one) are neither removed, updated, nor have their group membership changed.
+`exclude_users` gives a list of patterns. Adobe users with usernames that match (default case-insensitive, unless the pattern specifies case-sensitive) any of the specified patterns are neither removed, updated, nor have their group membership changed.
 
 `exclude_identity_types` gives a list of identity types. Adobe users who have one of these identity types are neither removed, updated, nor have their group membership changed.
 
@@ -163,7 +163,7 @@ Note that:
 
 - Accounts that would have been removed or updated but were not because of this feature are listed as `info` level log entries.
 
-- Federated accounts that are not in the enterprise directory or are disabled in the enterprise directory cannot log in anyway (because login is handled by the ID provider and the user is no longer listed there) even if the account still exists in the Adobe dashboard.
+- Federated accounts that are not in the directory or are disabled in the directory cannot log in anyway (because login is handled by the ID provider and the user is no longer listed there) even if the account still exists in the Adobe dashboard.
 
 
 
