@@ -36,26 +36,26 @@ class RuleProcessor(object):
         :type caller_options:dict
         '''        
         options = {
-            'directory_group_filter': None,
-            'username_filter_regex': None,
-            
-            'new_account_type': user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
-            'exclude_identity_types': [],
-            'manage_groups': True,
-            'update_user_info': True,
-            
-            'remove_user_key_list': None,
-            'remove_list_output_path': None,
-            'remove_nonexistent_users': False,
-            'delete_user_key_list': None,
+            'after_mapping_hook': None,
+            'default_country_code': None,
             'delete_list_output_path': None,
             'delete_nonexistent_users': False,
-            'default_country_code': None,
+            'delete_user_key_list': None,
+            'directory_group_filter': None,
+            'directory_group_mapped': False,
+            'exclude_groups': [],
+            'exclude_identity_types': [],
+            'exclude_users': [],
+            'extended_attributes': None,
+            'manage_groups': False,
             'max_deletions_per_run': None,
             'max_missing_users': None,
-
-            'after_mapping_hook': None,
-            'extended_attributes': None,
+            'new_account_type': user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
+            'remove_list_output_path': None,
+            'remove_nonexistent_users': False,
+            'remove_user_key_list': None,
+            'update_user_info': True,
+            'username_filter_regex': None,
         }
         options.update(caller_options)        
         self.options = options        
@@ -63,6 +63,11 @@ class RuleProcessor(object):
         self.filtered_directory_user_by_user_key = {}
         self.organization_info_by_organization = {}
         self.adding_dashboard_user_key = set()
+
+        # save away the exclude options for use in filtering
+        self.exclude_groups = self.normalize_groups(options['exclude_groups'])
+        self.exclude_identity_types = options['exclude_identity_types']
+        self.exclude_users = options['exclude_users']
 
         # we only need a reference to either the remove or delete key list,
         # since you can't do both
@@ -577,11 +582,11 @@ class RuleProcessor(object):
         exclude_identity_types = self.options['exclude_identity_types']
         will_process_orphans = self.need_to_process_orphaned_dashboard_users
 
-        # there are certain operations we only do in the owning org,
-        # such as logging excluded users.  We also own log them if there
-        # is a possibility that we will update or delete them.
+        # there are certain operations we only do in the owning org
         in_owning_org = organization_info.get_name() == OWNING_ORGANIZATION_NAME
-        log_excluded_users = in_owning_org and (update_user_info or manage_groups or will_process_orphans)
+
+        # we only log excluded users if we would have updated them.
+        log_excluded_users = update_user_info or manage_groups or will_process_orphans
 
 
         # Walk all the dashboard users, getting their group data, matching them with directory users,
@@ -601,9 +606,8 @@ class RuleProcessor(object):
             # so we can update the dashboard user's groups as needed.
             desired_groups = user_to_group_map.pop(user_key, None) or set()
 
-            # ignore excluded users
-            identity_type = self.get_identity_type_from_dashboard_user(dashboard_user)
-            if identity_type in exclude_identity_types:
+            # check for excluded users
+            if in_owning_org and self.is_dashboard_user_excluded(user_key, current_groups):
                 if log_excluded_users:
                     self.logger.info("Ignoring excluded dashboard user: %s", user_key)
                 continue
@@ -642,7 +646,18 @@ class RuleProcessor(object):
         # mark the org's dashboard users as processed and return the remaining ones in the map
         organization_info.set_dashboard_users_loaded()
         return user_to_group_map
-    
+
+    def is_dashboard_user_excluded(self, user_key, current_groups):
+        identity_type, username, domain = self.parse_user_key(user_key)
+        if identity_type in self.exclude_identity_types:
+            return True
+        if len(current_groups & self.exclude_groups) > 0:
+            return True
+        for re in self.exclude_users:
+            if re.match(username):
+                return True
+        return False
+
     @staticmethod
     def normalize_groups(group_names):
         '''
