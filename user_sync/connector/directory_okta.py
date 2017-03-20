@@ -269,57 +269,6 @@ class OktaDirectoryConnector(object):
 
 
 class OKTAValueFormatter(object):
-    def __init__(self, string_format):
-        '''
-        :type string_format: str
-        '''
-        if (string_format == None):
-            attribute_names = []
-        else:
-            formatter = string.Formatter()
-            attribute_names = [item[1] for item in formatter.parse(string_format) if item[1]]
-
-        self.string_format = string_format
-        self.attribute_names = attribute_names
-
-    def get_attribute_names(self):
-        '''
-        :rtype list(str)
-        '''
-        return self.attribute_names
-
-    def generate_value(self, record):
-        '''
-        :type parameter_names: list(str)
-        :type record: dict
-        :type logger: logging
-        :rtype (str, str)
-        '''
-        result = None
-        attribute_name = None
-        if (self.string_format != None):
-            values = {}
-            for attribute_name in self.attribute_names:
-                value = self.get_attribute_value(record, attribute_name)
-                if (value == None):
-                    values = None
-                    break
-                values[attribute_name] = value
-            if (values != None):
-                result = self.string_format.format(**values)
-        return (result, attribute_name)
-
-    @staticmethod
-    def get_attribute_value(attributes, attribute_name):
-        '''
-        :type attributes: dict
-        :type attribute_name: str
-        '''
-        if attribute_name in attributes:
-            attribute_value = attributes[attribute_name]
-            if (len(attribute_value) > 0):
-                return attribute_value[0]
-        return None
 
     @staticmethod
     def get_extended_attribute_dict(attributes):
