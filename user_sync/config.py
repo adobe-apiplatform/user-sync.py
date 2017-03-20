@@ -41,6 +41,7 @@ class ConfigLoader(object):
         :type caller_options: dict
         '''        
         self.options = options = {
+            # these are in alphabetical order!  Always add new ones that way!
             'config_directory': DEFAULT_CONFIG_DIRECTORY,
             'delete_list_output_path': None,
             'delete_nonexistent_users': False,
@@ -342,6 +343,8 @@ class ConfigLoader(object):
             exclude_identity_types.append(identity_type)
         for regexp in exclude_users_regexps:
             try:
+                # add "match begin" and "match end" markers to ensure complete match
+                # and compile the patterns because we will use them over and over
                 exclude_users.append(re.compile(r'\A' + regexp + r'\Z', re.UNICODE))
             except re.error as e:
                 validation_message = ('Illegal regular expression (%s) in %s: %s' %
@@ -396,6 +399,7 @@ class ConfigLoader(object):
 
         options = self.options
         result = {
+            # these are in alphabetical order!  Always add new ones that way!
             'after_mapping_hook': after_mapping_hook,
             'default_country_code': default_country_code,
             'delete_list_output_path': options['delete_list_output_path'],

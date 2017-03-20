@@ -36,6 +36,7 @@ class RuleProcessor(object):
         :type caller_options:dict
         '''        
         options = {
+            # these are in alphabetical order!  Always add new ones that way!
             'after_mapping_hook': None,
             'default_country_code': None,
             'delete_list_output_path': None,
@@ -68,6 +69,10 @@ class RuleProcessor(object):
         self.exclude_groups = self.normalize_groups(options['exclude_groups'])
         self.exclude_identity_types = options['exclude_identity_types']
         self.exclude_users = options['exclude_users']
+        # remember users we excluded in the owning org, so when they
+        # reappear in later orgs we will exclude them again.
+        # TODO: change the way multiple orgs are handled to iterate users only once
+        self.excluded_user_keys = set()
 
         # we only need a reference to either the remove or delete key list,
         # since you can't do both
@@ -607,9 +612,7 @@ class RuleProcessor(object):
             desired_groups = user_to_group_map.pop(user_key, None) or set()
 
             # check for excluded users
-            if in_owning_org and self.is_dashboard_user_excluded(user_key, current_groups):
-                if log_excluded_users:
-                    self.logger.info("Ignoring excluded dashboard user: %s", user_key)
+            if self.is_dashboard_user_excluded(in_owning_org, user_key, current_groups, log_excluded_users):
                 continue
 
             directory_user = filtered_directory_user_by_user_key.get(user_key)
@@ -647,16 +650,31 @@ class RuleProcessor(object):
         organization_info.set_dashboard_users_loaded()
         return user_to_group_map
 
-    def is_dashboard_user_excluded(self, user_key, current_groups):
-        identity_type, username, domain = self.parse_user_key(user_key)
-        if identity_type in self.exclude_identity_types:
-            return True
-        if len(current_groups & self.exclude_groups) > 0:
-            return True
-        for re in self.exclude_users:
-            if re.match(username):
+    def is_dashboard_user_excluded(self, in_owning_org, user_key, current_groups, do_logging):
+        if in_owning_org:
+            # in the owning org, we actually check the exclusion conditions
+            identity_type, username, domain = self.parse_user_key(user_key)
+            if identity_type in self.exclude_identity_types:
+                if do_logging:
+                    self.logger.info("Excluding dashboard user (due to type): %s", user_key)
+                self.excluded_user_keys.add(user_key)
                 return True
-        return False
+            if len(current_groups & self.exclude_groups) > 0:
+                if do_logging:
+                    self.logger.info("Excluding dashboard user (due to group): %s", user_key)
+                self.excluded_user_keys.add(user_key)
+                return True
+            for re in self.exclude_users:
+                if re.match(username):
+                    if do_logging:
+                        self.logger.info("Excluding dashboard user (due to name): %s", user_key)
+                    self.excluded_user_keys.add(user_key)
+                    return True
+            return False
+        else:
+            # in all other orgs, we use the cache, and don't log,
+            # because the owning org always gets processed first
+            return user_key in self.excluded_user_keys
 
     @staticmethod
     def normalize_groups(group_names):
