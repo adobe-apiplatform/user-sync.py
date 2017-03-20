@@ -68,7 +68,7 @@ class RulesTest(unittest.TestCase):
             accessor_1_organization_name: mock_accessor_dashboard_connector
         })
         
-        rule_processor = user_sync.rules.RuleProcessor({})
+        rule_processor = user_sync.rules.RuleProcessor({'manage_groups': True})
         rule_processor.run(directory_groups, mock_directory_connector, dashboard_connectors)
 
         rule_options = rule_processor.options
