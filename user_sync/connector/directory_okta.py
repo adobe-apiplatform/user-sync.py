@@ -71,7 +71,9 @@ class OktaDirectoryConnector(object):
         builder.set_string_value('logger_name', 'connector.' + OktaDirectoryConnector.name)
         builder.set_dict_value('source_filters', {})
 
-        okta_url = "https://" + builder.require_string_value('okta_url')
+        okta_url = builder.require_string_value('okta_url')
+        if 'https' not in okta_url:
+            okta_url = "https://" + okta_url
         api_token = builder.require_string_value('api_token')
 
         options = builder.get_options()
