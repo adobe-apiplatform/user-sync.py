@@ -66,10 +66,7 @@ class OktaDirectoryConnector(object):
                                  '{group}')
         builder.set_string_value('all_users_filter',
                                  'status eq "ACTIVE"')
-        builder.set_string_value('user_email_format', '{email}')
-        builder.set_string_value('user_username_format', None)
-        builder.set_string_value('user_username_format', None)
-        builder.set_string_value('user_domain_format', None)
+        #builder.set_string_value('user_email_format', '{email}')
         builder.set_string_value('user_identity_type', None)
         builder.set_string_value('logger_name', 'connector.' + OktaDirectoryConnector.name)
         builder.set_dict_value('source_filters', {})
@@ -81,11 +78,7 @@ class OktaDirectoryConnector(object):
 
         options = builder.get_options()
 
-
-        self.user_email_formatter = OKTAValueFormatter(options['user_email_format'])
-        self.user_username_formatter = OKTAValueFormatter(options['user_username_format'])
-        self.user_domain_formatter = OKTAValueFormatter(options['user_domain_format'])
-
+        #self.user_email_formatter = OKTAValueFormatter(options['user_email_format'])
 
         self.users_client = None
         self.groups_client = None
@@ -105,13 +98,12 @@ class OktaDirectoryConnector(object):
         logger.info('Connecting to: %s', okta_url)
 
         try:
-            self.users_client =  okta.UsersClient(okta_url,api_token)
+            self.users_client = okta.UsersClient(okta_url, api_token)
             self.groups_client = okta.UserGroupsClient(okta_url, api_token)
         except Exception as e:
             raise user_sync.error.AssertionException(repr(e))
 
         logger.info('Connected')
-
 
     def load_users_and_groups(self, groups, extended_attributes):
         '''
@@ -161,7 +153,6 @@ class OktaDirectoryConnector(object):
 
         return (not is_using_source_filter, user_by_uid.itervalues())
 
-
     def find_group(self, group):
         '''
         :type group: str
@@ -170,12 +161,15 @@ class OktaDirectoryConnector(object):
         '''
         options = self.options
         group_filter_format = options['group_filter_format']
+        try:
+            res = self.groups_client.get_groups(query=group_filter_format.format(group=group))
+        except Exception as e:
+            self.logger.warning("Unable to query group")
+            raise user_sync.error.AssertionException(repr(e))
 
-        res = self.groups_client.get_groups(query=group_filter_format.format(group=group))
-
-        if (len(res) <  1):
+        if (len(res) < 1):
             raise user_sync.error.AssertionException("Group not found for: %s" % group)
-        elif(len(res) > 1):
+        elif (len(res) > 1):
             raise user_sync.error.AssertionException("Multiple groups found for: %s" % group)
 
         return res[0]
@@ -187,69 +181,72 @@ class OktaDirectoryConnector(object):
         '''
         res_group = self.find_group(group)
         if (res_group != None):
-
-            members = self.groups_client.get_group_users(res_group.id)
-
+            try:
+                members = self.groups_client.get_group_users(res_group.id)
+            except Exception as e:
+                self.logger.warning("Unable to get_group_users")
+                raise user_sync.error.AssertionException(repr(e))
             for member in members:
                 yield (member.id)
-
         else:
             self.logger.warning("No group found for: %s", group)
-
 
     def iter_users(self, users_filter, extended_attributes):
         options = self.options
 
         ###TODO does nothing for now
-        user_attribute_names = ["firstName", "lastName", "countryCode", "id"]
-        user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
-        user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
-        user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
+        user_attribute_names = ["firstName", "lastName","login","email","countryCode"]
+        #user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
 
         extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
         user_attribute_names.extend(extended_attributes)
         ###
 
-        result_iter = self.iter_search_result(users_filter,user_attribute_names)
+        result_iter = self.iter_search_result(users_filter, user_attribute_names)
 
         for record in result_iter:
             profile = record.profile
-
             if (profile.email == None):
-                #if (last_attribute_name != None):
+                # if (last_attribute_name != None):
                 self.logger.warn('No email attribute for login: %s', profile.login)
                 continue
 
+            source_attributes = {}
             user = user_sync.connector.helper.create_blank_user()
 
-            user['uid'] = record.id
-
-            user['email'] = profile.email
-
-            user['username'] = profile.login
+            source_attributes['id'] = user['uid'] = record.id
+            source_attributes['email'] = user['email'] = profile.email
+            source_attributes['login'] = user['username'] = profile.login
 
             if profile.firstName != None:
-                user['firstname'] = profile.firstName
+                source_attributes['firstName'] = user['firstname'] = profile.firstName
+            else:
+                source_attributes['firstName'] = None
 
             if profile.lastName != None:
-                user['lastname'] = profile.lastName
+                source_attributes['lastName'] = user['lastname'] = profile.lastName
+            else:
+                source_attributes['lastName'] = None
 
             if profile.countryCode != None:
-                user['country'] = profile.countryCode
+                source_attributes['countryCode'] = user['country'] = profile.countryCode
+            else:
+                source_attributes['countryCode'] = None
 
-
-
-            #if extended_attributes is not None:
-            #    for extended_attribute in extended_attributes:
-            #        extended_attribute_value = LDAPValueFormatter.get_attribute_value(record, extended_attribute)
-            #        source_attributes[extended_attribute] = extended_attribute_value
+            if extended_attributes is not None:
+                for extended_attribute in extended_attributes:
+                    if extended_attribute not in source_attributes:
+                        if(hasattr(profile,extended_attribute)):
+                            extended_attribute_value = getattr(profile,extended_attribute)
+                            source_attributes[extended_attribute] = extended_attribute_value
+                        else:
+                            source_attributes[extended_attribute] = None
 
             # [TODO morr 2017-02-26]: Could be omitted if no hook; worth considering?
             # [TODO morr 2017-02-28]: Is the copy necessary? Could just assign I think
-
+            user['source_attributes'] = source_attributes.copy()
 
             yield (profile.login, user)
-
 
     def iter_search_result(self, filter_string, attributes):
         '''
@@ -257,67 +254,30 @@ class OktaDirectoryConnector(object):
         type: attributes: list(str)
         '''
 
+        attr_dict = OKTAValueFormatter.get_extended_attribute_dict(attributes)
+
         try:
-            #TODO monkey-patch okta.User.UserProfile class for additional attribute. For now return the common attribute
-
             self.logger.info("Calling okta SDK get_users with the following %s", filter_string)
-            users = self.users_client.get_users(query=filter_string)
-
-        except:
+            if attr_dict:
+                users = self.users_client.get_users(query=filter_string, extended_attribute=attr_dict)
+            else:
+                users = self.users_client.get_users(query=filter_string)
+        except Exception as e:
             self.logger.warning("Unable to query users")
-            raise
-
+            raise user_sync.error.AssertionException(repr(e))
         return users
 
+
+
+
 class OKTAValueFormatter(object):
-    def __init__(self, string_format):
-        '''
-        :type string_format: str
-        '''
-        if (string_format == None):
-            attribute_names = []
-        else:
-            formatter = string.Formatter()
-            attribute_names = [item[1] for item in formatter.parse(string_format) if item[1]]
-
-        self.string_format = string_format
-        self.attribute_names = attribute_names
-
-    def get_attribute_names(self):
-        '''
-        :rtype list(str)
-        '''
-        return self.attribute_names
-
-    def generate_value(self, record):
-        '''
-        :type parameter_names: list(str)
-        :type record: dict
-        :type logger: logging
-        :rtype (str, str)
-        '''
-        result = None
-        attribute_name = None
-        if (self.string_format != None):
-            values = {}
-            for attribute_name in self.attribute_names:
-                value = self.get_attribute_value(record, attribute_name)
-                if (value == None):
-                    values = None
-                    break
-                values[attribute_name] = value
-            if (values != None):
-                result = self.string_format.format(**values)
-        return (result, attribute_name)
 
     @staticmethod
-    def get_attribute_value(attributes, attribute_name):
-        '''
-        :type attributes: dict
-        :type attribute_name: str
-        '''
-        if attribute_name in attributes:
-            attribute_value = attributes[attribute_name]
-            if (len(attribute_value) > 0):
-                return attribute_value[0]
-        return None
+    def get_extended_attribute_dict(attributes):
+
+        attr_dict = {}
+        for attribute in attributes:
+            if attribute not in attr_dict:
+                attr_dict.update({attribute:str})
+
+        return attr_dict
