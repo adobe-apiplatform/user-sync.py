@@ -91,10 +91,12 @@ def init_console_log():
     root_logger.setLevel(logging.DEBUG)
     return console_log_handler
 
-def init_log(logging_config):
+def init_log(config_loader):
     '''
     :type logging_config: user_sync.config.DictConfig
     '''
+    logging_config = config_loader.get_logging_config()
+    
     builder = user_sync.config.OptionsBuilder(logging_config)
     builder.set_bool_value('log_to_file', False)
     builder.set_string_value('file_log_directory', 'logs')
@@ -123,7 +125,7 @@ def init_log(logging_config):
         if (file_log_level == None):
             file_log_level = logging.INFO
             unknown_file_log_level = True
-        file_log_directory = options['file_log_directory']
+        file_log_directory = config_loader.main_config_content.get_relative_filename(options['file_log_directory'])
         if not os.path.exists(file_log_directory):
             os.makedirs(file_log_directory)
         
@@ -320,7 +322,7 @@ def main():
         config_loader = create_config_loader(args)
         
         # initialize log based on configuration
-        init_log(config_loader.get_logging_config())
+        init_log(config_loader)
 
         # add start divider, app version number, and invocation parameters to log
         run_stats = user_sync.helper.JobStats('Run (User Sync version: ' + APP_VERSION + ')', divider='=')

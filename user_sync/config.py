@@ -173,7 +173,9 @@ class ConfigLoader(object):
             # accessors takes precedence over the file mapped in the file
             # pattern
             if accessors_config:
-                accessor_config_filename = self.main_config_content.get_relative_filename(accessors_config.get_list(organization_name, True))
+                accessor_config_filenames = accessors_config.get_list(organization_name, True)
+                if accessor_config_filenames:
+                    accessor_config_filename = self.main_config_content.get_relative_filename(accessor_config_filenames[0])
 
             additional_accessor_config_sources = []
             
