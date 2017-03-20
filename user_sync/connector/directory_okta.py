@@ -193,7 +193,7 @@ class OktaDirectoryConnector(object):
         options = self.options
 
         ###TODO does nothing for now
-        user_attribute_names = ["firstName", "lastName","login","email" "countryCode"]
+        user_attribute_names = ["firstName", "lastName","login","email","countryCode"]
         #user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
 
         extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
