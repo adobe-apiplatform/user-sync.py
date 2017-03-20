@@ -45,9 +45,6 @@ def process_args():
     parser.add_argument('-t', '--test-mode',
                         help='run API action calls in test mode (does not execute changes). Logs what would have been executed.',
                         action='store_true', dest='test_mode')
-    parser.add_argument('-c', '--config-path',
-                        help='specify path to config files. (default: "%(default)s")',
-                        default=config.DEFAULT_CONFIG_DIRECTORY, metavar='path', dest='config_path')
     parser.add_argument('--config-filename',
                         help='main config filename. (default: "%(default)s")',
                         default=config.DEFAULT_MAIN_CONFIG_FILENAME, metavar='filename', dest='config_filename')
@@ -94,10 +91,12 @@ def init_console_log():
     root_logger.setLevel(logging.DEBUG)
     return console_log_handler
 
-def init_log(logging_config):
+def init_log(config_loader):
     '''
     :type logging_config: user_sync.config.DictConfig
     '''
+    logging_config = config_loader.get_logging_config()
+    
     builder = user_sync.config.OptionsBuilder(logging_config)
     builder.set_bool_value('log_to_file', False)
     builder.set_string_value('file_log_directory', 'logs')
@@ -126,7 +125,7 @@ def init_log(logging_config):
         if (file_log_level == None):
             file_log_level = logging.INFO
             unknown_file_log_level = True
-        file_log_directory = options['file_log_directory']
+        file_log_directory = config_loader.main_config_content.get_relative_filename(options['file_log_directory'])
         if not os.path.exists(file_log_directory):
             os.makedirs(file_log_directory)
         
@@ -191,7 +190,6 @@ def begin_work(config_loader):
     
 def create_config_loader(args):
     config_bootstrap_options = {
-        'config_directory': args.config_path,
         'main_config_filename': args.config_filename,
     }
     config_loader = user_sync.config.ConfigLoader(config_bootstrap_options)
@@ -320,8 +318,11 @@ def main():
         except SystemExit:
             return
         
+        # build configuration loader, given config file path arguments
         config_loader = create_config_loader(args)
-        init_log(config_loader.get_logging_config())
+        
+        # initialize log based on configuration
+        init_log(config_loader)
 
         # add start divider, app version number, and invocation parameters to log
         run_stats = user_sync.helper.JobStats('Run (User Sync version: ' + APP_VERSION + ')', divider='=')
@@ -332,10 +333,15 @@ def main():
         lock_path = os.path.join(script_dir, 'lockfile')
         lock = user_sync.lockfile.ProcessLock(lock_path)
         if lock.set_lock():
-            try:                
+            try:
+                # build tool options options given arguments
                 config_options = create_config_loader_options(args)
-                config_loader.set_options(config_options)
                 
+                # update configuration loader with the additional configuration
+                # options
+                config_loader.update_options(config_options)
+                
+                # let the tool start the work!
                 begin_work(config_loader)
             finally:
                 lock.unlock()

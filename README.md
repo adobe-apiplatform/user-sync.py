@@ -69,8 +69,6 @@ optional arguments:
   -v, --version         show program's version number and exit
   -t, --test-mode       run API action calls in test mode (does not execute
                         changes). Logs what would have been executed.
-  -c path, --config-path path
-                        specify path to config files. (default: "")
   --config-filename filename
                         main config filename. (default: "user-sync-
                         config.yml")
