@@ -22,7 +22,7 @@ Choices available for handling Adobe account deletion via User Sync:
 
   - Recover all licenses and remove from your org, but leave account in existence.
 
-  - Recover all licenses and delete the account. *
+  - Recover all licenses and delete the account.
 
 \*  feature coming late March, 2017
 
