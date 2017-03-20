@@ -43,7 +43,7 @@ class DashboardConnector(object):
         :type name: str
         :type caller_options: dict
         '''
-        caller_config = user_sync.config.DictConfig('"%s dashboard options"' % name, caller_options)
+        caller_config = user_sync.config.DictConfig('"%s dashboard options"' % name, caller_options.content)
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('logger_name', 'dashboard.' + name)
         builder.set_bool_value('test_mode', False)
@@ -73,7 +73,7 @@ class DashboardConnector(object):
         ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
         api_key = enterprise_options['api_key']
-        private_key_file_path = enterprise_options['priv_key_path']
+        private_key_file_path = caller_options.get_relative_filename(enterprise_options['priv_key_path'])
         um_endpoint = "https://" + server_options['host'] + server_options['endpoint']    
         
         logger.info('Creating connection for org id: "%s" using private key file: "%s"', org_id, private_key_file_path)

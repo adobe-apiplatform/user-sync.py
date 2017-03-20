@@ -45,9 +45,6 @@ def process_args():
     parser.add_argument('-t', '--test-mode',
                         help='run API action calls in test mode (does not execute changes). Logs what would have been executed.',
                         action='store_true', dest='test_mode')
-    parser.add_argument('-c', '--config-path',
-                        help='specify path to config files. (default: "%(default)s")',
-                        default=config.DEFAULT_CONFIG_DIRECTORY, metavar='path', dest='config_path')
     parser.add_argument('--config-filename',
                         help='main config filename. (default: "%(default)s")',
                         default=config.DEFAULT_MAIN_CONFIG_FILENAME, metavar='filename', dest='config_filename')
@@ -191,7 +188,6 @@ def begin_work(config_loader):
     
 def create_config_loader(args):
     config_bootstrap_options = {
-        'config_directory': args.config_path,
         'main_config_filename': args.config_filename,
     }
     config_loader = user_sync.config.ConfigLoader(config_bootstrap_options)
@@ -307,7 +303,10 @@ def main():
         except SystemExit:
             return
         
+        # build configuration loader, given config file path arguments
         config_loader = create_config_loader(args)
+        
+        # initialize log based on configuration
         init_log(config_loader.get_logging_config())
         
         run_stats = user_sync.helper.JobStats("Run", divider = "=")
@@ -317,10 +316,15 @@ def main():
         lock_path = os.path.join(script_dir, 'lockfile')
         lock = user_sync.lockfile.ProcessLock(lock_path)
         if lock.set_lock():
-            try:                
+            try:
+                # build tool options options given arguments
                 config_options = create_config_loader_options(args)
-                config_loader.set_options(config_options)
                 
+                # update configuration loader with the additional configuration
+                # options
+                config_loader.update_options(config_options)
+                
+                # let the tool start the work!
                 begin_work(config_loader)
             finally:
                 lock.unlock()
