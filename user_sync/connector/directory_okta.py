@@ -193,7 +193,7 @@ class OktaDirectoryConnector(object):
         options = self.options
 
         ###TODO does nothing for now
-        user_attribute_names = ["firstName", "lastName", "countryCode", "id"]
+        user_attribute_names = ["firstName", "lastName","login","email" "countryCode"]
         #user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
 
         extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
@@ -208,26 +208,41 @@ class OktaDirectoryConnector(object):
                 # if (last_attribute_name != None):
                 self.logger.warn('No email attribute for login: %s', profile.login)
                 continue
+
+            source_attributes = {}
             user = user_sync.connector.helper.create_blank_user()
 
-            user['uid'] = record.id
-            user['email'] = profile.email
-            user['username'] = profile.login
+            source_attributes['id'] = user['uid'] = record.id
+            source_attributes['email'] = user['email'] = profile.email
+            source_attributes['login'] = user['username'] = profile.login
 
             if profile.firstName != None:
-                user['firstname'] = profile.firstName
-            if profile.lastName != None:
-                user['lastname'] = profile.lastName
-            if profile.countryCode != None:
-                user['country'] = profile.countryCode
+                source_attributes['firstName'] = user['firstname'] = profile.firstName
+            else:
+                source_attributes['firstName'] = None
 
-            # if extended_attributes is not None:
-            #    for extended_attribute in extended_attributes:
-            #        extended_attribute_value = LDAPValueFormatter.get_attribute_value(record, extended_attribute)
-            #        source_attributes[extended_attribute] = extended_attribute_value
+            if profile.lastName != None:
+                source_attributes['lastName'] = user['lastname'] = profile.lastName
+            else:
+                source_attributes['lastName'] = None
+
+            if profile.countryCode != None:
+                source_attributes['countryCode'] = user['country'] = profile.countryCode
+            else:
+                source_attributes['countryCode'] = None
+
+            if extended_attributes is not None:
+                for extended_attribute in extended_attributes:
+                    if extended_attribute not in source_attributes:
+                        if(hasattr(profile,extended_attribute)):
+                            extended_attribute_value = getattr(profile,extended_attribute)
+                            source_attributes[extended_attribute] = extended_attribute_value
+                        else:
+                            source_attributes[extended_attribute] = None
 
             # [TODO morr 2017-02-26]: Could be omitted if no hook; worth considering?
             # [TODO morr 2017-02-28]: Is the copy necessary? Could just assign I think
+            user['source_attributes'] = source_attributes.copy()
 
             yield (profile.login, user)
 
@@ -237,14 +252,20 @@ class OktaDirectoryConnector(object):
         type: attributes: list(str)
         '''
 
+        attr_dict = OKTAValueFormatter.get_extended_attribute_dict(attributes)
+
         try:
-            # TODO monkey-patch okta.User.UserProfile class for additional attribute. For now return the common attribute
             self.logger.info("Calling okta SDK get_users with the following %s", filter_string)
-            users = self.users_client.get_users(query=filter_string)
+            if attr_dict:
+                users = self.users_client.get_users(query=filter_string, extended_attribute=attr_dict)
+            else:
+                users = self.users_client.get_users(query=filter_string)
         except Exception as e:
             self.logger.warning("Unable to query users")
             raise user_sync.error.AssertionException(repr(e))
         return users
+
+
 
 
 class OKTAValueFormatter(object):
@@ -299,3 +320,13 @@ class OKTAValueFormatter(object):
             if (len(attribute_value) > 0):
                 return attribute_value[0]
         return None
+
+    @staticmethod
+    def get_extended_attribute_dict(attributes):
+
+        attr_dict = {}
+        for attribute in attributes:
+            if attribute not in attr_dict:
+                attr_dict.update({attribute:str})
+
+        return attr_dict
