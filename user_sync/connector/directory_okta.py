@@ -159,20 +159,24 @@ class OktaDirectoryConnector(object):
         :type attribute_list: list(str)
         :rtype (str, dict)
         '''
+        group = group.strip()
         options = self.options
         group_filter_format = options['group_filter_format']
         try:
-            res = self.groups_client.get_groups(query=group_filter_format.format(group=group))
+            results = self.groups_client.get_groups(query=group_filter_format.format(group=group))
         except Exception as e:
             self.logger.warning("Unable to query group")
             raise user_sync.error.AssertionException(repr(e))
 
-        if (len(res) < 1):
+        if(results == None):
             raise user_sync.error.AssertionException("Group not found for: %s" % group)
-        elif (len(res) > 1):
-            raise user_sync.error.AssertionException("Multiple groups found for: %s" % group)
+        else:
+            for result in results:
+                if result.profile.name == group:
+                    return result
 
-        return res[0]
+        return None
+
 
     def iter_group_members(self, group):
         '''
@@ -245,6 +249,9 @@ class OktaDirectoryConnector(object):
             # [TODO morr 2017-02-26]: Could be omitted if no hook; worth considering?
             # [TODO morr 2017-02-28]: Is the copy necessary? Could just assign I think
             user['source_attributes'] = source_attributes.copy()
+
+            # added to fix warning message about identitytype not being set in user obj.
+            user['identitytype'] = options['user_identity_type']
 
             yield (profile.login, user)
 
