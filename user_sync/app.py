@@ -45,15 +45,12 @@ def process_args():
     parser.add_argument('-t', '--test-mode',
                         help='run API action calls in test mode (does not execute changes). Logs what would have been executed.',
                         action='store_true', dest='test_mode')
-    parser.add_argument('-c', '--config-path',
-                        help='specify path to config files. (default: "%(default)s")',
-                        default=config.DEFAULT_CONFIG_DIRECTORY, metavar='path', dest='config_path')
-    parser.add_argument('--config-filename',
+    parser.add_argument('-c', '--config-filename',
                         help='main config filename. (default: "%(default)s")',
                         default=config.DEFAULT_MAIN_CONFIG_FILENAME, metavar='filename', dest='config_filename')
     parser.add_argument('--users', 
-                        help="specify the users to be considered for sync. Legal values are 'all' (the default), 'group name or names' (one or more specified AD groups), 'file f' (a specified input file).", 
-                        nargs="*", metavar=('all|file|group', 'arg1'), dest='users')
+                        help="specify the users to be considered for sync. Legal values are 'all' (the default), 'group name or names' (one or more specified AD groups), 'mapped' (all groups listed in configuration file), 'file f' (a specified input file).", 
+                        nargs="*", metavar=('all|file|mapped|group', 'arg1'), dest='users')
     parser.add_argument('--user-filter',
                         help='limit the selected set of users that may be examined for syncing, with the pattern being a regular expression.',
                         metavar='pattern', dest='username_filter_pattern')
@@ -72,9 +69,18 @@ def process_args():
     parser.add_argument('--generate-remove-list',
                         help='processing similar to --remove-nonexistent-users except that rather than performing removals, a file is generated (with the given pathname) listing users who would be removed. This file can then be given in the --remove-list argument in a subsequent run.',
                         metavar='output_path', dest='remove_list_output_path')
-    parser.add_argument('-d', '--remove-list',
-                        help='specifies the file containing the list of users to be removed. Users on this list are removeFromOrg\'ed on the Adobe side.',
+    parser.add_argument('--remove-list',
+                        help='specifies the file containing the list of users to be removed. Users on this list are removed from the organization on the Adobe side.',
                         metavar='input_path', dest='remove_list_input_path')
+    parser.add_argument('--delete-nonexistent-users',
+                        help='Causes the user sync tool to delete user accounts that exist on the Adobe side if they are not in the customer side AD. If the account is an Adobe ID account, it is remove from the Adobe-side organization, but not deleted.',
+                        action='store_true', dest='delete_nonexistent_users')
+    parser.add_argument('--generate-delete-list',
+                        help='processing similar to --delete-nonexistent-users except that rather than performing deletions, a file is generated (with the given pathname) listing users who would be deleted. This file can then be given in the --delete-list argument in a subsequent run.',
+                        metavar='output_path', dest='delete_list_output_path')
+    parser.add_argument('--delete-list',
+                        help='specifies the file containing the list of users to be deleted. Users in this list are removed from the organization on the Adobe side, and Enterprise and Federated user accounts are deleted on the Adobe side.',
+                        metavar='input_path', dest='delete_list_input_path')
     return parser.parse_args()
 
 def init_console_log():
@@ -117,7 +123,7 @@ def init_log(logging_config):
         if (file_log_level == None):
             file_log_level = logging.INFO
             unknown_file_log_level = True
-        file_log_directory = options['file_log_directory']
+        file_log_directory = user_sync.config.ConfigFileLoader.get_relative_filename(options['file_log_directory'])
         if not os.path.exists(file_log_directory):
             os.makedirs(file_log_directory)
         
@@ -138,6 +144,10 @@ def begin_work(config_loader):
     owning_dashboard_config = config_loader.get_dashboard_options_for_owning()
     accessor_dashboard_configs = config_loader.get_dashboard_options_for_accessors()
     rule_config = config_loader.get_rule_options()
+
+    # process mapped configuration after the directory groups have been loaded, as mapped setting depends on this.
+    if (rule_config['directory_group_mapped']):
+        rule_config['directory_group_filter'] = set(directory_groups.iterkeys())
 
     referenced_organization_names = set()
     for groups in directory_groups.itervalues():
@@ -178,7 +188,6 @@ def begin_work(config_loader):
     
 def create_config_loader(args):
     config_bootstrap_options = {
-        'config_directory': args.config_path,
         'main_config_filename': args.config_filename,
     }
     config_loader = user_sync.config.ConfigLoader(config_bootstrap_options)
@@ -188,7 +197,8 @@ def create_config_loader_options(args):
     config_options = {
         'test_mode': args.test_mode,        
         'manage_groups': args.manage_groups,
-        'update_user_info': args.update_user_info,        
+        'update_user_info': args.update_user_info,
+        'directory_group_mapped': False,
     }
 
     users_args = args.users
@@ -201,6 +211,9 @@ def create_config_loader_options(args):
                 raise user_sync.error.AssertionException('Missing file path for --users %s [file_path]' % users_action)
             config_options['directory_connector_module_name'] = 'user_sync.connector.directory_csv'
             config_options['directory_connector_overridden_options'] = {'file_path': users_args.pop(0)}
+        elif (users_action == 'mapped'):
+            config_options['directory_connector_module_name'] = 'user_sync.connector.directory_ldap'
+            config_options['directory_group_mapped'] = True
         elif (users_action == 'group'):            
             if (len(users_args) == 0):
                 raise user_sync.error.AssertionException('Missing groups for --users %s [groups]' % users_action)
@@ -217,19 +230,56 @@ def create_config_loader_options(args):
             raise user_sync.error.AssertionException("Bad regular expression for --user-filter: %s reason: %s" % (username_filter_pattern, e.message))
         config_options['username_filter_regex'] = compiled_expression
     
+    # --remove-list
     remove_list_input_path = args.remove_list_input_path
     if (remove_list_input_path != None):
         logger.info('Reading remove list from: %s', remove_list_input_path)
         remove_user_key_list = user_sync.rules.RuleProcessor.read_remove_list(remove_list_input_path, logger = logger)
         logger.info('Total users in remove list: %d', len(remove_user_key_list))
         config_options['remove_user_key_list'] = remove_user_key_list
+    
+    # --delete-list
+    delete_list_input_path = args.delete_list_input_path
+    if (delete_list_input_path != None):
+        logger.info('Reading delete list from: %s', delete_list_input_path)
+        delete_user_key_list = user_sync.rules.RuleProcessor.read_remove_list(delete_list_input_path, logger = logger)
+        logger.info('Total users in delete list: %d', len(delete_user_key_list))
+        config_options['delete_user_key_list'] = delete_user_key_list
+    
+    # can't specify both --remove-list and --delete-list!
+    if (remove_list_input_path and delete_list_input_path):
+        raise user_sync.error.AssertionException("Please specify either --remove-list or --delete-list")
          
+    # keep track of the number user removal type commands
+    user_removal_command_count = 0
+
+    # --remove-nonexistent-users
     config_options['remove_list_output_path'] = remove_list_output_path = args.remove_list_output_path
     remove_nonexistent_users = args.remove_nonexistent_users
-    if (remove_nonexistent_users and remove_list_output_path):
-        remove_nonexistent_users = False
-        logger.warn('--remove-nonexistent-users ignored when --generate-remove-list is specified')    
+    if remove_nonexistent_users:
+        if remove_list_output_path:
+            remove_nonexistent_users = False
+            logger.warn('--remove-nonexistent-users ignored when --generate-remove-list is specified')
+        if delete_list_input_path != None:
+            raise user_sync.error.AssertionException("--remove-nonexistent-users cannot be used when --delete-list is specified")
+        user_removal_command_count += 1
     config_options['remove_nonexistent_users'] = remove_nonexistent_users
+                    
+    # --delete-nonexistent-users
+    config_options['delete_list_output_path'] = delete_list_output_path = args.delete_list_output_path
+    delete_nonexistent_users = args.delete_nonexistent_users
+    if delete_nonexistent_users:
+        if delete_list_output_path:
+            delete_nonexistent_users = False
+            logger.warn('--delete-nonexistent-users ignored when --generate-delete-list is specified')
+        if remove_list_input_path != None:
+            raise user_sync.error.AssertionException("--delete-nonexistent-users cannot be used when --remove-list is specified")
+        user_removal_command_count += 1
+    config_options['delete_nonexistent_users'] = delete_nonexistent_users
+
+    # ensure the user has only entered one "remove user" type command.    
+    if user_removal_command_count > 1:
+        raise user_sync.error.AssertionException("You may specify either --remove-nonexistent-users or --delete-nonexistent-users")
                     
     source_filter_args = args.source_filter_args
     if (source_filter_args != None):
@@ -245,6 +295,19 @@ def create_config_loader_options(args):
     
     return config_options
 
+def log_parameters(args):
+    '''
+    Log the invocation parameters to make it easier to diagnose problem with customers
+    :param args: namespace
+    :return: None
+    '''
+    logger.info('------- Invocation parameters -------')
+    logger.info(' '.join(sys.argv))
+    logger.info('-------- Internal parameters --------')
+    for parameter_name, parameter_value in args.__dict__.iteritems():
+        logger.info('  %s: %s', parameter_name, parameter_value)
+    logger.info('-------------------------------------')
+
 def main():   
     run_stats = None 
     try:
@@ -255,9 +318,11 @@ def main():
         
         config_loader = create_config_loader(args)
         init_log(config_loader.get_logging_config())
-        
-        run_stats = user_sync.helper.JobStats("Run", divider = "=")
+
+        # add start divider, app version number, and invocation parameters to log
+        run_stats = user_sync.helper.JobStats('Run (User Sync version: ' + APP_VERSION + ')', divider='=')
         run_stats.log_start(logger)
+        log_parameters(args)
 
         script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
         lock_path = os.path.join(script_dir, 'lockfile')

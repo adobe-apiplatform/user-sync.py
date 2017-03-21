@@ -30,12 +30,9 @@ import user_sync.error
 import user_sync.identity_type
 import user_sync.rules
 
-DEFAULT_CONFIG_DIRECTORY = ''
 DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
 DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME = 'dashboard-owning-config.yml'
 DEFAULT_DASHBOARD_ACCESSOR_CONFIG_FILENAME_FORMAT = 'dashboard-accessor-{organization_name}-config.yml'
-
-GROUP_NAME_DELIMITER = '::'
 
 class ConfigLoader(object):
     def __init__(self, caller_options):
@@ -43,37 +40,37 @@ class ConfigLoader(object):
         :type caller_options: dict
         '''        
         self.options = options = {
-            'config_directory': DEFAULT_CONFIG_DIRECTORY,
-            'main_config_filename': DEFAULT_MAIN_CONFIG_FILENAME,            
-
+            # these are in alphabetical order!  Always add new ones that way!
+            'delete_list_output_path': None,
+            'delete_nonexistent_users': False,
+            'delete_user_key_list': None,
             'directory_connector_module_name': None,
             'directory_connector_overridden_options': None,
             'directory_group_filter': None,
-            'username_filter_regex': None,
+            'directory_group_mapped': False,
             'directory_source_filters': None,
-
-            'test_mode': False,            
-            'manage_groups': True,
-            'update_user_info': True,
-            
-            'remove_user_key_list': None,
+            'main_config_filename': DEFAULT_MAIN_CONFIG_FILENAME,
+            'manage_groups': False,
             'remove_list_output_path': None,
-            'remove_nonexistent_users': False
+            'remove_nonexistent_users': False,
+            'remove_user_key_list': None,
+            'test_mode': False,
+            'update_user_info': True,
+            'username_filter_regex': None,
         }
         options.update(caller_options)     
 
         main_config_filename = options.get('main_config_filename')
-        self.main_config_path = main_config_path = self.get_file_path(main_config_filename)
+        ConfigFileLoader.load(main_config_filename)
         
-        if (not os.path.isfile(main_config_path)):
-            raise user_sync.error.AssertionException('Config file does not exist: %s' % (main_config_path))  
+        if (not os.path.isfile(main_config_filename)):
+            raise user_sync.error.AssertionException('Config file does not exist: %s' % (main_config_filename))  
         
         self.directory_source_filters_accessed = set()        
         
         self.logger = logger = logging.getLogger('config')
-        logger.info("Using main config file: %s", main_config_path)                
-        config_content = self.load_from_yaml(self.main_config_path)         
-        self.main_config = DictConfig("<%s>" % main_config_filename, config_content)
+        logger.info("Using main config file: %s", main_config_filename)                
+        self.main_config = DictConfig("<%s>" % main_config_filename, ConfigFileLoader.content)
         
     def set_options(self, caller_options):          
         '''
@@ -111,7 +108,7 @@ class ConfigLoader(object):
             
         accessor_config_file_paths = {}
         accessor_config_filename_wildcard = accessor_config_filename_format.format(**{'organization_name': '*'})
-        for file_path in glob.glob1(self.options.get('config_directory'), accessor_config_filename_wildcard):
+        for file_path in glob.glob1(ConfigFileLoader.dirpath, accessor_config_filename_wildcard):
             parse_result = self.parse_string(accessor_config_filename_format, file_path)
             organization_name = parse_result.get('organization_name')
             if (organization_name != None):
@@ -186,7 +183,7 @@ class ConfigLoader(object):
     
     def get_directory_groups(self):
         '''
-        :rtype dict(str, list(user_sync.rules.Group))
+        :rtype dict(str, list(user_sync.rules.DashboardGroup))
         '''
         adobe_groups_by_directory_group = {}
         
@@ -200,13 +197,13 @@ class ConfigLoader(object):
         for item in groups_config.iter_dict_configs():
             directory_group = item.get_string('directory_group')            
             groups = adobe_groups_by_directory_group.get(directory_group)
-            if (groups == None):
+            if groups == None:
                 adobe_groups_by_directory_group[directory_group] = groups = []
 
             dashboard_groups_config = item.get_list_config('dashboard_groups')
             for dashboard_group in dashboard_groups_config.iter_values(types.StringTypes):
-                group = self.create_dashboard_group(dashboard_group)
-                if (group is None):
+                group = user_sync.rules.DashboardGroup.create(dashboard_group)
+                if group is None:
                     validation_message = 'Bad dashboard group: "%s" in directory group: "%s"' % (dashboard_group, directory_group)
                     raise user_sync.error.AssertionException(validation_message)
                 groups.append(group)
@@ -233,7 +230,7 @@ class ConfigLoader(object):
             if (isinstance(source, types.StringTypes)):
                 absolute_path = self.get_absolute_file_path(source)
                 if (os.path.isfile(absolute_path)):
-                    config = self.load_from_yaml(absolute_path)
+                    config = ConfigFileLoader.load_from_yaml(absolute_path)
                     options.append(config)
                 else:
                     raise user_sync.error.AssertionException('Cannot find file: %s for: %s' % (absolute_path, owner))
@@ -249,22 +246,14 @@ class ConfigLoader(object):
         make sure the path is relative from the config path.
         :type value: str
         '''        
-        path = value if os.path.isabs(value) else self.get_file_path(value)
-        return path
+        return ConfigFileLoader.get_relative_filename(value)
     
-    def load_from_yaml(self, file_path):
-        '''
-        :type file_path: str
-        '''        
-        with open(file_path, 'r', 1) as input_file:
-            return yaml.load(input_file)
-        
     def get_file_path(self, filename):
         '''
         :type filename: str
         :rtype str
         '''        
-        directory = self.options.get('config_directory')
+        directory = ConfigFileLoader.dirpath
         path = os.path.join(directory, filename)
         return path
 
@@ -304,16 +293,50 @@ class ConfigLoader(object):
         '''
         Return a dict representing options for RuleProcessor.
         '''
+        # process directory configuration options
         new_account_type = None
         default_country_code = None
         directory_config = self.main_config.get_dict_config('directory', True)
-        if (directory_config != None): 
+        if directory_config:
             new_account_type = directory_config.get_string('user_identity_type', True)
             new_account_type = user_sync.identity_type.parse_identity_type(new_account_type)
             default_country_code = directory_config.get_string('default_country_code', True)
-        if (new_account_type == None):
+        if not new_account_type:
             new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
-            self.logger.warning("Assuming the identity type for users is: %s", new_account_type)
+            self.logger.info("Using default for new_account_type: %s", new_account_type)
+
+        # process exclusion configuration options
+        exclude_identity_types = exclude_identity_type_names = []
+        exclude_users = exclude_users_regexps = []
+        exclude_groups = exclude_group_names = []
+        dashboard_config = self.main_config.get_dict_config('dashboard', True)
+        if dashboard_config:
+            exclude_identity_type_names = dashboard_config.get_list('exclude_identity_types', True) or []
+            exclude_users_regexps = dashboard_config.get_list('exclude_users', True) or []
+            exclude_group_names = dashboard_config.get_list('exclude_groups', True) or []
+        for name in exclude_identity_type_names:
+            message_format = 'Illegal value in exclude_identity_types: %s'
+            identity_type = user_sync.identity_type.parse_identity_type(name, message_format)
+            exclude_identity_types.append(identity_type)
+        for regexp in exclude_users_regexps:
+            try:
+                # add "match begin" and "match end" markers to ensure complete match
+                # and compile the patterns because we will use them over and over
+                exclude_users.append(re.compile(r'\A' + regexp + r'\Z', re.UNICODE))
+            except re.error as e:
+                validation_message = ('Illegal regular expression (%s) in %s: %s' %
+                                      (regexp, 'exclude_identity_types', e))
+                raise user_sync.error.AssertionException(validation_message)
+        for name in exclude_group_names:
+            group = user_sync.rules.DashboardGroup.create(name)
+            if not group or group.get_organization_name() != user_sync.rules.OWNING_ORGANIZATION_NAME:
+                validation_message = 'Illegal value for %s in config file: %s' % ('exclude_groups', name)
+                if not group:
+                    validation_message += ' (Not a legal group name)'
+                else:
+                    validation_message += ' (Can only exclude groups in owning organization)'
+                raise user_sync.error.AssertionException(validation_message)
+            exclude_groups.append(group.get_group_name())
 
         limits_config = self.main_config.get_dict_config('limits')
         max_deletions_per_run = limits_config.get_int('max_deletions_per_run')
@@ -322,52 +345,58 @@ class ConfigLoader(object):
         after_mapping_hook = None
         extended_attributes = None
         extensions_config = self.main_config.get_list_config('extensions', True)
-        if (extensions_config != None):
+        if (extensions_config is not None):
             for extension_config in extensions_config.iter_dict_configs():
                 context = extension_config.get_string('context')
-                if context == 'per-user':
-                    if (after_mapping_hook == None):
-                        after_mapping_hook_text = extension_config.get_string('after_mapping_hook')
-                        if (after_mapping_hook_text is not None):
-                            after_mapping_hook = compile(after_mapping_hook_text, '<per-user after-mapping-hook>', 'exec')
-                            extended_attributes = extension_config.get_list('extended_attributes')
 
-                            # [TODO morr 2017-02-27]: Do we really need to pre-create extended dashboard groups here? Or
-                            # could it be done on the fly, when they're encountered in values returned from hook code? If
-                            # the latter, we could do the customer a big favor by not requiring them to be declared in the
-                            # extension config.
-                            #
-                            # This should be revisited once the Complex Mapping feature as a whole is working and has been
-                            # thoroughly tested.
-                            #
-                            for extended_dashboard_group in extension_config.get_list('extended_dashboard_groups'):
-                                group = self.create_dashboard_group(extended_dashboard_group)
-                                if (group is None):
-                                    validation_message = 'Bad dashboard group: "%s" in extension with context "%s"' % (extended_dashboard_group, context)
-                                    raise user_sync.error.AssertionException(validation_message)
-
-                        else:
-                            self.logger.warning("No valid hook found in extension with context '%s'; extension ignored")
-                    else:
-                        self.logger.warning("Duplicate extension context '%s' ignored", context)
-                else:
+                if context != 'per-user':
                     self.logger.warning("Unrecognized extension context '%s' ignored", context)
-        
+                    continue
+                if (after_mapping_hook is not None):
+                    self.logger.warning("Duplicate extension context '%s' ignored", context)
+                    continue
+
+                after_mapping_hook_text = extension_config.get_string('after_mapping_hook')
+
+                if after_mapping_hook_text is None:
+                    self.logger.warning("No valid hook found in extension with context '%s'; extension ignored")
+                    continue
+
+                after_mapping_hook = compile(after_mapping_hook_text, '<per-user after-mapping-hook>', 'exec')
+                extended_attributes = extension_config.get_list('extended_attributes')
+
+                # declaration of extended dashboard groups: this is needed for two reasons:
+                # 1. it allows validation of group names, and matching them to dashboard groups
+                # 2. it allows removal of dashboard groups not assigned by the hook
+                for extended_dashboard_group in extension_config.get_list('extended_dashboard_groups'):
+                    group = user_sync.rules.DashboardGroup.create(extended_dashboard_group)
+                    if group is None:
+                        validation_message = 'Bad dashboard group: "%s" in extension with context "%s"' % (extended_dashboard_group, context)
+                        raise user_sync.error.AssertionException(validation_message)
+
         options = self.options
         result = {
-            'directory_group_filter': options['directory_group_filter'],
-            'username_filter_regex': options['username_filter_regex'],
-            'new_account_type': new_account_type,
-            'manage_groups': options['manage_groups'],
-            'update_user_info': options['update_user_info'],
-            'remove_user_key_list': options['remove_user_key_list'],
-            'remove_list_output_path': options['remove_list_output_path'],
-            'remove_nonexistent_users': options['remove_nonexistent_users'],
+            # these are in alphabetical order!  Always add new ones that way!
+            'after_mapping_hook': after_mapping_hook,
             'default_country_code': default_country_code,
+            'delete_list_output_path': options['delete_list_output_path'],
+            'delete_nonexistent_users': options['delete_nonexistent_users'],
+            'delete_user_key_list': options['delete_user_key_list'],
+            'directory_group_filter': options['directory_group_filter'],
+            'directory_group_mapped': options['directory_group_mapped'],
+            'exclude_groups': exclude_groups,
+            'exclude_identity_types': exclude_identity_types,
+            'exclude_users': exclude_users,
+            'extended_attributes': extended_attributes,
+            'manage_groups': options['manage_groups'],
             'max_deletions_per_run': max_deletions_per_run,
             'max_missing_users': max_missing_users,
-            'after_mapping_hook': after_mapping_hook,
-            'extended_attributes': extended_attributes,
+            'new_account_type': new_account_type,
+            'remove_list_output_path': options['remove_list_output_path'],
+            'remove_nonexistent_users': options['remove_nonexistent_users'],
+            'remove_user_key_list': options['remove_user_key_list'],
+            'update_user_info': options['update_user_info'],
+            'username_filter_regex': options['username_filter_regex'],
         }
         return result
 
@@ -382,22 +411,6 @@ class ConfigLoader(object):
                 connector_config['enterprise'] = new_enterprise_section
 
         return connector_config
-
-    def create_dashboard_group(self, dashboard_group_qualified_name):
-        parts = dashboard_group_qualified_name.split(GROUP_NAME_DELIMITER)
-        group_name = parts.pop()
-        organization_name = GROUP_NAME_DELIMITER.join(parts)
-        if (len(organization_name) == 0):
-            organization_name = user_sync.rules.OWNING_ORGANIZATION_NAME
-
-        group = None
-        if (len(group_name) > 0):
-            # check for existing group in case someone mistakenly declared an extended group that's already a mapping target
-            group = user_sync.rules.Group.get_dashboard_group(group_name, organization_name)
-            if group is None:
-                group = user_sync.rules.Group(group_name, organization_name)
-
-        return group
 
     def check_unused_config_keys(self):
         directory_connectors_config = self.get_directory_connector_configs()
@@ -601,6 +614,66 @@ class DictConfig(ObjectConfig):
         if (len(unused_keys) > 0):
             messages.append("Found unused keys: %s in: %s" % (unused_keys, self.get_full_scope()))
         return messages
+    
+class ConfigFileLoader(object):
+    @staticmethod
+    def load(filename):
+        '''
+        loads a configuration from a yaml file, and retains the directory
+        context
+        :type filename: str
+        :type content: dict
+        '''
+        ConfigFileLoader.filename = filename
+        ConfigFileLoader.dirpath = os.path.dirname(filename)
+        ConfigFileLoader.content = ConfigFileLoader.load_from_yaml(filename)
+        
+    @staticmethod
+    def get_relative_filename(filename):
+        '''
+        returns a filename relative to this configuration's directory context
+        :type filename: str
+        :rtype str
+        '''
+        if not os.path.isabs(filename):
+            if ConfigFileLoader.dirpath:
+                filename = ConfigFileLoader.dirpath + '/' + filename
+            
+        return filename
+
+    @staticmethod
+    def get_relative_filenames(filenames):
+        '''
+        returns a list of filenames relative to this configuration's directory
+        context
+        :type filenames: list(str)
+        :rtype list(str)
+        '''
+        new_filenames = []
+        for filename in filenames:
+            new_filenames.append(ConfigFileLoader.get_relative_filename(filename))
+            
+        return new_filenames
+    
+    @staticmethod
+    def load_from_yaml(filename):
+        '''
+        loads a yaml file and returns it as a dict.
+        :type filename: str
+        '''        
+        try:
+            with open(filename, 'r', 1) as input_file:
+                return yaml.load(input_file)
+        except IOError as e:
+            # if a file operation error occurred while loading the
+            # configuration file, swallow up the exception and re-raise this
+            # as an configuration loader exception.
+            raise user_sync.error.AssertionException('Error reading configuration file: %s' % e)
+        except yaml.error.MarkedYAMLError as e:
+            # same as above, but indicate this problem has to do with
+            # parsing the configuration file.
+            raise user_sync.error.AssertionException('Error parsing configuration file: %s' % e)
+    
     
 class OptionsBuilder(object):
     def __init__(self, default_config):

@@ -15,6 +15,7 @@ The command line for user sync selects the set of users to be processed, specifi
 | ------------- |:-------------| 
 |   `--users all` |    All users listed in the directory are included.  |
 |   `--users group "g1,g2,g3"`  |    The named directory groups are used to form the user selection. <br>Users that are members of any of the groups are included.  |
+|   `--users mapped`  |    The same as `--users group g1,g2,g3,...`, where `g1,g2,g3,...` are all the directory groups specified in the configuration file group mapping.|
 |   `--users file f`  |    The file f is read to form the selected set of users.  The LDAP directory is not used in this case. |
 |   `--user-filter pattern`    |  Can be combined with the above options to further filter and reduce the user selection. <br>`pattern` is a string in Python regular expression format.  <br>The user name must match the pattern in order to be included.  <br>Writing patterns can be somewhat of an art.  See examples below or refer to the Python documentation [here](https://docs.python.org/2/library/re.html). |
 
@@ -41,10 +42,11 @@ Note that only the users returned by the directory query and filter are consider
 | Command line option       ...........| Use when           |
 | ------------- |:-------------| 
 |   None                        |  No action desired on nonexistent users |
-|   `--disable-nonexistent-users`\* |    Adobe account to remain but licenses and group <br>memberships are removed.  |
+|   `--remove-entitlements-for-nonexistent-users`\* |    Adobe account to remain but licenses and group <br>memberships are removed.  |
 |   `--remove-nonexistent-users`  |    Adobe account to remain but licenses, group memberships, and membership in this org to be removed   |
-|   `--delete-nonexistent-users`\*  |    Adobe account to be deleted: remove from PLCs and user groups and <br>from the org; account deleted and all storage and settings freed. |
+|   `--delete-nonexistent-users`  |    Adobe account to be deleted: remove from PLCs and user groups and <br>from the org; account deleted and all storage and settings freed. |
 |   `--generate-remove-list f`    |  No action to be taken on the account.  User name written to file for later action. |
+|   `--generate-delete-list f`    |  No action to be taken on the account.  User name written to file for later action. |
 
 \* These options will be available in a future release.
 

@@ -52,7 +52,7 @@ options.
 The tool assumes that your enterprise has purchased Adobe product
 licenses. You must use the
 [Adobe Admin Console](https://www.adobe.io/console/) to define
-User Groups and Product License Configurations. Membership in
+user groups and product configurations. Membership in
 these groups controls which users in your organization can access
 which products.
 
@@ -73,8 +73,8 @@ directory system through LDAP.
 - User Sync requests current users and associated product
 configurations from the Adobe Admin Console through the User
 Management API.
-- User Sync determines which users need to be created, deleted,
-or updated, and what user-group and product configuration
+- User Sync determines which users need to be created, removed,
+or updated, and what user group and product configuration
 memberships they should have, based on rules you have defined in
 the User Sync configuration files.
 - User Sync makes the required changes to the Adobe Admin Console
@@ -102,12 +102,14 @@ information from the task of removing users or memberships. There
 are a number of options for handling the removal task.
 
 For more information about usage models and how to implement
-them, see the [Usage Scenarios](#Usage-Scenarios) section below.
+them, see the [Usage Scenarios](#usage-scenarios) section below.
+
+---
 
 ## Setup and Installation
 
 The use of the User Sync tool depends on your enterprise having
-set up Product License Configurations in the Adobe Admin
+set up product configurations in the Adobe Admin
 Console. For more information about how to do this, see the
 [Configure Services](https://helpx.adobe.com/enterprise/help/configure-services.html#configure_services_for_group)
 help page.
@@ -140,12 +142,12 @@ information store in Adobe.
 
 If you plan to use the User Sync tool to update user access to
 Adobe products, you must create groups in your own enterprise
-LDAP directory that correspond to the User Groups and Product
-License Configurations that you have defined in the
+LDAP directory that correspond to the user groups and product
+configurations that you have defined in the
 [Adobe Admin Console](https://www.adobe.io/console/). Membership
 in a product configuration grants access to particular set of
 Adobe products. You can grant or revoke access to users or to
-defined User Groups by adding or removing them from a product
+defined user groups by adding or removing them from a product
 configuration.
 
 The User Sync tool can grant product access to users by adding
@@ -163,23 +165,23 @@ corresponding names.
 #### Check your products and product configurations
 
 Before you start configuring User Sync, you must know what Adobe
-products your enterprise uses, and what Product License
-Configurations and User Groups are defined in the Adobe User
+products your enterprise uses, and what product
+configurations and user uroups are defined in the Adobe User
 Management system. For more information, see the help page for
 [configuring enterprise services](https://helpx.adobe.com/enterprise/help/configure-services.html#configure_services_for_group).
 
-If you do not yet have any configurations, you can use the
+If you do not yet have any product configurations, you can use the
 Console to create them. You must have some, and they must have
 corresponding groups in enterprise LDAP directory, in order to
 configure User Sync to update your user entitlement information.
 
-The names of Product License Configurations generally identify
+The names of product configurations generally identify
 the types of product access that users will need, such as All
 Access or Individual Product Access. To check the exact names, go
 to the Products section in the
 [Adobe Admin Console](https://www.adobe.io/console/) to see the
 products that are enabled for your enterprise. Click a product to
-see the details of Product License Configurations that have been
+see the details of product configurations that have been
 defined for that product.
 
 #### Create corresponding groups in your enterprise directory
@@ -193,7 +195,7 @@ might be called “all_apps”.
 Make a note of the names you choose for these groups, and which
 Adobe groups they correspond to. You will use this to set up a
 mapping in the main User Sync configuration file. See details in
-the [Configure group mapping](#Configure-group-mapping) section
+the [Configure group mapping](#configure-group-mapping) section
 below.
 
 ![Figure 2: Group Mapping Overview](media/group-mapping.png)
@@ -249,20 +251,20 @@ files in the package are optional and/or alternate versions for
 specific purposes. You can copy these to your root folder, then
 rename and edit them to make your own configuration files. (See
 the following section,
-[Configuring the User Sync Tool](#Configuring-the-User-Sync-Tool).)
+[Configuring the User Sync Tool](#configuring-the-user-sync-tool).)
 
 5. **In Windows only:**
 
     Before running the user-sync.pex executable in Windows, you might
 need to work around a Windows-only Python execution issue:
 
-	The Windows operating system enforces a file path length limit of
+    The Windows operating system enforces a file path length limit of
 260 characters. When executing a Python PEX file, it creates a
 temporary location to extract the contents of the package. If the
 path to that location exceeds 260 characters, the script does not
 execute properly.
 
-	By default, the temporary cache is in your home folder, which may
+    By default, the temporary cache is in your home folder, which may
 cause pathnames to exceed the limit. To work around this issue,
 create an environment variable in Windows called PEX\_ROOT, a set
 the path to C:\\user-sync\\.pex. The OS uses this variable for
@@ -344,6 +346,8 @@ information).
 Note that Adobe Customer Support is currently unable to provide
 support for the User Sync tool.
 
+---
+
 ## Configuring the User Sync Tool
 
 The operation of the User Sync tool is controlled by a set of
@@ -359,7 +363,7 @@ folder as the command-line executable.
 If you need to set up access to users in other organizations that
 have granted you access, you can include additional configuration
 files. For details, see the
-[advanced configuration instructions](#Accessing-Groups-in-Other-Organizations)
+[advanced configuration instructions](#accessing-groups-in-other-organizations)
 below.
 
 ### Setting up configuration files
@@ -414,7 +418,7 @@ enterprise LDAP directory. In order to isolate the sensitive
 information needed to connect to the two systems, all actual
 credential details are confined to these two files. **Be sure to
 secure them properly**, as described in the
-[Security Considerations](#Security-Considerations) section of
+[Security Considerations](#security-considerations) section of
 this document.
 
 #### Configure connection to the Adobe Admin Console
@@ -471,19 +475,19 @@ connects to the Adobe Admin Console through the User Management
 API. It should point to the separate, secure configuration file
 that
 stores the access credentials.
-	- The **directory** subsection contains two subsections,
+    - The **directory** subsection contains two subsections,
 connectors and groups:
-	- The **connectors** subsection points to the separate,
+    - The **connectors** subsection points to the separate,
 secure configuration file that stores the access credentials for
 your enterprise directory.
 - The **groups** section defines the mapping between your
 directory groups and Adobe product configurations and user
 groups.
 - The **limits** section sets values that limit the number of
-user accounts that can be deleted from the dashboard in a single
+user accounts that can be removed from the dashboard in a single
 run, and the minimum number of users that must be in the
-directory for user-sync to proceed with account deletion. These
-limits prevent accidental deletion of a large number of accounts
+directory for user-sync to proceed with account removal. These
+limits prevent accidental removal of a large number of accounts
 in case of misconfiguration or other errors.
 - The **logging** section specifies an audit trail path and
 controls how much information is written to the log.
@@ -510,10 +514,10 @@ directory:
 #### Configure group mapping
 
 Before you can synchronize user groups and entitlements, you must
-create User Groups and Product License Configurations in the
+create user groups and product configurations in the
 Adobe Admin Console, and corresponding groups in your enterprise
 directory, as described above in
-[Set up product-access synchronization](#Set-up-product-access-synchronization).
+[Set up product-access synchronization](#set-up-product-access-synchronization).
 
 **NOTE:** All groups must exist and have the specified names on
 both sides. The tool does not create any groups on either side;
@@ -546,10 +550,10 @@ For example:
 groups:
   - directory_group: Acrobat
     dashboard_groups:
-	  - Default Acrobat Pro DC configuration
+      - Default Acrobat Pro DC configuration
   - directory_group: Acrobat_Accounting
-	dashboard_groups:
-	  - Accounting_Department
+    dashboard_groups:
+      - Accounting_Department
 ```
 
 #### Configure limits
@@ -559,15 +563,15 @@ corresponding users are not present in the directory and the tool
 is invoked with the `--remove-nonexistent-users` option. The
 `max_deletions_per_run` and `max_missing_users` values in
 the `limits` section of the configuration file set limits on
-how many users can be deleted at any one time. These limits
-prevent accidental deletion of a large number of accounts in case
+how many users can be removed at any one time. These limits
+prevent accidental removal of a large number of accounts in case
 of misconfiguration or other errors:
 
 - The value of `max_deletions_per_run` sets a limit on the number
-of account deletions in a single run. If more users are flagged
-for deletion, they are left for the next run.
+of account removals in a single run. If more users are flagged
+for removal, they are left for the next run.
 
-	If you routinely remove a larger number of accounts, you can
+    If you routinely remove a larger number of accounts, you can
 raise this value.
 
 - If your organization has a large number of users in the
@@ -578,7 +582,7 @@ which causes the run to exit and report an error if there are
 this many fewer users in the enterprise directory than in the
 Adobe admin console.
 
-	Raise this value if you expect the number of users to drop by
+    Raise this value if you expect the number of users to drop by
 more than the value specified.
 
 For example:
@@ -672,23 +676,26 @@ illustrate possible configuration values.
 ```YAML
 dashboard:
   owning: dashboard-config.yml
-  user_identity_type: federatedID
+
 directory:
+  user_identity_type: federatedID
   connectors:
     ldap: connector-ldap.yml
   groups:
     - directory_group: Acrobat
       dashboard_groups:
-	    - Default Acrobat Pro DC configuration
-	- directory_group: Photoshop
-	  dashboard_groups:
-	    - "Default Photoshop CC - 100 GB configuration"
-		- "Default All Apps plan - 100 GB configuration"
-		- "Default Adobe Document Cloud for enterprise configuration"
-		- "Default Adobe Enterprise Support Program configuration"
+        - Default Acrobat Pro DC configuration
+    - directory_group: Photoshop
+      dashboard_groups:
+        - "Default Photoshop CC - 100 GB configuration"
+        - "Default All Apps plan - 100 GB configuration"
+        - "Default Adobe Document Cloud for enterprise configuration"
+        - "Default Adobe Enterprise Support Program configuration"
+
 limits:
   max_deletions_per_run: 10
   max_missing_users: 200
+
 logging:
   log_to_file: True
   file_log_directory: userSyncLog
@@ -763,6 +770,8 @@ enterprise directory.
 3. Check that users were removed from configured product
 configurations in the Adobe Admin Console.
 
+---
+
 ## Command Parameters
 
 Once the configuration files are set up, you can run the User
@@ -782,16 +791,20 @@ specific behavior in various situations.
 | `-v`<br />`--version` | Show program's version number and exit.  |
 | `-t`<br />`--test-mode` | Run API action calls in test mode (does not execute changes). Logs what would have been executed.  |
 | `-c` _filename_<br />`--config-filename` _filename_ | The complete path to the main configuration file, absolute or relative to the working folder. Default filename is "user-sync-config.yml" |
-| `--users` `all`<br />`--users` `file` _input_path_<br />`--users` `group` _grp1,grp2_ | Specify the users to be selected for sync. The default is `all` meaning all users found in the directory. Specifying `file` means to take input user specifications from the CSV file named by the argument.  Specifying `group` interprets the argument as a comma-separated list of groups in the enterprise directory, and only users in those groups are selected. |
+| `--users` `all`<br />`--users` `file` _input_path_<br />`--users` `group` _grp1,grp2_<br />`--users` `mapped` | Specify the users to be selected for sync. The default is `all` meaning all users found in the directory. Specifying `file` means to take input user specifications from the CSV file named by the argument. Specifying `group` interprets the argument as a comma-separated list of groups in the enterprise directory, and only users in those groups are selected. Specifying `mapped` is the same as specifying `group` with all groups listed in the group mapping in the configuration file. |
 | `--user-filter` _regex\_pattern_ | Limit the set of users that are examined for syncing to those matching a pattern specified with a regular expression. See the [Python regular expression documentation](https://docs.python.org/2/library/re.html) for information on constructing regular expressions in Python. |
 | `--source-filter` _connector_:_file_ | Names a file containing LDAP filter settings. The filter is an LDAP query string that is passed directly to the LDAP server.  See the [sample above](#connector_ldap.yml) and others in the archive of examples. |
 | `--update-user-info` | When supplied, synchronizes user information. If the information differs between the customer side and the Adobe side, the Adobe side is updated to match. This includes the firstname and lastname fields. |
 | `--process-groups` | When supplied, synchronizes group membership information. If the membership in mapped groups differs between the customer side and the Adobe side, the group membership is updated on the Adobe side to match. |
-| `--remove-nonexistent-users` | When supplied, if Federated users are found on the Adobe side that are not in the customer-side directory, removes those user accounts from the organization. |
-| `--generate-remove-list` _output\_path_ | When supplied, if Federated users are found on the Adobe side that are not in the enterprise directory, lists those users to the given file. You can then pass this file to the `remove-list` argument in a subsequent run. |
-| `-d` _input\_path_<br>`--remove-list` _input\_path_ | Removes a list of users contained in the given file from the Adobe organization. |
+| `--remove-nonexistent-users` | When supplied, if Enterprise ID or Federated ID user accounts are found on the Adobe side that are not in the customer-side directory, removes those user accounts from the organization. |
+| `--generate-remove-list` _output\_path_ | When supplied, if Enterprise ID or Federated ID user accounts are found on the Adobe side that are not in the enterprise directory, lists those users to the given file. You can then pass this file to the `remove-list` argument in a subsequent run. |
+| `--remove-list` _input\_path_ | Removes a list of users contained in the given file from the Adobe-side directory. |
+| `--delete-nonexistent-users` | When supplied, if Enterprise ID or Federated ID user accounts are found on the Adobe side that are not in the customer-side directory, those accounts are deleted from the Adobe side. If Adobe ID user accounts are found that are not on the customer side, they are removed from the organization but not deleted. |
+| `--generate-delete-list` _output\_path_ | When supplied, if user accounts are found on the Adobe side that are not in the enterprise directory, these user accounts are listed in the given file. You can then pass this file to the `delete-list` argument in a subsequent run. |
+| `--delete-list` _input\_path_ | Deletes the user accounts listed in the given file from the Adobe-side directory. Adobe ID user accounts are removed from the organization but not deleted. |
 {: .bordertablestyle }
 
+---
 
 ## Usage Scenarios
 
@@ -799,7 +812,7 @@ There are various ways to integrate the User Sync tool into
 your enterprise processes, such as:
 
 * **Update users and group memberships.** Sync users and group
-memberships by adding, updating, and deleting users in Adobe User
+memberships by adding, updating, and removing users in Adobe User
 Management system.  This is the most general and common use case.
 * **Sync only user information.** Use this approach if product
 access is to be handled using the Admin Console.
@@ -807,11 +820,11 @@ access is to be handled using the Admin Console.
 sync to users in given groups, or limit sync to users that match
 a given pattern. You can also sync against a CSV file rather than
 a directory system.
-* **Update users and group memberships, but handle deletions
+* **Update users and group memberships, but handle removals
 separately.** Sync users and group memberships by adding and
-updating users, but do not delete users in the initial
-call. Instead keep a list of users to be deleted, then perform
-the deletions in a separate call.
+updating users, but do not remove users in the initial
+call. Instead keep a list of users to be removed, then perform
+the removals in a separate call.
 
 This section provides detailed instructions for each of these scenarios.
 
@@ -820,12 +833,16 @@ This section provides detailed instructions for each of these scenarios.
 This is the most typical and common type of invocation. The tool
 finds all changes to user information and to user-group and
 product configuration membership information on the enterprise
-side. It syncs the Adobe side by adding, updating, and deleting
+side. It syncs the Adobe side by adding, updating, and removing
 users and memberships.
 
-For users that have a Federated identity type, this action
-deletes users that exist on the Adobe side, but no longer exist
-in the enterprise directory.
+By default, only users whose identity type is Enterprise ID or
+Federated ID will be created, removed, or have their group
+memberships managed by User Sync, because generally Adobe ID
+users are not managed in the customer directory. See the
+[description below](#managing-users-with-adobe-ids) under
+[Advanced Configuration](#advanced-configuration) if this is how
+your organization works.
 
 This example assumes that the configuration file,
 user-sync-config.yml, contains a mapping from a directory group
@@ -835,7 +852,7 @@ configuration**.
 #### Command
 
 This invocation supplies both the users and process-groups
-parameters, and allows deletion with the remove-nonexistent-users
+parameters, and allows user removal with the remove-nonexistent-users
 parameter.
 
 ```sh
@@ -910,6 +927,15 @@ configuration or user group management.
 ./user-sync –c user-sync-config.yml --users groups "group1, group2, group3"
 ```
 
+#### Sync only users in mapped groups
+
+This action is the same as specifying `--users groups "..."`, where `...` is all
+the groups in the group mapping in the configuration file.
+
+```sh
+./user-sync –c user-sync-config.yml --users mapped
+```
+
 #### Sync only matching users
 
 This action only looks for changes to user information for users
@@ -931,23 +957,60 @@ such a file, example.users-file.csv, is provided with the tool.
 ./user-sync –c user-sync-config.yml --users file user_list.csv
 ```
 
-#### Update users and group memberships, but handle deletions separately
+#### Update users and group memberships, but handle removals separately
 
 If you do not supply the remove-nonexistent-users parameter,
 you can sync user and group memberships without removing any
 users from the Adobe side.
 
-If you want to handle deletions separately, you can instruct
+If you want to handle removals separately, you can instruct
 the tool to flag users that no longer exist in the enterprise
 directory but still exist on the Adobe side. The
 generate-remove-list parameter writes out the list of user who
-are flagged for deletion to a CSV file.
+are flagged for removal to a CSV file.
 
-To perform the deletions in a separate call, you can pass the
+To perform the removals in a separate call, you can pass the
 file generated by the generate-remove-list parameter, or you
 can pass a CSV file of users that you have generated by some
 other means An example of such a file, example.users-file.csv,
 is provided with the tool.
+
+#### Add users and generate a list of users to remove
+
+This action synchronizes all users from the customer side with
+the Adobe side and also generates a list of users that no longer
+exist in the customer directory but still exist on the Adobe
+side.
+
+```sh
+./user-sync –c user-sync-config.yml --users all --generate-remove-list users-to-remove.csv
+```
+
+#### Remove users from separate list
+
+This action takes a CSV file containing a list of users that have
+been flagged for removal, and removes those users from the organization
+on the Adobe side. The CSV file is typically the one generated by a
+previous call that used the generate-remove-list parameter.
+
+You can create a CSV file of users to remove by some other means.
+However, if your list includes any users that still exist in your
+customer directory, those users will be added back in on the
+Adobe side by the next sync action that adds users.
+
+```sh
+./user-sync –c user-sync-config.yml --remove-list users-to-remove.csv
+```
+
+#### Delete non-existent users
+
+This invocation supplies both the users and process-groups
+parameters, and allows user account deletion with the
+delete-nonexistent-users parameter.
+
+```sh
+./user-sync –c user-sync-config.yml --users all --process-groups --delete-nonexistent-users
+```
 
 #### Add users and generate a list of users to delete
 
@@ -963,9 +1026,9 @@ side.
 #### Delete users from separate list
 
 This action takes a CSV file containing a list of users that have
-been flagged for deletion, and removes those users from the Adobe
+been flagged for deletion, and deletes those users from the Adobe
 side. The CSV file is typically the one generated by a previous
-call that used the generate-remove-list parameter.
+call that used the generate-delete-list parameter.
 
 You can create a CSV file of users to delete by some other means.
 However, if your list includes any users that still exist in your
@@ -973,20 +1036,53 @@ enterprise directory, those users will be added back in on the
 Adobe side by the next sync action that adds users.
 
 ```sh
-./user-sync –c user-sync-config.yml --remove-list users-to-remove.csv
+./user-sync –c user-sync-config.yml --delete-list users-to-delete.csv
 ```
+
+---
 
 ## Advanced Configuration
 
 User Sync requires additional configuration to synchronize user
 data in environments with more complex data structuring.
 
+- When you manage your Adobe ID users out of spreadsheets or your
+enterprise directory, you can configure the tool not to ignore
+them.
 - When your enterprise includes several Adobe organizations, you
 can configure the tool to add users in your organization to
 groups defined in other organizations.
 - When your enterprise user data includes customized attributes
 and mappings, you must configure the tool to be able to recognize
 those customizations.
+- When you want to use username (rather than email) based logins.
+
+### Managing Users with Adobe IDs
+
+There is a configuration option `managed_identity_types` which
+can be set so as to manage Adobe ID users (and also to exclude
+other types).  You will probably want to set up a separate sync
+job specifically for those users, possibly using CSV inputs
+rather than taking inputs from your enterprise directory. Be sure
+to configure this sync job to ignore Enterprise ID and Federated
+ID users, or those users are likely to be removed from the
+directory!
+
+Removal of Adobe ID users via User Sync is not generally a safe
+practice:
+
+* If you specify that adobeID users should be
+removed from your organization, you will have to re-invite them
+(and have them re-accept) if you ever want to add them back in.
+* System administrators often use Adobe IDs, so removing Adobe ID
+users may inadvertently remove system administrators (including
+yourself)
+
+A better practice, when managing Adobe ID users, is simply add
+them and manage their group memberships, but never to remove
+them.  By managing their group memberships you can disable their
+entitlements without the need for a new invitation if you later
+want to turn them back on.
 
 ### Accessing Groups in Other Organizations
 
@@ -1114,13 +1210,13 @@ extensions section of the main User Sync configuration file.
 extensions:
   - context: per_user
     extended_attributes:
-	  - my-attribute-1
-	  - my-attribute-2
+      - my-attribute-1
+      - my-attribute-2
     extended_dashboard_groups:
       - my-dashboard-group-1
-	  - my-dashboard-group-2
+      - my-dashboard-group-2
     after_mapping_hook: |
-		pass # custom python code goes here
+        pass # custom python code goes here
 ```
 
 #### Adding custom attributes
@@ -1173,22 +1269,22 @@ generated.
 ```YAML
 extensions:
   - context: per-user
-	extended_attributes:
-	  - bc
-	  - subco
-	extended_dashboard_groups:
-	  - Acrobat_Sunday_Special
-	  - Group for Test 011 TCP
-	after_mapping_hook: |
-	  bc = source_attributes['bc']
-	  subco = source_attributes['subco']
-	  if bc is not None:
-		  target_attributes['country'] = bc[0:2]
-		  target_groups.add(bc)
-	  if subco is not None:
-		  target_groups.add(subco)
-	  else:
-		  target_groups.add('Undefined subco')
+    extended_attributes:
+      - bc
+      - subco
+    extended_dashboard_groups:
+      - Acrobat_Sunday_Special
+      - Group for Test 011 TCP
+    after_mapping_hook: |
+      bc = source_attributes['bc']
+      subco = source_attributes['subco']
+      if bc is not None:
+          target_attributes['country'] = bc[0:2]
+          target_groups.add(bc)
+      if subco is not None:
+          target_groups.add(subco)
+      else:
+          target_groups.add('Undefined subco')
 ```
 
 In this example, two custom attributes, bc, and subco, are
@@ -1198,14 +1294,14 @@ code processes the data for each user:
 - The country code is taken from the first 2 characters in the bc
 attribute.
 
-	This shows how you can use custom directory attributes to provide
+    This shows how you can use custom directory attributes to provide
 values for standard fields being sent to Adobe.
 
 - The user is added to groups that come from subco attribute and
 the bc attribute (in addition to any mapped groups from the group
 map in the configuration file).
 
-	This shows how to customize the group or product configuration
+    This shows how to customize the group or product configuration
 list to get users synced into additional groups.
 
 If the hook code references Adobe groups or product
@@ -1214,7 +1310,7 @@ section of the main configuration file, they are listed under
 **extended_dashboard_groups**. This list effectively extends the
 set of dashboard groups that are considered on the Adobe
 side. See
-[Advanced Group and Product Management](#Advanced-Group-and-Product-Management)
+[Advanced Group and Product Management](#advanced-group-and-product-management)
 for more information.
 
 #### Hook code variables
@@ -1250,13 +1346,13 @@ value in this dictionary will change the value written on the
 Adobe side. Because Adobe pre-defines a fixed set of attributes,
 adding a key to this dictionary has no effect.  The keys in this
 dictionary are:
-	* `firstName` - ignored for AdobeID, used elsewhere
-	* `lastName` - ignored for AdobeID, used elsewhere
-	* `email` - used everywhere
-	* `country` - ignored for AdobeID, used elsewhere
-	* `username` - ignored for all but Federated ID
+    * `firstName` - ignored for AdobeID, used elsewhere
+    * `lastName` - ignored for AdobeID, used elsewhere
+    * `email` - used everywhere
+    * `country` - ignored for AdobeID, used elsewhere
+    * `username` - ignored for all but Federated ID
       [configured with username-based login](https://helpx.adobe.com/enterprise/help/configure-sso.html)
-	* `domain` - ignored for all but Federated ID [configured with username-based login](https://helpx.adobe.com/enterprise/help/configure-sso.html)
+    * `domain` - ignored for all but Federated ID [configured with username-based login](https://helpx.adobe.com/enterprise/help/configure-sso.html)
 * `target_groups`: A per-user Python set that collects the
 Adobe-side user groups and product configurations to which the
 user is added when `process-groups` is specified for the sync
@@ -1312,6 +1408,27 @@ not the product configurations. Each sync job targets one user
 group in its group map.  It updates membership in the user group,
 which indirectly updates the membership in the product
 configuration.
+
+### Working with Username-Based Login
+
+On the Adobe Admin Console, you can configure a federated domain to use email-based user login names or username-based (i.e., non-email-based) login.   Username-based login can be used when email addresses are expected to change often or your organization does not allow email addresses to be used for login.  Ultimately, whether to use username-based login or email-based login depends on a company's overall identity strategy.
+
+To configure User Sync to work with username logins, you need to set several additional configuration items.
+
+In the `connector-ldap.yml` file:
+
+- Set the value of `user_username_format` to a value like '{attrname}' where attrname names the directory attribute whose value is to be used for the user name.
+- Set the value of `user_domain_format` to a value like '{attrname}' if the domain name comes from the named directory attribute, or to a fixed string value like 'example.com'.
+
+When processing the directory, User Sync will fill in the username and domain values from those fields (or values).
+
+The values given for these configuration items can be a mix of string characters and one or more attribute names enclosed in curly-braces "{}".  The fixed characters are combined with the attribute value to form the string used in processing the user.
+
+For domains that use username-based login, the `user_username_format` configuration item should not produce an email address; the "@" character is not allowed in usernames used in username-based login.
+
+If you are using username-based login, you must still provide a unique email address for every user, and that email address must be in a domain that the organization has claimed and owns. User Sync will not add a user to the Adobe organization without an email address.
+
+---
 
 ## Deployment Best Practices
 
