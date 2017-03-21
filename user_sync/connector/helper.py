@@ -34,7 +34,7 @@ def create_blank_user():
     :rtype dict
     '''
     user = {
-        "identitytype": None,
+        "identity_type": None,
         "username": None,
         "domain": None,
         "firstname": None,

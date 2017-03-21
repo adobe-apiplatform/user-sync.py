@@ -30,7 +30,6 @@ import user_sync.error
 import user_sync.identity_type
 import user_sync.rules
 
-DEFAULT_CONFIG_DIRECTORY = ''
 DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
 DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME = 'dashboard-owning-config.yml'
 DEFAULT_DASHBOARD_ACCESSOR_CONFIG_FILENAME_FORMAT = 'dashboard-accessor-{organization_name}-config.yml'
@@ -42,7 +41,6 @@ class ConfigLoader(object):
         '''        
         self.options = options = {
             # these are in alphabetical order!  Always add new ones that way!
-            'config_directory': DEFAULT_CONFIG_DIRECTORY,
             'delete_list_output_path': None,
             'delete_nonexistent_users': False,
             'delete_user_key_list': None,
@@ -63,17 +61,16 @@ class ConfigLoader(object):
         options.update(caller_options)     
 
         main_config_filename = options.get('main_config_filename')
-        self.main_config_path = main_config_path = self.get_file_path(main_config_filename)
+        ConfigFileLoader.load(main_config_filename)
         
-        if (not os.path.isfile(main_config_path)):
-            raise user_sync.error.AssertionException('Config file does not exist: %s' % (main_config_path))  
+        if (not os.path.isfile(main_config_filename)):
+            raise user_sync.error.AssertionException('Config file does not exist: %s' % (main_config_filename))  
         
         self.directory_source_filters_accessed = set()        
         
         self.logger = logger = logging.getLogger('config')
-        logger.info("Using main config file: %s", main_config_path)                
-        config_content = self.load_from_yaml(self.main_config_path)         
-        self.main_config = DictConfig("<%s>" % main_config_filename, config_content)
+        logger.info("Using main config file: %s", main_config_filename)                
+        self.main_config = DictConfig("<%s>" % main_config_filename, ConfigFileLoader.content)
         
     def set_options(self, caller_options):          
         '''
@@ -111,7 +108,7 @@ class ConfigLoader(object):
             
         accessor_config_file_paths = {}
         accessor_config_filename_wildcard = accessor_config_filename_format.format(**{'organization_name': '*'})
-        for file_path in glob.glob1(self.options.get('config_directory'), accessor_config_filename_wildcard):
+        for file_path in glob.glob1(ConfigFileLoader.dirpath, accessor_config_filename_wildcard):
             parse_result = self.parse_string(accessor_config_filename_format, file_path)
             organization_name = parse_result.get('organization_name')
             if (organization_name != None):
@@ -237,7 +234,7 @@ class ConfigLoader(object):
             if (isinstance(source, types.StringTypes)):
                 absolute_path = self.get_absolute_file_path(source)
                 if (os.path.isfile(absolute_path)):
-                    config = self.load_from_yaml(absolute_path)
+                    config = ConfigFileLoader.load_from_yaml(absolute_path)
                     options.append(config)
                 else:
                     raise user_sync.error.AssertionException('Cannot find file: %s for: %s' % (absolute_path, owner))
@@ -253,32 +250,14 @@ class ConfigLoader(object):
         make sure the path is relative from the config path.
         :type value: str
         '''        
-        path = value if os.path.isabs(value) else self.get_file_path(value)
-        return path
+        return ConfigFileLoader.get_relative_filename(value)
     
-    def load_from_yaml(self, file_path):
-        '''
-        :type file_path: str
-        '''        
-        try:
-            with open(file_path, 'r', 1) as input_file:
-                return yaml.load(input_file)
-        except IOError as e:
-            # if a file operation error occurred while loading the
-            # configuration file, swallow up the exception and re-raise this
-            # as an configuration loader exception.
-            raise user_sync.error.AssertionException('Error reading configuration file: %s' % e)
-        except yaml.error.MarkedYAMLError as e:
-            # same as above, but indicate this problem has to do with
-            # parsing the configuration file.
-            raise user_sync.error.AssertionException('Error parsing configuration file: %s' % e)
-        
     def get_file_path(self, filename):
         '''
         :type filename: str
         :rtype str
         '''        
-        directory = self.options.get('config_directory')
+        directory = ConfigFileLoader.dirpath
         path = os.path.join(directory, filename)
         return path
 
@@ -340,10 +319,8 @@ class ConfigLoader(object):
             exclude_users_regexps = dashboard_config.get_list('exclude_users', True) or []
             exclude_group_names = dashboard_config.get_list('exclude_groups', True) or []
         for name in exclude_identity_type_names:
-            identity_type = user_sync.identity_type.parse_identity_type(name)
-            if not identity_type:
-                validation_message = 'Illegal value for %s in config file: %s' % ('exclude_identity_types', name)
-                raise user_sync.error.AssertionException(validation_message)
+            message_format = 'Illegal value in exclude_identity_types: %s'
+            identity_type = user_sync.identity_type.parse_identity_type(name, message_format)
             exclude_identity_types.append(identity_type)
         for regexp in exclude_users_regexps:
             try:
@@ -641,6 +618,66 @@ class DictConfig(ObjectConfig):
         if (len(unused_keys) > 0):
             messages.append("Found unused keys: %s in: %s" % (unused_keys, self.get_full_scope()))
         return messages
+    
+class ConfigFileLoader(object):
+    @staticmethod
+    def load(filename):
+        '''
+        loads a configuration from a yaml file, and retains the directory
+        context
+        :type filename: str
+        :type content: dict
+        '''
+        ConfigFileLoader.filename = filename
+        ConfigFileLoader.dirpath = os.path.dirname(filename)
+        ConfigFileLoader.content = ConfigFileLoader.load_from_yaml(filename)
+        
+    @staticmethod
+    def get_relative_filename(filename):
+        '''
+        returns a filename relative to this configuration's directory context
+        :type filename: str
+        :rtype str
+        '''
+        if not os.path.isabs(filename):
+            if ConfigFileLoader.dirpath:
+                filename = ConfigFileLoader.dirpath + '/' + filename
+            
+        return filename
+
+    @staticmethod
+    def get_relative_filenames(filenames):
+        '''
+        returns a list of filenames relative to this configuration's directory
+        context
+        :type filenames: list(str)
+        :rtype list(str)
+        '''
+        new_filenames = []
+        for filename in filenames:
+            new_filenames.append(ConfigFileLoader.get_relative_filename(filename))
+            
+        return new_filenames
+    
+    @staticmethod
+    def load_from_yaml(filename):
+        '''
+        loads a yaml file and returns it as a dict.
+        :type filename: str
+        '''        
+        try:
+            with open(filename, 'r', 1) as input_file:
+                return yaml.load(input_file)
+        except IOError as e:
+            # if a file operation error occurred while loading the
+            # configuration file, swallow up the exception and re-raise this
+            # as an configuration loader exception.
+            raise user_sync.error.AssertionException('Error reading configuration file: %s' % e)
+        except yaml.error.MarkedYAMLError as e:
+            # same as above, but indicate this problem has to do with
+            # parsing the configuration file.
+            raise user_sync.error.AssertionException('Error parsing configuration file: %s' % e)
+    
     
 class OptionsBuilder(object):
     def __init__(self, default_config):

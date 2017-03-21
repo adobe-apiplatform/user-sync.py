@@ -60,6 +60,7 @@ class LDAPDirectoryConnector(object):
         builder.set_string_value('group_filter_format', '(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))')
         builder.set_string_value('all_users_filter', '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))')
         builder.set_bool_value('require_tls_cert', False)
+        builder.set_string_value('user_identity_type_format', None)
         builder.set_string_value('user_email_format', '{mail}')
         builder.set_string_value('user_username_format', None)
         builder.set_string_value('user_domain_format', None)
@@ -72,7 +73,9 @@ class LDAPDirectoryConnector(object):
         builder.require_string_value('base_dn')
         options = builder.get_options()        
         password = caller_config.get_string('password')
-            
+
+        self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
+        self.user_identity_type_formatter = LDAPValueFormatter(options['user_identity_type_format'])
         self.user_email_formatter = LDAPValueFormatter(options['user_email_format'])
         self.user_username_formatter = LDAPValueFormatter(options['user_username_format'])
         self.user_domain_formatter = LDAPValueFormatter(options['user_domain_format'])
@@ -80,13 +83,6 @@ class LDAPDirectoryConnector(object):
         self.options = options
         self.logger = logger = user_sync.connector.helper.create_logger(options)
         caller_config.report_unused_values(logger)
-        
-        try:
-            options['user_identity_type'] = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
-        except user_sync.error.AssertionException as e:
-            logger.error(e.message)
-            e.set_reported()
-            raise e
         
         require_tls_cert = options['require_tls_cert']
         logger.debug('Initialized with options: %s', options)            
@@ -257,6 +253,7 @@ class LDAPDirectoryConnector(object):
         base_dn = options['base_dn']
 
         user_attribute_names = ["givenName", "sn", "c", "uid"]
+        user_attribute_names.extend(self.user_identity_type_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
@@ -268,11 +265,11 @@ class LDAPDirectoryConnector(object):
         for dn, record in result_iter:
             if (dn == None):
                 continue
-            
+
             email, last_attribute_name = self.user_email_formatter.generate_value(record)
             if (email == None):
                 if (last_attribute_name != None):
-                    self.logger.warn('No email attribute: %s for dn: %s', last_attribute_name, dn)
+                    self.logger.warning('Skipping user with dn %s: empty email attribute (%s)', dn, last_attribute_name)
                 continue
 
             source_attributes = {}
@@ -281,18 +278,33 @@ class LDAPDirectoryConnector(object):
             source_attributes['email'] = email
             user['email'] = email
 
+            identity_type, last_attribute_name = self.user_identity_type_formatter.generate_value(record)
+            if last_attribute_name and not identity_type:
+                self.logger.warning('No identity_type attribute (%s) for user with dn: %s, defaulting to %s',
+                                    last_attribute_name, dn, self.user_identity_type)
+            source_attributes['identity_type'] = identity_type
+            if not identity_type:
+                user['identity_type'] = self.user_identity_type
+            else:
+                try:
+                    user['identity_type'] = user_sync.identity_type.parse_identity_type(identity_type)
+                except user_sync.error.AssertionException as e:
+                    self.logger.warning('Skipping user with dn %s: %s', dn, e.message)
+                    continue
+
             username, last_attribute_name = self.user_username_formatter.generate_value(record)
             source_attributes['username'] = username
-            if (username == None and last_attribute_name != None):
-                self.logger.info('No username attribute: %s for dn: %s', last_attribute_name, dn)    
+            if last_attribute_name and not username:
+                self.logger.warning('No username attribute (%s) for user with dn: %s, default to email (%s)',
+                                    last_attribute_name, dn, email)
             user['username'] = username if username != None else email
 
             domain, last_attribute_name = self.user_domain_formatter.generate_value(record)
             source_attributes['domain'] = domain
-            if (domain != None):
+            if domain:
                 user['domain'] = domain
-            elif (last_attribute_name != None):
-                self.logger.info('No domain attribute: %s for dn: %s', last_attribute_name, dn)    
+            elif last_attribute_name:
+                self.logger.warning('No domain attribute (%s) for user with dn: %s', last_attribute_name, dn)
                                                 
             given_name_value = LDAPValueFormatter.get_attribute_value(record, 'givenName')
             source_attributes['givenName'] = given_name_value

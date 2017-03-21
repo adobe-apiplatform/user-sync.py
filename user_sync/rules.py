@@ -421,7 +421,7 @@ class RuleProcessor(object):
         return attributes
     
     def get_identity_type_from_directory_user(self, directory_user):
-        identity_type = directory_user.get('identitytype')
+        identity_type = directory_user.get('identity_type')
         if (identity_type == None):
             identity_type = self.options['new_account_type']
             self.logger.warning('Found user with no identity type, using %s: %s', identity_type, directory_user)
