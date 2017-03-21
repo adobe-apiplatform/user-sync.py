@@ -126,7 +126,7 @@ class ConfigLoader(object):
             accessor_config = None
             if (accessors_config != None): 
                 accessor_config = accessors_config.get_list(organization_name, True) 
-            accessor_config_sources = ConfigFileLoader.get_relative_filenames(self.as_list(accessor_config))
+            accessor_config_sources = self.as_list(accessor_config)
             accessor_config_file_path = accessor_config_file_paths.get(organization_name, None)
             if (accessor_config_file_path != None):
                 accessor_config_sources.append(accessor_config_file_path)
@@ -246,26 +246,8 @@ class ConfigLoader(object):
         make sure the path is relative from the config path.
         :type value: str
         '''        
-        path = value if os.path.isabs(value) else self.get_file_path(value)
-        return path
+        return ConfigFileLoader.get_relative_filename(value)
     
-    def load_from_yaml(self, file_path):
-        '''
-        :type file_path: str
-        '''        
-        try:
-            with open(file_path, 'r', 1) as input_file:
-                return yaml.load(input_file)
-        except IOError as e:
-            # if a file operation error occurred while loading the
-            # configuration file, swallow up the exception and re-raise this
-            # as an configuration loader exception.
-            raise user_sync.error.AssertionException('Error reading configuration file: %s' % e)
-        except yaml.error.MarkedYAMLError as e:
-            # same as above, but indicate this problem has to do with
-            # parsing the configuration file.
-            raise user_sync.error.AssertionException('Error parsing configuration file: %s' % e)
-        
     def get_file_path(self, filename):
         '''
         :type filename: str
