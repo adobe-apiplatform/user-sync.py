@@ -84,12 +84,7 @@ class OktaDirectoryConnector(object):
         self.groups_client = None
         self.logger = logger = user_sync.connector.helper.create_logger(options)
 
-        try:
-            options['user_identity_type'] = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
-        except user_sync.error.AssertionException as e:
-            logger.error(e.message)
-            e.set_reported()
-            raise e
+        self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
 
         self.options = options
 
@@ -220,6 +215,17 @@ class OktaDirectoryConnector(object):
 
             source_attributes['id'] = user['uid'] = record.id
             source_attributes['email'] = user['email'] = profile.email
+
+            source_attributes['identity_type'] = identity_type = self.user_identity_type
+            if not identity_type:
+                user['identity_type'] = self.user_identity_type
+            else:
+                try:
+                    user['identity_type'] = user_sync.identity_type.parse_identity_type(identity_type)
+                except user_sync.error.AssertionException as e:
+                    self.logger.warning('Skipping user %s: %s', profile.login, e.message)
+                    continue
+
             source_attributes['login'] = user['username'] = profile.login
 
             if profile.firstName != None:
@@ -249,9 +255,6 @@ class OktaDirectoryConnector(object):
             # [TODO morr 2017-02-26]: Could be omitted if no hook; worth considering?
             # [TODO morr 2017-02-28]: Is the copy necessary? Could just assign I think
             user['source_attributes'] = source_attributes.copy()
-
-            # added to fix warning message about identitytype not being set in user obj.
-            user['identitytype'] = options['user_identity_type']
 
             yield (profile.login, user)
 
