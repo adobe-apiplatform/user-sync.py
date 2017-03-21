@@ -117,7 +117,7 @@ class RulesTest(unittest.TestCase):
                        'firstname': '!Openldap CCE',
                        'country': user_country_code,
                        'lastname': 'User1',
-                       'identitytype': identity_type,
+                       'identity_type': identity_type,
                        'email': 'cceuser1@ensemble.ca',
                        'uid': '001'}
         }

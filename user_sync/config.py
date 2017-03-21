@@ -340,10 +340,8 @@ class ConfigLoader(object):
             exclude_users_regexps = dashboard_config.get_list('exclude_users', True) or []
             exclude_group_names = dashboard_config.get_list('exclude_groups', True) or []
         for name in exclude_identity_type_names:
-            identity_type = user_sync.identity_type.parse_identity_type(name)
-            if not identity_type:
-                validation_message = 'Illegal value for %s in config file: %s' % ('exclude_identity_types', name)
-                raise user_sync.error.AssertionException(validation_message)
+            message_format = 'Illegal value in exclude_identity_types: %s'
+            identity_type = user_sync.identity_type.parse_identity_type(name, message_format)
             exclude_identity_types.append(identity_type)
         for regexp in exclude_users_regexps:
             try:
