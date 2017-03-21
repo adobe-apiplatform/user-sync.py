@@ -161,7 +161,7 @@ class CSVDirectoryConnector(object):
             identity_type = self.get_column_value(row, identity_type_column_name)
             if identity_type is not None:
                 try:
-                    user['identitytype'] = user_sync.identity_type.parse_identity_type(identity_type) 
+                    user['identity_type'] = user_sync.identity_type.parse_identity_type(identity_type)
                 except user_sync.error.AssertionException as e:
                     logger.error('%s for user: %s', e.message, username)
                     e.set_reported()
