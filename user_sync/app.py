@@ -45,10 +45,7 @@ def process_args():
     parser.add_argument('-t', '--test-mode',
                         help='run API action calls in test mode (does not execute changes). Logs what would have been executed.',
                         action='store_true', dest='test_mode')
-    parser.add_argument('-c', '--config-path',
-                        help='specify path to config files. (default: "%(default)s")',
-                        default=config.DEFAULT_CONFIG_DIRECTORY, metavar='path', dest='config_path')
-    parser.add_argument('--config-filename',
+    parser.add_argument('-c', '--config-filename',
                         help='main config filename. (default: "%(default)s")',
                         default=config.DEFAULT_MAIN_CONFIG_FILENAME, metavar='filename', dest='config_filename')
     parser.add_argument('--users', 
@@ -126,7 +123,7 @@ def init_log(logging_config):
         if (file_log_level == None):
             file_log_level = logging.INFO
             unknown_file_log_level = True
-        file_log_directory = options['file_log_directory']
+        file_log_directory = user_sync.config.ConfigFileLoader.get_relative_filename(options['file_log_directory'])
         if not os.path.exists(file_log_directory):
             os.makedirs(file_log_directory)
         
@@ -191,7 +188,6 @@ def begin_work(config_loader):
     
 def create_config_loader(args):
     config_bootstrap_options = {
-        'config_directory': args.config_path,
         'main_config_filename': args.config_filename,
     }
     config_loader = user_sync.config.ConfigLoader(config_bootstrap_options)
