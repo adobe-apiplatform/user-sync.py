@@ -34,6 +34,18 @@ DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
 DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME = 'dashboard-owning-config.yml'
 DEFAULT_DASHBOARD_ACCESSOR_CONFIG_FILENAME_FORMAT = 'dashboard-accessor-{organization_name}-config.yml'
 
+# list of key paths that will be processed as filenames relative to the
+# configuration's file name
+PATH_KEYS = [
+    "/dashboard/owning",
+    "/dashboard/owning/enterprise/priv_key_path",
+    "/dashboard/accessors",
+    "/dashboard/accessors/*/enterprise/priv_key_path",
+    "/dashboard/accessor_config_filename_format",
+    "/directory/connectors/ldap",
+    "/enterprise/priv_key_path"
+    ]
+
 class ConfigLoader(object):
     def __init__(self, caller_options):
         '''
@@ -60,8 +72,8 @@ class ConfigLoader(object):
         }
         options.update(caller_options)     
 
-        main_config_filename = options.get('main_config_filename')
-        ConfigFileLoader.load(main_config_filename)
+        main_config_filename = self.get_absolute_file_path(options.get('main_config_filename'))
+        main_config_content = self.load_from_yaml(main_config_filename)
         
         if (not os.path.isfile(main_config_filename)):
             raise user_sync.error.AssertionException('Config file does not exist: %s' % (main_config_filename))  
@@ -70,7 +82,7 @@ class ConfigLoader(object):
         
         self.logger = logger = logging.getLogger('config')
         logger.info("Using main config file: %s", main_config_filename)                
-        self.main_config = DictConfig("<%s>" % main_config_filename, ConfigFileLoader.content)
+        self.main_config = DictConfig("<%s>" % main_config_filename, main_config_content)
         
     def set_options(self, caller_options):          
         '''
@@ -83,7 +95,7 @@ class ConfigLoader(object):
 
     def get_dashboard_options_for_owning(self):
         owning_config_filename = DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME
-        owning_config_path = self.get_file_path(owning_config_filename)
+        owning_config_path = self.get_absolute_file_path(owning_config_filename)
         
         owning_config = None
         dashboard_config = self.main_config.get_dict_config('dashboard', True)
@@ -108,7 +120,7 @@ class ConfigLoader(object):
             
         accessor_config_file_paths = {}
         accessor_config_filename_wildcard = accessor_config_filename_format.format(**{'organization_name': '*'})
-        for file_path in glob.glob1(ConfigFileLoader.dirpath, accessor_config_filename_wildcard):
+        for file_path in glob.glob(accessor_config_filename_wildcard):
             parse_result = self.parse_string(accessor_config_filename_format, file_path)
             organization_name = parse_result.get('organization_name')
             if (organization_name != None):
@@ -230,7 +242,7 @@ class ConfigLoader(object):
             if (isinstance(source, types.StringTypes)):
                 absolute_path = self.get_absolute_file_path(source)
                 if (os.path.isfile(absolute_path)):
-                    config = ConfigFileLoader.load_from_yaml(absolute_path)
+                    config = self.load_from_yaml(absolute_path)
                     options.append(config)
                 else:
                     raise user_sync.error.AssertionException('Cannot find file: %s for: %s' % (absolute_path, owner))
@@ -246,17 +258,8 @@ class ConfigLoader(object):
         make sure the path is relative from the config path.
         :type value: str
         '''        
-        return ConfigFileLoader.get_relative_filename(value)
+        return os.path.abspath(value)
     
-    def get_file_path(self, filename):
-        '''
-        :type filename: str
-        :rtype str
-        '''        
-        directory = ConfigFileLoader.dirpath
-        path = os.path.join(directory, filename)
-        return path
-
     @staticmethod
     def parse_string(format_string, string_value):
         '''
@@ -288,6 +291,75 @@ class ConfigLoader(object):
                     else:
                         result[dict_key] = dict_item
         return result
+
+    @staticmethod
+    def load_from_yaml(filename):
+        '''
+        loads a yaml file, processes the resulting dict to adapt file paths
+        defined in PATH_KEYS to locations relative to this file, and returns the
+        processed dict.
+        :type filename: str
+        :rtype dict
+        '''
+        try:
+            input_file = open(filename, 'r', 1)
+            yml = yaml.load(input_file)
+        except IOError as e:
+            # if a file operation error occurred while loading the
+            # configuration file, swallow up the exception and re-raise this
+            # as an configuration loader exception.
+            raise user_sync.error.AssertionException('Error reading configuration file: %s' % e)
+        except yaml.error.MarkedYAMLError as e:
+            # same as above, but indicate this problem has to do with
+            # parsing the configuration file.
+            raise user_sync.error.AssertionException('Error parsing configuration file: %s' % e)
+
+        dirpath = os.path.dirname(filename)
+
+        def process_dict_path_key(d, keys, level):
+            def relative_path(filename):
+                # returns an absolute path that is resolved relative to the
+                # source filename
+                if not os.path.isabs(filename):
+                    if dirpath:
+                        return os.path.abspath(dirpath + '/' + filename)
+                return filename
+
+            if level < len(keys):
+                key = keys[level]
+                # if a wildcard is specified, this indicates this should
+                # select all keys that have dict values, and recurse into them
+                # at the next level
+                if key == "*":
+                    for key in d.keys():
+                        val = d[key]
+                        if isinstance(val,dict):
+                            process_dict_path_key(val, keys, level+1)
+                elif d.has_key(key):
+                    val = d[key]
+                    if val:
+                        # at the end of the key path, so do the filename
+                        # processing
+                        if level == len(keys)-1:
+                            if isinstance(val,str):
+                                d[key] = relative_path(val)
+                            elif isinstance(val,list):
+                                rval = []
+                                for f in val:
+                                    rval.append(relative_path(f))
+                                d[key] = rval
+                            elif isinstance(val,dict):
+                                for key in val:
+                                    if isinstance(val[key],str):
+                                        val[key] = relative_path(val[key])
+                        elif isinstance(val,dict):
+                            process_dict_path_key(val, keys, level+1)
+
+        for path_key in PATH_KEYS:
+            keys = path_key.split("/")
+            process_dict_path_key(yml, keys, 1)
+            
+        return yml
 
     def get_rule_options(self):
         '''
@@ -614,66 +686,6 @@ class DictConfig(ObjectConfig):
         if (len(unused_keys) > 0):
             messages.append("Found unused keys: %s in: %s" % (unused_keys, self.get_full_scope()))
         return messages
-    
-class ConfigFileLoader(object):
-    @staticmethod
-    def load(filename):
-        '''
-        loads a configuration from a yaml file, and retains the directory
-        context
-        :type filename: str
-        :type content: dict
-        '''
-        ConfigFileLoader.filename = filename
-        ConfigFileLoader.dirpath = os.path.dirname(filename)
-        ConfigFileLoader.content = ConfigFileLoader.load_from_yaml(filename)
-        
-    @staticmethod
-    def get_relative_filename(filename):
-        '''
-        returns a filename relative to this configuration's directory context
-        :type filename: str
-        :rtype str
-        '''
-        if not os.path.isabs(filename):
-            if ConfigFileLoader.dirpath:
-                filename = ConfigFileLoader.dirpath + '/' + filename
-            
-        return filename
-
-    @staticmethod
-    def get_relative_filenames(filenames):
-        '''
-        returns a list of filenames relative to this configuration's directory
-        context
-        :type filenames: list(str)
-        :rtype list(str)
-        '''
-        new_filenames = []
-        for filename in filenames:
-            new_filenames.append(ConfigFileLoader.get_relative_filename(filename))
-            
-        return new_filenames
-    
-    @staticmethod
-    def load_from_yaml(filename):
-        '''
-        loads a yaml file and returns it as a dict.
-        :type filename: str
-        '''        
-        try:
-            with open(filename, 'r', 1) as input_file:
-                return yaml.load(input_file)
-        except IOError as e:
-            # if a file operation error occurred while loading the
-            # configuration file, swallow up the exception and re-raise this
-            # as an configuration loader exception.
-            raise user_sync.error.AssertionException('Error reading configuration file: %s' % e)
-        except yaml.error.MarkedYAMLError as e:
-            # same as above, but indicate this problem has to do with
-            # parsing the configuration file.
-            raise user_sync.error.AssertionException('Error parsing configuration file: %s' % e)
-    
     
 class OptionsBuilder(object):
     def __init__(self, default_config):
