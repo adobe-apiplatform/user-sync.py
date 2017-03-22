@@ -295,8 +295,9 @@ class ConfigLoader(object):
     @staticmethod
     def load_from_yaml(filename):
         '''
-        loads a yaml file, processes the resulting dict to adapt file paths
-        defined in PATH_KEYS to locations relative to this file, and returns the
+        loads a yaml file, processes the resulting dict to adapt values for keys
+        (the path to which is defined in PATH_KEYS) to a value that represents
+        a file reference relative to provided source file, and returns the
         processed dict.
         :type filename: str
         :rtype dict
@@ -316,10 +317,14 @@ class ConfigLoader(object):
 
         dirpath = os.path.dirname(filename)
 
-        def process_dict_path_key(d, keys, level):
+        # this function is used to process a single path key by replacing the
+        # value for the key that is found into a path relative to the given
+        # source file, with the assumption that the value is a file reference
+        # to begin with
+        def process_dict_path_key(dictionary, keys, level):
+            # returns an absolute path that is resolved relative to the source
+            # filename
             def relative_path(filename):
-                # returns an absolute path that is resolved relative to the
-                # source filename
                 if not os.path.isabs(filename):
                     if dirpath:
                         return os.path.abspath(dirpath + '/' + filename)
@@ -327,32 +332,34 @@ class ConfigLoader(object):
 
             if level < len(keys):
                 key = keys[level]
-                # if a wildcard is specified, this indicates this should
-                # select all keys that have dict values, and recurse into them
-                # at the next level
+                # if a wildcard is specified at this level, this indicates this
+                # should select all keys that have dict type values, and recurse
+                # into them at the next level
                 if key == "*":
-                    for key in d.keys():
-                        val = d[key]
+                    for key in dictionary.keys():
+                        val = dictionary[key]
                         if isinstance(val,dict):
                             process_dict_path_key(val, keys, level+1)
-                elif d.has_key(key):
-                    val = d[key]
+                elif dictionary.has_key(key):
+                    val = dictionary[key]
                     if val:
-                        # at the end of the key path, so do the filename
-                        # processing
+                        # if we are at the end of the key path, do the relative
+                        # filename processing
                         if level == len(keys)-1:
                             if isinstance(val,str):
-                                d[key] = relative_path(val)
+                                dictionary[key] = relative_path(val)
                             elif isinstance(val,list):
                                 rval = []
                                 for f in val:
                                     rval.append(relative_path(f))
-                                d[key] = rval
+                                dictionary[key] = rval
                             elif isinstance(val,dict):
                                 for key in val:
                                     if isinstance(val[key],str):
                                         val[key] = relative_path(val[key])
                         elif isinstance(val,dict):
+                            # otherwise, keep going down to the next level if
+                            # value of the current key in the path key is a dict
                             process_dict_path_key(val, keys, level+1)
 
         for path_key in PATH_KEYS:
