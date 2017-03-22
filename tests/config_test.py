@@ -54,7 +54,7 @@ class ConfigLoaderTest(unittest.TestCase):
 
     @mock.patch('user_sync.config.DictConfig.get_dict_config')
     @mock.patch('user_sync.config.ConfigLoader.create_dashboard_options')
-    @mock.patch('glob.glob1')
+    @mock.patch('glob.glob')
     @mock.patch('user_sync.config.ConfigLoader.parse_string')
     def test_get_dashboard_options_for_accessors(self, mock_parse, mock_glob, mock_create_dash, mock_get_dict):
         mock_create_dash.return_value = {'create_dash'}
