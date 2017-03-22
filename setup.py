@@ -45,7 +45,8 @@ setup(name='user-sync',
           'PyYAML',
           'umapi-client>=2.4.1',
           'psutil',
-          'keyring'
+          'keyring',
+          'okta=0.0.3',
       ],
       setup_requires=['nose>=1.0'],
       tests_require=[
