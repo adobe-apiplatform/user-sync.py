@@ -68,13 +68,15 @@ class RuleProcessor(object):
         self.adobe_users = set()
         # counters for action summary log
         self.action_summary = {
-            'number_of_adobe_users': 0,
-            'number_of_directory_users': 0,
+            'total_number_of_adobe_users': 0,
+            'number_of_adobe_users_excluded': 0,
+            'total_number_of_directory_users': 0,
+            'number_of_directory_users_filtered': 0,
             'number_of_users_created': 0,
             'number_of_users_updated': 0,
             'number_of_users_with_updated_groups': 0,
             'number_of_users_removed_from_mapped_group': 0,
-            'number_of_users_remove_or_deleted': 0,
+            'number_of_users_removed_or_deleted': 0,
             'number_of_users_with_no_changes': 0,
         }
 
@@ -162,12 +164,14 @@ class RuleProcessor(object):
         :return: None
         '''
         logger = self.logger
-        # find the total number of directory users
-        self.action_summary['number_of_directory_users'] = len(self.filtered_directory_user_by_user_key);
-        # find the total number of adobe users
-        self.action_summary['number_of_adobe_users'] = len(self.adobe_users);
+        # find the total number of directory users and selected/filtered users
+        self.action_summary['total_number_of_directory_users'] = len(self.directory_user_by_user_key)
+        self.action_summary['number_of_directory_users_filtered'] = len(self.filtered_directory_user_by_user_key)
+        # find the total number of adobe users and excluded users
+        self.action_summary['total_number_of_adobe_users'] = len(self.adobe_users)
+        self.action_summary['number_of_adobe_users_excluded'] = len(self.excluded_user_keys)
         # find out the number of users that have no changes
-        self.action_summary['number_of_users_with_no_changes'] = self.action_summary['number_of_adobe_users'] - self.action_summary['number_of_users_updated'] - self.action_summary['number_of_users_remove_or_deleted']
+        self.action_summary['number_of_users_with_no_changes'] = self.action_summary['total_number_of_adobe_users'] - self.action_summary['number_of_users_updated'] - self.action_summary['number_of_users_removed_or_deleted']
         logger.info('------------- Action Summary -------------')
         for action_name, action_count in self.action_summary.iteritems():
             logger.info('  %s: %s', action_name, action_count)
@@ -404,7 +408,7 @@ class RuleProcessor(object):
                     commands.remove_from_org(self.delete_user_accounts)
                     dashboard_connectors.get_owning_connector().send_commands(commands)
                     # increment remove_user count for action summary
-                    self.action_summary['number_of_users_remove_or_deleted'] += 1
+                    self.action_summary['number_of_users_removed_or_deleted'] += 1
 
         def on_remove_groups_callback(user_key):
             total_waiting = total_waiting_by_user_key[user_key]     
