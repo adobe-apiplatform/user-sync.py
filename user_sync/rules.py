@@ -71,7 +71,7 @@ class RuleProcessor(object):
             'total_number_of_adobe_users': 0,
             'number_of_adobe_users_excluded': 0,
             'total_number_of_directory_users': 0,
-            'number_of_directory_users_filtered': 0,
+            'number_of_directory_users_selected': 0,
             'number_of_users_created': 0,
             'number_of_users_updated': 0,
             'number_of_users_with_updated_groups': 0,
@@ -166,7 +166,7 @@ class RuleProcessor(object):
         logger = self.logger
         # find the total number of directory users and selected/filtered users
         self.action_summary['total_number_of_directory_users'] = len(self.directory_user_by_user_key)
-        self.action_summary['number_of_directory_users_filtered'] = len(self.filtered_directory_user_by_user_key)
+        self.action_summary['number_of_directory_users_selected'] = len(self.filtered_directory_user_by_user_key)
         # find the total number of adobe users and excluded users
         self.action_summary['total_number_of_adobe_users'] = len(self.adobe_users)
         self.action_summary['number_of_adobe_users_excluded'] = len(self.excluded_user_keys)
