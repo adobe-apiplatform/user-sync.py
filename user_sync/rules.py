@@ -76,7 +76,8 @@ class RuleProcessor(object):
             'number_of_users_updated': 0,
             'number_of_users_with_updated_groups': 0,
             'number_of_users_removed_from_mapped_group': 0,
-            'number_of_users_removed_or_deleted': 0,
+            'number_of_users_removed': 0,
+            'number_of_users_deleted': 0,
             'number_of_users_with_no_changes': 0,
         }
 
@@ -171,7 +172,7 @@ class RuleProcessor(object):
         self.action_summary['total_number_of_adobe_users'] = len(self.adobe_users)
         self.action_summary['number_of_adobe_users_excluded'] = len(self.excluded_user_keys)
         # find out the number of users that have no changes
-        self.action_summary['number_of_users_with_no_changes'] = self.action_summary['total_number_of_adobe_users'] - self.action_summary['number_of_users_updated'] - self.action_summary['number_of_users_removed_or_deleted']
+        self.action_summary['number_of_users_with_no_changes'] = self.action_summary['total_number_of_adobe_users'] - self.action_summary['number_of_users_updated'] - self.action_summary['number_of_users_removed'] - self.action_summary['number_of_users_deleted']
         logger.info('------------- Action Summary -------------')
         for action_name, action_count in self.action_summary.iteritems():
             logger.info('  %s: %s', action_name, action_count)
@@ -407,8 +408,11 @@ class RuleProcessor(object):
                                                                       username=username, domain=domain)
                     commands.remove_from_org(self.delete_user_accounts)
                     dashboard_connectors.get_owning_connector().send_commands(commands)
-                    # increment remove_user count for action summary
-                    self.action_summary['number_of_users_removed_or_deleted'] += 1
+                    # increment removed count or deleted count for action summary
+                    if self.delete_user_accounts and user_key in self.delete_user_accounts:
+                        self.action_summary['number_of_users_deleted'] += 1
+                    else:
+                        self.action_summary['number_of_users_removed'] += 1
 
         def on_remove_groups_callback(user_key):
             total_waiting = total_waiting_by_user_key[user_key]     
