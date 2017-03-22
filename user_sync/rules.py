@@ -64,6 +64,19 @@ class RuleProcessor(object):
         self.filtered_directory_user_by_user_key = {}
         self.organization_info_by_organization = {}
         self.adding_dashboard_user_key = set()
+        # adobe user-keys to find the number of unique adobe users for action summary log
+        self.adobe_users = set()
+        # counters for action summary log
+        self.action_summary = {
+            'number_of_adobe_users': 0,
+            'number_of_directory_users': 0,
+            'number_of_users_created': 0,
+            'number_of_users_updated': 0,
+            'number_of_users_with_updated_groups': 0,
+            'number_of_users_removed_from_mapped_group': 0,
+            'number_of_users_remove_or_deleted': 0,
+            'number_of_users_with_no_changes': 0,
+        }
 
         # save away the exclude options for use in filtering
         self.exclude_groups = self.normalize_groups(options['exclude_groups'])
@@ -140,7 +153,26 @@ class RuleProcessor(object):
         self.clean_dashboard_users(dashboard_connectors)    
         dashboard_connectors.execute_actions()
         dashboard_stats.log_end(logger)
+        self.log_action_summary()
             
+    def log_action_summary(self):
+        '''
+        log number of directory and Adobe users, number of created / updated / deleted users, and number of users with updated groups
+        or removed from mapped group because they were not in directory
+        :return: None
+        '''
+        logger = self.logger
+        # find the total number of directory users
+        self.action_summary['number_of_directory_users'] = len(self.filtered_directory_user_by_user_key);
+        # find the total number of adobe users
+        self.action_summary['number_of_adobe_users'] = len(self.adobe_users);
+        # find out the number of users that have no changes
+        self.action_summary['number_of_users_with_no_changes'] = self.action_summary['number_of_adobe_users'] - self.action_summary['number_of_users_updated'] - self.action_summary['number_of_users_remove_or_deleted']
+        logger.info('------------- Action Summary -------------')
+        for action_name, action_count in self.action_summary.iteritems():
+            logger.info('  %s: %s', action_name, action_count)
+        logger.info('------------------------------------------')
+
     def will_manage_groups(self):
         return self.options['manage_groups']
     
@@ -371,6 +403,8 @@ class RuleProcessor(object):
                                                                       username=username, domain=domain)
                     commands.remove_from_org(self.delete_user_accounts)
                     dashboard_connectors.get_owning_connector().send_commands(commands)
+                    # increment remove_user count for action summary
+                    self.action_summary['number_of_users_remove_or_deleted'] += 1
 
         def on_remove_groups_callback(user_key):
             total_waiting = total_waiting_by_user_key[user_key]     
@@ -493,6 +527,8 @@ class RuleProcessor(object):
             self.adding_dashboard_user_key.discard(user_key)
             is_success = response.get("is_success")            
             if is_success:
+                # increment counter for user created for action summary log
+                self.action_summary['number_of_users_created'] += 1
                 if (manage_groups):
                     for organization_name, dashboard_connector in dashboard_connectors.accessor_connectors.iteritems():
                         accessor_organization_info = self.get_organization_info(organization_name)
@@ -535,11 +571,19 @@ class RuleProcessor(object):
         if identity_type != user_sync.identity_type.ADOBEID_IDENTITY_TYPE:
             commands.update_user(attributes_to_update)
         else:
-            if len(attributes_to_update) > 0:
+            if attributes_to_update and len(attributes_to_update) > 0:
                 self.logger.warning("Can't update attributes on Adobe ID user: %s", dashboard_user.get("email"))
         commands.add_groups(groups_to_add)
         commands.remove_groups(groups_to_remove)
         dashboard_connector.send_commands(commands)
+
+        # increment counts if needed for user_updated, user_with_updated_group, and user_removed_from_mapped_group for action summay
+        if attributes_to_update and len(attributes_to_update) > 0:
+            self.action_summary['number_of_users_updated'] += 1
+        if groups_to_add and len(groups_to_add) > 0:
+            self.action_summary['number_of_users_with_updated_groups'] += 1
+        if groups_to_remove and len(groups_to_remove) > 0:
+            self.action_summary['number_of_users_removed_from_mapped_group'] += 1
 
     def try_and_update_dashboard_user(self, organization_info, user_key, dashboard_connector, attributes_to_update = None, groups_to_add = None, groups_to_remove = None, dashboard_user = None):
         '''
@@ -604,6 +648,8 @@ class RuleProcessor(object):
             current_groups = self.normalize_groups(dashboard_user.get('groups'))
             groups_to_add = set()
             groups_to_remove = set()
+            # add adobe user to set for action summary
+            self.adobe_users.add(user_key)
 
             # If this dashboard user matches any directory user, pop them out of the
             # map because we know they don't need to be created.
