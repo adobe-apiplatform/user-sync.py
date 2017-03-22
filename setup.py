@@ -46,7 +46,7 @@ setup(name='user-sync',
           'umapi-client>=2.4.1',
           'psutil',
           'keyring',
-          'okta=0.0.3',
+          'okta==0.0.3',
       ],
       setup_requires=['nose>=1.0'],
       tests_require=[
