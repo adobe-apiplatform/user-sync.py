@@ -19,7 +19,7 @@ output_filename = user-sync
 pex:
 	pip install --upgrade pip
 	pip install pex requests wheel
-	pip wheel -w wheelhouse -r misc/build/requirements.txt -r $(python_ldap_requirements)
+	pip wheel -w wheelhouse -r misc/build/requirements.txt -r $(python_ldap_requirements) -r misc/build/requirements-okta.txt
 	-$(RM) $(output_dir)
 	pex \
 		-v -o $(output_dir)/$(output_filename)$(output_file_extension) -m user_sync.app \
