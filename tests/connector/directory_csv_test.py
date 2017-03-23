@@ -11,7 +11,7 @@ class CSVDirectoryTest(unittest.TestCase):
     def test_normal(self):
         _, file_path = tempfile.mkstemp(".csv")
         
-        field_names = ['firstname', 'lastname', 'email', 'country', 'groups']
+        field_names = ['identity_type', 'firstname', 'lastname', 'email', 'country', 'groups']
         user1 = tests.helper.create_test_user(['Acrobat1', 'Acrobat2'])
         user2 = tests.helper.create_test_user([])
         
