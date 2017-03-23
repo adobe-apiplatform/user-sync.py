@@ -1675,3 +1675,20 @@ schtasks`) for more details.
 There is also a GUI for managing windows scheduled tasks. You can
 find the Task Scheduler in the Windows administrative control
 panel.
+
+## Okta User Sync
+
+In addition to LDAP and CSV, the User Sync tool supports Okta as a source for user identity and product entitlement sync.
+
+### Configuration
+
+To load an Okta config, use the key "okta" in `user-sync-config.yml`.
+
+```yaml
+directory:
+  connectors:
+    okta: connector-okta.yml
+```
+
+Note: If both an Okta and an LDAP config are specified, the User Sync tool will load the config for the first key specified. 
+If an Okta config comes before an LDAP config, then the Okta config will be loaded and the LDAP config will be ignored.
