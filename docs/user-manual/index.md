@@ -1584,7 +1584,10 @@ panel.
 
 ## Okta User Sync
 
-In addition to LDAP and CSV, the User Sync tool supports Okta as a source for user identity and product entitlement sync.
+In addition to LDAP and CSV, the User Sync tool supports [Okta](https://www.okta.com) as a source for user identity and product entitlement sync.
+
+Okta customers must obtain an API token for use with the Okta Users API.  See [Okta's Developer Documentation](http://developer.okta.com/docs/api/getting_started/api_test_client.html) 
+for more information.
 
 ### Configuration
 
@@ -1598,3 +1601,14 @@ directory:
 
 Note: If both an Okta and an LDAP config are specified, the User Sync tool will load the config for the first key specified. 
 If an Okta config comes before an LDAP config, then the Okta config will be loaded and the LDAP config will be ignored.
+
+#### Config Options
+
+Option | Type | Description | Example
+--- | --- | --- | ---
+`okta_url` | String | Base URL/Host of Okta instance | `https://dev-XXXXX.oktapreview.com`
+`api_token` | String | Secret API token | n/a
+`group_filter_format` | String | Templatized group filter (default: `{group}` | `{group}`
+`all_users_filter` | String | Filter to identify active users (default: `status eq "ACTIVE"`) | `profile.email sw "test.user."` (only sync users whose email addresses start with "test.user.")
+`user_username_format` | String | Templatized email string - configure the field that maps to the Email ID in the Admin Console (default: `{email}`) | `{email}`
+`user_identity_type` | String | Type of identity to create in the Admin Console (`enterpriseID` or `federatedID`, default: `enterpriseID`) | `federatedID`
