@@ -123,7 +123,7 @@ def init_log(logging_config):
         if (file_log_level == None):
             file_log_level = logging.INFO
             unknown_file_log_level = True
-        file_log_directory = user_sync.config.ConfigFileLoader.get_relative_filename(options['file_log_directory'])
+        file_log_directory = options['file_log_directory']
         if not os.path.exists(file_log_directory):
             os.makedirs(file_log_directory)
         

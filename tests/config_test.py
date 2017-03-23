@@ -31,7 +31,7 @@ from user_sync.config import ObjectConfig
 
 class ConfigLoaderTest(unittest.TestCase):
     @mock.patch('os.path.isfile')
-    @mock.patch('user_sync.config.ConfigLoader.load_from_yaml')
+    @mock.patch('user_sync.config.ConfigFileLoader.load_from_yaml')
     def setUp(self, mock_yaml, mock_isfile):
         mock_isfile.return_value = True
         self.conf_load = ConfigLoader({'options': 'testOpt'})
@@ -54,7 +54,7 @@ class ConfigLoaderTest(unittest.TestCase):
 
     @mock.patch('user_sync.config.DictConfig.get_dict_config')
     @mock.patch('user_sync.config.ConfigLoader.create_dashboard_options')
-    @mock.patch('glob.glob1')
+    @mock.patch('glob.glob')
     @mock.patch('user_sync.config.ConfigLoader.parse_string')
     def test_get_dashboard_options_for_accessors(self, mock_parse, mock_glob, mock_create_dash, mock_get_dict):
         mock_create_dash.return_value = {'create_dash'}

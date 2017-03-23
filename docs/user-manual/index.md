@@ -1039,6 +1039,41 @@ Adobe side by the next sync action that adds users.
 ./user-sync –c user-sync-config.yml --delete-list users-to-delete.csv
 ```
 
+### Action Summary
+
+At the end of the invocation, an action summary will be printed to the log. 
+The summary provides the user with statistics accumulated during the run. 
+The statistics collected include:
+
+- **Total number of Adobe users:** The total number of Adobe users in your admin console dashboard
+- **Number of Adobe users excluded:** Number of Adobe users that were excluded from operations via the exclude_parameters
+- **Total number of directory users:** The total number of users read from LDAP or CSV file
+- **Number of directory users selected:** Number of directory users selected via user-filter parameter
+- **Number of Adobe users created:** Number of Adobe users created during this run
+- **Number of Adobe users updated:** Number of Adobe users updated during this run
+- **Number of Adobe users removed:** Number of Adobe users removed from the organization on the Adobe side
+- **Number of Adobe users deleted:** Number of Adobe users removed from the organization and Enterprise/Federated user accounts deleted on Adobe side
+- **Number of Adobe users with updated groups:** Number of Adobe users that are added to one or more user groups
+- **Number of Adobe users removed from mapped groups:** Number of Adobe users that are removed from one or more user groups
+- **Number of Adobe users with no changes:** Number of Adobe users that was unchanged during this run
+
+#### Sample action summary output to the log
+```text
+2017-03-22 21:37:44 21787 INFO processor - ------------- Action Summary -------------
+2017-03-22 21:37:44 21787 INFO processor -   Total number of Adobe users: 50
+2017-03-22 21:37:44 21787 INFO processor -   Number of Adobe users excluded: 0
+2017-03-22 21:37:44 21787 INFO processor -   Total number of directory users: 10
+2017-03-22 21:37:44 21787 INFO processor -   Number of directory users selected: 10
+2017-03-22 21:37:44 21787 INFO processor -   Number of Adobe users created: 7
+2017-03-22 21:37:44 21787 INFO processor -   Number of Adobe users updated: 1
+2017-03-22 21:37:44 21787 INFO processor -   Number of Adobe users removed: 1
+2017-03-22 21:37:44 21787 INFO processor -   Number of Adobe users deleted: 0
+2017-03-22 21:37:44 21787 INFO processor -   Number of Adobe users with updated groups: 2
+2017-03-22 21:37:44 21787 INFO processor -   Number of Adobe users removed from mapped groups: 5
+2017-03-22 21:37:44 21787 INFO processor -   Number of Adobe users with no changes: 48
+2017-03-22 21:37:44 21787 INFO processor - ------------------------------------------
+```
+
 ---
 
 ## Advanced Configuration
