@@ -351,14 +351,13 @@ support for the User Sync tool.
 ## Configuring the User Sync Tool
 
 The operation of the User Sync tool is controlled by a set of
-configuration files with these file names, located in the same
-folder as the command-line executable.
+configuration files.
 
 | Configuration File | Purpose |
 |:------|:---------|
-| dashboard&#x2011;config.yml&nbsp;&nbsp; | Required. Contains credentials and access information for calling the Adobe User Management API. |
-| connector-ldap.yml | Required. Contains credentials and access information for accessing the enterprise LDAP directory. |
-| user-sync-config.yml | Required. Contains configuration options that define the mapping of directory groups to Adobe product configurations and user groups, and that control the update behavior. |
+| user-sync-config.yml | Required. Contains configuration options that define the mapping of directory groups to Adobe product configurations and user groups, and that control the update behavior. You can specify a different configuration file using the `user-sync -c other-config.yml` command option. |
+| dashboard-config.yml | Required. Contains credentials and access information for calling the Adobe User Management API. You can specify a different dashboard configuration file, or directly specify the dashboard configuration parameters in the main configuration file. |
+| connector-ldap.yml | Required. Contains credentials and access information for accessing the enterprise LDAP directory. You can specify a different LDAP configuration file, or directly specify the LDAP configuration parameters in the main configuration file. |
 
 If you need to set up access to users in other organizations that
 have granted you access, you can include additional configuration
@@ -449,7 +448,8 @@ enterprise:
 
 **Note:** Make sure you put the private key file at the location
 specified in `priv_key_path`, and that it is readable only to the
-user account that runs the tool.
+user account that runs the tool. Relative paths are interpreted
+as relative to the configuration file containing this setting.
 
 #### Configure connection to your enterprise directory
 

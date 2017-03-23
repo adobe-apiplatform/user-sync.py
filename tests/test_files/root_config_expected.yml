@@ -1,0 +1,19 @@
+dashboard:
+    owning: tests/test_files/dashboard/dashboard-owning-config.yml
+    accessors:
+        test-org-1:
+            enterprise:
+                priv_key_path: tests/keys/test-org-1/private-key-test.key
+        test-org-2: tests/test_files/accessors/xyz/accessor-config-test.yml
+    accessor_config_filename_format: tests/test_files/accessors-test/dashboard-accessor-{organization_name}-config.yml
+    test: value should not change
+logging:
+    file_log_directory: tests/test_files/logs
+other:
+    test-string: test string value should not change
+    test-dict:
+        test-string-2: this should not change as well
+    test-list:
+        - item-1
+        - item-2
+        - test-string-3: xyz

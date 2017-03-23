@@ -39,128 +39,109 @@ class ConfigFileLoaderTest(unittest.TestCase):
         message if they don't match. Also outputs the expected and result
         values.
         '''
-        self.assertEqual(result, expected, error_message + '\nexpected: %s, got: %s' % (expected, result))
+        self.assertEqual(expected, result, error_message + '\nexpected: %s, got: %s' % (expected, result))
+
+    def assert_dict_eq(self, exp, res, err_msg):
+        '''
+        compares the result dict against the expected dict, and recursively
+        asserts that their content matches. The error message is given if an
+        error was encountered, and the expected and actual results are given
+        as well.
+        '''
+        def assert_sub_value_eq(exp_val, res_val):
+            if isinstance(exp_val, dict):
+                assert_sub_dict_eq(exp_val, res_val)
+            elif isinstance(exp_val, list):
+                assert_sub_list_eq(exp_val, res_val)
+            else:
+                self.assertEqual(exp_val, res_val)
+        
+        def assert_sub_list_eq(exp, res):
+            '''
+            compares the result list against the expected list recursively, and
+            raises an assertion error if ti's values or sub-values don't match
+            '''
+            self.assertIsInstance(exp, list, 'expected is not dict')
+            self.assertIsInstance(res, list, 'result is not list')
+            
+            self.assertEqual(len(exp), len(res), 'expected and result lists don\'t have the same number of entries')
+            
+            for exp_item, res_item in zip(exp, res):
+                assert_sub_value_eq(exp_item, res_item)
     
-    @mock.patch('__builtin__.open')
-    @mock.patch('yaml.load')
-    def test_load_root_config(self, mock_yaml, mock_open):
+        def assert_sub_dict_eq(exp, res):
+            '''
+            compares the result dict against the expected dict recursively, and
+            raises an assertion error if it's values or sub-values don't match.
+            '''
+            self.assertIsInstance(exp, dict, 'expected is not dict')
+            self.assertIsInstance(res, dict, 'result is not dict')
+            
+            self.assertEqual(len(exp.keys()), len(res.keys()), 'expected and result dicts don\'t have the same number of keys')
+    
+            for key in exp.keys():
+                assert_sub_value_eq(exp[key], res[key])
+            
+        try:
+            assert_sub_dict_eq(exp, res)
+        except AssertionError as e:
+            raise AssertionError('%s\n%s' % (err_msg, e.message))
+        
+    def test_load_root_config(self):
+        '''
+        tests ConfigFileLoader.load_root_config by inputing a root configuration
+        file from the specified test file path, and asserts that the resulting
+        processed content has the file references properly updated by comparing
+        it against an expected results file, localized to the test platform
+        '''
+        yml = ConfigFileLoader.load_root_config('tests/test_files/root_config.yml')
+
+        # load expected result
+        with open('tests/test_files/root_config_expected.yml', 'r', 1) as input_file:
+            exp_yml = yaml.load(input_file)
+        
+        # update paths in expected results to absoluate paths on this platform
+        exp_yml['dashboard']['owning'] = os.path.abspath(exp_yml['dashboard']['owning']);
+        exp_yml['dashboard']['accessors']['test-org-1']['enterprise']['priv_key_path'] = os.path.abspath(exp_yml['dashboard']['accessors']['test-org-1']['enterprise']['priv_key_path']);
+        exp_yml['dashboard']['accessors']['test-org-2'] = os.path.abspath(exp_yml['dashboard']['accessors']['test-org-2']);
+        exp_yml['dashboard']['accessor_config_filename_format'] = os.path.abspath(exp_yml['dashboard']['accessor_config_filename_format']);
+        exp_yml['logging']['file_log_directory'] = os.path.abspath(exp_yml['logging']['file_log_directory']);
+
+        self.assert_dict_eq(yml, exp_yml, 'test root configuration did not match expected configuration')
+
+    def test_load_root_default_config(self):
         '''
         tests ConfigFileLoader.load_root_config by inputing a root configuration
         file path, and asserts that the resulting processed content has the
         file references properly updated
-        :type mock_yaml: Mock
-        :type mock_open: Mock
         '''
-        mocked_open = mock_open('test')
-        mocked_open_name = '%s.open' % __name__
-        with patch(mocked_open_name, mocked_open, create=True):
-            mock_yaml.return_value = {
-                    'dashboard':{
-                            'owning':'dashboard/dashboard-owning-config-test.yml',
-                            'accessors':{
-                                    'test-org-1': {
-                                            'enterprise':{
-                                                    'priv_key_path':'../keys/test-org-1/private-key-test.key'
-                                                }
-                                        },
-                                    'test-org-2':'accessors/xyz/accessor-config-test.yml'
-                                },
-                            'accessor_config_filename_format':'accessors-test/dashboard-accessor-{organization_name}-config.yml',
-                            'test':'value should not change'
-                        },
-                    'logging':{
-                            'file_log_directory':'logs'
-                        },
-                    'other':{
-                            'test-string':'test string value should not change',
-                            'test-dict':{
-                                    'test-string-2':'this should not change as well'
-                                },
-                            'test-list':[
-                                'item-1',
-                                'item-2',
-                                {
-                                    'test-string-3':'xyz'
-                                }
-                                ]
-                        }
-                }
-            
-            yml = ConfigFileLoader.load_root_config('config-test/user-sync-config-test.yml')
-            
-            # test path updating
-            self.assert_eq(yml['dashboard']['owning'], os.path.abspath('config-test/dashboard/dashboard-owning-config-test.yml'), 'owning dashboard configuration path is incorrect')
-            self.assert_eq(yml['dashboard']['accessor_config_filename_format'], os.path.abspath('config-test/accessors-test/dashboard-accessor-{organization_name}-config.yml'), 'accessor dashboard config file format is incorrect')
-            self.assert_eq(yml['dashboard']['accessors']['test-org-1']['enterprise']['priv_key_path'], os.path.abspath('keys/test-org-1/private-key-test.key'), 'accessor test_org_1 dashboard config private key path is incorrect')
-            self.assert_eq(yml['dashboard']['accessors']['test-org-2'], os.path.abspath('config-test/accessors/xyz/accessor-config-test.yml'), 'accessor test_org_2 dashboard config file path is incorrect')
-            self.assert_eq(yml['logging']['file_log_directory'], os.path.abspath('config-test/logs'), 'logging path is incorrect')
+        yml = ConfigFileLoader.load_root_config('tests/test_files/root_default_config.yml')
 
-            # test control keys
-            self.assert_eq(yml['dashboard']['test'], 'value should not change', '/dashboard/test value should not change')
-            self.assert_eq(yml['other']['test-string'], 'test string value should not change', '/other/test-string value should not change')
-            self.assert_eq(yml['other']['test-dict']['test-string-2'], 'this should not change as well', '/other/test-dict/test-string-2 value should not change')
-            self.assert_eq(yml['other']['test-list'][0], 'item-1', '/other/test-list/[0] value should not change')
-            self.assert_eq(yml['other']['test-list'][2]['test-string-3'], 'xyz', '/other/test-list/[2] value should not change')
+        # load expected result
+        with open('tests/test_files/root_default_config_expected.yml', 'r', 1) as input_file:
+            exp_yml = yaml.load(input_file)
+        
+        # update paths in expected results to absoluate paths on this platform
+        exp_yml['dashboard']['owning'] = os.path.abspath(exp_yml['dashboard']['owning']);
+        exp_yml['dashboard']['accessor_config_filename_format'] = os.path.abspath(exp_yml['dashboard']['accessor_config_filename_format']);
+        exp_yml['logging']['file_log_directory'] = os.path.abspath(exp_yml['logging']['file_log_directory']);
 
-    @mock.patch('__builtin__.open')
-    @mock.patch('yaml.load')
-    def test_load_root_default_config(self, mock_yaml, mock_open):
-        '''
-        tests ConfigFileLoader.load_root_config by inputing a root configuration
-        file path, and asserts that the resulting processed content has the
-        file references properly updated
-        :type mock_yaml: Mock
-        :type mock_open: Mock
-        '''
-        mocked_open = mock_open('test')
-        mocked_open_name = '%s.open' % __name__
-        with patch(mocked_open_name, mocked_open, create=True):
-            mock_yaml.return_value = {
-                    'dashboard':{
-                            'other-1':'test-123'
-                        },
-                    'logging':{
-                            'file_log_directory':'logs-test'
-                        },
-                }
-            
-            yml = ConfigFileLoader.load_root_config('config-test-2/user-sync-config-test.yml')
-            
-            # assert default values are preserved
-            self.assert_eq(yml['dashboard']['owning'], os.path.abspath('config-test-2/%s' % user_sync.config.DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME), 'default owning dashboard configuration path is incorrect')
-            self.assert_eq(yml['dashboard']['accessor_config_filename_format'], os.path.abspath('config-test-2/%s' % user_sync.config.DEFAULT_DASHBOARD_ACCESSOR_CONFIG_FILENAME_FORMAT), 'default accessor dashboard configuration file format is incorrect')
-            
-            # assert file paths are still updated properly
-            self.assert_eq(yml['logging']['file_log_directory'], os.path.abspath('config-test-2/logs-test'), 'default owning dashboard configuration path is incorrect')
+        self.assert_dict_eq(yml, exp_yml, 'test root default configuration did not match expected configuration')
 
-    @mock.patch('__builtin__.open')
-    @mock.patch('yaml.load')
-    def test_load_sub_config(self, mock_yaml, mock_open):
+    def test_load_sub_config(self):
         '''
         same purpose as test_load_root_config, but tests against sub
         configuration path updates (which is currently only the private key
         path in the dashboard configuration file)
-        :type mock_yaml: Mock
-        :type mock_open: Mock
         '''
-        mocked_open = mock_open('test')
-        mocked_open_name = '%s.open' % __name__
-        with patch(mocked_open_name, mocked_open, create=True):
-            mock_yaml.return_value = {
-                    'enterprise':{
-                            'priv_key_path':'../keys/test-key.key',
-                            'test':'value should not change'
-                        },
-                    'other': {
-                            'test-2': 123
-                        }
-                }
-            
-            yml = ConfigFileLoader.load_sub_config('sub-config-test/user-sync-config-test.yml')
-            
-            # test path updating
-            self.assert_eq(yml['enterprise']['priv_key_path'], os.path.abspath('keys/test-key.key'), 'private key path is incorrect')
+        yml = ConfigFileLoader.load_sub_config('tests/test_files/sub_config.yml')
 
-            # test control keys
-            self.assert_eq(yml['enterprise']['test'], 'value should not change', '/enterprise/test value should not change')
-            self.assert_eq(yml['other']['test-2'], 123, '/other/test-2 value should not change')
+        # load expected result
+        with open('tests/test_files/sub_config_expected.yml', 'r', 1) as input_file:
+            exp_yml = yaml.load(input_file)
+        
+        # update paths in expected results to absoluate paths on this platform
+        exp_yml['enterprise']['priv_key_path'] = os.path.abspath(exp_yml['enterprise']['priv_key_path']);
+
+        self.assert_dict_eq(yml, exp_yml, 'test sub configuration did not match expected configuration')
+ 
