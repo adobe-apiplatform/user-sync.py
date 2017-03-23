@@ -31,7 +31,7 @@ from user_sync.config import ObjectConfig
 
 class ConfigLoaderTest(unittest.TestCase):
     @mock.patch('os.path.isfile')
-    @mock.patch('user_sync.config.ConfigLoader.load_from_yaml')
+    @mock.patch('user_sync.config.ConfigFileLoader.load_from_yaml')
     def setUp(self, mock_yaml, mock_isfile):
         mock_isfile.return_value = True
         self.conf_load = ConfigLoader({'options': 'testOpt'})

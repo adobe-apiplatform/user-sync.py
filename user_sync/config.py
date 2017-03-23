@@ -39,17 +39,17 @@ DEFAULT_DASHBOARD_ACCESSOR_CONFIG_FILENAME_FORMAT = 'dashboard-accessor-{organiz
 ROOT_CONFIG_PATH_KEYS = [
         { 'path':'/dashboard/owning', 'default': DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME },
         '/dashboard/owning/enterprise/priv_key_path',
-        '/dashboard/accessors',
+        '/dashboard/accessors/*',
         '/dashboard/accessors/*/enterprise/priv_key_path',
         { 'path':'/dashboard/accessor_config_filename_format', 'default':DEFAULT_DASHBOARD_ACCESSOR_CONFIG_FILENAME_FORMAT },
-        '/directory/connectors/ldap'
+        '/directory/connectors/ldap',
+        '/logging/file_log_directory'
     ]
 
 # like ROOT_CONFIG_PATH_KEYS, but this is applied to non-root configuration
 # files
 SUB_CONFIG_PATH_KEYS = [
-        "/enterprise/priv_key_path",
-        "/logging/file_log_directory"
+        "/enterprise/priv_key_path"
     ]
 
 class ConfigLoader(object):
@@ -623,8 +623,8 @@ class ConfigFileLoader(object):
         :rtype dict
         '''
         try:
-            input_file = open(filename, 'r', 1)
-            yml = yaml.load(input_file)
+            with open(filename, 'r', 1) as input_file:
+                yml = yaml.load(input_file)
         except IOError as e:
             # if a file operation error occurred while loading the
             # configuration file, swallow up the exception and re-raise this
@@ -645,6 +645,9 @@ class ConfigFileLoader(object):
             to begin with. It is used recursively to navigate into child
             dictionaries to search the path key.
             type dictionary: dict
+            type keys: list
+            type level: int
+            type default_val: str
             '''
             def relative_path(filename):
                 '''
@@ -670,11 +673,13 @@ class ConfigFileLoader(object):
                     if isinstance(val,str):
                         dictionary[key] = relative_path(val)
                     elif isinstance(val,list):
-                        paths = []
-                        for path in val:
-                            if isinstance(path, str):
-                                paths.append(relative_path(path))
-                        dictionary[key] = paths
+                        vals = []
+                        for entry in val:
+                            if isinstance(entry, str):
+                                vals.append(relative_path(entry))
+                            else:
+                                vals.append(entry)
+                        dictionary[key] = vals
 
             # end of path key
             if level == len(keys)-1:
