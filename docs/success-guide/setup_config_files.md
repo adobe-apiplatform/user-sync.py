@@ -121,8 +121,8 @@ Limits on deletion prevent accidental account deletion in the event of misconfig
 &#9744; If you expect the number of directory users to drop by more than 200 between User Sync runs, then you will need to raise the max\_missing\_users value.  These config file entries are to prevent runaway deletion in case of misconfiguration or other problems.
 
 	limits:
-	    max_deletions_per_run: 10   # ceiling on disable/remove/delete
-	    max_missing_users: 200      # abort if this many directory users disappear
+	    max_strays_to_process: 10   # ceiling on disable/remove/delete
+	    max_strays_hard_limit: 200      # abort if this many directory users disappear
 
 
 
