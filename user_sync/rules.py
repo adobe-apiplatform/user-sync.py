@@ -75,11 +75,26 @@ class RuleProcessor(object):
             'number_of_users_created': 0,
             'number_of_users_updated': 0,
             'number_of_users_with_updated_groups': 0,
-            'number_of_users_removed_from_mapped_group': 0,
+            'number_of_users_removed_from_mapped_groups': 0,
             'number_of_users_removed': 0,
             'number_of_users_deleted': 0,
             'number_of_users_with_no_changes': 0,
         }
+        # English text description for action summary log.
+        # The action summary will be shown the same order as they are defined in the list
+        self.action_summary_descriptions = [
+            ['total_number_of_adobe_users', 'Total number of Adobe users'],
+            ['number_of_adobe_users_excluded', 'Number of Adobe users excluded'],
+            ['total_number_of_directory_users', 'Total number of directory users'],
+            ['number_of_directory_users_selected', 'Number of directory users selected'],
+            ['number_of_users_created', 'Number of users created'],
+            ['number_of_users_updated', 'Number of users updated'],
+            ['number_of_users_removed', 'Number of users removed'],
+            ['number_of_users_deleted', 'Number of users deleted'],
+            ['number_of_users_with_updated_groups', 'Number of users with updated groups'],
+            ['number_of_users_removed_from_mapped_groups', 'Number of users removed from mapped groups'],
+            ['number_of_users_with_no_changes', 'Number of users with no changes'],
+        ]
 
         # save away the exclude options for use in filtering
         self.exclude_groups = self.normalize_groups(options['exclude_groups'])
@@ -174,8 +189,11 @@ class RuleProcessor(object):
         # find out the number of users that have no changes
         self.action_summary['number_of_users_with_no_changes'] = self.action_summary['total_number_of_adobe_users'] - self.action_summary['number_of_users_updated'] - self.action_summary['number_of_users_removed'] - self.action_summary['number_of_users_deleted']
         logger.info('------------- Action Summary -------------')
-        for action_name, action_count in self.action_summary.iteritems():
-            logger.info('  %s: %s', action_name, action_count)
+        for action_description in self.action_summary_descriptions:
+            action = action_description[0]
+            description = action_description[1]
+            action_count = self.action_summary[action]
+            logger.info('  %s: %s', description, action_count)
         logger.info('------------------------------------------')
 
     def will_manage_groups(self):
@@ -343,7 +361,7 @@ class RuleProcessor(object):
             if (search_result == None):
                 return False
         return True
-    
+
     def process_orphaned_dashboard_users(self):
         orphan_user_key_list = self.orphan_user_key_list
             
@@ -591,7 +609,7 @@ class RuleProcessor(object):
         if groups_to_add and len(groups_to_add) > 0:
             self.action_summary['number_of_users_with_updated_groups'] += 1
         if groups_to_remove and len(groups_to_remove) > 0:
-            self.action_summary['number_of_users_removed_from_mapped_group'] += 1
+            self.action_summary['number_of_users_removed_from_mapped_groups'] += 1
 
     def try_and_update_dashboard_user(self, organization_info, user_key, dashboard_connector, attributes_to_update = None, groups_to_add = None, groups_to_remove = None, dashboard_user = None):
         '''
