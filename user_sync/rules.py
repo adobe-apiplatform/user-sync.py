@@ -28,6 +28,21 @@ import user_sync.identity_type
 
 GROUP_NAME_DELIMITER = '::'
 OWNING_ORGANIZATION_NAME = None
+# English text description for action summary log.
+# The action summary will be shown the same order as they are defined in the list
+ACTION_SUMMARY_DESCRIPTION = [
+    ['total_number_of_adobe_users', 'Total number of Adobe users'],
+    ['number_of_adobe_users_excluded', 'Number of Adobe users excluded'],
+    ['total_number_of_directory_users', 'Total number of directory users'],
+    ['number_of_directory_users_selected', 'Number of directory users selected'],
+    ['number_of_users_created', 'Number of Adobe users created'],
+    ['number_of_users_updated', 'Number of Adobe users updated'],
+    ['number_of_users_removed', 'Number of Adobe users removed'],
+    ['number_of_users_deleted', 'Number of Adobe users deleted'],
+    ['number_of_users_with_updated_groups', 'Number of Adobe users with updated groups'],
+    ['number_of_users_removed_from_mapped_groups', 'Number of Adobe users removed from mapped groups'],
+    ['number_of_users_with_no_changes', 'Number of Adobe users with no changes'],
+]
 
 class RuleProcessor(object):
     
@@ -80,21 +95,6 @@ class RuleProcessor(object):
             'number_of_users_deleted': 0,
             'number_of_users_with_no_changes': 0,
         }
-        # English text description for action summary log.
-        # The action summary will be shown the same order as they are defined in the list
-        self.action_summary_descriptions = [
-            ['total_number_of_adobe_users', 'Total number of Adobe users'],
-            ['number_of_adobe_users_excluded', 'Number of Adobe users excluded'],
-            ['total_number_of_directory_users', 'Total number of directory users'],
-            ['number_of_directory_users_selected', 'Number of directory users selected'],
-            ['number_of_users_created', 'Number of users created'],
-            ['number_of_users_updated', 'Number of users updated'],
-            ['number_of_users_removed', 'Number of users removed'],
-            ['number_of_users_deleted', 'Number of users deleted'],
-            ['number_of_users_with_updated_groups', 'Number of users with updated groups'],
-            ['number_of_users_removed_from_mapped_groups', 'Number of users removed from mapped groups'],
-            ['number_of_users_with_no_changes', 'Number of users with no changes'],
-        ]
 
         # save away the exclude options for use in filtering
         self.exclude_groups = self.normalize_groups(options['exclude_groups'])
@@ -189,7 +189,7 @@ class RuleProcessor(object):
         # find out the number of users that have no changes
         self.action_summary['number_of_users_with_no_changes'] = self.action_summary['total_number_of_adobe_users'] - self.action_summary['number_of_users_updated'] - self.action_summary['number_of_users_removed'] - self.action_summary['number_of_users_deleted']
         logger.info('------------- Action Summary -------------')
-        for action_description in self.action_summary_descriptions:
+        for action_description in ACTION_SUMMARY_DESCRIPTION:
             action = action_description[0]
             description = action_description[1]
             action_count = self.action_summary[action]
