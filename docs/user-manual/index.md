@@ -561,13 +561,13 @@ groups:
 User accounts are removed from the Adobe dashboard when
 corresponding users are not present in the directory and the tool
 is invoked with the `--remove-nonexistent-users` option. The
-`max_deletions_per_run` and `max_missing_users` values in
+`max_removed_users` and `max_unmatched_users` values in
 the `limits` section of the configuration file set limits on
 how many users can be removed at any one time. These limits
 prevent accidental removal of a large number of accounts in case
 of misconfiguration or other errors:
 
-- The value of `max_deletions_per_run` sets a limit on the number
+- The value of `max_removed_users` sets a limit on the number
 of account removals in a single run. If more users are flagged
 for removal, they are left for the next run.
 
@@ -577,7 +577,7 @@ raise this value.
 - If your organization has a large number of users in the
 enterprise directory and the number of users read during a sync
 is suddenly small, this could indicate a misconfiguration or
-error situation.  The value of `max_missing_users` is a threshold
+error situation.  The value of `max_unmatched_users` is a threshold
 which causes the run to exit and report an error if there are
 this many fewer users in the enterprise directory than in the
 Adobe admin console.
@@ -589,8 +589,8 @@ For example:
 
 ```YAML
 limits:
-  max_deletions_per_run: 10
-  max_missing_users: 200
+  max_removed_users: 10
+  max_unmatched_users: 200
 ```
 
 This configuration causes User Sync to remove no more than 10
@@ -693,8 +693,8 @@ directory:
         - "Default Adobe Enterprise Support Program configuration"
 
 limits:
-  max_deletions_per_run: 10
-  max_missing_users: 200
+  max_removed_users: 10
+  max_unmatched_users: 200
 
 logging:
   log_to_file: True
@@ -1581,3 +1581,72 @@ schtasks`) for more details.
 There is also a GUI for managing windows scheduled tasks. You can
 find the Task Scheduler in the Windows administrative control
 panel.
+
+## Okta User Sync
+
+In addition to LDAP and CSV, the User Sync tool supports [Okta](https://www.okta.com) as a source for user identity and product entitlement sync.
+
+Okta customers must obtain an API token for use with the Okta Users API.  See [Okta's Developer Documentation](http://developer.okta.com/docs/api/getting_started/api_test_client.html) 
+for more information.
+
+### Configuration
+
+To load an Okta config, use the key "okta" in `user-sync-config.yml`.
+
+```yaml
+directory:
+  connectors:
+    okta: connector-okta.yml
+```
+
+Note: If both an Okta and an LDAP config are specified, the User Sync tool will load the config for the first key specified. 
+If an Okta config comes before an LDAP config, then the Okta config will be loaded and the LDAP config will be ignored.
+
+#### Config Options
+
+Option | Type | Description | Example
+--- | --- | --- | ---
+`okta_url` | String | Base URL/Host of Okta instance | `https://dev-XXXXX.oktapreview.com`
+`api_token` | String | Secret API token | n/a
+`group_filter_format` | String | Templatized group filter (default: `{group}` | `{group}`
+`all_users_filter` | String | Filter to identify active users (default: `status eq "ACTIVE"`) See [Okta's filter documentation](http://developer.okta.com/docs/api/resources/users.html#list-users-with-a-filter) for more information| `profile.email sw "test.user."` (only sync users whose email addresses start with "test.user.")
+`user_identity_type` | String | Type of identity to create in the Admin Console (`enterpriseID` or `federatedID`, default: `enterpriseID`) | `federatedID`
+
+**Note:** `user_username_format` and `user_domain_format` are not supported.  Username-based Federated IDs are not possible with Okta,
+since Okta uses email address as the primary ID of all users.
+
+#### Config Example
+
+```yaml
+okta_url: "Okta URL goes here ie. youcompany.okta.com"
+
+#For more detail on getting Okta API Token: http://developer.okta.com/docs/api/getting_started/getting_a_token.html
+api_token: "API token goes here"
+
+# specifies the string format used to construct a group query.
+# {group} is replaced with the name of the group to find. Default is:
+# example for OKTA
+group_filter_format: "{group}"
+
+# specifies the string filter used to find all users in the directory.
+# For more detail: http://developer.okta.com/docs/api/resources/users.html#list-users-with-a-filter
+# Default, intending for Okta, is:
+all_users_filter: 'status eq "ACTIVE"'
+
+# specifies the identity type of the dashboard user to create.
+# the valid values are: enterpriseID, federatedID
+#
+# If not specified, the default identity type from the main config file is used.
+#
+# example for enterprise ID:
+user_identity_type: federatedID
+```
+
+### Running Okta Sync
+
+The process for running sync with Okta is the same as running sync against LDAP or CSV.  All command-line parameters are supported (including `--users group`).  
+
+### Extension Support ###
+
+Okta sync can use extended groups, attributes and after-mapping hooks.  Extended attributes must be valid Okta profile fields.
+See the [User Manual](#custom-attributes-and-mappings) for more information on extension functionality.
