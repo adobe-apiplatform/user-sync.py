@@ -71,33 +71,35 @@ def process_args():
                              'the group membership is updated on the Adobe side so that the memberships in mapped '
                              'groups matches the customer side.',
                         action='store_true', dest='manage_groups')
-    parser.add_argument('--remove-entitlements-for-strays',
-                        help="any 'stray' Adobe users (that is, Adobe users that don't match users on the customer "
-                             "side) are removed from all user groups and product configurations on the Adobe side, "
+    parser.add_argument('--remove-entitlements-for-unmatched-users',
+                        help="any Adobe users that don't match users on the customer "
+                             "side are removed from all user groups and product configurations, "
                              "but they are left visible in the Users list in the Adobe console.",
                         action='store_true', dest='disentitle_strays')
-    parser.add_argument('--remove-strays',
-                        help='like --remove-entitlements-for-strays, but additionally removes stray users '
+    parser.add_argument('--remove-unmatched-users',
+                        help='like --remove-entitlements-for-unmatched-users, but additionally removes unmatched users '
                              'from the Users list in the Adobe console.  The user account is left intact, with all'
                              'of its associated storage, and can be re-added to the Users list if desired.',
                         action='store_true', dest='remove_strays')
-    parser.add_argument('--delete-strays',
-                        help='like --remove-strays, but additionally deletes the '
+    parser.add_argument('--delete-unmatched-users',
+                        help='like --remove-unmatched-users, but additionally deletes the '
                              '(Enterprise or Federated ID) user account for any '
-                             'stray users, so that all of their associated storage is reclaimed and their email '
+                             'unmatched users, so that all of their associated storage is reclaimed and their email '
                              'address is freed up for re-allocation to a new user.',
                         action='store_true', dest='delete_strays')
-    parser.add_argument('--output-stray-list',
-                        help="any 'stray' Adobe users (that is, Adobe users that don't match users on the customer "
-                             "side) are written to a file with the given pathname. "
-                             "This file can then be given in the --stray-list argument in a subsequent run.",
+    parser.add_argument('--output-unmatched-users',
+                        help="all Adobe users that don't match users on the customer "
+                             "side are written to a file with the given pathname, "
+                             "but are not otherwise processed. "
+                             "The output file can then be used with --input-unmatched-users in a subsequent run.",
                         metavar='output_path', dest='stray_list_output_path')
-    parser.add_argument('--input-stray-list',
-                        help='causes stray Adobe users to be read from a file with the given pathname rather than'
-                             'being computed by matching Adobe users with customer users, '
-                             'see --output-stray-list.  When using this option, you must also specify the type'
-                             'of stray processing you want done by specifying one of the options '
-                             '--remove-entitlements-for-strays, --remove-strays or --delete-strays.',
+    parser.add_argument('--input-unmatched-users',
+                        help='instead of computing unmatched users by comparing Adobe users with directory users, '
+                             'the list of unmatched Adobe users is read from a file (see --output-unmatched-users). '
+                             'When using this option, you must also specify what you want done with unmatched users by'
+                             'specifying one of the arguments '
+                             '--remove-entitlements-for-unmatched-users, --remove-unmatched-users '
+                             'or --delete-unmatched-users.',
                         metavar='input_path', dest='stray_list_input_path')
     return parser.parse_args()
 
@@ -251,63 +253,61 @@ def create_config_loader_options(args):
             raise user_sync.error.AssertionException("Bad regular expression for --user-filter: %s reason: %s" % (username_filter_pattern, e.message))
         config_options['username_filter_regex'] = compiled_expression
     
-    # --input-stray-list
+    # --input-unmatched-users
     stray_list_input_path = args.stray_list_input_path
     if (stray_list_input_path != None):
         if users_args is not None:
-            raise user_sync.error.AssertionException('You cannot specify both --users and --input-stray-list')
+            raise user_sync.error.AssertionException('You cannot specify both --users and --input-unmatched-users')
         # don't read the directory when processing from the stray list
         config_options['directory_connector_module_name'] = None
-        logger.info('--input-stray-list specified, so not reading and comparing directory and Adobe users')
-        logger.info('Reading stray list from: %s', stray_list_input_path)
-        stray_key_list = user_sync.rules.RuleProcessor.read_remove_list(stray_list_input_path, logger = logger)
-        logger.info('Total users in stray list: %d', len(stray_key_list))
-        config_options['stray_key_list'] = stray_key_list
+        logger.info('--input-unmatched-users specified, so not reading and comparing directory and Adobe users')
+        stray_key_map = user_sync.rules.RuleProcessor.read_stray_key_map(stray_list_input_path, logger = logger)
+        config_options['stray_key_map'] = stray_key_map
 
-    # --output-stray-list
+    # --output-unmatched-users
     stray_list_output_path = args.stray_list_output_path
     if (stray_list_output_path != None):
         if stray_list_input_path:
             raise user_sync.error.AssertionException('You cannot specify both '
-                                                     '--input-stray-list and --output-stray-list')
-        logger.info('Writing stray list to: %s', stray_list_output_path)
+                                                     '--input-unmatched-users and --output-unmatched-users')
+        logger.info('Writing unmatched users to: %s', stray_list_output_path)
         config_options['stray_list_output_path'] = stray_list_output_path
 
     # keep track of the number user removal type commands
     stray_processing_command_count = 0
 
-    # --remove-strays
+    # --remove-unmatched-users
     remove_strays = args.remove_strays
     if remove_strays:
         if stray_list_output_path:
             remove_strays = False
-            logger.warn('--remove-strays ignored when --output-stray-list is specified')
+            logger.warn('--remove-unmatched-users ignored when --output-unmatched-users is specified')
         stray_processing_command_count += 1
     config_options['remove_strays'] = remove_strays
 
-    # --delete-strays
+    # --delete-unmatched-users
     delete_strays = args.delete_strays
     if delete_strays:
         if stray_list_output_path:
             delete_strays = False
-            logger.warn('--delete-strays ignored when --output-stray-list is specified')
+            logger.warn('--delete-unmatched-users ignored when --output-unmatched-users is specified')
         stray_processing_command_count += 1
     config_options['delete_strays'] = delete_strays
 
-    # --remove-entitlements-for-strays
+    # --remove-entitlements-for-unmatched-users
     disentitle_strays = args.disentitle_strays
     if disentitle_strays:
         if stray_list_output_path:
             disentitle_strays = False
-            logger.warn('--remove-entitlements-for-strays ignored when --output-stray-list is specified')
+            logger.warn('--remove-entitlements-for-unmatched-users ignored when --output-unmatched-users is specified')
         stray_processing_command_count += 1
     config_options['disentitle_strays'] = disentitle_strays
 
     # ensure the user has only entered one "remove user" type command.    
     if stray_processing_command_count > 1:
         raise user_sync.error.AssertionException('You cannot specify more than one of '
-                                                 '--remove-entitlements-for-strays, --remove-strays '
-                                                 'and --delete-strays')
+                                                 '--remove-entitlements-for-unmatched-users, --remove-unmatched-users '
+                                                 'and --delete-unmatched-users')
                     
     source_filter_args = args.source_filter_args
     if (source_filter_args != None):
