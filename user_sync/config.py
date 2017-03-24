@@ -69,7 +69,7 @@ class ConfigLoader(object):
             'main_config_filename': DEFAULT_MAIN_CONFIG_FILENAME,
             'manage_groups': False,
             'remove_strays': False,
-            'stray_key_list': None,
+            'stray_key_map': None,
             'stray_list_output_path': None,
             'test_mode': False,
             'update_user_info': True,
@@ -334,8 +334,8 @@ class ConfigLoader(object):
             exclude_groups.append(group.get_group_name())
 
         limits_config = self.main_config.get_dict_config('limits')
-        max_strays_hard_limit = limits_config.get_int('max_strays_hard_limit')
-        max_strays_to_process = limits_config.get_int('max_strays_to_process')
+        max_unmatched_users = limits_config.get_int('max_unmatched_users')
+        max_removed_users = limits_config.get_int('max_removed_users')
 
         after_mapping_hook = None
         extended_attributes = None
@@ -383,11 +383,11 @@ class ConfigLoader(object):
             'exclude_users': exclude_users,
             'extended_attributes': extended_attributes,
             'manage_groups': options['manage_groups'],
-            'max_strays_hard_limit': max_strays_hard_limit,
-            'max_strays_to_process': max_strays_to_process,
+            'max_removed_users': max_removed_users,
+            'max_unmatched_users': max_unmatched_users,
             'new_account_type': new_account_type,
             'remove_strays': options['remove_strays'],
-            'stray_key_list': options['stray_key_list'],
+            'stray_key_map': options['stray_key_map'],
             'stray_list_output_path': options['stray_list_output_path'],
             'update_user_info': options['update_user_info'],
             'username_filter_regex': options['username_filter_regex'],

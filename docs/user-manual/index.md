@@ -561,13 +561,13 @@ groups:
 User accounts are removed from the Adobe dashboard when
 corresponding users are not present in the directory and the tool
 is invoked with the `--remove-nonexistent-users` option. The
-`max_strays_to_process` and `max_strays_hard_limit` values in
+`max_removed_users` and `max_unmatched_users` values in
 the `limits` section of the configuration file set limits on
 how many users can be removed at any one time. These limits
 prevent accidental removal of a large number of accounts in case
 of misconfiguration or other errors:
 
-- The value of `max_strays_to_process` sets a limit on the number
+- The value of `max_removed_users` sets a limit on the number
 of account removals in a single run. If more users are flagged
 for removal, they are left for the next run.
 
@@ -577,7 +577,7 @@ raise this value.
 - If your organization has a large number of users in the
 enterprise directory and the number of users read during a sync
 is suddenly small, this could indicate a misconfiguration or
-error situation.  The value of `max_strays_hard_limit` is a threshold
+error situation.  The value of `max_unmatched_users` is a threshold
 which causes the run to exit and report an error if there are
 this many fewer users in the enterprise directory than in the
 Adobe admin console.
@@ -589,8 +589,8 @@ For example:
 
 ```YAML
 limits:
-  max_strays_to_process: 10
-  max_strays_hard_limit: 200
+  max_removed_users: 10
+  max_unmatched_users: 200
 ```
 
 This configuration causes User Sync to remove no more than 10
@@ -693,8 +693,8 @@ directory:
         - "Default Adobe Enterprise Support Program configuration"
 
 limits:
-  max_strays_to_process: 10
-  max_strays_hard_limit: 200
+  max_removed_users: 10
+  max_unmatched_users: 200
 
 logging:
   log_to_file: True
