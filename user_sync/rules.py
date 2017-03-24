@@ -867,7 +867,7 @@ class RuleProcessor(object):
     @staticmethod
     def get_username_from_user_key(user_key):
         return RuleProcessor.parse_user_key(user_key)[1]
-    
+
     @staticmethod
     def read_stray_key_map(file_path, delimiter = None, logger = None):
         '''
@@ -894,7 +894,7 @@ class RuleProcessor(object):
             id_type = row.get(id_type_column_name)
             user = row.get(user_column_name)
             domain = row.get(domain_column_name)
-            
+
             user_key = RuleProcessor.get_user_key(id_type, user, domain)
             if user_key:
                 if org_name not in result:
@@ -903,24 +903,42 @@ class RuleProcessor(object):
                     result[org_name].append(user_key)
             elif logger:
                 logger.error("Invalid input line, ignored: %s", row)
-        logger.info('Read %d umatched users.', len(result.get(OWNING_ORGANIZATION_NAME, [])))
+        user_count = len(result.get(OWNING_ORGANIZATION_NAME, []))
+        user_plural = "" if user_count == 1 else "s"
+        org_count = len(result) - 1
+        org_plural = "" if org_count == 1 else "s"
+        if org_count > 0:
+            logger.info('Read %d unmatched user%s for owning org, with %d accessor org%s',
+                        user_count, user_plural, org_count, org_plural)
+        else:
+            logger.info('Read %d unmatched user%s.', user_count, user_plural)
         return result
 
     def write_stray_key_map(self):
+        result = self.stray_key_map
         file_path = self.stray_list_output_path
-        self.logger.info('Writing unmatched users to: %s', file_path)
+        logger = self.logger
+        logger.info('Writing unmatched users to: %s', file_path)
         with open(file_path, 'wb') as output_file:
             delimiter = user_sync.helper.guess_delimiter_from_filename(file_path)            
             writer = csv.DictWriter(output_file, fieldnames = ['type', 'user', 'domain', 'org'], delimiter = delimiter)
             writer.writeheader()
             # None sorts before strings, so sorting the keys in the map
             # puts the owning org first in the output, which is handy
-            for org_name in sorted(self.stray_key_map.keys()):
-                for user_key in self.stray_key_map[org_name]:
+            for org_name in sorted(result.keys()):
+                for user_key in result[org_name]:
                     id_type, username, domain = self.parse_user_key(user_key)
                     org = org_name if org_name else ""
                     writer.writerow({'type': id_type, 'user': username, 'domain': domain, 'org': org})
-        self.logger.info('Number of unmatched users: %d', len(self.stray_key_map.get(OWNING_ORGANIZATION_NAME, [])))
+        user_count = len(result.get(OWNING_ORGANIZATION_NAME, []))
+        user_plural = "" if user_count == 1 else "s"
+        org_count = len(result) - 1
+        org_plural = "" if org_count == 1 else "s"
+        if org_count > 0:
+            logger.info('Wrote %d unmatched user%s for owning org, with %d accessor org%s',
+                        user_count, user_plural, org_count, org_plural)
+        else:
+            logger.info('Wrote %d unmatched user%s.', user_count, user_plural)
             
     def log_after_mapping_hook_scope(self, before_call=None, after_call=None):
         if ((before_call is None and after_call is None) or (before_call is not None and after_call is not None)):

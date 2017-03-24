@@ -91,7 +91,8 @@ class DashboardConnector(object):
             ims_endpoint_jwt=server_options['ims_endpoint_jwt'],
             user_management_endpoint=um_endpoint,
             test_mode=options['test_mode'],
-            user_agent="user-sync/" + APP_VERSION
+            user_agent="user-sync/" + APP_VERSION,
+            logger=self.logger,
         )
         logger.info('API initialized on: %s', um_endpoint)
         
