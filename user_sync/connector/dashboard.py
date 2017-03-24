@@ -156,6 +156,9 @@ class Commands(object):
             }
             self.do_list.append(('add_to_groups', params))
 
+    def remove_all_groups(self):
+        self.do_list.append(('remove_from_groups', "all"))
+
     def remove_groups(self, groups_to_remove):
         '''
         :type groups_to_remove: set(str)
@@ -203,7 +206,7 @@ class Commands(object):
         :type delete_account: bool
         '''
         params = {
-            "delete_account": delete_account
+            "delete_account": True if delete_account else False
         }
         self.do_list.append(('remove_from_organization', params))
 

@@ -59,19 +59,18 @@ class ConfigLoader(object):
         '''        
         self.options = options = {
             # these are in alphabetical order!  Always add new ones that way!
-            'delete_list_output_path': None,
-            'delete_nonexistent_users': False,
-            'delete_user_key_list': None,
+            'delete_strays': False,
             'directory_connector_module_name': None,
             'directory_connector_overridden_options': None,
             'directory_group_filter': None,
             'directory_group_mapped': False,
             'directory_source_filters': None,
+            'disentitle_strays': False,
             'main_config_filename': DEFAULT_MAIN_CONFIG_FILENAME,
             'manage_groups': False,
-            'remove_list_output_path': None,
-            'remove_nonexistent_users': False,
-            'remove_user_key_list': None,
+            'remove_strays': False,
+            'stray_key_map': None,
+            'stray_list_output_path': None,
             'test_mode': False,
             'update_user_info': True,
             'username_filter_regex': None,
@@ -339,8 +338,8 @@ class ConfigLoader(object):
             exclude_groups.append(group.get_group_name())
 
         limits_config = self.main_config.get_dict_config('limits')
-        max_deletions_per_run = limits_config.get_int('max_deletions_per_run')
-        max_missing_users = limits_config.get_int('max_missing_users')
+        max_unmatched_users = limits_config.get_int('max_unmatched_users')
+        max_removed_users = limits_config.get_int('max_removed_users')
 
         after_mapping_hook = None
         extended_attributes = None
@@ -379,22 +378,21 @@ class ConfigLoader(object):
             # these are in alphabetical order!  Always add new ones that way!
             'after_mapping_hook': after_mapping_hook,
             'default_country_code': default_country_code,
-            'delete_list_output_path': options['delete_list_output_path'],
-            'delete_nonexistent_users': options['delete_nonexistent_users'],
-            'delete_user_key_list': options['delete_user_key_list'],
+            'delete_strays': options['delete_strays'],
             'directory_group_filter': options['directory_group_filter'],
             'directory_group_mapped': options['directory_group_mapped'],
+            'disentitle_strays': options['disentitle_strays'],
             'exclude_groups': exclude_groups,
             'exclude_identity_types': exclude_identity_types,
             'exclude_users': exclude_users,
             'extended_attributes': extended_attributes,
             'manage_groups': options['manage_groups'],
-            'max_deletions_per_run': max_deletions_per_run,
-            'max_missing_users': max_missing_users,
+            'max_removed_users': max_removed_users,
+            'max_unmatched_users': max_unmatched_users,
             'new_account_type': new_account_type,
-            'remove_list_output_path': options['remove_list_output_path'],
-            'remove_nonexistent_users': options['remove_nonexistent_users'],
-            'remove_user_key_list': options['remove_user_key_list'],
+            'remove_strays': options['remove_strays'],
+            'stray_key_map': options['stray_key_map'],
+            'stray_list_output_path': options['stray_list_output_path'],
             'update_user_info': options['update_user_info'],
             'username_filter_regex': options['username_filter_regex'],
         }
