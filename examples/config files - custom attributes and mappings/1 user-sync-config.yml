@@ -19,7 +19,8 @@ dashboard:
   # accessor_config_filename_format: "dashboard-accessor-{organization_name}-config.yml"
 
 directory:
-  # (optional) Default country code to use if directory doesn't provide one for a user [Must be two-letter ISO-3166 code - see https://en.wikipedia.org/wiki/ISO_3166-1]
+  # (optional) Default country code to use if directory doesn't provide one for a user
+  # [Must be a two-letter ISO-3166 code - see https://en.wikipedia.org/wiki/ISO_3166-1]
   #
   # example:
   # default_country_code: US
@@ -121,9 +122,14 @@ extensions:
       elif subco == 'Company 2':
         target_groups.add('Company 2 Users')
 
-limits:
-    max_strays_to_process: 10    # if --remove-nonexistent-users is specified, this is the most users that will be removed.  Others will be left for a later run.  A critical message will be logged.
-    max_strays_hard_limit: 200       # if more than this number of user accounts are not found in the directory, user sync will abort with an error and a critical message will be logged.
+limits:   # provide processing controls over Adobe users that do not match users on the customer side
+          # these controls only apply when unmatched users are being removed or deleted from the Adobe side;
+          # if the users are just being output to a file for later processing, these settings do not apply.
+    max_unmatched_users: 200  # If more than this many unmatched users are found, no processing of them is done.
+                              # Instead, user sync will abort at the point it would remove or delete them.
+    max_removed_users: 10     # If more than this many stray users are found, only this many of them will be
+                              # removed or deleted, and the the run will terminate normally.  Later runs
+                              # can be used to process the next batch of them.
 
 logging:
   # specifies whether you wish to generate a log file
