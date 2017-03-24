@@ -1667,8 +1667,7 @@ Option | Type | Description | Example
 `okta_url` | String | Base URL/Host of Okta instance | `https://dev-XXXXX.oktapreview.com`
 `api_token` | String | Secret API token | n/a
 `group_filter_format` | String | Templatized group filter (default: `{group}` | `{group}`
-`all_users_filter` | String | Filter to identify active users (default: `status eq "ACTIVE"`) | `profile.email sw "test.user."` (only sync users whose email addresses start with "test.user.")
-`user_email_format` | String | Templatized email string - configure the field that maps to the Email ID in the Admin Console (default: `{email}`) | `{email}`
+`all_users_filter` | String | Filter to identify active users (default: `status eq "ACTIVE"`) See [Okta's filter documentation](http://developer.okta.com/docs/api/resources/users.html#list-users-with-a-filter) for more information| `profile.email sw "test.user."` (only sync users whose email addresses start with "test.user.")
 `user_identity_type` | String | Type of identity to create in the Admin Console (`enterpriseID` or `federatedID`, default: `enterpriseID`) | `federatedID`
 
 **Note:** `user_username_format` and `user_domain_format` are not supported.  Username-based Federated IDs are not possible with Okta,
