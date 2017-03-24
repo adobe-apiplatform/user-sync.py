@@ -355,9 +355,9 @@ configuration files.
 
 | Configuration File | Purpose |
 |:------|:---------|
-| user-sync-config.yml | Required. Contains configuration options that define the mapping of directory groups to Adobe product configurations and user groups, and that control the update behavior. You can specify a different configuration file using the `user-sync -c other-config.yml` command option. |
-| dashboard-config.yml | Required. Contains credentials and access information for calling the Adobe User Management API. You can specify a different dashboard configuration file, or directly specify the dashboard configuration parameters in the main configuration file. |
-| connector-ldap.yml | Required. Contains credentials and access information for accessing the enterprise LDAP directory. You can specify a different LDAP configuration file, or directly specify the LDAP configuration parameters in the main configuration file. |
+| user-sync-config.yml | Required. Contains configuration options that define the mapping of directory groups to Adobe product configurations and user groups, and that control the update behavior. You can specify a different configuration file using the `user-sync -c other-config.yml` command line option. |
+| dashboard-config.yml | Required. Contains credentials and access information for calling the Adobe User Management API. You can specify a different dashboard configuration file in the main configuration file. |
+| connector-ldap.yml | Required. Contains credentials and access information for accessing the enterprise LDAP directory. You can specify a different LDAP configuration file in the main configuration file. |
 
 If you need to set up access to users in other organizations that
 have granted you access, you can include additional configuration
