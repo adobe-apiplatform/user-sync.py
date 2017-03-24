@@ -190,7 +190,7 @@ class RuleProcessor(object):
         # so first we compute that pad length
         pad = 0
         for action_description in ACTION_SUMMARY_DESCRIPTION:
-            if len(action_description[1] > pad):
+            if len(action_description[1]) > pad:
                 pad = len(action_description[1])
         # and then we use it
         for action_description in ACTION_SUMMARY_DESCRIPTION:
