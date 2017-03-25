@@ -112,7 +112,7 @@ class OktaDirectoryConnector(object):
         is_using_source_filter = False
         source_filters = options['source_filters']
         source_filter = source_filters.get('all_users_filter')
-        if (source_filter != None):
+        if source_filter is not None:
             users_filter = "(%s) and (%s)" % (all_users_filter, source_filter)
             is_using_source_filter = True
             self.logger.info('Applied source filter: %s', users_filter)
