@@ -19,6 +19,9 @@
 # SOFTWARE.
 
 import csv
+import os
+import re
+import yaml
 
 from user_sync.connector import helper
 from user_sync.connector.dashboard import ActionManager
@@ -51,6 +54,88 @@ def create_test_user(groups):
     }
     return user
 
+def assert_eq(unit_test, result, expected, error_message):
+    '''
+    compares the result against the expected value, and outputs an error
+    message if they don't match. Also outputs the expected and result
+    values.
+    '''
+    unit_test.assertEqual(expected, result, error_message + '\nexpected: %s, got: %s' % (expected, result))
+
+def assert_dict_eq(unit_test, res, exp, err_msg):
+    '''
+    compares the result dict against the expected dict, and recursively
+    asserts that their content matches. The error message is given if an
+    error was encountered, and the expected and actual results are given
+    as well.
+    '''
+    def assert_sub_value_eq(res, exp):
+        '''
+        used to recursively assert that values are equal. If it's a dict or
+        list, drill down into then to assert that their entries are equivalent,
+        otherwise just compare the values directly.
+        '''
+        if isinstance(res, dict):
+            assert_sub_dict_eq(res, exp)
+        elif isinstance(res, list):
+            assert_sub_list_eq(res, exp)
+        else:
+            unit_test.assertEqual(res, exp)
+    
+    def assert_sub_list_eq(res, exp):
+        '''
+        compares the result list against the expected list recursively, and
+        raises an assertion error if ti's values or sub-values don't match
+        '''
+        unit_test.assertIsInstance(exp, list, 'expected is not dict')
+        unit_test.assertIsInstance(res, list, 'result is not list')
+        
+        unit_test.assertEqual(len(exp), len(res), 'expected and result lists don\'t have the same number of entries')
+        
+        for exp_item, res_item in zip(exp, res):
+            assert_sub_value_eq(exp_item, res_item)
+
+    def assert_sub_dict_eq(res, exp):
+        '''
+        compares the result dict against the expected dict recursively, and
+        raises an assertion error if it's values or sub-values don't match.
+        '''
+        unit_test.assertIsInstance(exp, dict, 'expected is not dict')
+        unit_test.assertIsInstance(res, dict, 'result is not dict')
+        
+        unit_test.assertEqual(len(res.keys()), len(exp.keys()), 'expected and result dicts don\'t have the same number of keys')
+
+        for key in exp.keys():
+            assert_sub_value_eq(res[key], exp[key])
+        
+    try:
+        assert_sub_dict_eq(res, exp)
+    except AssertionError as e:
+        raise AssertionError('%s\n%s' % (err_msg, e.message))
+    
+def assert_config(unit_test, res_dict, exp_file):
+    '''
+    tests the result dictionary against a expected dictionary. The expected
+    dictionary is loaded from a file, and replaces instances of double curly
+    braces containing a path with an native absolute path.
+    '''
+    with open(exp_file, 'r', 1) as input_file:
+        exp_str = input_file.read()
+    
+    def native_path_callback(match):
+        return os.path.abspath(match.group(1))
+    
+    exp_str = re.sub(r'\{\{(.*)\}\}', native_path_callback, exp_str)
+    exp_dict = yaml.load(exp_str)
+    
+    assert_dict_eq(unit_test, res_dict, exp_dict, 'result does not match expected result')
+
+def assert_configs(unit_test, res_list):
+    '''
+    tests the list of dictionary results against the corresponding expectations
+    '''
+    for res_map in res_list:
+        assert_config(unit_test, res_map['result'], res_map['expected'])
 
 def assert_equal_users(unit_test, expected_users, actual_users):
     actual_users_by_email = dict((user['email'], user) for user in actual_users)
