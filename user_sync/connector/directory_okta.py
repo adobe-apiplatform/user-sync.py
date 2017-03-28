@@ -182,7 +182,8 @@ class OktaDirectoryConnector(object):
         res_group = self.find_group(group)
         if res_group:
             try:
-                members = self.groups_client.get_group_users(res_group.id)
+                attr_dict = OKTAValueFormatter.get_extended_attribute_dict(user_attribute_names)
+                members = self.groups_client.get_group_all_users(res_group.id, attr_dict)
             except Exception as e:
                 self.logger.warning("Unable to get_group_users")
                 raise user_sync.error.AssertionException(repr(e))
@@ -261,9 +262,9 @@ class OktaDirectoryConnector(object):
         try:
             self.logger.info("Calling okta SDK get_users with the following %s", filter_string)
             if attr_dict:
-                users = self.users_client.get_users(query=filter_string, extended_attribute=attr_dict)
+                users = self.users_client.get_all_users(query=filter_string, extended_attribute=attr_dict)
             else:
-                users = self.users_client.get_users(query=filter_string)
+                users = self.users_client.get_all_users(query=filter_string)
         except Exception as e:
             self.logger.warning("Unable to query users")
             raise user_sync.error.AssertionException(repr(e))
