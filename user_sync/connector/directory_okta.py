@@ -219,7 +219,9 @@ class OktaDirectoryConnector(object):
                 self.logger.warning('Skipping user %s: %s', profile.login, e.message)
                 return None
 
-        source_attributes['login'] = user['username'] = profile.login
+        source_attributes['login'] = profile.login
+
+        user['username'] = ''
 
         if profile.firstName:
             source_attributes['firstName'] = user['firstname'] = profile.firstName
