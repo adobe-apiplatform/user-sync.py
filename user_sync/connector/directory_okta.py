@@ -36,22 +36,20 @@ def connector_metadata():
 
 
 def connector_initialize(options):
-    '''
+    """
     :type options: dict
-    '''
+    """
     state = OktaDirectoryConnector(options)
     return state
 
 
 def connector_load_users_and_groups(state, groups, extended_attributes):
-    '''
+    """
     :type state: OktaDirectoryConnector
     :type groups: list(str)
     :type extended_attributes: list(str)
     :rtype (bool, iterable(dict))
-    '''
-
-    # CSV supports arbitrary aka "extended" attrs by default, so the value of extended_attributes has no impact on this particular connector
+    """
 
     return state.load_users_and_groups(groups, extended_attributes)
 
@@ -66,7 +64,7 @@ class OktaDirectoryConnector(object):
                                  '{group}')
         builder.set_string_value('all_users_filter',
                                  'status eq "ACTIVE"')
-        #builder.set_string_value('user_email_format', '{email}')
+        # builder.set_string_value('user_email_format', '{email}')
         builder.set_string_value('user_identity_type', None)
         builder.set_string_value('logger_name', 'connector.' + OktaDirectoryConnector.name)
         builder.set_dict_value('source_filters', {})
@@ -78,7 +76,7 @@ class OktaDirectoryConnector(object):
 
         options = builder.get_options()
 
-        #self.user_email_formatter = OKTAValueFormatter(options['user_email_format'])
+        # self.user_email_formatter = OKTAValueFormatter(options['user_email_format'])
 
         self.users_client = None
         self.groups_client = None
@@ -87,6 +85,9 @@ class OktaDirectoryConnector(object):
         self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
 
         self.options = options
+
+        self.user_by_login = {}
+        self.user_by_uid = {}
 
         logger.debug('Initialized with options: %s', options)
 
@@ -101,18 +102,20 @@ class OktaDirectoryConnector(object):
         logger.info('Connected')
 
     def load_users_and_groups(self, groups, extended_attributes):
-        '''
+        """
         :type groups: list(str)
         :type extended_attributes: list(str)
         :rtype (bool, iterable(dict))
-        '''
+        """
+
         options = self.options
+
         all_users_filter = options['all_users_filter']
 
         is_using_source_filter = False
         source_filters = options['source_filters']
         source_filter = source_filters.get('all_users_filter')
-        if source_filter is not None:
+        if source_filter:
             users_filter = "(%s) and (%s)" % (all_users_filter, source_filter)
             is_using_source_filter = True
             self.logger.info('Applied source filter: %s', users_filter)
@@ -123,37 +126,30 @@ class OktaDirectoryConnector(object):
 
         self.user_by_login = user_by_login = {}
         self.user_by_uid = user_by_uid = {}
-        for user_login, user in self.iter_users(users_filter, extended_attributes):
-            uid = user.get("uid")
-            if (id != None):
-                user_by_uid[uid] = user
-            user_by_login[user_login] = user
-
-        self.logger.info('Total users loaded: %d', len(user_by_login))
 
         for group in groups:
             total_group_members = 0
             total_group_users = 0
-            group_members = self.iter_group_members(group)
-            for group_member_uid in group_members:
+            for user in self.iter_group_members(group, extended_attributes):
                 total_group_members += 1
 
-                user = user_by_uid.get(group_member_uid)
-                if (user != None):
+                uid = user.get('uid')
+                if user and uid:
+                    user_by_uid[uid] = user
                     total_group_users += 1
                     user_groups = user['groups']
-                    if not group in user_groups:
+                    if group not in user_groups:
                         user_groups.append(group)
+
             self.logger.debug('Group %s members: %d users: %d', group, total_group_members, total_group_users)
 
-        return (not is_using_source_filter, user_by_uid.itervalues())
+        return not is_using_source_filter, user_by_uid.itervalues()
 
     def find_group(self, group):
-        '''
+        """
         :type group: str
-        :type attribute_list: list(str)
-        :rtype (str, dict)
-        '''
+        :rtype UserGroup
+        """
         group = group.strip()
         options = self.options
         group_filter_format = options['group_filter_format']
@@ -163,7 +159,7 @@ class OktaDirectoryConnector(object):
             self.logger.warning("Unable to query group")
             raise user_sync.error.AssertionException(repr(e))
 
-        if(results == None):
+        if results is None:
             raise user_sync.error.AssertionException("Group not found for: %s" % group)
         else:
             for result in results:
@@ -172,97 +168,91 @@ class OktaDirectoryConnector(object):
 
         return None
 
-
-    def iter_group_members(self, group):
-        '''
+    def iter_group_members(self, group, extended_attributes):
+        """
         :type group: str
+        :type extended_attributes: list
         :rtype iterator(str, str)
-        '''
+        """
+
+        user_attribute_names = ["firstName", "lastName", "login", "email", "countryCode"]
+        extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
+        user_attribute_names.extend(extended_attributes)
+
         res_group = self.find_group(group)
-        if (res_group != None):
+        if res_group:
             try:
                 members = self.groups_client.get_group_users(res_group.id)
             except Exception as e:
                 self.logger.warning("Unable to get_group_users")
                 raise user_sync.error.AssertionException(repr(e))
             for member in members:
-                yield (member.id)
+                profile = member.profile
+                if not profile.email:
+                    # if (last_attribute_name != None):
+                    self.logger.warn('No email attribute for login: %s', profile.login)
+                    continue
+
+                user = self.convert_user(member, extended_attributes)
+                if not user:
+                    continue
+                yield (user)
         else:
             self.logger.warning("No group found for: %s", group)
 
-    def iter_users(self, users_filter, extended_attributes):
-        options = self.options
+    def convert_user(self, record, extended_attributes):
+        profile = record.profile
 
-        ###TODO does nothing for now
-        user_attribute_names = ["firstName", "lastName","login","email","countryCode"]
-        #user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
+        source_attributes = {}
+        user = user_sync.connector.helper.create_blank_user()
 
-        extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
-        user_attribute_names.extend(extended_attributes)
-        ###
+        source_attributes['id'] = user['uid'] = record.id
+        source_attributes['email'] = user['email'] = profile.email
 
-        result_iter = self.iter_search_result(users_filter, user_attribute_names)
+        source_attributes['identity_type'] = identity_type = self.user_identity_type
+        if not identity_type:
+            user['identity_type'] = self.user_identity_type
+        else:
+            try:
+                user['identity_type'] = user_sync.identity_type.parse_identity_type(identity_type)
+            except user_sync.error.AssertionException as e:
+                self.logger.warning('Skipping user %s: %s', profile.login, e.message)
+                return None
 
-        for record in result_iter:
-            profile = record.profile
-            if (profile.email == None):
-                # if (last_attribute_name != None):
-                self.logger.warn('No email attribute for login: %s', profile.login)
-                continue
+        source_attributes['login'] = user['username'] = profile.login
 
-            source_attributes = {}
-            user = user_sync.connector.helper.create_blank_user()
+        if profile.firstName:
+            source_attributes['firstName'] = user['firstname'] = profile.firstName
+        else:
+            source_attributes['firstName'] = None
 
-            source_attributes['id'] = user['uid'] = record.id
-            source_attributes['email'] = user['email'] = profile.email
+        if profile.lastName:
+            source_attributes['lastName'] = user['lastname'] = profile.lastName
+        else:
+            source_attributes['lastName'] = None
 
-            source_attributes['identity_type'] = identity_type = self.user_identity_type
-            if not identity_type:
-                user['identity_type'] = self.user_identity_type
-            else:
-                try:
-                    user['identity_type'] = user_sync.identity_type.parse_identity_type(identity_type)
-                except user_sync.error.AssertionException as e:
-                    self.logger.warning('Skipping user %s: %s', profile.login, e.message)
-                    continue
+        if profile.countryCode:
+            source_attributes['countryCode'] = user['country'] = profile.countryCode
+        else:
+            source_attributes['countryCode'] = None
 
-            source_attributes['login'] = user['username'] = profile.login
+        if extended_attributes:
+            for extended_attribute in extended_attributes:
+                if extended_attribute not in source_attributes:
+                    if hasattr(profile,extended_attribute):
+                        extended_attribute_value = getattr(profile,extended_attribute)
+                        source_attributes[extended_attribute] = extended_attribute_value
+                    else:
+                        source_attributes[extended_attribute] = None
 
-            if profile.firstName != None:
-                source_attributes['firstName'] = user['firstname'] = profile.firstName
-            else:
-                source_attributes['firstName'] = None
-
-            if profile.lastName != None:
-                source_attributes['lastName'] = user['lastname'] = profile.lastName
-            else:
-                source_attributes['lastName'] = None
-
-            if profile.countryCode != None:
-                source_attributes['countryCode'] = user['country'] = profile.countryCode
-            else:
-                source_attributes['countryCode'] = None
-
-            if extended_attributes is not None:
-                for extended_attribute in extended_attributes:
-                    if extended_attribute not in source_attributes:
-                        if(hasattr(profile,extended_attribute)):
-                            extended_attribute_value = getattr(profile,extended_attribute)
-                            source_attributes[extended_attribute] = extended_attribute_value
-                        else:
-                            source_attributes[extended_attribute] = None
-
-            # [TODO morr 2017-02-26]: Could be omitted if no hook; worth considering?
-            # [TODO morr 2017-02-28]: Is the copy necessary? Could just assign I think
-            user['source_attributes'] = source_attributes.copy()
-
-            yield (profile.login, user)
+        user['source_attributes'] = source_attributes.copy()
+        return user
 
     def iter_search_result(self, filter_string, attributes):
-        '''
+        """
         type: filter_string: str
         type: attributes: list(str)
-        '''
+        """
 
         attr_dict = OKTAValueFormatter.get_extended_attribute_dict(attributes)
 
@@ -276,8 +266,6 @@ class OktaDirectoryConnector(object):
             self.logger.warning("Unable to query users")
             raise user_sync.error.AssertionException(repr(e))
         return users
-
-
 
 
 class OKTAValueFormatter(object):
