@@ -124,7 +124,7 @@ class ConfigLoader(object):
         :rtype str
         '''
         options = self.options
-        if options['directory_get_config_name']:
+        if 'directory_get_config_name' in options and options['directory_get_config_name']:
             module_type = self.main_config.child_configs['directory'].value['connectors'].keys()[0]
             return 'user_sync.connector.directory_' + module_type
         else:
