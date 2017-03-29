@@ -289,8 +289,14 @@ class ActionManager(object):
         '''
         :type action: umapi_client.UserAction
         '''
-        _, sent, _ = self.connection.execute_single(action)
-        self.process_sent_items(sent)
+        sent = 0
+        try:
+            _, sent, _ = self.connection.execute_single(action)
+        except umapi_client.BatchError as e:
+            self.logger.log(logging.CRITICAL, "Unexpected response! Actions may have failed: %s", e)
+            sent = e.statistics[1]
+        finally:
+            self.process_sent_items(sent)
 
     def process_sent_items(self, total_sent):
         if (total_sent > 0):
@@ -303,7 +309,10 @@ class ActionManager(object):
                 
                 if (not is_success):
                     for error in action_errors:
-                        self.logger.error('Error requestID: %s code: "%s" message: "%s"', action.frame.get("requestID"), error.get('errorCode'), error.get('message'));
+                        self.logger.error('Error in requestID: %s (User: %s, Command: %s): code: "%s" message: "%s"',
+                                          action.frame.get("requestID"),
+                                          error.get("target", "<Unknown>"), error.get("command", "<Unknown>"),
+                                          error.get('errorCode', "<None>"), error.get('message', "<None>"))
                 
                 item_callback = sent_item['callback']
                 if (callable(item_callback)):
@@ -314,7 +323,11 @@ class ActionManager(object):
                     })
 
     def flush(self):
-        _, sent, _ = self.connection.execute_queued()
-        self.process_sent_items(sent)
-        
-
+        sent = 0
+        try:
+            _, sent, _ = self.connection.execute_queued()
+        except umapi_client.BatchError as e:
+            self.logger.log(logging.CRITICAL, "Unexpected response! Actions may have failed: %s", e)
+            sent = e.statistics[1]
+        finally:
+            self.process_sent_items(sent)
