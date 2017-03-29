@@ -64,9 +64,13 @@ class CSVDirectoryConnector(object):
         builder.set_string_value('username_column_name', 'user')
         builder.set_string_value('domain_column_name', 'domain')
         builder.set_string_value('identity_type_column_name', 'type')
+        builder.set_string_value('user_identity_type', None)
         builder.set_string_value('logger_name', 'connector.' + CSVDirectoryConnector.name)
         builder.require_string_value('file_path')
-        options = builder.get_options()        
+        options = builder.get_options()
+
+        # identity type for new users if not specified in column
+        self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
 
         self.options = options
         self.logger = logger = user_sync.connector.helper.create_logger(options)        
@@ -159,13 +163,15 @@ class CSVDirectoryConnector(object):
             user['username'] = username
                 
             identity_type = self.get_column_value(row, identity_type_column_name)
-            if identity_type is not None:
+            if identity_type:
                 try:
-                    user['identitytype'] = user_sync.identity_type.parse_identity_type(identity_type) 
+                    user['identity_type'] = user_sync.identity_type.parse_identity_type(identity_type)
                 except user_sync.error.AssertionException as e:
                     logger.error('%s for user: %s', e.message, username)
                     e.set_reported()
                     raise e
+            else:
+                identity_type = self.user_identity_type
 
             domain = self.get_column_value(row, domain_column_name)
             if domain:

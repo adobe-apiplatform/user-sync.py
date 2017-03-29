@@ -68,7 +68,7 @@ class RulesTest(unittest.TestCase):
             accessor_1_organization_name: mock_accessor_dashboard_connector
         })
         
-        rule_processor = user_sync.rules.RuleProcessor({})
+        rule_processor = user_sync.rules.RuleProcessor({'manage_groups': True})
         rule_processor.run(directory_groups, mock_directory_connector, dashboard_connectors)
 
         rule_options = rule_processor.options
@@ -117,7 +117,7 @@ class RulesTest(unittest.TestCase):
                        'firstname': '!Openldap CCE',
                        'country': user_country_code,
                        'lastname': 'User1',
-                       'identitytype': identity_type,
+                       'identity_type': identity_type,
                        'email': 'cceuser1@ensemble.ca',
                        'uid': '001'}
         }

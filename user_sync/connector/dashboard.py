@@ -91,7 +91,8 @@ class DashboardConnector(object):
             ims_endpoint_jwt=server_options['ims_endpoint_jwt'],
             user_management_endpoint=um_endpoint,
             test_mode=options['test_mode'],
-            user_agent="user-sync/" + APP_VERSION
+            user_agent="user-sync/" + APP_VERSION,
+            logger=self.logger,
         )
         logger.info('API initialized on: %s', um_endpoint)
         
@@ -156,6 +157,9 @@ class Commands(object):
             }
             self.do_list.append(('add_to_groups', params))
 
+    def remove_all_groups(self):
+        self.do_list.append(('remove_from_groups', "all"))
+
     def remove_groups(self, groups_to_remove):
         '''
         :type groups_to_remove: set(str)
@@ -196,8 +200,16 @@ class Commands(object):
             
         self.do_list.append(('create', params))
 
-    def remove_from_org(self):
-        self.do_list.append(('remove_from_organization', {}))
+    def remove_from_org(self, delete_account):
+        '''
+        Removes a user from the organization. If delete_account is set, it
+        will delete the user on the Adobe side as well.
+        :type delete_account: bool
+        '''
+        params = {
+            "delete_account": True if delete_account else False
+        }
+        self.do_list.append(('remove_from_organization', params))
 
     def __len__(self):
         return len(self.do_list)
@@ -277,8 +289,14 @@ class ActionManager(object):
         '''
         :type action: umapi_client.UserAction
         '''
-        _, sent, _ = self.connection.execute_single(action)
-        self.process_sent_items(sent)
+        sent = 0
+        try:
+            _, sent, _ = self.connection.execute_single(action)
+        except umapi_client.BatchError as e:
+            self.logger.log(logging.CRITICAL, "Unexpected response! Actions may have failed: %s", e)
+            sent = e.statistics[1]
+        finally:
+            self.process_sent_items(sent)
 
     def process_sent_items(self, total_sent):
         if (total_sent > 0):
@@ -291,7 +309,10 @@ class ActionManager(object):
                 
                 if (not is_success):
                     for error in action_errors:
-                        self.logger.error('Error requestID: %s code: "%s" message: "%s"', action.frame.get("requestID"), error.get('errorCode'), error.get('message'));
+                        self.logger.error('Error in requestID: %s (User: %s, Command: %s): code: "%s" message: "%s"',
+                                          action.frame.get("requestID"),
+                                          error.get("target", "<Unknown>"), error.get("command", "<Unknown>"),
+                                          error.get('errorCode', "<None>"), error.get('message', "<None>"))
                 
                 item_callback = sent_item['callback']
                 if (callable(item_callback)):
@@ -302,7 +323,11 @@ class ActionManager(object):
                     })
 
     def flush(self):
-        _, sent, _ = self.connection.execute_queued()
-        self.process_sent_items(sent)
-        
-
+        sent = 0
+        try:
+            _, sent, _ = self.connection.execute_queued()
+        except umapi_client.BatchError as e:
+            self.logger.log(logging.CRITICAL, "Unexpected response! Actions may have failed: %s", e)
+            sent = e.statistics[1]
+        finally:
+            self.process_sent_items(sent)

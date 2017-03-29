@@ -30,10 +30,27 @@ import user_sync.error
 import user_sync.identity_type
 import user_sync.rules
 
-DEFAULT_CONFIG_DIRECTORY = ''
 DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
 DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME = 'dashboard-owning-config.yml'
 DEFAULT_DASHBOARD_ACCESSOR_CONFIG_FILENAME_FORMAT = 'dashboard-accessor-{organization_name}-config.yml'
+
+# list of key paths in the root configuration file that will be processed as
+# filenames relative to the configuration's file path
+ROOT_CONFIG_PATH_KEYS = [
+        { 'path':'/dashboard/owning', 'default': DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME },
+        '/dashboard/owning/enterprise/priv_key_path',
+        '/dashboard/accessors/*',
+        '/dashboard/accessors/*/enterprise/priv_key_path',
+        { 'path':'/dashboard/accessor_config_filename_format', 'default':DEFAULT_DASHBOARD_ACCESSOR_CONFIG_FILENAME_FORMAT },
+        '/directory/connectors/ldap',
+        '/logging/file_log_directory'
+    ]
+
+# like ROOT_CONFIG_PATH_KEYS, but this is applied to non-root configuration
+# files
+SUB_CONFIG_PATH_KEYS = [
+        "/enterprise/priv_key_path"
+    ]
 
 class ConfigLoader(object):
     def __init__(self, caller_options):
@@ -41,37 +58,36 @@ class ConfigLoader(object):
         :type caller_options: dict
         '''        
         self.options = options = {
-            'config_directory': DEFAULT_CONFIG_DIRECTORY,
-            'main_config_filename': DEFAULT_MAIN_CONFIG_FILENAME,            
-
+            # these are in alphabetical order!  Always add new ones that way!
+            'delete_strays': False,
             'directory_connector_module_name': None,
             'directory_connector_overridden_options': None,
             'directory_group_filter': None,
-            'username_filter_regex': None,
+            'directory_group_mapped': False,
             'directory_source_filters': None,
-
-            'test_mode': False,            
-            'manage_groups': True,
+            'disentitle_strays': False,
+            'main_config_filename': DEFAULT_MAIN_CONFIG_FILENAME,
+            'manage_groups': False,
+            'remove_strays': False,
+            'stray_key_map': None,
+            'stray_list_output_path': None,
+            'test_mode': False,
             'update_user_info': True,
-            
-            'remove_user_key_list': None,
-            'remove_list_output_path': None,
-            'remove_nonexistent_users': False
+            'username_filter_regex': None,
         }
         options.update(caller_options)     
 
         main_config_filename = options.get('main_config_filename')
-        self.main_config_path = main_config_path = self.get_file_path(main_config_filename)
+        main_config_content = ConfigFileLoader.load_root_config(main_config_filename)
         
-        if (not os.path.isfile(main_config_path)):
-            raise user_sync.error.AssertionException('Config file does not exist: %s' % (main_config_path))  
+        if (not os.path.isfile(main_config_filename)):
+            raise user_sync.error.AssertionException('Config file does not exist: %s' % (main_config_filename))  
         
         self.directory_source_filters_accessed = set()        
         
         self.logger = logger = logging.getLogger('config')
-        logger.info("Using main config file: %s", main_config_path)                
-        config_content = self.load_from_yaml(self.main_config_path)         
-        self.main_config = DictConfig("<%s>" % main_config_filename, config_content)
+        logger.info("Using main config file: %s", main_config_filename)                
+        self.main_config = DictConfig("<%s>" % main_config_filename, main_config_content)
         
     def set_options(self, caller_options):          
         '''
@@ -83,16 +99,11 @@ class ConfigLoader(object):
         return self.main_config.get_dict_config('logging', True)
 
     def get_dashboard_options_for_owning(self):
-        owning_config_filename = DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME
-        owning_config_path = self.get_file_path(owning_config_filename)
-        
         owning_config = None
         dashboard_config = self.main_config.get_dict_config('dashboard', True)
         if (dashboard_config != None):
             owning_config = dashboard_config.get_list('owning', True)
         owning_config_sources = self.as_list(owning_config)
-        if (os.path.isfile(owning_config_path)):
-            owning_config_sources.append(owning_config_filename)
         owning_config_sources.append({
             'test_mode': self.options['test_mode']
         })
@@ -109,7 +120,7 @@ class ConfigLoader(object):
             
         accessor_config_file_paths = {}
         accessor_config_filename_wildcard = accessor_config_filename_format.format(**{'organization_name': '*'})
-        for file_path in glob.glob1(self.options.get('config_directory'), accessor_config_filename_wildcard):
+        for file_path in glob.glob(accessor_config_filename_wildcard):
             parse_result = self.parse_string(accessor_config_filename_format, file_path)
             organization_name = parse_result.get('organization_name')
             if (organization_name != None):
@@ -142,8 +153,12 @@ class ConfigLoader(object):
         :rtype str
         '''
         options = self.options
-        return options['directory_connector_module_name']
-    
+        if 'directory_get_config_name' in options and options['directory_get_config_name']:
+            module_type = self.main_config.child_configs['directory'].value['connectors'].keys()[0]
+            return 'user_sync.connector.directory_' + module_type
+        else:
+            return options['directory_connector_module_name']
+
     def get_directory_connector_configs(self):
         connectors_config = None
         directory_config = self.main_config.get_dict_config('directory', True)
@@ -228,44 +243,18 @@ class ConfigLoader(object):
                 
         options = []
         for source in sources: 
-            if (isinstance(source, types.StringTypes)):
-                absolute_path = self.get_absolute_file_path(source)
-                if (os.path.isfile(absolute_path)):
-                    config = self.load_from_yaml(absolute_path)
+            if isinstance(source, types.StringTypes):
+                if os.path.isfile(source):
+                    config = ConfigFileLoader.load_sub_config(source)
                     options.append(config)
                 else:
-                    raise user_sync.error.AssertionException('Cannot find file: %s for: %s' % (absolute_path, owner))
-            elif (isinstance(source, dict)):
+                    raise user_sync.error.AssertionException('Cannot find file: %s for: %s' % (source, owner))
+            elif isinstance(source, dict):
                 options.append(source)
-            elif (source != None):
+            elif source:
                 raise user_sync.error.AssertionException('Source should be a filename or a dictionary for: %s' % owner)
         return self.combine_dicts(options)
     
-    def get_absolute_file_path(self, value):
-        '''
-        If value is an absolute path, return as is.  Otherwise, if value is a relative path, 
-        make sure the path is relative from the config path.
-        :type value: str
-        '''        
-        path = value if os.path.isabs(value) else self.get_file_path(value)
-        return path
-    
-    def load_from_yaml(self, file_path):
-        '''
-        :type file_path: str
-        '''        
-        with open(file_path, 'r', 1) as input_file:
-            return yaml.load(input_file)
-        
-    def get_file_path(self, filename):
-        '''
-        :type filename: str
-        :rtype str
-        '''        
-        directory = self.options.get('config_directory')
-        path = os.path.join(directory, filename)
-        return path
-
     @staticmethod
     def parse_string(format_string, string_value):
         '''
@@ -298,35 +287,59 @@ class ConfigLoader(object):
                         result[dict_key] = dict_item
         return result
 
+
     def get_rule_options(self):
         '''
         Return a dict representing options for RuleProcessor.
         '''
+        # process directory configuration options
         new_account_type = None
         default_country_code = None
-        managed_identity_types = []
         directory_config = self.main_config.get_dict_config('directory', True)
-        if (directory_config != None): 
+        if directory_config:
             new_account_type = directory_config.get_string('user_identity_type', True)
             new_account_type = user_sync.identity_type.parse_identity_type(new_account_type)
             default_country_code = directory_config.get_string('default_country_code', True)
-            for name in directory_config.get_list('managed_identity_types', True) or []:
-                identity_type = user_sync.identity_type.parse_identity_type(name)
-                if not identity_type:
-                    validation_message = "Unknown value for %s in config file: %s" % ('managed_identity_types', name)
-                    raise user_sync.error.AssertionException(validation_message)
-                managed_identity_types.append(identity_type)
         if not new_account_type:
             new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
             self.logger.info("Using default for new_account_type: %s", new_account_type)
-        if not managed_identity_types:
-            managed_identity_types = [user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
-                                     user_sync.identity_type.FEDERATED_IDENTITY_TYPE]
-            self.logger.info("Using default for managed_identity_types: %s", managed_identity_types)
+
+        # process exclusion configuration options
+        exclude_identity_types = exclude_identity_type_names = []
+        exclude_users = exclude_users_regexps = []
+        exclude_groups = exclude_group_names = []
+        dashboard_config = self.main_config.get_dict_config('dashboard', True)
+        if dashboard_config:
+            exclude_identity_type_names = dashboard_config.get_list('exclude_identity_types', True) or []
+            exclude_users_regexps = dashboard_config.get_list('exclude_users', True) or []
+            exclude_group_names = dashboard_config.get_list('exclude_groups', True) or []
+        for name in exclude_identity_type_names:
+            message_format = 'Illegal value in exclude_identity_types: %s'
+            identity_type = user_sync.identity_type.parse_identity_type(name, message_format)
+            exclude_identity_types.append(identity_type)
+        for regexp in exclude_users_regexps:
+            try:
+                # add "match begin" and "match end" markers to ensure complete match
+                # and compile the patterns because we will use them over and over
+                exclude_users.append(re.compile(r'\A' + regexp + r'\Z', re.UNICODE))
+            except re.error as e:
+                validation_message = ('Illegal regular expression (%s) in %s: %s' %
+                                      (regexp, 'exclude_identity_types', e))
+                raise user_sync.error.AssertionException(validation_message)
+        for name in exclude_group_names:
+            group = user_sync.rules.DashboardGroup.create(name)
+            if not group or group.get_organization_name() != user_sync.rules.OWNING_ORGANIZATION_NAME:
+                validation_message = 'Illegal value for %s in config file: %s' % ('exclude_groups', name)
+                if not group:
+                    validation_message += ' (Not a legal group name)'
+                else:
+                    validation_message += ' (Can only exclude groups in owning organization)'
+                raise user_sync.error.AssertionException(validation_message)
+            exclude_groups.append(group.get_group_name())
 
         limits_config = self.main_config.get_dict_config('limits')
-        max_deletions_per_run = limits_config.get_int('max_deletions_per_run')
-        max_missing_users = limits_config.get_int('max_missing_users')
+        max_unmatched_users = limits_config.get_int('max_unmatched_users')
+        max_removed_users = limits_config.get_int('max_removed_users')
 
         after_mapping_hook = None
         extended_attributes = None
@@ -362,21 +375,26 @@ class ConfigLoader(object):
 
         options = self.options
         result = {
-            'directory_group_mapped': options['directory_group_mapped'],
-            'directory_group_filter': options['directory_group_filter'],
-            'username_filter_regex': options['username_filter_regex'],
-            'new_account_type': new_account_type,
-            'managed_identity_types': managed_identity_types,
-            'manage_groups': options['manage_groups'],
-            'update_user_info': options['update_user_info'],
-            'remove_user_key_list': options['remove_user_key_list'],
-            'remove_list_output_path': options['remove_list_output_path'],
-            'remove_nonexistent_users': options['remove_nonexistent_users'],
-            'default_country_code': default_country_code,
-            'max_deletions_per_run': max_deletions_per_run,
-            'max_missing_users': max_missing_users,
+            # these are in alphabetical order!  Always add new ones that way!
             'after_mapping_hook': after_mapping_hook,
+            'default_country_code': default_country_code,
+            'delete_strays': options['delete_strays'],
+            'directory_group_filter': options['directory_group_filter'],
+            'directory_group_mapped': options['directory_group_mapped'],
+            'disentitle_strays': options['disentitle_strays'],
+            'exclude_groups': exclude_groups,
+            'exclude_identity_types': exclude_identity_types,
+            'exclude_users': exclude_users,
             'extended_attributes': extended_attributes,
+            'manage_groups': options['manage_groups'],
+            'max_removed_users': max_removed_users,
+            'max_unmatched_users': max_unmatched_users,
+            'new_account_type': new_account_type,
+            'remove_strays': options['remove_strays'],
+            'stray_key_map': options['stray_key_map'],
+            'stray_list_output_path': options['stray_list_output_path'],
+            'update_user_info': options['update_user_info'],
+            'username_filter_regex': options['username_filter_regex'],
         }
         return result
 
@@ -594,6 +612,143 @@ class DictConfig(ObjectConfig):
         if (len(unused_keys) > 0):
             messages.append("Found unused keys: %s in: %s" % (unused_keys, self.get_full_scope()))
         return messages
+    
+class ConfigFileLoader(object):
+    @staticmethod
+    def load_from_yaml(filename, path_keys):
+        '''
+        loads a yaml file, processes the resulting dict to adapt values for keys
+        (the path to which is defined in PATH_KEYS) to a value that represents
+        a file reference relative to provided source file, and returns the
+        processed dict.
+        :type filename: str
+        :rtype dict
+        '''
+        try:
+            with open(filename, 'r', 1) as input_file:
+                yml = yaml.load(input_file)
+        except IOError as e:
+            # if a file operation error occurred while loading the
+            # configuration file, swallow up the exception and re-raise this
+            # as an configuration loader exception.
+            raise user_sync.error.AssertionException('Error reading configuration file: %s' % e)
+        except yaml.error.MarkedYAMLError as e:
+            # same as above, but indicate this problem has to do with
+            # parsing the configuration file.
+            raise user_sync.error.AssertionException('Error parsing configuration file: %s' % e)
+
+        dirpath = os.path.dirname(filename)
+    
+        def process_path_key(dictionary, keys, level, default_val):
+            '''
+            this function is used to process a single path key by replacing the
+            value for the key that is found into a path relative to the given
+            source file, with the assumption that the value is a file reference
+            to begin with. It is used recursively to navigate into child
+            dictionaries to search the path key.
+            type dictionary: dict
+            type keys: list
+            type level: int
+            type default_val: str
+            '''
+            def relative_path(filename):
+                '''
+                returns an absolute path that is resolved relative to the source
+                filename. The source filename is provided in the parent
+                load_from_yaml function, and os.path.abspath is used to return
+                the absolute path of the resolved relative path
+                type filename: str
+                rtype: str
+                '''
+                if dirpath and not os.path.isabs(filename):
+                    return os.path.abspath(os.path.join(dirpath, filename))
+                return filename
+            
+            def process_path_key_value(key):
+                '''
+                does the relative path processing for a single key of the
+                current dictionary
+                type key: str
+                '''
+                if dictionary.has_key(key):
+                    val = dictionary[key]
+                    if isinstance(val,str):
+                        dictionary[key] = relative_path(val)
+                    elif isinstance(val,list):
+                        vals = []
+                        for entry in val:
+                            if isinstance(entry, str):
+                                vals.append(relative_path(entry))
+                            else:
+                                vals.append(entry)
+                        dictionary[key] = vals
+
+            # end of path key
+            if level == len(keys)-1:
+                key = keys[level]
+                # if a wildcard is specified at this level, that means we
+                # should process all keys as path values
+                if key == "*":
+                    for key in dictionary.keys():
+                        process_path_key_value(key)
+                elif dictionary.has_key(key):
+                    process_path_key_value(key)
+                # key was not found, but default value was set, so apply it
+                elif default_val:
+                    dictionary[key] = relative_path(default_val)
+                    
+            elif level < len(keys)-1:
+                key = keys[level]
+                # if a wildcard is specified at this level, this indicates this
+                # should select all keys that have dict type values, and recurse
+                # into them at the next level
+                if key == "*":
+                    for key in dictionary.keys():
+                        if isinstance(dictionary[key],dict):
+                            process_path_key(dictionary[key], keys, level+1, default_val)
+                            
+                elif dictionary.has_key(key):
+                    # if the key refers to adictionary, recurse into it to go
+                    # further down the path key
+                    if isinstance(dictionary[key],dict):
+                        process_path_key(dictionary[key], keys, level+1, default_val)
+                        
+                # if the key was not found, but a default value is specified,
+                # drill down further to set the default value
+                elif default_val:
+                    dictionary[key] = {}
+                    process_path_key(dictionary[key], keys, level+1, default_val)
+
+        for path_key in path_keys:
+            if isinstance(path_key, dict):
+                keys = path_key['path'].split('/')
+                process_path_key(yml, keys, 1, path_key['default'])
+            elif isinstance(path_key, str):
+                keys = path_key.split('/')
+                process_path_key(yml, keys, 1, None)
+            
+        return yml
+    
+    @staticmethod
+    def load_root_config(filename):
+        '''
+        loads the specified file as a root configuration file. This basically
+        means that on top of loading the file as a yaml file into a dictionary,
+        it will apply the ROOT_CONFIG_PATH_KEYS to the dictionary to replace
+        the specified paths with absolute path values that are resolved
+        relative to the given configuration's filename.
+        type filename: str
+        rtype dict
+        '''
+        return ConfigFileLoader.load_from_yaml(filename, ROOT_CONFIG_PATH_KEYS)
+        
+    @staticmethod
+    def load_sub_config(filename):
+        '''
+        same as load_root_config, but applies SUB_CONFIG_PATH_KEYS to the
+        dictionary loaded from the yaml file.
+        '''
+        return ConfigFileLoader.load_from_yaml(filename, SUB_CONFIG_PATH_KEYS)
     
 class OptionsBuilder(object):
     def __init__(self, default_config):

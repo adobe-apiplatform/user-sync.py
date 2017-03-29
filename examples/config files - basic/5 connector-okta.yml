@@ -1,0 +1,22 @@
+okta_url: "Your Okta URL goes here ie. youcompany.okta.com"
+
+#For more detail on getting Okta API Token: http://developer.okta.com/docs/api/getting_started/getting_a_token.html
+api_token: "API token goes here"
+
+# specifies the string format used to construct a group query.
+# {group} is replaced with the name of the group to find.  Default is:
+# example for OKTA
+group_filter_format: "{group}"
+
+# specifies the string filter used to find all users in the directory.
+# For more detail: http://developer.okta.com/docs/api/resources/users.html#list-users-with-a-filter
+# Default, intending for Okta, is:
+all_users_filter: 'status eq "ACTIVE"'
+
+# specifies the identity type of the dashboard user to create.
+# the valid values are: enterpriseID, federatedID
+#
+# If not specified, the default identity type from the main config file is used.
+#
+# example for enterprise ID:
+user_identity_type: federatedID
