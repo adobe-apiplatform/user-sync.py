@@ -27,7 +27,20 @@ import user_sync.helper
 import user_sync.identity_type
 
 GROUP_NAME_DELIMITER = '::'
+STRAY_NAME_DELIMITER = ':::'
 OWNING_ORGANIZATION_NAME = None
+# English text description for action summary log.
+# The action summary will be shown the same order as they are defined in the list
+ACTION_SUMMARY_DESCRIPTION = [
+    ['directory_users_read', 'Number of directory users read'],
+    ['directory_users_selected', 'Number of directory users selected for input'],
+    ['adobe_users_read', 'Number of Adobe users read'],
+    ['adobe_users_excluded', 'Number of Adobe users excluded from updates'],
+    ['adobe_users_created', 'Number of new Adobe users added'],
+    ['adobe_users_updated', 'Number of existing Adobe users updated'],
+    ['adobe_strays_processed', 'Number of unmatched Adobe users processed'],
+    ['adobe_users_unchanged', 'Number of non-excluded Adobe users with no changes'],
+]
 
 class RuleProcessor(object):
     
@@ -36,27 +49,26 @@ class RuleProcessor(object):
         :type caller_options:dict
         '''        
         options = {
-            'directory_group_filter': None,
-            'username_filter_regex': None,
-            
-            'new_account_type': user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
-            'managed_identity_types': [user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
-                                       user_sync.identity_type.FEDERATED_IDENTITY_TYPE],
-            'manage_groups': True,
-            'update_user_info': True,
-            
-            'remove_user_key_list': None,
-            'remove_list_output_path': None,
-            'remove_nonexistent_users': False,
-            'delete_user_key_list': None,
-            'delete_list_output_path': None,
-            'delete_nonexistent_users': False,
-            'default_country_code': None,
-            'max_deletions_per_run': None,
-            'max_missing_users': None,
-
+            # these are in alphabetical order!  Always add new ones that way!
             'after_mapping_hook': None,
+            'default_country_code': None,
+            'delete_strays': False,
+            'directory_group_filter': None,
+            'directory_group_mapped': False,
+            'disentitle_strays': False,
+            'exclude_groups': [],
+            'exclude_identity_types': [],
+            'exclude_users': [],
             'extended_attributes': None,
+            'manage_groups': False,
+            'max_removed_users': 10,
+            'max_unmatched_users': 200,
+            'new_account_type': user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
+            'remove_strays': False,
+            'stray_key_map': None,
+            'stray_list_output_path': None,
+            'update_user_info': True,
+            'username_filter_regex': None,
         }
         options.update(caller_options)        
         self.options = options        
@@ -64,18 +76,47 @@ class RuleProcessor(object):
         self.filtered_directory_user_by_user_key = {}
         self.organization_info_by_organization = {}
         self.adding_dashboard_user_key = set()
+        # counters for action summary log
+        self.action_summary = {
+            # these are in alphabetical order!  Always add new ones that way!
+            'adobe_strays_processed': 0,
+            'adobe_users_created': 0,
+            'adobe_users_excluded': 0,
+            'adobe_users_read': 0,
+            'adobe_users_unchanged': 0,
+            'adobe_users_updated': 0,
+            'directory_users_read': 0,
+            'directory_users_selected': 0,
+        }
 
-        # we only need a reference to either the remove or delete key list,
-        # since you can't do both
-        self.orphan_user_key_list = set(options['remove_user_key_list'] or options['delete_user_key_list'] or [])
-        self.orphan_list_output_path = options['remove_list_output_path'] or options['delete_list_output_path']
+        # save away the exclude options for use in filtering
+        self.exclude_groups = self.normalize_groups(options['exclude_groups'])
+        self.exclude_identity_types = options['exclude_identity_types']
+        self.exclude_users = options['exclude_users']
+
+        # There's a big difference between how we handle the owning org,
+        # and how we handle accessor orgs.  We care about all the (non-excluded)
+        # users in the owning org, but we only care about those users in the
+        # accessor orgs that match (non-excluded) users in the owning org.
+        # That's because all we do in the accessor orgs is group management
+        # of owning-org users, who are presumed to be in owning-org domains.
+        # So instead of keeping track of excluded users in the owning org,
+        # we keep track of included users, so we can match them against users
+        # in the accessor orgs (and exclude all that don't match).
+        self.included_user_keys = set()
+        self.excluded_user_count = 0
+
+        # stray key map comes in, stray_list_output_path goes out
+        self.stray_key_map = options['stray_key_map'] or {}
+        self.stray_list_output_path = options['stray_list_output_path']
         
-        # determine if we need to delete user accounts instead of just removing
-        # them
-        self.delete_user_accounts = options['delete_nonexistent_users'] or options['delete_user_key_list']
-        
-        # determine whether we need to process orphaned users at all
-        self.need_to_process_orphaned_dashboard_users = options['remove_list_output_path'] or options['remove_nonexistent_users'] or options['delete_list_output_path'] or options['delete_nonexistent_users']
+        # determine whether we need to process strays at all
+        self.need_to_process_strays = (
+            options['stray_list_output_path'] or
+            options['disentitle_strays'] or
+            options['remove_strays'] or
+            options['delete_strays']
+        )
         
         self.logger = logger = logging.getLogger('processor')
 
@@ -117,18 +158,57 @@ class RuleProcessor(object):
             load_directory_stats.log_end(logger)
             should_sync_dashboard_users = True
         else:
+            # no directory users to sync the dashboard with
             should_sync_dashboard_users = False
         
         dashboard_stats = user_sync.helper.JobStats("Sync Dashboard", divider = "-")
         dashboard_stats.log_start(logger)
-        if (should_sync_dashboard_users):
+        if should_sync_dashboard_users:
             self.process_dashboard_users(dashboard_connectors)
-            if self.need_to_process_orphaned_dashboard_users:
-                self.process_orphaned_dashboard_users()                            
-        self.clean_dashboard_users(dashboard_connectors)    
+        if self.need_to_process_strays:
+            self.process_strays(dashboard_connectors)
         dashboard_connectors.execute_actions()
         dashboard_stats.log_end(logger)
+        self.log_action_summary()
             
+    def log_action_summary(self):
+        '''
+        log number of directory and Adobe users, number of created / updated / deleted users, and number of users with updated groups
+        or removed from mapped group because they were not in directory
+        :return: None
+        '''
+        logger = self.logger
+        # find the total number of directory users and selected/filtered users
+        self.action_summary['directory_users_read'] = len(self.directory_user_by_user_key)
+        self.action_summary['directory_users_selected'] = len(self.filtered_directory_user_by_user_key)
+        # find the total number of adobe users and excluded users
+        self.action_summary['adobe_users_read'] = len(self.included_user_keys) + self.excluded_user_count
+        self.action_summary['adobe_users_excluded'] = self.excluded_user_count
+        # find out the number of users that have no changes; this depends on whether
+        # we actually read the directory or read an input file.  So there are two cases:
+        if self.action_summary['adobe_users_read'] == 0:
+            self.action_summary['adobe_users_unchanged'] = 0
+        else:
+            self.action_summary['adobe_users_unchanged'] = (
+                self.action_summary['adobe_users_read'] -
+                self.action_summary['adobe_users_excluded'] -
+                self.action_summary['adobe_users_updated'] -
+                self.action_summary['adobe_strays_processed']
+            )
+        logger.info('------------- Action Summary -------------')
+        # to line up the stats, we pad them out to the longest stat description length,
+        # so first we compute that pad length
+        pad = 0
+        for action_description in ACTION_SUMMARY_DESCRIPTION:
+            if len(action_description[1]) > pad:
+                pad = len(action_description[1])
+        # and then we use it
+        for action_description in ACTION_SUMMARY_DESCRIPTION:
+            description = action_description[1].rjust(pad, ' ')
+            action_count = self.action_summary[action_description[0]]
+            logger.info('  %s: %s', description, action_count)
+        logger.info('------------------------------------------')
+
     def will_manage_groups(self):
         return self.options['manage_groups']
     
@@ -140,8 +220,8 @@ class RuleProcessor(object):
     
     def prepare_organization_infos(self):
         '''
-        Make sure we have prepared organizations for all the mapped groups, including extensions
-        '''                   
+        Make sure we have prepared organizations for all the mapped groups, including extensions.
+        '''
         for dashboard_group in DashboardGroup.iter_groups():
             organization_info = self.get_organization_info(dashboard_group.get_organization_name())
             organization_info.add_mapped_group(dashboard_group.get_group_name())
@@ -161,15 +241,14 @@ class RuleProcessor(object):
         
         directory_user_by_user_key = self.directory_user_by_user_key        
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
-        orphan_user_key_list = self.orphan_user_key_list
 
         directory_groups = set(mappings.iterkeys())
         if (directory_group_filter != None):
             directory_groups.update(directory_group_filter)
         all_loaded, directory_users = directory_connector.load_users_and_groups(directory_groups, extended_attributes)
-        if (not all_loaded and self.need_to_process_orphaned_dashboard_users):
-            self.logger.warn('Not all users loaded.  Cannot check orphaned users...')
-            self.need_to_process_orphaned_dashboard_users = False
+        if (not all_loaded and self.need_to_process_strays):
+            self.logger.warn('Not all users loaded.  Cannot check for unmatched users...')
+            self.need_to_process_strays = False
         
         for directory_user in directory_users:
             user_key = self.get_directory_user_key(directory_user)
@@ -179,9 +258,7 @@ class RuleProcessor(object):
                 continue
             if not self.is_selected_user_key(user_key):
                 continue
-            if user_key in orphan_user_key_list:
-                continue
-            
+
             filtered_directory_user_by_user_key[user_key] = directory_user
             self.get_organization_info(OWNING_ORGANIZATION_NAME).add_desired_group_for(user_key, None)
 
@@ -278,15 +355,6 @@ class RuleProcessor(object):
                 for user_key, desired_groups in accessor_unprocessed_groups_by_user_key.iteritems():
                     self.try_and_update_dashboard_user(accessor_organization_info, user_key, dashboard_connector, groups_to_add=desired_groups)
                     
-    def iter_orphaned_dashboard_users(self, orphan_account_types):
-        owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
-        for user_key, dashboard_user in owning_organization_info.iter_orphaned_dashboard_users():
-            if not self.is_selected_user_key(user_key):
-                continue
-            if dashboard_user.get('type') not in orphan_account_types:
-                continue
-            yield dashboard_user
-            
     def is_selected_user_key(self, user_key):
         '''
         :type user_key: str
@@ -298,111 +366,99 @@ class RuleProcessor(object):
             if (search_result == None):
                 return False
         return True
-    
-    def process_orphaned_dashboard_users(self):
-        orphan_user_key_list = self.orphan_user_key_list
-            
-        options = self.options
-        orphan_list_output_path = options['orphan_list_output_path']
-        remove_nonexistent_users = options['remove_nonexistent_users']
-        delete_nonexistent_users = options['delete_nonexistent_users']
-        
-        max_deletions_per_run = options['max_deletions_per_run']
-        max_missing_users = options['max_missing_users']
 
-        orphaned_dashboard_users = list(self.iter_orphaned_dashboard_users())
-        self.logger.info('Orphaned users to be processed: %s', [self.get_dashboard_user_key(dashboard_user) for dashboard_user in orphaned_dashboard_users])
-        
-        number_of_orphaned_dashboard_users = len(orphaned_dashboard_users)
-
-        if orphan_list_output_path:
-            self.logger.info('Writing orphaned users list to: %s', orphan_list_output_path)
-            self.write_orphan_list(orphan_list_output_path, orphaned_dashboard_users)
-        elif remove_nonexistent_users or delete_nonexistent_users:
-            if number_of_orphaned_dashboard_users > max_missing_users:
-                raise user_sync.error.AssertionException(
-                    'Unable to process orphaned users, as number of users (%s) is larger than max_missing_users setting' % number_of_orphaned_dashboard_users)
-            orphan_count = 0
-            for dashboard_user in orphaned_dashboard_users:
-                orphan_count += 1
-                if orphan_count > max_deletions_per_run:
-                    self.logger.critical('Only processing %d of the %d orphaned users ' +
-                                         'due to max_deletions_per_run setting', max_deletions_per_run,
-                                         number_of_orphaned_dashboard_users)
-                    break
-                user_key = self.get_dashboard_user_key(dashboard_user)
-                orphan_user_key_list.add(user_key)
-                    
-    def clean_dashboard_users(self, dashboard_connectors):
-        # Process removal of users.  The remove_user_key list is generated earlier in processing.
+    def add_stray(self, user_key, org_name):
         '''
+        Remember that this user is a stray found in this dashboard org.  The special marker value None
+        means that we are about to start processing this organization, so initialize the map for it.
+        :param user_key: user_key (str) from a dashboard user in the owning org
+        :param org_name: org_name (str) of the dashboard org the user was found in
+        '''
+        if user_key is None:
+            self.stray_key_map[org_name] = []
+        else:
+            self.stray_key_map[org_name].append(user_key)
+
+    def process_strays(self, dashboard_connectors):
+        '''
+        Do the top-level logic for stray processing (output to file or clean them up), enforce limits, etc.
+        The actual work is done in sub-functions that we call.
+        :param dashboard_connectors:
+        :return:
+        '''
+        stray_count = len(self.stray_key_map.get(OWNING_ORGANIZATION_NAME, []))
+        if self.stray_list_output_path:
+            self.action_summary['adobe_strays_processed'] = stray_count
+            self.write_stray_key_map()
+        else:
+            max_missing = self.options['max_unmatched_users']
+            max_deletions = self.options['max_removed_users']
+            if stray_count > max_missing:
+                raise user_sync.error.AssertionException(
+                    'Unable to process strays, as their count (%s) is larger than max_unmatched_users setting (%d)' %
+                    (stray_count, max_missing))
+            if stray_count > max_deletions:
+                self.logger.critical('Only processing %d of the %d unmatched users due to max_removed_users setting',
+                                     max_deletions, stray_count)
+                stray_count = max_deletions
+            self.action_summary['adobe_strays_processed'] = max_deletions
+            self.clean_strays(dashboard_connectors, stray_count)
+                    
+    def clean_strays(self, dashboard_connectors, stray_count):
+        '''
+        Process strays.  This doesn't require having loaded users from the dashboard.
+        Removal of entitlements and removal from org are processed against every accessor org,
+        whereas account deletion is only done against the owning org.
         :type dashboard_connectors: DashboardConnectors
         '''
-        orphan_user_key_list = self.orphan_user_key_list
-        if (len(orphan_user_key_list) == 0):
-            return
+        # figure out what cleaning to do
+        disentitle_strays = self.options['disentitle_strays']
+        delete_strays = self.options['delete_strays']
 
-        owning_organization_info = self.get_organization_info(OWNING_ORGANIZATION_NAME)
-        
-        self.logger.info('Removing users: %s', orphan_user_key_list)                
-        ready_to_remove_from_org = False
+        # we always work off the list of strays from the owning organization, which we
+        # truncate to the given max count and use to access users in accessor orgs.
+        stray_key_map = self.stray_key_map
+        owning_strays = stray_key_map.get(OWNING_ORGANIZATION_NAME, [])[:stray_count]
 
-        total_waiting_by_user_key = {}
-        for user_key in orphan_user_key_list:
-            total_waiting_by_user_key[user_key] = 0
+        # convenience function to get dashboard Commands given a user key
+        def get_commands(user_key):
+            '''Given a user key, returns the dashboard commands targeting that user'''
+            id_type, username, domain = self.parse_user_key(user_key)
+            return user_sync.connector.dashboard.Commands(identity_type=id_type, username=username, domain=domain)
 
-        def try_and_remove_from_org(user_key):
-            total_waiting = total_waiting_by_user_key[user_key]
-            if total_waiting == 0:    
-                if (not owning_organization_info.is_dashboard_users_loaded() or owning_organization_info.get_dashboard_user(user_key) != None):
-                    self.logger.info('Removing user for user key: %s', user_key)
-                    id_type, username, domain = self.parse_user_key(user_key)
-                    commands = user_sync.connector.dashboard.Commands(identity_type=id_type,
-                                                                      username=username, domain=domain)
-                    commands.remove_from_org(self.delete_user_accounts)
-                    dashboard_connectors.get_owning_connector().send_commands(commands)
-
-        def on_remove_groups_callback(user_key):
-            total_waiting = total_waiting_by_user_key[user_key]     
-            total_waiting -= 1
-            total_waiting_by_user_key[user_key] = total_waiting
-            if ready_to_remove_from_org:
-                try_and_remove_from_org(user_key)
-
-        def create_remove_groups_callback(user_key):
-            total_waiting = total_waiting_by_user_key[user_key]     
-            total_waiting += 1
-            total_waiting_by_user_key[user_key] = total_waiting
-            return lambda response: on_remove_groups_callback(user_key)
-        
+        # do the accessor orgs first, in case we are deleting user accounts from the owning org at the end
         for organization_name, dashboard_connector in dashboard_connectors.get_accessor_connectors().iteritems():
-            organization_info = self.get_organization_info(organization_name)
-            mapped_groups = organization_info.get_mapped_groups()
-            if (len(mapped_groups) == 0):
-                self.logger.info('No mapped groups for accessor: %s', organization_name) 
-                continue
-                            
-            for user_key in orphan_user_key_list:
-                dashboard_user = organization_info.get_dashboard_user(user_key)
-                if (dashboard_user != None):
-                    groups_to_remove = self.normalize_groups(dashboard_user.get('groups')) & mapped_groups
-                elif not organization_info.is_dashboard_users_loaded():
-                    groups_to_remove = mapped_groups
-                else:
-                    groups_to_remove = None
+            org_strays = set(stray_key_map.get(organization_name, []))
+            for user_key in owning_strays:
+                if user_key in org_strays:
+                    commands = get_commands(user_key)
+                    if disentitle_strays:
+                        self.logger.info('Removing all entitlements in %s for unmatched user with user key: %s',
+                                         organization_name, user_key)
+                        commands.remove_all_groups()
+                    else:
+                        self.logger.info('Removing from accessor org %s unmatched user with user key: %s',
+                                         organization_name, user_key)
+                        commands.remove_from_org(False)
+                    dashboard_connector.send_commands(commands)
+            # make sure the commands for each org are executed before moving to the next
+            dashboard_connector.get_action_manager().flush()
 
-                if (groups_to_remove != None and len(groups_to_remove) > 0):
-                    self.logger.info('Removing groups for user key: %s removed: %s', user_key, groups_to_remove)
-                    id_type, username, domain = self.parse_user_key(user_key)
-                    commands = user_sync.connector.dashboard.Commands(identity_type=id_type,
-                                                                      username=username, domain=domain)
-                    commands.remove_groups(groups_to_remove)
-                    dashboard_connector.send_commands(commands, create_remove_groups_callback(user_key))
+        # finish with the owning org
+        owning_connector = dashboard_connectors.get_owning_connector()
+        for user_key in owning_strays:
+            commands = get_commands(user_key)
+            if disentitle_strays:
+                self.logger.info('Removing all entitlements for unmatched user with user key: %s', user_key)
+                commands.remove_all_groups()
+            else:
+                action = "Deleting" if delete_strays else "Removing"
+                self.logger.info('%s unmatched user with user key: %s', action, user_key)
+                commands.remove_from_org(True if delete_strays else False)
+            owning_connector.send_commands(commands)
+        # make sure the actions get sent
+        owning_connector.get_action_manager().flush()
 
-        ready_to_remove_from_org = True
-        for user_key in orphan_user_key_list:
-            try_and_remove_from_org(user_key)
-     
     def get_user_attributes(self, directory_user):
         attributes = {}
         attributes['email'] = directory_user['email']
@@ -411,7 +467,7 @@ class RuleProcessor(object):
         return attributes
     
     def get_identity_type_from_directory_user(self, directory_user):
-        identity_type = directory_user.get('identitytype')
+        identity_type = directory_user.get('identity_type')
         if (identity_type == None):
             identity_type = self.options['new_account_type']
             self.logger.warning('Found user with no identity type, using %s: %s', identity_type, directory_user)
@@ -443,21 +499,15 @@ class RuleProcessor(object):
         :type user_key: str
         :type dashboard_connectors: DashboardConnectors
         '''
-        # Check to see what we're updating, and who for
+        # Check to see what we're updating
         options = self.options
         update_user_info = options['update_user_info'] 
         manage_groups = self.will_manage_groups()
-        managed_identity_types = self.options['managed_identity_types']
-
-        # get identity type of directory user, and don't add if not a managed type
-        directory_user = self.directory_user_by_user_key[user_key]
-        identity_type = self.get_identity_type_from_directory_user(directory_user)
-        if identity_type not in managed_identity_types:
-            self.logger.warning('Unmanaged directory user not in Adobe: %s', user_key)
-            return
 
         # start the add process
         self.logger.info('Adding directory user to Adobe: %s', user_key)
+        directory_user = self.directory_user_by_user_key[user_key]
+        identity_type = self.get_identity_type_from_directory_user(directory_user)
         commands = self.create_commands_from_directory_user(directory_user, identity_type)
         attributes = self.get_user_attributes(directory_user)
         # check whether the country is set in the directory, use default if not
@@ -489,6 +539,8 @@ class RuleProcessor(object):
             self.adding_dashboard_user_key.discard(user_key)
             is_success = response.get("is_success")            
             if is_success:
+                # increment counter for user created for action summary log
+                self.action_summary['adobe_users_created'] += 1
                 if (manage_groups):
                     for organization_name, dashboard_connector in dashboard_connectors.accessor_connectors.iteritems():
                         accessor_organization_info = self.get_organization_info(organization_name)
@@ -503,7 +555,9 @@ class RuleProcessor(object):
         self.adding_dashboard_user_key.add(user_key)
         dashboard_connectors.get_owning_connector().send_commands(commands, callback)
 
-    def update_dashboard_user(self, organization_info, user_key, dashboard_connector, attributes_to_update = None, groups_to_add = None, groups_to_remove = None, dashboard_user = None):
+    def update_dashboard_user(self, organization_info, user_key, dashboard_connector,
+                              attributes_to_update = None, groups_to_add = None, groups_to_remove = None,
+                              dashboard_user = None):
         # Note that the user may exist only in the directory, only in the dashboard, or both at this point.
         # When we are updating an Adobe user who has been removed from the directory, we have to be careful to use
         # data from the dashboard_user parameter and not try to get information from the directory.
@@ -516,9 +570,19 @@ class RuleProcessor(object):
         :type groups_to_add: set(str)
         :type groups_to_remove: set(str)
         :type dashboard_user: dict # with type, username, domain, and email entries
-        '''        
-        if ((groups_to_add and len(groups_to_add) > 0) or (groups_to_remove and len(groups_to_remove) > 0)):
-            self.logger.info('Managing groups for user key: %s organization: %s added: %s removed: %s', user_key, organization_info.get_name(), groups_to_add, groups_to_remove)
+        '''
+        is_owning_org = organization_info.get_name() == OWNING_ORGANIZATION_NAME
+        if attributes_to_update or groups_to_add or groups_to_remove:
+            self.action_summary['adobe_users_updated'] += 1 if is_owning_org else 0
+        if attributes_to_update:
+            self.logger.info('Updating info for user key: %s changes: %s', user_key, attributes_to_update)
+        if groups_to_add or groups_to_remove:
+            if is_owning_org:
+                self.logger.info('Managing groups for user key: %s added: %s removed: %s',
+                                 user_key, groups_to_add, groups_to_remove)
+            else:
+                self.logger.info('Managing groups for user key: %s organization: %s added: %s removed: %s',
+                                 user_key, organization_info.get_name(), groups_to_add, groups_to_remove)
 
         if user_key in self.directory_user_by_user_key:
             directory_user = self.directory_user_by_user_key[user_key]
@@ -531,13 +595,15 @@ class RuleProcessor(object):
         if identity_type != user_sync.identity_type.ADOBEID_IDENTITY_TYPE:
             commands.update_user(attributes_to_update)
         else:
-            if len(attributes_to_update) > 0:
+            if attributes_to_update:
                 self.logger.warning("Can't update attributes on Adobe ID user: %s", dashboard_user.get("email"))
         commands.add_groups(groups_to_add)
         commands.remove_groups(groups_to_remove)
         dashboard_connector.send_commands(commands)
 
-    def try_and_update_dashboard_user(self, organization_info, user_key, dashboard_connector, attributes_to_update = None, groups_to_add = None, groups_to_remove = None, dashboard_user = None):
+    def try_and_update_dashboard_user(self, organization_info, user_key, dashboard_connector,
+                                      attributes_to_update = None, groups_to_add = None, groups_to_remove = None,
+                                      dashboard_user = None):
         '''
         Send the user update action smartly.   
         If the user is being added, the action is postponed.  
@@ -551,9 +617,10 @@ class RuleProcessor(object):
         '''        
         groups_to_add = self.calculate_groups_to_add(organization_info, user_key, groups_to_add) 
         groups_to_remove = self.calculate_groups_to_remove(organization_info, user_key, groups_to_remove)
-        if (user_key not in self.adding_dashboard_user_key):
-            self.update_dashboard_user(organization_info, user_key, dashboard_connector, attributes_to_update, groups_to_add, groups_to_remove, dashboard_user)
-        elif (attributes_to_update != None or groups_to_add != None or groups_to_remove != None):
+        if user_key not in self.adding_dashboard_user_key:
+            self.update_dashboard_user(organization_info, user_key, dashboard_connector,
+                                       attributes_to_update, groups_to_add, groups_to_remove, dashboard_user)
+        elif attributes_to_update or groups_to_add or groups_to_remove:
             self.logger.info("Delay user update for user: %s organization: %s", user_key, organization_info.get_name())
 
     def update_dashboard_users_for_connector(self, organization_info, dashboard_connector):
@@ -576,11 +643,24 @@ class RuleProcessor(object):
         user_to_group_map = organization_info.get_desired_groups_by_user_key()
         user_to_group_map = {} if user_to_group_map == None else user_to_group_map.copy()
 
-        # check to see if we should update dashboard user attributes and groups, and who for
+        # check to see if we should update dashboard users
         options = self.options
         update_user_info = options['update_user_info']
         manage_groups = self.will_manage_groups()
-        managed_identity_types = self.options['managed_identity_types']
+        will_process_strays = self.need_to_process_strays
+
+        # prepare the strays map if we are going to be processing them
+        if will_process_strays:
+            self.add_stray(None, organization_info.get_name())
+
+        # there are certain operations we only do in the owning org
+        in_owning_org = organization_info.get_name() == OWNING_ORGANIZATION_NAME
+
+        # we only log certain users if they are relevant to our processing.
+        log_excluded_users = update_user_info or manage_groups or will_process_strays
+        log_stray_users = manage_groups or will_process_strays
+        log_matching_users = update_user_info or manage_groups
+
 
         # Walk all the dashboard users, getting their group data, matching them with directory users,
         # and adjusting their attribute and group data accordingly.
@@ -599,50 +679,72 @@ class RuleProcessor(object):
             # so we can update the dashboard user's groups as needed.
             desired_groups = user_to_group_map.pop(user_key, None) or set()
 
-            # ignore users whose identity type we are not managing
-            identity_type = self.get_identity_type_from_dashboard_user(dashboard_user)
-            if identity_type not in managed_identity_types:
-                self.logger.info("Ignoring unmanaged dashboard user: %s", user_key)
+            # check for excluded users
+            if self.is_dashboard_user_excluded(in_owning_org, user_key, current_groups, log_excluded_users):
                 continue
 
             directory_user = filtered_directory_user_by_user_key.get(user_key)
             if directory_user is None:
-                # There's no selected directory user matching this dashboard user,
-                # so we mark this dashboard user as an orphan, and we mark him
+                # There's no selected directory user matching this dashboard user
+                # so we mark this dashboard user as a stray, and we mark him
                 # for removal from any mapped groups.
-                organization_info.add_orphaned_dashboard_user(user_key, dashboard_user)
-                self.logger.info("Adobe user not in input user set: %s", user_key)
+                if log_stray_users:
+                    self.logger.info("Adobe user unmatched on customer side: %s", user_key)
+                if will_process_strays:
+                    self.add_stray(user_key, organization_info.get_name())
                 if manage_groups:
                     groups_to_remove = current_groups & organization_info.get_mapped_groups()
-                    if len(groups_to_remove) > 0:
-                        self.logger.info("Removed from Groups: %s", groups_to_remove)
             else:
                 # There is a selected directory user who matches this dashboard user,
                 # so mark any changed dashboard attributes,
                 # and mark him for addition and removal of the appropriate mapped groups
-                if update_user_info and organization_info.get_name() == OWNING_ORGANIZATION_NAME:
+                if log_matching_users:
+                    self.logger.info("Adobe user matched on customer side: %s", user_key)
+                if update_user_info and in_owning_org:
                     attribute_differences = self.get_user_attribute_difference(directory_user, dashboard_user)
-                    if (len(attribute_differences) > 0):
-                        self.logger.info('Updating info for user key: %s changes: %s', user_key, attribute_differences)
                 if manage_groups:
                     groups_to_add = desired_groups - current_groups
-                    if len(groups_to_add) > 0:
-                        self.logger.info("Added to Groups: %s", groups_to_add)
                     groups_to_remove =  (current_groups - desired_groups) & organization_info.get_mapped_groups()
-                    if len(groups_to_remove) > 0:
-                        self.logger.info("Removed from Groups: %s", groups_to_remove)
 
             # Finally, execute the attribute and group adjustments
-            self.try_and_update_dashboard_user(organization_info, user_key, dashboard_connector, attribute_differences, groups_to_add, groups_to_remove, dashboard_user)
+            self.try_and_update_dashboard_user(organization_info, user_key, dashboard_connector,
+                                               attribute_differences, groups_to_add, groups_to_remove, dashboard_user)
 
         # mark the org's dashboard users as processed and return the remaining ones in the map
         organization_info.set_dashboard_users_loaded()
         return user_to_group_map
-    
+
+    def is_dashboard_user_excluded(self, in_owning_org, user_key, current_groups, do_logging):
+        if in_owning_org:
+            # in the owning org, we actually check the exclusion conditions
+            identity_type, username, domain = self.parse_user_key(user_key)
+            if identity_type in self.exclude_identity_types:
+                if do_logging:
+                    self.logger.info("Excluding dashboard user (due to type): %s", user_key)
+                self.excluded_user_count += 1
+                return True
+            if len(current_groups & self.exclude_groups) > 0:
+                if do_logging:
+                    self.logger.info("Excluding dashboard user (due to group): %s", user_key)
+                self.excluded_user_count += 1
+                return True
+            for re in self.exclude_users:
+                if re.match(username):
+                    if do_logging:
+                        self.logger.info("Excluding dashboard user (due to name): %s", user_key)
+                    self.excluded_user_count += 1
+                    return True
+            self.included_user_keys.add(user_key)
+            return False
+        else:
+            # in all other orgs, we exclude every user that
+            #  doesn't match an included user from the owning org
+            return user_key not in self.included_user_keys
+
     @staticmethod
     def normalize_groups(group_names):
         '''
-        :type group_name: iterator(str)
+        :type group_names: iterator(str)
         :rtype set(str)
         '''
         result = set()
@@ -716,7 +818,7 @@ class RuleProcessor(object):
         :type directory_user: dict
         '''
         id_type = self.get_identity_type_from_directory_user(directory_user)
-        return self.get_user_key(directory_user['username'], directory_user['domain'], directory_user['email'], id_type)
+        return self.get_user_key(id_type, directory_user['username'], directory_user['domain'], directory_user['email'])
     
     def get_dashboard_user_key(self, dashboard_user):
         '''
@@ -724,10 +826,10 @@ class RuleProcessor(object):
         :type dashboard_user: dict
         '''
         id_type = self.get_identity_type_from_dashboard_user(dashboard_user)
-        return self.get_user_key(dashboard_user['username'], dashboard_user['domain'], dashboard_user['email'], id_type)
+        return self.get_user_key(id_type, dashboard_user['username'], dashboard_user['domain'], dashboard_user['email'])
 
     @staticmethod
-    def get_user_key(username, domain, email, id_type):
+    def get_user_key(id_type, username, domain, email=None):
         '''
         Construct the user key for a directory or dashboard user.
         The user key is the stringification of the tuple (id_type, username, domain)
@@ -740,7 +842,7 @@ class RuleProcessor(object):
         :return: string "id_type,username,domain" (or None)
         '''
         id_type = user_sync.identity_type.parse_identity_type(id_type)
-        email = user_sync.helper.normalize_string(email)
+        email = user_sync.helper.normalize_string(email) if email else None
         username = user_sync.helper.normalize_string(username) or email
         domain = user_sync.helper.normalize_string(domain)
 
@@ -765,51 +867,78 @@ class RuleProcessor(object):
     @staticmethod
     def get_username_from_user_key(user_key):
         return RuleProcessor.parse_user_key(user_key)[1]
-    
+
     @staticmethod
-    def read_remove_list(file_path, delimiter = None, logger = None):
+    def read_stray_key_map(file_path, delimiter = None, logger = None):
         '''
-        Load the users to be removed from a CSV file.  Returns the list of user keys.
+        Load the users to be removed from a CSV file.  Returns the stray key map.
         :type file_path: str
         :type delimiter: str
         :type logger: logging.Logger
         '''
-        result = []
-
+        logger.info('Reading unmatched users from: %s', file_path)
         id_type_column_name = 'type'
         user_column_name = 'user'
-        domain_column_name = 'domain'        
+        domain_column_name = 'domain'
+        org_name_column_name = 'org'
         rows = user_sync.helper.iter_csv_rows(file_path,
                                               delimiter = delimiter,
-                                              recognized_column_names = [id_type_column_name,
-                                                                         user_column_name,
-                                                                         domain_column_name],
+                                              recognized_column_names = [
+                                                  id_type_column_name, user_column_name, domain_column_name,
+                                                  org_name_column_name,
+                                              ],
                                               logger = logger)
+        result = {}
         for row in rows:
+            org_name = row.get(org_name_column_name) or OWNING_ORGANIZATION_NAME
             id_type = row.get(id_type_column_name)
             user = row.get(user_column_name)
             domain = row.get(domain_column_name)
-            
-            # specifying None for (optional) email, because we don't have it
-            user_key = RuleProcessor.get_user_key(user, domain, None, id_type)
+
+            user_key = RuleProcessor.get_user_key(id_type, user, domain)
             if user_key:
-                result.append(user_key)
+                if org_name not in result:
+                    result[org_name] = [user_key]
+                else:
+                    result[org_name].append(user_key)
             elif logger:
                 logger.error("Invalid input line, ignored: %s", row)
+        user_count = len(result.get(OWNING_ORGANIZATION_NAME, []))
+        user_plural = "" if user_count == 1 else "s"
+        org_count = len(result) - 1
+        org_plural = "" if org_count == 1 else "s"
+        if org_count > 0:
+            logger.info('Read %d unmatched user%s for owning org, with %d accessor org%s',
+                        user_count, user_plural, org_count, org_plural)
+        else:
+            logger.info('Read %d unmatched user%s.', user_count, user_plural)
         return result
 
-    def write_orphan_list(self, file_path, dashboard_users):
-        total_users = 0
+    def write_stray_key_map(self):
+        result = self.stray_key_map
+        file_path = self.stray_list_output_path
+        logger = self.logger
+        logger.info('Writing unmatched users to: %s', file_path)
         with open(file_path, 'wb') as output_file:
             delimiter = user_sync.helper.guess_delimiter_from_filename(file_path)            
-            writer = csv.DictWriter(output_file, fieldnames = ['type', 'user', 'domain'], delimiter = delimiter)
+            writer = csv.DictWriter(output_file, fieldnames = ['type', 'user', 'domain', 'org'], delimiter = delimiter)
             writer.writeheader()
-            for dashboard_user in dashboard_users:
-                user_key = self.get_dashboard_user_key(dashboard_user)
-                id_type, username, domain = self.parse_user_key(user_key)
-                writer.writerow({'type': id_type, 'user': username, 'domain': domain})
-                total_users += 1
-        self.logger.info('Total users in orphan list: %d', total_users)
+            # None sorts before strings, so sorting the keys in the map
+            # puts the owning org first in the output, which is handy
+            for org_name in sorted(result.keys()):
+                for user_key in result[org_name]:
+                    id_type, username, domain = self.parse_user_key(user_key)
+                    org = org_name if org_name else ""
+                    writer.writerow({'type': id_type, 'user': username, 'domain': domain, 'org': org})
+        user_count = len(result.get(OWNING_ORGANIZATION_NAME, []))
+        user_plural = "" if user_count == 1 else "s"
+        org_count = len(result) - 1
+        org_plural = "" if org_count == 1 else "s"
+        if org_count > 0:
+            logger.info('Wrote %d unmatched user%s for owning org, with %d accessor org%s',
+                        user_count, user_plural, org_count, org_plural)
+        else:
+            logger.info('Wrote %d unmatched user%s.', user_count, user_plural)
             
     def log_after_mapping_hook_scope(self, before_call=None, after_call=None):
         if ((before_call is None and after_call is None) or (before_call is not None and after_call is not None)):
@@ -935,7 +1064,7 @@ class OrganizationInfo(object):
         self.desired_groups_by_user_key = {}
         self.dashboard_user_by_user_key = {}
         self.dashboard_users_loaded = False
-        self.orphaned_dashboard_user_by_user_key = {}
+        self.stray_by_user_key = {}
         self.groups_added_by_user_key = {}
         self.groups_removed_by_user_key = {}
 
@@ -996,16 +1125,5 @@ class OrganizationInfo(object):
     def is_dashboard_users_loaded(self):
         return self.dashboard_users_loaded
     
-    def add_orphaned_dashboard_user(self, user_key, user):
-        '''
-        :type user_key: str
-        :type user: dict
-        '''
-        self.orphaned_dashboard_user_by_user_key[user_key] = user
-        
-    def iter_orphaned_dashboard_users(self):
-        orphaned_dashboard_user_by_user_key = self.orphaned_dashboard_user_by_user_key
-        return [] if orphaned_dashboard_user_by_user_key == None else orphaned_dashboard_user_by_user_key.iteritems() 
-            
     def __repr__(self):
         return "OrganizationInfo('name': %s)" % self.name

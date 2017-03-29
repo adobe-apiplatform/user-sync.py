@@ -561,13 +561,13 @@ groups:
 User accounts are removed from the Adobe dashboard when
 corresponding users are not present in the directory and the tool
 is invoked with the `--remove-nonexistent-users` option. The
-`max_deletions_per_run` and `max_missing_users` values in
+`max_removed_users` and `max_unmatched_users` values in
 the `limits` section of the configuration file set limits on
 how many users can be removed at any one time. These limits
 prevent accidental removal of a large number of accounts in case
 of misconfiguration or other errors:
 
-- The value of `max_deletions_per_run` sets a limit on the number
+- The value of `max_removed_users` sets a limit on the number
 of account removals in a single run. If more users are flagged
 for removal, they are left for the next run.
 
@@ -577,7 +577,7 @@ raise this value.
 - If your organization has a large number of users in the
 enterprise directory and the number of users read during a sync
 is suddenly small, this could indicate a misconfiguration or
-error situation.  The value of `max_missing_users` is a threshold
+error situation.  The value of `max_unmatched_users` is a threshold
 which causes the run to exit and report an error if there are
 this many fewer users in the enterprise directory than in the
 Adobe admin console.
@@ -589,8 +589,8 @@ For example:
 
 ```YAML
 limits:
-  max_deletions_per_run: 10
-  max_missing_users: 200
+  max_removed_users: 10
+  max_unmatched_users: 200
 ```
 
 This configuration causes User Sync to remove no more than 10
@@ -693,8 +693,8 @@ directory:
         - "Default Adobe Enterprise Support Program configuration"
 
 limits:
-  max_deletions_per_run: 10
-  max_missing_users: 200
+  max_removed_users: 10
+  max_unmatched_users: 200
 
 logging:
   log_to_file: True
@@ -1037,6 +1037,41 @@ Adobe side by the next sync action that adds users.
 
 ```sh
 ./user-sync –c user-sync-config.yml --delete-list users-to-delete.csv
+```
+
+### Action Summary
+
+At the end of the invocation, an action summary will be printed to the log. 
+The summary provides the user with statistics accumulated during the run. 
+The statistics collected include:
+
+- **Total number of Adobe users:** The total number of Adobe users in your admin console dashboard
+- **Number of Adobe users excluded:** Number of Adobe users that were excluded from operations via the exclude_parameters
+- **Total number of directory users:** The total number of users read from LDAP or CSV file
+- **Number of directory users selected:** Number of directory users selected via user-filter parameter
+- **Number of Adobe users created:** Number of Adobe users created during this run
+- **Number of Adobe users updated:** Number of Adobe users updated during this run
+- **Number of Adobe users removed:** Number of Adobe users removed from the organization on the Adobe side
+- **Number of Adobe users deleted:** Number of Adobe users removed from the organization and Enterprise/Federated user accounts deleted on Adobe side
+- **Number of Adobe users with updated groups:** Number of Adobe users that are added to one or more user groups
+- **Number of Adobe users removed from mapped groups:** Number of Adobe users that are removed from one or more user groups
+- **Number of Adobe users with no changes:** Number of Adobe users that was unchanged during this run
+
+#### Sample action summary output to the log
+```text
+2017-03-22 21:37:44 21787 INFO processor - ------------- Action Summary -------------
+2017-03-22 21:37:44 21787 INFO processor -   Total number of Adobe users: 50
+2017-03-22 21:37:44 21787 INFO processor -   Number of Adobe users excluded: 0
+2017-03-22 21:37:44 21787 INFO processor -   Total number of directory users: 10
+2017-03-22 21:37:44 21787 INFO processor -   Number of directory users selected: 10
+2017-03-22 21:37:44 21787 INFO processor -   Number of Adobe users created: 7
+2017-03-22 21:37:44 21787 INFO processor -   Number of Adobe users updated: 1
+2017-03-22 21:37:44 21787 INFO processor -   Number of Adobe users removed: 1
+2017-03-22 21:37:44 21787 INFO processor -   Number of Adobe users deleted: 0
+2017-03-22 21:37:44 21787 INFO processor -   Number of Adobe users with updated groups: 2
+2017-03-22 21:37:44 21787 INFO processor -   Number of Adobe users removed from mapped groups: 5
+2017-03-22 21:37:44 21787 INFO processor -   Number of Adobe users with no changes: 48
+2017-03-22 21:37:44 21787 INFO processor - ------------------------------------------
 ```
 
 ---

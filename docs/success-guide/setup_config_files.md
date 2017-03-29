@@ -112,7 +112,7 @@ A more realistic example is:
 
 ![](images/setup_config_group_map.png)
 
-#### Delete Limits 
+#### Unmatched User Limits 
 
 Limits on deletion prevent accidental account deletion in the event of misconfiguration or some other problem that results in User Sync not getting proper data from the directory system.
 
@@ -121,8 +121,8 @@ Limits on deletion prevent accidental account deletion in the event of misconfig
 &#9744; If you expect the number of directory users to drop by more than 200 between User Sync runs, then you will need to raise the max\_missing\_users value.  These config file entries are to prevent runaway deletion in case of misconfiguration or other problems.
 
 	limits:
-	    max_deletions_per_run: 10   # ceiling on disable/remove/delete
-	    max_missing_users: 200      # abort if this many directory users disappear
+	    max_removed_users: 10   # ceiling on disable/remove/delete
+	    max_unmatched_users: 200      # abort if this many directory users disappear
 
 
 

@@ -42,6 +42,7 @@ def create_test_user(groups):
     firstName = 'User_%d' % next_user_id
     next_user_id += 1    
     user = {
+        'identity_type': 'enterpriseID',
         'firstname': firstName,
         'lastname': 'Test',
         'email': '%s_email@example.com' % firstName,
