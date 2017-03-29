@@ -3,7 +3,8 @@ dashboard:
   # By default, it would look for dashboard-owning-config.yml and
   # dashboard-accessor-*-config.yml in the configuration path,
   # with the yml's identifying the owning organization and accessor organizations
-  # respectively.
+  # respectively. Relative paths in configuration files are always taken
+  # relative to the configuration file in which they appear..
   #  
   # You can also specify the configurations under this section too,
   # with keys owning and accessors.

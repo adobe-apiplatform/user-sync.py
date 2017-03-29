@@ -1,0 +1,4 @@
+dashboard:
+    other-1: test-123
+logging:
+    file_log_directory: logs-test

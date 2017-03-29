@@ -1,0 +1,4 @@
+enterprise:
+    priv_key_path: ../test-key/private.key
+other:
+    test-2: 123

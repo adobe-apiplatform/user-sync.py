@@ -1,0 +1,6 @@
+dashboard:
+    owning: {{tests/test_files/root_config/default_settings/dashboard-owning-config.yml}}
+    accessor_config_filename_format: {{tests/test_files/root_config/default_settings/dashboard-accessor-{organization_name}-config.yml}}
+    other-1: test-123
+logging:
+    file_log_directory: {{tests/test_files/root_config/default_settings/logs-test}}
