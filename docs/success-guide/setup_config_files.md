@@ -41,7 +41,7 @@ If you need a non-default LDAP query to select the desired set of users, it is s
 
 ### Adobe UMAPI Credentials 
 
-&#9744; Edit the dashboard-config.yml.  Put in the information from the adobe.io integration you created earlier.  This would be the org\_id, api\_key, client\_secret, and tech\_acct.
+&#9744; Edit the adobe-users-config.yml.  Put in the information from the adobe.io integration you created earlier.  This would be the org\_id, api\_key, client\_secret, and tech\_acct.
 
 &#9744; Place the private key file in the user_sync_tool folder The priv\_key\_path config file items is then set to the name of this file.
 
@@ -95,17 +95,17 @@ You can provision user accounts by adding them to an enterprise directory group 
 &#9744; Edit the group mapping part of the file.  For each directory groups D that should map to an Adobe PC or user group P, add an entry after "groups:" of the form
 
 	    - directory_group: D
-	      dashboard_groups: 
+	      adobe_groups: 
 	        - P
 
 A more realistic example is:
 
 	  groups:
 	    - directory_group: acrobat_pro_dc
-	      dashboard_groups: 
+	      adobe_groups: 
 	        - Default Acrobat Pro DC configuration
 	    - directory_group: all_apps
-	      dashboard_groups:
+	      adobe_groups:
 	        - All Apps
 
 
@@ -116,13 +116,10 @@ A more realistic example is:
 
 Limits on deletion prevent accidental account deletion in the event of misconfiguration or some other problem that results in User Sync not getting proper data from the directory system.
 
-&#9744; If you expect higher churn in accounts, you will need to raise the max\_deletions\_per\_run item to a value around your expected number of deletions per run of sync.
-
-&#9744; If you expect the number of directory users to drop by more than 200 between User Sync runs, then you will need to raise the max\_missing\_users value.  These config file entries are to prevent runaway deletion in case of misconfiguration or other problems.
+&#9744; If you expect the number of directory users to drop by more than 200 between User Sync runs, then you will need to raise the `max_adobe_only_users` value.  These config file entries are to prevent runaway deletion in case of misconfiguration or other problems.
 
 	limits:
-	    max_removed_users: 10   # ceiling on disable/remove/delete
-	    max_unmatched_users: 200      # abort if this many directory users disappear
+	    max_adobe_only_users: 200      # abort if this many directory users disappear
 
 
 
@@ -133,7 +130,7 @@ If you want to drive account creation and removal through User Sync, and want to
 &#9744; If you need to use this feature, add lines such as below to the config file at the top level.   To protect users on the Admin Console from updates, create a user group and put the protected users into that group, then list that group as excluded from User Sync processing.  You can also list specific users and/or a pattern that matches specific user names to protect those users.  You can protect users based on their identity type as well.  For example, often User Sync is used only to manage federatedID or enterpriseID user types and you can exclude adobeID type users from management by User Sync.  You only need to include configuration items for exclusions that you wish to use.
 
 ```YAML
-dashboard_user_exclusions:
+adobe_users:
   exclude_groups: 
     - administrators   # Names an Adobe user group or product configuration whose members are not to be altered or removed by User Sync
     - contractors      # You can have more than one group in a list
@@ -159,11 +156,9 @@ Note that:
 
 - Directory side users are still created on the Adobe side even if one of the exclude parameters would then exclude the user on the Adobe side from updates in successive runs. That is, these parameters apply only to Adobe users who exist when the Adobe directory is being matched against the customer directory.
 
-- The entire `dashboard_user_exclusions` configuration section is optional. 
-
 - Accounts that would have been removed or updated but were not because of this feature are listed as `info` level log entries.
 
-- Federated accounts that are not in the directory or are disabled in the directory cannot log in anyway (because login is handled by the ID provider and the user is no longer listed there) even if the account still exists in the Adobe dashboard.
+- Federated accounts that are not in the directory or are disabled in the directory cannot log in anyway (because login is handled by the ID provider and the user is no longer listed there) even if the account still exists in Adobe.
 
 
 

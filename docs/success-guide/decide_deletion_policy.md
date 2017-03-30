@@ -10,21 +10,18 @@ layout: default
 When accounts are disabled or deleted from the directory you often want the corresponding Adobe account removed, but removing the Adobe account may delete assets, settings, etc. that are later needed.  Also, Adobe Id accounts that may be in your organization cannot be deleted because the account belongs to the end user.  However, licenses you granted to the Adobe Id user can be recovered when you want to remove that user from your organization.
 
 
-
-
 Choices available for handling Adobe account deletion via User Sync:
 
   - Take no action.  Account cleanup must be handled manually.
 
   - Generate list of accounts to be deleted, but no action is taken now.  The list can be edited and later used to drive account deletion through User Sync.
 
-  - Recover all licenses given by your org to the account, but leave the account active. *
+  - Recover all licenses given by your org to the account, but leave the account active. (remove-entitlements)
 
-  - Recover all licenses and remove from your org, but leave account in existence.
+  - Recover all licenses and remove from your org, but leave account in existence.  (remove)
 
-  - Recover all licenses and delete the account.
+  - Recover all licenses and delete the account.  (delete)
 
-\*  feature coming late March, 2017
 
 Some things to know about account deletion:
 
