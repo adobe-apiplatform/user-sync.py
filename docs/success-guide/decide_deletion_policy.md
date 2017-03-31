@@ -16,7 +16,7 @@ Choices available for handling Adobe account deletion via User Sync:
 
   - Generate list of accounts to be deleted, but no action is taken now.  The list can be edited and later used to drive account deletion through User Sync.
 
-  - Recover all licenses given by your org to the account, but leave the account active. (remove-entitlements)
+  - Recover all licenses given by your org to the account, but leave the account active. (remove-adobe-groups)
 
   - Recover all licenses and remove from your org, but leave account in existence.  (remove)
 

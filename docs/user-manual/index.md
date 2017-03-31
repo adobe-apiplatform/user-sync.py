@@ -134,7 +134,7 @@ complete, you will be assigned an **API key**, a **Technical
 account ID**, an **Organization ID**, and a **client secret**
 that the tool will use, along with your cerficate information, to
 communicate securely with the Admin Console. When you install the
-User Sync tool, you must provide these as initial configuration
+User Sync tool, you must provide these as configuration
 values that the tool requires to access your organization's user
 information store in Adobe.
 
@@ -142,10 +142,10 @@ information store in Adobe.
 
 If you plan to use the User Sync tool to update user access to
 Adobe products, you must create groups in your own enterprise
-LDAP directory that correspond to the user groups and product
+directory that correspond to the user groups and product
 configurations that you have defined in the
 [Adobe Admin Console](https://www.adobe.io/console/). Membership
-in a product configuration grants access to particular set of
+in a product configuration grants access to a particular set of
 Adobe products. You can grant or revoke access to users or to
 defined user groups by adding or removing them from a product
 configuration.
@@ -172,7 +172,7 @@ Management system. For more information, see the help page for
 
 If you do not yet have any product configurations, you can use the
 Console to create them. You must have some, and they must have
-corresponding groups in enterprise LDAP directory, in order to
+corresponding groups in enterprise directory, in order to
 configure User Sync to update your user entitlement information.
 
 The names of product configurations generally identify
@@ -229,6 +229,9 @@ The User Sync Tool is available from the
 [User Sync repository on GitHub](https://github.com/adobe-apiplatform/user-sync.py). To
 install the tool:
 
+1. Create a folder on your server where you will install the 
+User Sync tool and place the configuration files.
+
 1. Click the **Releases** link to locate the latest release,
 which contains the release notes, this documentation, sample
 configuration files, and all the built versions (as well as
@@ -241,7 +244,7 @@ Source Code package that corresponds to the release, or use the
 latest source off the master branch.)
 
 3. Locate the Python executable file (`user-sync` or
-`user-sync.pex` for Windows) and place it in your User Sync root
+`user-sync.pex` for Windows) and place it in your User Sync
 folder.
 
 4. Download the `examples.tar.gz` archive of sample configuration
@@ -277,9 +280,9 @@ the cache location, which prevents the path from exceeding the
 #### Security Considerations
 
 Because the User Sync application accesses sensitive information
-on both the customer and Adobe sides, its use involves a number
+on both the enterprise and Adobe sides, its use involves a number
 of different files that contain sensitive information. Great care
-should be take to keep these files save from unauthorized access.
+should be take to keep these files safe from unauthorized access.
 
 ##### Configuration files
 
@@ -565,7 +568,7 @@ is invoked with one of the options
 
 - `--adobe-only-user-action delete`
 - `--adobe-only-user-action remove`
-- `--adobe-only-user-action remove-entitlements`
+- `--adobe-only-user-action remove-adobe-groups`
 
 If your organization has a large number of users in the
 enterprise directory and the number of users read during a sync
@@ -782,11 +785,10 @@ specific behavior in various situations.
 | `-t`<br />`--test-mode` | Run API action calls in test mode (does not execute changes). Logs what would have been executed.  |
 | `-c` _filename_<br />`--config-filename` _filename_ | The complete path to the main configuration file, absolute or relative to the working folder. Default filename is "user-sync-config.yml" |
 | `--users` `all`<br />`--users` `file` _input_path_<br />`--users` `group` _grp1,grp2_<br />`--users` `mapped` | Specify the users to be selected for sync. The default is `all` meaning all users found in the directory. Specifying `file` means to take input user specifications from the CSV file named by the argument. Specifying `group` interprets the argument as a comma-separated list of groups in the enterprise directory, and only users in those groups are selected. Specifying `mapped` is the same as specifying `group` with all groups listed in the group mapping in the configuration file. This is a very common case where just the users in mapped groups are to be synced.|
-| `--user-filter` _regex\_pattern_ | Limit the set of users that are examined for syncing to those matching a pattern specified with a regular expression. See the [Python regular expression documentation](https://docs.python.org/2/library/re.html) for information on constructing regular expressions in Python. |
-| `--source-filter` _connector_:_file_ | Names a file containing LDAP filter settings. The filter is an LDAP query string that is passed directly to the LDAP server.  See the [sample above](#connector_ldap.yml) and others in the archive of examples. |
+| `--user-filter` _regex\_pattern_ | Limit the set of users that are examined for syncing to those matching a pattern specified with a regular expression. See the [Python regular expression documentation](https://docs.python.org/2/library/re.html) for information on constructing regular expressions in Python. The user name must completely match the regular expression.|
 | `--update-user-info` | When supplied, synchronizes user information. If the information differs between the customer side and the Adobe side, the Adobe side is updated to match. This includes the firstname and lastname fields. |
 | `--process-groups` | When supplied, synchronizes group membership information. If the membership in mapped groups differs between the customer side and the Adobe side, the group membership is updated on the Adobe side to match. |
-| `--adobe-only-user-action preserve`<br />`--adobe-only-user-action remove-entitlements`<br />`--adobe-only-user-action  remove`<br />`--adobe-only-user-action delete`<br /><br/>`--adobe-only-user-action  write-file  <filename>` | When supplied, if user accounts are found on the Adobe side that are not in the directory, take the indicated action.  <br/><br/>`preserve`: no action concerning account deletion is taken. This is the default.  There may still be group membership changes if the `--process-groups` option was specified.<br/><br/>`remove-entitlements`: The account is removed from user groups and product configurations, freeing any licenses it held, but is left as an active account in the organization.<br><br/>`remove`: In addition to remove-entitlements, the account is also removed from the organization, but is left as an existing account.<br/><br/>`delete`: In addition to the action for remove, the account is deleted if owned by the organization.<br/><br/>`write-file`: the list of user account present on the Adobe side but not in the directory is written to the file indicated.  No other account action is taken.  You can then pass this file to the `--adobe-only-user-list` argument in a subsequent run.<br/><br>Only permitted actions will be applied.  Accounts of type adobeID are owned by the user so the delete action will do the equivalent of remove.  The same is true of Adobe accounts owned by other organizations. |
+| `--adobe-only-user-action preserve`<br />`--adobe-only-user-action remove-adobe-groups`<br />`--adobe-only-user-action  remove`<br />`--adobe-only-user-action delete`<br /><br/>`--adobe-only-user-action  write-file  <filename>`<br/><br/>`--adobe-only-user-action  exclude` | When supplied, if user accounts are found on the Adobe side that are not in the directory, take the indicated action.  <br/><br/>`preserve`: no action concerning account deletion is taken. This is the default.  There may still be group membership changes if the `--process-groups` option was specified.<br/><br/>`remove-adobe-groups`: The account is removed from user groups and product configurations, freeing any licenses it held, but is left as an active account in the organization.<br><br/>`remove`: In addition to remove-adobe-groups, the account is also removed from the organization, but is left as an existing account.<br/><br/>`delete`: In addition to the action for remove, the account is deleted if owned by the organization.<br/><br/>`write-file`: the list of user account present on the Adobe side but not in the directory is written to the file indicated.  No other account action is taken.  You can then pass this file to the `--adobe-only-user-list` argument in a subsequent run.<br/><br/>`exclude`: No update of any kind is applied to users found only on the Adobe side.  This is used when doing updates of specific users via a file (--users file f) where only users needing explicit updates are listed in the file and all other users should be left alone.<br/><br>Only permitted actions will be applied.  Accounts of type adobeID are owned by the user so the delete action will do the equivalent of remove.  The same is true of Adobe accounts owned by other organizations. |
 | `adobe-only-user-list` _input\_path_ | Specifies a file from which a list of users will be read.  This list is used as the definitive list of "Adobe only" user accounts to be acted upon.  One of the `--adobe-only-user-action` directives must also be specified and its action will be applied to user accounts in the list.  The `--users` option is disallowed if this option is present: only account removal actions can be processed.  |
 {: .bordertablestyle }
 
@@ -1079,20 +1081,24 @@ groups defined in other organizations.
 and mappings, you must configure the tool to be able to recognize
 those customizations.
 - When you want to use username (rather than email) based logins.
+- When you want to manage some user accounts manually through the Adobe Admin Console in addition to using User Sync
 
 ### Managing Users with Adobe IDs
 
-There is a configuration option `managed_identity_types` which
-can be set so as to manage Adobe ID users (and also to exclude
-other types).  You will probably want to set up a separate sync
+There is a configuration option `exclude_identity_types` (in 
+the adobe_users section of the main config file) which
+is set by default to ignore Adobe ID users.  If you want User Sync to 
+manage some Adobe Id type users, you must turn this option off in the 
+config file.
+
+You will probably want to set up a separate sync
 job specifically for those users, possibly using CSV inputs
-rather than taking inputs from your enterprise directory. Be sure
+rather than taking inputs from your enterprise directory. If you do this, be sure
 to configure this sync job to ignore Enterprise ID and Federated
 ID users, or those users are likely to be removed from the
 directory!
 
-Removal of Adobe ID users via User Sync is not generally a safe
-practice:
+Removal of Adobe ID users via User Sync may not have the effect you desire:
 
 * If you specify that adobeID users should be
 removed from your organization, you will have to re-invite them
@@ -1106,6 +1112,11 @@ them and manage their group memberships, but never to remove
 them.  By managing their group memberships you can disable their
 entitlements without the need for a new invitation if you later
 want to turn them back on.
+
+Remember that Adobe Id accounts are owned by the end user and 
+cannot be deleted.  If you apply a delete action, User Sync will 
+automatically substitute the remove action for the delete action.
+
 
 ### Accessing Groups in Other Organizations
 
@@ -1143,35 +1154,23 @@ able to identify groups as belonging to an external organization.
 To configure for access to groups in other organizations, you
 must:
 
-- Include additional connection configuration files in your User
-Sync root folder.
-- Tell the tool how to access these files.
-- Identify groups that are defined in an external organization.
+- Include additional connection configuration files.
+- Tell User Sync how to access these files.
+- Identify the groups that are defined in another organization.
 
 ##### 1. Include additional configuration files
 
 For each additional organization to which you require access, you
 must add a configuration file that provides the access
 credentials for that organization. The file has the
-same format as the adobe-users-config.yml file, and must be named
-according to the following convention:
+same format as the adobe-users-config.yml file.  Each additional organization will be referred to by a short nickname (that you define).  You can name the configuration file that has the access credentials for that organization however you like.  
 
-`dashboard-`_OrgName_`-config.yml`
+For example, suppose the additional organization is named "department 37".  The config file for it might be named: 
 
-For the _OrgName_ element, use a short identifier that you choose
-to represent the organization.
+`department37-config.yml`
 
-##### 2. Configure the tool to access the additional files
+##### 2. Configure User Sync to access the additional files
 
-Your main configuration file must define the filename format of
-these additional configuration file names.
-
-```YAML
-accessor_config_filename_format: "dashboard-{organization_name}-config.yml"
-```
-
-In this specifier, `{organization_name}` is a literal value that
-indicates a placeholder in the file names.
 
 The adobe-users section of the main configuration file must
 include entries that reference these files, and
@@ -1180,15 +1179,17 @@ example:
 
 ```YAML
 adobe-users:
-  config:
-    - adobe-users-config.yml
-    org1: dashboard-org1-config.yml
-    org2: dashboard-org2-config.yml
+  connectors:
+    umapi:
+      - adobe-users-config.yml
+      - org1: org1-config.yml
+      - org2: org2-config.yml
+      - d37: department37-config.yml  # d37 is short name for example above
 ```
 
-These referenced configuration files must exist in your
-configuration folder, and contain access credentials for the
-external organization.  Note that, like your own connection
+If unqualified file names are used, the configuration files must be in the same folder as the main configuration file that references them.
+
+Note that, like your own connection
 configuration file, they contain sensitive information that must
 be protected.
 
@@ -1451,6 +1452,41 @@ The values given for these configuration items can be a mix of string characters
 For domains that use username-based login, the `user_username_format` configuration item should not produce an email address; the "@" character is not allowed in usernames used in username-based login.
 
 If you are using username-based login, you must still provide a unique email address for every user, and that email address must be in a domain that the organization has claimed and owns. User Sync will not add a user to the Adobe organization without an email address.
+
+### Protecting Specific Accounts from User Sync Deletion
+
+If you drive account creation and removal through User Sync, and want to manually create a few accounts, you may need this feature to keep User Sync from deleting the manually created accounts.
+
+In the adobe_users section of the main configuration file you can include
+the following entries:
+
+```YAML
+adobe_users:
+  exclude_adobe_groups: 
+      - special_users       # Adobe accounts in the named group will not be removed or changed by user sync
+  exclude_users:
+      - ".*@example.com"    # users whose name matches the pattern will be preserved by user sync 
+      - another@example.com # can have more than one pattern
+  exclude_identity_types:
+      - adobeID             # causes user sync to not remove accounts that are AdobeIds
+      - enterpriseID
+      - federatedID         # you wouldn’t have all of these since that would exclude everyone  
+```
+
+These are optional configuration items.  The identify individual or groups
+of accounts and the identified accounts are protected from deletion by 
+User Sync.  These accounts may still be added to or removed from user
+groups or Product Configurations based on the group map entries and
+the `--process-groups` command line option.  
+
+If you want to prevent User Sync from removing these accounts from groups, only place them in groups not under control of User Sync, that is, in groups 
+that are not named in the group map in the config file.
+
+- `exclude_adobe_groups`: The values of this configuration item is a list of strings that name Adobe user groups or PCs.  Any users in any of these groups are preserved and never deleted as Adobe-only users.
+- `exclude_users`: The values of this configuration item is a list of strings that are patterns that can match Adobe user names.  Any matching users are preserved and never deleted as Adobe-only users.
+- `exclude_identity_types`:  The values of this configuration item is a list of strings that can be "adobeID", "enterpriseID", and "federatedID".  This causes any account that isof the listed type(s) to be preserved and never deleted as Adobe-only users.
+
+
 
 ---
 
