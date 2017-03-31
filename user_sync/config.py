@@ -21,12 +21,12 @@
 import logging
 import os
 import re
-
-import types
 import yaml
+import six
 
 import user_sync.identity_type
 import user_sync.rules
+import user_sync.port
 from user_sync import credential_manager
 from user_sync.error import AssertionException
 
@@ -102,17 +102,17 @@ class ConfigLoader(object):
         secondary_config_sources = {}
         primary_config_sources = []
         for item in umapi_config:
-            if isinstance(item, types.StringTypes):
+            if isinstance(item, six.string_types):
                 if secondary_config_sources:
                     # if we see a string after a dict, the user has done something wrong, and we fail.
                     raise AssertionException("Secondary umapi configuration found with no prefix: " + item)
                 primary_config_sources.append(item)
             elif isinstance(item, dict):
-                for key, val in item.iteritems():
+                for key, val in six.iteritems(item):
                     secondary_config_sources[key] = self.as_list(val)
         primary_config = self.create_umapi_options(primary_config_sources)
         secondary_configs = {key: self.create_umapi_options(val)
-                             for key, val in secondary_config_sources.iteritems()}
+                             for key, val in six.iteritems(secondary_config_sources)}
         return primary_config, secondary_configs
     
     def get_directory_connector_module_name(self):
@@ -149,7 +149,7 @@ class ConfigLoader(object):
                                                          connector_name,
                                                          config=options,
                                                          config_loader = self)
-        if isinstance(credentials, types.StringTypes):
+        if isinstance(credentials, six.string_types):
             credentials = ConfigFileLoader.load_other_config(credentials)
         if isinstance(credentials, dict):
             options = self.combine_dicts([options, credentials])
@@ -206,7 +206,7 @@ class ConfigLoader(object):
     def as_list(value):
         if (value == None):
             return []
-        elif isinstance(value, types.ListType):
+        elif isinstance(value, user_sync.port.list_type):
             return value
         return [value]
         
@@ -250,7 +250,7 @@ class ConfigLoader(object):
         result = {}
         for dict_item in dicts:
             if (isinstance(dict_item, dict)):
-                for dict_key, dict_item in dict_item.iteritems():
+                for dict_key, dict_item in six.iteritems(dict_item):
                     result_item = result.get(dict_key)
                     if (isinstance(result_item, dict) and isinstance(dict_item, dict)):
                         result_item.update(dict_item)
@@ -365,7 +365,7 @@ class ConfigLoader(object):
                                                                  org_id,
                                                                  config = enterprise_section,
                                                                  config_loader = self)
-                if isinstance(credentials, types.StringTypes):
+                if isinstance(credentials, six.string_types):
                     credentials = ConfigFileLoader.load_other_config(credentials)
                 if isinstance(credentials, dict):
                     options['enterprise'] = self.combine_dicts([enterprise_section, credentials])
@@ -374,8 +374,12 @@ class ConfigLoader(object):
     def check_unused_config_keys(self):
         directory_connectors_config = self.get_directory_connector_configs()
         self.main_config.report_unused_values(self.logger, [directory_connectors_config])
-
-    
+        directory_source_filters = self.options['directory_source_filters']
+        if (directory_source_filters != None):
+            unused_keys = set(six.iterkeys(directory_source_filters)) - self.directory_source_filters_accessed
+            if (len(unused_keys) > 0):
+                raise user_sync.error.AssertionException("Unused source filters for: %s" % list(unused_keys))
+        
 class ObjectConfig(object):
     def __init__(self, scope):
         '''
@@ -403,7 +407,7 @@ class ObjectConfig(object):
         :rtype iterable(ObjectConfig)
         '''
         yield self        
-        for child_config in self.child_configs.itervalues():
+        for child_config in six.itervalues(self.child_configs):
             for subtree_config in child_config.iter_configs():
                 yield subtree_config
                 
@@ -419,8 +423,8 @@ class ObjectConfig(object):
         return AssertionException("%s in: %s" % (message, self.get_full_scope()))
     
     def describe_types(self, types_to_describe):
-        if (types_to_describe == types.StringTypes):
-            result = self.describe_types(types.StringType)
+        if (types_to_describe == six.string_types):
+            result = self.describe_types(user_sync.port.string_type)
         elif (isinstance(types_to_describe, tuple)):
             result = []
             for type_to_describe in types_to_describe:
@@ -495,8 +499,7 @@ class DictConfig(ObjectConfig):
         return key in self.value
     
     def iter_keys(self):
-        return self.value.iterkeys()
-    
+        return six.iterkeys(self.value)
     def iter_unused_keys(self):
         for key in self.iter_keys():
             if (key not in self.accessed_keys):
@@ -519,13 +522,13 @@ class DictConfig(ObjectConfig):
         return value
 
     def get_string(self, key, none_allowed = False):
-        return self.get_value(key, types.StringTypes, none_allowed)
+        return self.get_value(key, six.string_types, none_allowed)
 
     def get_int(self, key, none_allowed = False):
-        return self.get_value(key, types.IntType, none_allowed)
+        return self.get_value(key, user_sync.port.integer_type, none_allowed)
 
     def get_bool(self, key, none_allowed = False):
-        return self.get_value(key, types.BooleanType, none_allowed)
+        return self.get_value(key, user_sync.port.boolean_type, none_allowed)
 
     def get_list(self, key, none_allowed = False):        
         value = self.get_value(key, None, none_allowed)
@@ -655,7 +658,7 @@ class ConfigFileLoader:
             raise AssertionException('Error parsing configuration file: %s' % e)
 
         # process the content of the dict
-        for path_key, options in path_keys.iteritems():
+        for path_key, options in six.iteritems(path_keys):
             cls.key_path = path_key
             keys = path_key.split('/')
             cls.process_path_key(yml, keys, 1, *options)
@@ -682,7 +685,7 @@ class ConfigFileLoader:
             # if a wildcard is specified at this level, that means we
             # should process all keys as path values
             if key == "*":
-                for key, val in dictionary.iteritems():
+                for key, val in six.iteritems(dictionary):
                     dictionary[key] = cls.process_path_value(val, must_exist, can_have_subdict)
             elif dictionary.has_key(key):
                 dictionary[key] = cls.process_path_value(dictionary[key], must_exist, can_have_subdict)
@@ -719,13 +722,13 @@ class ConfigFileLoader:
         :param key: the key whose value we are processing, for error messages
         :param val: the value we are processing, for error messages
         '''
-        if isinstance(val, types.StringTypes):
+        if isinstance(val, six.string_types):
             return cls.relative_path(val, must_exist)
         elif isinstance(val, list):
             vals = []
             for entry in val:
                 if can_have_subdict and isinstance(entry, dict):
-                    for subkey, subval in entry.iteritems():
+                    for subkey, subval in six.iteritems(entry):
                         vals.append({subkey: cls.relative_path(subval, must_exist)})
                 else:
                     vals.append(cls.relative_path(entry, must_exist))
@@ -736,7 +739,7 @@ class ConfigFileLoader:
         '''
         returns an absolute path that is resolved relative to the file being loaded
         '''
-        if not isinstance(val, types.StringTypes):
+        if not isinstance(val, six.string_types):
             raise AssertionException("Expected pathname for setting %s in config file %s" %
                                      (cls.key_path, cls.filename))
         if cls.dirpath and not os.path.isabs(val):
@@ -763,21 +766,21 @@ class OptionsBuilder(object):
         :type key: str
         :type default_value: bool
         '''
-        self.set_value(key, types.BooleanType, default_value)
+        self.set_value(key, user_sync.port.boolean_type, default_value)
 
     def set_int_value(self, key, default_value):
         '''
         :type key: str
         :type default_value: int
         '''
-        self.set_value(key, types.IntType, default_value)
+        self.set_value(key, user_sync.port.integer_type, default_value)
 
     def set_string_value(self, key, default_value):
         '''
         :type key: str
         :type default_value: str
         '''
-        self.set_value(key, types.StringTypes, default_value)
+        self.set_value(key, six.string_types, default_value)
 
     def set_dict_value(self, key, default_value):
         '''
@@ -792,7 +795,7 @@ class OptionsBuilder(object):
         '''
         value = default_value
         config = self.default_config
-        if (config != None and config.has_key(key)):            
+        if (config != None and config.has_key(key)):
             value = config.get_value(key, allowed_types, False)
         self.options[key] = value
 
@@ -801,7 +804,7 @@ class OptionsBuilder(object):
         :type key: str
         :rtype str
         '''
-        return self.require_value(key, types.StringTypes)
+        return self.require_value(key, six.string_types)
         
     def require_value(self, key, allowed_types):
         '''

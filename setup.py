@@ -41,10 +41,11 @@ setup(name='user-sync',
       packages=['user_sync', 'user_sync.connector'],
       install_requires=[
           'pycrypto',
-          'python-ldap==2.4.25',
+          'pyldap>=2.4.28',
           'PyYAML',
           'umapi-client>=2.2',
           'psutil',
+          'six'
       ],
       setup_requires=['nose>=1.0'],
       tests_require=[

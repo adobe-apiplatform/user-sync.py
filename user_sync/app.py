@@ -24,8 +24,8 @@ import logging
 import os
 import re
 import sys
+import six
 
-import config
 import user_sync.config
 import user_sync.connector.directory
 import user_sync.connector.umapi
@@ -49,7 +49,7 @@ def process_args():
                         action='store_true', dest='test_mode')
     parser.add_argument('-c', '--config-filename',
                         help='main config filename. (default: "%(default)s")',
-                        default=config.DEFAULT_MAIN_CONFIG_FILENAME, metavar='filename', dest='config_filename')
+                        default=user_sync.config.DEFAULT_MAIN_CONFIG_FILENAME, metavar='filename', dest='config_filename')
     parser.add_argument('--users',
                         help="specify the users to be considered for sync. Legal values are 'all' (the default), "
                              "'group names' (one or more specified groups), 'mapped' (all groups listed in "
@@ -152,16 +152,16 @@ def begin_work(config_loader):
 
     # process mapped configuration after the directory groups have been loaded, as mapped setting depends on this.
     if (rule_config['directory_group_mapped']):
-        rule_config['directory_group_filter'] = set(directory_groups.iterkeys())
+        rule_config['directory_group_filter'] = set(six.iterkeys(directory_groups))
 
     # make sure that all the adobe groups are from known umapi connector names
     referenced_umapi_names = set()
-    for groups in directory_groups.itervalues():
+    for groups in six.itervalues(directory_groups):
         for group in groups:
             umapi_name = group.umapi_name
             if (umapi_name != user_sync.rules.PRIMARY_UMAPI_NAME):
                 referenced_umapi_names.add(umapi_name)
-    referenced_umapi_names.difference_update(secondary_umapi_configs.iterkeys())
+    referenced_umapi_names.difference_update(six.iterkeys(secondary_umapi_configs))
 
     if (len(referenced_umapi_names) > 0):
         raise AssertionException('Adobe groups reference unknown umapi connectors: %s' % referenced_umapi_names)
@@ -185,7 +185,7 @@ def begin_work(config_loader):
     primary_name = '.primary' if secondary_umapi_configs else ''
     umapi_primary_connector = user_sync.connector.umapi.UmapiConnector(primary_name, primary_umapi_config)
     umapi_other_connectors = {}
-    for secondary_umapi_name, secondary_config in secondary_umapi_configs.iteritems():
+    for secondary_umapi_name, secondary_config in six.iteritems(secondary_umapi_configs):
         umapi_secondary_conector = user_sync.connector.umapi.UmapiConnector(".secondary.%s" % secondary_umapi_name,
                                                                             secondary_config)
         umapi_other_connectors[secondary_umapi_name] = umapi_secondary_conector
@@ -307,7 +307,7 @@ def log_parameters(args):
     logger.info('------- Invocation parameters -------')
     logger.info(' '.join(sys.argv))
     logger.debug('-------- Internal parameters --------')
-    for parameter_name, parameter_value in args.__dict__.iteritems():
+    for parameter_name, parameter_value in six.iteritems(args.__dict__):
         logger.debug('  %s: %s', parameter_name, parameter_value)
     logger.info('-------------------------------------')
 

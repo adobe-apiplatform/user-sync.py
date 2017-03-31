@@ -19,6 +19,7 @@
 # SOFTWARE.
 
 import ldap.controls.libldap
+import six
 import string
 
 import user_sync.config
@@ -136,7 +137,7 @@ class LDAPDirectoryConnector(object):
                         user_groups.append(group)
             self.logger.debug('Group %s members: %d users: %d', group, total_group_members, total_group_users)
         
-        return user_by_dn.itervalues()
+        return six.itervalues(user_by_dn)
         
     def find_ldap_group(self, group, attribute_list=None):
         '''
@@ -150,6 +151,7 @@ class LDAPDirectoryConnector(object):
         base_dn = options['base_dn']
         group_filter_format = options['group_filter_format']
         
+        # res = connection.search()
         res = connection.search_s(
             base_dn,
             ldap.SCOPE_SUBTREE,
@@ -192,7 +194,7 @@ class LDAPDirectoryConnector(object):
             if (attributes == None):
                 break;
                                         
-            for current_attribute_name, current_attribute_values in attributes.iteritems():
+            for current_attribute_name, current_attribute_values in six.iteritems(attributes):
                 current_attribute_name_parts = current_attribute_name.split(';')
                 if (current_attribute_name_parts[0] == attribute_name):
                     if (len(current_attribute_name_parts) > 1):
