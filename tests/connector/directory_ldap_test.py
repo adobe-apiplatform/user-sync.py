@@ -1,5 +1,6 @@
 import mock.mock
 import re
+import six
 import unittest
 
 import user_sync.connector.directory
@@ -82,6 +83,6 @@ class LDAPDirectoryTest(unittest.TestCase):
         directory_connector = user_sync.connector.directory.DirectoryConnector(user_sync.connector.directory_ldap)
         directory_connector.initialize(ldap_options)
  
-        actual_users = directory_connector.load_users_and_groups(users_by_group.iterkeys())
+        actual_users = directory_connector.load_users_and_groups(six.iterkeys(users_by_group)
 
         tests.helper.assert_equal_users(self, all_users, actual_users)

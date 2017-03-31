@@ -27,9 +27,12 @@ import types
 
 import keyring
 import yaml
+import six
 
 import user_sync.identity_type
 import user_sync.rules
+import user_sync.port
+from user_sync import credential_manager
 from user_sync.error import AssertionException
 
 DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
@@ -107,17 +110,17 @@ class ConfigLoader(object):
         secondary_config_sources = {}
         primary_config_sources = []
         for item in umapi_config:
-            if isinstance(item, types.StringTypes):
+            if isinstance(item, six.string_types):
                 if secondary_config_sources:
                     # if we see a string after a dict, the user has done something wrong, and we fail.
                     raise AssertionException("Secondary umapi configuration found with no prefix: " + item)
                 primary_config_sources.append(item)
             elif isinstance(item, dict):
-                for key, val in item.iteritems():
+                for key, val in six.iteritems(item):
                     secondary_config_sources[key] = self.as_list(val)
         primary_config = self.create_umapi_options(primary_config_sources)
         secondary_configs = {key: self.create_umapi_options(val)
-                             for key, val in secondary_config_sources.iteritems()}
+                             for key, val in six.iteritems(secondary_config_sources)}
         return primary_config, secondary_configs
 
     def get_directory_connector_module_name(self):
@@ -202,7 +205,7 @@ class ConfigLoader(object):
     def as_list(value):
         if value is None:
             return []
-        elif isinstance(value, types.ListType):
+        elif isinstance(value, user_sync.port.list_type):
             return value
         return [value]
 
@@ -244,11 +247,11 @@ class ConfigLoader(object):
         """
         result = {}
         for dict_item in dicts:
-            if isinstance(dict_item, dict):
-                for dict_key, dict_val in dict_item.iteritems():
-                    result_val = result.get(dict_key)
-                    if isinstance(result_val, dict) and isinstance(dict_val, dict):
-                        result_val.update(dict_val)
+            if (isinstance(dict_item, dict)):
+                for dict_key, dict_item in six.iteritems(dict_item):
+                    result_item = result.get(dict_key)
+                    if (isinstance(result_item, dict) and isinstance(dict_item, dict)):
+                        result_item.update(dict_item)
                     else:
                         result[dict_key] = dict_val
         return result
@@ -402,9 +405,9 @@ class ObjectConfig(object):
         return AssertionException("%s in: %s" % (message, self.get_full_scope()))
 
     def describe_types(self, types_to_describe):
-        if types_to_describe == types.StringTypes:
-            result = self.describe_types(types.StringType)
-        elif isinstance(types_to_describe, tuple):
+        if (types_to_describe == six.string_types):
+            result = self.describe_types(user_sync.port.string_type)
+        elif (isinstance(types_to_describe, tuple)):
             result = []
             for type_to_describe in types_to_describe:
                 result.extend(self.describe_types(type_to_describe))
@@ -480,8 +483,7 @@ class DictConfig(ObjectConfig):
         return item in self.value
 
     def iter_keys(self):
-        return self.value.iterkeys()
-
+        return six.iterkeys(self.value)
     def iter_unused_keys(self):
         for key in self.iter_keys():
             if key not in self.accessed_keys:
@@ -503,14 +505,14 @@ class DictConfig(ObjectConfig):
         value = self.get_value(key, dict, none_allowed)
         return value
 
-    def get_string(self, key, none_allowed=False):
-        return self.get_value(key, types.StringTypes, none_allowed)
+    def get_string(self, key, none_allowed = False):
+        return self.get_value(key, six.string_types, none_allowed)
 
-    def get_int(self, key, none_allowed=False):
-        return self.get_value(key, types.IntType, none_allowed)
+    def get_int(self, key, none_allowed = False):
+        return self.get_value(key, user_sync.port.integer_type, none_allowed)
 
-    def get_bool(self, key, none_allowed=False):
-        return self.get_value(key, types.BooleanType, none_allowed)
+    def get_bool(self, key, none_allowed = False):
+        return self.get_value(key, user_sync.port.boolean_type, none_allowed)
 
     def get_list(self, key, none_allowed=False):
         value = self.get_value(key, None, none_allowed)
@@ -719,7 +721,7 @@ class ConfigFileLoader:
                 raise AssertionException("Error parsing configuration file '%s': %s" % (cls.filepath, e))
 
         # process the content of the dict
-        for path_key, options in path_keys.iteritems():
+        for path_key, options in six.iteritems(path_keys):
             cls.key_path = path_key
             keys = path_key.split('/')
             cls.process_path_key(yml, keys, 1, *options)
@@ -746,7 +748,7 @@ class ConfigFileLoader:
             # if a wildcard is specified at this level, that means we
             # should process all keys as path values
             if key == "*":
-                for key, val in dictionary.iteritems():
+                for key, val in six.iteritems(dictionary):
                     dictionary[key] = cls.process_path_value(val, must_exist, can_have_subdict)
             elif key in dictionary:
                 dictionary[key] = cls.process_path_value(dictionary[key], must_exist, can_have_subdict)
@@ -791,7 +793,7 @@ class ConfigFileLoader:
             vals = []
             for entry in val:
                 if can_have_subdict and isinstance(entry, dict):
-                    for subkey, subval in entry.iteritems():
+                    for subkey, subval in six.iteritems(entry):
                         vals.append({subkey: cls.relative_path(subval, must_exist)})
                 else:
                     vals.append(cls.relative_path(entry, must_exist))

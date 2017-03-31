@@ -1,4 +1,3 @@
-import string
 import tempfile
 import unittest
 
@@ -22,7 +21,7 @@ class CSVDirectoryTest(unittest.TestCase):
             csv_user = user.copy();
             user_groups = user['groups']
             all_groups.update(user_groups)
-            csv_user['groups'] = string.join(user_groups, ',')
+            csv_user['groups'] = ','.join(user_groups)
             csv_users.append(csv_user)
         tests.helper.write_to_separated_value_file(field_names, ',', csv_users, file_path);
         
