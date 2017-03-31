@@ -894,7 +894,7 @@ class RuleProcessor(object):
             domain = ""
         elif not domain:
             return None
-        return unicode(id_type) + u',' + unicode(username) + u',' + unicode(domain)
+        return six.text_type(id_type) + u',' + six.text_type(username) + u',' + six.text_type(domain)
 
     def parse_user_key(self, user_key):
         """
