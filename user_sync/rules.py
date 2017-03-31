@@ -878,7 +878,7 @@ class RuleProcessor(object):
         '''
         logger.info('Reading unmatched users from: %s', file_path)
         id_type_column_name = 'type'
-        user_column_name = 'user'
+        user_column_name = 'username'
         domain_column_name = 'domain'
         org_name_column_name = 'org'
         rows = user_sync.helper.iter_csv_rows(file_path,
@@ -921,7 +921,9 @@ class RuleProcessor(object):
         logger.info('Writing unmatched users to: %s', file_path)
         with open(file_path, 'wb') as output_file:
             delimiter = user_sync.helper.guess_delimiter_from_filename(file_path)            
-            writer = csv.DictWriter(output_file, fieldnames = ['type', 'user', 'domain', 'org'], delimiter = delimiter)
+            writer = csv.DictWriter(output_file,
+                                    fieldnames = ['type', 'username', 'domain', 'org'],
+                                    delimiter = delimiter)
             writer.writeheader()
             # None sorts before strings, so sorting the keys in the map
             # puts the owning org first in the output, which is handy
@@ -929,7 +931,7 @@ class RuleProcessor(object):
                 for user_key in result[org_name]:
                     id_type, username, domain = self.parse_user_key(user_key)
                     org = org_name if org_name else ""
-                    writer.writerow({'type': id_type, 'user': username, 'domain': domain, 'org': org})
+                    writer.writerow({'type': id_type, 'username': username, 'domain': domain, 'org': org})
         user_count = len(result.get(OWNING_ORGANIZATION_NAME, []))
         user_plural = "" if user_count == 1 else "s"
         org_count = len(result) - 1

@@ -61,7 +61,7 @@ class CSVDirectoryConnector(object):
         builder.set_string_value('email_column_name', 'email')
         builder.set_string_value('country_column_name', 'country')
         builder.set_string_value('groups_column_name', 'groups')
-        builder.set_string_value('username_column_name', 'user')
+        builder.set_string_value('username_column_name', 'username')
         builder.set_string_value('domain_column_name', 'domain')
         builder.set_string_value('identity_type_column_name', 'type')
         builder.set_string_value('user_identity_type', None)
