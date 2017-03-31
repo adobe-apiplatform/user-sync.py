@@ -486,7 +486,7 @@ the connectors field.
     - The adobe_users section also can contain exclude_identity_types, 
 exclude_adobe_groups, and exclude_users which limit the scope of users
 affected by User Sync.  See the later section
-[Protecting Specific Accounts from User Sync Deletion](#protecting-accounts)
+[Protecting Specific Accounts from User Sync Deletion](#protecting-specific-accounts-from-user-sync-deletion)
 which describes this more fully.
 - The **directory_users** subsection contains two subsections,
 connectors and groups:
@@ -548,16 +548,16 @@ access. For example:
 ```YAML
 groups:
   - directory_group: Acrobat
-    dashboard_groups:
+    ad0be_groups:
       - "Default Acrobat Pro DC configuration"
   - directory_group: Photoshop
-    dashboard_groups:
+    adobe_groups:
       - "Default Photoshop CC - 100 GB configuration"
       - "Default All Apps plan - 100 GB configuration"
 ```
 
 Directory groups can be mapped to either *product configurations*
-or *user groups*. A `dashboard_groups` entry can name either kind
+or *user groups*. An `adobe_groups` entry can name either kind
 of group.
 
 For example:
@@ -565,10 +565,10 @@ For example:
 ```YAML
 groups:
   - directory_group: Acrobat
-    dashboard_groups:
+    adobe_groups:
       - Default Acrobat Pro DC configuration
   - directory_group: Acrobat_Accounting
-    dashboard_groups:
+    adobe_groups:
       - Accounting_Department
 ```
 
@@ -689,10 +689,10 @@ directory:
     ldap: connector-ldap.yml
   groups:
     - directory_group: Acrobat
-      dashboard_groups:
+      adobe_groups:
         - Default Acrobat Pro DC configuration
     - directory_group: Photoshop
-      dashboard_groups:
+      adobe_groups:
         - "Default Photoshop CC - 100 GB configuration"
         - "Default All Apps plan - 100 GB configuration"
         - "Default Adobe Document Cloud for enterprise configuration"
@@ -1216,7 +1216,7 @@ group name. For example:
 
 ```YAML
 - directory_group: CCE Trustee Group
-  dashboard_groups:
+  adobe_groups:
     - "org1::Default Adobe Enterprise Support Program configuration"
 ```
 
@@ -1250,9 +1250,9 @@ extensions:
     extended_attributes:
       - my-attribute-1
       - my-attribute-2
-    extended_dashboard_groups:
-      - my-dashboard-group-1
-      - my-dashboard-group-2
+    extended_adobe_groups:
+      - my-adobe-group-1
+      - my-adobe-group-2
     after_mapping_hook: |
         pass # custom python code goes here
 ```
@@ -1310,7 +1310,7 @@ extensions:
     extended_attributes:
       - bc
       - subco
-    extended_dashboard_groups:
+    extended_adobe_groups:
       - Acrobat_Sunday_Special
       - Group for Test 011 TCP
     after_mapping_hook: |
@@ -1345,7 +1345,7 @@ list to get users synced into additional groups.
 If the hook code references Adobe groups or product
 configurations that do not already appear in the **groups**
 section of the main configuration file, they are listed under
-**extended_dashboard_groups**. This list effectively extends the
+**extended_adobe_groups**. This list effectively extends the
 set of Adobe groups that are considered . See
 [Advanced Group and Product Management](#advanced-group-and-product-management)
 for more information.
@@ -1465,7 +1465,6 @@ For domains that use username-based login, the `user_username_format` configurat
 
 If you are using username-based login, you must still provide a unique email address for every user, and that email address must be in a domain that the organization has claimed and owns. User Sync will not add a user to the Adobe organization without an email address.
 
-<a name="protecting-accounts"></a>
 ### Protecting Specific Accounts from User Sync Deletion
 
 If you drive account creation and removal through User Sync, and want to manually create a few accounts, you may need this feature to keep User Sync from deleting the manually created accounts.
