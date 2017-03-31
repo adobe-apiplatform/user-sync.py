@@ -320,16 +320,18 @@ that it can only be accessed by authorized users.
 Logging is enabled by default, and outputs all transactions
 against the User Management API to the console. You can configure
 the tool to write to a log file as well. The files created during
-execution are date stamped and written to the file system.
+execution are date stamped and written to the file system in a 
+folder specified in the configuration file.
 
 The User Management API treats a user’s email address as the
 unique identifier. Every action, along with the email address
 associated with the user, is written to the log. If you choose to
-log data to files, those files contain this sensitive
+log data to files, those files contain this
 information.
 
-The utility does not provide any log retention control or
-management. If you choose to log data to files, take necessary
+User Sync does not provide any log retention control or
+management. It starts a new log file every day.  If you choose to 
+log data to files, take necessary
 precautions to manage the lifetime and access to these files.
 
 If your company’s security policy does not allow any personally
@@ -356,16 +358,17 @@ information).
 ## Configuring the User Sync Tool
 
 The operation of the User Sync tool is controlled by a set of
-configuration files with these file names, located in the same
+configuration files with these file names, located (by default) in the same
 folder as the command-line executable.
 
 | Configuration File | Purpose |
 |:------|:---------|
+| user-sync-config.yml | Required. Contains configuration options that define the mapping of directory groups to Adobe product configurations and user groups, and that control the update behavior.  Also contains references to the other config files.|
 | adobe&#x2011;user&#x2011;config.yml&nbsp;&nbsp; | Required. Contains credentials and access information for calling the Adobe User Management API. |
-| connector-ldap.yml | Required. Contains credentials and access information for accessing the enterprise LDAP directory. |
-| user-sync-config.yml | Required. Contains configuration options that define the mapping of directory groups to Adobe product configurations and user groups, and that control the update behavior. |
+| connector-ldap.yml | Required. Contains credentials and access information for accessing the enterprise directory. |
 
-If you need to set up access to users in other organizations that
+
+If you need to set up access to Adobe groups in other organizations that
 have granted you access, you can include additional configuration
 files. For details, see the
 [advanced configuration instructions](#accessing-groups-in-other-organizations)
@@ -472,27 +475,35 @@ base_dn: "base_dn.of.directory"
 ### Configuration options
 
 The main configuration file, user-sync-config.yml, is divided
-into several main sections: **adobe_users**, **directory**,
+into several main sections: **adobe_users**, **directory_users**,
 **limits**, and **logging**.
 
 - The **adobe_users** section specifies how the User Sync tool
 connects to the Adobe Admin Console through the User Management
 API. It should point to the separate, secure configuration file
-that
-stores the access credentials.
-    - The **directory** subsection contains two subsections,
+that stores the access credentials.  This is set in the umapi field of
+the connectors field.
+    - The adobe_users section also can contain exclude_identity_types, 
+exclude_adobe_groups, and exclude_users which limit the scope of users
+affected by User Sync.  See the later section
+[Protecting Specific Accounts from User Sync Deletion](#protecting-accounts)
+which describes this more fully.
+- The **directory_users** subsection contains two subsections,
 connectors and groups:
     - The **connectors** subsection points to the separate,
 secure configuration file that stores the access credentials for
 your enterprise directory.
-- The **groups** section defines the mapping between your
+    - The **groups** section defines the mapping between your
 directory groups and Adobe product configurations and user
 groups.
-- The **limits** section sets values that limit the minimum number 
-of users that must be in the
-directory for user-sync to proceed with account removal. These
-limits prevent accidental removal of a large number of accounts
-in case of misconfiguration or other errors.
+    - **directory_users** can also contain keys that set the default country
+code and identity type.  See the example configuration files for details.
+- The **limits** section sets the `max_adobe_only_users` value that 
+prevents User Sync from updating or deleting Adobe user accounts if 
+there are more than the specified value of accounts that appear in 
+the Adobe organization but not in the directory. This
+limit prevents removal of a large number of accounts
+in case of misconfiguration or other errors.  This is a required item.
 - The **logging** section specifies an audit trail path and
 controls how much information is written to the log.
 
@@ -504,13 +515,14 @@ connection credentials. This isolates the sensitive information,
 allowing you to secure the files and limit access to them.
 
 Provide pointers to the connection configuration files in the
-**adobe_users** and **directory** sections:
+**adobe_users** and **directory_users** sections:
 
 ```
 adobe_users:
-  owning: adobe_users-config.yml
+  connectors:
+    umapi: adobe_users-config.yml
 
-directory:
+directory_users:
   connectors:
     ldap: connector-ldap.yml
 ```
@@ -1453,6 +1465,7 @@ For domains that use username-based login, the `user_username_format` configurat
 
 If you are using username-based login, you must still provide a unique email address for every user, and that email address must be in a domain that the organization has claimed and owns. User Sync will not add a user to the Adobe organization without an email address.
 
+<a name="protecting-accounts"></a>
 ### Protecting Specific Accounts from User Sync Deletion
 
 If you drive account creation and removal through User Sync, and want to manually create a few accounts, you may need this feature to keep User Sync from deleting the manually created accounts.
