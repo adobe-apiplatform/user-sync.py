@@ -681,9 +681,10 @@ illustrate possible configuration values.
 
 ```YAML
 adobe_users:
-  config: adobe-users-config.yml
+  connectors:
+    umapi: connector-umapi.yml
 
-directory:
+directory_users:
   user_identity_type: federatedID
   connectors:
     ldap: connector-ldap.yml
@@ -720,7 +721,7 @@ group_filter_format: "(&(objectClass=posixGroup)(cn={group}))"
 all_users_filter: "(&(objectClass=person)(objectClass=top))"
 ```
 
-##### adobe-users-config.yml
+##### connector-umapi.yml
 
 ```YAML
 server:
@@ -1175,7 +1176,7 @@ must:
 For each additional organization to which you require access, you
 must add a configuration file that provides the access
 credentials for that organization. The file has the
-same format as the adobe-users-config.yml file.  Each additional organization will be referred to by a short nickname (that you define).  You can name the configuration file that has the access credentials for that organization however you like.  
+same format as the connector-umapi.yml file.  Each additional organization will be referred to by a short nickname (that you define).  You can name the configuration file that has the access credentials for that organization however you like.  
 
 For example, suppose the additional organization is named "department 37".  The config file for it might be named: 
 
@@ -1193,7 +1194,7 @@ example:
 adobe-users:
   connectors:
     umapi:
-      - adobe-users-config.yml
+      - connector-umapi.yml
       - org1: org1-config.yml
       - org2: org2-config.yml
       - d37: department37-config.yml  # d37 is short name for example above

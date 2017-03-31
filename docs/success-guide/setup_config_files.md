@@ -41,7 +41,7 @@ If you need a non-default LDAP query to select the desired set of users, it is s
 
 ### Adobe UMAPI Credentials 
 
-&#9744; Edit the adobe-users-config.yml.  Put in the information from the adobe.io integration you created earlier.  This would be the org\_id, api\_key, client\_secret, and tech\_acct.
+&#9744; Edit the connector-umapi.yml.  Put in the information from the adobe.io integration you created earlier.  This would be the org\_id, api\_key, client\_secret, and tech\_acct.
 
 &#9744; Place the private key file in the user_sync_tool folder The priv\_key\_path config file items is then set to the name of this file.
 
