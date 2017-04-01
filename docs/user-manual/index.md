@@ -1225,8 +1225,15 @@ group name. Join them with "::". For example:
 
 ### Custom Attributes and Mappings
 
-You must configure User Sync to recognize any non-standard
-mappings between your enterprise-directory user data and Adobe
+It is possible to define custom mappings of directory attribute
+or other values to the fields used to define and update users:
+first name, last name, email address, user name, country, and group membership.
+Normally, standard attributes in the directory are used to
+obtain these values.  You can define other attributes to be used and
+specify how field values should be computed.
+
+To do this, you must configure User Sync to recognize any non-standard
+mappings between your enterprise directory user data and Adobe
 user data.  Non-standard mappings include:
 
 - Values for user name, groups, country, or email that are in or
@@ -1242,6 +1249,15 @@ custom mapping for those attributes, and any computation or
 action to be taken to sync the values. The custom action is
 specified using a small block of Python code. Examples and
 standard blocks are provided.
+
+The configuration for custom attributes and mappings go in a separate
+configuration file.  That file is referenced from the main
+configuration file in the `directory_users` section:
+
+```
+directory_users:
+  extension: extenstions_config.yml  # reference to file with custom mapping information
+```
 
 Custom attribute handling is performed for each user, so the
 customizations are configured in the per-user subsection of the
