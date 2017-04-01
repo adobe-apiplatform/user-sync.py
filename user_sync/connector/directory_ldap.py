@@ -67,7 +67,6 @@ class LDAPDirectoryConnector(object):
         builder.set_string_value('user_identity_type', None)
         builder.set_int_value('search_page_size', 200)
         builder.set_string_value('logger_name', 'connector.' + LDAPDirectoryConnector.name)
-        builder.set_dict_value('source_filters', {})
         host = builder.require_string_value('host')
         username = builder.require_string_value('username')
         builder.require_string_value('base_dn')
@@ -109,21 +108,9 @@ class LDAPDirectoryConnector(object):
         options = self.options
         all_users_filter = options['all_users_filter']
         
-        is_using_source_filter = False
-        source_filters = options['source_filters']
-        source_filter = source_filters.get('all_users_filter')
-        if (source_filter != None):
-            users_filter = "(&%s%s)" % (all_users_filter, source_filter)
-            is_using_source_filter = True
-            self.logger.info('Applied source filter: %s', users_filter)
-        else:
-            users_filter = all_users_filter
-
-        self.logger.info('Loading users...')
-
         self.user_by_dn = user_by_dn = {}
         self.user_by_uid = user_by_uid = {}
-        for user_dn, user in self.iter_users(users_filter, extended_attributes):
+        for user_dn, user in self.iter_users(all_users_filter, extended_attributes):
             uid = user.get('uid')
             if (uid != None):
                 user_by_uid[uid] = user
@@ -148,7 +135,7 @@ class LDAPDirectoryConnector(object):
                         user_groups.append(group)
             self.logger.debug('Group %s members: %d users: %d', group, total_group_members, total_group_users)
         
-        return (not is_using_source_filter, user_by_dn.itervalues())    
+        return user_by_dn.itervalues()
         
     def find_ldap_group(self, group, attribute_list=None):
         '''

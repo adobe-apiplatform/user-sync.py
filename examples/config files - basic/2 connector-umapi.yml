@@ -1,13 +1,36 @@
-server:
-  # This section describes the location of the servers used for the dashboard. Default is:
-  # host: usermanagement.adobe.io
-  # endpoint: /v2/usermanagement
-  # ims_host: ims-na1.adobelogin.com
-  # ims_endpoint_jwt: /ims/exchange/jwt
+# This is a sample configuration file for the umapi connector type.
+#
+# umapi (user management api) is a network protocol served by Adobe that
+# provides management of users in Adobe-hosted enterprise organizations.
+#
+# This sample file contains all of the settable options for this protocol.
+# All of the settings here can be changed.  It is recommended
+# that you make a copy of this file and edit that to match your configuration.
+# While you are at it, you will likely want to remove a lot of this  commentary,
+# in order to enhance the readability of your file.
 
+# (optional) UMAPI server settings (defaults as shown)
+# These settings specify how to contact the Adobe servers which
+# host the UMAPI services and those which provide authorization.
+# You will never need to alter these settings unless you are provided
+# alternate values as part of a pilot program with Adobe.  It is
+# highly recommended that you leave these values commented out
+# so that the default values are guaranteed to be used.
+server:
+  #host: usermanagement.adobe.io
+  #endpoint: /v2/usermanagement
+  #ims_host: ims-na1.adobelogin.com
+  #ims_endpoint_jwt: /ims/exchange/jwt
+
+# (required) enterprise organization settings
+# You must specify all five of these settings.  Consult the
+# Adobe UMAPI documentation and the Adobe I/O Console to determine
+# the correct settings for your enterprise organization.
+# [NOTE: the priv_key_path setting can be an absolute or relative pathname;
+# if relative, it is interpreted relative to this configuration file.]
 enterprise:
   org_id: "Org ID goes here"
   api_key: "API key goes here"
   client_secret: "Client secret goes here"
   tech_acct: "Tech account ID goes here"
-  priv_key_path: "Path to private.key goes here"
+  priv_key_path: "path/to/private/key/file"

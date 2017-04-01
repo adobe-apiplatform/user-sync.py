@@ -11,6 +11,7 @@
 # The adobe_users section controls connection to the Adobe UM API endpoints
 # and also which users on the Adobe side are eligible to be updated.
 adobe_users:
+  #
   # These three settings control which Adobe users are excluded from
   # being updated by User Sync.  All three default to no value, meaning
   # that (by default) all users on the Adobe side can be updated and/or
@@ -28,14 +29,15 @@ adobe_users:
   # removed because your directory doesn't contain them.]
   exclude_identity_types:
     - adobeID
+  #
   # (optional) exclude_adobe_groups (no default value)
   # exclude_adobe_groups is a list of values, each of which is a string
   # that names a product configuration or user group on the Adobe side.
   # Any user in one or more of the named Adobe groups is excluded from
   # updates by User Sync.
   exclude_adobe_groups:
-    - "Sample Product Configuration"
-    - "Sample User Group"
+    #- "Sample Product Configuration"
+    #- "Sample User Group"
   # (optional) exclude_users (no default value)
   # exclude_users is a list of values, each of which is a Python
   # regular expression.  Users who match any of these regular expressions
@@ -45,8 +47,8 @@ adobe_users:
   # Except in the case of federated IDs that do username-based login,
   # the username of a user is the same as the email of the user.
   exclude_users:
-    - ".*@special.com"
-    - "freelancer-[0-9]+.*"
+    #- ".*@special.com"
+    #- "freelancer-[0-9]+.*"
 
   # (required) connectors
   # The connectors section specifies how to connect User Sync to Adobe.
@@ -60,13 +62,14 @@ adobe_users:
     # use a relative pathname, it is interpreted relative to the
     # location of this configuration file, not relative to the
     # working directory of your User Sync process.
-    umapi: "2 connector-umapi.yml"
+    umapi: "connector-umapi.yml"
 
 # The directory_users section controls how customer-side users are accessed,
 # sets default values for attributes not specified in the customer directory,
 # and also determines how customer-side directory groups correspond to
 # Adobe-side product configurations and user groups.
 directory_users:
+  #
   # (optional) user_identity_type (default value enterpriseID)
   # All Adobe users have an identity type: one of Adobe ID, Enterprise ID,
   # or Federated ID.  When a directory user is created on the Adobe side,
@@ -79,6 +82,7 @@ directory_users:
   # for one (or any) of your users, you can specify a default type here that
   # will be used: one of "adobeID", "enterpriseID", or "federatedID".
   user_identity_type: enterpriseID
+  #
   # (optional) default_country_code (no default value)
   # All Adobe users have a country code, which is a two-letter (ISO-3166) country code
   # which represents the home country of the user.
@@ -89,10 +93,22 @@ directory_users:
   # the user for his home country at the time of first sign-in.  But to avoid mistakes,
   # it is highly recommended that IT assign the value via User Sync.]
   default_country_code: US
+  #
+  # (optional) extension (no default value)
+  # Extensions allow you to run custom logic on a per-user basis to extend
+  # the way directory-user attributes and groups are mapped to attributes,
+  # product configurations, and user groups on the Adobe side.  You specify
+  # your extension in a separate configuration file, and provide the path
+  # to that file in this section.  As always, the path you provide can be
+  # either an absolute or relative path, and if relative it's take as relative
+  # to this configuration file, not to the User Sync working directory.
+  # [To to use an extension, uncomment and update the next line.]
+  #extension: extension-config.yml
 
   # (required) connectors
   # The connectors section specifies how to connect User Sync to your directory.
   connectors:
+    #
     # (optional) ldap (no default value)
     # ldap stand for "lightweight directory access protocol", which is the
     # network protocol used by most in-house directory systems (including
@@ -103,7 +119,8 @@ directory_users:
     # use a relative pathname, it is interpreted relative to the
     # location of this configuration file, not relative to the
     # working directory of your User Sync process.
-    ldap: "3 connector-ldap.yml"
+    ldap: "connector-ldap.yml"
+    #
     # (optional) csv (no default value)
     # csv stands for "comma-separated values", which is the most common form
     # of plain-text spreadsheet format.  The value of the csv setting is
@@ -113,7 +130,7 @@ directory_users:
     # use a relative pathname, it is interpreted relative to the
     # location of this configuration file, not relative to the
     # working directory of your User Sync process.
-    csv: "4 connector-csv.yml"
+    csv: "connector-csv.yml"
 
   # (optional) groups (no default value)
   # The groups setting specifies how groups in the customer directory map
@@ -147,6 +164,7 @@ directory_users:
 # The limits section provides processing limits which can help ensure that
 # User Sync jobs do not exceed expected guardrails in their operation
 limits:
+  #
   # (required) max_adobe_only_users
   # After initial population of users has been done on the Adobe side,
   # most User Sync jobs are expected to incrementally update and/or remove
@@ -166,10 +184,12 @@ limits:
 # The logging section specifies what console or log file output
 # should be produced during each run of User Sync.
 logging:
+  #
   # (optional) log_to_file (default value "False")
   # Whether you want logging done to a file in addition to the standard output.
   # allowed values are "True" (log to both) or "False" (log only to standard output).
   log_to_file: False
+  #
   # (optional) file_log_directory (default value "logs")
   # An absolute or relative path to the directory where log files should be placed.
   # A single file is created per day, named with format "YYYY-MM-DD.log", and all
@@ -177,12 +197,14 @@ logging:
   # If a relative path is specified, it is interpreted relative to this configuration
   # file, not relative to the User Sync process working directory.
   file_log_directory: logs
+  #
   # (optional) file_log_level (default value "info")
   # This determines the detail level of the information logged to files.
   # Value must be one of "debug", "info", "warning", "error", or "critical",
   # in order of decreasing detail (that is, debug produces the most information,
   # while critical produces the least information, suppressing even reports
   # of non-fatal errors in operations.)
+  #
   file_log_level: info
   # (optional) console_log_level (default value "info")
   # This determines the detail level of the information logged to standard output.

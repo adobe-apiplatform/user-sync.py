@@ -82,7 +82,6 @@ class LDAPDirectoryTest(unittest.TestCase):
         directory_connector = user_sync.connector.directory.DirectoryConnector(user_sync.connector.directory_ldap)
         directory_connector.initialize(ldap_options)
  
-        all_loaded, actual_users = directory_connector.load_users_and_groups(users_by_group.iterkeys())
+        actual_users = directory_connector.load_users_and_groups(users_by_group.iterkeys())
 
-        self.assertTrue(all_loaded)
         tests.helper.assert_equal_users(self, all_users, actual_users)
