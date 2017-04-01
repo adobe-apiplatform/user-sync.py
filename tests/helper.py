@@ -21,8 +21,8 @@
 import csv
 
 from user_sync.connector import helper
-from user_sync.connector.dashboard import ActionManager
-from user_sync.connector.dashboard import Commands
+from user_sync.connector.umapi import ActionManager
+from user_sync.connector.umapi import Commands
 import user_sync.identity_type
 
 def write_to_separated_value_file(field_names, delimiter, items, output_file_path):
@@ -62,24 +62,24 @@ def assert_equal_users(unit_test, expected_users, actual_users):
         assert_equal_field_values(unit_test, expected_user, actual_user, ['firstname', 'lastname', 'email', 'country'])
         unit_test.assertSetEqual(set(expected_user['groups']), set(actual_user['groups']))
 
-def assert_equal_dashboard_commands(unit_test, expected_commands, actual_commands):
+def assert_equal_umapi_commands(unit_test, expected_commands, actual_commands):
     unit_test.assertEqual(expected_commands.__dict__, actual_commands.__dict__)
 
-def assert_equal_dashboard_commands_list(unit_test, expected_commands_list, actual_commands_list):
+def assert_equal_umapi_commands_list(unit_test, expected_commands_list, actual_commands_list):
     unit_test.assertEqual(len(expected_commands_list), len(actual_commands_list))    
     expected_list = sorted(expected_commands_list, key=lambda commands: commands.username)
     actual_list = sorted(actual_commands_list, key=lambda commands: commands.username)    
     for i in range(0, len(expected_list) - 1):
         expected_commands = expected_list[i]
         actual_commands = actual_list[i]
-        assert_equal_dashboard_commands(unit_test, expected_commands, actual_commands)
+        assert_equal_umapi_commands(unit_test, expected_commands, actual_commands)
         
-def create_dashboard_commands(user, identity_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE):
+def create_umapi_commands(user, identity_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE):
     commands = Commands(identity_type=identity_type, email=user['email'], username=user['username'], domain=user['domain'])
     return commands
 
 def create_logger():
-    return helper.create_logger({"logger_name" : "connector.dashboard"})
+    return helper.create_logger({"logger_name" : "connector.umapi"})
 
 def create_action_manager():
     return ActionManager(None, "test org id", create_logger())
