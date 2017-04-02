@@ -55,21 +55,8 @@ class ConfigFileLoaderTest(unittest.TestCase):
         mocked_open_name = '%s.open' % __name__
         with patch(mocked_open_name, mocked_open, create=True):
             mock_yaml.return_value = {
-                    'dashboard':{
-                            'owning':'dashboard/dashboard-owning-config-test.yml',
-                            'accessors':{
-                                    'test-org-1': {
-                                            'enterprise':{
-                                                    'priv_key_path':'../keys/test-org-1/private-key-test.key'
-                                                }
-                                        },
-                                    'test-org-2':'accessors/xyz/accessor-config-test.yml'
-                                },
-                            'accessor_config_filename_format':'accessors-test/dashboard-accessor-{organization_name}-config.yml',
-                            'test':'value should not change'
-                        },
                     'logging':{
-                            'file_log_directory':'logs'
+                            'file_log_directory':'log-test-1'
                         },
                     'other':{
                             'test-string':'test string value should not change',
@@ -85,22 +72,23 @@ class ConfigFileLoaderTest(unittest.TestCase):
                                 ]
                         }
                 }
-            
-            yml = ConfigFileLoader.load_root_config('config-test/user-sync-config-test.yml')
+            with mock.patch(os.path.isfile) as m_isfile:
+                m_isfile.return_value = True
+                yml = ConfigFileLoader.load_root_config('config-test/user-sync-config-test.yml')
             
             # test path updating
-            self.assert_eq(yml['dashboard']['owning'], os.path.abspath('config-test/dashboard/dashboard-owning-config-test.yml'), 'owning dashboard configuration path is incorrect')
-            self.assert_eq(yml['dashboard']['accessor_config_filename_format'], os.path.abspath('config-test/accessors-test/dashboard-accessor-{organization_name}-config.yml'), 'accessor dashboard config file format is incorrect')
-            self.assert_eq(yml['dashboard']['accessors']['test-org-1']['enterprise']['priv_key_path'], os.path.abspath('keys/test-org-1/private-key-test.key'), 'accessor test_org_1 dashboard config private key path is incorrect')
-            self.assert_eq(yml['dashboard']['accessors']['test-org-2'], os.path.abspath('config-test/accessors/xyz/accessor-config-test.yml'), 'accessor test_org_2 dashboard config file path is incorrect')
-            self.assert_eq(yml['logging']['file_log_directory'], os.path.abspath('config-test/logs'), 'logging path is incorrect')
+            self.assert_eq(yml['logging']['file_log_directory'], os.path.abspath('config-test/log-test-1'),
+                           'logging path is incorrect')
 
             # test control keys
-            self.assert_eq(yml['dashboard']['test'], 'value should not change', '/dashboard/test value should not change')
-            self.assert_eq(yml['other']['test-string'], 'test string value should not change', '/other/test-string value should not change')
-            self.assert_eq(yml['other']['test-dict']['test-string-2'], 'this should not change as well', '/other/test-dict/test-string-2 value should not change')
-            self.assert_eq(yml['other']['test-list'][0], 'item-1', '/other/test-list/[0] value should not change')
-            self.assert_eq(yml['other']['test-list'][2]['test-string-3'], 'xyz', '/other/test-list/[2] value should not change')
+            self.assert_eq(yml['other']['test-string'], 'test string value should not change',
+                           '/other/test-string value should not change')
+            self.assert_eq(yml['other']['test-dict']['test-string-2'], 'this should not change as well',
+                           '/other/test-dict/test-string-2 value should not change')
+            self.assert_eq(yml['other']['test-list'][0], 'item-1',
+                           '/other/test-list/[0] value should not change')
+            self.assert_eq(yml['other']['test-list'][2]['test-string-3'], 'xyz',
+                           '/other/test-list/[2] value should not change')
 
     @mock.patch('__builtin__.open')
     @mock.patch('yaml.load')
@@ -116,22 +104,20 @@ class ConfigFileLoaderTest(unittest.TestCase):
         mocked_open_name = '%s.open' % __name__
         with patch(mocked_open_name, mocked_open, create=True):
             mock_yaml.return_value = {
-                    'dashboard':{
-                            'other-1':'test-123'
-                        },
-                    'logging':{
-                            'file_log_directory':'logs-test'
-                        },
+                    'adobe_users': {'connectors': {'umapi': 'test-123'}},
+                    'logging': {'log_to_file': True},
                 }
-            
-            yml = ConfigFileLoader.load_root_config('config-test-2/user-sync-config-test.yml')
-            
+            with mock.patch(os.path.isfile) as m_isfile:
+                m_isfile.return_value = True
+                yml = ConfigFileLoader.load_root_config('config-test-2/user-sync-config-test.yml')
+
             # assert default values are preserved
-            self.assert_eq(yml['dashboard']['owning'], os.path.abspath('config-test-2/%s' % user_sync.config.DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME), 'default owning dashboard configuration path is incorrect')
-            self.assert_eq(yml['dashboard']['accessor_config_filename_format'], os.path.abspath('config-test-2/%s' % user_sync.config.DEFAULT_DASHBOARD_ACCESSOR_CONFIG_FILENAME_FORMAT), 'default accessor dashboard configuration file format is incorrect')
-            
+            self.assert_eq(yml['logging']['file_log_directory'], os.path.abspath('config-test-2/logs'),
+                           'default log path is missing or incorrect')
+
             # assert file paths are still updated properly
-            self.assert_eq(yml['logging']['file_log_directory'], os.path.abspath('config-test-2/logs-test'), 'default owning dashboard configuration path is incorrect')
+            self.assert_eq(yml['adobe_users']['connectors']['umapi'], os.path.abspath('config-test-2/test-123'),
+                           'default primary umapi configuration path is incorrect')
 
     @mock.patch('__builtin__.open')
     @mock.patch('yaml.load')
@@ -139,7 +125,7 @@ class ConfigFileLoaderTest(unittest.TestCase):
         '''
         same purpose as test_load_root_config, but tests against sub
         configuration path updates (which is currently only the private key
-        path in the dashboard configuration file)
+        path in the umapi configuration file)
         :type mock_yaml: Mock
         :type mock_open: Mock
         '''
@@ -155,12 +141,15 @@ class ConfigFileLoaderTest(unittest.TestCase):
                             'test-2': 123
                         }
                 }
-            
-            yml = ConfigFileLoader.load_sub_config('sub-config-test/user-sync-config-test.yml')
+            with mock.patch(os.path.isfile) as m_isfile:
+                m_isfile.return_value = True
+                yml = ConfigFileLoader.load_sub_config('sub-config-test/user-sync-config-test.yml')
             
             # test path updating
-            self.assert_eq(yml['enterprise']['priv_key_path'], os.path.abspath('keys/test-key.key'), 'private key path is incorrect')
+            self.assert_eq(yml['enterprise']['priv_key_path'], os.path.abspath('keys/test-key.key'),
+                           'private key path is incorrect')
 
             # test control keys
-            self.assert_eq(yml['enterprise']['test'], 'value should not change', '/enterprise/test value should not change')
+            self.assert_eq(yml['enterprise']['test'], 'value should not change',
+                           '/enterprise/test value should not change')
             self.assert_eq(yml['other']['test-2'], 123, '/other/test-2 value should not change')

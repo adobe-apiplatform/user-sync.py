@@ -37,15 +37,15 @@ try:
 except:
     pass
 
-class DashboardConnector(object):
+class UmapiConnector(object):
     def __init__(self, name, caller_options):
         '''
         :type name: str
         :type caller_options: dict
         '''
-        caller_config = user_sync.config.DictConfig('"%s dashboard options"' % name, caller_options)
+        caller_config = user_sync.config.DictConfig('"%s umapi options"' % name, caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
-        builder.set_string_value('logger_name', 'dashboard.' + name)
+        builder.set_string_value('logger_name', 'umapi.' + name)
         builder.set_bool_value('test_mode', False)
         options = builder.get_options()        
 

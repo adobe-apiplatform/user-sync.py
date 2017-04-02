@@ -1,53 +1,124 @@
-username: "LDAP user goes here"
+# This is a sample configuration file for the ldap connector type.
+#
+# ldap (lightweight directory access protocol) is a network protocol used by
+# most enterprise directory systems (including Active Directory from Microsoft).
+#
+# This sample file contains all of the settable options for this protocol.
+# There is tremendous variation in the user object structure and attribute
+# value structure among LDAP directories even within a single enterprise, so
+# you will likely have to adapt the value specified here to match those in
+# use in your situation.  All of the settings here can be changed, and
+# many do not have default values and so are required.  It is recommended
+# that you make a copy of this file and edit that to match your configuration.
+# While you are at it, you will likely want to remove a lot of this  commentary,
+# in order to enhance the readability of your file.
+
+# connection settings (required)
+# You must specify all four of these settings.  Consult with your
+# enterprise directory administrators to get suitable values.
+# You may want to specify these connection settings in a separate file
+# from the rest of your settings, so as to guard your credential more
+# securely than your other configuration values.  See the User Sync
+# documentation for an explanation of how to do this.
+username: "LDAP username goes here"
 password: "LDAP password goes here"
 host: "LDAP host URL goes here.  e.g. ldap://ldap.example.com"
 base_dn: "defines the base DN. e.g. DC=example,DC=com"
 
-# specifies the string format used to construct a group query.
-# {group} is replaced with the name of the group to find.  Default is:
-# group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
+# (optional) user_identity_type (default is inherited from main configuration)
+# user_identity_type specifies a default identity type for when directory users
+# are created on the Adobe side (one of adobeID, enterpriseID, federatedID).
+# This overrides the exact same setting in the top-level user sync configuration
+# file, and if not specified here the value set or default there is used as
+# the default value for this connection.  To set an override, uncomment this setting.
+#user_identity_type: enterpriseID
+
+# (optional) search_page_size (default value given below)
+# search_page_size specifies the result page size requested when
+# fetching values from the directory.
+search_page_size: 200
+
+# (optional) require_tls_cert (default value given below)
+# require_tls_cert forces the ldap connection to use TLS security with cerficate
+# validation.  Allowed values are True (require) or False (don't require).
+require_tls_cert: False
+
+# (optional) all_users_filter (default value given below)
+# all_users_filter specifies the query used to find all users in the directory.
+# The default value specified here is appropriate for Active Directory, which has a
+# special field that is used to enable and disable users.  The value for OpenLDAP
+# directories might be much simpler: "(&(objectClass=person)(objectClass=top))"
+all_users_filter: "(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
+
+# (optional) group_filter_format (default value given below)
+# group_filter_format specifies the format string used to construct a group query,
+# as needed by the --users groups or --users mapped command-line arguments.
+# {group} is replaced with the name of the group to find.  The default value here is
+# complex, because it's meant to work for both AD-style and OpenLDAP-style directories.
+# You will likely want to replace it with a simpler query customized for your directory,
+# such as this one for Active Directory: "(&(objectCategory=group)(cn={group}))"
+# or this one for OpenLDAP: "(&(|(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
+group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
+
+# (optional) user_identity_type_format (no default)
+# user_identity_type_format specifies how to construct a user's desired identity
+# type on the Adobe side by combining constant strings with attribute values.
+# Any names in curly braces are take as attribute names, and everything including
+# the braces will be replaced on a per-user basis with the values of the attributes.
+# There is no default value for this setting, because most directories don't contain
+# users with different identity types (so setting the default identity type suffices).
+# If your directory contains users of different identity types, you should define
+# this field to look at the value of an appropriate attribute in your directory.
+# For example, if your directory attribute "idType" had one of the values
+# adobe, enterprise, or federated in it for each user, you could use:
+#user_identity_type_format: "{idType}ID"
+
+# (optional) user_email_format (default value given below)
+# user_email_format specifies how to construct a user's email address by
+# combining constant strings with the values of specific directory attributes.
+# Any names in curly braces are take as attribute names, and everything including
+# the braces will be replaced on a per-user basis with the values of the attributes.
+# The default value used here is simple, and suitable for OpenLDAP systems.  If you
+# are using a non-email-aware AD system, which holds the username separately
+# from the domain name, you may want: "{sAMAccountName}@mydomain.com"
+user_email_format: "{mail}"
+
+# (optional) user_domain_format (no default value)
+# user_domain_format is analogous to user_email_format in syntax, but it
+# is used to discover the domain for a given user.  If not specified, the
+# domain is taken from the domain part of the user's email address.
+#user_domain_format: "{domain}"
+
+# (optional) user_username_format (no default value)
+# user_username_format specifies how to construct a user's username on the
+# Adobe side by combining contstant strings with attribute values.
+# Any names in curly braces are take as attribute names, and everything including
+# the braces will be replaced on a per-user basis with the values of the attributes.
+# This setting should only be used when you are using federatedID and your
+# federation configuration specifies username-based login.  In all other cases,
+# make sure this is not set or returns an empty value, and the user's username
+# will be taken from the user's email.
+# This example supposes that the department and user_id are concatenated to
+# produce a unique username for each user.
+#user_username_format: "{department}_{user_id}"
+
+# Some additional info about LDAP connectors:
 #
-# example for AD 
-# group_filter_format: "(&(objectCategory=group)(cn={group}))"
+# Unlike the CSV connector, the LDAP connector does not have custom specifications
+# for how to construct user first names, last names, or country codes from the
+# values of different attributes.  That's because the LDAP protocol specifies
+# pre-defined aliases for a large number of typical attribute values, so there
+# are already pre-defined attribute names that are used for these fields:
+# - the Adobe first name is set from the LDAP "givenName" attribute
+# - the Adobe last name is set from the LDAP "sn" (surname) attribute
+# - the Adobe country is set from the LDAP "country" attribute
+# If you need to override these values on the Adobe side, you can use the
+# custom extension mechanism (see the docs) to compute and set field values
+# by combining these and any other custom attributes needed.  Seed the
+# User Sync documentation for full details.
 #
-# example for OpenLDAP
-# group_filter_format: "(&(objectClass=groupOfNames)(objectClass=posixGroup)(cn={group}))"
-
-# specifies the string filter used to find all users in the directory.
-# Default, intending for AD, is:
-# all_users_filter: "(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
-#
-# example for OpenLDAP
-# all_users_filter: "(&(objectClass=person)(objectClass=top))"
-
-# specifies how an email address is retrieved in the system.
-# the string is a string format, with names enclosed by curly brackets replaced
-# by the corresponding attributes for a user. Default is:
-# user_email_format: "{mail}"
-#
-# other example: 
-# user_email_format: "{sAMAccountName}@example.com"
-
-# specifies the identity type of the dashboard user to create.  
-# the valid values are: enterpriseID, federatedID
-# 
-# If not specified, the default identity type from the main config file is used.
-# 
-# example for enterprise ID:
-# user_identity_type: enterpriseID
-
-# specifies the result page size.  Default is:
-# search_page_size: 200
-
-# set to True if you want to validate SSL cert.  Default is:
-# require_tls_cert: False
-
-# Definition of where in the directory to get the domain if that information 
-# is in a non-standard place.  The value can be a fixed string and/or one or
-# more directory attribute names enclosed in curly braces.
-# user_domain_format: {domain}
-
-# Definition of where in the directory to get the user name for a federated
-# domain using username-based login.  The value can be a string and/or one or
-# more directory attribute names enclosed in curly braces.  For example,
-# user_username_format: {user_id}_{department}
+# Finally, some LDAP systems use uids to identify groups, and place users in
+# groups via uid rather than name.  The User Sync implementation always reads
+# the uid attribute on all objects if the directory provides one, so it is
+# able to handle directories which function in this way even though the
+# configuration files always specify groups by name.
