@@ -64,9 +64,9 @@ def process_args():
                              'side is updated to match.',
                         action='store_true', dest='update_user_info')
     parser.add_argument('--process-groups',
-                        help='if the membership in mapped groups differs between the enterprise and Adobe sides, '
+                        help='if the membership in mapped groups differs between the enterprise directory and Adobe sides, '
                              'the group membership is updated on the Adobe side so that the memberships in mapped '
-                             'groups matches those on the enterprise side.',
+                             'groups matches those on the enterprise directory side.',
                         action='store_true', dest='manage_groups')
     parser.add_argument('--adobe-only-user-action',
                         help="specify what action to take on Adobe users that don't match users from the "
@@ -79,10 +79,11 @@ def process_args():
                         nargs="*", metavar=('exclude|preserve|write-file|delete|remove|remove-adobe-groups', 'arg1'),
                         dest='adobe_only_user_action')
     parser.add_argument('--adobe-only-user-list',
-                        help='instead of computing unmatched users by comparing Adobe users with directory users, '
-                             'the list of unmatched Adobe users is read from a file (see --adobe-only-user-action write-file). '
-                             'When using this option, you must also specify what you want done with unmatched users by'
-                             'specifying one of the arguments of --adobe-only-user-action',
+                        help="instead of computing Adobe-only users (Adobe users with no matching users "
+                             "in the directory) by comparing Adobe users with directory users, "
+                             "the list is read from a file (see --adobe-only-user-action write-file). "
+                             "When using this option, you must also specify what you want done with Adobe-only "
+                             "users by also including --adobe-only-user-action and one of its arguments",
                         metavar='input_path', dest='stray_list_input_path')
     return parser.parse_args()
 
