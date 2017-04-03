@@ -19,26 +19,27 @@
 # SOFTWARE.
 
 import argparse
-import config
 import datetime
 import logging
 import os
 import re
 import sys
 
+import config
 import user_sync.config
-import user_sync.error
+import user_sync.connector.directory
+import user_sync.connector.umapi
+from user_sync.error import AssertionException
 import user_sync.lockfile
 import user_sync.rules
-import user_sync.connector.directory
-import user_sync.connector.dashboard
 from user_sync.version import __version__ as APP_VERSION
 
 LOG_STRING_FORMAT = '%(asctime)s %(process)d %(levelname)s %(name)s - %(message)s'
-LOG_DATE_FORMAT ='%Y-%m-%d %H:%M:%S'
+LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
-def process_args():    
-    parser = argparse.ArgumentParser(description='Adobe Enterprise Dashboard User Sync')
+
+def process_args():
+    parser = argparse.ArgumentParser(description='User Sync from Adobe')
     parser.add_argument('-v', '--version',
                         action='version',
                         version='%(prog)s ' + APP_VERSION)
@@ -51,57 +52,42 @@ def process_args():
                         default=config.DEFAULT_MAIN_CONFIG_FILENAME, metavar='filename', dest='config_filename')
     parser.add_argument('--users',
                         help="specify the users to be considered for sync. Legal values are 'all' (the default), "
-                             "'group name or names' (one or more specified AD groups), 'mapped' (all groups listed in "
-                             "configuration file), 'file f' (a specified input file).",
+                             "'group names' (one or more specified groups), 'mapped' (all groups listed in "
+                             "the configuration file), 'file f' (a specified input file).",
                         nargs="*", metavar=('all|file|mapped|group', 'arg1'), dest='users')
     parser.add_argument('--user-filter',
                         help='limit the selected set of users that may be examined for syncing, with the pattern '
                              'being a regular expression.',
                         metavar='pattern', dest='username_filter_pattern')
-    parser.add_argument('--source-filter',
-                        help='send the file to the specified connector (for example, --source-filter ldap:foo.yml). '
-                             'This parameter is used to limit the scope of the LDAP query.',
-                        metavar='connector:file', dest='source_filter_args')
     parser.add_argument('--update-user-info',
-                        help='if user information differs between the customer side and the Adobe side, the Adobe '
+                        help='if user information differs between the enterprise side and the Adobe side, the Adobe '
                              'side is updated to match.',
                         action='store_true', dest='update_user_info')
     parser.add_argument('--process-groups',
-                        help='if the membership in mapped groups differs between the customer side and the Adobe side, '
+                        help='if the membership in mapped groups differs between the enterprise and Adobe sides, '
                              'the group membership is updated on the Adobe side so that the memberships in mapped '
-                             'groups matches the customer side.',
+                             'groups matches those on the enterprise side.',
                         action='store_true', dest='manage_groups')
-    parser.add_argument('--remove-entitlements-for-unmatched-users',
-                        help="any Adobe users that don't match users on the customer "
-                             "side are removed from all user groups and product configurations, "
-                             "but they are left visible in the Users list in the Adobe console.",
-                        action='store_true', dest='disentitle_strays')
-    parser.add_argument('--remove-unmatched-users',
-                        help='like --remove-entitlements-for-unmatched-users, but additionally removes unmatched users '
-                             'from the Users list in the Adobe console.  The user account is left intact, with all'
-                             'of its associated storage, and can be re-added to the Users list if desired.',
-                        action='store_true', dest='remove_strays')
-    parser.add_argument('--delete-unmatched-users',
-                        help='like --remove-unmatched-users, but additionally deletes the '
-                             '(Enterprise or Federated ID) user account for any '
-                             'unmatched users, so that all of their associated storage is reclaimed and their email '
-                             'address is freed up for re-allocation to a new user.',
-                        action='store_true', dest='delete_strays')
-    parser.add_argument('--output-unmatched-users',
-                        help="all Adobe users that don't match users on the customer "
-                             "side are written to a file with the given pathname, "
-                             "but are not otherwise processed. "
-                             "The output file can then be used with --input-unmatched-users in a subsequent run.",
-                        metavar='output_path', dest='stray_list_output_path')
-    parser.add_argument('--input-unmatched-users',
+    parser.add_argument('--adobe-only-user-action',
+                        help="specify what action to take on Adobe users that don't match input users from the "
+                             "directory.  Options are 'exclude' (from all changes), "
+                             "'preserve' (as is except for --process-groups, the default), "
+                             "'write-file f' (preserve and list them), "
+                             "'delete' (users and their cloud storage), "
+                             "'remove' (users but preserve cloud storage), "
+                             "'remove-adobe-groups' (but do not remove users)",
+                        nargs="*", metavar=('exclude|preserve|write-file|delete|remove|remove-adobe-groups', 'arg1'),
+                        dest='adobe_only_user_action')
+    parser.add_argument('--adobe-only-user-list',
                         help='instead of computing unmatched users by comparing Adobe users with directory users, '
-                             'the list of unmatched Adobe users is read from a file (see --output-unmatched-users). '
+                             'the list of unmatched Adobe users is read from a file (see --output-adobe-users). '
                              'When using this option, you must also specify what you want done with unmatched users by'
                              'specifying one of the arguments '
-                             '--remove-entitlements-for-unmatched-users, --remove-unmatched-users '
-                             'or --delete-unmatched-users.',
+                             '--remove-entitlements-for-adobe-users, --remove-adobe-users '
+                             'or --delete-adobe-users.',
                         metavar='input_path', dest='stray_list_input_path')
     return parser.parse_args()
+
 
 def init_console_log():
     console_log_handler = logging.StreamHandler(sys.stdout)
@@ -110,6 +96,7 @@ def init_console_log():
     root_logger.addHandler(console_log_handler)
     root_logger.setLevel(logging.DEBUG)
     return console_log_handler
+
 
 def init_log(logging_config):
     '''
@@ -121,7 +108,7 @@ def init_log(logging_config):
     builder.set_string_value('file_log_level', 'info')
     builder.set_string_value('console_log_level', 'info')
     options = builder.get_options()
-        
+
     level_lookup = {
         'debug': logging.DEBUG,
         'info': logging.INFO,
@@ -129,13 +116,12 @@ def init_log(logging_config):
         'error': logging.ERROR,
         'critical': logging.CRITICAL
     }
-    
+
     console_log_level = level_lookup.get(options['console_log_level'])
     if (console_log_level == None):
         console_log_level = logging.INFO
         logger.log(logging.WARNING, 'Unknown console log level: %s setting to info' % options['console_log_level'])
     console_log_handler.setLevel(console_log_level)
-
 
     if options['log_to_file'] == True:
         unknown_file_log_level = False
@@ -146,84 +132,89 @@ def init_log(logging_config):
         file_log_directory = options['file_log_directory']
         if not os.path.exists(file_log_directory):
             os.makedirs(file_log_directory)
-        
+
         file_path = os.path.join(file_log_directory, datetime.date.today().isoformat() + ".log")
         fileHandler = logging.FileHandler(file_path)
         fileHandler.setLevel(file_log_level)
-        fileHandler.setFormatter(logging.Formatter(LOG_STRING_FORMAT, LOG_DATE_FORMAT))        
+        fileHandler.setFormatter(logging.Formatter(LOG_STRING_FORMAT, LOG_DATE_FORMAT))
         logging.getLogger().addHandler(fileHandler)
         if (unknown_file_log_level == True):
             logger.log(logging.WARNING, 'Unknown file log level: %s setting to info' % options['file_log_level'])
-        
+
+
 def begin_work(config_loader):
     '''
     :type config_loader: user_sync.config.ConfigLoader
     '''
 
     directory_groups = config_loader.get_directory_groups()
-    owning_dashboard_config = config_loader.get_dashboard_options_for_owning()
-    accessor_dashboard_configs = config_loader.get_dashboard_options_for_accessors()
+    primary_umapi_config, secondary_umapi_configs = config_loader.get_umapi_options()
     rule_config = config_loader.get_rule_options()
 
     # process mapped configuration after the directory groups have been loaded, as mapped setting depends on this.
     if (rule_config['directory_group_mapped']):
         rule_config['directory_group_filter'] = set(directory_groups.iterkeys())
 
-    referenced_organization_names = set()
+    # make sure that all the adobe groups are from known umapi connector names
+    referenced_umapi_names = set()
     for groups in directory_groups.itervalues():
         for group in groups:
-            organization_name = group.organization_name
-            if (organization_name != user_sync.rules.OWNING_ORGANIZATION_NAME):
-                referenced_organization_names.add(organization_name)
-    referenced_organization_names.difference_update(accessor_dashboard_configs.iterkeys())
-    
-    if (len(referenced_organization_names) > 0):
-        raise user_sync.error.AssertionException('dashboard_groups have references to unknown accessor dashboards: %s' % referenced_organization_names) 
-                
+            umapi_name = group.umapi_name
+            if (umapi_name != user_sync.rules.PRIMARY_UMAPI_NAME):
+                referenced_umapi_names.add(umapi_name)
+    referenced_umapi_names.difference_update(secondary_umapi_configs.iterkeys())
+
+    if (len(referenced_umapi_names) > 0):
+        raise AssertionException('Adobe groups reference unknown umapi connectors: %s' % referenced_umapi_names)
+
     directory_connector = None
     directory_connector_options = None
     directory_connector_module_name = config_loader.get_directory_connector_module_name()
     if (directory_connector_module_name != None):
-        directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])    
-        directory_connector = user_sync.connector.directory.DirectoryConnector(directory_connector_module)        
+        directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
+        directory_connector = user_sync.connector.directory.DirectoryConnector(directory_connector_module)
         directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
 
     config_loader.check_unused_config_keys()
-        
+
     if (directory_connector != None and directory_connector_options != None):
         # specify the default user_identity_type if it's not already specified in the options
         if 'user_identity_type' not in directory_connector_options:
             directory_connector_options['user_identity_type'] = rule_config['new_account_type']
         directory_connector.initialize(directory_connector_options)
-    
-    dashboard_owning_connector = user_sync.connector.dashboard.DashboardConnector("owning", owning_dashboard_config)
-    dashboard_accessor_connectors = {}    
-    for accessor_organization_name, accessor_config in accessor_dashboard_configs.iteritems():
-        dashboard_accessor_conector = user_sync.connector.dashboard.DashboardConnector("accessor.%s" % accessor_organization_name, accessor_config)
-        dashboard_accessor_connectors[accessor_organization_name] = dashboard_accessor_conector 
-    dashboard_connectors = user_sync.rules.DashboardConnectors(dashboard_owning_connector, dashboard_accessor_connectors)
+
+    primary_name = '.primary' if secondary_umapi_configs else ''
+    umapi_primary_connector = user_sync.connector.umapi.UmapiConnector(primary_name, primary_umapi_config)
+    umapi_other_connectors = {}
+    for secondary_umapi_name, secondary_config in secondary_umapi_configs.iteritems():
+        umapi_secondary_conector = user_sync.connector.umapi.UmapiConnector(".secondary.%s" % secondary_umapi_name,
+                                                                            secondary_config)
+        umapi_other_connectors[secondary_umapi_name] = umapi_secondary_conector
+    umapi_connectors = user_sync.rules.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
 
     rule_processor = user_sync.rules.RuleProcessor(rule_config)
     if (len(directory_groups) == 0 and rule_processor.will_manage_groups()):
         logger.warn('no groups mapped in config file')
-    rule_processor.run(directory_groups, directory_connector, dashboard_connectors)
-    
-    
+    rule_processor.run(directory_groups, directory_connector, umapi_connectors)
+
+
 def create_config_loader(args):
     config_bootstrap_options = {
         'main_config_filename': args.config_filename,
     }
     config_loader = user_sync.config.ConfigLoader(config_bootstrap_options)
     return config_loader
-            
+
+
 def create_config_loader_options(args):
     config_options = {
-        'test_mode': args.test_mode,        
+        'test_mode': args.test_mode,
         'manage_groups': args.manage_groups,
         'update_user_info': args.update_user_info,
         'directory_group_mapped': False,
     }
 
+    # --users
     users_args = args.users
     if users_args is not None:
         users_action = None if len(users_args) == 0 else user_sync.helper.normalize_string(users_args.pop(0))
@@ -231,7 +222,7 @@ def create_config_loader_options(args):
             config_options['directory_get_config_name'] = True
         elif users_action == 'file':
             if len(users_args) == 0:
-                raise user_sync.error.AssertionException('Missing file path for --users %s [file_path]' % users_action)
+                raise AssertionException('Missing file path for --users %s [file_path]' % users_action)
             config_options['directory_connector_module_name'] = 'user_sync.connector.directory_csv'
             config_options['directory_connector_overridden_options'] = {'file_path': users_args.pop(0)}
         elif users_action == 'mapped':
@@ -239,89 +230,57 @@ def create_config_loader_options(args):
             config_options['directory_group_mapped'] = True
         elif users_action == 'group':
             if len(users_args) == 0:
-                raise user_sync.error.AssertionException('Missing groups for --users %s [groups]' % users_action)
+                raise AssertionException('Missing groups for --users %s [groups]' % users_action)
             config_options['directory_get_config_name'] = True
             config_options['directory_group_filter'] = users_args.pop(0).split(',')
         else:
-            raise user_sync.error.AssertionException('Unknown argument --users %s' % users_action)
-    
-    username_filter_pattern = args.username_filter_pattern 
+            raise AssertionException('Unknown argument --users %s' % users_action)
+
+    username_filter_pattern = args.username_filter_pattern
     if (username_filter_pattern):
         try:
-            compiled_expression = re.compile(username_filter_pattern, re.IGNORECASE)
+            compiled_expression = re.compile(r'\A' + username_filter_pattern + r'\Z', re.IGNORECASE)
         except Exception as e:
-            raise user_sync.error.AssertionException("Bad regular expression for --user-filter: %s reason: %s" % (username_filter_pattern, e.message))
+            raise AssertionException("Bad regular expression for --user-filter: %s reason: %s" %
+                                     (username_filter_pattern, e.message))
         config_options['username_filter_regex'] = compiled_expression
-    
-    # --input-unmatched-users
+
+    # --adobe-only-user-action
+    adobe_action_args = args.adobe_only_user_action
+    if adobe_action_args is not None:
+        adobe_action = None if not adobe_action_args else user_sync.helper.normalize_string(adobe_action_args.pop(0))
+        if (adobe_action == None or adobe_action == 'preserve'):
+            pass  # no option settings needed
+        elif (adobe_action == 'exclude'):
+            config_options['exclude_strays'] = True
+        elif (adobe_action == 'write-file'):
+            if not adobe_action_args:
+                raise AssertionException('Missing file path for --adobe-only-user-action %s [file_path]' % adobe_action)
+            config_options['stray_list_output_path'] = adobe_action_args.pop(0)
+            logger.info('Writing unmatched users to: %s', config_options['stray_list_output_path'])
+        elif (adobe_action == 'delete'):
+            config_options['delete_strays'] = True
+        elif (adobe_action == 'remove'):
+            config_options['remove_strays'] = True
+        elif (adobe_action == 'remove-adobe-groups'):
+            config_options['disentitle_strays'] = True
+        else:
+            raise AssertionException('Unknown argument --adobe-only-user-action %s' % adobe_action)
+
+    # --adobe-only-user-list
     stray_list_input_path = args.stray_list_input_path
-    if (stray_list_input_path != None):
+    if stray_list_input_path:
         if users_args is not None:
-            raise user_sync.error.AssertionException('You cannot specify both --users and --input-unmatched-users')
+            raise AssertionException('You cannot specify both --users and --adobe-only-user-list')
+        if config_options.get('stray_list_output_path'):
+            raise AssertionException('You cannot specify both --adobe-only-user-list and --output-adobe-users')
         # don't read the directory when processing from the stray list
         config_options['directory_connector_module_name'] = None
-        logger.info('--input-unmatched-users specified, so not reading and comparing directory and Adobe users')
-        stray_key_map = user_sync.rules.RuleProcessor.read_stray_key_map(stray_list_input_path, logger = logger)
-        config_options['stray_key_map'] = stray_key_map
+        logger.info('--adobe-only-user-list specified, so not reading or comparing directory and Adobe users')
+        config_options['stray_list_input_path'] = stray_list_input_path
 
-    # --output-unmatched-users
-    stray_list_output_path = args.stray_list_output_path
-    if (stray_list_output_path != None):
-        if stray_list_input_path:
-            raise user_sync.error.AssertionException('You cannot specify both '
-                                                     '--input-unmatched-users and --output-unmatched-users')
-        logger.info('Writing unmatched users to: %s', stray_list_output_path)
-        config_options['stray_list_output_path'] = stray_list_output_path
-
-    # keep track of the number user removal type commands
-    stray_processing_command_count = 0
-
-    # --remove-unmatched-users
-    remove_strays = args.remove_strays
-    if remove_strays:
-        if stray_list_output_path:
-            remove_strays = False
-            logger.warn('--remove-unmatched-users ignored when --output-unmatched-users is specified')
-        stray_processing_command_count += 1
-    config_options['remove_strays'] = remove_strays
-
-    # --delete-unmatched-users
-    delete_strays = args.delete_strays
-    if delete_strays:
-        if stray_list_output_path:
-            delete_strays = False
-            logger.warn('--delete-unmatched-users ignored when --output-unmatched-users is specified')
-        stray_processing_command_count += 1
-    config_options['delete_strays'] = delete_strays
-
-    # --remove-entitlements-for-unmatched-users
-    disentitle_strays = args.disentitle_strays
-    if disentitle_strays:
-        if stray_list_output_path:
-            disentitle_strays = False
-            logger.warn('--remove-entitlements-for-unmatched-users ignored when --output-unmatched-users is specified')
-        stray_processing_command_count += 1
-    config_options['disentitle_strays'] = disentitle_strays
-
-    # ensure the user has only entered one "remove user" type command.    
-    if stray_processing_command_count > 1:
-        raise user_sync.error.AssertionException('You cannot specify more than one of '
-                                                 '--remove-entitlements-for-unmatched-users, --remove-unmatched-users '
-                                                 'and --delete-unmatched-users')
-                    
-    source_filter_args = args.source_filter_args
-    if (source_filter_args != None):
-        source_filter_args_separator_index = source_filter_args.find(':')
-        if (source_filter_args_separator_index >= 0):
-            connector_name = source_filter_args[:source_filter_args_separator_index]
-            source_filter_file_path = source_filter_args[source_filter_args_separator_index + 1:]
-            config_options['directory_source_filters'] = {
-                connector_name: source_filter_file_path
-            }
-        else:
-            raise user_sync.error.AssertionException("Invalid arg for --source-filter: %s" % source_filter_args)
-    
     return config_options
+
 
 def log_parameters(args):
     '''
@@ -336,14 +295,15 @@ def log_parameters(args):
         logger.info('  %s: %s', parameter_name, parameter_value)
     logger.info('-------------------------------------')
 
-def main():   
-    run_stats = None 
+
+def main():
+    run_stats = None
     try:
         try:
             args = process_args()
         except SystemExit:
             return
-        
+
         config_loader = create_config_loader(args)
         init_log(config_loader.get_logging_config())
 
@@ -356,33 +316,33 @@ def main():
         lock_path = os.path.join(script_dir, 'lockfile')
         lock = user_sync.lockfile.ProcessLock(lock_path)
         if lock.set_lock():
-            try:                
+            try:
                 config_options = create_config_loader_options(args)
                 config_loader.set_options(config_options)
-                
+
                 begin_work(config_loader)
             finally:
                 lock.unlock()
         else:
             logger.info("Process is already locked")
-        
-    except user_sync.error.AssertionException as e:
+
+    except AssertionException as e:
         if (not e.is_reported()):
             logger.critical(e.message)
-            e.set_reported()    
+            e.set_reported()
     except:
         try:
             logger.error('Unhandled exception', exc_info=sys.exc_info())
-        except:        
+        except:
             pass
-        
+
     finally:
         if (run_stats != None):
             run_stats.log_end(logger)
-        
+
+
 console_log_handler = init_console_log()
 logger = logging.getLogger('main')
 
 if __name__ == '__main__':
     main()
-    

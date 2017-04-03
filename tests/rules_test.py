@@ -21,7 +21,7 @@
 import mock.mock
 import unittest
 
-import user_sync.connector.dashboard
+import user_sync.connector.umapi
 import user_sync.connector.directory
 import user_sync.rules
 import tests.helper
@@ -29,16 +29,16 @@ import tests.helper
 class RulesTest(unittest.TestCase):
     
     def test_normal(self):
-        owning_organization_name = user_sync.rules.OWNING_ORGANIZATION_NAME
-        accessor_1_organization_name = "accessor1"
+        primary_umapi_name = user_sync.rules.PRIMARY_UMAPI_NAME
+        secondary_1_umapi_name = "secondary1"
         directory_group_1 = 'acrobat1' 
         directory_group_2 = 'acrobat2' 
-        owning_group_11 = 'acrobat11' 
-        owning_group_12 = 'acrobat12' 
-        owning_group_21 = 'acrobat21' 
+        primary_group_11 = 'acrobat11'
+        primary_group_12 = 'acrobat12'
+        primary_group_21 = 'acrobat21'
         directory_groups = {
-            directory_group_1: [user_sync.rules.DashboardGroup(owning_group_11, owning_organization_name), user_sync.rules.DashboardGroup('acrobat12', accessor_1_organization_name)],
-            directory_group_2: [user_sync.rules.DashboardGroup(owning_group_21, owning_organization_name)]
+            directory_group_1: [user_sync.rules.AdobeGroup(primary_group_11, primary_umapi_name), user_sync.rules.AdobeGroup('acrobat12', secondary_1_umapi_name)],
+            directory_group_2: [user_sync.rules.AdobeGroup(primary_group_21, primary_umapi_name)]
         }
         all_users = [tests.helper.create_test_user([directory_group_1]), 
             tests.helper.create_test_user([directory_group_2]),
@@ -48,62 +48,62 @@ class RulesTest(unittest.TestCase):
             user['username'] = user['email']
             user['domain'] = None
             
-        owning_users = []
-        owning_user_1 = all_users[1].copy()
-        owning_user_1['groups'] = [owning_group_11]
-        owning_users.append(owning_user_1)
+        primary_users = []
+        primary_user_1 = all_users[1].copy()
+        primary_user_1['groups'] = [primary_group_11]
+        primary_users.append(primary_user_1)
         
         def mock_load_users_and_groups(groups, extended_attributes=None):
-            return (True, list(all_users))
+            return list(all_users)
         mock_directory_connector = mock.mock.create_autospec(user_sync.connector.directory.DirectoryConnector)
         mock_directory_connector.load_users_and_groups = mock_load_users_and_groups
         
-        owning_commands_list = []    
-        mock_owning_dashboard_connector = self.create_mock_dashboard_connector(owning_users, owning_commands_list)
+        primary_commands_list = []
+        mock_primary_umapi_connector = self.create_mock_umapi_connector(primary_users, primary_commands_list)
 
-        accessor_commands_list = []    
-        mock_accessor_dashboard_connector = self.create_mock_dashboard_connector([], accessor_commands_list)
+        secondary_commands_list = []
+        mock_secondary_umapi_connector = self.create_mock_umapi_connector([], secondary_commands_list)
         
-        dashboard_connectors = user_sync.rules.DashboardConnectors(mock_owning_dashboard_connector, {
-            accessor_1_organization_name: mock_accessor_dashboard_connector
+        umapi_connectors = user_sync.rules.UmapiConnectors(mock_primary_umapi_connector, {
+            secondary_1_umapi_name: mock_secondary_umapi_connector
         })
         
         rule_processor = user_sync.rules.RuleProcessor({'manage_groups': True})
-        rule_processor.run(directory_groups, mock_directory_connector, dashboard_connectors)
+        rule_processor.run(directory_groups, mock_directory_connector, umapi_connectors)
 
         rule_options = rule_processor.options
 
-        expected_owning_commands_list = []
+        expected_primary_commands_list = []
         
         user = all_users[1]
-        commands = tests.helper.create_dashboard_commands(user)
-        commands.add_groups(set([owning_group_21]))
-        commands.remove_groups(set([owning_group_11]))
-        expected_owning_commands_list.append(commands)
+        commands = tests.helper.create_umapi_commands(user)
+        commands.add_groups(set([primary_group_21]))
+        commands.remove_groups(set([primary_group_11]))
+        expected_primary_commands_list.append(commands)
         
         user = all_users[0]
-        commands = tests.helper.create_dashboard_commands(user)
+        commands = tests.helper.create_umapi_commands(user)
         commands.add_user(self.create_user_attributes_for_commands(user, rule_options['update_user_info']))
-        commands.add_groups(set([owning_group_11]))        
-        expected_owning_commands_list.append(commands)
+        commands.add_groups(set([primary_group_11]))
+        expected_primary_commands_list.append(commands)
         
         user = all_users[2]
-        commands = tests.helper.create_dashboard_commands(user)
+        commands = tests.helper.create_umapi_commands(user)
         commands.add_user(self.create_user_attributes_for_commands(user, rule_options['update_user_info']))
-        expected_owning_commands_list.append(commands)
+        expected_primary_commands_list.append(commands)
                 
-        expected_accessor_commands_list = []
+        expected_secondary_commands_list = []
         user = all_users[0]
-        commands = tests.helper.create_dashboard_commands(user)
-        commands.add_groups(set([owning_group_12]))
-        expected_accessor_commands_list.append(commands)
+        commands = tests.helper.create_umapi_commands(user)
+        commands.add_groups(set([primary_group_12]))
+        expected_secondary_commands_list.append(commands)
 
-        tests.helper.assert_equal_dashboard_commands_list(self, expected_owning_commands_list, owning_commands_list)
-        tests.helper.assert_equal_dashboard_commands_list(self, expected_accessor_commands_list, accessor_commands_list)
+        tests.helper.assert_equal_umapi_commands_list(self, expected_primary_commands_list, primary_commands_list)
+        tests.helper.assert_equal_umapi_commands_list(self, expected_secondary_commands_list, secondary_commands_list)
 
     # default country code tests
     @mock.patch('logging.getLogger')
-    def _do_country_code_test(self, mock_dashboard_commands, mock_connectors, identity_type, default_country_code, user_country_code, expected_country_code, mock_logger):
+    def _do_country_code_test(self, mock_umapi_commands, mock_connectors, identity_type, default_country_code, user_country_code, expected_country_code, mock_logger):
         user_key = identity_type + ',cceuser1@ensemble.ca,'
         expected_result = {'lastname': 'User1', 'email': 'cceuser1@ensemble.ca', 'firstname': '!Openldap CCE', 'option': 'updateIfAlreadyExists'}
         if (expected_country_code):
@@ -121,54 +121,54 @@ class RulesTest(unittest.TestCase):
                        'email': 'cceuser1@ensemble.ca',
                        'uid': '001'}
         }
-        mock_rules.add_dashboard_user(user_key, mock_connectors)
+        mock_rules.add_umapi_user(user_key, set(), mock_connectors)
 
         if (identity_type == 'federatedID' and default_country_code == None and user_country_code == None):
             mock_rules.logger.error.assert_called_with('User %s cannot be added as it has a blank country code and no default has been specified.', user_key)
         else:
-            mock_dashboard_commands.return_value.add_user.assert_called_with(expected_result)
+            mock_umapi_commands.return_value.add_user.assert_called_with(expected_result)
 
     # federatedId
-    @mock.patch('user_sync.rules.DashboardConnectors')
-    @mock.patch('user_sync.connector.dashboard.Commands')
-    def test_default_country_federatedId_no_country_no_default(self, mock_dashboard_commands, mock_connectors):
-        self._do_country_code_test(mock_dashboard_commands, mock_connectors, 'federatedID', None, None, None)
+    @mock.patch('user_sync.rules.UmapiConnectors')
+    @mock.patch('user_sync.connector.umapi.Commands')
+    def test_default_country_federatedId_no_country_no_default(self, mock_umapi_commands, mock_connectors):
+        self._do_country_code_test(mock_umapi_commands, mock_connectors, 'federatedID', None, None, None)
 
-    @mock.patch('user_sync.rules.DashboardConnectors')
-    @mock.patch('user_sync.connector.dashboard.Commands')
-    def test_default_country_federatedId_country_supplied_no_default(self, mock_dashboard_commands, mock_connectors):
-        self._do_country_code_test(mock_dashboard_commands, mock_connectors, 'federatedID', None, 'UK', 'UK')
+    @mock.patch('user_sync.rules.UmapiConnectors')
+    @mock.patch('user_sync.connector.umapi.Commands')
+    def test_default_country_federatedId_country_supplied_no_default(self, mock_umapi_commands, mock_connectors):
+        self._do_country_code_test(mock_umapi_commands, mock_connectors, 'federatedID', None, 'UK', 'UK')
 
-    @mock.patch('user_sync.rules.DashboardConnectors')
-    @mock.patch('user_sync.connector.dashboard.Commands')
-    def test_default_country_federatedId_country_supplied_with_default(self, mock_dashboard_commands, mock_connectors):
-        self._do_country_code_test(mock_dashboard_commands, mock_connectors, 'federatedID', 'US', 'UK', 'UK')
+    @mock.patch('user_sync.rules.UmapiConnectors')
+    @mock.patch('user_sync.connector.umapi.Commands')
+    def test_default_country_federatedId_country_supplied_with_default(self, mock_umapi_commands, mock_connectors):
+        self._do_country_code_test(mock_umapi_commands, mock_connectors, 'federatedID', 'US', 'UK', 'UK')
 
-    @mock.patch('user_sync.rules.DashboardConnectors')
-    @mock.patch('user_sync.connector.dashboard.Commands')
-    def test_default_country_federatedId_no_country_with_default(self, mock_dashboard_commands, mock_connectors):
-        self._do_country_code_test(mock_dashboard_commands, mock_connectors, 'federatedID', 'US', None, 'US')
+    @mock.patch('user_sync.rules.UmapiConnectors')
+    @mock.patch('user_sync.connector.umapi.Commands')
+    def test_default_country_federatedId_no_country_with_default(self, mock_umapi_commands, mock_connectors):
+        self._do_country_code_test(mock_umapi_commands, mock_connectors, 'federatedID', 'US', None, 'US')
 
     # enterpriseId
-    @mock.patch('user_sync.rules.DashboardConnectors')
-    @mock.patch('user_sync.connector.dashboard.Commands')
-    def test_default_country_enterpriseID_no_country_no_default(self, mock_dashboard_commands, mock_connectors):
-        self._do_country_code_test(mock_dashboard_commands, mock_connectors, 'enterpriseID', None, None, 'UD')
+    @mock.patch('user_sync.rules.UmapiConnectors')
+    @mock.patch('user_sync.connector.umapi.Commands')
+    def test_default_country_enterpriseID_no_country_no_default(self, mock_umapi_commands, mock_connectors):
+        self._do_country_code_test(mock_umapi_commands, mock_connectors, 'enterpriseID', None, None, 'UD')
 
-    @mock.patch('user_sync.rules.DashboardConnectors')
-    @mock.patch('user_sync.connector.dashboard.Commands')
-    def test_default_country_enterpriseID_country_supplied_no_default(self, mock_dashboard_commands, mock_connectors):
-        self._do_country_code_test(mock_dashboard_commands, mock_connectors, 'enterpriseID', None, 'UK', 'UK')
+    @mock.patch('user_sync.rules.UmapiConnectors')
+    @mock.patch('user_sync.connector.umapi.Commands')
+    def test_default_country_enterpriseID_country_supplied_no_default(self, mock_umapi_commands, mock_connectors):
+        self._do_country_code_test(mock_umapi_commands, mock_connectors, 'enterpriseID', None, 'UK', 'UK')
 
-    @mock.patch('user_sync.rules.DashboardConnectors')
-    @mock.patch('user_sync.connector.dashboard.Commands')
-    def test_default_country_enterpriseID_country_supplied_with_default(self, mock_dashboard_commands, mock_connectors):
-        self._do_country_code_test(mock_dashboard_commands, mock_connectors, 'enterpriseID', 'US', 'UK', 'UK')
+    @mock.patch('user_sync.rules.UmapiConnectors')
+    @mock.patch('user_sync.connector.umapi.Commands')
+    def test_default_country_enterpriseID_country_supplied_with_default(self, mock_umapi_commands, mock_connectors):
+        self._do_country_code_test(mock_umapi_commands, mock_connectors, 'enterpriseID', 'US', 'UK', 'UK')
 
-    @mock.patch('user_sync.rules.DashboardConnectors')
-    @mock.patch('user_sync.connector.dashboard.Commands')
-    def test_default_country_enterpriseID_no_country_with_default(self, mock_dashboard_commands, mock_connectors):
-        self._do_country_code_test(mock_dashboard_commands, mock_connectors, 'enterpriseID', 'US', None, 'US')
+    @mock.patch('user_sync.rules.UmapiConnectors')
+    @mock.patch('user_sync.connector.umapi.Commands')
+    def test_default_country_enterpriseID_no_country_with_default(self, mock_umapi_commands, mock_connectors):
+        self._do_country_code_test(mock_umapi_commands, mock_connectors, 'enterpriseID', 'US', None, 'US')
 
     @staticmethod
     def create_user_attributes_for_commands(user, update_user_info):
@@ -181,7 +181,7 @@ class RulesTest(unittest.TestCase):
         }
         
     @staticmethod
-    def create_mock_dashboard_connector(users_to_return, commands_list_output):
+    def create_mock_umapi_connector(users_to_return, commands_list_output):
         def mock_send_commands(commands, callback = None):
             if (len(commands) > 0):
                 commands_list_output.append(commands)
@@ -192,9 +192,9 @@ class RulesTest(unittest.TestCase):
                     "errors": None
                 })
 
-        action_manager = mock.mock.create_autospec(user_sync.connector.dashboard.ActionManager)
+        action_manager = mock.mock.create_autospec(user_sync.connector.umapi.ActionManager)
         action_manager.has_work = lambda: False
-        mock_connector = mock.mock.create_autospec(user_sync.connector.dashboard)
+        mock_connector = mock.mock.create_autospec(user_sync.connector.umapi)
         mock_connector.iter_users = lambda: list(users_to_return)
         mock_connector.send_commands = mock_send_commands
         mock_connector.get_action_manager = lambda: action_manager

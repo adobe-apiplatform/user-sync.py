@@ -62,7 +62,7 @@ To set up PyCharm for debugging,
 # Basic Usage
 
 ```
-Adobe Enterprise Dashboard User Sync
+User Sync from Adobe
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -127,10 +127,4 @@ optional arguments:
 
 # Configuration
 
-See `examples/example.user-sync-config.yml` for the main configuration template.  The main configuration file user-sync-config.yml must exist in the configuration path.
-
-See `examples/example.dashboard-config.yml` for the dashboard configuration template.  The tool would try and find dashboard-owning-config.yml in the configuration path.
-
-See `examples/example.connector-ldap.yml` for the ldap configuration template.  The main configuration file can be configured to reference this file.
-
-
+See the `examples` directory for sample confguration files of all types.

@@ -18,39 +18,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import glob
 import logging
 import os
 import re
+
 import types
 import yaml
 
-from user_sync import credential_manager
-import user_sync.error
 import user_sync.identity_type
 import user_sync.rules
+from user_sync import credential_manager
+from user_sync.error import AssertionException
 
 DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
-DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME = 'dashboard-owning-config.yml'
-DEFAULT_DASHBOARD_ACCESSOR_CONFIG_FILENAME_FORMAT = 'dashboard-accessor-{organization_name}-config.yml'
-
-# list of key paths in the root configuration file that will be processed as
-# filenames relative to the configuration's file path
-ROOT_CONFIG_PATH_KEYS = [
-        { 'path':'/dashboard/owning', 'default': DEFAULT_DASHBOARD_OWNING_CONFIG_FILENAME },
-        '/dashboard/owning/enterprise/priv_key_path',
-        '/dashboard/accessors/*',
-        '/dashboard/accessors/*/enterprise/priv_key_path',
-        { 'path':'/dashboard/accessor_config_filename_format', 'default':DEFAULT_DASHBOARD_ACCESSOR_CONFIG_FILENAME_FORMAT },
-        '/directory/connectors/ldap',
-        '/logging/file_log_directory'
-    ]
-
-# like ROOT_CONFIG_PATH_KEYS, but this is applied to non-root configuration
-# files
-SUB_CONFIG_PATH_KEYS = [
-        "/enterprise/priv_key_path"
-    ]
 
 class ConfigLoader(object):
     def __init__(self, caller_options):
@@ -64,12 +44,12 @@ class ConfigLoader(object):
             'directory_connector_overridden_options': None,
             'directory_group_filter': None,
             'directory_group_mapped': False,
-            'directory_source_filters': None,
             'disentitle_strays': False,
+            'exclude_strays': False,
             'main_config_filename': DEFAULT_MAIN_CONFIG_FILENAME,
             'manage_groups': False,
             'remove_strays': False,
-            'stray_key_map': None,
+            'stray_list_input_path': None,
             'stray_list_output_path': None,
             'test_mode': False,
             'update_user_info': True,
@@ -81,9 +61,7 @@ class ConfigLoader(object):
         main_config_content = ConfigFileLoader.load_root_config(main_config_filename)
         
         if (not os.path.isfile(main_config_filename)):
-            raise user_sync.error.AssertionException('Config file does not exist: %s' % (main_config_filename))  
-        
-        self.directory_source_filters_accessed = set()        
+            raise AssertionException('Config file does not exist: %s' % (main_config_filename))  
         
         self.logger = logger = logging.getLogger('config')
         logger.info("Using main config file: %s", main_config_filename)                
@@ -98,55 +76,44 @@ class ConfigLoader(object):
     def get_logging_config(self):
         return self.main_config.get_dict_config('logging', True)
 
-    def get_dashboard_options_for_owning(self):
-        owning_config = None
-        dashboard_config = self.main_config.get_dict_config('dashboard', True)
-        if (dashboard_config != None):
-            owning_config = dashboard_config.get_list('owning', True)
-        owning_config_sources = self.as_list(owning_config)
-        owning_config_sources.append({
-            'test_mode': self.options['test_mode']
-        })
-        return self.create_dashboard_options(owning_config_sources, 'owning_dashboard') 
-    
-    def get_dashboard_options_for_accessors(self):
-        dashboard_config = self.main_config.get_dict_config('dashboard', True)
-
-        accessor_config_filename_format = None        
-        if (dashboard_config != None):
-            accessor_config_filename_format = dashboard_config.get_string('accessor_config_filename_format', True)                        
-        if (accessor_config_filename_format == None):
-            accessor_config_filename_format = DEFAULT_DASHBOARD_ACCESSOR_CONFIG_FILENAME_FORMAT
-            
-        accessor_config_file_paths = {}
-        accessor_config_filename_wildcard = accessor_config_filename_format.format(**{'organization_name': '*'})
-        for file_path in glob.glob(accessor_config_filename_wildcard):
-            parse_result = self.parse_string(accessor_config_filename_format, file_path)
-            organization_name = parse_result.get('organization_name')
-            if (organization_name != None):
-                accessor_config_file_paths[organization_name] = file_path
-             
-        accessors_config = None
-        if (dashboard_config != None):
-            accessors_config = dashboard_config.get_dict_config('accessors', True)
-                
-        accessors_options = {}
-        organization_names = set(accessor_config_file_paths.iterkeys())
-        if (accessors_config != None):
-            organization_names.update(accessors_config.iter_keys())
-        for organization_name in organization_names:
-            accessor_config = None
-            if (accessors_config != None): 
-                accessor_config = accessors_config.get_list(organization_name, True) 
-            accessor_config_sources = self.as_list(accessor_config)
-            accessor_config_file_path = accessor_config_file_paths.get(organization_name, None)
-            if (accessor_config_file_path != None):
-                accessor_config_sources.append(accessor_config_file_path)
-            accessor_config_sources.append({            
-                'test_mode': self.options['test_mode']
-            })
-            accessors_options[organization_name] = self.create_dashboard_options(accessor_config_sources, 'accessor_dashboard[%s]' % organization_name)
-        return accessors_options
+    def get_umapi_options(self):
+        '''
+        Read and return the primary and secondary umapi connector configs.
+        The primary is a singleton, the secondaries are a map from name to config.
+        The syntax in the config file is rather complex, which makes this code a bit complex;
+        be sure you read the detailed docs before trying to read this function.
+        We also check for and err out gracefully if it's a v1-style config file.
+        :return: tuple: (primary, secondary_map)
+        '''
+        if self.main_config.get_dict_config('dashboard', True):
+            raise AssertionException("Your main configuration file is still in v1 format.  Please convert it to v2.")
+        adobe_users_config = self.main_config.get_dict_config('adobe_users', True)
+        if not adobe_users_config:
+            return {}, {}
+        connector_config = adobe_users_config.get_dict_config('connectors', True)
+        if not connector_config:
+            return {}, {}
+        umapi_config = connector_config.get_list('umapi', True)
+        if not umapi_config:
+            return {}, {}
+        # umapi_config is a list of strings (primary umapi source files) followed by a
+        # list of dicts (secondary umapi source specifications, whose keys are umapi names
+        # and whose values are a list of config file strings)
+        secondary_config_sources = {}
+        primary_config_sources = []
+        for item in umapi_config:
+            if isinstance(item, types.StringTypes):
+                if secondary_config_sources:
+                    # if we see a string after a dict, the user has done something wrong, and we fail.
+                    raise AssertionException("Secondary umapi configuration found with no prefix: " + item)
+                primary_config_sources.append(item)
+            elif isinstance(item, dict):
+                for key, val in item.iteritems():
+                    secondary_config_sources[key] = self.as_list(val)
+        primary_config = self.create_umapi_options(primary_config_sources)
+        secondary_configs = {key: self.create_umapi_options(val)
+                             for key, val in secondary_config_sources.iteritems()}
+        return primary_config, secondary_configs
     
     def get_directory_connector_module_name(self):
         '''
@@ -161,7 +128,7 @@ class ConfigLoader(object):
 
     def get_directory_connector_configs(self):
         connectors_config = None
-        directory_config = self.main_config.get_dict_config('directory', True)
+        directory_config = self.main_config.get_dict_config('directory_users', True)
         if directory_config != None:
             connectors_config = directory_config.get_dict_config('connectors', True)
         return connectors_config
@@ -170,41 +137,33 @@ class ConfigLoader(object):
         '''
         :rtype dict
         '''                
-        connector_options = {}
+        options = {}
         connectors_config = self.get_directory_connector_configs()
         if (connectors_config != None):
             connector_item = connectors_config.get_list(connector_name, True)
-            connector_options = self.get_dict_from_sources(connector_item, 'directory[%s]' % connector_name)
+            options = self.get_dict_from_sources(connector_item)
         
-        source_filter_sources = self.as_list(connector_options.get('source_filter'))
-        directory_source_filters = self.options['directory_source_filters']
-        if (directory_source_filters != None):
-            self.directory_source_filters_accessed.add(connector_name)
-            # get the dictionary for the source filter file
-            directory_source_list = self.as_list(directory_source_filters.get(connector_name))
-            source_filter_dict = self.get_dict_from_sources(directory_source_list,'directory[%s].source_filters' % connector_name)
-            # ensure it contains an 'all_users_filter'
-            if (source_filter_dict.get('all_users_filter') == None):
-                self.logger.warn('Ignoring source filter for directory[%s] as "all_users_filter" was not specified' % connector_name)
-            else:
-                source_filter_sources.append(directory_source_filters.get(connector_name))
-        source_filters =  self.get_dict_from_sources(source_filter_sources, 'directory[%s].source_filters' % connector_name)
-        if (len(source_filters) > 0):   
-            connector_options['source_filters'] = source_filters
-                
-        configs = [connector_options, self.options['directory_connector_overridden_options']]
-        current_config = self.combine_dicts(configs)
-        credential_config_source = credential_manager.get_credentials(credential_manager.DIRECTORY_CREDENTIAL_TYPE, connector_name, config = current_config, config_loader = self)
-        return self.get_dict_from_sources([current_config, credential_config_source], "directory_credential_manager")
+        options = self.combine_dicts([options, self.options['directory_connector_overridden_options']])
+        # credentials are None, a dict, or a config filename to read to get a dict
+        credentials = credential_manager.get_credentials(credential_manager.DIRECTORY_CREDENTIAL_TYPE,
+                                                         connector_name,
+                                                         config=options,
+                                                         config_loader = self)
+        if isinstance(credentials, types.StringTypes):
+            credentials = ConfigFileLoader.load_other_config(credentials)
+        if isinstance(credentials, dict):
+            options = self.combine_dicts([options, credentials])
+        return options
     
     def get_directory_groups(self):
         '''
-        :rtype dict(str, list(user_sync.rules.DashboardGroup))
+        :rtype dict(str, list(user_sync.rules.AdobeGroup))
         '''
         adobe_groups_by_directory_group = {}
-        
+        if self.main_config.get_dict_config('directory', True):
+            raise AssertionException("Your main configuration file is still in v1 format.  Please convert it to v2.")
         groups_config = None
-        directory_config = self.main_config.get_dict_config('directory', True)
+        directory_config = self.main_config.get_dict_config('directory_users', True)
         if (directory_config != None):
             groups_config = directory_config.get_list_config('groups', True)         
         if (groups_config == None):
@@ -216,17 +175,34 @@ class ConfigLoader(object):
             if groups == None:
                 adobe_groups_by_directory_group[directory_group] = groups = []
 
-            dashboard_groups_config = item.get_list_config('dashboard_groups')
-            for dashboard_group in dashboard_groups_config.iter_values(types.StringTypes):
-                group = user_sync.rules.DashboardGroup.create(dashboard_group)
+            adobe_groups_config = item.get_list_config('adobe_groups')
+            for adobe_group in adobe_groups_config.iter_values(types.StringTypes):
+                group = user_sync.rules.AdobeGroup.create(adobe_group)
                 if group is None:
-                    validation_message = 'Bad dashboard group: "%s" in directory group: "%s"' % (dashboard_group, directory_group)
-                    raise user_sync.error.AssertionException(validation_message)
+                    validation_message = 'Bad adobe group: "%s" in directory group: "%s"' % (adobe_group, directory_group)
+                    raise AssertionException(validation_message)
                 groups.append(group)
 
         return adobe_groups_by_directory_group
 
-    @staticmethod    
+    def get_directory_extension_options(self):
+        '''
+        Read the directory extension, if there is one, and return its dictionary of options
+        :return: dict
+        '''
+        options = {}
+        directory_config = self.main_config.get_dict_config('directory_users', True)
+        if directory_config:
+            sources = directory_config.get_list('extension', True)
+            if sources:
+                options = DictConfig('extension', self.get_dict_from_sources(sources))
+                if options:
+                    after_mapping_hook_text = options.get_string('after_mapping_hook', True)
+                    if after_mapping_hook_text is None:
+                        raise AssertionError("No after_mapping_hook found in extension configuration")
+        return options
+
+    @staticmethod
     def as_list(value):
         if (value == None):
             return []
@@ -234,25 +210,20 @@ class ConfigLoader(object):
             return value
         return [value]
         
-    def get_dict_from_sources(self, sources, owner):
+    def get_dict_from_sources(self, sources):
         '''
-        :type sources: list
+        Given a list of config file paths, return the dictionary composed of all the contents
+        of those config files, or None if the list is empty
+        :param sources: a list of strings
+        :param owner: a string to use in error messages if we can't find a config file.
+        :rtype dict
         '''
-        if (sources == None):
+        if not sources:
             return {}
-                
         options = []
-        for source in sources: 
-            if isinstance(source, types.StringTypes):
-                if os.path.isfile(source):
-                    config = ConfigFileLoader.load_sub_config(source)
-                    options.append(config)
-                else:
-                    raise user_sync.error.AssertionException('Cannot find file: %s for: %s' % (source, owner))
-            elif isinstance(source, dict):
-                options.append(source)
-            elif source:
-                raise user_sync.error.AssertionException('Source should be a filename or a dictionary for: %s' % owner)
+        for source in sources:
+            config = ConfigFileLoader.load_sub_config(source)
+            options.append(config)
         return self.combine_dicts(options)
     
     @staticmethod
@@ -287,7 +258,6 @@ class ConfigLoader(object):
                         result[dict_key] = dict_item
         return result
 
-
     def get_rule_options(self):
         '''
         Return a dict representing options for RuleProcessor.
@@ -295,7 +265,7 @@ class ConfigLoader(object):
         # process directory configuration options
         new_account_type = None
         default_country_code = None
-        directory_config = self.main_config.get_dict_config('directory', True)
+        directory_config = self.main_config.get_dict_config('directory_users', True)
         if directory_config:
             new_account_type = directory_config.get_string('user_identity_type', True)
             new_account_type = user_sync.identity_type.parse_identity_type(new_account_type)
@@ -308,11 +278,11 @@ class ConfigLoader(object):
         exclude_identity_types = exclude_identity_type_names = []
         exclude_users = exclude_users_regexps = []
         exclude_groups = exclude_group_names = []
-        dashboard_config = self.main_config.get_dict_config('dashboard', True)
-        if dashboard_config:
-            exclude_identity_type_names = dashboard_config.get_list('exclude_identity_types', True) or []
-            exclude_users_regexps = dashboard_config.get_list('exclude_users', True) or []
-            exclude_group_names = dashboard_config.get_list('exclude_groups', True) or []
+        umapi_config = self.main_config.get_dict_config('adobe_users', True)
+        if umapi_config:
+            exclude_identity_type_names = umapi_config.get_list('exclude_identity_types', True) or []
+            exclude_users_regexps = umapi_config.get_list('exclude_users', True) or []
+            exclude_group_names = umapi_config.get_list('exclude_groups', True) or []
         for name in exclude_identity_type_names:
             message_format = 'Illegal value in exclude_identity_types: %s'
             identity_type = user_sync.identity_type.parse_identity_type(name, message_format)
@@ -325,53 +295,38 @@ class ConfigLoader(object):
             except re.error as e:
                 validation_message = ('Illegal regular expression (%s) in %s: %s' %
                                       (regexp, 'exclude_identity_types', e))
-                raise user_sync.error.AssertionException(validation_message)
+                raise AssertionException(validation_message)
         for name in exclude_group_names:
-            group = user_sync.rules.DashboardGroup.create(name)
-            if not group or group.get_organization_name() != user_sync.rules.OWNING_ORGANIZATION_NAME:
+            group = user_sync.rules.AdobeGroup.create(name)
+            if not group or group.get_umapi_name() != user_sync.rules.PRIMARY_UMAPI_NAME:
                 validation_message = 'Illegal value for %s in config file: %s' % ('exclude_groups', name)
                 if not group:
                     validation_message += ' (Not a legal group name)'
                 else:
-                    validation_message += ' (Can only exclude groups in owning organization)'
-                raise user_sync.error.AssertionException(validation_message)
+                    validation_message += ' (Can only exclude groups in primary organization)'
+                raise AssertionException(validation_message)
             exclude_groups.append(group.get_group_name())
 
+        # get the limits
         limits_config = self.main_config.get_dict_config('limits')
-        max_unmatched_users = limits_config.get_int('max_unmatched_users')
-        max_removed_users = limits_config.get_int('max_removed_users')
+        max_adobe_only_users = limits_config.get_int('max_adobe_only_users')
 
+        # now get the directory extension, if any
         after_mapping_hook = None
         extended_attributes = None
-        extensions_config = self.main_config.get_list_config('extensions', True)
-        if (extensions_config is not None):
-            for extension_config in extensions_config.iter_dict_configs():
-                context = extension_config.get_string('context')
-
-                if context != 'per-user':
-                    self.logger.warning("Unrecognized extension context '%s' ignored", context)
-                    continue
-                if (after_mapping_hook is not None):
-                    self.logger.warning("Duplicate extension context '%s' ignored", context)
-                    continue
-
-                after_mapping_hook_text = extension_config.get_string('after_mapping_hook')
-
-                if after_mapping_hook_text is None:
-                    self.logger.warning("No valid hook found in extension with context '%s'; extension ignored")
-                    continue
-
-                after_mapping_hook = compile(after_mapping_hook_text, '<per-user after-mapping-hook>', 'exec')
-                extended_attributes = extension_config.get_list('extended_attributes')
-
-                # declaration of extended dashboard groups: this is needed for two reasons:
-                # 1. it allows validation of group names, and matching them to dashboard groups
-                # 2. it allows removal of dashboard groups not assigned by the hook
-                for extended_dashboard_group in extension_config.get_list('extended_dashboard_groups'):
-                    group = user_sync.rules.DashboardGroup.create(extended_dashboard_group)
-                    if group is None:
-                        validation_message = 'Bad dashboard group: "%s" in extension with context "%s"' % (extended_dashboard_group, context)
-                        raise user_sync.error.AssertionException(validation_message)
+        extension_config = self.get_directory_extension_options()
+        if extension_config:
+            after_mapping_hook_text = extension_config.get_string('after_mapping_hook')
+            after_mapping_hook = compile(after_mapping_hook_text, '<per-user after-mapping-hook>', 'exec')
+            extended_attributes = extension_config.get_list('extended_attributes')
+            # declaration of extended adobe groups: this is needed for two reasons:
+            # 1. it allows validation of group names, and matching them to adobe groups
+            # 2. it allows removal of adobe groups not assigned by the hook
+            for extended_adobe_group in extension_config.get_list('extended_adobe_groups'):
+                group = user_sync.rules.AdobeGroup.create(extended_adobe_group)
+                if group is None:
+                    message = 'Extension contains illegal extended_adobe_group spec: ' + str(extended_adobe_group)
+                    raise AssertionException(message)
 
         options = self.options
         result = {
@@ -387,39 +342,38 @@ class ConfigLoader(object):
             'exclude_users': exclude_users,
             'extended_attributes': extended_attributes,
             'manage_groups': options['manage_groups'],
-            'max_removed_users': max_removed_users,
-            'max_unmatched_users': max_unmatched_users,
+            'max_adobe_only_users': max_adobe_only_users,
             'new_account_type': new_account_type,
             'remove_strays': options['remove_strays'],
-            'stray_key_map': options['stray_key_map'],
+            'stray_list_input_path': options['stray_list_input_path'],
             'stray_list_output_path': options['stray_list_output_path'],
             'update_user_info': options['update_user_info'],
             'username_filter_regex': options['username_filter_regex'],
         }
         return result
 
-    def create_dashboard_options(self, connector_config_sources, owner):
-        connector_config = self.get_dict_from_sources(connector_config_sources, owner)
-        enterprise_section = connector_config.get('enterprise')
-        if (isinstance(enterprise_section, dict)):
+    def create_umapi_options(self, connector_config_sources):
+        options = self.get_dict_from_sources(connector_config_sources)
+        options['test_mode'] = self.options['test_mode']
+        enterprise_section = options.get('enterprise')
+        if isinstance(enterprise_section, dict):
             org_id = enterprise_section.get('org_id')
-            if (org_id != None):                    
-                credential_config_source = credential_manager.get_credentials(credential_manager.UMAPI_CREDENTIAL_TYPE, org_id, config = enterprise_section, config_loader = self)
-                new_enterprise_section = self.get_dict_from_sources([enterprise_section, credential_config_source], "dashboard_credential_manager[%s]" % org_id)
-                connector_config['enterprise'] = new_enterprise_section
-
-        return connector_config
+            if (org_id != None):
+                # credentials are None, a dict, or a config filename to read to get a dict
+                credentials = credential_manager.get_credentials(credential_manager.UMAPI_CREDENTIAL_TYPE,
+                                                                 org_id,
+                                                                 config = enterprise_section,
+                                                                 config_loader = self)
+                if isinstance(credentials, types.StringTypes):
+                    credentials = ConfigFileLoader.load_other_config(credentials)
+                if isinstance(credentials, dict):
+                    options['enterprise'] = self.combine_dicts([enterprise_section, credentials])
+        return options
 
     def check_unused_config_keys(self):
         directory_connectors_config = self.get_directory_connector_configs()
         self.main_config.report_unused_values(self.logger, [directory_connectors_config])
-        
-        directory_source_filters = self.options['directory_source_filters']
-        if (directory_source_filters != None):
-            unused_keys = set(directory_source_filters.iterkeys()) - self.directory_source_filters_accessed
-            if (len(unused_keys) > 0):
-                raise user_sync.error.AssertionException("Unused source filters for: %s" % list(unused_keys))
-        
+
     
 class ObjectConfig(object):
     def __init__(self, scope):
@@ -461,7 +415,7 @@ class ObjectConfig(object):
         return '.'.join(scopes)
     
     def create_assertion_error(self, message):
-        return user_sync.error.AssertionException("%s in: %s" % (message, self.get_full_scope()))
+        return AssertionException("%s in: %s" % (message, self.get_full_scope()))
     
     def describe_types(self, types_to_describe):
         if (types_to_describe == types.StringTypes):
@@ -488,7 +442,7 @@ class ObjectConfig(object):
                     logger.log(log_level, message)
         
         if (has_error):
-            raise user_sync.error.AssertionException('Detected unused keys that are not ignorable.')
+            raise AssertionException('Detected unused keys that are not ignorable.')
     
     def describe_unused_values(self):
         return []
@@ -613,124 +567,23 @@ class DictConfig(ObjectConfig):
             messages.append("Found unused keys: %s in: %s" % (unused_keys, self.get_full_scope()))
         return messages
     
-class ConfigFileLoader(object):
-    @staticmethod
-    def load_from_yaml(filename, path_keys):
-        '''
-        loads a yaml file, processes the resulting dict to adapt values for keys
-        (the path to which is defined in PATH_KEYS) to a value that represents
-        a file reference relative to provided source file, and returns the
-        processed dict.
-        :type filename: str
-        :rtype dict
-        '''
-        try:
-            with open(filename, 'r', 1) as input_file:
-                yml = yaml.load(input_file)
-        except IOError as e:
-            # if a file operation error occurred while loading the
-            # configuration file, swallow up the exception and re-raise this
-            # as an configuration loader exception.
-            raise user_sync.error.AssertionException('Error reading configuration file: %s' % e)
-        except yaml.error.MarkedYAMLError as e:
-            # same as above, but indicate this problem has to do with
-            # parsing the configuration file.
-            raise user_sync.error.AssertionException('Error parsing configuration file: %s' % e)
+class ConfigFileLoader:
+    '''
+    Loads config files and does pathname expansion on settings that refer to files or directories
+    '''
+    # key_paths in the root configuration file that should have filename values
+    # mapped to their value options.  See load_from_yaml for the option meanings.
+    ROOT_CONFIG_PATH_KEYS = {'/adobe_users/connectors/umapi': (True, True, None),
+                             '/directory_users/connectors/*': (True, False, None),
+                             '/directory_users/extension': (True, False, None),
+                             '/logging/file_log_directory': (False, False, "logs"),
+                             }
 
-        dirpath = os.path.dirname(filename)
-    
-        def process_path_key(dictionary, keys, level, default_val):
-            '''
-            this function is used to process a single path key by replacing the
-            value for the key that is found into a path relative to the given
-            source file, with the assumption that the value is a file reference
-            to begin with. It is used recursively to navigate into child
-            dictionaries to search the path key.
-            type dictionary: dict
-            type keys: list
-            type level: int
-            type default_val: str
-            '''
-            def relative_path(filename):
-                '''
-                returns an absolute path that is resolved relative to the source
-                filename. The source filename is provided in the parent
-                load_from_yaml function, and os.path.abspath is used to return
-                the absolute path of the resolved relative path
-                type filename: str
-                rtype: str
-                '''
-                if dirpath and not os.path.isabs(filename):
-                    return os.path.abspath(os.path.join(dirpath, filename))
-                return filename
-            
-            def process_path_key_value(key):
-                '''
-                does the relative path processing for a single key of the
-                current dictionary
-                type key: str
-                '''
-                if dictionary.has_key(key):
-                    val = dictionary[key]
-                    if isinstance(val,str):
-                        dictionary[key] = relative_path(val)
-                    elif isinstance(val,list):
-                        vals = []
-                        for entry in val:
-                            if isinstance(entry, str):
-                                vals.append(relative_path(entry))
-                            else:
-                                vals.append(entry)
-                        dictionary[key] = vals
+    # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files
+    SUB_CONFIG_PATH_KEYS = {'/enterprise/priv_key_path': (True, False, None)}
 
-            # end of path key
-            if level == len(keys)-1:
-                key = keys[level]
-                # if a wildcard is specified at this level, that means we
-                # should process all keys as path values
-                if key == "*":
-                    for key in dictionary.keys():
-                        process_path_key_value(key)
-                elif dictionary.has_key(key):
-                    process_path_key_value(key)
-                # key was not found, but default value was set, so apply it
-                elif default_val:
-                    dictionary[key] = relative_path(default_val)
-                    
-            elif level < len(keys)-1:
-                key = keys[level]
-                # if a wildcard is specified at this level, this indicates this
-                # should select all keys that have dict type values, and recurse
-                # into them at the next level
-                if key == "*":
-                    for key in dictionary.keys():
-                        if isinstance(dictionary[key],dict):
-                            process_path_key(dictionary[key], keys, level+1, default_val)
-                            
-                elif dictionary.has_key(key):
-                    # if the key refers to adictionary, recurse into it to go
-                    # further down the path key
-                    if isinstance(dictionary[key],dict):
-                        process_path_key(dictionary[key], keys, level+1, default_val)
-                        
-                # if the key was not found, but a default value is specified,
-                # drill down further to set the default value
-                elif default_val:
-                    dictionary[key] = {}
-                    process_path_key(dictionary[key], keys, level+1, default_val)
-
-        for path_key in path_keys:
-            if isinstance(path_key, dict):
-                keys = path_key['path'].split('/')
-                process_path_key(yml, keys, 1, path_key['default'])
-            elif isinstance(path_key, str):
-                keys = path_key.split('/')
-                process_path_key(yml, keys, 1, None)
-            
-        return yml
-    
-    @staticmethod
-    def load_root_config(filename):
+    @classmethod
+    def load_root_config(cls, filename):
         '''
         loads the specified file as a root configuration file. This basically
         means that on top of loading the file as a yaml file into a dictionary,
@@ -740,16 +593,159 @@ class ConfigFileLoader(object):
         type filename: str
         rtype dict
         '''
-        return ConfigFileLoader.load_from_yaml(filename, ROOT_CONFIG_PATH_KEYS)
-        
-    @staticmethod
-    def load_sub_config(filename):
+        return cls.load_from_yaml(filename, cls.ROOT_CONFIG_PATH_KEYS)
+
+    @classmethod
+    def load_sub_config(cls, filename):
         '''
         same as load_root_config, but applies SUB_CONFIG_PATH_KEYS to the
         dictionary loaded from the yaml file.
         '''
-        return ConfigFileLoader.load_from_yaml(filename, SUB_CONFIG_PATH_KEYS)
-    
+        return cls.load_from_yaml(filename, cls.SUB_CONFIG_PATH_KEYS)
+
+    @classmethod
+    def load_other_config(cls, filename):
+        '''
+        same as load_root_config, but does no post-processing.
+        '''
+        return cls.load_from_yaml(filename, {})
+
+    # these are set by load_from_yaml to hold the current state of what
+    # key_path is being searched for in what file in what directory
+    filepath = None # absolute path of file currently being loaded
+    filename = None # filename of file currently being loaded
+    dirpath = None  # directory path of file currently being loaded
+    key_path = None # the full pathname of the setting key being processed
+
+    @classmethod
+    def load_from_yaml(cls, filename, path_keys):
+        '''
+        loads a yaml file, processes the resulting dict to adapt values for keys
+        (the path to which is defined in path_keys) to a value that represents
+        a file reference relative to the source file being loaded, and returns the
+        processed dict.
+        :param filename: the file to load yaml from
+        :param path_keys: a dict whose keys are "path_keys" such as /key1/key2/key3
+                          and whose values are tuples: (must_exist, can_have_subdict, default_val)
+                          which are options on the value of the key whose values
+                          are path expanded: must the path exist, can it be a list of paths
+                          that contains sub-dictionaries whose values are paths, and
+                          does the key have a default value so that must be added to
+                          the dictionary if there is not already a value found.
+        '''
+        cls.filepath = os.path.abspath(filename)
+        cls.filename = os.path.split(cls.filepath)[1]
+        cls.dirpath = os.path.dirname(cls.filepath)
+        if not os.path.isfile(cls.filepath):
+            raise AssertionException('No such configuration file: %s' % (cls.filepath,))
+
+        # read the dict from the YAML file
+        try:
+            with open(filename, 'r', 1) as input_file:
+                yml = yaml.load(input_file)
+        except IOError as e:
+            # if a file operation error occurred while loading the
+            # configuration file, swallow up the exception and re-raise this
+            # as an configuration loader exception.
+            raise AssertionException('Error reading configuration file: %s' % e)
+        except yaml.error.MarkedYAMLError as e:
+            # same as above, but indicate this problem has to do with
+            # parsing the configuration file.
+            raise AssertionException('Error parsing configuration file: %s' % e)
+
+        # process the content of the dict
+        for path_key, options in path_keys.iteritems():
+            cls.key_path = path_key
+            keys = path_key.split('/')
+            cls.process_path_key(yml, keys, 1, *options)
+        return yml
+
+    @classmethod
+    def process_path_key(cls, dictionary, keys, level, must_exist, can_have_subdict, default_val):
+        '''
+        this function is given the list of keys in the current key_path, and searches
+        recursively into the given dictionary until it finds the designated value, and then
+        resolves relative values in that value to abspaths based on the current filename.
+        If a default value for the key_path is given, and no value is found in the dictionary,
+        then the key_path is added to the dictionary with the expanded default value.
+        type dictionary: dict
+        type keys: list
+        type level: int
+        type must_exist: boolean
+        type can_have_subdict: boolean
+        type default_val: any
+        '''
+        # found the key_path, process values
+        if level == len(keys)-1:
+            key = keys[level]
+            # if a wildcard is specified at this level, that means we
+            # should process all keys as path values
+            if key == "*":
+                for key, val in dictionary.iteritems():
+                    dictionary[key] = cls.process_path_value(val, must_exist, can_have_subdict)
+            elif dictionary.has_key(key):
+                dictionary[key] = cls.process_path_value(dictionary[key], must_exist, can_have_subdict)
+            # key was not found, but default value was set, so apply it
+            elif default_val:
+                dictionary[key] = cls.relative_path(default_val, must_exist)
+        # otherwise recurse deeper into the dict
+        elif level < len(keys)-1:
+            key = keys[level]
+            # if a wildcard is specified at this level, this indicates this
+            # should select all keys that have dict type values, and recurse
+            # into them at the next level
+            if key == "*":
+                for key in dictionary.keys():
+                    if isinstance(dictionary[key],dict):
+                        cls.process_path_key(dictionary[key], keys, level+1, must_exist, can_have_subdict, default_val)
+            elif dictionary.has_key(key):
+                # if the key refers to a dictionary, recurse into it to go
+                # further down the path key
+                if isinstance(dictionary[key], dict):
+                    cls.process_path_key(dictionary[key], keys, level+1, must_exist, can_have_subdict, default_val)
+            # if the key was not found, but a default value is specified,
+            # drill down further to set the default value
+            elif default_val:
+                dictionary[key] = {}
+                cls.process_path_key(dictionary[key], keys, level+1, must_exist, can_have_subdict, default_val)
+
+    @classmethod
+    def process_path_value(cls, val, must_exist, can_have_subdict):
+        '''
+        does the relative path processing for a value from the dictionary,
+        which can be a string, a list of strings, or a list of strings
+        and "tagged" strings (sub-dictionaries whose values are strings)
+        :param key: the key whose value we are processing, for error messages
+        :param val: the value we are processing, for error messages
+        '''
+        if isinstance(val, types.StringTypes):
+            return cls.relative_path(val, must_exist)
+        elif isinstance(val, list):
+            vals = []
+            for entry in val:
+                if can_have_subdict and isinstance(entry, dict):
+                    for subkey, subval in entry.iteritems():
+                        vals.append({subkey: cls.relative_path(subval, must_exist)})
+                else:
+                    vals.append(cls.relative_path(entry, must_exist))
+            return vals
+
+    @classmethod
+    def relative_path(cls, val, must_exist):
+        '''
+        returns an absolute path that is resolved relative to the file being loaded
+        '''
+        if not isinstance(val, types.StringTypes):
+            raise AssertionException("Expected pathname for setting %s in config file %s" %
+                                     (cls.key_path, cls.filename))
+        if cls.dirpath and not os.path.isabs(val):
+            val = os.path.abspath(os.path.join(cls.dirpath, val))
+        if must_exist and not os.path.isfile(val):
+            raise AssertionException('In setting %s in config file %s: No such file %s' %
+                                     (cls.key_path, cls.filename, val))
+        return val
+
+
 class OptionsBuilder(object):
     def __init__(self, default_config):
         '''
@@ -812,6 +808,6 @@ class OptionsBuilder(object):
         '''
         config = self.default_config
         if (config == None):
-            raise user_sync.error.AssertionException("No config found.")
+            raise AssertionException("No config found.")
         self.options[key] = value = config.get_value(key, allowed_types)
         return value
