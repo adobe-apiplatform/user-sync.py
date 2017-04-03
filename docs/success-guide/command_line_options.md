@@ -42,13 +42,13 @@ Note that only the users returned by the directory query and filter are consider
 | Command line option       ...........| Use when           |
 | ------------- |:-------------| 
 |   None                        |  No action desired on nonexistent users |
-|   `--remove-entitlements-for-nonexistent-users`\* |    Adobe account to remain but licenses and group <br>memberships are removed.  |
-|   `--remove-nonexistent-users`  |    Adobe account to remain but licenses, group memberships, and membership in this org to be removed   |
-|   `--delete-nonexistent-users`  |    Adobe account to be deleted: remove from PLCs and user groups and <br>from the org; account deleted and all storage and settings freed. |
-|   `--generate-remove-list f`    |  No action to be taken on the account.  User name written to file for later action. |
-|   `--generate-delete-list f`    |  No action to be taken on the account.  User name written to file for later action. |
+|   `--adobe-only-user-action remove-adobe-groups` |    Adobe account to remain but licenses and group <br>memberships are removed.  |
+|   `--adobe-only-user-action remove`  |    Adobe account to remain but licenses, group memberships, and membership in this org to be removed   |
+|   `--adobe-only-user-action delete`  |    Adobe account to be deleted: remove from PLCs and user groups and <br>from the org; account deleted and all storage and settings freed. |
+|   `--adobe-only-user-action write-file f.csv`    |  No action to be taken on the account.  User name written to file for later action. |
 
-\* These options will be available in a future release.
+
+
 
 ## Other Options
 
@@ -61,11 +61,11 @@ Note that only the users returned by the directory query and filter are consider
 
 A few examples:
 
-`user-sync --users all --process-groups --remove-nonexistent-users`
+`user-sync --users all --process-groups --adobe-only-user-action remove`
 
 - Process all users based on config settings, update Adobe group membership, and if there are any users listed in the org that are not in the directory, remove them.
     
-`user-sync --users file example.users-file.csv --process-groups --remove-nonexistent-users`
+`user-sync --users file example.users-file.csv --process-groups --adobe-only-user-action remove`
 
 - The file “example.users-file.csv” is read as the master user list. No attempt is made to contact a directory service such as AD or LDAP in this case.
 
