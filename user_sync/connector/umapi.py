@@ -76,7 +76,7 @@ class UmapiConnector(object):
         private_key_file_path = enterprise_options['priv_key_path']
         um_endpoint = "https://" + server_options['host'] + server_options['endpoint']    
         
-        logger.info('Creating connection for org id: "%s" using private key file: "%s"', org_id, private_key_file_path)
+        logger.debug('Creating connection for org id: "%s" using private key file: "%s"', org_id, private_key_file_path)
         auth_dict = {
             "org_id": org_id,
             "tech_acct_id": enterprise_options['tech_acct'],
@@ -94,7 +94,7 @@ class UmapiConnector(object):
             user_agent="user-sync/" + APP_VERSION,
             logger=self.logger,
         )
-        logger.info('API initialized on: %s', um_endpoint)
+        logger.debug('API initialized on: %s', um_endpoint)
         
         self.action_manager = ActionManager(connection, org_id, logger)
     
@@ -286,7 +286,7 @@ class ActionManager(object):
         }
         self.items.append(item)
         self.action_count += 1
-        self.logger.log(logging.INFO, 'Added action: %s', json.dumps(action.wire_dict()))
+        self.logger.debug('Added action: %s', json.dumps(action.wire_dict()))
         self._execute_action(action)
     
     def has_work(self):
@@ -300,7 +300,7 @@ class ActionManager(object):
         try:
             _, sent, _ = self.connection.execute_single(action)
         except umapi_client.BatchError as e:
-            self.logger.log(logging.CRITICAL, "Unexpected response! Actions may have failed: %s", e)
+            self.logger.critical("Unexpected response! Actions may have failed: %s", e)
             sent = e.statistics[1]
         finally:
             self.process_sent_items(sent)
@@ -335,7 +335,7 @@ class ActionManager(object):
         try:
             _, sent, _ = self.connection.execute_queued()
         except umapi_client.BatchError as e:
-            self.logger.log(logging.CRITICAL, "Unexpected response! Actions may have failed: %s", e)
+            self.logger.critical("Unexpected response! Actions may have failed: %s", e)
             sent = e.statistics[1]
         finally:
             self.process_sent_items(sent)

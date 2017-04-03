@@ -256,7 +256,6 @@ def create_config_loader_options(args):
             if not adobe_action_args:
                 raise AssertionException('Missing file path for --adobe-only-user-action %s [file_path]' % adobe_action)
             config_options['stray_list_output_path'] = adobe_action_args.pop(0)
-            logger.info('Writing unmatched users to: %s', config_options['stray_list_output_path'])
         elif (adobe_action == 'delete'):
             config_options['delete_strays'] = True
         elif (adobe_action == 'remove'):
@@ -289,9 +288,9 @@ def log_parameters(args):
     '''
     logger.info('------- Invocation parameters -------')
     logger.info(' '.join(sys.argv))
-    logger.info('-------- Internal parameters --------')
+    logger.debug('-------- Internal parameters --------')
     for parameter_name, parameter_value in args.__dict__.iteritems():
-        logger.info('  %s: %s', parameter_name, parameter_value)
+        logger.debug('  %s: %s', parameter_name, parameter_value)
     logger.info('-------------------------------------')
 
 
@@ -323,7 +322,7 @@ def main():
             finally:
                 lock.unlock()
         else:
-            logger.info("Process is already locked")
+            logger.critical("A different User Sync process is currently running.")
 
     except AssertionException as e:
         if (not e.is_reported()):

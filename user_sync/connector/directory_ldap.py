@@ -86,7 +86,7 @@ class LDAPDirectoryConnector(object):
         require_tls_cert = options['require_tls_cert']
         logger.debug('Initialized with options: %s', options)            
 
-        logger.info('Connecting to: %s using username: %s', host, username)            
+        logger.debug('Connecting to: %s using username: %s', host, username)
         if not require_tls_cert:
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
         connection = ldap.initialize(host)
@@ -97,7 +97,7 @@ class LDAPDirectoryConnector(object):
         except Exception as e:
             raise user_sync.error.AssertionException(repr(e))
         self.connection = connection
-        logger.info('Connected')            
+        logger.debug('Connected')
         
     def load_users_and_groups(self, groups, extended_attributes):
         '''
@@ -116,7 +116,7 @@ class LDAPDirectoryConnector(object):
                 user_by_uid[uid] = user
             user_by_dn[user_dn] = user
 
-        self.logger.info('Total users loaded: %d', len(user_by_dn))
+        self.logger.debug('Total users loaded: %d', len(user_by_dn))
 
         for group in groups:
             total_group_members = 0
