@@ -69,22 +69,20 @@ def process_args():
                              'groups matches those on the enterprise side.',
                         action='store_true', dest='manage_groups')
     parser.add_argument('--adobe-only-user-action',
-                        help="specify what action to take on Adobe users that don't match input users from the "
+                        help="specify what action to take on Adobe users that don't match users from the "
                              "directory.  Options are 'exclude' (from all changes), "
                              "'preserve' (as is except for --process-groups, the default), "
                              "'write-file f' (preserve and list them), "
-                             "'delete' (users and their cloud storage), "
+                             "'remove-adobe-groups' (but do not remove users)"
                              "'remove' (users but preserve cloud storage), "
-                             "'remove-adobe-groups' (but do not remove users)",
+                             "'delete' (users and their cloud storage), ",
                         nargs="*", metavar=('exclude|preserve|write-file|delete|remove|remove-adobe-groups', 'arg1'),
                         dest='adobe_only_user_action')
     parser.add_argument('--adobe-only-user-list',
                         help='instead of computing unmatched users by comparing Adobe users with directory users, '
-                             'the list of unmatched Adobe users is read from a file (see --output-adobe-users). '
+                             'the list of unmatched Adobe users is read from a file (see --adobe-only-user-action write-file). '
                              'When using this option, you must also specify what you want done with unmatched users by'
-                             'specifying one of the arguments '
-                             '--remove-entitlements-for-adobe-users, --remove-adobe-users '
-                             'or --delete-adobe-users.',
+                             'specifying one of the arguments of --adobe-only-user-action',
                         metavar='input_path', dest='stray_list_input_path')
     return parser.parse_args()
 
