@@ -34,17 +34,18 @@ If you are managing licenses with user sync, include the option `--process-group
 ## Account Deletion
 
 
-There are several command line options that allow you to specify the action to be taken when an Adobe account with no corresponding directory account is found (a “nonexistent” user).
-Note that only the users returned by the directory query and filter are considered as "existing".
+There are several command line options that allow you to specify the action to be taken when an Adobe account with no corresponding directory account is found (an “Adobe only” user).
+Note that only the users returned by the directory query and filter are considered as "existing" in the enterprise directory.  These options range from "completely ignore" to "completely delete" with several possibilities in between.
 
 
 
 | Command line option       ...........| Use when           |
 | ------------- |:-------------| 
-|   None                        |  No action desired on nonexistent users |
+|   `--adobe-only-user-action exclude`                        |  No action desired on accounts that exist only in Adobe and have no corresponding directory account. Adobe group memberships are not updated even if `--process-groups` is present. |
+|   `--adobe-only-user-action preserve`                        |  No removal or deletion of accounts that exist only in Adobe and have no corresponding directory account. Adobe group memberships are updated if `--process-groups` is present. |
 |   `--adobe-only-user-action remove-adobe-groups` |    Adobe account to remain but licenses and group <br>memberships are removed.  |
-|   `--adobe-only-user-action remove`  |    Adobe account to remain but licenses, group memberships, and membership in this org to be removed   |
-|   `--adobe-only-user-action delete`  |    Adobe account to be deleted: remove from PLCs and user groups and <br>from the org; account deleted and all storage and settings freed. |
+|   `--adobe-only-user-action remove`  |    Adobe account to remain but licenses, group memberships, and listing in the Adobe Admin console are removed   |
+|   `--adobe-only-user-action delete`  |    Adobe account to be deleted: remove from<br>Adobe product configurations and user groups; account deleted and all storage and settings freed. |
 |   `--adobe-only-user-action write-file f.csv`    |  No action to be taken on the account.  User name written to file for later action. |
 
 
@@ -63,11 +64,11 @@ A few examples:
 
 `user-sync --users all --process-groups --adobe-only-user-action remove`
 
-- Process all users based on config settings, update Adobe group membership, and if there are any users listed in the org that are not in the directory, remove them.
+- Process all users based on config settings, update Adobe group membership, and if there are any Adobe users that are not in the directory, remove them from the Adobe side, freeing any licenses they may have been allocated.  The Adobe account is not deleted so that it can be re-added and/or stored assets recovered.
     
-`user-sync --users file example.users-file.csv --process-groups --adobe-only-user-action remove`
+`user-sync --users file users-file.csv --process-groups --adobe-only-user-action remove`
 
-- The file “example.users-file.csv” is read as the master user list. No attempt is made to contact a directory service such as AD or LDAP in this case.
+- The file “users-file.csv” is read as the master user list. No attempt is made to contact a directory service such as AD or LDAP in this case.  Adobe group membership is updated per the information in the file, and any Adobe accounts not listed in the file are removed (see definition of remove, above).
 
 ## Define your command line
 
