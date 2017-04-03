@@ -125,7 +125,7 @@ class ConfigLoader(object):
         '''
         options = self.options
         if 'directory_get_config_name' in options and options['directory_get_config_name']:
-            module_type = self.main_config.child_configs['directory'].value['connectors'].keys()[0]
+            module_type = self.main_config.child_configs['directory_users'].value['connectors'].keys()[0]
             return 'user_sync.connector.directory_' + module_type
         else:
             return options['directory_connector_module_name']

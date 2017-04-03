@@ -143,7 +143,7 @@ class OktaDirectoryConnector(object):
 
             self.logger.debug('Group %s members: %d users: %d', group, total_group_members, total_group_users)
 
-        return not is_using_source_filter, user_by_uid.itervalues()
+        return user_by_uid.itervalues()
 
     def find_group(self, group):
         """
@@ -210,12 +210,12 @@ class OktaDirectoryConnector(object):
         source_attributes['id'] = user['uid'] = record.id
         source_attributes['email'] = user['email'] = profile.email
 
-        source_attributes['identity_type'] = identity_type = self.user_identity_type
-        if not identity_type:
+        source_attributes['identity_type'] = user_identity_type = self.user_identity_type
+        if not user_identity_type:
             user['identity_type'] = self.user_identity_type
         else:
             try:
-                user['identity_type'] = user_sync.identity_type.parse_identity_type(identity_type)
+                user['identity_type'] = user_sync.identity_type.parse_identity_type(user_identity_type)
             except user_sync.error.AssertionException as e:
                 self.logger.warning('Skipping user %s: %s', profile.login, e.message)
                 return None
