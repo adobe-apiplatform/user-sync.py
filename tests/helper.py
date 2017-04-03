@@ -59,7 +59,8 @@ def assert_equal_users(unit_test, expected_users, actual_users):
     for expected_user in expected_users:
         actual_user = actual_users_by_email.get(expected_user['email'])
         unit_test.assertIsNotNone(expected_user)            
-        assert_equal_field_values(unit_test, expected_user, actual_user, ['firstname', 'lastname', 'email', 'country'])
+        assert_equal_field_values(unit_test, expected_user, actual_user,
+                                  ['firstname', 'lastname', 'email', 'country'])
         unit_test.assertSetEqual(set(expected_user['groups']), set(actual_user['groups']))
 
 def assert_equal_umapi_commands(unit_test, expected_commands, actual_commands):
@@ -75,7 +76,8 @@ def assert_equal_umapi_commands_list(unit_test, expected_commands_list, actual_c
         assert_equal_umapi_commands(unit_test, expected_commands, actual_commands)
         
 def create_umapi_commands(user, identity_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE):
-    commands = Commands(identity_type=identity_type, email=user['email'], username=user['username'], domain=user['domain'])
+    commands = Commands(identity_type=identity_type,
+                        email=user['email'], username=user['username'], domain=user['domain'])
     return commands
 
 def create_logger():
@@ -84,7 +86,7 @@ def create_logger():
 def create_action_manager():
     return ActionManager(None, "test org id", create_logger())
 
-class MockGetString():
+class MockDictConfig():
     def get_string(self,test1,test2):
         return 'test'
 

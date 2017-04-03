@@ -183,10 +183,11 @@ def begin_work(config_loader):
             directory_connector_options['user_identity_type'] = rule_config['new_account_type']
         directory_connector.initialize(directory_connector_options)
 
-    umapi_primary_connector = user_sync.connector.umapi.UmapiConnector("primary", primary_umapi_config)
+    primary_name = '.primary' if secondary_umapi_configs else ''
+    umapi_primary_connector = user_sync.connector.umapi.UmapiConnector(primary_name, primary_umapi_config)
     umapi_other_connectors = {}
     for secondary_umapi_name, secondary_config in secondary_umapi_configs.iteritems():
-        umapi_secondary_conector = user_sync.connector.umapi.UmapiConnector("secondary.%s" % secondary_umapi_name,
+        umapi_secondary_conector = user_sync.connector.umapi.UmapiConnector(".secondary.%s" % secondary_umapi_name,
                                                                             secondary_config)
         umapi_other_connectors[secondary_umapi_name] = umapi_secondary_conector
     umapi_connectors = user_sync.rules.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
