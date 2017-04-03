@@ -268,7 +268,7 @@ class ConfigLoader(object):
             default_country_code = directory_config.get_string('default_country_code', True)
         if not new_account_type:
             new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
-            self.logger.info("Using default for new_account_type: %s", new_account_type)
+            self.logger.debug("Using default for new_account_type: %s", new_account_type)
 
         # process exclusion configuration options
         exclude_identity_types = exclude_identity_type_names = []

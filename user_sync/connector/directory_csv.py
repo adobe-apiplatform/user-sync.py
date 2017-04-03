@@ -85,9 +85,9 @@ class CSVDirectoryConnector(object):
         '''        
         options = self.options
         file_path = options['file_path']
-        self.logger.info('Reading from: %s', file_path)
+        self.logger.debug('Reading from: %s', file_path)
         self.users = users = self.read_users(file_path, extended_attributes)
-        self.logger.info('Number of users loaded: %d', len(users))
+        self.logger.debug('Number of users loaded: %d', len(users))
         return users.itervalues()
 
     def read_users(self, file_path, extended_attributes):
