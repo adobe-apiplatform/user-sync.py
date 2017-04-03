@@ -45,7 +45,7 @@ class UmapiConnector(object):
         '''
         caller_config = user_sync.config.DictConfig('"%s umapi options"' % name, caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
-        builder.set_string_value('logger_name', 'umapi.' + name)
+        builder.set_string_value('logger_name', 'umapi' + name)
         builder.set_bool_value('test_mode', False)
         options = builder.get_options()        
 
@@ -234,10 +234,16 @@ class ActionManager(object):
         :type org_id: str
         :type logger: logging.Logger
         '''
+        self.action_count = 0
+        self.error_count = 0
         self.items = []
         self.connection = connection
         self.org_id = org_id
         self.logger = logger.getChild('action')
+
+    def get_statistics(self):
+        '''Return the count of actions sent so far, and how many had errors.'''
+        return self.action_count, self.error_count
         
     def get_next_request_id(self):
         request_id = 'action_%d' % ActionManager.next_request_id
@@ -279,6 +285,7 @@ class ActionManager(object):
             'callback': callback
         }
         self.items.append(item)
+        self.action_count += 1
         self.logger.log(logging.INFO, 'Added action: %s', json.dumps(action.wire_dict()))
         self._execute_action(action)
     
@@ -308,6 +315,7 @@ class ActionManager(object):
                 is_success = not action_errors or len(action_errors) == 0
                 
                 if (not is_success):
+                    self.error_count += 1
                     for error in action_errors:
                         self.logger.error('Error in requestID: %s (User: %s, Command: %s): code: "%s" message: "%s"',
                                           action.frame.get("requestID"),

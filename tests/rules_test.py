@@ -121,7 +121,7 @@ class RulesTest(unittest.TestCase):
                        'email': 'cceuser1@ensemble.ca',
                        'uid': '001'}
         }
-        mock_rules.add_umapi_user(user_key, mock_connectors)
+        mock_rules.add_umapi_user(user_key, set(), mock_connectors)
 
         if (identity_type == 'federatedID' and default_country_code == None and user_country_code == None):
             mock_rules.logger.error.assert_called_with('User %s cannot be added as it has a blank country code and no default has been specified.', user_key)

@@ -77,12 +77,28 @@ class ConfigLoader(object):
         return self.main_config.get_dict_config('logging', True)
 
     def get_umapi_options(self):
+        '''
+        Read and return the primary and secondary umapi connector configs.
+        The primary is a singleton, the secondaries are a map from name to config.
+        The syntax in the config file is rather complex, which makes this code a bit complex;
+        be sure you read the detailed docs before trying to read this function.
+        We also check for and err out gracefully if it's a v1-style config file.
+        :return: tuple: (primary, secondary_map)
+        '''
+        if self.main_config.get_dict_config('dashboard', True):
+            raise AssertionException("Your main configuration file is still in v1 format.  Please convert it to v2.")
         adobe_users_config = self.main_config.get_dict_config('adobe_users', True)
-        connector_config = adobe_users_config and adobe_users_config.get_dict_config('connectors', True)
-        if connector_config:
-            umapi_config = connector_config.get_list('umapi', True)
+        if not adobe_users_config:
+            return {}, {}
+        connector_config = adobe_users_config.get_dict_config('connectors', True)
+        if not connector_config:
+            return {}, {}
+        umapi_config = connector_config.get_list('umapi', True)
+        if not umapi_config:
+            return {}, {}
         # umapi_config is a list of strings (primary umapi source files) followed by a
-        # list of dicts (secondary umapi source specifications, which are lists of strings)
+        # list of dicts (secondary umapi source specifications, whose keys are umapi names
+        # and whose values are a list of config file strings)
         secondary_config_sources = {}
         primary_config_sources = []
         for item in umapi_config:
@@ -140,7 +156,8 @@ class ConfigLoader(object):
         :rtype dict(str, list(user_sync.rules.AdobeGroup))
         '''
         adobe_groups_by_directory_group = {}
-        
+        if self.main_config.get_dict_config('directory', True):
+            raise AssertionException("Your main configuration file is still in v1 format.  Please convert it to v2.")
         groups_config = None
         directory_config = self.main_config.get_dict_config('directory_users', True)
         if (directory_config != None):
@@ -174,10 +191,10 @@ class ConfigLoader(object):
         if directory_config:
             sources = directory_config.get_list('extension', True)
             if sources:
-                options = self.get_dict_from_sources(directory_config and sources)
+                options = DictConfig('extension', self.get_dict_from_sources(sources))
                 if options:
-                    after_mapping_hook_text = options.get('after_mapping_hook')
-                    if not after_mapping_hook_text:
+                    after_mapping_hook_text = options.get_string('after_mapping_hook', True)
+                    if after_mapping_hook_text is None:
                         raise AssertionError("No after_mapping_hook found in extension configuration")
         return options
 
@@ -293,15 +310,15 @@ class ConfigLoader(object):
         # now get the directory extension, if any
         after_mapping_hook = None
         extended_attributes = None
-        extension_options = self.get_directory_extension_options()
-        if extension_options:
-            after_mapping_hook_text = extension_options.get_string('after_mapping_hook')
+        extension_config = self.get_directory_extension_options()
+        if extension_config:
+            after_mapping_hook_text = extension_config.get_string('after_mapping_hook')
             after_mapping_hook = compile(after_mapping_hook_text, '<per-user after-mapping-hook>', 'exec')
-            extended_attributes = extension_options.get_list('extended_attributes')
+            extended_attributes = extension_config.get_list('extended_attributes')
             # declaration of extended adobe groups: this is needed for two reasons:
             # 1. it allows validation of group names, and matching them to adobe groups
             # 2. it allows removal of adobe groups not assigned by the hook
-            for extended_adobe_group in extension_options.get_list('extended_adobe_groups'):
+            for extended_adobe_group in extension_config.get_list('extended_adobe_groups'):
                 group = user_sync.rules.AdobeGroup.create(extended_adobe_group)
                 if group is None:
                     message = 'Extension contains illegal extended_adobe_group spec: ' + str(extended_adobe_group)
