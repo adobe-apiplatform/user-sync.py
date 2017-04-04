@@ -278,11 +278,11 @@ class ConfigLoader(object):
         exclude_identity_types = exclude_identity_type_names = []
         exclude_users = exclude_users_regexps = []
         exclude_groups = exclude_group_names = []
-        umapi_config = self.main_config.get_dict_config('adobe_users', True)
-        if umapi_config:
-            exclude_identity_type_names = umapi_config.get_list('exclude_identity_types', True) or []
-            exclude_users_regexps = umapi_config.get_list('exclude_users', True) or []
-            exclude_group_names = umapi_config.get_list('exclude_adobe_groups', True) or []
+        adobe_config = self.main_config.get_dict_config('adobe_users', True)
+        if adobe_config:
+            exclude_identity_type_names = adobe_config.get_list('exclude_identity_types', True) or []
+            exclude_users_regexps = adobe_config.get_list('exclude_users', True) or []
+            exclude_group_names = adobe_config.get_list('exclude_adobe_groups', True) or []
         for name in exclude_identity_type_names:
             message_format = 'Illegal value in exclude_identity_types: %s'
             identity_type = user_sync.identity_type.parse_identity_type(name, message_format)
