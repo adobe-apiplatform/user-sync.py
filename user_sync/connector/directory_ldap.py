@@ -89,10 +89,11 @@ class LDAPDirectoryConnector(object):
         logger.debug('Connecting to: %s using username: %s', host, username)
         if not require_tls_cert:
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
-        connection = ldap.initialize(host)
-        connection.protocol_version = ldap.VERSION3
-        connection.set_option(ldap.OPT_REFERRALS, 0)
+        
         try:
+            connection = ldap.initialize(host)
+            connection.protocol_version = ldap.VERSION3
+            connection.set_option(ldap.OPT_REFERRALS, 0)
             connection.simple_bind_s(username, password)
         except Exception as e:
             raise user_sync.error.AssertionException(repr(e))
