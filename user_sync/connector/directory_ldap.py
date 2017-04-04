@@ -66,7 +66,7 @@ class LDAPDirectoryConnector(object):
         builder.set_string_value('user_domain_format', None)
         builder.set_string_value('user_identity_type', None)
         builder.set_int_value('search_page_size', 200)
-        builder.set_string_value('logger_name', 'connector.' + LDAPDirectoryConnector.name)
+        builder.set_string_value('logger_name', LDAPDirectoryConnector.name)
         host = builder.require_string_value('host')
         username = builder.require_string_value('username')
         builder.require_string_value('base_dn')
