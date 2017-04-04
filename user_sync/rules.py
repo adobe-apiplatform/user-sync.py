@@ -100,11 +100,11 @@ class RuleProcessor(object):
         self.stray_list_output_path = options['stray_list_output_path']
         
         # determine whether we need to process strays at all
-        self.need_to_process_strays = not options['exclude_strays'] and (options['manage_groups'] or
-                                                                         options['stray_list_output_path'] or
-                                                                         options['disentitle_strays'] or
-                                                                         options['remove_strays'] or
-                                                                         options['delete_strays'])
+        self.will_process_strays = (not options['exclude_strays']) and (options['manage_groups'] or
+                                                                        options['stray_list_output_path'] or
+                                                                        options['disentitle_strays'] or
+                                                                        options['remove_strays'] or
+                                                                        options['delete_strays'])
 
         # in/out variables for per-user after-mapping-hook code
         self.after_mapping_hook_scope = {
@@ -151,7 +151,7 @@ class RuleProcessor(object):
         umapi_stats.log_start(logger)
         if should_sync_umapi_users:
             self.process_umapi_users(umapi_connectors)
-        if self.need_to_process_strays:
+        if self.will_process_strays:
             self.process_strays(umapi_connectors)
         umapi_connectors.execute_actions()
         umapi_stats.log_end(logger)
@@ -195,7 +195,7 @@ class RuleProcessor(object):
             ['adobe_users_created', 'Number of new Adobe users added'],
             ['adobe_users_updated', 'Number of existing Adobe users updated'],
         ]
-        if self.need_to_process_strays:
+        if self.will_process_strays:
             if self.options['delete_strays']:
                 action = 'deleted'
             elif self.options['remove_strays']:
@@ -679,7 +679,7 @@ class RuleProcessor(object):
         options = self.options
         update_user_info = options['update_user_info']
         manage_groups = self.will_manage_groups()
-        will_process_strays = self.need_to_process_strays
+        will_process_strays = self.will_process_strays
 
         # prepare the strays map if we are going to be processing them
         if will_process_strays:
@@ -689,8 +689,8 @@ class RuleProcessor(object):
         in_primary_org = umapi_info.get_name() == PRIMARY_UMAPI_NAME
 
         # we only log certain users if they are relevant to our processing.
-        log_excluded_users = update_user_info or manage_groups or will_process_strays
-        log_stray_users = manage_groups or will_process_strays
+        log_excluded_users = update_user_info or manage_groups
+        log_stray_users = will_process_strays
         log_matching_users = update_user_info or manage_groups
 
 
