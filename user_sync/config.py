@@ -127,6 +127,10 @@ class ConfigLoader(object):
         directory_config = self.main_config.get_dict_config('directory_users', True)
         if directory_config != None:
             connectors_config = directory_config.get_dict_config('connectors', True)
+        # make sure neither ldap nor csv connectors get reported as unused
+        if connectors_config:
+            connectors_config.get_list('ldap', True)
+            connectors_config.get_list('csv', True)
         return connectors_config
     
     def get_directory_connector_options(self, connector_name):
@@ -171,8 +175,8 @@ class ConfigLoader(object):
             if groups == None:
                 adobe_groups_by_directory_group[directory_group] = groups = []
 
-            adobe_groups_config = item.get_list_config('adobe_groups')
-            for adobe_group in adobe_groups_config.iter_values(types.StringTypes):
+            adobe_groups = item.get_list('adobe_groups', True)
+            for adobe_group in adobe_groups or []:
                 group = user_sync.rules.AdobeGroup.create(adobe_group)
                 if group is None:
                     validation_message = 'Bad adobe group: "%s" in directory group: "%s"' % (adobe_group, directory_group)
@@ -274,11 +278,11 @@ class ConfigLoader(object):
         exclude_identity_types = exclude_identity_type_names = []
         exclude_users = exclude_users_regexps = []
         exclude_groups = exclude_group_names = []
-        umapi_config = self.main_config.get_dict_config('adobe_users', True)
-        if umapi_config:
-            exclude_identity_type_names = umapi_config.get_list('exclude_identity_types', True) or []
-            exclude_users_regexps = umapi_config.get_list('exclude_users', True) or []
-            exclude_group_names = umapi_config.get_list('exclude_groups', True) or []
+        adobe_config = self.main_config.get_dict_config('adobe_users', True)
+        if adobe_config:
+            exclude_identity_type_names = adobe_config.get_list('exclude_identity_types', True) or []
+            exclude_users_regexps = adobe_config.get_list('exclude_users', True) or []
+            exclude_group_names = adobe_config.get_list('exclude_adobe_groups', True) or []
         for name in exclude_identity_type_names:
             message_format = 'Illegal value in exclude_identity_types: %s'
             identity_type = user_sync.identity_type.parse_identity_type(name, message_format)
