@@ -335,6 +335,7 @@ class ConfigLoader(object):
             'disentitle_strays': options['disentitle_strays'],
             'exclude_groups': exclude_groups,
             'exclude_identity_types': exclude_identity_types,
+            'exclude_strays': options['exclude_strays'],
             'exclude_users': exclude_users,
             'extended_attributes': extended_attributes,
             'manage_groups': options['manage_groups'],

@@ -206,11 +206,29 @@ def create_config_loader(args):
 
 
 def create_config_loader_options(args):
+    '''
+    This is where all the command-line arguments get set as options in the main config
+    so that it appears as if they were loaded as part of the main configuration file.
+    If you add an option that is supposed to be set from the command line here, you
+    had better make sure you add it to the ones read in get_rule_options.
+    :param args: the command-line args as parsed
+    :return: the configured options for the config loader.
+    '''
     config_options = {
-        'test_mode': args.test_mode,
-        'manage_groups': args.manage_groups,
-        'update_user_info': args.update_user_info,
+        'delete_strays': False,
+        'directory_connector_module_name': None,
+        'directory_connector_overridden_options': None,
+        'directory_group_filter': None,
         'directory_group_mapped': False,
+        'disentitle_strays': False,
+        'exclude_strays': False,
+        'manage_groups': args.manage_groups,
+        'remove_strays': False,
+        'stray_list_input_path': None,
+        'stray_list_output_path': None,
+        'test_mode': args.test_mode,
+        'update_user_info': args.update_user_info,
+        'username_filter_regex': None,
     }
 
     # --users
