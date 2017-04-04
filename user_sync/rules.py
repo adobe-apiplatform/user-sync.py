@@ -679,6 +679,7 @@ class RuleProcessor(object):
         options = self.options
         update_user_info = options['update_user_info']
         manage_groups = self.will_manage_groups()
+        exclude_strays = self.options['exclude_strays']
         will_process_strays = self.will_process_strays
 
         # prepare the strays map if we are going to be processing them
@@ -689,8 +690,8 @@ class RuleProcessor(object):
         in_primary_org = umapi_info.get_name() == PRIMARY_UMAPI_NAME
 
         # we only log certain users if they are relevant to our processing.
-        log_excluded_users = update_user_info or manage_groups
-        log_stray_users = will_process_strays
+        log_excluded_users = update_user_info or manage_groups or will_process_strays
+        log_stray_users = will_process_strays or (exclude_strays and log_excluded_users)
         log_matching_users = update_user_info or manage_groups
 
 
@@ -721,7 +722,10 @@ class RuleProcessor(object):
                 # so we mark this adobe user as a stray, and we mark him
                 # for removal from any mapped groups.
                 if log_stray_users:
-                    self.logger.debug("Found Adobe-only user: %s", user_key)
+                    if exclude_strays and log_excluded_users:
+                        self.logger.debug("Excluding Adobe-only user: %s", user_key)
+                    else:
+                        self.logger.debug("Found Adobe-only user: %s", user_key)
                 if will_process_strays:
                     self.add_stray(umapi_info.get_name(), user_key,
                                    None if not manage_groups else current_groups & umapi_info.get_mapped_groups())
