@@ -689,12 +689,6 @@ class RuleProcessor(object):
         # there are certain operations we only do in the primary umapi
         in_primary_org = umapi_info.get_name() == PRIMARY_UMAPI_NAME
 
-        # we only log certain users if they are relevant to our processing.
-        log_excluded_users = update_user_info or manage_groups or will_process_strays
-        log_stray_users = will_process_strays or (exclude_strays and log_excluded_users)
-        log_matching_users = update_user_info or manage_groups
-
-
         # Walk all the adobe users, getting their group data, matching them with directory users,
         # and adjusting their attribute and group data accordingly.
         for umapi_user in umapi_connector.iter_users():
@@ -713,7 +707,7 @@ class RuleProcessor(object):
             desired_groups = user_to_group_map.pop(user_key, None) or set()
 
             # check for excluded users
-            if self.is_umapi_user_excluded(in_primary_org, user_key, current_groups, log_excluded_users):
+            if self.is_umapi_user_excluded(in_primary_org, user_key, current_groups):
                 continue
 
             directory_user = filtered_directory_user_by_user_key.get(user_key)
@@ -721,19 +715,17 @@ class RuleProcessor(object):
                 # There's no selected directory user matching this adobe user
                 # so we mark this adobe user as a stray, and we mark him
                 # for removal from any mapped groups.
-                if log_stray_users:
-                    if exclude_strays and log_excluded_users:
-                        self.logger.debug("Excluding Adobe-only user: %s", user_key)
-                    else:
-                        self.logger.debug("Found Adobe-only user: %s", user_key)
-                if will_process_strays:
+                if exclude_strays:
+                    self.logger.debug("Excluding Adobe-only user: %s", user_key)
+                elif will_process_strays:
+                    self.logger.debug("Found Adobe-only user: %s", user_key)
                     self.add_stray(umapi_info.get_name(), user_key,
                                    None if not manage_groups else current_groups & umapi_info.get_mapped_groups())
             else:
                 # There is a selected directory user who matches this adobe user,
                 # so mark any changed umapi attributes,
                 # and mark him for addition and removal of the appropriate mapped groups
-                if log_matching_users:
+                if update_user_info or manage_groups:
                     self.logger.debug("Adobe user matched on customer side: %s", user_key)
                 if update_user_info and in_primary_org:
                     attribute_differences = self.get_user_attribute_difference(directory_user, umapi_user)
@@ -749,24 +741,21 @@ class RuleProcessor(object):
         umapi_info.set_umapi_users_loaded()
         return user_to_group_map
 
-    def is_umapi_user_excluded(self, in_primary_org, user_key, current_groups, do_logging):
+    def is_umapi_user_excluded(self, in_primary_org, user_key, current_groups):
         if in_primary_org:
             # in the primary umapi, we actually check the exclusion conditions
             identity_type, username, domain = self.parse_user_key(user_key)
             if identity_type in self.exclude_identity_types:
-                if do_logging:
-                    self.logger.debug("Excluding adobe user (due to type): %s", user_key)
+                self.logger.debug("Excluding adobe user (due to type): %s", user_key)
                 self.excluded_user_count += 1
                 return True
             if len(current_groups & self.exclude_groups) > 0:
-                if do_logging:
-                    self.logger.debug("Excluding adobe user (due to group): %s", user_key)
+                self.logger.debug("Excluding adobe user (due to group): %s", user_key)
                 self.excluded_user_count += 1
                 return True
             for re in self.exclude_users:
                 if re.match(username):
-                    if do_logging:
-                        self.logger.debug("Excluding adobe user (due to name): %s", user_key)
+                    self.logger.debug("Excluding adobe user (due to name): %s", user_key)
                     self.excluded_user_count += 1
                     return True
             self.included_user_keys.add(user_key)
