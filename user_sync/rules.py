@@ -387,7 +387,7 @@ class RuleProcessor(object):
         umapi_connectors.execute_actions()
 
         # Now manage the adobe groups in the secondaries
-        for umapi_name, umapi_connector in six.iteritems(umapi_connectors.get_secondary_connectors):
+        for umapi_name, umapi_connector in six.iteritems(umapi_connectors.get_secondary_connectors()):
             secondary_umapi_info = self.get_umapi_info(umapi_name)
             if (len(secondary_umapi_info.get_mapped_groups()) == 0):
                 continue
@@ -840,7 +840,7 @@ class RuleProcessor(object):
     def get_user_attribute_difference(self, directory_user, umapi_user):
         differences = {}
         attributes = self.get_user_attributes(directory_user)
-        for key, value in six.iteritems(attributes.iteritems):
+        for key, value in six.iteritems(attributes):
             umapi_value = umapi_user.get(key)
             if (value != umapi_value):
                 differences[key] = value
