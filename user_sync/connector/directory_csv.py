@@ -65,7 +65,7 @@ class CSVDirectoryConnector(object):
         builder.set_string_value('domain_column_name', 'domain')
         builder.set_string_value('identity_type_column_name', 'type')
         builder.set_string_value('user_identity_type', None)
-        builder.set_string_value('logger_name', 'connector.' + CSVDirectoryConnector.name)
+        builder.set_string_value('logger_name', CSVDirectoryConnector.name)
         builder.require_string_value('file_path')
         options = builder.get_options()
 

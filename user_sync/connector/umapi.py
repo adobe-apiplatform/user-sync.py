@@ -26,9 +26,9 @@ import umapi_client
 
 import helper
 import user_sync.config
-import user_sync.error
 import user_sync.helper
 import user_sync.identity_type
+from user_sync.error import AssertionException
 from user_sync.version import __version__ as APP_VERSION
 
 try:
@@ -84,16 +84,20 @@ class UmapiConnector(object):
             "client_secret": enterprise_options['client_secret'],
             "private_key_file": private_key_file_path
         }
-        self.connection = connection = umapi_client.Connection(
-            org_id=org_id, 
-            auth_dict=auth_dict, 
-            ims_host=ims_host,
-            ims_endpoint_jwt=server_options['ims_endpoint_jwt'],
-            user_management_endpoint=um_endpoint,
-            test_mode=options['test_mode'],
-            user_agent="user-sync/" + APP_VERSION,
-            logger=self.logger,
-        )
+        try:
+            self.connection = connection = umapi_client.Connection(
+                org_id=org_id,
+                auth_dict=auth_dict,
+                ims_host=ims_host,
+                ims_endpoint_jwt=server_options['ims_endpoint_jwt'],
+                user_management_endpoint=um_endpoint,
+                test_mode=options['test_mode'],
+                user_agent="user-sync/" + APP_VERSION,
+                logger=self.logger,
+            )
+        except Exception as e:
+            raise AssertionException("UMAPI connection to org id '%s' failed: %s" % (org_id, e))
+
         logger.debug('API initialized on: %s', um_endpoint)
         
         self.action_manager = ActionManager(connection, org_id, logger)
@@ -184,7 +188,7 @@ class Commands(object):
             email = self.email if self.email else self.username
             if not email:
                 errorMessage = "ERROR: you must specify an email with an Adobe ID"
-                raise user_sync.error.AssertionException(errorMessage)
+                raise AssertionException(errorMessage)
             params = self.convert_user_attributes_to_params({'email': email})
         else:
             params = self.convert_user_attributes_to_params(attributes)
