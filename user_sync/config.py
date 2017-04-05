@@ -374,11 +374,6 @@ class ConfigLoader(object):
     def check_unused_config_keys(self):
         directory_connectors_config = self.get_directory_connector_configs()
         self.main_config.report_unused_values(self.logger, [directory_connectors_config])
-        directory_source_filters = self.options['directory_source_filters']
-        if (directory_source_filters != None):
-            unused_keys = set(six.iterkeys(directory_source_filters)) - self.directory_source_filters_accessed
-            if (len(unused_keys) > 0):
-                raise user_sync.error.AssertionException("Unused source filters for: %s" % list(unused_keys))
         
 class ObjectConfig(object):
     def __init__(self, scope):

@@ -151,7 +151,6 @@ class LDAPDirectoryConnector(object):
         base_dn = options['base_dn']
         group_filter_format = options['group_filter_format']
         
-        # res = connection.search()
         res = connection.search_s(
             base_dn,
             ldap.SCOPE_SUBTREE,
