@@ -2,7 +2,7 @@
 #
 # CSV (Comma-Separated Values) is a plain-text spreadsheet format.
 # The main function of this configuration file is to specify how column names
-# in the spreadsheet are mapped to attribute names in the customer directory.
+# in the spreadsheet are mapped to attribute names in the directory.
 #
 # The first line of a CSV file is assumed to be header row with column names.
 # The column names in your spreadsheet can be in any order, and if there are
@@ -25,7 +25,7 @@
 # Values in this column must be valid, unquoted email addresses.
 # A value is required in this column for all users, regardless
 # of their identity type.  For Adobe ID users, all of the other
-# column values are ignored.  For Enterprise and Federated ID
+# column values are optional.  For Enterprise and Federated ID
 # users, all of the other column values are significant.
 email_column_name: email
 
