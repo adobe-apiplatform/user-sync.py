@@ -21,6 +21,7 @@
 import types
 import unittest
 import os
+import os.path
 import yaml
 
 import mock
@@ -43,14 +44,17 @@ class ConfigFileLoaderTest(unittest.TestCase):
     
     @mock.patch('__builtin__.open')
     @mock.patch('yaml.load')
-    def test_load_root_config(self, mock_yaml, mock_open):
+    @mock.patch('os.path.isfile')
+    def test_load_root_config(self, mock_isfile, mock_yaml, mock_open):
         '''
         tests ConfigFileLoader.load_root_config by inputing a root configuration
         file path, and asserts that the resulting processed content has the
         file references properly updated
+        :type mock_isfile: Mock
         :type mock_yaml: Mock
         :type mock_open: Mock
         '''
+        mock_isfile.return_value = True
         mocked_open = mock_open('test')
         mocked_open_name = '%s.open' % __name__
         with patch(mocked_open_name, mocked_open, create=True):
@@ -72,9 +76,7 @@ class ConfigFileLoaderTest(unittest.TestCase):
                                 ]
                         }
                 }
-            with mock.patch(os.path.isfile) as m_isfile:
-                m_isfile.return_value = True
-                yml = ConfigFileLoader.load_root_config('config-test/user-sync-config-test.yml')
+            yml = ConfigFileLoader.load_root_config('config-test/user-sync-config-test.yml')
             
             # test path updating
             self.assert_eq(yml['logging']['file_log_directory'], os.path.abspath('config-test/log-test-1'),
@@ -92,14 +94,17 @@ class ConfigFileLoaderTest(unittest.TestCase):
 
     @mock.patch('__builtin__.open')
     @mock.patch('yaml.load')
-    def test_load_root_default_config(self, mock_yaml, mock_open):
+    @mock.patch('os.path.isfile')
+    def test_load_root_default_config(self, mock_isfile, mock_yaml, mock_open):
         '''
         tests ConfigFileLoader.load_root_config by inputing a root configuration
         file path, and asserts that the resulting processed content has the
         file references properly updated
+        :type mock_isfile: Mock
         :type mock_yaml: Mock
         :type mock_open: Mock
         '''
+        mock_isfile.return_value = True
         mocked_open = mock_open('test')
         mocked_open_name = '%s.open' % __name__
         with patch(mocked_open_name, mocked_open, create=True):
@@ -107,9 +112,7 @@ class ConfigFileLoaderTest(unittest.TestCase):
                     'adobe_users': {'connectors': {'umapi': 'test-123'}},
                     'logging': {'log_to_file': True},
                 }
-            with mock.patch(os.path.isfile) as m_isfile:
-                m_isfile.return_value = True
-                yml = ConfigFileLoader.load_root_config('config-test-2/user-sync-config-test.yml')
+            yml = ConfigFileLoader.load_root_config('config-test-2/user-sync-config-test.yml')
 
             # assert default values are preserved
             self.assert_eq(yml['logging']['file_log_directory'], os.path.abspath('config-test-2/logs'),
@@ -121,14 +124,17 @@ class ConfigFileLoaderTest(unittest.TestCase):
 
     @mock.patch('__builtin__.open')
     @mock.patch('yaml.load')
-    def test_load_sub_config(self, mock_yaml, mock_open):
+    @mock.patch('os.path.isfile')
+    def test_load_sub_config(self, mock_isfile, mock_yaml, mock_open):
         '''
         same purpose as test_load_root_config, but tests against sub
         configuration path updates (which is currently only the private key
         path in the umapi configuration file)
+        :type mock_isfile: Mock
         :type mock_yaml: Mock
         :type mock_open: Mock
         '''
+        mock_isfile.return_value = True
         mocked_open = mock_open('test')
         mocked_open_name = '%s.open' % __name__
         with patch(mocked_open_name, mocked_open, create=True):
@@ -141,9 +147,7 @@ class ConfigFileLoaderTest(unittest.TestCase):
                             'test-2': 123
                         }
                 }
-            with mock.patch(os.path.isfile) as m_isfile:
-                m_isfile.return_value = True
-                yml = ConfigFileLoader.load_sub_config('sub-config-test/user-sync-config-test.yml')
+            yml = ConfigFileLoader.load_sub_config('sub-config-test/user-sync-config-test.yml')
             
             # test path updating
             self.assert_eq(yml['enterprise']['priv_key_path'], os.path.abspath('keys/test-key.key'),

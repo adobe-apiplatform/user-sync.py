@@ -100,11 +100,11 @@ class RuleProcessor(object):
         self.stray_list_output_path = options['stray_list_output_path']
         
         # determine whether we need to process strays at all
-        self.need_to_process_strays = not options['exclude_strays'] and (options['manage_groups'] or
-                                                                         options['stray_list_output_path'] or
-                                                                         options['disentitle_strays'] or
-                                                                         options['remove_strays'] or
-                                                                         options['delete_strays'])
+        self.will_process_strays = (not options['exclude_strays']) and (options['manage_groups'] or
+                                                                        options['stray_list_output_path'] or
+                                                                        options['disentitle_strays'] or
+                                                                        options['remove_strays'] or
+                                                                        options['delete_strays'])
 
         # in/out variables for per-user after-mapping-hook code
         self.after_mapping_hook_scope = {
@@ -151,7 +151,7 @@ class RuleProcessor(object):
         umapi_stats.log_start(logger)
         if should_sync_umapi_users:
             self.process_umapi_users(umapi_connectors)
-        if self.need_to_process_strays:
+        if self.will_process_strays:
             self.process_strays(umapi_connectors)
         umapi_connectors.execute_actions()
         umapi_stats.log_end(logger)
@@ -195,7 +195,7 @@ class RuleProcessor(object):
             ['adobe_users_created', 'Number of new Adobe users added'],
             ['adobe_users_updated', 'Number of existing Adobe users updated'],
         ]
-        if self.need_to_process_strays:
+        if self.will_process_strays:
             if self.options['delete_strays']:
                 action = 'deleted'
             elif self.options['remove_strays']:
@@ -259,7 +259,7 @@ class RuleProcessor(object):
         :type mappings: dict(str, list(AdobeGroup))
         :type directory_connector: user_sync.connector.directory.DirectoryConnector
         '''
-        self.logger.info('Building work list...')
+        self.logger.debug('Building work list...')
                 
         options = self.options
         directory_group_filter = options['directory_group_filter']
@@ -327,9 +327,11 @@ class RuleProcessor(object):
                 else:
                     self.logger.error('Target adobe group %s is not known; ignored', target_group_qualified_name)
 
-        self.logger.info('Total directory users after filtering: %d', len(filtered_directory_user_by_user_key))
+        self.logger.debug('Total directory users after filtering: %d', len(filtered_directory_user_by_user_key))
         if (self.logger.isEnabledFor(logging.DEBUG)):        
-            self.logger.debug('Group work list: %s', dict([(umapi_name, umapi_info.get_desired_groups_by_user_key()) for umapi_name, umapi_info in self.umapi_info_by_name.iteritems()]))
+            self.logger.debug('Group work list: %s', dict([(umapi_name, umapi_info.get_desired_groups_by_user_key())
+                                                           for umapi_name, umapi_info
+                                                           in self.umapi_info_by_name.iteritems()]))
     
     def is_directory_user_in_groups(self, directory_user, groups):
         '''
@@ -357,8 +359,11 @@ class RuleProcessor(object):
         :type umapi_connectors: UmapiConnectors
         '''        
         manage_groups = self.will_manage_groups()
-        
-        self.logger.info('Syncing primary...')
+
+        if umapi_connectors.get_secondary_connectors():
+            self.logger.debug('Syncing users to primary umapi...')
+        else:
+            self.logger.debug('Syncing users to umapi...')
         primary_umapi_info = self.get_umapi_info(PRIMARY_UMAPI_NAME)
 
         # Loop over users and compare then and process differences
@@ -377,10 +382,10 @@ class RuleProcessor(object):
             secondary_umapi_info = self.get_umapi_info(umapi_name)
             if (len(secondary_umapi_info.get_mapped_groups()) == 0):
                 continue
-            self.logger.info('Syncing secondary: %s...', umapi_name)
+            self.logger.debug('Syncing users to secondary umapi %s...', umapi_name)
             secondary_updates_by_user_key = self.update_umapi_users_for_connector(secondary_umapi_info, umapi_connector)
             if secondary_updates_by_user_key:
-                self.logger.critical("Shouldn't happen! In secondary %s, the following users were not found: %s",
+                self.logger.critical("Shouldn't happen! In secondary umapi %s, the following users were not found: %s",
                                      umapi_name, secondary_updates_by_user_key.keys())
 
     def is_selected_user_key(self, user_key):
@@ -438,7 +443,7 @@ class RuleProcessor(object):
             self.action_summary['adobe_strays_processed'] = 0
             return
         self.action_summary['adobe_strays_processed'] = stray_count
-        self.logger.info("Processing Adobe-only users...")
+        self.logger.debug("Processing Adobe-only users...")
         self.manage_strays(umapi_connectors)
                     
     def manage_strays(self, umapi_connectors):
@@ -475,7 +480,7 @@ class RuleProcessor(object):
                                          umapi_name, user_key)
                         commands.remove_all_groups()
                     elif remove_strays or delete_strays:
-                        self.logger.info('Removing unmatched Adobe-only user from %s: %s',
+                        self.logger.info('Removing Adobe-only user from %s: %s',
                                          umapi_name, user_key)
                         commands.remove_from_org(False)
                     elif manage_stray_groups:
@@ -588,7 +593,7 @@ class RuleProcessor(object):
         attributes['option'] = "updateIfAlreadyExists" if update_user_info else 'ignoreIfAlreadyExists'
 
         # add the user to primary with groups
-        self.logger.info('Adding directory user to Adobe: %s', user_key)
+        self.logger.info('Adding directory user with user key: %s', user_key)
         self.action_summary['adobe_users_created'] += 1
         primary_commands.add_user(attributes)
         if (manage_groups):
@@ -599,7 +604,7 @@ class RuleProcessor(object):
             secondary_umapi_info = self.get_umapi_info(umapi_name)
             # only add the user to this secondary if he is in groups in this secondary
             if secondary_umapi_info.get_desired_groups(user_key):
-                self.logger.info('Adding directory user to %s: %s', umapi_name, user_key)
+                self.logger.info('Adding directory user to %s with user key: %s', umapi_name, user_key)
                 secondary_commands = self.create_commands_from_directory_user(directory_user, identity_type)
                 secondary_commands.add_user(attributes)
                 umapi_connector.send_commands(secondary_commands)
@@ -674,7 +679,8 @@ class RuleProcessor(object):
         options = self.options
         update_user_info = options['update_user_info']
         manage_groups = self.will_manage_groups()
-        will_process_strays = self.need_to_process_strays
+        exclude_strays = self.options['exclude_strays']
+        will_process_strays = self.will_process_strays
 
         # prepare the strays map if we are going to be processing them
         if will_process_strays:
@@ -682,12 +688,6 @@ class RuleProcessor(object):
 
         # there are certain operations we only do in the primary umapi
         in_primary_org = umapi_info.get_name() == PRIMARY_UMAPI_NAME
-
-        # we only log certain users if they are relevant to our processing.
-        log_excluded_users = update_user_info or manage_groups or will_process_strays
-        log_stray_users = manage_groups or will_process_strays
-        log_matching_users = update_user_info or manage_groups
-
 
         # Walk all the adobe users, getting their group data, matching them with directory users,
         # and adjusting their attribute and group data accordingly.
@@ -707,7 +707,7 @@ class RuleProcessor(object):
             desired_groups = user_to_group_map.pop(user_key, None) or set()
 
             # check for excluded users
-            if self.is_umapi_user_excluded(in_primary_org, user_key, current_groups, log_excluded_users):
+            if self.is_umapi_user_excluded(in_primary_org, user_key, current_groups):
                 continue
 
             directory_user = filtered_directory_user_by_user_key.get(user_key)
@@ -715,17 +715,18 @@ class RuleProcessor(object):
                 # There's no selected directory user matching this adobe user
                 # so we mark this adobe user as a stray, and we mark him
                 # for removal from any mapped groups.
-                if log_stray_users:
-                    self.logger.info("Adobe user unmatched on customer side: %s", user_key)
-                if will_process_strays:
+                if exclude_strays:
+                    self.logger.debug("Excluding Adobe-only user: %s", user_key)
+                elif will_process_strays:
+                    self.logger.debug("Found Adobe-only user: %s", user_key)
                     self.add_stray(umapi_info.get_name(), user_key,
                                    None if not manage_groups else current_groups & umapi_info.get_mapped_groups())
             else:
                 # There is a selected directory user who matches this adobe user,
                 # so mark any changed umapi attributes,
                 # and mark him for addition and removal of the appropriate mapped groups
-                if log_matching_users:
-                    self.logger.info("Adobe user matched on customer side: %s", user_key)
+                if update_user_info or manage_groups:
+                    self.logger.debug("Adobe user matched on customer side: %s", user_key)
                 if update_user_info and in_primary_org:
                     attribute_differences = self.get_user_attribute_difference(directory_user, umapi_user)
                 if manage_groups:
@@ -740,24 +741,21 @@ class RuleProcessor(object):
         umapi_info.set_umapi_users_loaded()
         return user_to_group_map
 
-    def is_umapi_user_excluded(self, in_primary_org, user_key, current_groups, do_logging):
+    def is_umapi_user_excluded(self, in_primary_org, user_key, current_groups):
         if in_primary_org:
             # in the primary umapi, we actually check the exclusion conditions
             identity_type, username, domain = self.parse_user_key(user_key)
             if identity_type in self.exclude_identity_types:
-                if do_logging:
-                    self.logger.info("Excluding adobe user (due to type): %s", user_key)
+                self.logger.debug("Excluding adobe user (due to type): %s", user_key)
                 self.excluded_user_count += 1
                 return True
             if len(current_groups & self.exclude_groups) > 0:
-                if do_logging:
-                    self.logger.info("Excluding adobe user (due to group): %s", user_key)
+                self.logger.debug("Excluding adobe user (due to group): %s", user_key)
                 self.excluded_user_count += 1
                 return True
             for re in self.exclude_users:
                 if re.match(username):
-                    if do_logging:
-                        self.logger.info("Excluding adobe user (due to name): %s", user_key)
+                    self.logger.debug("Excluding adobe user (due to name): %s", user_key)
                     self.excluded_user_count += 1
                     return True
             self.included_user_keys.add(user_key)
@@ -926,10 +924,10 @@ class RuleProcessor(object):
         org_count = len(self.stray_key_map) - 1
         org_plural = "" if org_count == 1 else "s"
         if org_count > 0:
-            self.logger.info('Read %d unmatched user%s for primary umapi, with %d secondary umapi%s',
+            self.logger.info('Read %d Adobe-only user%s for primary umapi, with %d secondary umapi%s',
                              user_count, user_plural, org_count, org_plural)
         else:
-            self.logger.info('Read %d unmatched user%s.', user_count, user_plural)
+            self.logger.info('Read %d Adobe-only user%s.', user_count, user_plural)
 
     def write_stray_key_map(self):
         file_path = self.stray_list_output_path
@@ -953,10 +951,10 @@ class RuleProcessor(object):
         org_count = len(self.stray_key_map) - 1
         org_plural = "" if org_count == 1 else "s"
         if org_count > 0:
-            logger.info('Wrote %d unmatched user%s for primary umapi, with %d secondary umapi%s',
+            logger.info('Wrote %d Adobe-only user%s for primary umapi, with %d secondary umapi%s',
                         user_count, user_plural, org_count, org_plural)
         else:
-            logger.info('Wrote %d unmatched user%s.', user_count, user_plural)
+            logger.info('Wrote %d Adobe-only user%s.', user_count, user_plural)
             
     def log_after_mapping_hook_scope(self, before_call=None, after_call=None):
         if ((before_call is None and after_call is None) or (before_call is not None and after_call is not None)):

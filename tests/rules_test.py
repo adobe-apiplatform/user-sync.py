@@ -194,6 +194,7 @@ class RulesTest(unittest.TestCase):
 
         action_manager = mock.mock.create_autospec(user_sync.connector.umapi.ActionManager)
         action_manager.has_work = lambda: False
+        action_manager.get_statistics = lambda: (len(commands_list_output), 0)
         mock_connector = mock.mock.create_autospec(user_sync.connector.umapi)
         mock_connector.iter_users = lambda: list(users_to_return)
         mock_connector.send_commands = mock_send_commands
