@@ -198,6 +198,8 @@ mapping in the main User Sync configuration file. See details in
 the [Configure group mapping](#configure-group-mapping) section
 below.
 
+It is a best practice to note in the description field of the Product Configuration or User Group that the group is managed by User Sync and should not be edited in the Admin Console.
+
 ![Figure 2: Group Mapping Overview](media/group-mapping.png)
 
 ### Installing the User Sync tool
@@ -1035,6 +1037,40 @@ on the list generated in a prior run of User Sync.
 ```sh
 ./user-sync --adobe-only-user-list users-to-delete.csv --adobe-only-user-action delete
 ```
+
+### Handling Push Notifications
+
+If your directory system can generate notifications of updates you can use User Sync to
+process those updates incrementally.  The technique shown in this section can also be 
+used to process immediate updates where an administrator has updated a user or group of 
+users and wants to push just those updates immediately into Adobe's user management 
+system.  Some scripting may be required to transform the information coming from the 
+push notification to a csv format suitable for input to User Sync, and to separate 
+deletions from other updates, which mush be handled separately in User Sync.
+
+Create a file, say, `updated_users.csv` with the user update format illustrated in 
+the `users-file.csv` example file in the folder `csv inputs - user and remove lists`.  
+This is a basic csv file with columns for firstname, lastname, and so on.
+
+    firstname,lastname,email,country,groups,type,username,domain
+    John,Smith,jsmith@example.com,US,"AdobeCC-All",enterpriseID
+    Jane,Doe,jdoe@example.com,US,"AdobeCC-All",federatedID
+ 
+This file is then provided to User Sync:
+
+```sh
+./user-sync --users file updated-users.csv --process-groups --adobe-only-user-action exclude
+```
+
+The --adobe-only-user-action exclude causes User Sync to update only users that are in the updated-users.csv file and to ignore all others.
+
+Deletions are handled similarly.  Create a file `deleted-users.csv` based on the format of `remove-list.csv` in the same example folder and run User Sync:
+
+```sh
+./user-sync --adobe-only-user-list deleted-users.csv --adobe-only-user-action remove
+```
+
+This will handle deletions based on the notification and no other actions will be taken.  Note that `remove` could be replaced with one of the other actions based on how you want to handle deleted users.
 
 ### Action Summary
 

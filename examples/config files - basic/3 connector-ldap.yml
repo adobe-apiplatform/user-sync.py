@@ -16,10 +16,7 @@
 # connection settings (required)
 # You must specify all four of these settings.  Consult with your
 # enterprise directory administrators to get suitable values.
-# You may want to specify these connection settings in a separate file
-# from the rest of your settings, so as to guard your credential more
-# securely than your other configuration values.  See the User Sync
-# documentation for an explanation of how to do this.
+# These access credentials are sensitive and must be protected.
 username: "LDAP username goes here"
 password: "LDAP password goes here"
 host: "LDAP host URL goes here.  e.g. ldap://ldap.example.com"
@@ -76,7 +73,7 @@ group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objec
 # (optional) user_email_format (default value given below)
 # user_email_format specifies how to construct a user's email address by
 # combining constant strings with the values of specific directory attributes.
-# Any names in curly braces are take as attribute names, and everything including
+# Any names in curly braces are taken as attribute names, and everything including
 # the braces will be replaced on a per-user basis with the values of the attributes.
 # The default value used here is simple, and suitable for OpenLDAP systems.  If you
 # are using a non-email-aware AD system, which holds the username separately
@@ -91,8 +88,8 @@ user_email_format: "{mail}"
 
 # (optional) user_username_format (no default value)
 # user_username_format specifies how to construct a user's username on the
-# Adobe side by combining contstant strings with attribute values.
-# Any names in curly braces are take as attribute names, and everything including
+# Adobe side by combining constant strings with attribute values.
+# Any names in curly braces are taken as attribute names, and everything including
 # the braces will be replaced on a per-user basis with the values of the attributes.
 # This setting should only be used when you are using federatedID and your
 # federation configuration specifies username-based login.  In all other cases,
