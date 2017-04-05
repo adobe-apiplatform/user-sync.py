@@ -1059,7 +1059,7 @@ This is a basic csv file with columns for firstname, lastname, and so on.
 This file is then provided to User Sync:
 
 ```sh
-./user-sync --users file updated-users.csv --process-groups --adobe-only-user-action exclude
+./user-sync --users file updated-users.csv --process-groups --update-users --adobe-only-user-action exclude
 ```
 
 The --adobe-only-user-action exclude causes User Sync to update only users that are in the updated-users.csv file and to ignore all others.
