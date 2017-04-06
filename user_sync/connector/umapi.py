@@ -26,9 +26,9 @@ import umapi_client
 
 import helper
 import user_sync.config
-import user_sync.error
 import user_sync.helper
 import user_sync.identity_type
+from user_sync.error import AssertionException
 from user_sync.version import __version__ as APP_VERSION
 
 try:
@@ -37,15 +37,15 @@ try:
 except:
     pass
 
-class DashboardConnector(object):
+class UmapiConnector(object):
     def __init__(self, name, caller_options):
         '''
         :type name: str
         :type caller_options: dict
         '''
-        caller_config = user_sync.config.DictConfig('"%s dashboard options"' % name, caller_options)
+        caller_config = user_sync.config.DictConfig('"%s umapi options"' % name, caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
-        builder.set_string_value('logger_name', 'dashboard.' + name)
+        builder.set_string_value('logger_name', 'umapi' + name)
         builder.set_bool_value('test_mode', False)
         options = builder.get_options()        
 
@@ -76,7 +76,7 @@ class DashboardConnector(object):
         private_key_file_path = enterprise_options['priv_key_path']
         um_endpoint = "https://" + server_options['host'] + server_options['endpoint']    
         
-        logger.info('Creating connection for org id: "%s" using private key file: "%s"', org_id, private_key_file_path)
+        logger.debug('Creating connection for org id: "%s" using private key file: "%s"', org_id, private_key_file_path)
         auth_dict = {
             "org_id": org_id,
             "tech_acct_id": enterprise_options['tech_acct'],
@@ -84,17 +84,21 @@ class DashboardConnector(object):
             "client_secret": enterprise_options['client_secret'],
             "private_key_file": private_key_file_path
         }
-        self.connection = connection = umapi_client.Connection(
-            org_id=org_id, 
-            auth_dict=auth_dict, 
-            ims_host=ims_host,
-            ims_endpoint_jwt=server_options['ims_endpoint_jwt'],
-            user_management_endpoint=um_endpoint,
-            test_mode=options['test_mode'],
-            user_agent="user-sync/" + APP_VERSION,
-            logger=self.logger,
-        )
-        logger.info('API initialized on: %s', um_endpoint)
+        try:
+            self.connection = connection = umapi_client.Connection(
+                org_id=org_id,
+                auth_dict=auth_dict,
+                ims_host=ims_host,
+                ims_endpoint_jwt=server_options['ims_endpoint_jwt'],
+                user_management_endpoint=um_endpoint,
+                test_mode=options['test_mode'],
+                user_agent="user-sync/" + APP_VERSION,
+                logger=self.logger,
+            )
+        except Exception as e:
+            raise AssertionException("UMAPI connection to org id '%s' failed: %s" % (org_id, e))
+
+        logger.debug('API initialized on: %s', um_endpoint)
         
         self.action_manager = ActionManager(connection, org_id, logger)
     
@@ -184,7 +188,7 @@ class Commands(object):
             email = self.email if self.email else self.username
             if not email:
                 errorMessage = "ERROR: you must specify an email with an Adobe ID"
-                raise user_sync.error.AssertionException(errorMessage)
+                raise AssertionException(errorMessage)
             params = self.convert_user_attributes_to_params({'email': email})
         else:
             params = self.convert_user_attributes_to_params(attributes)
@@ -234,10 +238,16 @@ class ActionManager(object):
         :type org_id: str
         :type logger: logging.Logger
         '''
+        self.action_count = 0
+        self.error_count = 0
         self.items = []
         self.connection = connection
         self.org_id = org_id
         self.logger = logger.getChild('action')
+
+    def get_statistics(self):
+        '''Return the count of actions sent so far, and how many had errors.'''
+        return self.action_count, self.error_count
         
     def get_next_request_id(self):
         request_id = 'action_%d' % ActionManager.next_request_id
@@ -279,7 +289,8 @@ class ActionManager(object):
             'callback': callback
         }
         self.items.append(item)
-        self.logger.log(logging.INFO, 'Added action: %s', json.dumps(action.wire_dict()))
+        self.action_count += 1
+        self.logger.debug('Added action: %s', json.dumps(action.wire_dict()))
         self._execute_action(action)
     
     def has_work(self):
@@ -289,8 +300,14 @@ class ActionManager(object):
         '''
         :type action: umapi_client.UserAction
         '''
-        _, sent, _ = self.connection.execute_single(action)
-        self.process_sent_items(sent)
+        sent = 0
+        try:
+            _, sent, _ = self.connection.execute_single(action)
+        except umapi_client.BatchError as e:
+            self.logger.critical("Unexpected response! Actions may have failed: %s", e)
+            sent = e.statistics[1]
+        finally:
+            self.process_sent_items(sent)
 
     def process_sent_items(self, total_sent):
         if (total_sent > 0):
@@ -302,8 +319,12 @@ class ActionManager(object):
                 is_success = not action_errors or len(action_errors) == 0
                 
                 if (not is_success):
+                    self.error_count += 1
                     for error in action_errors:
-                        self.logger.error('Error requestID: %s code: "%s" message: "%s"', action.frame.get("requestID"), error.get('errorCode'), error.get('message'));
+                        self.logger.error('Error in requestID: %s (User: %s, Command: %s): code: "%s" message: "%s"',
+                                          action.frame.get("requestID"),
+                                          error.get("target", "<Unknown>"), error.get("command", "<Unknown>"),
+                                          error.get('errorCode', "<None>"), error.get('message', "<None>"))
                 
                 item_callback = sent_item['callback']
                 if (callable(item_callback)):
@@ -314,7 +335,11 @@ class ActionManager(object):
                     })
 
     def flush(self):
-        _, sent, _ = self.connection.execute_queued()
-        self.process_sent_items(sent)
-        
-
+        sent = 0
+        try:
+            _, sent, _ = self.connection.execute_queued()
+        except umapi_client.BatchError as e:
+            self.logger.critical("Unexpected response! Actions may have failed: %s", e)
+            sent = e.statistics[1]
+        finally:
+            self.process_sent_items(sent)

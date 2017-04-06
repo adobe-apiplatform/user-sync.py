@@ -1,0 +1,61 @@
+# This is a sample configuration file for a user extension.
+#
+# This file extends the behavior specified in your main configuration file,
+# by adding custom python code to the logic for attribute and group mapping
+# which is specified in the directory_users section.
+#
+# To load your extension file, put the file's relative or absolute path
+# as the value of the extension setting in the directory_users section
+# of your main configuration file.
+
+# (optional) extended_attributes (default value is an empty list)
+# extended_attributes is a list of attribute names whose per-user
+# values are required by your extension in order to function properly.
+# These attributes will be read on a per-user basis, and will be available
+# in the source_attributes dictionary in your after_mapping_hook.  Any
+# of these attributes which don't have a value in the directory entry for
+# a given user will have a Python None value in that user's dictionary.
+extended_attributes:
+  - bc
+  - subco
+
+# (optional) extended_adobe_groups (default value is an empty list)
+# extended_adobe_groups is a list of Adobe-side product configuration
+# and/or user group names, exactly like those found in the groups
+# setting in the main configuration file.  Your after_mapping_hook
+# can add users to any product configuration or user group found here
+# as well as any found in the groups setting, and the effect of the
+# --process-groups argument will treat them exactly as if the
+# extended mapping had been specified as part of the groups setting.
+extended_adobe_groups:
+  - Company 1 Users
+  - Company 2 Users
+
+# (required) after_mapping_hook
+# This is where you specify your Python hook code.  Note the vertical bar
+# after the after_mapping_hook label: this vertical bar is required and
+# denotes that all the following indented lines up to the next blank
+# line are part of a code block.  Do not have blank lines in your code block.
+#
+# after_mapping_hook code executes in a scope containing the following variables:
+#
+#     source_attributes   # in: attributes retrieved from customer directory system (eg 'c', 'givenName')
+#                         # out: N/A
+#     source_groups       # in: customer-side directory groups found for user
+#                         # out: N/A
+#     target_attributes   # in: user's attributes for UMAPI calls as defined by usual rules (eg 'country', 'firstname')
+#                         # out: user's attributes for UMAPI calls as potentially changed by hook code
+#     target_groups       # in: Adobe-side dashboard groups mapped for user by usual rules
+#                         # out: Adobe-side dashboard groups as potentially changed by hook code
+#     hook_storage        # for exclusive use by hook code: initialized to None; persists across per-user calls
+#     logger              # an object of type logging.logger which outputs to the console and/or file log
+#
+after_mapping_hook: |
+  bc = source_attributes.get('bc')
+  subco = source_attributes.get('subco')
+  if bc is not None:
+    target_attributes['country'] = bc[0:2]
+  if subco == 'Company 1':
+    target_groups.add('Company 1 Users')
+  elif subco == 'Company 2':
+    target_groups.add('Company 2 Users')

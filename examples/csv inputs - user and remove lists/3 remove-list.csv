@@ -1,4 +1,4 @@
-type,user,domain
+type,username,domain
 adobeID,jimbo@gmail.com,
 enterpriseID,jsmith1@ent-domain.com,
 federatedID,jsmith2,user-login-fed-domain.com

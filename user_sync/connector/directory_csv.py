@@ -61,11 +61,11 @@ class CSVDirectoryConnector(object):
         builder.set_string_value('email_column_name', 'email')
         builder.set_string_value('country_column_name', 'country')
         builder.set_string_value('groups_column_name', 'groups')
-        builder.set_string_value('username_column_name', 'user')
+        builder.set_string_value('username_column_name', 'username')
         builder.set_string_value('domain_column_name', 'domain')
         builder.set_string_value('identity_type_column_name', 'type')
         builder.set_string_value('user_identity_type', None)
-        builder.set_string_value('logger_name', 'connector.' + CSVDirectoryConnector.name)
+        builder.set_string_value('logger_name', CSVDirectoryConnector.name)
         builder.require_string_value('file_path')
         options = builder.get_options()
 
@@ -85,10 +85,10 @@ class CSVDirectoryConnector(object):
         '''        
         options = self.options
         file_path = options['file_path']
-        self.logger.info('Reading from: %s', file_path)
+        self.logger.debug('Reading from: %s', file_path)
         self.users = users = self.read_users(file_path, extended_attributes)
-        self.logger.info('Number of users loaded: %d', len(users))
-        return (True, users.itervalues())
+        self.logger.debug('Number of users loaded: %d', len(users))
+        return users.itervalues()
 
     def read_users(self, file_path, extended_attributes):
         '''
