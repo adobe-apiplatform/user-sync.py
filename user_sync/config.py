@@ -116,12 +116,19 @@ class ConfigLoader(object):
         return primary_config, secondary_configs
     
     def get_directory_connector_module_name(self):
-        '''
+        """
         :rtype str
-        '''
+        """
         options = self.options
-        if 'directory_get_config_name' in options and options['directory_get_config_name']:
+        get_config_name = options.get('directory_get_config_name')
+        if get_config_name:
             module_type = self.main_config.child_configs['directory_users'].value['connectors'].keys()[0]
+            group_filter = options.get('directory_group_filter')
+            group_mapped = options.get('directory_group_mapped')
+
+            if module_type == 'okta' and not group_filter and not group_mapped:
+                raise AssertionException('Okta connector module does not support "--users all"')
+
             return 'user_sync.connector.directory_' + module_type
         else:
             return options['directory_connector_module_name']
