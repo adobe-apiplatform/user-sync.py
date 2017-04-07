@@ -366,7 +366,7 @@ folder as the command-line executable.
 | Configuration File | Purpose |
 |:------|:---------|
 | user-sync-config.yml | Required. Contains configuration options that define the mapping of directory groups to Adobe product configurations and user groups, and that control the update behavior.  Also contains references to the other config files.|
-| adobe&#x2011;user&#x2011;config.yml&nbsp;&nbsp; | Required. Contains credentials and access information for calling the Adobe User Management API. |
+| connector&#x2011;umapi.yml&nbsp;&nbsp; | Required. Contains credentials and access information for calling the Adobe User Management API. |
 | connector-ldap.yml | Required. Contains credentials and access information for accessing the enterprise directory. |
 
 
@@ -384,7 +384,7 @@ files - basic` folder in the release artifact
 
 ```text
 1 user-sync-config.yml
-2 adobe-user-config.yml
+2 connector-umapi.yml
 3 connector-ldap.yml
 ```
 
