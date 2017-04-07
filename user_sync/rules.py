@@ -900,32 +900,32 @@ class RuleProcessor(object):
         id_type_column_name = 'type'
         user_column_name = 'username'
         domain_column_name = 'domain'
-        org_name_column_name = 'umapi'
+        ummapi_name_column_name = 'umapi'
         rows = user_sync.helper.iter_csv_rows(file_path,
                                               delimiter = delimiter,
                                               recognized_column_names = [
                                                   id_type_column_name, user_column_name, domain_column_name,
-                                                  org_name_column_name,
+                                                  ummapi_name_column_name,
                                               ],
                                               logger = self.logger)
         for row in rows:
-            org_name = row.get(org_name_column_name) or PRIMARY_UMAPI_NAME
+            umapi_name = row.get(ummapi_name_column_name) or PRIMARY_UMAPI_NAME
             id_type = row.get(id_type_column_name)
             user = row.get(user_column_name)
             domain = row.get(domain_column_name)
             user_key = self.get_user_key(id_type, user, domain)
             if user_key:
-                self.add_stray(org_name, None)
-                self.add_stray(org_name, user_key)
+                self.add_stray(umapi_name, None)
+                self.add_stray(umapi_name, user_key)
             else:
                 self.logger.error("Invalid input line, ignored: %s", row)
         user_count = len(self.get_stray_keys())
         user_plural = "" if user_count == 1 else "s"
-        org_count = len(self.stray_key_map) - 1
-        org_plural = "" if org_count == 1 else "s"
-        if org_count > 0:
+        secondary_count = len(self.stray_key_map) - 1
+        if secondary_count > 0:
+            umapi_plural = "" if secondary_count == 1 else "s"
             self.logger.info('Read %d Adobe-only user%s for primary umapi, with %d secondary umapi%s',
-                             user_count, user_plural, org_count, org_plural)
+                             user_count, user_plural, secondary_count, umapi_plural)
         else:
             self.logger.info('Read %d Adobe-only user%s.', user_count, user_plural)
 
@@ -933,26 +933,35 @@ class RuleProcessor(object):
         file_path = self.stray_list_output_path
         logger = self.logger
         logger.info('Writing Adobe-only users to: %s', file_path)
+        # figure out if we should include a umapi column
+        secondary_count = 0
+        fieldnames = ['type', 'username', 'domain']
+        for umapi_name in self.stray_key_map:
+            if umapi_name != PRIMARY_UMAPI_NAME and self.get_stray_keys(umapi_name):
+                if not secondary_count:
+                    fieldnames.append('umapi')
+                secondary_count += 1
         with open(file_path, 'wb') as output_file:
             delimiter = user_sync.helper.guess_delimiter_from_filename(file_path)            
-            writer = csv.DictWriter(output_file,
-                                    fieldnames = ['type', 'username', 'domain', 'umapi'],
-                                    delimiter = delimiter)
+            writer = csv.DictWriter(output_file, fieldnames=fieldnames, delimiter=delimiter)
             writer.writeheader()
             # None sorts before strings, so sorting the keys in the map
             # puts the primary umapi first in the output, which is handy
-            for org_name in sorted(self.stray_key_map.keys()):
-                for user_key in self.get_stray_keys(org_name):
+            for umapi_name in sorted(self.stray_key_map.keys()):
+                for user_key in self.get_stray_keys(umapi_name):
                     id_type, username, domain = self.parse_user_key(user_key)
-                    umapi = org_name if org_name else ""
-                    writer.writerow({'type': id_type, 'username': username, 'domain': domain, 'umapi': umapi})
+                    umapi = umapi_name if umapi_name else ""
+                    if secondary_count:
+                        row_dict = {'type': id_type, 'username': username, 'domain': domain, 'umapi': umapi}
+                    else:
+                        row_dict = {'type': id_type, 'username': username, 'domain': domain}
+                    writer.writerow(row_dict)
         user_count = len(self.stray_key_map.get(PRIMARY_UMAPI_NAME, []))
         user_plural = "" if user_count == 1 else "s"
-        org_count = len(self.stray_key_map) - 1
-        org_plural = "" if org_count == 1 else "s"
-        if org_count > 0:
+        if secondary_count > 0:
+            umapi_plural = "" if secondary_count == 1 else "s"
             logger.info('Wrote %d Adobe-only user%s for primary umapi, with %d secondary umapi%s',
-                        user_count, user_plural, org_count, org_plural)
+                        user_count, user_plural, secondary_count, umapi_plural)
         else:
             logger.info('Wrote %d Adobe-only user%s.', user_count, user_plural)
             
