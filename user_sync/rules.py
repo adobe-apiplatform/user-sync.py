@@ -54,6 +54,7 @@ class RuleProcessor(object):
             'remove_strays': False,
             'stray_list_input_path': None,
             'stray_list_output_path': None,
+            'test_mode': False,
             'update_user_info': True,
             'username_filter_regex': None,
         }
@@ -89,9 +90,12 @@ class RuleProcessor(object):
         # of primary-umapi users, who are presumed to be in primary-umapi domains.
         # So instead of keeping track of excluded users in the primary umapi,
         # we keep track of included users, so we can match them against users
-        # in the secondary umapis (and exclude all that don't match).
+        # in the secondary umapis (and exclude all that don't match).  Finally,
+        # we keep track of user keys (in any umapi) that we have updated, so
+        # we can correctly report their count.
         self.included_user_keys = set()
         self.excluded_user_count = 0
+        self.updated_user_keys = set()
 
         # stray key input path comes in, stray_list_output_path goes out
         self.stray_key_map = self.make_stray_key_map()
@@ -99,12 +103,11 @@ class RuleProcessor(object):
             self.read_stray_key_map(options['stray_list_input_path'])
         self.stray_list_output_path = options['stray_list_output_path']
         
-        # determine whether we need to process strays at all
-        self.will_process_strays = (not options['exclude_strays']) and (options['manage_groups'] or
-                                                                        options['stray_list_output_path'] or
-                                                                        options['disentitle_strays'] or
-                                                                        options['remove_strays'] or
-                                                                        options['delete_strays'])
+        # determine what processing is needed on strays
+        self.will_manage_strays = (options['manage_groups'] or options['disentitle_strays'] or
+                                   options['remove_strays'] or options['delete_strays'])
+        self.will_process_strays = (not options['exclude_strays']) and (options['stray_list_output_path'] or
+                                                                        self.will_manage_strays)
 
         # in/out variables for per-user after-mapping-hook code
         self.after_mapping_hook_scope = {
@@ -171,6 +174,7 @@ class RuleProcessor(object):
         # find the total number of adobe users and excluded users
         self.action_summary['adobe_users_read'] = len(self.included_user_keys) + self.excluded_user_count
         self.action_summary['adobe_users_excluded'] = self.excluded_user_count
+        self.action_summary['adobe_users_updated'] = len(self.updated_user_keys)
         # find out the number of users that have no changes; this depends on whether
         # we actually read the directory or read an input file.  So there are two cases:
         if self.action_summary['adobe_users_read'] == 0:
@@ -182,7 +186,11 @@ class RuleProcessor(object):
                 self.action_summary['adobe_users_updated'] -
                 self.action_summary['adobe_strays_processed']
             )
-        logger.info('---------------------------------- Action Summary ----------------------------------')
+        if self.options['test_mode']:
+            header = '- Action Summary (TEST MODE) -'
+        else:
+            header = '------- Action Summary -------'
+        logger.info('---------------------------' + header + '---------------------------')
 
         # English text description for action summary log.
         # The action summary will be shown the same order as they are defined in this list
@@ -193,7 +201,7 @@ class RuleProcessor(object):
             ['adobe_users_excluded', 'Number of Adobe users excluded from updates'],
             ['adobe_users_unchanged', 'Number of non-excluded Adobe users with no changes'],
             ['adobe_users_created', 'Number of new Adobe users added'],
-            ['adobe_users_updated', 'Number of existing Adobe users updated'],
+            ['adobe_users_updated', 'Number of matching Adobe users updated'],
         ]
         if self.will_process_strays:
             if self.options['delete_strays']:
@@ -204,7 +212,7 @@ class RuleProcessor(object):
                 action = 'removed from all groups'
             else:
                 action = 'with groups processed'
-            action_summary_description.append(['adobe_strays_processed', 'Number of Adobe-only users ' + action + ':'])
+            action_summary_description.append(['adobe_strays_processed', 'Number of Adobe-only users ' + action])
 
         # prepare the network summary
         umapi_summary_format = 'Number of%s%s UMAPI actions sent (total, success, error)'
@@ -436,15 +444,16 @@ class RuleProcessor(object):
         stray_count = len(self.get_stray_keys())
         if self.stray_list_output_path:
             self.write_stray_key_map()
-        max_missing = self.options['max_adobe_only_users']
-        if stray_count > max_missing:
-            self.logger.critical('Unable to process Adobe-only users, as their count (%s) is larger '
-                                 'than the max_adobe_only_users setting (%d)', stray_count, max_missing)
-            self.action_summary['adobe_strays_processed'] = 0
-            return
-        self.action_summary['adobe_strays_processed'] = stray_count
-        self.logger.debug("Processing Adobe-only users...")
-        self.manage_strays(umapi_connectors)
+        if self.will_manage_strays:
+            max_missing = self.options['max_adobe_only_users']
+            if stray_count > max_missing:
+                self.logger.critical('Unable to process Adobe-only users, as their count (%s) is larger '
+                                     'than the max_adobe_only_users setting (%d)', stray_count, max_missing)
+                self.action_summary['adobe_strays_processed'] = 0
+                return
+            self.action_summary['adobe_strays_processed'] = stray_count
+            self.logger.debug("Processing Adobe-only users...")
+            self.manage_strays(umapi_connectors)
                     
     def manage_strays(self, umapi_connectors):
         '''
@@ -627,7 +636,7 @@ class RuleProcessor(object):
         '''
         is_primary_org = umapi_info.get_name() == PRIMARY_UMAPI_NAME
         if attributes_to_update or groups_to_add or groups_to_remove:
-            self.action_summary['adobe_users_updated'] += 1 if is_primary_org else 0
+            self.updated_user_keys.add(user_key)
         if attributes_to_update:
             self.logger.info('Updating info for user key: %s changes: %s', user_key, attributes_to_update)
         if groups_to_add or groups_to_remove:
@@ -900,32 +909,32 @@ class RuleProcessor(object):
         id_type_column_name = 'type'
         user_column_name = 'username'
         domain_column_name = 'domain'
-        org_name_column_name = 'umapi'
+        ummapi_name_column_name = 'umapi'
         rows = user_sync.helper.iter_csv_rows(file_path,
                                               delimiter = delimiter,
                                               recognized_column_names = [
                                                   id_type_column_name, user_column_name, domain_column_name,
-                                                  org_name_column_name,
+                                                  ummapi_name_column_name,
                                               ],
                                               logger = self.logger)
         for row in rows:
-            org_name = row.get(org_name_column_name) or PRIMARY_UMAPI_NAME
+            umapi_name = row.get(ummapi_name_column_name) or PRIMARY_UMAPI_NAME
             id_type = row.get(id_type_column_name)
             user = row.get(user_column_name)
             domain = row.get(domain_column_name)
             user_key = self.get_user_key(id_type, user, domain)
             if user_key:
-                self.add_stray(org_name, None)
-                self.add_stray(org_name, user_key)
+                self.add_stray(umapi_name, None)
+                self.add_stray(umapi_name, user_key)
             else:
                 self.logger.error("Invalid input line, ignored: %s", row)
         user_count = len(self.get_stray_keys())
         user_plural = "" if user_count == 1 else "s"
-        org_count = len(self.stray_key_map) - 1
-        org_plural = "" if org_count == 1 else "s"
-        if org_count > 0:
+        secondary_count = len(self.stray_key_map) - 1
+        if secondary_count > 0:
+            umapi_plural = "" if secondary_count == 1 else "s"
             self.logger.info('Read %d Adobe-only user%s for primary umapi, with %d secondary umapi%s',
-                             user_count, user_plural, org_count, org_plural)
+                             user_count, user_plural, secondary_count, umapi_plural)
         else:
             self.logger.info('Read %d Adobe-only user%s.', user_count, user_plural)
 
@@ -933,26 +942,35 @@ class RuleProcessor(object):
         file_path = self.stray_list_output_path
         logger = self.logger
         logger.info('Writing Adobe-only users to: %s', file_path)
+        # figure out if we should include a umapi column
+        secondary_count = 0
+        fieldnames = ['type', 'username', 'domain']
+        for umapi_name in self.stray_key_map:
+            if umapi_name != PRIMARY_UMAPI_NAME and self.get_stray_keys(umapi_name):
+                if not secondary_count:
+                    fieldnames.append('umapi')
+                secondary_count += 1
         with open(file_path, 'wb') as output_file:
             delimiter = user_sync.helper.guess_delimiter_from_filename(file_path)            
-            writer = csv.DictWriter(output_file,
-                                    fieldnames = ['type', 'username', 'domain', 'umapi'],
-                                    delimiter = delimiter)
+            writer = csv.DictWriter(output_file, fieldnames=fieldnames, delimiter=delimiter)
             writer.writeheader()
             # None sorts before strings, so sorting the keys in the map
             # puts the primary umapi first in the output, which is handy
-            for org_name in sorted(self.stray_key_map.keys()):
-                for user_key in self.get_stray_keys(org_name):
+            for umapi_name in sorted(self.stray_key_map.keys()):
+                for user_key in self.get_stray_keys(umapi_name):
                     id_type, username, domain = self.parse_user_key(user_key)
-                    umapi = org_name if org_name else ""
-                    writer.writerow({'type': id_type, 'username': username, 'domain': domain, 'umapi': umapi})
+                    umapi = umapi_name if umapi_name else ""
+                    if secondary_count:
+                        row_dict = {'type': id_type, 'username': username, 'domain': domain, 'umapi': umapi}
+                    else:
+                        row_dict = {'type': id_type, 'username': username, 'domain': domain}
+                    writer.writerow(row_dict)
         user_count = len(self.stray_key_map.get(PRIMARY_UMAPI_NAME, []))
         user_plural = "" if user_count == 1 else "s"
-        org_count = len(self.stray_key_map) - 1
-        org_plural = "" if org_count == 1 else "s"
-        if org_count > 0:
+        if secondary_count > 0:
+            umapi_plural = "" if secondary_count == 1 else "s"
             logger.info('Wrote %d Adobe-only user%s for primary umapi, with %d secondary umapi%s',
-                        user_count, user_plural, org_count, org_plural)
+                        user_count, user_plural, secondary_count, umapi_plural)
         else:
             logger.info('Wrote %d Adobe-only user%s.', user_count, user_plural)
             
