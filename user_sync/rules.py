@@ -99,12 +99,11 @@ class RuleProcessor(object):
             self.read_stray_key_map(options['stray_list_input_path'])
         self.stray_list_output_path = options['stray_list_output_path']
         
-        # determine whether we need to process strays at all
-        self.will_process_strays = (not options['exclude_strays']) and (options['manage_groups'] or
-                                                                        options['stray_list_output_path'] or
-                                                                        options['disentitle_strays'] or
-                                                                        options['remove_strays'] or
-                                                                        options['delete_strays'])
+        # determine what processing is needed on strays
+        self.will_manage_strays = (options['manage_groups'] or options['disentitle_strays'] or
+                                   options['remove_strays'] or options['delete_strays'])
+        self.will_process_strays = (not options['exclude_strays']) and (options['stray_list_output_path'] or
+                                                                        self.will_manage_strays)
 
         # in/out variables for per-user after-mapping-hook code
         self.after_mapping_hook_scope = {
@@ -193,7 +192,7 @@ class RuleProcessor(object):
             ['adobe_users_excluded', 'Number of Adobe users excluded from updates'],
             ['adobe_users_unchanged', 'Number of non-excluded Adobe users with no changes'],
             ['adobe_users_created', 'Number of new Adobe users added'],
-            ['adobe_users_updated', 'Number of existing Adobe users updated'],
+            ['adobe_users_updated', 'Number of matching Adobe users updated'],
         ]
         if self.will_process_strays:
             if self.options['delete_strays']:
@@ -204,7 +203,7 @@ class RuleProcessor(object):
                 action = 'removed from all groups'
             else:
                 action = 'with groups processed'
-            action_summary_description.append(['adobe_strays_processed', 'Number of Adobe-only users ' + action + ':'])
+            action_summary_description.append(['adobe_strays_processed', 'Number of Adobe-only users ' + action])
 
         # prepare the network summary
         umapi_summary_format = 'Number of%s%s UMAPI actions sent (total, success, error)'
@@ -436,15 +435,16 @@ class RuleProcessor(object):
         stray_count = len(self.get_stray_keys())
         if self.stray_list_output_path:
             self.write_stray_key_map()
-        max_missing = self.options['max_adobe_only_users']
-        if stray_count > max_missing:
-            self.logger.critical('Unable to process Adobe-only users, as their count (%s) is larger '
-                                 'than the max_adobe_only_users setting (%d)', stray_count, max_missing)
-            self.action_summary['adobe_strays_processed'] = 0
-            return
-        self.action_summary['adobe_strays_processed'] = stray_count
-        self.logger.debug("Processing Adobe-only users...")
-        self.manage_strays(umapi_connectors)
+        if self.will_manage_strays:
+            max_missing = self.options['max_adobe_only_users']
+            if stray_count > max_missing:
+                self.logger.critical('Unable to process Adobe-only users, as their count (%s) is larger '
+                                     'than the max_adobe_only_users setting (%d)', stray_count, max_missing)
+                self.action_summary['adobe_strays_processed'] = 0
+                return
+            self.action_summary['adobe_strays_processed'] = stray_count
+            self.logger.debug("Processing Adobe-only users...")
+            self.manage_strays(umapi_connectors)
                     
     def manage_strays(self, umapi_connectors):
         '''
