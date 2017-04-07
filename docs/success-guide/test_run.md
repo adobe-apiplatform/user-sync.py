@@ -26,19 +26,19 @@ Give it a try:
 &#9744; Next, try a sync limited to a single user and run in test mode.  You need to know the name of some user in your directory.  For example, if the user is bart@example.com, try:
 
 
-	./user-sync -t --users all --user-filter bart@example.com 
+	./user-sync -t --users all --user-filter bart@example.com --adobe-only-user-action exclude
 
-	./user-sync -t --users all --user-filter bart@example.com --process-groups
+	./user-sync -t --users all --user-filter bart@example.com --process-groups --adobe-only-user-action exclude
 
-The first command above will sync only the one user (because of the user filter) which should result in an attempt to create the user.  Because of running in test mode (-t), the run of user-sync will only attempt to create the user and not actually do it.
+The first command above will sync only the one user (because of the user filter) which should result in an attempt to create the user.  Because of running in test mode (-t), the run of user-sync will only attempt to create the user and not actually do it.  The `--adobe-only-user-action exclude` option will prevent updates to any user accounts that already exist in the Adobe organization.
 
 The second command above (with the --process-groups option) will attempt to create the user and add them to any groups that are mapped from the their directory groups.  Again, this is in test mode so no actual action will be taken.  If there are already existing users and the groups have users already added to them, user-sync may attempt to remove them.  If this is the case, skip the next test.  Also, if you are not using directory groups to manage product access, skip the tests that involve --process-groups.
 
 &#9744; Next, try a sync limited to a single user and don't run in test mode.  This should actually create the user and add to groups (if mapped). 
 
-	./user-sync --users all --user-filter bart@example.com --process-groups
+	./user-sync --users all --user-filter bart@example.com --process-groups --adobe-only-user-action exclude
 
-	./user-sync --users all --user-filter bart@example.com --process-groups
+	./user-sync --users all --user-filter bart@example.com --process-groups --adobe-only-user-action exclude
 
 &#9744; Next, go check on the Adobe Admin Console if the user has appeared and the group memberships have been added.
 

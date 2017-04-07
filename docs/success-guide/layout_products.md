@@ -21,11 +21,12 @@ You can use User Sync to manage PC membership and license allocation.  This is o
 
 User Sync helps you manage Adobe product licenses by allowing you to place users into directory groups using the directory system interface or other tools.  Those groups are then mapped to Adobe user groups or PCs.  The mapping is part of the User Sync configuration file.  When User Sync detects that directory users are in one of these mapped groups, the user is added to the corresponding Adobe user group or PC.  Similarly, users in the user group or PC but not in the corresponding directory group are removed from the user group or PC.
 
-&#9744; Decide if you will manage license allocation using User Sync.  If not, you can skip the remaining steps for now, but you will still need to do them and manually add users to the user groups or PCs later using the Adobe Admin Console. 
+&#9744; Decide if you will manage license allocation using User Sync.  If not, you can skip the remaining steps for now, but you will still need to do them and then manually add users to the user groups or PCs later using the Adobe Admin Console. 
 
-&#9744; Create the PCs in the Adobe Admin console for the configurations of products and groups of users you will be managing.
+&#9744; Create the PCs in the Adobe Admin console for the configurations of products and groups of users you will be managing.  Add the comment "Managed by User Sync - do not edit" to the description field of the PC.
 
-&#9744; If you are going to use User Groups, create them and add them to the PC(s) representing product licenses to be issued to members of the user group.
+&#9744; If you are going to use User Groups, create them and add them to the PC(s) representing product licenses to be issued to members of the user group. Add the comment "Managed by User Sync - do not edit" to the description field of the user group.
+
 
 &#9744; Draw a diagram of your Adobe organizations, and the products and PCs in each.  Add the directory and directory groups to the picture and show the mapping.  For example:
 
