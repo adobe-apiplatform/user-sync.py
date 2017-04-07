@@ -20,17 +20,59 @@
 
 
 import unittest
+import mock
+import logging
+import okta
+import json
 
-from user_sync.connector.directory_okta import OKTAValueFormatter
+from user_sync.error import AssertionException
+from user_sync.connector.directory_okta import OktaDirectoryConnector, \
+    OKTAValueFormatter, connector_load_users_and_groups
+
+
 class TestOKTAValueFormatter(unittest.TestCase):
     def test_get_extended_attribute_dict(self):
         print 'Used to compare input and expected output data after OKTA formatting def Call'
         attributes = ['firstName', 'lastName', 'login', 'email', 'countryCode']
-        expectedresult = str('''{'countryCode': <type 'str'>, 'lastName': <type 'str'>, 'login': <type 'str'>, 'email': <type 'str'>, 'firstName': <type 'str'>}''')
+        expectedresult = str("{'countryCode': <type 'str'>, 'lastName': <type 'str'>, 'login': <type 'str'>, 'email': <type 'str'>, 'firstName': <type 'str'>}")
 
         self.assertEqual(expectedresult, str(OKTAValueFormatter.get_extended_attribute_dict(attributes)), 'Getting expected Output')
-		
-		
-		
-		
-		
+
+
+class TestOktaErrors(unittest.TestCase):
+    def setUp(self):
+        class MockResponse:
+            def __init__(self, status_code, data):
+                self.status_code = status_code
+                self.text = json.dumps(data)
+
+        self.mock_response = MockResponse
+
+        self.orig_directory_init = OktaDirectoryConnector.__init__
+
+        OktaDirectoryConnector.__init__ = mock.Mock(return_value=None)
+        directory = OktaDirectoryConnector({})
+        directory.options = {'source_filters': {}, 'all_users_filter': None, 'group_filter_format': '{group}'}
+        directory.logger = mock.create_autospec(logging.Logger)
+        directory.groups_client = okta.UserGroupsClient('example.com', 'xyz')
+
+        self.directory = directory
+
+    def tearDown(self):
+        OktaDirectoryConnector.__init__ = self.orig_directory_init
+
+    @mock.patch('okta.framework.ApiClient.requests')
+    def test_error_get_group(self, mock_requests):
+        # Mock an error response and make sure that the Okta connector catches the exception
+        # This will happen in the get_groups() method, which is the first time the UserGroupsClient is called
+
+        mock_requests.get.return_value = self.mock_response(404, {
+          "errorCode": "E0000007",
+          "errorSummary": "Not found: Resource not found: users (UserGroup)",
+          "errorLink": "E0000007",
+          "errorId": "oaepKQbQ-_FQ7y5YxDQWFw5Vg",
+          "errorCauses": []
+        })
+
+        self.assertRaises(AssertionException,
+                          connector_load_users_and_groups, self.directory, ['group1', 'group2'], [])
