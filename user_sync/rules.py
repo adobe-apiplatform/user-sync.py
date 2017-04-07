@@ -89,9 +89,12 @@ class RuleProcessor(object):
         # of primary-umapi users, who are presumed to be in primary-umapi domains.
         # So instead of keeping track of excluded users in the primary umapi,
         # we keep track of included users, so we can match them against users
-        # in the secondary umapis (and exclude all that don't match).
+        # in the secondary umapis (and exclude all that don't match).  Finally,
+        # we keep track of user keys (in any umapi) that we have updated, so
+        # we can correctly report their count.
         self.included_user_keys = set()
         self.excluded_user_count = 0
+        self.updated_user_keys = set()
 
         # stray key input path comes in, stray_list_output_path goes out
         self.stray_key_map = self.make_stray_key_map()
@@ -170,6 +173,7 @@ class RuleProcessor(object):
         # find the total number of adobe users and excluded users
         self.action_summary['adobe_users_read'] = len(self.included_user_keys) + self.excluded_user_count
         self.action_summary['adobe_users_excluded'] = self.excluded_user_count
+        self.action_summary['adobe_users_updated'] = len(self.updated_user_keys)
         # find out the number of users that have no changes; this depends on whether
         # we actually read the directory or read an input file.  So there are two cases:
         if self.action_summary['adobe_users_read'] == 0:
@@ -627,7 +631,7 @@ class RuleProcessor(object):
         '''
         is_primary_org = umapi_info.get_name() == PRIMARY_UMAPI_NAME
         if attributes_to_update or groups_to_add or groups_to_remove:
-            self.action_summary['adobe_users_updated'] += 1 if is_primary_org else 0
+            self.updated_user_keys.add(user_key)
         if attributes_to_update:
             self.logger.info('Updating info for user key: %s changes: %s', user_key, attributes_to_update)
         if groups_to_add or groups_to_remove:
