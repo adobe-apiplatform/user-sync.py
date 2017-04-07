@@ -1627,7 +1627,7 @@ The following example shows how to set up a batch file `run_sync.bat` in
 Windows.
 
 ```sh
-python C:\\...\\user-sync.pex --users file users-file.csv --process-groups | findstr "WARNING ERROR CRITICAL ---- ====" > temp.file.txt
+python C:\\...\\user-sync.pex --users file users-file.csv --process-groups | findstr /I "WARNING ERROR CRITICAL ---- ==== Number" > temp.file.txt
 rem email the contents of temp.file.txt to the user sync administration
 sendmail -s “Adobe User Sync Report for today” UserSyncAdmins@example.com < temp.file.txt
 ```
