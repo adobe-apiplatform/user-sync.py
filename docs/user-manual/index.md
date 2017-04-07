@@ -758,9 +758,9 @@ you can see the result before running live.
 
 2. Add users to one or more configured directory/security groups.
 
-3. Run User Sync in test mode. (`./user-sync -t --users all --process-groups`)
+3. Run User Sync in test mode. (`./user-sync -t --users all --process-groups --adobe-only-user-action exclude`)
 
-3. Run User Sync not in test mode. (`./user-sync --users all --process-groups`)
+3. Run User Sync not in test mode. (`./user-sync --users all --process-groups --adobe-only-user-action exclude`)
 
 4. Check that test users were created in Adobe Admin Console.
 
@@ -768,7 +768,7 @@ you can see the result before running live.
 
 1. Modify group membership of one or more test user in the directory.
 
-1. Run User Sync. (`./user-sync -t --users all --process-groups`)
+1. Run User Sync. (`./user-sync -t --users all --process-groups --adobe-only-user-action exclude`)
 
 2. Check that test users in Adobe Admin Console were updated to
 reflect new product configuration membership.
@@ -778,12 +778,12 @@ reflect new product configuration membership.
 1. Remove or disable one or more existing test users in your
 enterprise directory.
 
-2. Run User Sync. (`./user-sync -t --users all --process-groups`)
+2. Run User Sync. (`./user-sync -t --users all --process-groups --adobe-only-user-action exclude`)
 
 3. Check that users were removed from configured product
 configurations in the Adobe Admin Console.
 
-4. Run User Sync to remove the users (`./user-sync -t --users all --process-groups --adobe-only-user-action delete`) Then run without -t.
+4. Run User Sync to remove the users (`./user-sync -t --users all --process-groups --adobe-only-user-action delete`) Then run without -t.  Caution: check that only the desired user was removed when running with -t.  This run (without -t) will actually delete users.
 
 5. Check that the user accounts are removed from the Adobe Admin Console.
 
