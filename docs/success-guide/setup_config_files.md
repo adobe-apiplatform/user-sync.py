@@ -28,7 +28,7 @@ In previous steps, you set up a file system directory for the user sync tool Pyt
 
 ### Directory Access Configuration File
 
-If you are driving User Sync from a file, you can skip setting up connector-ldap.yml and instead create a csv file with your entire user list following the "csv inputs - user and remove lists/1 users-file.csv" file example.  This file is in the examples.config.tar.gz download from the release.
+If you are driving User Sync from a file, you can skip setting up connector-ldap.yml and instead create a csv file with your entire user list following the "csv inputs - user and remove lists/1 users-file.csv" file example.  This file is in the example-configurations.tar.gz download from the release.
 
 &#9744; Edit the file connector-ldap.yml.  This file has access information to the directory system.  Put in username, password, host, and base_dn values.
 
@@ -43,7 +43,7 @@ If you need a non-default LDAP query to select the desired set of users, it is s
 
 &#9744; Edit the connector-umapi.yml.  Put in the information from the adobe.io integration you created earlier.  This would be the org\_id, api\_key, client\_secret, and tech\_acct.
 
-&#9744; Place the private key file in the user_sync_tool folder The priv\_key\_path config file item is then set to the name of this file.
+&#9744; Place the private key file in the user_sync_tool folder. The priv\_key\_path config file item is then set to the name of this file.
 
 ![](images/setup_config_umapi.png)
 
@@ -157,7 +157,7 @@ Note that:
 
 - Directory side users are still created on the Adobe side even if one of the exclude parameters would then exclude the user on the Adobe side from updates in successive runs. That is, these parameters apply only to Adobe users who exist when the Adobe directory is being matched against the customer directory.
 
-- Accounts that would have been removed or updated but were not because of this feature are listed as `info` level log entries.
+- Accounts that would have been removed or updated but were not because of this feature are listed as `debug` level log entries.
 
 - Federated accounts that are not in the directory or are disabled in the directory cannot log in anyway (because login is handled by the ID provider and the user is no longer listed there) even if the account still exists in Adobe.
 - You will likely want to exclude identities of type adobeID because they are usually not listed in the enterprise directory.

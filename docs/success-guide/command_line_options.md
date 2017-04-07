@@ -55,7 +55,7 @@ Note that only the users returned by the directory query and filter are consider
 
 `--test-mode`:  causes User Sync to run through all processing including querying the directory and calling the Adobe User Management APIs to process the request, but no actual action is taken.  No users are created, deleted, or altered.
 
-`--update-user-info`: causes User Sync to check for changes in first name, last name, or email address of users and make updates to the Adobe information if it does not match the directory information.  Specifying this option may increases run time.
+`--update-user-info`: causes User Sync to check for changes in first name, last name, or email address of users and make updates to the Adobe information if it does not match the directory information.  Specifying this option may increase run time.
 
 
 ## Examples
