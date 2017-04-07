@@ -54,6 +54,7 @@ class RuleProcessor(object):
             'remove_strays': False,
             'stray_list_input_path': None,
             'stray_list_output_path': None,
+            'test_mode': False,
             'update_user_info': True,
             'username_filter_regex': None,
         }
@@ -185,7 +186,11 @@ class RuleProcessor(object):
                 self.action_summary['adobe_users_updated'] -
                 self.action_summary['adobe_strays_processed']
             )
-        logger.info('---------------------------------- Action Summary ----------------------------------')
+        if self.options['test_mode']:
+            header = '- Action Summary (TEST MODE) -'
+        else:
+            header = '------- Action Summary -------'
+        logger.info('---------------------------' + header + '---------------------------')
 
         # English text description for action summary log.
         # The action summary will be shown the same order as they are defined in this list

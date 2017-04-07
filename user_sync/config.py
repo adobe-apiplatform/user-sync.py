@@ -348,6 +348,7 @@ class ConfigLoader(object):
             'remove_strays': options['remove_strays'],
             'stray_list_input_path': options['stray_list_input_path'],
             'stray_list_output_path': options['stray_list_output_path'],
+            'test_mode': options['test_mode'],
             'update_user_info': options['update_user_info'],
             'username_filter_regex': options['username_filter_regex'],
         }
