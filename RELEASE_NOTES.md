@@ -1,4 +1,4 @@
-# Release Notes for User Sync Tool Version 1.2
+# Release Notes for User Sync Tool Version 2.0
 
 These notes apply to 2.0rc1 of 2017-04-03.
 
@@ -78,6 +78,8 @@ a new file, call it `extension.yaml`
   * change `extensions` to `extension`, move it into
 the `directory_users` section, and put the relative
 path to the new `extension.yaml` file as its value.
+
+If you have a file that lists users for input (--users file f) or removal, the column named `user` should be renamed to `username`.
 
 
 
