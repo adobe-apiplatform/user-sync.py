@@ -1,8 +1,14 @@
-# User Sync Tool from Adobe
+# user-sync.py: User Sync Tool from Adobe
 
-The Adobe User Sync Tool is a command-line tool that moves user and group information from an organization's enterprise 
-directory system to the Adobe Admin Console. The key goals of the User Sync Tool are to streamline the process of 
-named user deployment and automate user management for all Adobe users and products.
+The User Sync Tool is a command-line tool that automates the creation and management of Adobe user accounts.  It
+does this by reading user and group information from an organization's enterprise directory system or a file and 
+then creating, updating, or removing user accounts in the Adobe Admin Console. The key goals of the User Sync 
+Tool are to streamline the process of named user deployment and automate user management for all Adobe users and products.
+
+This application is open source, maintained by Adobe, and distributed under the terms
+of the OSI-approved MIT license.  See the LICENSE file for details.
+
+Copyright (c) 2016-2017 Adobe Systems Incorporated.
 
 # Quick Links
 
@@ -11,26 +17,6 @@ named user deployment and automate user management for all Adobe users and produ
 - [Step-by-Step Setup](https://adobe-apiplatform.github.io/user-sync.py/success-guide/)
 - [Non-Technical Overview](https://spark.adobe.com/page/E3hSsLq3G1iVz/)
 
-# user-sync.py
-
-Application for synchronizing customer directories with the
-Adobe Enterprise Admin Console via the
-[User Management API](https://www.adobe.io/products/usermanagement/docs/gettingstarted.html)
-(aka UMAPI).
-
-This application is open source, maintained by Adobe, and distributed under the terms
-of the OSI-approved MIT license.  See the LICENSE file for details.
-
-Copyright (c) 2016-2017 Adobe Systems Incorporated.
-
-# Overview
-
-`user-sync` automates user creation and product entitlement
-assignment in the Adobe Enterprise Admin Console.
-It takes a list of enterprise directory users, 
-either from an LDAP connection or from a tab-separated file, 
-and creates, updates, or removes user accounts in the
-Admin Console.
 
 # Requirements
 
