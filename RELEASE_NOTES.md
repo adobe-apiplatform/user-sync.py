@@ -1,6 +1,6 @@
 # Release Notes for User Sync Tool Version 2.0
 
-These notes apply to 2.0rc1 of 2017-04-03.
+These notes apply to 2.0rc2 of 2017-04-07.
 
 ## New Arguments & Configuration Syntax
 
