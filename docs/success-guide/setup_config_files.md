@@ -28,7 +28,7 @@ In previous steps, you set up a file system directory for the user sync tool Pyt
 
 ### Directory Access Configuration File
 
-If you are driving User Sync from a file, you can skip this step.  Setup a csv file with your entire user list following the "csv inputs - user and remove lists/1 users-file.csv" file example.  This file is in the examples.config.tar.gz download from the release.
+If you are driving User Sync from a file, you can skip setting up connector-ldap.yml and instead create a csv file with your entire user list following the "csv inputs - user and remove lists/1 users-file.csv" file example.  This file is in the example-configurations.tar.gz download from the release.
 
 &#9744; Edit the file connector-ldap.yml.  This file has access information to the directory system.  Put in username, password, host, and base_dn values.
 
@@ -43,7 +43,7 @@ If you need a non-default LDAP query to select the desired set of users, it is s
 
 &#9744; Edit the connector-umapi.yml.  Put in the information from the adobe.io integration you created earlier.  This would be the org\_id, api\_key, client\_secret, and tech\_acct.
 
-&#9744; Place the private key file in the user_sync_tool folder The priv\_key\_path config file items is then set to the name of this file.
+&#9744; Place the private key file in the user_sync_tool folder. The priv\_key\_path config file item is then set to the name of this file.
 
 ![](images/setup_config_umapi.png)
 
@@ -59,7 +59,8 @@ Edit the user-sync-config.yml file.
 	  # example:
 	  # default_country_code: US
 
-If your directory does not list a country for each user, you can set a default country here.  Remove the "# " from the default country code line so it looks like this
+
+&#9744; If your directory does not list a country for each user, you can set a default country here.  Remove the "# " from the default country code line so it looks like this
 
 	  default_country_code: US
 
@@ -103,7 +104,7 @@ A more realistic example is:
 	  groups:
 	    - directory_group: acrobat_pro_dc
 	      adobe_groups: 
-	        - Default Acrobat Pro DC configuration
+	        - Default Acrobat_Users
 	    - directory_group: all_apps
 	      adobe_groups:
 	        - All Apps
@@ -116,10 +117,10 @@ A more realistic example is:
 
 Limits on deletion prevent accidental account deletion in the event of misconfiguration or some other problem that results in User Sync not getting proper data from the directory system.
 
-&#9744; If you expect the number of directory users to drop by more than 200 between User Sync runs, then you will need to raise the `max_adobe_only_users` value.  These config file entries are to prevent runaway deletion in case of misconfiguration or other problems.
+&#9744; If you expect the number of directory users to drop by more than 200 between User Sync runs, then you will need to raise the `max_adobe_only_users` value.  This config file entry prevents runaway deletion in case of misconfiguration or other problems.
 
 	limits:
-	    max_adobe_only_users: 200      # abort if this many directory users disappear
+	    max_adobe_only_users: 200      # abort updates if this many directory users disappear
 
 
 
@@ -127,11 +128,11 @@ Limits on deletion prevent accidental account deletion in the event of misconfig
 
 If you want to drive account creation and removal through User Sync, and want to manually create a few accounts then you may need this feature to keep User Sync from deleting your manually created accounts.
 
-&#9744; If you need to use this feature, add lines such as below to the config file at the top level.   To protect users on the Admin Console from updates, create a user group and put the protected users into that group, then list that group as excluded from User Sync processing.  You can also list specific users and/or a pattern that matches specific user names to protect those users.  You can protect users based on their identity type as well.  For example, often User Sync is used only to manage federatedID or enterpriseID user types and you can exclude adobeID type users from management by User Sync.  You only need to include configuration items for exclusions that you wish to use.
+&#9744; If you need to use this feature, add lines such as below to the config file under adobe_users.   To protect users on the Admin Console from updates, create a user group and put the protected users into that group, then list that group as excluded from User Sync processing.  You can also list specific users and/or a pattern that matches specific user names to protect those users.  You can protect users based on their identity type as well.  For example, often User Sync is used only to manage federatedID or enterpriseID user types and you can exclude adobeID type users from management by User Sync.  You only need to include configuration items for exclusions that you wish to use.
 
 ```YAML
 adobe_users:
-  exclude_groups: 
+  exclude_adobe_groups: 
     - administrators   # Names an Adobe user group or product configuration whose members are not to be altered or removed by User Sync
     - contractors      # You can have more than one group in a list
   exclude_users:
@@ -156,9 +157,10 @@ Note that:
 
 - Directory side users are still created on the Adobe side even if one of the exclude parameters would then exclude the user on the Adobe side from updates in successive runs. That is, these parameters apply only to Adobe users who exist when the Adobe directory is being matched against the customer directory.
 
-- Accounts that would have been removed or updated but were not because of this feature are listed as `info` level log entries.
+- Accounts that would have been removed or updated but were not because of this feature are listed as `debug` level log entries.
 
 - Federated accounts that are not in the directory or are disabled in the directory cannot log in anyway (because login is handled by the ID provider and the user is no longer listed there) even if the account still exists in Adobe.
+- You will likely want to exclude identities of type adobeID because they are usually not listed in the enterprise directory.
 
 
 
@@ -170,7 +172,7 @@ log\_to\_file turns the file log on or off.
 
 Messages can be on one of 5 level of importance and you can choose the lowest importance that will be included for either the file log or standard output log to the console.  The defaults are to produce the file log and to include messages of level "info" or higher.  This is the recommended setting.
 
-&#9744; Review the settings for logs and make any desired changes.
+&#9744; Review the settings for logs and make any desired changes.  The recommended log level is info (which is the default).
 
 	logging:
 	  # specifies whether you wish to generate a log file
