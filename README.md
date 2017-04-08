@@ -1,3 +1,16 @@
+# Adobe User Sync Tool
+
+The Adobe User Sync Tool is a command-line tool that moves user and group information from an organization's enterprise 
+directory system to the Adobe Admin Console. The key goals of the User Sync Tool are to streamline the process of 
+named user deployment and automate user management for all Adobe users and products.
+
+# Quick Links
+
+- [User Sync Overview](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/UserSyncTool.html)
+- [User Manual](https://adobe-apiplatform.github.io/user-sync.py/user-manual/)
+- [Step-by-Step Setup](https://adobe-apiplatform.github.io/user-sync.py/success-guide/)
+- [Non-Technical Overview](https://spark.adobe.com/page/E3hSsLq3G1iVz/)
+
 # user-sync.py
 
 Application for synchronizing customer directories with the
