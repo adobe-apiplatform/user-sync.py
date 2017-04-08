@@ -1,4 +1,4 @@
-User Sync Tool from Adobe
+# User Sync Tool from Adobe
 
 The Adobe User Sync Tool is a command-line tool that moves user and group information from an organization's enterprise 
 directory system to the Adobe Admin Console. The key goals of the User Sync Tool are to streamline the process of 
