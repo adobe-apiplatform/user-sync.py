@@ -51,7 +51,7 @@ options.
 
 The tool assumes that your enterprise has purchased Adobe product
 licenses. You must use the
-[Adobe Admin Console](https://www.adobe.io/console/) to define
+[Adobe Admin Console](https://adminconsole.adobe.com/enterprise/) to define
 user groups and product configurations. Membership in
 these groups controls which users in your organization can access
 which products.
