@@ -1,6 +1,6 @@
 # Release Notes for User Sync Tool Version 2.0
 
-These notes apply to 2.0rc2 of 2017-04-07.
+These notes apply to v2.0 of 2017-04-10.
 
 ## New Arguments & Configuration Syntax
 
@@ -48,7 +48,9 @@ some had applied only to Federated ID and some to Enterprise ID.
 All existing configuration files, user input files,
 and command-line scripts will need to be revamped
 to be compatible with the new formats.  Here is a quick
-cheat sheet of what needs to be done:
+cheat sheet of what needs to be done.
+
+### Configuration Files
 
 * replace `dashboard:` with `adobe_users:`
 * replace `directory:` with `directory_users:`
@@ -79,7 +81,20 @@ a new file, call it `extension.yaml`
 the `directory_users` section, and put the relative
 path to the new `extension.yaml` file as its value.
 
-If you have a file that lists users for input (--users file f) or removal, the column named `user` should be renamed to `username`.
+### User Input Files
 
+If you have a file that lists users for input (`--users file` _f_),
+the column head `user` should be changed to `username`.
 
+### Removed User Input Files
 
+The format for files containing users to be removed/deleted has
+changed, and you will need to regenerate these files rather than
+using any existing ones.
+
+### Command Line Scripts
+
+* All of the options related to Adobe user removal have been
+changed to use the new ``--adobe-only-user-action` argument.
+* The `--source-filter` argument has been removed.  Use the
+configuration setting `all_users_filter` instead.
