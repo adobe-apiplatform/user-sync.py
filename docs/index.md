@@ -3,7 +3,7 @@ layout: page
 title: User Sync Documentation
 ---
 
-Welcome to the documentation center for User Sync, from Adobe.
+Welcome to the documentation center for [User Sync from Adobe](https://github.com/adobe-apiplatform/user-sync.py/releases/latest).
 
 # What is User Sync?
 
