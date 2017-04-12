@@ -51,6 +51,22 @@ def create_test_user(groups):
     }
     return user
 
+def create_test_user_uid(groups):
+    global next_user_id
+    firstName = 'User_%d' % next_user_id
+    uid = '0000%s' % next_user_id
+    next_user_id += 1
+    user = {
+        'uid': uid,
+        'identity_type': 'enterpriseID',
+        'firstname': firstName,
+        'lastname': 'Test',
+        'email': '%s_email@example.com' % firstName,
+        'country': 'CA' if (next_user_id % 2 == 0) else 'US',
+        'groups': groups
+    }
+    return user
+
 
 def assert_equal_users(unit_test, expected_users, actual_users):
     actual_users_by_email = dict((user['email'], user) for user in actual_users)
