@@ -32,11 +32,11 @@ Select “release”
 
 ![install2](images/install_release_screen.png)
 
-&#9744; Download the examples.config.tar.gz, User Sync Guide, and build for your platform, osx, ubuntu, windows, or centos.
+&#9744; Download the example-configurations.tar.gz, User Sync Guide, and build for your platform, osx, ubuntu, windows, or centos.
 
 &#9744; Extract the user-sync (or user-sync.pex) file from the archive and place the file for your OS in the folder.  In our example, this would be /home/user_sync/user_sync_tool/user-sync or C:\Users\user_sync\user_sync_tool\user-sync.pex.
 
-&#9744; In the examples.config.tar.gz file there is a directory **config files - basic**.  From this folder extract the first 3 files and place in the user_sync_tool folder.  
+&#9744; In the example-configurations.tar.gz file there is a directory **config files - basic**.  From this folder extract the first 3 files and place in the user_sync_tool folder.  
 
 &#9744; Next, rename the 3 config example files by removing the leading "1 ", "2 ", and "3 " from the names.  We will edit these files to create the real User Sync configuration files.
 
