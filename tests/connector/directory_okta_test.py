@@ -24,6 +24,7 @@ import mock
 import logging
 import okta
 import json
+import tests.helper
 
 from user_sync.error import AssertionException
 from user_sync.connector.directory_okta import OktaDirectoryConnector, \
@@ -135,3 +136,91 @@ class TestOktaGroupFilter(unittest.TestCase):
                              'group_filter_format': '{groupA}'}
         self.assertRaises(AssertionException, directory.find_group, "Group 1")
 
+
+class TestOktaUsersGroups(unittest.TestCase):
+    def setUp(self):
+        self.orig_directory_init = OktaDirectoryConnector.__init__
+
+        OktaDirectoryConnector.__init__ = mock.Mock(return_value=None)
+        directory = OktaDirectoryConnector({})
+        directory.options = {'source_filters': {}, 'all_users_filter': None, 'group_filter_format': '{group}'}
+        directory.logger = mock.create_autospec(logging.Logger)
+        directory.groups_client = okta.UserGroupsClient('example.com', 'xyz')
+
+        self.directory = directory
+
+    def tearDown(self):
+        OktaDirectoryConnector.__init__ = self.orig_directory_init
+
+    @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.iter_group_members')
+    def test_found_user_single_group(self, mock_members):
+        # There are 1 users in the Group. This test should return 1 users.
+        groups = ['group1']
+        test_user = tests.helper.create_test_user_uid(groups[0])
+        mock_members.return_value = [test_user]
+        directory = self.directory
+        results = directory.load_users_and_groups(groups, [])
+        self.assertEqual(len(list(results)), 1)
+
+    @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.iter_group_members')
+    def test_found_user_multiple_groups(self, mock_members):
+        # There are 1 users in each Group. This test should total return 2 users.
+        groups = ['group1', 'group2']
+        test_users = []
+        for group in groups:
+            test_users.append([tests.helper.create_test_user_uid([group])])
+        mock_members.side_effect = test_users
+        directory = self.directory
+        results = directory.load_users_and_groups(groups, [])
+        self.assertEqual(len(list(results)), 2)
+
+    @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.iter_group_members')
+    def test_found_user_single_group_multiple_user(self, mock_members):
+        # There are 5 users in the Group. This test should return 5 users.
+        groups = ['group1']
+        test_users = []
+        user_count = 0
+        while user_count < 5:
+            test_users.append(tests.helper.create_test_user_uid(groups[0]))
+            user_count = user_count + 1
+        mock_members.return_value = test_users
+        directory = self.directory
+        results = directory.load_users_and_groups(groups, [])
+        self.assertEqual(len(list(results)), 5)
+
+    @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.iter_group_members')
+    def test_found_user_multiple_groups_multiple_user(self, mock_members):
+        # There are 5 users in each Group. This test should total return 10 users.
+        groups = ['group1', 'group2']
+        total_test_users = []
+        for group in groups:
+            test_users = []
+            user_count = 0
+            while user_count < 5:
+                test_users.append(tests.helper.create_test_user_uid(group))
+                user_count = user_count + 1
+            total_test_users.append(test_users)
+        mock_members.side_effect = total_test_users
+        directory = self.directory
+        results = directory.load_users_and_groups(groups, [])
+        self.assertEqual(len(list(results)), 10)
+
+    @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.iter_group_members')
+    def test_no_user_single_group(self, mock_members):
+        # There are 0 users in the Group. This test should return 0 users.
+        groups = ['group1']
+        test_users = []
+        mock_members.return_value = test_users
+        directory = self.directory
+        results = directory.load_users_and_groups(groups, [])
+        self.assertEqual(len(list(results)), 0)
+
+    @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.iter_group_members')
+    def test_no_user_multiple_groups(self, mock_members):
+        # There are 0 users in each Group. This test should total return 0 users.
+        groups = ['group1', 'group2']
+        total_test_users = [[], []]
+        mock_members.side_effect = total_test_users
+        directory = self.directory
+        results = directory.load_users_and_groups(groups, [])
+        self.assertEqual(len(list(results)), 0)
