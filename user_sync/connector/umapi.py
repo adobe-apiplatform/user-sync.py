@@ -71,6 +71,12 @@ class UmapiConnector(object):
         # set up the auth dict for umapi-client
         ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
+        api_key = enterprise_options['api_key']
+        private_key_file_path = enterprise_options['priv_key_path']
+        #um_endpoint = "https://" + server_options['host'] + server_options['endpoint']    
+        um_endpoint = "http://" + server_options['host'] + server_options['endpoint']    
+        
+        logger.debug('Creating connection for org id: "%s" using private key file: "%s"', org_id, private_key_file_path)
         auth_dict = {
             'org_id': org_id,
             'tech_acct_id': enterprise_options['tech_acct'],
