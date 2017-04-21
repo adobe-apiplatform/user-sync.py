@@ -26,6 +26,7 @@ import jwt
 import six
 import umapi_client
 from Crypto.PublicKey import RSA
+import umapi_client.auth
 
 import user_sync.connector.helper
 import user_sync.config
@@ -52,10 +53,12 @@ class UmapiConnector(object):
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('logger_name', self.name)
         builder.set_bool_value('test_mode', False)
-        options = builder.get_options()
+        builder.set_bool_value('bypass_authentication_mode', False)
+        options = builder.get_options()        
 
         server_config = caller_config.get_dict_config('server', True)
         server_builder = user_sync.config.OptionsBuilder(server_config)
+        server_builder.set_string_value('protocol', 'https://')
         server_builder.set_string_value('host', 'usermanagement.adobe.io')
         server_builder.set_string_value('endpoint', '/v2/usermanagement')
         server_builder.set_string_value('ims_host', 'ims-na1.adobelogin.com')
@@ -64,11 +67,20 @@ class UmapiConnector(object):
         server_builder.set_int_value('retries', 3)
         options['server'] = server_options = server_builder.get_options()
 
+        # if we are bypassing authentication, don't require the enterprise settings except for the org id. This should
+        # only be used for testing.
         enterprise_config = caller_config.get_dict_config('enterprise')
         enterprise_builder = user_sync.config.OptionsBuilder(enterprise_config)
         enterprise_builder.require_string_value('org_id')
-        enterprise_builder.require_string_value('tech_acct')
+        if caller_options['bypass_authentication_mode']:
+            enterprise_builder.set_string_value('api_key', None)
+            enterprise_builder.set_string_value('client_secret', None)
+            enterprise_builder.set_string_value('tech_acct', None)
+            enterprise_builder.set_string_value('priv_key_path', None)
+        else:
+            enterprise_builder.require_string_value('tech_acct')
         options['enterprise'] = enterprise_options = enterprise_builder.get_options()
+
         self.options = options
         self.logger = logger = user_sync.connector.helper.create_logger(options)
         if server_config:
@@ -77,12 +89,6 @@ class UmapiConnector(object):
 
         ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
-        api_key = enterprise_options['api_key']
-        private_key_file_path = enterprise_options['priv_key_path']
-        #um_endpoint = "https://" + server_options['host'] + server_options['endpoint']    
-        um_endpoint = "http://" + server_options['host'] + server_options['endpoint']    
-        
-        logger.debug('Creating connection for org id: "%s" using private key file: "%s"', org_id, private_key_file_path)
         auth_dict = {
             'org_id': org_id,
             'tech_acct_id': enterprise_options['tech_acct'],
@@ -119,9 +125,45 @@ class UmapiConnector(object):
         # open the connection
         um_endpoint = "https://" + server_options['host'] + server_options['endpoint']
         logger.debug('%s: creating connection for org %s at endpoint %s', self.name, org_id, um_endpoint)
+
+        auth = None
+        auth_dict = None
+
+        # if we are bypassing authentication, pass in a dummy authentication object, since we are assuming the end
+        # point shouldn't be using it anyways.
+        if caller_options['bypass_authentication_mode']:
+            auth = umapi_client.auth.Auth('test', 'test')
+        else:
+            api_key = enterprise_options['api_key']
+            private_key_file_path = enterprise_options['priv_key_path']
+            logger.debug('Creating connection for org id: "%s" using private key file: "%s"', org_id,
+                         private_key_file_path)
+            auth_dict = {
+                "org_id": org_id,
+                "tech_acct_id": enterprise_options['tech_acct'],
+                "api_key": api_key,
+                "client_secret": enterprise_options['client_secret'],
+                "private_key_file": private_key_file_path
+            }
+
+            # get the private key
+            key_path = enterprise_config.get_string('priv_key_path', True)
+            if key_path:
+                data_setting = enterprise_config.has_credential('priv_key_data')
+                if data_setting:
+                    raise AssertionException('%s: cannot specify both "priv_key_path" and "%s"' %
+                                             (enterprise_config.get_full_scope(), data_setting))
+                logger.debug('%s: reading private key data from file %s', self.name, key_path)
+                auth_dict['private_key_file'] = key_path
+            else:
+                auth_dict['private_key_data'] = enterprise_config.get_credential('priv_key_data', org_id)
+
+            um_endpoint = server_options['protocol'] + server_options['host'] + server_options['endpoint']
+            logger.debug('%s: creating connection for org %s at endpoint %s', self.name, org_id, um_endpoint)
         try:
             self.connection = connection = umapi_client.Connection(
                 org_id=org_id,
+                auth=auth,
                 auth_dict=auth_dict,
                 ims_host=ims_host,
                 ims_endpoint_jwt=server_options['ims_endpoint_jwt'],

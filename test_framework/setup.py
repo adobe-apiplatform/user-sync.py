@@ -41,6 +41,10 @@ setup(name='user-sync-test',
       packages=['user_sync_test'],
       install_requires=[
           'PyYAML',
+          'vcrpy',
+          'mock',
+          'six',
+          'requests'
       ],
       setup_requires=[],
       tests_require=[
