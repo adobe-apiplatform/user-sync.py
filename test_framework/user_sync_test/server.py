@@ -24,6 +24,7 @@ import os
 import threading
 import vcr
 import requests
+import time
 
 class TestService:
     def __init__(self, config):
@@ -46,14 +47,18 @@ class TestService:
         Starts the server given the proxy configuration.
         '''
         self.server = TestServer((self.config['proxy_host'], self.config['proxy_port']), TestServerHandler, config=self.config)
-        self.server_thread = threading.Thread(target = self.server.serve_forever())
+        self.server_thread = threading.Thread(target = self.server.serve_forever)
         self.server_thread.daemon = True
+        self.server_thread.start()
+        time.sleep(5)
         
     def stop(self):
         '''
         Stops the service by shutting down the HTTP server
         '''
+        print 'shutting down server'
         self.server.shutdown()
+        self.server_thread.join()
         
 class TestServer(HTTPServer):
     def __init__(self, server_address, RequestHandlerClass, config=None, bind_and_activate=True):
@@ -91,7 +96,7 @@ class TestServerHandler(BaseHTTPRequestHandler):
             
         self._set_headers()
         self.wfile.write(response.content)
-        
+
     def do_POST(self):
         url = 'https://' + self.server.config['destination_host'] + self.path
         req_headers = self.headers.dict
