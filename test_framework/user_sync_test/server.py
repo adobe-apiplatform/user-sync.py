@@ -25,91 +25,123 @@ import threading
 import vcr
 import requests
 import time
+import gzip
+import StringIO
 
-class TestService:
+class UserSyncTestService:
     def __init__(self, config):
         '''
-        Initializes the server with the specified configuration.
+        Initializes the test service given the configuration, but does not start the service.
         '''
         self.config = {
-                'proxy_host': 'localhost',
-                'proxy_port': 8888,
-                'destination_host': 'usermanagement.adobe.io',
-                'pass_through': True
-            }
+            'proxy_host': 'localhost',
+            'proxy_port': 8888,
+            'destination_host': 'usermanagement.adobe.io',
+            'pass_through': True
+        }
         self.config.update(config)
         self.server = None
         self.server_thread = None
         
-        
     def run(self):
         '''
-        Starts the server given the proxy configuration.
+        Starts the service by starting the test server on another thread.
         '''
-        self.server = TestServer((self.config['proxy_host'], self.config['proxy_port']), TestServerHandler, config=self.config)
+        self.server = UserSyncTestServer((self.config['proxy_host'], self.config['proxy_port']), UserSyncTestServerHandler, config=self.config)
         self.server_thread = threading.Thread(target = self.server.serve_forever)
         self.server_thread.daemon = True
         self.server_thread.start()
-        time.sleep(5)
+
+        # give the server some time to startup
+        time.sleep(1)
         
     def stop(self):
         '''
-        Stops the service by shutting down the HTTP server
+        Stops the service by shutting down the test server, and waiting for the test server thread to end.
         '''
         print 'shutting down server'
         self.server.shutdown()
         self.server_thread.join()
         
-class TestServer(HTTPServer):
+class UserSyncTestServer(HTTPServer):
     def __init__(self, server_address, RequestHandlerClass, config=None, bind_and_activate=True):
         '''
-        Initialize the test server. TestServer basically subclasses HTTPServer
-        to keep track of the configuration context, as the base HTTPServer class
-        takes in a class for the handler rather than an instance, and there is
-        no direct way for the handler to keep the context.
+        Initialize the test server. TestServer basically subclasses HTTPServer to keep track of the configuration
+        context, as the base HTTPServer class takes in a class for the handler rather than an instance, and there is no
+        direct way for the handler to keep the context.
         '''
         HTTPServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate)
         self.config = config
         
-class TestServerHandler(BaseHTTPRequestHandler):
-    def _set_headers(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
+class UserSyncTestServerHandler(BaseHTTPRequestHandler):
+    def _prepare_request(self):
+        '''
+        Builds and preprocesses variables needed for the http proxy target request, including the url, request headers,
+        and the vcr object.
+        :rtype: str, dict(str,any), vcr.VCR
+        '''
+        url = 'https://' + self.server.config['destination_host'] + self.path
+        request_headers = self.headers.dict
+        request_headers['host'] = self.server.config['destination_host']
+        record_mode = 'all' if self.server.config['pass_through'] else 'none'
+        test_vcr = vcr.VCR(
+            record_mode=record_mode,
+            decode_compressed_response=True
+        )
+        return url, request_headers, test_vcr
+
+    def _send_response(self, response):
+        '''
+        Sends the response to the proxy client. If the content-encoding is gzip, recompress it before sending it to
+        the client, and update the header content-length. Data is sent via chunking or in a single block, depnding on
+        the delivery type of the original response (though effectively it is always sent in one chunk)
+        :param cassette_filename: 
+        '''
+        # process headers before passing them along. Some of these entries may need to be updated before we let them go.
+        headers = response.headers.copy()
+        if not 'Accept-Encoding' in headers:
+            headers['Accept-Encoding'] = 'identity'
+
+        # re-encode the content before passing this along, if needed.
+        output = response.content
+        if 'Content-Encoding' in response.headers and response.headers['Content-Encoding'] == 'gzip':
+            buffer = StringIO.StringIO()
+            with gzip.GzipFile(fileobj=buffer, mode="w") as f:
+                f.write(output)
+            output = buffer.getvalue()
+            headers['Content-Length'] = '%d' % len(output)
+
+        # pass along response headers
+        self.send_response(response.status_code)
+        for header in headers:
+            self.send_header(header, headers[header])
         self.end_headers()
-        
+
+        # handle chunking
+        if 'Transfer-Encoding' in response.headers and response.headers['Transfer-Encoding'].lower() == 'chunked':
+            self.wfile.write('%X\r\n%s\r\n' % (len(output), output))
+            self.wfile.write('0\r\n\r\n')
+        else:
+            self.wfile.write(output)
+
     def do_GET(self):
         '''
-        
+        Handles get request via proxy through vcr. The response is obtained by either using the get cassette file, or by
+        passing along the request to the live server, depending whether the test server is in record mode.
         '''
-        url = 'https://' + self.server.config['destination_host'] + self.path
-        req_headers = self.headers.dict
-        req_headers['host'] = self.server.config['destination_host']
-        cassette_file = self.server.config['get_filename']
-        record_mode = 'all' if self.server.config['pass_through'] else 'none'
-        test_vcr = vcr.VCR(
-            record_mode=record_mode,
-            decode_compressed_response=True
-        )
-        with test_vcr.use_cassette(cassette_file) as cass:
-            response = requests.get(url, headers=req_headers)
+        url, request_headers, test_vcr = self._prepare_request()
+        with test_vcr.use_cassette(self.server.config['get_filename']) as cass:
+            response = requests.get(url, headers=request_headers)
             cass.dirty = True
-            
-        self._set_headers()
-        self.wfile.write(response.content)
+        self._send_response(response)
 
     def do_POST(self):
-        url = 'https://' + self.server.config['destination_host'] + self.path
-        req_headers = self.headers.dict
-        req_headers['host'] = self.server.config['destination_host']
-        cassette_file = self.server.config['post_filename']
-        record_mode = 'all' if self.server.config['pass_through'] else 'none'
-        test_vcr = vcr.VCR(
-            record_mode=record_mode,
-            decode_compressed_response=True
-        )
-        with test_vcr.use_cassette(cassette_file) as cass:
-            response = requests.get(url, headers=req_headers)
+        '''
+        Same as do_GET, but executes post using a post cassette file.
+        '''
+        url, request_headers, test_vcr = self._prepare_request()
+        with test_vcr.use_cassette(self.server.config['post_filename']) as cass:
+            data = self.rfile.read(int(self.headers['Content-Length']))
+            response = requests.post(url, headers=request_headers, data=data)
             cass.dirty = True
-            
-        self._set_headers()
-        self.wfile.write(response.content)
+        self._send_response(response)
