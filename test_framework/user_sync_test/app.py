@@ -28,7 +28,8 @@ def process_args():
     parser.add_argument("-t", "--test-name",
                         help="test name",
                         metavar="name of test",
-                        dest="test_name")
+                        dest="test_name",
+                        default=None)
     parser.add_argument("-r", "--record",
                         help="sets the user-sync-test tool in record mode",
                         action="store_true",
@@ -55,12 +56,11 @@ def main():
         except SystemExit:
             return
 
-        config = {}
-        config['config_filename'] = args.config_filename
-        config['record_mode'] = args.record_mode
-        config['test_name'] = None
-        if args.test_name:
-            config['test_name'] = args.test_name
+        config = {
+            'config_filename': args.config_filename,
+            'record_mode': args.record_mode,
+            'test_name': args.test_name
+        }
 
         test_set = UserSyncTestSet(args.config_filename, config)
         test_set.run()

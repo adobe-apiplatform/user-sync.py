@@ -51,13 +51,11 @@ class ConfigFileLoader:
         loads a yaml file, processes the loaded dict given the specified template keys. Essentially the same as the
         ConfigFileLoader in the UserSync app.
         :param filename: the file to load yaml from
-        :param template_keys: a dict whose keys are "template_keys" such as /key1/key2/key3
-                              and whose values are tuples: (must_exist, can_have_subdict, default_val)
-                              which are options on the value of the key whose values
-                              are path expanded: must the path exist, can it be a list of paths
-                              that contains sub-dictionaries whose values are paths, and
-                              does the key have a default value so that must be added to
-                              the dictionary if there is not already a value found.
+        :param template_keys: a dict whose keys are "template_keys" such as /key1/key2/key3 and whose values are tuples:
+            (must_exist, can_have_subdict, default_val) which are options on the value of the key whose values are path
+            expanded: must the path exist, can it be a list of paths that contains sub-dictionaries whose values are
+            paths, and does the key have a default value so that must be added to the dictionary if there is not already
+            a value found.
         '''
         cls.filepath = os.path.abspath(filename)
         cls.filename = os.path.split(cls.filepath)[1]
@@ -90,8 +88,7 @@ class ConfigFileLoader:
         '''
         if level == len(keys)-1:
             key = keys[level]
-            # if a wildcard is specified at this level, that means we should
-            # process all keys as path values
+            # if a wildcard is specified at this level, that means we should process all keys as path values
             if key == "*":
                 for key, val in dictionary.iteritems():
                     dictionary[key] = cls.process_path_value(val, must_exist, can_have_subdict)
@@ -101,9 +98,8 @@ class ConfigFileLoader:
                 dictionary[key] = cls.relative_path(default_val, must_exist)
         elif level < len(keys)-1:
             key = keys[level]
-            # if a wildcard is specified at this level, this indicates this
-            # should select all keys that have dict type values, and recurse
-            # into them at the next level
+            # if a wildcard is specified at this level, this indicates this should select all keys that have dict type
+            # values, and recurse into them at the next level
             if key == "*":
                 for key in dictionary.keys():
                     if isinstance(dictionary[key],dict):
@@ -153,23 +149,25 @@ class ConfigFileLoader:
 
 
 class UserSyncTestSet:
-    def __init__(self, config_filename, program_config):
+    def __init__(self, config_filename, config):
         '''
         Sets up a user sync test set, given a path to the test set's configuration file.
         :type config_filename: str
         '''
+        self.logger = logging.getLogger('user-sync-test-set')
+
         config_filename = os.path.abspath(config_filename)
         self.test_set_path = os.path.dirname(config_filename)
 
         test_set_config = ConfigFileLoader.load_from_yaml(config_filename, TEST_SET_TEMPLATE_KEYS)
 
-        self.test_set_config = program_config.copy()
+        self.test_set_config = config
         self.test_set_config.update({
             'user_sync_path': test_set_config['user_sync']['user_sync_path']
         })
 
         self.server_config = {
-            'pass_through': program_config['record_mode'],
+            'pass_through': config['record_mode'],
             'proxy_host': test_set_config['umapi']['proxy_host'],
             'destination_host': test_set_config['umapi']['destination_host']
         }
@@ -182,74 +180,92 @@ class UserSyncTestSet:
         '''
         self.test_paths = [os.path.join(self.test_set_path,f) for f in os.listdir(self.test_set_path) if os.path.isfile(os.path.join(self.test_set_path,f,'test-config.yml'))]
         for test_path in self.test_paths:
-            print 'test: ' + test_path
-            test = UserSyncTest(test_path, self.options, self.server_options)
-            if self.options['record_mode']:
-                test.record()
+            self.logger.info('test: %s' % test_path)
+            test = UserSyncTest(test_path, self.test_set_config, self.server_config)
+            if self.test_set_config['record_mode']:
+                test.run_live()
             else:
-                test.play()
+                test.run()
 
 class UserSyncTest:
-    def __init__(self, config_path, options, server_options):
+    def __init__(self, config_path, test_set_config, server_config):
         '''
         Sets up a user sync test, given a path to the test's configuration file.
         :type config_path: str
         '''
-        self.options = options
-        self.server_options = server_options
-        self.server_options['test_folder_path'] = config_path
-        self.config = ConfigFileLoader.load_from_yaml(os.path.join(config_path, 'test-config.yml'), TEST_TEMPLATE_KEYS)
+        config = ConfigFileLoader.load_from_yaml(os.path.join(config_path, 'test-config.yml'), TEST_TEMPLATE_KEYS)
 
-        self.options['user_sync_args'] = self.config['user_sync']['arguments']
-        self.options['record_output_filename'] = self.config['user_sync']['record_output_filename']
-        self.options['canned_output_filename'] = self.config['user_sync']['canned_output_filename']
-        self.server_options['get_filename'] = self.config['server_profile']['get_filename']
-        self.server_options['post_filename'] = self.config['server_profile']['post_filename']
+        self.server_config = server_config
+        self.server_config.update({
+            'test_folder_path': config_path,
+            'get_filename': config['server_profile']['get_filename'],
+            'post_filename': config['server_profile']['post_filename']
+        })
+
+        self.test_config = test_set_config.copy()
+        self.test_config.update({
+            'user_sync_args': config['user_sync']['arguments'],
+            'record_output_filename': config['user_sync']['record_output_filename'],
+            'canned_output_filename': config['user_sync']['canned_output_filename']
+        })
 
         self.logger = logging.getLogger('user-sync-test')
 
-    def removeFileIfExists(self,filename):
+    def _reset_output_file(self,filename):
+        '''
+        Resets and output file by first removing the file with the specified filename if it exists, then creating the
+        intermediate folders if they don't exist.
+        :type filename: str
+        '''
         if os.path.exists(filename):
             os.remove(filename)
 
-    def record(self):
-        '''
-        Runs the test in record mode. It first clears the record folder, then sets the server in pass-through mode.
-        user-sync is then invoked with the arguments specified in the configuration file, and requests and responses are
-        recorded until user-sync returns.
-        '''
-        self.removeFileIfExists(self.server_options['get_filename'])
-        self.removeFileIfExists(self.server_options['post_filename'])
+        dirname = os.path.dirname(filename)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
 
-        service = server.TestService(self.server_options)
+    def _run(self, args, output_filename):
+        '''
+        Runs the test given the command line arguments, and the output filename. The output file is deleted first if
+        it exists, then the user-sync test service is started. The test service is stopped once the user-sync command
+        has been run.
+        :type args: list(str) representing the components of the command line argument.
+        :type output_filename: str represents the filename of the file to write the command line output to.
+        '''
+        self.logger.info("%s" % (' '.join(args)))
+
+        self._reset_output_file(output_filename)
+
+        service = server.UserSyncTestService(self.server_config)
         service.run()
 
-        arguments = [self.options['user_sync_path']]
-        arguments.extend(shlex.split(self.config['user_sync']['arguments']))
-
-        self.logger.info("recording test: %s %s" % (self.options['user_sync_path'], self.config['user_sync']['arguments']))
-
-
-        output = subprocess.check_output(arguments, cwd=self.server_options['test_folder_path'])
-        print output
-        
-        service.stop()
-        
-    def play(self):
-        '''
-        Runs the test in playback mode. This simply sets the test server to use the recorded data, and launches the
-        user-sync tool to --bypass-authentication-mode.
-        '''
-        service = server.TestService(self.server_options)
-        service.run()
-
-        arguments = [self.options['user_sync_path']]
-        arguments.extend(['--bypass-authentication-mode'])
-        arguments.extend(shlex.split(self.config['user_sync']['arguments']))
-
-        print "play: %s %s" % (self.options['user_sync_path'], self.config['user_sync']['arguments'])
-        
-        output = subprocess.check_output(arguments, cwd=self.server_options['test_folder_path'])
-        print output
+        with open(output_filename, 'w') as output_file:
+            subprocess.call(args, cwd=self.server_config['test_folder_path'], stdout=output_file)
 
         service.stop()
+
+    def run_live(self):
+        '''
+        Runs the test in record mode. It first removes the existing recorded data, then runs the user-sync test service
+        in record mode (allowing the user-sync service to pass through the service and connect to the live Adobe
+        server). Finally it saves the recorded requests and responses, as well as the user-sync tool output.
+        '''
+        self._reset_output_file(self.server_config['get_filename'])
+        self._reset_output_file(self.server_config['post_filename'])
+
+        args = [self.test_config['user_sync_path']]
+        args.extend(shlex.split(self.test_config['user_sync_args']))
+
+        self._run(args, self.test_config['record_output_filename'])
+
+    def run(self):
+        '''
+        Runs the test using canned data. This simply sets the user-sync test service to use the recorded data, instead
+        of connecting to the live Adobe server, and launches the user-sync tool with --bypass-authentication-mode. The
+        user-sync tool is saved to the specified path.
+        '''
+        args = [self.test_config['user_sync_path']]
+        args.extend(['--bypass-authentication-mode'])
+        args.extend(shlex.split(self.test_config['user_sync_args']))
+
+        self._run(args, self.test_config['canned_output_filename'])
