@@ -224,3 +224,78 @@ class TestOktaUsersGroups(unittest.TestCase):
         directory = self.directory
         results = directory.load_users_and_groups(groups, [])
         self.assertEqual(len(list(results)), 0)
+
+# Used to Test UserGroupsClient , iter_group_members Definations
+class TestOktaIterGroupMember(unittest.TestCase):
+    def setUp(self):
+        class MockResponse:
+            def __init__(self, status_code, data):
+                self.status_code = status_code
+                self.text = json.dumps(data)
+                self.links = {}
+
+        self.mock_response = MockResponse
+        self.orig_directory_init = OktaDirectoryConnector.__init__
+        OktaDirectoryConnector.__init__ = mock.Mock(return_value=None)
+        directory = OktaDirectoryConnector({})
+        directory.logger = mock.create_autospec(logging.Logger)
+        directory.groups_client = okta.UserGroupsClient('example.com', 'xyz')
+        directory.user_identity_type = 'enterpriseID'
+        self.directory = directory
+
+    def tearDown(self):
+        OktaDirectoryConnector.__init__ = self.orig_directory_init
+
+    @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.find_group')
+    @mock.patch('okta.framework.ApiClient.requests')
+    def test_success_extended_attribute_key(self, mock_requests, mock_find_group):
+        # This test the extended_attribute feature
+        # Should return requested Extended Attribute Key in result['source_attributes']
+
+        mock_requests.get.return_value = self.mock_response(200, [{"id": "00u9s60df0cO5cU3Y0h7",
+                                                                   "profile": {"login": "testuser@xyz.com",
+                                                                               "mobilePhone": None,
+                                                                               "email": "testuser@xyz.com",
+                                                                               "secondEmail": None, "firstName": "Test",
+                                                                               "lastName": "User",
+                                                                               "countryCode": "US",
+                                                                               "additionalTest": "TestValue1234"}}])
+        mockID = mock.Mock()
+        mockID.id = "TestGroup1"
+        mock_find_group.return_value = mockID
+
+        directory = self.directory
+        directory.options = {'source_filters': {}, 'all_users_filter': None, 'group_filter_format': '{group}'}
+        extended_attributes = ['firstName', 'lastName', 'login', 'email', 'countryCode', 'additionalTest']
+        iterGroupResponse = directory.iter_group_members("testGroup", extended_attributes)
+        temp_var = list(iterGroupResponse)
+
+        self.assertIn('additionalTest', temp_var[0]['source_attributes'])
+        self.assertEqual(temp_var[0]['source_attributes']['additionalTest'], 'TestValue1234')
+
+
+    @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.find_group')
+    @mock.patch('okta.framework.ApiClient.requests')
+    def test_success_extended_attribute_value(self, mock_requests, mock_find_group):
+        # This test the extended_attribute feature
+        # Should return requested Extended Attribute value in result['source_attributes']
+
+        mock_requests.get.return_value = self.mock_response(200, [{"id": "00u9s60df0cO5cU3Y0h7",
+                                                                   "profile": {"login": "testuser@xyz.com",
+                                                                               "mobilePhone": None,
+                                                                               "email": "testuser@xyz.com",
+                                                                               "secondEmail": None, "firstName": "Test",
+                                                                               "lastName": "User",
+                                                                               "countryCode": "US",
+                                                                               "additionalTest": "TestValue1234"}}])
+        mockID = mock.Mock()
+        mockID.id = "TestGroup1"
+        mock_find_group.return_value = mockID
+
+        directory = self.directory
+        directory.options = {'source_filters': {}, 'all_users_filter': None, 'group_filter_format': '{group}'}
+        extended_attributes = ['firstName', 'lastName', 'login', 'email', 'countryCode', 'additionalTest']
+        iterGroupResponse = directory.iter_group_members("testGroup", extended_attributes)
+        temp_var = list(iterGroupResponse)
+
+        self.assertEqual(temp_var[0]['source_attributes']['additionalTest'], 'TestValue1234')
