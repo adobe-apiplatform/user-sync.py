@@ -64,27 +64,26 @@ def process_args():
                              'side is updated to match.',
                         action='store_true', dest='update_user_info')
     parser.add_argument('--process-groups',
-                        help='if the membership in mapped groups differs between the enterprise and Adobe sides, '
+                        help='if the membership in mapped groups differs between the enterprise directory and Adobe sides, '
                              'the group membership is updated on the Adobe side so that the memberships in mapped '
-                             'groups matches those on the enterprise side.',
+                             'groups matches those on the enterprise directory side.',
                         action='store_true', dest='manage_groups')
     parser.add_argument('--adobe-only-user-action',
-                        help="specify what action to take on Adobe users that don't match input users from the "
+                        help="specify what action to take on Adobe users that don't match users from the "
                              "directory.  Options are 'exclude' (from all changes), "
                              "'preserve' (as is except for --process-groups, the default), "
                              "'write-file f' (preserve and list them), "
-                             "'delete' (users and their cloud storage), "
+                             "'remove-adobe-groups' (but do not remove users)"
                              "'remove' (users but preserve cloud storage), "
-                             "'remove-adobe-groups' (but do not remove users)",
+                             "'delete' (users and their cloud storage), ",
                         nargs="*", metavar=('exclude|preserve|write-file|delete|remove|remove-adobe-groups', 'arg1'),
                         dest='adobe_only_user_action')
     parser.add_argument('--adobe-only-user-list',
-                        help='instead of computing unmatched users by comparing Adobe users with directory users, '
-                             'the list of unmatched Adobe users is read from a file (see --output-adobe-users). '
-                             'When using this option, you must also specify what you want done with unmatched users by'
-                             'specifying one of the arguments '
-                             '--remove-entitlements-for-adobe-users, --remove-adobe-users '
-                             'or --delete-adobe-users.',
+                        help="instead of computing Adobe-only users (Adobe users with no matching users "
+                             "in the directory) by comparing Adobe users with directory users, "
+                             "the list is read from a file (see --adobe-only-user-action write-file). "
+                             "When using this option, you must also specify what you want done with Adobe-only "
+                             "users by also including --adobe-only-user-action and one of its arguments",
                         metavar='input_path', dest='stray_list_input_path')
     return parser.parse_args()
 
@@ -207,11 +206,29 @@ def create_config_loader(args):
 
 
 def create_config_loader_options(args):
+    '''
+    This is where all the command-line arguments get set as options in the main config
+    so that it appears as if they were loaded as part of the main configuration file.
+    If you add an option that is supposed to be set from the command line here, you
+    had better make sure you add it to the ones read in get_rule_options.
+    :param args: the command-line args as parsed
+    :return: the configured options for the config loader.
+    '''
     config_options = {
-        'test_mode': args.test_mode,
-        'manage_groups': args.manage_groups,
-        'update_user_info': args.update_user_info,
+        'delete_strays': False,
+        'directory_connector_module_name': None,
+        'directory_connector_overridden_options': None,
+        'directory_group_filter': None,
         'directory_group_mapped': False,
+        'disentitle_strays': False,
+        'exclude_strays': False,
+        'manage_groups': args.manage_groups,
+        'remove_strays': False,
+        'stray_list_input_path': None,
+        'stray_list_output_path': None,
+        'test_mode': args.test_mode,
+        'update_user_info': args.update_user_info,
+        'username_filter_regex': None,
     }
 
     # --users
@@ -257,7 +274,6 @@ def create_config_loader_options(args):
             if not adobe_action_args:
                 raise AssertionException('Missing file path for --adobe-only-user-action %s [file_path]' % adobe_action)
             config_options['stray_list_output_path'] = adobe_action_args.pop(0)
-            logger.info('Writing unmatched users to: %s', config_options['stray_list_output_path'])
         elif (adobe_action == 'delete'):
             config_options['delete_strays'] = True
         elif (adobe_action == 'remove'):
@@ -290,9 +306,9 @@ def log_parameters(args):
     '''
     logger.info('------- Invocation parameters -------')
     logger.info(' '.join(sys.argv))
-    logger.info('-------- Internal parameters --------')
+    logger.debug('-------- Internal parameters --------')
     for parameter_name, parameter_value in args.__dict__.iteritems():
-        logger.info('  %s: %s', parameter_name, parameter_value)
+        logger.debug('  %s: %s', parameter_name, parameter_value)
     logger.info('-------------------------------------')
 
 
@@ -324,7 +340,7 @@ def main():
             finally:
                 lock.unlock()
         else:
-            logger.info("Process is already locked")
+            logger.critical("A different User Sync process is currently running.")
 
     except AssertionException as e:
         if (not e.is_reported()):

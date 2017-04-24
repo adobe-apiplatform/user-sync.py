@@ -225,7 +225,6 @@ class TestOktaUsersGroups(unittest.TestCase):
         results = directory.load_users_and_groups(groups, [])
         self.assertEqual(len(list(results)), 0)
 
-
 # Used to Test UserGroupsClient , iter_group_members Definations
 class TestOktaIterGroupMember(unittest.TestCase):
     def setUp(self):
@@ -300,5 +299,3 @@ class TestOktaIterGroupMember(unittest.TestCase):
         temp_var = list(iterGroupResponse)
 
         self.assertEqual(temp_var[0]['source_attributes']['additionalTest'], 'TestValue1234')
-
-		
