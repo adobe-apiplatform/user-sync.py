@@ -22,6 +22,16 @@ password: "LDAP password goes here"
 host: "LDAP host URL goes here.  e.g. ldap://ldap.example.com"
 base_dn: "defines the base DN. e.g. DC=example,DC=com"
 
+#Optional
+credential_manager:
+    #This will pull credential from Windows Credential Manager in Control Panel.
+    #UserName and Password field above can be commented out
+    #value: windows_credential_manager
+    type: windows_credential_manager
+    #service_name is Required for Windows Credential Manger
+    service_name: "Internet or Network Address field in Credential Manager"
+    username: "UserName"
+
 # (optional) user_identity_type (default is inherited from main configuration)
 # user_identity_type specifies a default identity type for when directory users
 # are created on the Adobe side (one of adobeID, enterpriseID, federatedID).

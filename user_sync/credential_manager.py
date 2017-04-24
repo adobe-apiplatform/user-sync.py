@@ -17,9 +17,11 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import keyring
 
 UMAPI_CREDENTIAL_TYPE = "Adobe_UMAPI"
 DIRECTORY_CREDENTIAL_TYPE = "Directory"
+KEYRING_SUPPORTED = ['windows_credential_manager']
 
 def get_credentials(credential_type, credential_id, **kwArgs):
     '''
@@ -42,5 +44,16 @@ def get_credentials(credential_type, credential_id, **kwArgs):
     :type kwArgs: dict
     :rtype dict | str | None
     '''
+    if credential_type == DIRECTORY_CREDENTIAL_TYPE:
+        config = kwArgs['config']
+        if "credential_manager" in config:
+            cred_man = config['credential_manager']
+            for supported in KEYRING_SUPPORTED:
+                if cred_man['type'] == supported:
+                    return get_credentials_from_keyring(cred_man['service_name'], cred_man['username'])
     return None
+
+def get_credentials_from_keyring(service, username):
+    cred = keyring.get_password(service_name=service, username=username)
+    return {'username': username, 'password': cred}
     
