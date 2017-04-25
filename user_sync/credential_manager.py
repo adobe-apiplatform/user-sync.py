@@ -52,14 +52,14 @@ def get_credentials(credential_type, credential_id, **kwArgs):
             cred_man = config['credential_manager']
             for supported in KEYRING_SUPPORTED:
                 if cred_man['type'] == supported:
-                    return get_credentials_from_keyring(cred_man['service_name'], cred_man['service_username'])
+                    return get_credentials_from_keyring(cred_man['service_name'], config['username'])
     return None
 
 def get_credentials_from_keyring(service_name, service_username):
     try:
         cred = keyring.get_password(service_name=service_name, username=service_username)
     except Exception as e:
-        raise AssertionException(repr(e))
+        raise AssertionException("Error accessing credential manager: %s" % e)
     if cred == None:
         raise AssertionException("Unable to retrieve password for service_name: '%s' service_username: %s" % (service_name, service_username))
     elif cred == "":
