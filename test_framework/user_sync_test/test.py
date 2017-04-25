@@ -24,6 +24,7 @@ import server
 import error
 import shlex
 import six
+import re
 import logging
 
 TEST_SET_TEMPLATE_KEYS = {
@@ -60,6 +61,7 @@ class ConfigFileLoader:
         cls.filepath = os.path.abspath(filename)
         cls.filename = os.path.split(cls.filepath)[1]
         cls.dirpath = os.path.dirname(cls.filepath)
+
         if not os.path.isfile(cls.filepath):
             raise error.AssertionException('No such configuration file: %s' % (cls.filepath))
 
@@ -157,8 +159,7 @@ class UserSyncTestSet:
         self.logger = logging.getLogger('user-sync-test-set')
 
         config_filename = os.path.abspath(config_filename)
-        self.test_set_path = os.path.dirname(config_filename)
-
+        test_set_path = os.path.dirname(config_filename)
         test_set_config = ConfigFileLoader.load_from_yaml(config_filename, TEST_SET_TEMPLATE_KEYS)
 
         self.test_set_config = config
@@ -172,13 +173,17 @@ class UserSyncTestSet:
             'destination_host': test_set_config['umapi']['destination_host']
         }
 
+        if self.test_set_config['test_name']:
+            self.test_paths = [os.path.join(test_set_path, self.test_set_config['test_name'])]
+        else:
+            self.test_paths = [os.path.join(test_set_path,f) for f in os.listdir(test_set_path) if os.path.isfile(os.path.join(test_set_path,f,'test-config.yml'))]
+
     def run(self):
         '''
         Runs all the tests in the test set. It first identifies tests by searching in the test set folder for all
         sub-folders containing the file test-config.yml. It then goes through the tests configurations individually, and
         creates and runs each test configuration instance.
         '''
-        self.test_paths = [os.path.join(self.test_set_path,f) for f in os.listdir(self.test_set_path) if os.path.isfile(os.path.join(self.test_set_path,f,'test-config.yml'))]
         for test_path in self.test_paths:
             self.logger.info('test: %s' % test_path)
             test = UserSyncTest(test_path, self.test_set_config, self.server_config)
@@ -186,6 +191,57 @@ class UserSyncTestSet:
                 test.run_live()
             else:
                 test.run()
+
+class StringComparator:
+    def __init__(self, str1_expr, str1_args, str2_expr, str2_args):
+        '''
+        Defines a string comparator where their equality is determined by the specified regular expressions. The line
+        arguments parameters are used as format parameters that are applied to the string before performing the matches.
+        Capture groups define in string1_expr must be matched exactly in the second string.
+        :type str1_expr: str defining the regular expression for the first line used for comparison. You can define
+            capture groups that can be used for one to one comparison in the second line.
+        :type str1_args: list(str) defining the arguments used in formatting the str1_expr, which is applied just
+            before running the regular expression match.
+        :type str2_expr: str defining the regular expression for the second line used for the comparison.
+        :type str2_args: list(str) like str1_expr, defines the arguments used in formatting the str2_expr. You can
+            add None elements in the list, which will be populated with the capture group values from the str1_expr
+            match just before applying the arguments to the str2_expr formatting.
+        '''
+        self.str1_expr = str1_expr
+        self.str1_args = str1_args
+        self.str2_expr = str2_expr
+        self.str2_args = str2_args
+
+    def compare(self, str1, str2):
+        '''
+        Compares two lines using the comparator's str1/str2 expressions. Capture groups specified in str1 expression
+        are applied to str2 arguments, where any None entry is replaced with a capture group value in order of
+        occurance.
+        The expression for str1 is first matched. If that succeeds, the expression for str 2 is matched with the 
+        specified arguements and capture groups applied. The compare is considered successful if the second match
+        succeeds.
+        :param str1: str representing the first string to match
+        :param str2: str representing the second string that the first will me matched to.
+        :return: bool
+        '''
+        m = re.match(self.str1_expr % tuple(self.str1_args), str1)
+        if m:
+            str1_groups = m.groups()
+            str2_args = list(self.str2_args)
+            str2_group_indexes = [index for index in range(1, len(str2_args)) if str2_args[index] is None]
+
+            if not (len(str1_groups) == len(str2_group_indexes)):
+                raise error.AssertionException(
+                    'Output compare error: expected %d captures, got %d captures.' % (len(str2_group_indexes), len(str1_groups)))
+
+            for str1_group, str2_group_index in zip(str1_groups, str2_group_indexes):
+                str2_args[str2_group_index] = re.escape(str1_group)
+
+            if re.match(self.str2_expr % tuple(str2_args), str2):
+                return True
+
+        return False
+
 
 class UserSyncTest:
     def __init__(self, config_path, test_set_config, server_config):
@@ -230,7 +286,7 @@ class UserSyncTest:
         it exists, then the user-sync test service is started. The test service is stopped once the user-sync command
         has been run.
         :type args: list(str) representing the components of the command line argument.
-        :type output_filename: str represents the filename of the file to write the command line output to.
+        :c output_filename: str represents the filename of the file to write the command line output to.
         '''
         self.logger.info("%s" % (' '.join(args)))
 
@@ -244,28 +300,92 @@ class UserSyncTest:
 
         service.stop()
 
+    def _compare_output(self, recorded_output_filename, canned_output_filename, user_sync_path):
+        '''
+        Compares the contents of the specified output filenames. Contents are compared by ignoring the timestamp,
+        references to the total time, and the --bypass-authentication-mode part of the command line arguments. If a
+        difference is encountered, an exception is raised detailing the line number and the mismatched lines.
+        :type recorded_output_filename: str
+        :type canned_output_filename: str
+        '''
+        # log format defined in app.py (date, time, pid)
+        timestamp_re = r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d+'
+
+        LINE_COMPARE_MAP = [
+            StringComparator(
+                r"^%s INFO main - %s (.*)$", [timestamp_re, re.escape(user_sync_path)],
+                r"^%s INFO main - %s --bypass-authentication-mode %s$", [timestamp_re, re.escape(user_sync_path), None]
+            ),
+            StringComparator(
+                r"^%s (.*)\(Total time: \d:\d\d:\d\d\)(.*)$", [timestamp_re],
+                r"^%s %s\(Total time: \d:\d\d:\d\d\)%s$", [timestamp_re, None, None]
+            ),
+            StringComparator(
+                r"^%s (.*)$", [timestamp_re],
+                r"^%s %s$", [timestamp_re, None]
+            ),
+        ]
+
+        if not os.path.isfile(recorded_output_filename):
+            raise error.AssertionException('Output compare error: recorded output file "%s" not found.'% (recorded_output_filename))
+        if not os.path.isfile(canned_output_filename):
+            raise error.AssertionException('Output compare error: canned output file "%s" not found.' % (canned_output_filename))
+
+        with open(recorded_output_filename, 'r') as rfile:
+            rlines = rfile.readlines()
+        with open(canned_output_filename, 'r') as cfile:
+            clines = cfile.readlines()
+
+        if not (len(rlines) == len(clines)):
+            raise error.AssertionException('Output compare error: expected %d lines, got %d lines.' % (len(rlines), len(clines)))
+
+        line_index = 0
+        for rline, cline in zip(rlines, clines):
+            matched = False
+            for comparator in LINE_COMPARE_MAP:
+                if comparator.compare(rline, cline):
+                    matched = True
+                    break
+
+            if not matched:
+                raise error.AssertionException('Output compare error: unexpected output at line %d\nrecord: %s\noutput: %s' % (line_index, rline, cline))
+
+            line_index = line_index + 1
+
     def run_live(self):
         '''
         Runs the test in record mode. It first removes the existing recorded data, then runs the user-sync test service
         in record mode (allowing the user-sync service to pass through the service and connect to the live Adobe
-        server). Finally it saves the recorded requests and responses, as well as the user-sync tool output.
+        server). It ends by saving the recorded requests and responses, as well as the user-sync tool output.
         '''
-        self._reset_output_file(self.server_config['get_filename'])
-        self._reset_output_file(self.server_config['post_filename'])
+        try:
+            self._reset_output_file(self.server_config['get_filename'])
+            self._reset_output_file(self.server_config['post_filename'])
 
-        args = [self.test_config['user_sync_path']]
-        args.extend(shlex.split(self.test_config['user_sync_args']))
+            args = [self.test_config['user_sync_path']]
+            args.extend(shlex.split(self.test_config['user_sync_args']))
 
-        self._run(args, self.test_config['record_output_filename'])
+            self._run(args, self.test_config['record_output_filename'])
+        except error.AssertionException as e:
+            if not e.is_reported():
+                self.logger.error('user-sync test error: %s' % (e.message))
+                e.set_reported()
 
     def run(self):
         '''
         Runs the test using canned data. This simply sets the user-sync test service to use the recorded data, instead
-        of connecting to the live Adobe server, and launches the user-sync tool with --bypass-authentication-mode. The
-        user-sync tool is saved to the specified path.
+        of connecting to the live Adobe server, and launches the user-sync tool with --bypass-authentication-mode. Then
+        test ends by saving the user-sync tool output to the configured path.
         '''
-        args = [self.test_config['user_sync_path']]
-        args.extend(['--bypass-authentication-mode'])
-        args.extend(shlex.split(self.test_config['user_sync_args']))
+        try:
+            args = [self.test_config['user_sync_path']]
+            args.extend(['--bypass-authentication-mode'])
+            args.extend(shlex.split(self.test_config['user_sync_args']))
 
-        self._run(args, self.test_config['canned_output_filename'])
+            self._run(args, self.test_config['canned_output_filename'])
+
+            self._compare_output(self.test_config['record_output_filename'], self.test_config['canned_output_filename'], self.test_config['user_sync_path'])
+        except error.AssertionException as e:
+            if not e.is_reported():
+                self.logger.error('user-sync test error: %s' % (e.message))
+                e.set_reported()
