@@ -31,3 +31,7 @@ the [User Manual](user-manual/index.md). It's also your starting
 point for customizing the behavior of User Sync, as it includes
 instructions for doing custom mappings between customer directory
 information and data on the Adobe side.
+
+# FAQ 
+
+[Here are some at least occasionally asked questions and their answers](FAQ/index.md).
