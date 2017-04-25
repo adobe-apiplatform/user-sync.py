@@ -55,13 +55,13 @@ def get_credentials(credential_type, credential_id, **kwArgs):
                     return get_credentials_from_keyring(cred_man['service_name'], config['username'])
     return None
 
-def get_credentials_from_keyring(service_name, service_username):
+def get_credentials_from_keyring(service_name, username):
     try:
-        cred = keyring.get_password(service_name=service_name, username=service_username)
+        cred = keyring.get_password(service_name=service_name, username=username)
     except Exception as e:
         raise AssertionException("Error accessing credential manager: %s" % e)
     if cred == None:
-        raise AssertionException("Unable to retrieve password for service_name: '%s' service_username: %s" % (service_name, service_username))
+        raise AssertionException("Unable to retrieve password for service_name: '%s' service_username: %s" % (service_name, username))
     elif cred == "":
-        raise AssertionException ("Password is empty for service_name: '%s' service_username: %s" % (service_name, service_username))
-    return {'username': service_username, 'password': cred}
+        raise AssertionException ("Password is empty for service_name: '%s' service_username: %s" % (service_name, username))
+    return {'username': username, 'password': cred}
