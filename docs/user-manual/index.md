@@ -1501,6 +1501,26 @@ group in its group map.  It updates membership in the user group,
 which indirectly updates the membership in the product
 configuration.
 
+### Removing Group Mappings
+
+There is potential confusion when removing a mapped group. Say a 
+directory group `acrobat_users` is mapped to the Adobe group `Acrobat`. 
+and you no longer want to map the group to `Acrobat` so you take out 
+the entry. The result is that all of the users are left in the 
+`Acrobat` group because `Acrobat` is no longer a mapped group so user 
+sync leaves it alone. It doesn't result in removing all the users 
+from `Acrobat` as you might have expected.
+
+If you also wanted the users removed from the `Acrobat` group, you can
+manually remove them using the Admin Console, or you can (at least 
+temporarily) leave the entry in the group map in the configuration
+file, but change the directory group to a name that you know does
+not exist in the directory, such as `no_directory_group`.  The next sync 
+run will notice that there are users in the Adobe group who are 
+not in the directory group and 
+they will all be moved.  Once this has happened, you can remove
+the entire mapping from the configuration file.
+
 ### Working with Username-Based Login
 
 On the Adobe Admin Console, you can configure a federated domain to use email-based user login names or username-based (i.e., non-email-based) login.   Username-based login can be used when email addresses are expected to change often or your organization does not allow email addresses to be used for login.  Ultimately, whether to use username-based login or email-based login depends on a company's overall identity strategy.
