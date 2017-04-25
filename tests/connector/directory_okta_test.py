@@ -25,6 +25,7 @@ import logging
 import okta
 import json
 import tests.helper
+import copy
 
 from user_sync.error import AssertionException
 from user_sync.connector.directory_okta import OktaDirectoryConnector, \
@@ -156,7 +157,7 @@ class TestOktaUsersGroups(unittest.TestCase):
     def test_found_user_single_group(self, mock_members):
         # There are 1 users in the Group. This test should return 1 users.
         groups = ['group1']
-        test_user = tests.helper.create_test_user_uid(groups[0])
+        test_user = tests.helper.create_test_user_uid()
         mock_members.return_value = [test_user]
         directory = self.directory
         results = directory.load_users_and_groups(groups, [])
@@ -168,7 +169,7 @@ class TestOktaUsersGroups(unittest.TestCase):
         groups = ['group1', 'group2']
         test_users = []
         for group in groups:
-            test_users.append([tests.helper.create_test_user_uid([group])])
+            test_users.append([tests.helper.create_test_user_uid()])
         mock_members.side_effect = test_users
         directory = self.directory
         results = directory.load_users_and_groups(groups, [])
@@ -181,7 +182,7 @@ class TestOktaUsersGroups(unittest.TestCase):
         test_users = []
         user_count = 0
         while user_count < 5:
-            test_users.append(tests.helper.create_test_user_uid(groups[0]))
+            test_users.append(tests.helper.create_test_user_uid())
             user_count = user_count + 1
         mock_members.return_value = test_users
         directory = self.directory
@@ -197,7 +198,7 @@ class TestOktaUsersGroups(unittest.TestCase):
             test_users = []
             user_count = 0
             while user_count < 5:
-                test_users.append(tests.helper.create_test_user_uid(group))
+                test_users.append(tests.helper.create_test_user_uid())
                 user_count = user_count + 1
             total_test_users.append(test_users)
         mock_members.side_effect = total_test_users
@@ -225,7 +226,18 @@ class TestOktaUsersGroups(unittest.TestCase):
         results = directory.load_users_and_groups(groups, [])
         self.assertEqual(len(list(results)), 0)
 
-# Used to Test UserGroupsClient , iter_group_members Definations
+    @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.iter_group_members')
+    def test_same_user_in_multiple_groups(self, mock_members):
+        # BUG User A suppose to be Group 1 and Group 2.
+        groups = ['group1', 'group2']
+        test_user = tests.helper.create_test_user_uid()
+        mock_members.side_effect = [[test_user], [copy.deepcopy(test_user)]]
+        directory = self.directory
+        result = directory.load_users_and_groups(groups, [])
+        result_list = list(result)
+        self.assertEqual(result_list[0]['groups'], ['group1','group2'])
+
+# Used to Test UserGroupsClient , iter_group_members Definitions
 class TestOktaIterGroupMember(unittest.TestCase):
     def setUp(self):
         class MockResponse:
