@@ -19,6 +19,8 @@
 # SOFTWARE.
 import keyring
 
+from user_sync.error import AssertionException
+
 UMAPI_CREDENTIAL_TYPE = "Adobe_UMAPI"
 DIRECTORY_CREDENTIAL_TYPE = "Directory"
 KEYRING_SUPPORTED = ['windows_credential_manager']
@@ -50,10 +52,16 @@ def get_credentials(credential_type, credential_id, **kwArgs):
             cred_man = config['credential_manager']
             for supported in KEYRING_SUPPORTED:
                 if cred_man['type'] == supported:
-                    return get_credentials_from_keyring(cred_man['service_name'], cred_man['username'])
+                    return get_credentials_from_keyring(cred_man['service_name'], cred_man['service_username'])
     return None
 
-def get_credentials_from_keyring(service, username):
-    cred = keyring.get_password(service_name=service, username=username)
-    return {'username': username, 'password': cred}
-    
+def get_credentials_from_keyring(service_name, service_username):
+    try:
+        cred = keyring.get_password(service_name=service_name, username=service_username)
+    except Exception as e:
+        raise AssertionException(repr(e))
+    if cred == None:
+        raise AssertionException("Unable to retrieve password for service_name: '%s' service_username: %s" % (service_name, service_username))
+    elif cred == "":
+        raise AssertionException ("Password is empty for service_name: '%s' service_username: %s" % (service_name, service_username))
+    return {'username': service_username, 'password': cred}

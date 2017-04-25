@@ -72,6 +72,7 @@ class LDAPDirectoryConnector(object):
         builder.require_string_value('base_dn')
         options = builder.get_options()        
         password = caller_config.get_string('password')
+        # make sure credential_manager does not get reported as unused
         caller_config.get_dict("credential_manager", True)
 
         self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])

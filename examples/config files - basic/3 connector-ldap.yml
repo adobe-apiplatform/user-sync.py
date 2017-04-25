@@ -30,7 +30,7 @@ credential_manager:
     type: windows_credential_manager
     #service_name is Required for Windows Credential Manger
     service_name: "Internet or Network Address field in Credential Manager"
-    username: "UserName"
+    service_username: "UserName"
 
 # (optional) user_identity_type (default is inherited from main configuration)
 # user_identity_type specifies a default identity type for when directory users
