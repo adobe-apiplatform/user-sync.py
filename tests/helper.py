@@ -51,7 +51,7 @@ def create_test_user(groups):
     }
     return user
 
-def create_test_user_uid(groups):
+def create_test_user_uid():
     global next_user_id
     firstName = 'User_%d' % next_user_id
     uid = '0000%s' % next_user_id
@@ -63,7 +63,7 @@ def create_test_user_uid(groups):
         'lastname': 'Test',
         'email': '%s_email@example.com' % firstName,
         'country': 'CA' if (next_user_id % 2 == 0) else 'US',
-        'groups': groups
+        'groups': []
     }
     return user
 
