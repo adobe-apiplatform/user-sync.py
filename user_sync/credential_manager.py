@@ -48,11 +48,11 @@ def get_credentials(credential_type, credential_id, **kwArgs):
     '''
     if credential_type == DIRECTORY_CREDENTIAL_TYPE:
         config = kwArgs['config']
-        if "credential_manager" in config:
+        if 'credential_manager' in config:
             cred_man = config['credential_manager']
-            for supported in KEYRING_SUPPORTED:
-                if cred_man['type'] == supported:
-                    return get_credentials_from_keyring(cred_man['service_name'], config['username'])
+            if (cred_man.get('type') in KEYRING_SUPPORTED and
+                        'service_name' in cred_man and 'username' in config):
+                return get_credentials_from_keyring(cred_man['service_name'], config['username'])
     return None
 
 def get_credentials_from_keyring(service_name, username):
