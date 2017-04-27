@@ -71,22 +71,16 @@ In User Sync, you can use user groups or Product Configurations in the mapping f
 
 Most of the examples show just a single Adobe user group or PC, but the mapping can be one to many.  Simply list all the user groups or PCs, one per line, with a leading "-" (and indented to the proper level) on each as per YML list format.
 
-### I understand the user sync tool would do a GET users from the org (or product configuration?) in order to compare with the extract of users from AD. It is known the limitation of number of requests per minute to Adobe's server.  Is this a problem?
-
-For example,  the back-off can stop the activity to query or update 
-in X number of tries. This can leave a partially updated list of users or a 
-partial query.
+### Can the UMAPI server's throttling interfere with the operation of user sync?
 
 No, User sync handles throttling and retries so that throttling may slow 
 down the overall user sync process, but there is no problem caused by throttling 
 and user sync will properly complete all operations.
  
-###  Is there a local list of users created/updated (on the user sync side) in order not to disturb our server every time for a list of users from the org/product configuration?
+###  Is there a local list of users created/updated (on the user sync side) in order to reduce Adobe server calls?
 
 No, User sync always queries the Adobe user management systems to get 
 current information when it is run.
-
-### I’d like to know more on how the user sync tool deals with the throttling in general.
 
 The Adobe systems protect themselves from overload by tracking the incoming 
 request volume.  If this is starting to exceed limits, then requests return 
@@ -96,30 +90,31 @@ a "retry-after" header indicating when capacity will be available again.  User s
 
 User sync supports all id types (Adobe IDs, Federated IDs and Enterprise IDs).
 
-### An org can have owned domains and domains to which another org has granted it access. The UM API can run queries on both. How about user sync? Users are added to the product configuration just because they are found in the AD group, no check on the domain?
+### An Adobe organization can be granted access to users from domains owned by other organizations.  Can User Sync handle this case?
 
-User Sync uses the UMAPI, so it can both query and manage the user 
-groups and product access for users in both owned and accessed domains.  However, 
+Yes.  User Sync can both query and manage user 
+group membership and product access for users in both owned and accessed domains.  However, 
 like the Admin Console, User Sync can only be used to create and update user 
-accounts in owned domains, not domains owned by other organizations.
+accounts in owned domains, not domains owned by other organizations.  Users from those
+domains can be granted product access but not edited or deleted.
 
 ### Is there an update function, or just add/remove users (for only federatedID)?
 
 For all types of ID (Adobe, Enterprise, and Federated), User Sync supports 
 update of group memberships under control of the --process-groups option.  
-For Enteprise and Federated IDs, User Sync supports update of first name, last 
+For Enterprise and Federated IDs, User Sync supports update of first name, last 
 name, and email fields under control of the --update-user-info  option.  When 
 country updates become available in the Admin Console, they will also be 
 available via the UMAPI.  And for Federated IDs whose "User Login Setting" 
-is "Username", User Sync supports update of username as well as the other fields. 
+is "Username", User Sync supports update of username as well as the other fields.
 
-### The user sync tool is dedicated to a particular OS? (for example, win package is different than unix or linux installer?)
+### Is the user sync tool dedicated to a particular OS?
 
 User Sync is an open source python project.  Users can build for any OS platform they desire.  We provide builds for Windows, OS X, Ubuntu, and Cent OS 7 platforms.
- 
+
 ### Has this been tested on python 3.5?
 
-User Sync has been run successfully on Python 3.x, but most of our use and testing is on Python 2.7 so you may discover problems, and we only provide builds on Python 2.7.  Feel free to report (and contribute fixes) to the open source site at https://github.com/adobe-apiplatform/user-sync.py.
+User Sync has been run successfully on Python 3.x, but most of our use and testing is on Python 2.7 so you may discover problems, and we only provide builds on Python 2.7.  Feel free to report problems (and contribute fixes) to the open source site at https://github.com/adobe-apiplatform/user-sync.py.
 
 ### If something changes in the API (new field in creating users, for example ) how will the update  be applied to the user sync tool?
 
@@ -130,34 +125,19 @@ only the single pex file needs to be updated by the user.  If there are configur
 changes or command line changes to support new features, there may be updates in 
 those files to take advantage of them.
 
-### Does User sync need some sort of whitelisting with the firewall rules of the machine
-on which it runs? I see Windows users are more prone to such errors, from support 
-experience.
+Also note that User Sync is built on top of umapi-client, which is the only module with direct knowledge of the API. When the API changes, umapi-client always gets updated to support it. If and when API changes provide for more User Sync-related capabilities, then User Sync may be updated to provide them.
 
-User sync needs to be able to access the enterprise directory system and Adobe.  
-Since there can be significant variance across system setups, we can't give any 
-specific steps.  LDAP typically uses port 389, but can be configured by IT.  Adobe 
-only requires REST calls over SSL on port 443.
+### Does User sync need some sort of whitelisting with the firewall rules of the machine on which it runs?
 
-### There is something specified about a second step in differentiating the users 
-of a bigger company by adding the country code and the cost centre as metadata 
-to users when they are created; is user sync set up with this feature?
+Generally no. User sync is purely a network client, and does not accept incoming connections, so the machine-local firewall rules for inbound connections are irrelevant.
 
-Country is required for Federated Ids and useful for Enterprise Ids (if not 
-supplied, the user will have to supply the country on first login).  User Sync 
-supports using the standard control field from LDAP, and also supports the 
-specification of a default country code to be used.  
-User Sync can also be customized to call a customer-provided python "hook" in the 
-User Sync configuration; this hook can use customer-side attributes such as 
-cost center to control attributes and group mappings of users on the Adobe side.
+However, as a network client, User Sync requires SSL (port 443) outbound access through customer network firewalls in order to reach the Adobe servers. Customer networks also need to permit User Sync, if configured that way, to reach the customer LDAP/AD server, on whatever port is specified in the User Sync configuration (port 389 by default).
+
+### Is User Sync part of Adobe's offering to EVIP customers?
  
-### Is User Sync part of Adobe's offering to EVIP customers as well as ETLA customers?
+Yes, all Enterprise customers have access to the UMAPI and User Sync, regardless of their buying program (E-VIP, ETLA, or Enterprise Agreement).
  
-Or to put it another way, do EVIP customers have access to the UM API?
-
-Yes, EVIP customers have access to the UMAPI and User Sync.
- 
-### What is the Internationalization story for the User Sync tool;  is it internationally enabled (support at least double-byte character input)?
+### What is the internationalization story for the User Sync tool;  is it internationally enabled (support at least double-byte character input)?
  
 Python 2.7 (the language of the tool) distinguishes “str” (8-bit character strings) 
 and “unicode” (enforced UTF-8-encoded 8 bit character strings), and the user 
