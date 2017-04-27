@@ -76,15 +76,15 @@ Most of the examples show just a single Adobe user group or PC, but the mapping 
 No, User sync handles throttling and retries so that throttling may slow 
 down the overall user sync process, but there is no problem caused by throttling 
 and user sync will properly complete all operations.
+
+The Adobe systems protect themselves from overload by tracking the incoming 
+request volume.  If this is starting to exceed limits, then requests return 
+a "retry-after" header indicating when capacity will be available again.  User sync honors these headers and waits for the requested amount of time before retrying.  More information, including code samples, can be found in the [User Management API documentation](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/throttling.html).
  
 ###  Is there a local list of users created/updated (on the user sync side) in order to reduce Adobe server calls?
 
 No, User sync always queries the Adobe user management systems to get 
 current information when it is run.
-
-The Adobe systems protect themselves from overload by tracking the incoming 
-request volume.  If this is starting to exceed limits, then requests return 
-a "retry-after" header indicating when capacity will be available again.  User sync honors these headers and waits for the requested amount of time before retrying.  More information, including code samples, can be found in the [User Management API documentation](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/throttling.html).
  
 ### Is the user sync tool limited to federated Ids or can any type of ID can be created?
 
