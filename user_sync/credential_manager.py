@@ -17,9 +17,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import keyring
+
+from user_sync.error import AssertionException
 
 UMAPI_CREDENTIAL_TYPE = "Adobe_UMAPI"
 DIRECTORY_CREDENTIAL_TYPE = "Directory"
+KEYRING_SUPPORTED = ['windows_credential_manager']
 
 def get_credentials(credential_type, credential_id, **kwArgs):
     '''
@@ -42,5 +46,22 @@ def get_credentials(credential_type, credential_id, **kwArgs):
     :type kwArgs: dict
     :rtype dict | str | None
     '''
+    if credential_type == DIRECTORY_CREDENTIAL_TYPE:
+        config = kwArgs['config']
+        if 'credential_manager' in config:
+            cred_man = config['credential_manager']
+            if (cred_man.get('type') in KEYRING_SUPPORTED and
+                        'service_name' in cred_man and 'username' in config):
+                return get_credentials_from_keyring(cred_man['service_name'], config['username'])
     return None
-    
+
+def get_credentials_from_keyring(service_name, username):
+    try:
+        cred = keyring.get_password(service_name=service_name, username=username)
+    except Exception as e:
+        raise AssertionException("Error accessing credential manager: %s" % e)
+    if cred == None:
+        raise AssertionException("Unable to retrieve password for service_name: '%s' service_username: %s" % (service_name, username))
+    elif cred == "":
+        raise AssertionException ("Password is empty for service_name: '%s' service_username: %s" % (service_name, username))
+    return {'username': username, 'password': cred}
