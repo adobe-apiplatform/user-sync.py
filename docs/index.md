@@ -32,6 +32,7 @@ point for customizing the behavior of User Sync, as it includes
 instructions for doing custom mappings between customer directory
 information and data on the Adobe side.
 
-# FAQ 
+# Frequently Asked Questions  
 
-[Here are some at least occasionally asked questions and their answers](FAQ/index.md).
+We have compiled a [FAQ document](FAQ/index.md) that answers many questions we have been asked and others we expected to be asked.
+
