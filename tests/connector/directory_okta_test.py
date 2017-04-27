@@ -228,7 +228,7 @@ class TestOktaUsersGroups(unittest.TestCase):
 
     @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.iter_group_members')
     def test_same_user_in_multiple_groups(self, mock_members):
-        # BUG User A suppose to be Group 1 and Group 2.
+        #User A in both Group 1 and Group 2.
         groups = ['group1', 'group2']
         test_user = tests.helper.create_test_user_uid()
         mock_members.side_effect = [[test_user], [copy.deepcopy(test_user)]]
