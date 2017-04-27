@@ -85,8 +85,6 @@ class OktaDirectoryConnector(object):
         self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
 
         self.options = options
-
-        self.user_by_login = {}
         self.user_by_uid = {}
 
         logger.debug('Initialized with options: %s', options)
@@ -123,8 +121,6 @@ class OktaDirectoryConnector(object):
             users_filter = all_users_filter
 
         self.logger.info('Loading users...')
-
-        self.user_by_login = user_by_login = {}
         self.user_by_uid = user_by_uid = {}
 
         for group in groups:
@@ -135,9 +131,10 @@ class OktaDirectoryConnector(object):
 
                 uid = user.get('uid')
                 if user and uid:
-                    user_by_uid[uid] = user
+                    if uid not in user_by_uid:
+                        user_by_uid[uid] = user
                     total_group_users += 1
-                    user_groups = user['groups']
+                    user_groups = user_by_uid[uid]['groups']
                     if group not in user_groups:
                         user_groups.append(group)
 
