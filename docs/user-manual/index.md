@@ -812,7 +812,7 @@ specific behavior in various situations.
 | `--user-filter` _regex\_pattern_ | Limit the set of users that are examined for syncing to those matching a pattern specified with a regular expression. See the [Python regular expression documentation](https://docs.python.org/2/library/re.html) for information on constructing regular expressions in Python. The user name must completely match the regular expression.|
 | `--update-user-info` | When supplied, synchronizes user information. If the information differs between the enterprise directory side and the Adobe side, the Adobe side is updated to match. This includes the firstname and lastname fields. |
 | `--process-groups` | When supplied, synchronizes group membership information. If the membership in mapped groups differs between the enterprise directory side and the Adobe side, the group membership is updated on the Adobe side to match. This includes removal of group membership for Adobe users not listed in the directory side (unless the `--adobe-only-user-action exclude` option is also selected).|
-| `--adobe-only-user-action preserve`<br />`--adobe-only-user-action remove-adobe-groups`<br />`--adobe-only-user-action  remove`<br />`--adobe-only-user-action delete`<br /><br/>`--adobe-only-user-action  write-file`&nbsp;filename<br/><br/>`--adobe-only-user-action  exclude` | When supplied, if user accounts are found on the Adobe side that are not in the directory, take the indicated action.  <br/><br/>`preserve`: no action concerning account deletion is taken. This is the default.  There may still be group membership changes if the `--process-groups` option was specified.<br/><br/>`remove-adobe-groups`: The account is removed from user groups and product configurations, freeing any licenses it held, but is left as an active account in the organization.<br><br/>`remove`: In addition to remove-adobe-groups, the account is also removed from the organization, but is left as an existing account.<br/><br/>`delete`: In addition to the action for remove, the account is deleted if owned by the organization.<br/><br/>`write-file`: the list of user account present on the Adobe side but not in the directory is written to the file indicated.  No other account action is taken.  You can then pass this file to the `--adobe-only-user-list` argument in a subsequent run.<br/><br/>`exclude`: No update of any kind is applied to users found only on the Adobe side.  This is used when doing updates of specific users via a file (--users file f) where only users needing explicit updates are listed in the file and all other users should be left alone.<br/><br>Only permitted actions will be applied.  Accounts of type adobeID are owned by the user so the delete action will do the equivalent of remove.  The same is true of Adobe accounts owned by other organizations. |
+| `--adobe-only-user-action preserve`<br />`--adobe-only-user-action remove-adobe-groups`<br />`--adobe-only-user-action  remove`<br />`--adobe-only-user-action delete`<br /><br/>`--adobe-only-user-action  write-file`&nbsp;filename<br/><br/>`--adobe-only-user-action  exclude` | When supplied, if user accounts are found on the Adobe side that are not in the directory, take the indicated action.  <br/><br/>`preserve`: no action concerning account deletion is taken. This is the default.  There may still be group membership changes if the `--process-groups` option was specified.<br/><br/>`remove-adobe-groups`: The account is removed from user groups and product configurations, freeing any licenses it held, but is left as an active account in the organization.<br><br/>`remove`: In addition to remove-adobe-groups, the account is also removed from the organization, but the user account, with its associated assets, is left in the domain and can be re-added to the organization if desired.<br/><br/>`delete`: In addition to the action for remove, the account is deleted if its domain is owned by the organization.<br/><br/>`write-file`: No action concerning account deletion is taken. The list of user accounts present on the Adobe side but not in the directory is written to the file indicated.  You can then pass this file to the `--adobe-only-user-list` argument in a subsequent run.  There may still be group membership changes if the `--process-groups` option was specified.<br/><br/>`exclude`: No update of any kind is applied to users found only on the Adobe side.  This is used when doing updates of specific users via a file (--users file f) where only users needing explicit updates are listed in the file and all other users should be left alone.<br/><br>Only permitted actions will be applied.  Accounts of type adobeID are owned by the user so the delete action will do the equivalent of remove.  The same is true of Adobe accounts owned by other organizations. |
 | `adobe-only-user-list` _filename_ | Specifies a file from which a list of users will be read.  This list is used as the definitive list of "Adobe only" user accounts to be acted upon.  One of the `--adobe-only-user-action` directives must also be specified and its action will be applied to user accounts in the list.  The `--users` option is disallowed if this option is present: only account removal actions can be processed.  |
 {: .bordertablestyle }
 
@@ -1501,6 +1501,26 @@ group in its group map.  It updates membership in the user group,
 which indirectly updates the membership in the product
 configuration.
 
+### Removing Group Mappings
+
+There is potential confusion when removing a mapped group. Say a 
+directory group `acrobat_users` is mapped to the Adobe group `Acrobat`. 
+and you no longer want to map the group to `Acrobat` so you take out 
+the entry. The result is that all of the users are left in the 
+`Acrobat` group because `Acrobat` is no longer a mapped group so user 
+sync leaves it alone. It doesn't result in removing all the users 
+from `Acrobat` as you might have expected.
+
+If you also wanted the users removed from the `Acrobat` group, you can
+manually remove them using the Admin Console, or you can (at least 
+temporarily) leave the entry in the group map in the configuration
+file, but change the directory group to a name that you know does
+not exist in the directory, such as `no_directory_group`.  The next sync 
+run will notice that there are users in the Adobe group who are 
+not in the directory group and 
+they will all be moved.  Once this has happened, you can remove
+the entire mapping from the configuration file.
+
 ### Working with Username-Based Login
 
 On the Adobe Admin Console, you can configure a federated domain to use email-based user login names or username-based (i.e., non-email-based) login.   Username-based login can be used when email addresses are expected to change often or your organization does not allow email addresses to be used for login.  Ultimately, whether to use username-based login or email-based login depends on a company's overall identity strategy.
@@ -1554,6 +1574,42 @@ that are not named in the group map in the config file.
 - `exclude_identity_types`:  The values of this configuration item is a list of strings that can be "adobeID", "enterpriseID", and "federatedID".  This causes any account that is of the listed type(s) to be preserved and never deleted as Adobe-only users.
 
 
+### Working With Nested Directory Groups in Active Directory
+
+If your directory groups are structured in a nested manner so that users are 
+not in one simple named directory group, you will need to run more complex
+LDAP queries to enumerate the list of users.  For example you might have a group
+nesting structure like this:
+
+
+    All_Divisions
+		Blue_Division
+		       User1@example.com
+		       User2@example.com
+		Green_Division
+		       User3@example.com
+		       User4@example.com
+
+
+To handle this type of nesting structure, in your LDAP config file, 
+set the value of group_filter_format as follows:
+
+    group_filter_format: "(memberOf:1.2.840.113556.1.4.1941:=cn={group},cn=users,DC=example,DC=com)"
+    
+where this part of the query:
+
+    cn={group},cn=users,DC=example,DC=com
+
+is the full distinguished name of the group.  The entry {group} will be replaced by the actual group when User Sync runs the group membership query.  This example assumes the group is located in the 
+directory in users.example.com.  If the group is located elsewhere in the directory, you
+would need to provide the appropriate path to reference it.  (example.com would be replaced by
+your actual domain name also.) 
+
+Once this is set, you can use `All_Divisions` in the group map as the directory group and/or specify `--users group All_Divisions` as the source for users.
+
+How this works is explained in the accepted answer to this [StackOverflow](http://stackoverflow.com/questions/6195812/ldap-nested-group-membership) question and in this [MS technote](https://msdn.microsoft.com/en-us/library/aa746475%28VS.85%29.aspx). AD supports the LDAP_MATCHING_RULE_IN_CHAIN predicate which will search the entire ancestry tree to find containment.  1.2.840.113556.1.4.1941 is the precise OID you must specify to use that predicate.
+
+This can be a very expensive filter, and should be used very carefully.
 
 ---
 
