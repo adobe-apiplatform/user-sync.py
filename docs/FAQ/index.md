@@ -3,6 +3,11 @@ layout: page
 title: User Sync Frequently Asked Questions
 advertise: FAQ
 ---
+### Table of Contents
+{:."no_toc"}
+
+* TOC Placeholder
+{:toc}
 
 
 ### What is User Sync?
