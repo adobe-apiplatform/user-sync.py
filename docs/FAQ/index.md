@@ -66,10 +66,7 @@ In User Sync, you can use user groups or Product Configurations in the mapping f
 
 Most of the examples show just a single Adobe user group or PC, but the mapping can be one to many.  Simply list all the user groups or PCs, one per line, with a leading "-" (and indented to the proper level) on each as per YML list format.
 
-### I understand the user sync tool would do a GET users from the org (or product 
-configuration?) in order to compare with the extract of users from AD. It is 
-known the limitation of number of requests per minute to Adobe's server.  Is this 
-a problem?
+### I understand the user sync tool would do a GET users from the org (or product configuration?) in order to compare with the extract of users from AD. It is known the limitation of number of requests per minute to Adobe's server.  Is this a problem?
 
 For example,  the back-off can stop the activity to query or update 
 in X number of tries. This can leave a partially updated list of users or a 
@@ -79,37 +76,29 @@ No, User sync handles throttling and retries so that throttling may slow
 down the overall user sync process, but there is no problem caused by throttling 
 and user sync will properly complete all operations.
  
-###  Is there a local list of users created/updated (on the user sync side) 
-in order not to disturb our server every time for a list of users from the 
-org/product configuration?
+###  Is there a local list of users created/updated (on the user sync side) in order not to disturb our server every time for a list of users from the org/product configuration?
 
 No, User sync always queries the Adobe user management systems to get 
 current information when it is run.
 
-### I’d like to know more on how the user sync tool deals with the throttling 
-in general.
+### I’d like to know more on how the user sync tool deals with the throttling in general.
 
 The Adobe systems protect themselves from overload by tracking the incoming 
 request volume.  If this is starting to exceed limits, then requests return 
 a "retry-after" header indicating when capacity will be available again.  User sync honors these headers and waits for the requested amount of time before retrying.  More information, including code samples, can be found in the [User Management API documentation](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/throttling.html).
  
-### Is the user sync tool limited to federated Ids or can any type of ID can be 
-created?
+### Is the user sync tool limited to federated Ids or can any type of ID can be created?
 
 User sync supports all id types (Adobe IDs, Federated IDs and Enterprise IDs).
 
-### An org can have owned domains and domains to which another org has granted it 
-access. The UM API can run queries on both. How about user sync? Users are 
-added to the product configuration just because they are found in the AD group, 
-no check on the domain?
+### An org can have owned domains and domains to which another org has granted it access. The UM API can run queries on both. How about user sync? Users are added to the product configuration just because they are found in the AD group, no check on the domain?
 
 User Sync uses the UMAPI, so it can both query and manage the user 
 groups and product access for users in both owned and accessed domains.  However, 
 like the Admin Console, User Sync can only be used to create and update user 
 accounts in owned domains, not domains owned by other organizations.
 
-### Is there an update function, or just add/remove users (for only 
-federatedID)?
+### Is there an update function, or just add/remove users (for only federatedID)?
 
 For all types of ID (Adobe, Enterprise, and Federated), User Sync supports 
 update of group memberships under control of the --process-groups option.  
@@ -119,8 +108,7 @@ country updates become available in the Admin Console, they will also be
 available via the UMAPI.  And for Federated IDs whose "User Login Setting" 
 is "Username", User Sync supports update of username as well as the other fields. 
 
-### The user sync tool is dedicated to a particular OS? (for example, win package 
-is different than unix or linux installer?)
+### The user sync tool is dedicated to a particular OS? (for example, win package is different than unix or linux installer?)
 
 User Sync is an open source python project.  Users can build for any OS platform they desire.  We provide builds for Windows, OS X, Ubuntu, and Cent OS 7 platforms.
  
@@ -164,8 +152,7 @@ Or to put it another way, do EVIP customers have access to the UM API?
 
 Yes, EVIP customers have access to the UMAPI and User Sync.
  
-### What is the Internationalization story for the User Sync tool;  is it 
-internationally enabled (support at least double-byte character input)?
+### What is the Internationalization story for the User Sync tool;  is it internationally enabled (support at least double-byte character input)?
  
 Python 2.7 (the language of the tool) distinguishes “str” (8-bit character strings) 
 and “unicode” (enforced UTF-8-encoded 8 bit character strings), and the user 
