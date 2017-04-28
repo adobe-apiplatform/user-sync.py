@@ -283,8 +283,6 @@ class TestOktaIterGroupMember(unittest.TestCase):
         temp_var = list(iterGroupResponse)
 
         self.assertIn('additionalTest', temp_var[0]['source_attributes'])
-        self.assertEqual(temp_var[0]['source_attributes']['additionalTest'], 'TestValue1234')
-
 
     @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.find_group')
     @mock.patch('okta.framework.ApiClient.requests')
@@ -311,3 +309,79 @@ class TestOktaIterGroupMember(unittest.TestCase):
         temp_var = list(iterGroupResponse)
 
         self.assertEqual(temp_var[0]['source_attributes']['additionalTest'], 'TestValue1234')
+
+    @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.find_group')
+    @mock.patch('okta.framework.ApiClient.requests')
+    def test_non_existence_extended_attribute_key(self, mock_requests, mock_find_group):
+        # This test the extended_attribute feature
+        # user object should contain badattribute eventhough it does not exist in Okta User Profile
+
+        mock_requests.get.return_value = self.mock_response(200, [{"id": "00u9s60df0cO5cU3Y0h7",
+                                                                   "profile": {"login": "testuser@xyz.com",
+                                                                               "mobilePhone": None,
+                                                                               "email": "testuser@xyz.com",
+                                                                               "secondEmail": None, "firstName": "Test",
+                                                                               "lastName": "User",
+                                                                               "countryCode": "US",
+                                                                               "additionalTest": "TestValue1234"}}])
+        mockID = mock.Mock()
+        mockID.id = "TestGroup1"
+        mock_find_group.return_value = mockID
+
+        directory = self.directory
+        directory.options = {'source_filters': {}, 'all_users_filter': None, 'group_filter_format': '{group}'}
+        extended_attributes = ['firstName', 'lastName', 'login', 'email', 'countryCode', 'badattribute']
+        iterGroupResponse = directory.iter_group_members("testGroup", extended_attributes)
+        temp_var = list(iterGroupResponse)
+
+        self.assertIn('badattribute', temp_var[0]['source_attributes'])
+
+    @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.find_group')
+    @mock.patch('okta.framework.ApiClient.requests')
+    def test_non_existence_extended_attribute_value(self, mock_requests, mock_find_group):
+        # This test the extended_attribute feature
+        # user object should contain badattribute key eventhough it does not exist in Okta User Profile
+
+        mock_requests.get.return_value = self.mock_response(200, [{"id": "00u9s60df0cO5cU3Y0h7",
+                                                                   "profile": {"login": "testuser@xyz.com",
+                                                                               "mobilePhone": None,
+                                                                               "email": "testuser@xyz.com",
+                                                                               "secondEmail": None, "firstName": "Test",
+                                                                               "lastName": "User",
+                                                                               "countryCode": "US",
+                                                                               "additionalTest": "TestValue1234"}}])
+        mockID = mock.Mock()
+        mockID.id = "TestGroup1"
+        mock_find_group.return_value = mockID
+
+        directory = self.directory
+        directory.options = {'source_filters': {}, 'all_users_filter': None, 'group_filter_format': '{group}'}
+        extended_attributes = ['firstName', 'lastName', 'login', 'email', 'countryCode', 'badattribute']
+        iterGroupResponse = directory.iter_group_members("testGroup", extended_attributes)
+        temp_var = list(iterGroupResponse)
+        self.assertEqual(temp_var[0]['source_attributes']['badattribute'], None)
+
+    @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.find_group')
+    @mock.patch('okta.framework.ApiClient.requests')
+    def test_invalid_missing_profile_user(self, mock_requests, mock_find_group):
+        # This test the extended_attribute feature
+        # user object should contain badattribute value of None eventhough it does not exist in Okta User Profile
+
+        mock_requests.get.return_value = self.mock_response(200, [{"id": "00u9s60df0cO5cU3Y0h7",
+                                                                   "profile": {"login": "testuser@xyz.com",
+                                                                               "mobilePhone": None,
+                                                                               "email": "testuser@xyz.com",
+                                                                               "secondEmail": None, "firstName": "Test",
+                                                                               "lastName": None,
+                                                                               "countryCode": "US",
+                                                                               "additionalTest": "TestValue1234"}}])
+        mockID = mock.Mock()
+        mockID.id = "TestGroup1"
+        mock_find_group.return_value = mockID
+
+        directory = self.directory
+        directory.options = {'source_filters': {}, 'all_users_filter': None, 'group_filter_format': '{group}'}
+        extended_attributes = ['firstName', 'lastName', 'login', 'email', 'countryCode', 'badattribute']
+        iterGroupResponse = directory.iter_group_members("testGroup", extended_attributes)
+        temp_var = list(iterGroupResponse)
+        self.assertEqual(temp_var[0]['source_attributes']['badattribute'], None)
