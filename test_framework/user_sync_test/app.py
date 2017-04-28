@@ -2,6 +2,7 @@ import sys
 import argparse
 import logging
 import error
+import vcr
 
 from test import UserSyncTestSet
 from version import __version__ as APP_VERSION
@@ -47,7 +48,34 @@ def init_console_log():
     root_logger = logging.getLogger()
     root_logger.addHandler(console_log_handler)
     root_logger.setLevel(logging.DEBUG)
+    vcr_stubs_logger = logging.getLogger('vcr.stubs')
+    vcr_stubs_logger.setLevel(logging.WARNING)
+    vcr_cassette_logger = logging.getLogger('vcr.cassette')
+    vcr_cassette_logger.setLevel(logging.WARNING)
+    vcr_cassette_logger = logging.getLogger('requests.packages.urllib3.connectionpool')
+    vcr_cassette_logger.setLevel(logging.WARNING)
     return console_log_handler
+
+def log_test_set_summary(test_set):
+    '''
+    Outputs the summary for the test set.
+    :param test_set: UserSyncTestSet
+    '''
+    COUNTER_MAP = [
+        ('tests succeeded', test_set.success_count),
+        ('tests failed', test_set.fail_count)
+    ]
+
+    max_name_len = 0
+    for (k, v) in COUNTER_MAP:
+        if len(k) > max_name_len:
+            max_name_len = len(k)
+
+    logger.info('------------------- Test Summary -------------------')
+    for (k, v) in COUNTER_MAP:
+        logger.info('%s: %d' % (k.rjust(max_name_len), v))
+    logger.info('----------------------------------------------------')
+
 
 def main():
     try:
@@ -64,6 +92,8 @@ def main():
 
         test_set = UserSyncTestSet(args.config_filename, config)
         test_set.run()
+
+        log_test_set_summary(test_set)
 
     except error.AssertionException as e:
         if not e.is_reported():

@@ -1,0 +1,8 @@
+email_column_name: email
+first_name_column_name: firstname
+last_name_column_name: lastname
+country_column_name: country
+groups_column_name: groups
+identity_type_column_name: type
+username_column_name: username
+domain_column_name: domain

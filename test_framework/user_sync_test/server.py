@@ -59,7 +59,6 @@ class UserSyncTestService:
         '''
         Stops the service by shutting down the test server, and waiting for the test server thread to end.
         '''
-        print 'shutting down server'
         self.server.shutdown()
         self.server_thread.join()
         
@@ -130,7 +129,7 @@ class UserSyncTestServerHandler(BaseHTTPRequestHandler):
         passing along the request to the live server, depending whether the test server is in record mode.
         '''
         url, request_headers, test_vcr = self._prepare_request()
-        with test_vcr.use_cassette(self.server.config['get_filename']) as cass:
+        with test_vcr.use_cassette(self.server.config['cassette_filename']) as cass:
             response = requests.get(url, headers=request_headers)
             cass.dirty = True
         self._send_response(response)
@@ -140,7 +139,7 @@ class UserSyncTestServerHandler(BaseHTTPRequestHandler):
         Same as do_GET, but executes post using a post cassette file.
         '''
         url, request_headers, test_vcr = self._prepare_request()
-        with test_vcr.use_cassette(self.server.config['post_filename']) as cass:
+        with test_vcr.use_cassette(self.server.config['cassette_filename']) as cass:
             data = self.rfile.read(int(self.headers['Content-Length']))
             response = requests.post(url, headers=request_headers, data=data)
             cass.dirty = True
