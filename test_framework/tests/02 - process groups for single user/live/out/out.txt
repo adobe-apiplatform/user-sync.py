@@ -1,0 +1,24 @@
+2017-04-28 12:58:47 44670 INFO config - Using main config file: ../config/user-sync-config.yml
+2017-04-28 12:58:47 44670 INFO main - ========== Start Run (User Sync version: 2.0) ==============
+2017-04-28 12:58:47 44670 INFO main - ------- Invocation parameters -------
+2017-04-28 12:58:47 44670 INFO main - /Users/imak/github-adobe/user-sync.py/dist/user-sync -c ../config/user-sync-config.yml --process-groups --users file ../config/users.csv
+2017-04-28 12:58:47 44670 INFO main - -------------------------------------
+2017-04-28 12:58:48 44670 INFO processor - ---------- Start Load from Directory -----------------------
+2017-04-28 12:58:48 44670 WARNING csv - In file '../config/users.csv': unrecognized column names: ['bc', 'subco']
+2017-04-28 12:58:48 44670 INFO processor - ---------- End Load from Directory (Total time: 0:00:00) ---
+2017-04-28 12:58:48 44670 INFO processor - ---------- Start Sync Umapi --------------------------------
+2017-04-28 12:58:51 44670 INFO processor - Managing groups for user key: enterpriseID,cce1@ensemble.ca, added: set(['default adobe document cloud for enterprise configuration']) removed: set([])
+2017-04-28 12:58:52 44670 INFO processor - Removing mapped groups from Adobe-only user: enterpriseID,cce3@ensemble.ca,
+2017-04-28 12:58:53 44670 INFO processor - ---------- End Sync Umapi (Total time: 0:00:05) ------------
+2017-04-28 12:58:53 44670 INFO processor - ---------------------------------- Action Summary ----------------------------------
+2017-04-28 12:58:53 44670 INFO processor -                         Number of directory users read: 1
+2017-04-28 12:58:53 44670 INFO processor -           Number of directory users selected for input: 1
+2017-04-28 12:58:53 44670 INFO processor -                             Number of Adobe users read: 52
+2017-04-28 12:58:53 44670 INFO processor -            Number of Adobe users excluded from updates: 17
+2017-04-28 12:58:53 44670 INFO processor -     Number of non-excluded Adobe users with no changes: 0
+2017-04-28 12:58:53 44670 INFO processor -                        Number of new Adobe users added: 0
+2017-04-28 12:58:53 44670 INFO processor -                 Number of matching Adobe users updated: 1
+2017-04-28 12:58:53 44670 INFO processor -       Number of Adobe-only users with groups processed: 34
+2017-04-28 12:58:53 44670 INFO processor -   Number of UMAPI actions sent (total, success, error): (2, 2, 0)
+2017-04-28 12:58:53 44670 INFO processor - ------------------------------------------------------------------------------------
+2017-04-28 12:58:53 44670 INFO main - ========== End Run (User Sync version: 2.0) (Total time: 0:00:05) 

@@ -23,6 +23,7 @@ import subprocess
 import server
 import error
 import shlex
+import shutil
 import six
 import re
 import logging
@@ -31,11 +32,15 @@ TEST_SET_TEMPLATE_KEYS = {
     '/user_sync/user_sync_path': (True, False, "../../dist/user-sync"),
     }
 
+# '/user_sync/record_output_filename': (False, False, "record/output.txt"),
+# '/user_sync/canned_output_filename': (False, False, "canned/output.txt"),
+
 TEST_TEMPLATE_KEYS = {
-    '/user_sync/record_output_filename': (False, False, "record/output.txt"),
-    '/user_sync/canned_output_filename': (False, False, "canned/output.txt"),
-    '/server_profile/get_filename': (False, False, 'record/get.yml'),
-    '/server_profile/post_filename': (False, False, 'record/post.yml')
+    '/user_sync/live/working_dir': (False, False, "live"),
+    '/user_sync/live/output_dir': (False, False, "live/out"),
+    '/user_sync/recorded/working_dir': (False, False, "rec"),
+    '/user_sync/recorded/output_dir': (False, False, "rec/out"),
+    '/server_profile/cassette_filename': (False, False, 'live/cassette.yml'),
     }
 
 class ConfigFileLoader:
@@ -178,6 +183,9 @@ class UserSyncTestSet:
         else:
             self.test_paths = [os.path.join(test_set_path,f) for f in os.listdir(test_set_path) if os.path.isfile(os.path.join(test_set_path,f,'test-config.yml'))]
 
+        self.success_count = 0
+        self.fail_count = 0
+
     def run(self):
         '''
         Runs all the tests in the test set. It first identifies tests by searching in the test set folder for all
@@ -185,12 +193,16 @@ class UserSyncTestSet:
         creates and runs each test configuration instance.
         '''
         for test_path in self.test_paths:
-            self.logger.info('test: %s' % test_path)
             test = UserSyncTest(test_path, self.test_set_config, self.server_config)
             if self.test_set_config['record_mode']:
                 test.run_live()
             else:
                 test.run()
+
+            if test.success:
+                self.success_count += 1
+            else:
+                self.fail_count += 1
 
 class StringComparator:
     def __init__(self, str1_expr, str1_args, str2_expr, str2_args):
@@ -254,18 +266,21 @@ class UserSyncTest:
         self.server_config = server_config
         self.server_config.update({
             'test_folder_path': config_path,
-            'get_filename': config['server_profile']['get_filename'],
-            'post_filename': config['server_profile']['post_filename']
+            'cassette_filename': config['server_profile']['cassette_filename'],
         })
 
         self.test_config = test_set_config.copy()
         self.test_config.update({
+            'config_path': config_path,
             'user_sync_args': config['user_sync']['arguments'],
-            'record_output_filename': config['user_sync']['record_output_filename'],
-            'canned_output_filename': config['user_sync']['canned_output_filename']
+            'live_working_dir': config['user_sync']['live']['working_dir'],
+            'live_output_dir': config['user_sync']['live']['output_dir'],
+            'rec_working_dir': config['user_sync']['recorded']['working_dir'],
+            'rec_output_dir': config['user_sync']['recorded']['output_dir'],
         })
 
         self.logger = logging.getLogger('user-sync-test')
+        self.success = False
 
     def _reset_output_file(self,filename):
         '''
@@ -273,14 +288,16 @@ class UserSyncTest:
         intermediate folders if they don't exist.
         :type filename: str
         '''
-        if os.path.exists(filename):
+        if os.path.isfile(filename):
             os.remove(filename)
+        elif os.path.isdir(filename):
+            shutil.rmtree(filename)
 
         dirname = os.path.dirname(filename)
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
-    def _run(self, args, output_filename):
+    def _run(self, args, working_dir, output_filename):
         '''
         Runs the test given the command line arguments, and the output filename. The output file is deleted first if
         it exists, then the user-sync test service is started. The test service is stopped once the user-sync command
@@ -296,17 +313,17 @@ class UserSyncTest:
         service.run()
 
         with open(output_filename, 'w') as output_file:
-            subprocess.call(args, cwd=self.server_config['test_folder_path'], stdout=output_file)
+            subprocess.call(args, cwd=working_dir, stdout=output_file)
 
         service.stop()
 
-    def _compare_output(self, recorded_output_filename, canned_output_filename, user_sync_path):
+    def _compare_output(self, live_output_filename, rec_output_filename, user_sync_path):
         '''
         Compares the contents of the specified output filenames. Contents are compared by ignoring the timestamp,
         references to the total time, and the --bypass-authentication-mode part of the command line arguments. If a
         difference is encountered, an exception is raised detailing the line number and the mismatched lines.
-        :type recorded_output_filename: str
-        :type canned_output_filename: str
+        :type live_output_filename: str
+        :type rec_output_filename: str
         '''
         # log format defined in app.py (date, time, pid)
         timestamp_re = r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d+'
@@ -326,14 +343,14 @@ class UserSyncTest:
             ),
         ]
 
-        if not os.path.isfile(recorded_output_filename):
-            raise error.AssertionException('Output compare error: recorded output file "%s" not found.'% (recorded_output_filename))
-        if not os.path.isfile(canned_output_filename):
-            raise error.AssertionException('Output compare error: canned output file "%s" not found.' % (canned_output_filename))
+        if not os.path.isfile(live_output_filename):
+            raise error.AssertionException('Output compare error: recorded output file "%s" not found.'% (live_output_filename))
+        if not os.path.isfile(rec_output_filename):
+            raise error.AssertionException('Output compare error: canned output file "%s" not found.' % (rec_output_filename))
 
-        with open(recorded_output_filename, 'r') as rfile:
+        with open(live_output_filename, 'r') as rfile:
             rlines = rfile.readlines()
-        with open(canned_output_filename, 'r') as cfile:
+        with open(rec_output_filename, 'r') as cfile:
             clines = cfile.readlines()
 
         if not (len(rlines) == len(clines)):
@@ -359,13 +376,17 @@ class UserSyncTest:
         server). It ends by saving the recorded requests and responses, as well as the user-sync tool output.
         '''
         try:
-            self._reset_output_file(self.server_config['get_filename'])
-            self._reset_output_file(self.server_config['post_filename'])
+            self._reset_output_file(self.server_config['cassette_filename'])
+            self._reset_output_file(self.test_config['live_output_dir'])
 
             args = [self.test_config['user_sync_path']]
             args.extend(shlex.split(self.test_config['user_sync_args']))
 
-            self._run(args, self.test_config['record_output_filename'])
+            output_filename = os.path.join(self.test_config['live_output_dir'], 'out.txt')
+            self._run(args, self.test_config['live_working_dir'], output_filename)
+
+            self.logger.info('successfully recorded %s' % (self.test_config['config_path']))
+            self.success = True
         except error.AssertionException as e:
             if not e.is_reported():
                 self.logger.error('user-sync test error: %s' % (e.message))
@@ -378,13 +399,20 @@ class UserSyncTest:
         test ends by saving the user-sync tool output to the configured path.
         '''
         try:
+            self._reset_output_file(self.test_config['rec_output_dir'])
+
             args = [self.test_config['user_sync_path']]
             args.extend(['--bypass-authentication-mode'])
             args.extend(shlex.split(self.test_config['user_sync_args']))
 
-            self._run(args, self.test_config['canned_output_filename'])
+            live_output_filename = os.path.join(self.test_config['live_output_dir'], 'out.txt')
+            output_filename = os.path.join(self.test_config['rec_output_dir'], 'out.txt')
+            self._run(args, self.test_config['rec_working_dir'], output_filename)
 
-            self._compare_output(self.test_config['record_output_filename'], self.test_config['canned_output_filename'], self.test_config['user_sync_path'])
+            self._compare_output(live_output_filename, output_filename, self.test_config['user_sync_path'])
+
+            self.logger.info('successfully ran and verified output for %s' % (self.test_config['config_path']))
+            self.success = True
         except error.AssertionException as e:
             if not e.is_reported():
                 self.logger.error('user-sync test error: %s' % (e.message))
