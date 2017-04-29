@@ -68,15 +68,13 @@ class CSVDirectoryConnector(object):
         builder.set_string_value('logger_name', CSVDirectoryConnector.name)
         builder.require_string_value('file_path')
         options = builder.get_options()
+        self.options = options
+        self.logger = logger = user_sync.connector.helper.create_logger(options)
+        logger.debug('CSV initialized with options: %s', options)
+        caller_config.report_unused_values(logger)
 
         # identity type for new users if not specified in column
         self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
-
-        self.options = options
-        self.logger = logger = user_sync.connector.helper.create_logger(options)        
-        caller_config.report_unused_values(logger)
-
-        logger.debug('Initialized with options: %s', options)            
 
     def load_users_and_groups(self, groups, extended_attributes):
         '''
@@ -129,7 +127,7 @@ class CSVDirectoryConnector(object):
             email = self.get_column_value(row, email_column_name)
             if email is None or email.find('@') < 0:
                 logger.warning('Missing or invalid email at row: %d; skipping', line_read)
-                continue;
+                continue
             
             user = users.get(email)
             if user is None:
