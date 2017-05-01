@@ -171,10 +171,10 @@ class UserSyncTestSet:
         test_set_path = os.path.dirname(config_filename)
         test_set_config = ConfigFileLoader.load_from_yaml(config_filename, TEST_SET_TEMPLATE_KEYS)
 
-        user_sync_common_args = test_set_config['user_sync']['common_arguments']
+        user_sync_common_args = test_set_config['user_sync']['common_arguments'] if 'common_arguments' in test_set_config['user_sync'] else None
         user_sync_path = test_set_config['user_sync']['user_sync_path']
         if re.match(r"^.*\.pex$", user_sync_path, re.IGNORECASE):
-            user_sync_common_args = user_sync_path if not user_sync_common_args else "%s %s" % (user_sync_path, user_sync_common_args)
+            user_sync_common_args = user_sync_path if not user_sync_common_args else "\"%s\" %s" % (user_sync_path, user_sync_common_args)
             user_sync_path = "python"
 
         self.test_set_config = config
