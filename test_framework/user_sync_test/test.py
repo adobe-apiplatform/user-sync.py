@@ -158,7 +158,11 @@ class ConfigFileLoader:
 class UserSyncTestSet:
     def __init__(self, config_filename, config):
         '''
-        Sets up a user sync test set, given a path to the test set's configuration file.
+        Sets up a user sync test set, given a path to the test set's configuration file. This basically maps
+        configuration settings from the configuration file and options constructed from the command line arguments to
+        test set and server configuration dictionary objects. Also, the user sync path is examined to determine if
+        the user-sync tool can be invoked directly, or needs to be invoked through python, and sets up the
+        test set configuration accordingly.
         :type config_filename: str
         '''
         self.logger = logging.getLogger('user-sync-test-set')
@@ -167,9 +171,16 @@ class UserSyncTestSet:
         test_set_path = os.path.dirname(config_filename)
         test_set_config = ConfigFileLoader.load_from_yaml(config_filename, TEST_SET_TEMPLATE_KEYS)
 
+        user_sync_common_args = test_set_config['user_sync']['common_arguments']
+        user_sync_path = test_set_config['user_sync']['user_sync_path']
+        if re.match(r"^.*\.pex$", user_sync_path, re.IGNORECASE):
+            user_sync_common_args = user_sync_path if not user_sync_common_args else "%s %s" % (user_sync_path, user_sync_common_args)
+            user_sync_path = "python"
+
         self.test_set_config = config
         self.test_set_config.update({
-            'user_sync_path': test_set_config['user_sync']['user_sync_path']
+            'user_sync_path': user_sync_path,
+            'user_sync_common_args': user_sync_common_args
         })
 
         self.server_config = {
@@ -380,6 +391,8 @@ class UserSyncTest:
             self._reset_output_file(self.test_config['live_output_dir'])
 
             args = [self.test_config['user_sync_path']]
+            if self.test_config['user_sync_common_args']:
+                args.extend(shlex.split(self.test_config['user_sync_common_args']))
             args.extend(shlex.split(self.test_config['user_sync_args']))
 
             output_filename = os.path.join(self.test_config['live_output_dir'], 'out.txt')
@@ -402,6 +415,8 @@ class UserSyncTest:
             self._reset_output_file(self.test_config['rec_output_dir'])
 
             args = [self.test_config['user_sync_path']]
+            if self.test_config['user_sync_common_args']:
+                args.extend(shlex.split(self.test_config['user_sync_common_args']))
             args.extend(['--bypass-authentication-mode'])
             args.extend(shlex.split(self.test_config['user_sync_args']))
 
