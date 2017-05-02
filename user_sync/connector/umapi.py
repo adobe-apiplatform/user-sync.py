@@ -61,7 +61,6 @@ class UmapiConnector(object):
         enterprise_config = caller_config.get_dict_config('enterprise')
         enterprise_builder = user_sync.config.OptionsBuilder(enterprise_config)
         enterprise_builder.require_string_value('org_id')
-        enterprise_builder.require_string_value('api_key')
         enterprise_builder.require_string_value('tech_acct')
         options['enterprise'] = enterprise_options = enterprise_builder.get_options() 
         self.options = options
@@ -75,8 +74,8 @@ class UmapiConnector(object):
         auth_dict = {
             'org_id': org_id,
             'tech_acct_id': enterprise_options['tech_acct'],
-            'api_key': enterprise_options['api_key'],
-            'client_secret': enterprise_config.get_credential('client_secret', org_id)
+            'api_key': enterprise_config.get_credential('api_key', org_id),
+            'client_secret': enterprise_config.get_credential('client_secret', org_id),
         }
         # get the private key
         key_path = enterprise_config.get_string('priv_key_path', True)
