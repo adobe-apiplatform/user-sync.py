@@ -25,7 +25,7 @@ import user_sync.helper
 import user_sync.identity_type
 import okta.UserGroupsClient
 import okta.UsersClient
-import string
+from user_sync.error import AssertionException
 
 
 def connector_metadata():
@@ -126,7 +126,7 @@ class OktaDirectoryConnector(object):
         for group in groups:
             total_group_members = 0
             total_group_users = 0
-            for user in self.iter_group_members(group, extended_attributes):
+            for user in self.iter_group_members(group, users_filter, extended_attributes):
                 total_group_members += 1
 
                 uid = user.get('uid')
@@ -165,7 +165,7 @@ class OktaDirectoryConnector(object):
 
         return None
 
-    def iter_group_members(self, group, extended_attributes):
+    def iter_group_members(self, group, filter_string, extended_attributes):
         """
         :type group: str
         :type extended_attributes: list
@@ -184,6 +184,9 @@ class OktaDirectoryConnector(object):
             except Exception as e:
                 self.logger.warning("Unable to get_group_users")
                 raise user_sync.error.AssertionException(repr(e))
+            #Filtering users based all_users_filter query in config
+            if filter_string:
+                members = self.filter_user(members,filter_string)
             for member in members:
                 profile = member.profile
                 if not profile.email:
@@ -267,6 +270,12 @@ class OktaDirectoryConnector(object):
             raise user_sync.error.AssertionException(repr(e))
         return users
 
+    def filter_user(self, users, filter_string):
+        try:
+            result = list(filter(lambda user: eval(filter_string), users))
+        except Exception as e:
+            raise AssertionException("Error filtering user: %s" % e)
+        return result
 
 class OKTAValueFormatter(object):
 
