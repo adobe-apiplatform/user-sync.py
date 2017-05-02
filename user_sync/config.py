@@ -21,13 +21,13 @@
 import logging
 import os
 import re
-
 import types
+
+import keyring
 import yaml
 
 import user_sync.identity_type
 import user_sync.rules
-from user_sync import credential_manager
 from user_sync.error import AssertionException
 
 DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
@@ -139,20 +139,10 @@ class ConfigLoader(object):
         '''                
         options = {}
         connectors_config = self.get_directory_connector_configs()
-        if (connectors_config != None):
+        if connectors_config is not None:
             connector_item = connectors_config.get_list(connector_name, True)
             options = self.get_dict_from_sources(connector_item)
-        
         options = self.combine_dicts([options, self.options['directory_connector_overridden_options']])
-        # credentials are None, a dict, or a config filename to read to get a dict
-        credentials = credential_manager.get_credentials(credential_manager.DIRECTORY_CREDENTIAL_TYPE,
-                                                         connector_name,
-                                                         config=options,
-                                                         config_loader = self)
-        if isinstance(credentials, types.StringTypes):
-            credentials = ConfigFileLoader.load_other_config(credentials)
-        if isinstance(credentials, dict):
-            options = self.combine_dicts([options, credentials])
         return options
     
     def get_directory_groups(self):
@@ -164,9 +154,9 @@ class ConfigLoader(object):
             raise AssertionException("Your main configuration file is still in v1 format.  Please convert it to v2.")
         groups_config = None
         directory_config = self.main_config.get_dict_config('directory_users', True)
-        if (directory_config != None):
+        if directory_config is not None:
             groups_config = directory_config.get_list_config('groups', True)         
-        if (groups_config == None):
+        if groups_config is None:
             return adobe_groups_by_directory_group
         
         for item in groups_config.iter_dict_configs():
@@ -215,7 +205,6 @@ class ConfigLoader(object):
         Given a list of config file paths, return the dictionary composed of all the contents
         of those config files, or None if the list is empty
         :param sources: a list of strings
-        :param owner: a string to use in error messages if we can't find a config file.
         :rtype dict
         '''
         if not sources:
@@ -249,10 +238,10 @@ class ConfigLoader(object):
         '''
         result = {}
         for dict_item in dicts:
-            if (isinstance(dict_item, dict)):
+            if isinstance(dict_item, dict):
                 for dict_key, dict_item in dict_item.iteritems():
                     result_item = result.get(dict_key)
-                    if (isinstance(result_item, dict) and isinstance(dict_item, dict)):
+                    if isinstance(result_item, dict) and isinstance(dict_item, dict):
                         result_item.update(dict_item)
                     else:
                         result[dict_key] = dict_item
@@ -357,26 +346,12 @@ class ConfigLoader(object):
     def create_umapi_options(self, connector_config_sources):
         options = self.get_dict_from_sources(connector_config_sources)
         options['test_mode'] = self.options['test_mode']
-        enterprise_section = options.get('enterprise')
-        if isinstance(enterprise_section, dict):
-            org_id = enterprise_section.get('org_id')
-            if (org_id != None):
-                # credentials are None, a dict, or a config filename to read to get a dict
-                credentials = credential_manager.get_credentials(credential_manager.UMAPI_CREDENTIAL_TYPE,
-                                                                 org_id,
-                                                                 config = enterprise_section,
-                                                                 config_loader = self)
-                if isinstance(credentials, types.StringTypes):
-                    credentials = ConfigFileLoader.load_other_config(credentials)
-                if isinstance(credentials, dict):
-                    options['enterprise'] = self.combine_dicts([enterprise_section, credentials])
         return options
 
     def check_unused_config_keys(self):
         directory_connectors_config = self.get_directory_connector_configs()
         self.main_config.report_unused_values(self.logger, [directory_connectors_config])
 
-    
 class ObjectConfig(object):
     def __init__(self, scope):
         '''
@@ -420,9 +395,9 @@ class ObjectConfig(object):
         return AssertionException("%s in: %s" % (message, self.get_full_scope()))
     
     def describe_types(self, types_to_describe):
-        if (types_to_describe == types.StringTypes):
+        if types_to_describe == types.StringTypes:
             result = self.describe_types(types.StringType)
-        elif (isinstance(types_to_describe, tuple)):
+        elif isinstance(types_to_describe, tuple):
             result = []
             for type_to_describe in types_to_describe:
                 result.extend(self.describe_types(type_to_describe))
@@ -430,12 +405,13 @@ class ObjectConfig(object):
             result = [types_to_describe.__name__]
         return result
     
-    def report_unused_values(self, logger, optional_configs = []):
+    def report_unused_values(self, logger, optional_configs=None):
+        optional_configs = [] if optional_configs is None else optional_configs
         has_error = False        
         for config in self.iter_configs():
             messages = config.describe_unused_values()
-            if (len(messages) > 0):
-                if (config in optional_configs):
+            if len(messages) > 0:
+                if config in optional_configs:
                     log_level = logging.WARNING
                 else:
                     log_level = logging.ERROR
@@ -443,7 +419,7 @@ class ObjectConfig(object):
                 for message in messages:
                     logger.log(log_level, message)
         
-        if (has_error):
+        if has_error:
             raise AssertionException('Detected unused keys that are not ignorable.')
     
     def describe_unused_values(self):
@@ -465,7 +441,7 @@ class ListConfig(ObjectConfig):
         '''
         index = 0
         for item in self.value:
-            if (not isinstance(item, allowed_types)):
+            if not isinstance(item, allowed_types):
                 reported_types = self.describe_types(allowed_types)
                 raise self.create_assertion_error("Value should be one of these types: %s for index: %s" % (reported_types, index))
             index += 1
@@ -475,7 +451,7 @@ class ListConfig(ObjectConfig):
         index = 0
         for value in self.iter_values(dict):
             config = self.find_child_config(index)
-            if (config == None):
+            if config is None:
                 config = DictConfig("[%s]" % index, value)
                 self.add_child(config)
             yield config
@@ -500,7 +476,7 @@ class DictConfig(ObjectConfig):
     
     def iter_unused_keys(self):
         for key in self.iter_keys():
-            if (key not in self.accessed_keys):
+            if key not in self.accessed_keys:
                 yield key
         
     def get_dict_config(self, key, none_allowed = False):
@@ -508,9 +484,9 @@ class DictConfig(ObjectConfig):
         :rtype DictConfig
         '''
         result = self.find_child_config(key)
-        if (result == None):
+        if result is None:
             value = self.get_dict(key, none_allowed)
-            if (value != None):
+            if value is not None:
                 result = DictConfig(key, value)
                 self.add_child(result)
         return result        
@@ -530,7 +506,7 @@ class DictConfig(ObjectConfig):
 
     def get_list(self, key, none_allowed = False):        
         value = self.get_value(key, None, none_allowed)
-        if (value != None and not isinstance(value, list)):
+        if value is not None and not isinstance(value, list):
             value = [value]
         return value
 
@@ -539,9 +515,9 @@ class DictConfig(ObjectConfig):
         :rtype ListConfig
         '''
         result = self.find_child_config(key)
-        if (result == None):
+        if result is None:
             value = self.get_list(key, none_allowed)
-            if (value != None):
+            if value is not None:
                 result = ListConfig(key, value)
                 self.add_child(result)
         return result
@@ -554,10 +530,10 @@ class DictConfig(ObjectConfig):
         '''
         self.accessed_keys.add(key)
         result = self.value.get(key)
-        if (result == None):
-            if (not none_allowed):
+        if result is None:
+            if not none_allowed:
                 raise self.create_assertion_error("Value not found for key: %s" % key)
-        elif (allowed_types != None and not isinstance(result, allowed_types)):
+        elif allowed_types is not None and not isinstance(result, allowed_types):
             reported_types = self.describe_types(allowed_types)
             raise self.create_assertion_error("Value should be one of these types: %s for key: %s" % (reported_types, key))
         return result
@@ -565,10 +541,66 @@ class DictConfig(ObjectConfig):
     def describe_unused_values(self):
         messages = []
         unused_keys = list(self.iter_unused_keys())
-        if (len(unused_keys) > 0):
+        if len(unused_keys) > 0:
             messages.append("Found unused keys: %s in: %s" % (unused_keys, self.get_full_scope()))
         return messages
-    
+
+    keyring_prefix = 'secure_'
+    keyring_suffix = '_key'
+
+    def has_credential(self, name):
+        '''
+        Check if there is a credential setting with the given name
+        :param name: plaintext setting name for the credential
+        :return: setting that was specified, or None if none was
+        '''
+        scope = self.get_full_scope()
+        keyring_name = self.keyring_prefix + name + self.keyring_suffix
+        plaintext = self.get_string(name, True)
+        secure = self.get_string(keyring_name, True)
+        if plaintext and secure:
+            raise AssertionException('%s: cannot contain setting for both "%s" and "%s"' % (scope, name, keyring_name))
+        if plaintext is not None:
+            return name
+        elif secure is not None:
+            return keyring_name
+        else:
+            return None
+
+    def get_credential(self, name, user_name, none_allowed=False):
+        '''
+        Get the credential with the given name.  Raises an AssertionException if there
+        is no credential, or if the credential is specified both in plaintext and the keyring.
+        If the credential is kept in the keyring, the value of the keyring_name setting
+        gives the secure storage key, and we fetch that key for the given user.
+        :param name: setting name for the plaintext credential
+        :param user_name: the user for whom we should fetch the service name password in secure storage
+        :param none_allowed: whether the credential can be missing or empty
+        :return: credential string
+        '''
+        keyring_name = self.keyring_prefix + name + self.keyring_suffix
+        scope = self.get_full_scope()
+        # sometimes the credential is in plain text
+        cleartext_value = self.get_string(name, True)
+        # sometimes the value is in the keyring
+        secure_value_key = self.get_string(keyring_name, True)
+        # but it has to be in exactly one of those two places!
+        if not cleartext_value and not secure_value_key and not none_allowed:
+            raise AssertionException('%s: must contain setting for "%s" or "%s"' % (scope, name, keyring_name))
+        if cleartext_value and secure_value_key:
+            raise AssertionException('%s: cannot contain setting for both "%s" and "%s"' % (scope, name, keyring_name))
+        if secure_value_key:
+            try:
+                value = keyring.get_password(service_name=secure_value_key, username=user_name)
+            except Exception as e:
+                raise AssertionException('%s: Error accessing secure storage: %s' % (scope, e))
+        else:
+            value = cleartext_value
+        if not value and not none_allowed:
+            raise AssertionException(
+                '%s: No value in secure storage for user "%s", key "%s"' % (scope, user_name, secure_value_key))
+        return value
+
 class ConfigFileLoader:
     '''
     Loads config files and does pathname expansion on settings that refer to files or directories
@@ -717,8 +749,9 @@ class ConfigFileLoader:
         does the relative path processing for a value from the dictionary,
         which can be a string, a list of strings, or a list of strings
         and "tagged" strings (sub-dictionaries whose values are strings)
-        :param key: the key whose value we are processing, for error messages
         :param val: the value we are processing, for error messages
+        :param must_exist: whether there must be a value
+        :param can_have_subdict: whether the value can be a tagged string
         '''
         if isinstance(val, types.StringTypes):
             return cls.relative_path(val, must_exist)
@@ -793,7 +826,7 @@ class OptionsBuilder(object):
         '''
         value = default_value
         config = self.default_config
-        if (config != None and config.has_key(key)):            
+        if config is not None and config.has_key(key):
             value = config.get_value(key, allowed_types, False)
         self.options[key] = value
 
@@ -809,7 +842,7 @@ class OptionsBuilder(object):
         :type key: str
         '''
         config = self.default_config
-        if (config == None):
+        if config is None:
             raise AssertionException("No config found.")
         self.options[key] = value = config.get_value(key, allowed_types)
         return value
