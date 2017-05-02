@@ -18,13 +18,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import ldap.controls.libldap
 import string
+
+import keyring
+import ldap.controls.libldap
 
 import user_sync.config
 import user_sync.connector.helper
 import user_sync.error
 import user_sync.identity_type
+from user_sync.error import AssertionException
+
 
 def connector_metadata():
     metadata = {
@@ -55,7 +59,7 @@ class LDAPDirectoryConnector(object):
     group_member_attribute = "member"
     
     def __init__(self, caller_options):
-        caller_config = user_sync.config.DictConfig('"%s options"' % LDAPDirectoryConnector.name, caller_options)
+        caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('group_filter_format', '(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))')
         builder.set_string_value('all_users_filter', '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))')
@@ -70,33 +74,31 @@ class LDAPDirectoryConnector(object):
         host = builder.require_string_value('host')
         username = builder.require_string_value('username')
         builder.require_string_value('base_dn')
-        options = builder.get_options()        
-        password = caller_config.get_string('password')
+        options = builder.get_options()
+        self.options = options
+        self.logger = logger = user_sync.connector.helper.create_logger(options)
+        logger.debug('%s initialized with options: %s', self.name, options)
 
         self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
         self.user_identity_type_formatter = LDAPValueFormatter(options['user_identity_type_format'])
         self.user_email_formatter = LDAPValueFormatter(options['user_email_format'])
         self.user_username_formatter = LDAPValueFormatter(options['user_username_format'])
         self.user_domain_formatter = LDAPValueFormatter(options['user_domain_format'])
-        
-        self.options = options
-        self.logger = logger = user_sync.connector.helper.create_logger(options)
+
+        password = caller_config.get_credential('password', options['username'])
+        # this check must come after we get the password value
         caller_config.report_unused_values(logger)
-        
-        require_tls_cert = options['require_tls_cert']
-        logger.debug('Initialized with options: %s', options)            
 
         logger.debug('Connecting to: %s using username: %s', host, username)
-        if not require_tls_cert:
+        if not options['require_tls_cert']:
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
-        
         try:
             connection = ldap.initialize(host)
             connection.protocol_version = ldap.VERSION3
             connection.set_option(ldap.OPT_REFERRALS, 0)
             connection.simple_bind_s(username, password)
         except Exception as e:
-            raise user_sync.error.AssertionException(repr(e))
+            raise AssertionException('LDAP connection failure: ' + repr(e))
         self.connection = connection
         logger.debug('Connected')
         
@@ -157,20 +159,20 @@ class LDAPDirectoryConnector(object):
             attrlist=attribute_list
         )
         
-        group_tuple = None;
+        group_tuple = None
         for current_tuple in res:
             if (current_tuple[0] != None):
                 if (group_tuple != None):
-                    raise user_sync.error.AssertionException("Multiple LDAP groups found for: %s" % group)
+                    raise AssertionException("Multiple LDAP groups found for: %s" % group)
                 group_tuple = current_tuple
         
         return group_tuple
 
     def iter_attribute_values(self, dn, attribute_name, attributes=None):
         '''
-        :type group_dn: str
+        :type dn: str
         :type attribute_name: str
-        :type group_attributes: dict(str, list)
+        :type attributes: dict(str, list)
         :rtype iterator
         '''
         
@@ -185,12 +187,12 @@ class LDAPDirectoryConnector(object):
                 result_type, result_response = connection.result(msgid)
                 msgid = None
                 if ((result_type == ldap.RES_SEARCH_RESULT or result_type == ldap.RES_SEARCH_ENTRY) and len(result_response) > 0):
-                    current_tuple = result_response[0];
+                    current_tuple = result_response[0]
                     if (current_tuple[0] != None):
                         attributes = current_tuple[1]
             
             if (attributes == None):
-                break;
+                break
                                         
             for current_attribute_name, current_attribute_values in attributes.iteritems():
                 current_attribute_name_parts = current_attribute_name.split(';')
@@ -198,11 +200,11 @@ class LDAPDirectoryConnector(object):
                     if (len(current_attribute_name_parts) > 1):
                         upper_bound = self.get_range_upper_bound(current_attribute_name_parts[1])
                         if (upper_bound != None and upper_bound != '*'):
-                            next_attribute_name = "%s;range=%s-*" % (attribute_name, str(int(upper_bound) + 1));                        
+                            next_attribute_name = "%s;range=%s-*" % (attribute_name, str(int(upper_bound) + 1))
                             msgid = connection.search(dn, ldap.SCOPE_BASE, attrlist=[next_attribute_name])
                     for current_attribute_value in current_attribute_values:
                         try:
-                            yield current_attribute_value;
+                            yield current_attribute_value
                         except GeneratorExit:
                             if (msgid != None):
                                 connection.abandon(msgid)
@@ -215,7 +217,7 @@ class LDAPDirectoryConnector(object):
         if (range_statement != None):
             statement_parts = range_statement.split('=')
             if (statement_parts[0] == 'range' and len(statement_parts) > 1):
-                range_parts = statement_parts[1].split('-');
+                range_parts = statement_parts[1].split('-')
                 if (len(range_parts) > 1):
                     result = range_parts[1] 
         return result
@@ -230,7 +232,7 @@ class LDAPDirectoryConnector(object):
         if (group_tuple == None):
             self.logger.warning("No group found for: %s", group)
         else:
-            group_dn, group_attributes = group_tuple;
+            group_dn, group_attributes = group_tuple
             for attribute in attributes:
                 attribute_values = self.iter_attribute_values(group_dn, attribute, group_attributes)
                 for attribute_value in attribute_values:
@@ -276,7 +278,7 @@ class LDAPDirectoryConnector(object):
             else:
                 try:
                     user['identity_type'] = user_sync.identity_type.parse_identity_type(identity_type)
-                except user_sync.error.AssertionException as e:
+                except AssertionException as e:
                     self.logger.warning('Skipping user with dn %s: %s', dn, e.message)
                     continue
 
@@ -386,22 +388,20 @@ class LDAPValueFormatter(object):
     
     def generate_value(self, record):
         '''
-        :type parameter_names: list(str)
         :type record: dict
-        :type logger: logging
         :rtype (str, str)
         ''' 
         result = None
         attribute_name = None
-        if (self.string_format != None):   
+        if self.string_format is not None:
             values = {}
             for attribute_name in self.attribute_names:
                 value = self.get_attribute_value(record, attribute_name)
-                if (value == None):
+                if value is None:
                     values = None
                     break
                 values[attribute_name] = value
-            if (values != None):
+            if values is not None:
                 result = self.string_format.format(**values)
         return (result, attribute_name)
 

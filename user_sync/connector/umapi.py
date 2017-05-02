@@ -43,9 +43,10 @@ class UmapiConnector(object):
         :type name: str
         :type caller_options: dict
         '''
-        caller_config = user_sync.config.DictConfig('"%s umapi options"' % name, caller_options)
+        self.name = 'umapi' + name
+        caller_config = user_sync.config.DictConfig(self.name + ' configuration', caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
-        builder.set_string_value('logger_name', 'umapi' + name)
+        builder.set_string_value('logger_name', self.name)
         builder.set_bool_value('test_mode', False)
         options = builder.get_options()        
 
@@ -55,35 +56,43 @@ class UmapiConnector(object):
         server_builder.set_string_value('endpoint', '/v2/usermanagement')
         server_builder.set_string_value('ims_host', 'ims-na1.adobelogin.com')
         server_builder.set_string_value('ims_endpoint_jwt', '/ims/exchange/jwt')
-        options['server'] = server_options = server_builder.get_options() 
-        
+        options['server'] = server_options = server_builder.get_options()
+
         enterprise_config = caller_config.get_dict_config('enterprise')
         enterprise_builder = user_sync.config.OptionsBuilder(enterprise_config)
         enterprise_builder.require_string_value('org_id')
-        enterprise_builder.require_string_value('api_key')
-        enterprise_builder.require_string_value('client_secret')
         enterprise_builder.require_string_value('tech_acct')
-        enterprise_builder.require_string_value('priv_key_path')
         options['enterprise'] = enterprise_options = enterprise_builder.get_options() 
-
-        self.options = options;        
+        self.options = options
         self.logger = logger = helper.create_logger(options)
-        caller_config.report_unused_values(logger)
-        
+        server_config.report_unused_values(logger)
+        logger.debug('UMAPI initialized with options: %s', options)
+
+        # set up the auth dict for umapi-client
         ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
-        api_key = enterprise_options['api_key']
-        private_key_file_path = enterprise_options['priv_key_path']
-        um_endpoint = "https://" + server_options['host'] + server_options['endpoint']    
-        
-        logger.debug('Creating connection for org id: "%s" using private key file: "%s"', org_id, private_key_file_path)
         auth_dict = {
-            "org_id": org_id,
-            "tech_acct_id": enterprise_options['tech_acct'],
-            "api_key": api_key,
-            "client_secret": enterprise_options['client_secret'],
-            "private_key_file": private_key_file_path
+            'org_id': org_id,
+            'tech_acct_id': enterprise_options['tech_acct'],
+            'api_key': enterprise_config.get_credential('api_key', org_id),
+            'client_secret': enterprise_config.get_credential('client_secret', org_id),
         }
+        # get the private key
+        key_path = enterprise_config.get_string('priv_key_path', True)
+        if key_path:
+            data_setting = enterprise_config.has_credential('priv_key_data')
+            if data_setting:
+                raise AssertionException('%s: cannot specify both "priv_key_path" and "%s"' %
+                                         (enterprise_config.get_full_scope(), data_setting))
+            logger.debug('%s: reading private key data from file %s', self.name, key_path)
+            auth_dict['private_key_file'] = key_path
+        else:
+            auth_dict['private_key_data'] = enterprise_config.get_credential('priv_key_data', org_id)
+        # this check must come after we fetch all the settings
+        enterprise_config.report_unused_values(logger)
+        # open the connection
+        um_endpoint = "https://" + server_options['host'] + server_options['endpoint']
+        logger.debug('%s: creating connection for org %s at endpoint %s', self.name, org_id, um_endpoint)
         try:
             self.connection = connection = umapi_client.Connection(
                 org_id=org_id,
@@ -96,10 +105,9 @@ class UmapiConnector(object):
                 logger=self.logger,
             )
         except Exception as e:
-            raise AssertionException("UMAPI connection to org id '%s' failed: %s" % (org_id, e))
-
-        logger.debug('API initialized on: %s', um_endpoint)
-        
+            raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))
+        logger.debug('%s: connection established', self.name)
+        # wrap the connection in an action manager
         self.action_manager = ActionManager(connection, org_id, logger)
     
     def get_users(self):
@@ -134,8 +142,8 @@ class Commands(object):
         :type username: str
         :type domain: str
         '''
-        self.identity_type = identity_type;
-        self.email = email;
+        self.identity_type = identity_type
+        self.email = email
         self.username = username
         self.domain = domain
         self.do_list = []
@@ -162,7 +170,7 @@ class Commands(object):
             self.do_list.append(('add_to_groups', params))
 
     def remove_all_groups(self):
-        self.do_list.append(('remove_from_groups', "all"))
+        self.do_list.append(('remove_from_groups', 'all'))
 
     def remove_groups(self, groups_to_remove):
         '''
@@ -170,15 +178,9 @@ class Commands(object):
         '''
         if (groups_to_remove != None and len(groups_to_remove) > 0):
             params = {
-                "groups": groups_to_remove
+                'groups': groups_to_remove
             }
             self.do_list.append(('remove_from_groups', params))
-    
-    def remove_all_groups(self):
-        params = {
-            "all_groups": True
-        }
-        self.do_list.append(('remove_from_groups', params))
     
     def add_user(self, attributes):
         '''
