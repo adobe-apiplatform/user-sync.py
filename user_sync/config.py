@@ -21,8 +21,9 @@
 import logging
 import os
 import re
-
 import types
+
+import keyring
 import yaml
 
 import user_sync.identity_type
@@ -351,7 +352,6 @@ class ConfigLoader(object):
         directory_connectors_config = self.get_directory_connector_configs()
         self.main_config.report_unused_values(self.logger, [directory_connectors_config])
 
-    
 class ObjectConfig(object):
     def __init__(self, scope):
         '''
@@ -544,7 +544,63 @@ class DictConfig(ObjectConfig):
         if len(unused_keys) > 0:
             messages.append("Found unused keys: %s in: %s" % (unused_keys, self.get_full_scope()))
         return messages
-    
+
+    keyring_prefix = 'secure_'
+    keyring_suffix = '_key'
+
+    def has_credential(self, name):
+        '''
+        Check if there is a credential setting with the given name
+        :param name: plaintext setting name for the credential
+        :return: setting that was specified, or None if none was
+        '''
+        scope = self.get_full_scope()
+        keyring_name = self.keyring_prefix + name + self.keyring_suffix
+        plaintext = self.get_string(name, True)
+        secure = self.get_string(keyring_name, True)
+        if plaintext and secure:
+            raise AssertionException('%s: cannot contain setting for both "%s" and "%s"' % (scope, name, keyring_name))
+        if plaintext is not None:
+            return name
+        elif secure is not None:
+            return keyring_name
+        else:
+            return None
+
+    def get_credential(self, name, user_name, none_allowed=False):
+        '''
+        Get the credential with the given name.  Raises an AssertionException if there
+        is no credential, or if the credential is specified both in plaintext and the keyring.
+        If the credential is kept in the keyring, the value of the keyring_name setting
+        gives the secure storage key, and we fetch that key for the given user.
+        :param name: setting name for the plaintext credential
+        :param user_name: the user for whom we should fetch the service name password in secure storage
+        :param none_allowed: whether the credential can be missing or empty
+        :return: credential string
+        '''
+        keyring_name = self.keyring_prefix + name + self.keyring_suffix
+        scope = self.get_full_scope()
+        # sometimes the credential is in plain text
+        cleartext_value = self.get_string(name, True)
+        # sometimes the value is in the keyring
+        secure_value_key = self.get_string(keyring_name, True)
+        # but it has to be in exactly one of those two places!
+        if not cleartext_value and not secure_value_key and not none_allowed:
+            raise AssertionException('%s: must contain setting for "%s" or "%s"' % (scope, name, keyring_name))
+        if cleartext_value and secure_value_key:
+            raise AssertionException('%s: cannot contain setting for both "%s" and "%s"' % (scope, name, keyring_name))
+        if secure_value_key:
+            try:
+                value = keyring.get_password(service_name=secure_value_key, username=user_name)
+            except Exception as e:
+                raise AssertionException('%s: Error accessing secure storage: %s' % (scope, e))
+        else:
+            value = cleartext_value
+        if not value and not none_allowed:
+            raise AssertionException(
+                '%s: No value in secure storage for user "%s", key "%s"' % (scope, user_name, secure_value_key))
+        return value
+
 class ConfigFileLoader:
     '''
     Loads config files and does pathname expansion on settings that refer to files or directories

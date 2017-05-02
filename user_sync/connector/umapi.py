@@ -22,7 +22,6 @@ import json
 import logging
 
 import jwt
-import keyring
 import umapi_client
 
 import helper
@@ -44,9 +43,10 @@ class UmapiConnector(object):
         :type name: str
         :type caller_options: dict
         '''
-        caller_config = user_sync.config.DictConfig('"%s umapi options"' % name, caller_options)
+        self.name = 'umapi' + name
+        caller_config = user_sync.config.DictConfig(self.name + ' configuration', caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
-        builder.set_string_value('logger_name', 'umapi' + name)
+        builder.set_string_value('logger_name', self.name)
         builder.set_bool_value('test_mode', False)
         options = builder.get_options()        
 
@@ -73,66 +73,27 @@ class UmapiConnector(object):
         ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
         auth_dict = {
-            "org_id": org_id,
-            "tech_acct_id": enterprise_options['tech_acct'],
-            "api_key": enterprise_options['api_key'],
+            'org_id': org_id,
+            'tech_acct_id': enterprise_options['tech_acct'],
+            'api_key': enterprise_options['api_key'],
+            'client_secret': enterprise_config.get_credential('client_secret', org_id)
         }
-        # get the client secret
-        plaintext_secret = enterprise_config.get_string('client_secret', True)
-        secure_secret_key = enterprise_config.get_string('secure_client_secret_key', True)
-        if not plaintext_secret and not secure_secret_key:
-            raise AssertionException('UMAPI configuration must contain client_secret or secure_client_secret_key')
-        if plaintext_secret and secure_secret_key:
-            logger.warning('UMAPI configuration contains both client_secret and secure_client_secret_key, '
-                           'preferring secure_client_secret_key')
-        if secure_secret_key:
-            try:
-                secret = keyring.get_password(service_name=secure_secret_key, username=org_id)
-            except Exception as e:
-                raise AssertionException("Error accessing secure storage: %s" % e)
-            if secret == None:
-                raise AssertionException('No value in secure storage for UMAPI secure_client_secret_key '
-                                         '(' + secure_secret_key + ')')
-            elif secret == "":
-                raise AssertionException('Empty value in secure storage for UMAPI secure_client_secret_key '
-                                         '(' + secure_secret_key + ')')
-            auth_dict['client_secret'] = secret
-        else:
-            auth_dict['client_secret'] = plaintext_secret
         # get the private key
-        plaintext_data_path = enterprise_config.get_string('priv_key_path', True)
-        plaintext_data = enterprise_config.get_string('priv_key_data', True)
-        secure_data_key = enterprise_config.get_string('secure_priv_key_data_key', True)
-        if plaintext_data_path:
-            if plaintext_data or secure_data_key:
-                raise AssertionException('UMAPI configuration has private key settings for both file and string data')
-            logger.debug("UMAPI reading private key data from file '%s'", plaintext_data_path)
-            auth_dict['private_key_file'] = plaintext_data_path
+        key_path = enterprise_config.get_string('priv_key_path', True)
+        if key_path:
+            data_setting = enterprise_config.has_credential('priv_key_data')
+            if data_setting:
+                raise AssertionException('%s: cannot specify both "priv_key_path" and "%s"' %
+                                         (enterprise_config.get_full_scope(), data_setting))
+            logger.debug('%s: reading private key data from file %s', self.name, key_path)
+            auth_dict['private_key_file'] = key_path
         else:
-            if not plaintext_data and not secure_data_key:
-                raise AssertionException('UMAPI configuration must contain priv_key_data or secure_priv_key_data_key')
-            if plaintext_data and secure_data_key:
-                logger.warning('UMAPI configuration contains both priv_key_data and secure_priv_key_data_key, '
-                               'preferring secure_priv_key_data_key')
-            if secure_data_key:
-                try:
-                    data = keyring.get_password(service_name=secure_data_key, username=org_id)
-                except Exception as e:
-                    raise AssertionException("Error accessing secure storage: %s" % e)
-                if data == None:
-                    raise AssertionException('No value in secure storage for UMAPI secure_priv_key_data_key '
-                                             '(' + secure_data_key + ')')
-                elif data == "":
-                    raise AssertionException('Empty value in secure storage for UMAPI secure_priv_key_data_key '
-                                             '(' + secure_data_key + ')')
-                auth_dict['private_key_data'] = data
-            else:
-                auth_dict['private_key_data'] = plaintext_data
-        # this check must come after we get all the secret and private_key values
+            auth_dict['private_key_data'] = enterprise_config.get_credential('priv_key_data', org_id)
+        # this check must come after we fetch all the settings
         enterprise_config.report_unused_values(logger)
         # open the connection
         um_endpoint = "https://" + server_options['host'] + server_options['endpoint']
-        logger.debug('Creating connection for org %s at endpoint %s', org_id, um_endpoint)
+        logger.debug('%s: creating connection for org %s at endpoint %s', self.name, org_id, um_endpoint)
         try:
             self.connection = connection = umapi_client.Connection(
                 org_id=org_id,
@@ -145,8 +106,8 @@ class UmapiConnector(object):
                 logger=self.logger,
             )
         except Exception as e:
-            raise AssertionException("UMAPI connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))
-        logger.debug('UMAPI connection established')
+            raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))
+        logger.debug('%s: connection established', self.name)
         # wrap the connection in an action manager
         self.action_manager = ActionManager(connection, org_id, logger)
     
@@ -210,7 +171,7 @@ class Commands(object):
             self.do_list.append(('add_to_groups', params))
 
     def remove_all_groups(self):
-        self.do_list.append(('remove_from_groups', "all"))
+        self.do_list.append(('remove_from_groups', 'all'))
 
     def remove_groups(self, groups_to_remove):
         '''
@@ -218,15 +179,9 @@ class Commands(object):
         '''
         if (groups_to_remove != None and len(groups_to_remove) > 0):
             params = {
-                "groups": groups_to_remove
+                'groups': groups_to_remove
             }
             self.do_list.append(('remove_from_groups', params))
-    
-    def remove_all_groups(self):
-        params = {
-            "all_groups": True
-        }
-        self.do_list.append(('remove_from_groups', params))
     
     def add_user(self, attributes):
         '''

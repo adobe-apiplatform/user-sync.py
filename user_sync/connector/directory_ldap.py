@@ -59,7 +59,7 @@ class LDAPDirectoryConnector(object):
     group_member_attribute = "member"
     
     def __init__(self, caller_options):
-        caller_config = user_sync.config.DictConfig('"%s options"' % LDAPDirectoryConnector.name, caller_options)
+        caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('group_filter_format', '(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))')
         builder.set_string_value('all_users_filter', '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))')
@@ -77,7 +77,7 @@ class LDAPDirectoryConnector(object):
         options = builder.get_options()
         self.options = options
         self.logger = logger = user_sync.connector.helper.create_logger(options)
-        logger.debug('LDAP initialized with options: %s', options)
+        logger.debug('%s initialized with options: %s', self.name, options)
 
         self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
         self.user_identity_type_formatter = LDAPValueFormatter(options['user_identity_type_format'])
@@ -85,29 +85,8 @@ class LDAPDirectoryConnector(object):
         self.user_username_formatter = LDAPValueFormatter(options['user_username_format'])
         self.user_domain_formatter = LDAPValueFormatter(options['user_domain_format'])
 
-        # sometimes the password is in plain text
-        cleartext_password = caller_config.get_string('password', True)
-        # sometimes the password is in the keyring
-        secure_password_key = caller_config.get_string('secure_password_key', True)
-        # but it has to be in one of those two places!
-        if not cleartext_password and not secure_password_key:
-            raise AssertionException('LDAP configuration must contain password or secure_password_key')
-        if cleartext_password and secure_password_key:
-            logger.warning('LDAP configuration specifies both secure_password_key and password; '
-                           'preferring secure_password_key.')
-        if secure_password_key:
-            try:
-                password = keyring.get_password(service_name=secure_password_key, username=username)
-            except Exception as e:
-                raise AssertionException("Error accessing secure storage: %s" % e)
-            if password == None:
-                raise AssertionException('No value in secure storage for LDAP secure_password_key '
-                                         '(' + secure_password_key + ')')
-            elif password == "":
-                logger.warning('Empty value in secure storage for LDAP secure_password_key (%s)', secure_password_key)
-        else:
-            password = cleartext_password
-        # this check must come after we get all the password values
+        password = caller_config.get_credential('password', options['username'])
+        # this check must come after we get the password value
         caller_config.report_unused_values(logger)
 
         logger.debug('Connecting to: %s using username: %s', host, username)

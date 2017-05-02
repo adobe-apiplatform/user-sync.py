@@ -53,7 +53,7 @@ class CSVDirectoryConnector(object):
     name = 'csv'
     
     def __init__(self, caller_options):
-        caller_config = user_sync.config.DictConfig('"%s options"' % CSVDirectoryConnector.name, caller_options)
+        caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('delimiter', None)
         builder.set_string_value('first_name_column_name', 'firstname')
@@ -65,12 +65,12 @@ class CSVDirectoryConnector(object):
         builder.set_string_value('domain_column_name', 'domain')
         builder.set_string_value('identity_type_column_name', 'type')
         builder.set_string_value('user_identity_type', None)
-        builder.set_string_value('logger_name', CSVDirectoryConnector.name)
+        builder.set_string_value('logger_name', self.name)
         builder.require_string_value('file_path')
         options = builder.get_options()
         self.options = options
         self.logger = logger = user_sync.connector.helper.create_logger(options)
-        logger.debug('CSV initialized with options: %s', options)
+        logger.debug('%s initialized with options: %s', self.name, options)
         caller_config.report_unused_values(logger)
 
         # identity type for new users if not specified in column
