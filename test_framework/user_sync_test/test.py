@@ -324,7 +324,7 @@ class UserSyncTest:
         service.run()
 
         with open(output_filename, 'w') as output_file:
-            subprocess.call(args, cwd=working_dir, stdout=output_file)
+            subprocess.call(args, cwd=working_dir, stdout=output_file, stderr=output_file, shell=True)
 
         service.stop()
 
@@ -392,8 +392,8 @@ class UserSyncTest:
 
             args = [self.test_config['user_sync_path']]
             if self.test_config['user_sync_common_args']:
-                args.extend(shlex.split(self.test_config['user_sync_common_args']))
-            args.extend(shlex.split(self.test_config['user_sync_args']))
+                args.extend(shlex.split(self.test_config['user_sync_common_args'], posix=False))
+            args.extend(shlex.split(self.test_config['user_sync_args'], posix=False))
 
             output_filename = os.path.join(self.test_config['live_output_dir'], 'out.txt')
             self._run(args, self.test_config['live_working_dir'], output_filename)
@@ -416,9 +416,9 @@ class UserSyncTest:
 
             args = [self.test_config['user_sync_path']]
             if self.test_config['user_sync_common_args']:
-                args.extend(shlex.split(self.test_config['user_sync_common_args']))
+                args.extend(shlex.split(self.test_config['user_sync_common_args'], posix=False))
             args.extend(['--bypass-authentication-mode'])
-            args.extend(shlex.split(self.test_config['user_sync_args']))
+            args.extend(shlex.split(self.test_config['user_sync_args'], posix=False))
 
             live_output_filename = os.path.join(self.test_config['live_output_dir'], 'out.txt')
             output_filename = os.path.join(self.test_config['rec_output_dir'], 'out.txt')
