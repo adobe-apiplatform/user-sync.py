@@ -4,7 +4,7 @@ title: User Manual
 advertise: User Manual
 ---
 
-Version 2.0, released 2017-03-29
+Version 2.1, released 2017-05-05
 
 This document has all the information you need to get up and
 running with User Sync. It presumes familiarity with the use of
@@ -286,6 +286,13 @@ on both the enterprise and Adobe sides, its use involves a number
 of different files that contain sensitive information. Great care
 should be take to keep these files safe from unauthorized access.
 
+User Sync release 2.1 or later allow you to store credentials in
+the operating system's secure credential store as an alternative
+to storing them in files and securing those files, or to store
+umapi and ldap configuration files in a secure way that you can
+define.  See section [Security recommendations](#security-recommendations)
+for more details.
+
 ##### Configuration files
 
 Configuration files must include sensitive information, such as
@@ -296,6 +303,12 @@ configuration files and ensure that only authorized users are
 able to access them. In particular: do not allow read access to
 any file containing sensitive information except from the user
 account that runs the sync process.
+
+If you choose to use the operating system to store credentials,
+you still setup the same configuration files but rather than storing
+the actual credentials, they store key ids that are used to look up
+the actual credentials.  Details are shown in
+[Security recommendations](#security-recommendations).
 
 If you are having User Sync access your corporate directory, it
 must be configured to read from the directory server using a
@@ -430,6 +443,12 @@ credential details are confined to these two files. **Be sure to
 secure them properly**, as described in the
 [Security Considerations](#security-considerations) section of
 this document.
+
+The sample configuration files include entries that define the actual
+credential values and entries that reference credentials in the operating system 
+credential store.  You would keep only one of each pair and comment out or 
+remove the other.  Another example user-sync-config.yaml show how to reference
+umapi and ldap configuration files stored in a secure store that you define.
 
 #### Configure connection to the Adobe Admin Console
 
@@ -1659,6 +1678,84 @@ script from continuously hitting the User Management API when it
 reaches the rate limit. It is normal to see messages in the
 console indicating that the script has paused for a short amount
 of time before trying to execute again.
+
+Starting in User Sync 2.1, there are two additional techniques available
+for protecting credentials.  The first uses the operating system credential
+store to store individual configuration credential values.  The second uses
+a mechanism you must provide to store the entire configuration file for umapi
+and ldap access which includes all the credentials required.  These are
+detailed in the next two sections.
+
+#### Storing Credentials in OS Level Storage
+
+To setup User Sync to pull credentials from the Python Keyring OS credential store, set the connector-umapi.yaml and connector-ldap.yaml files as follows:
+
+connector-umapi.yaml
+
+	server:
+	
+	enterprise:
+	  org_id: your org id
+	  secure_api_key_key: umapi_api_key
+	  secure_client_secret_key: umapi_client_secret
+	  tech_acct: your tech account@techacct.adobe.com
+	  secure_priv_key_data_key: umapi_private_key_data
+
+Note the change of api_key, client_secret, and priv_key_path to secure_api_key_key, secure_client_secret_key, and secure_priv_key_data_key, respectively.  These alternate configuration values give the key names to be looked up in keyring (or the equivalent service on other platforms) to retrieve the actual credential values.  In this example, the credential key names are get_credential, umapi_client_secret, and
+umapi_private_key_data.
+
+The credential values will be looked up using the specified key names with the user being the org_id value.
+
+
+connector-ldap.yaml
+
+	username: "your ldap account username"
+	secure_password_key: ldap_password 
+	host: "ldap://ldap server name"
+	base_dn: "DC=domain name,DC=com"
+
+The LDAP access password will be looked up using the specified key name with the user being the specified username value.
+
+#### Storing Credential Files in External Management Systems
+
+As an alternative to storing credentials in the local credential store, it is possible to integrate User Sync with some other system or encryption mechanism.  To support such integrations, it is possible to store the entire configuration files for umapi and ldap externally in some other system or format.
+
+This is done by specifying, in the main User Sync configuration file, a command to be executed whose output is used as the umapi or ldap configuration file contents.  You will need to provide the command that fetches the configuration information and sends it to standard output in yaml format, matching what the configuration file would have contained.
+
+To set this up, use the following items in the main configuration file.
+
+
+user-sync-config.yaml (showing partial file only)
+
+	adobe_users:
+	  connectors:
+	    # umapi: connector-umapi.yaml   # instead of this file reference, use:
+		umapi: $(read_umapi_config_from_s3)
+	    # if a working directory is required:
+		# umapi $([temp]read_umapi_config_from_s3) # runs command in "temp" folder
+	
+	directory_users:
+	   connectors:
+		# ldap: connector-ldap.yaml # instead of this file reference, use:
+	    ldap: $(read_ldap_config_from_server)
+ 
+The general format for external command references is
+
+	$([working directory pathname]command args)
+
+The working directory pathname is optional.  If present, it is enclosed
+in square brackets.  If the working directory pathname is not fully qualified
+it is interpreted as relative to the configuration file containing
+the reference.
+
+The remainder of the line is the shell command name
+followed by any arguments.  A command shell is launched by User Sync which
+runs the command.  The standard output from the command is captured and that
+output is used as the umapi or ldap configuration file.
+
+If the command terminates abnormally User Sync terminates with an error.
+
+The command can reference a new or existing program or a script.
 
 ### Scheduled task examples
 
