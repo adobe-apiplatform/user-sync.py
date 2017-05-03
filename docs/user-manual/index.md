@@ -450,7 +450,7 @@ credential store.  You would keep only one of each pair and comment out or
 remove the other.  Another example user-sync-config.yaml show how to reference
 umapi and ldap configuration files stored in a secure store that you define.
 
-#### Configure connection to the Adobe Admin Console
+#### Configure connection to the Adobe Admin Console (UMAPI)
 
 When you have obtained access and set up an integration with User
 Management in the Adobe I/O
@@ -464,7 +464,7 @@ have been assigned to your organization:
 - Technical Account ID
 - Private Certificate
 
-Open your copy of the adobe-user-config.yml file in a plain-text
+Open your copy of the connector-umapi.yml file in a plain-text
 editor, and enter these values in the “enterprise” section:
 
 ```YAML
@@ -479,6 +479,19 @@ enterprise:
 **Note:** Make sure you put the private key file at the location
 specified in `priv_key_path`, and that it is readable only to the
 user account that runs the tool.
+
+In User Sync 2.1 or later there is an alternative to storing the private key in a separate file; you can place
+the private key directly in the configuration file.  Rather than using the
+`priv_key_path` key, use `priv_key_data` as follows:
+
+	  priv_key_data: |
+	    -----BEGIN RSA PRIVATE KEY-----
+	    MIIJKAIBAAKCAge85H76SDKJ8273HHSDKnnfhd88837aWwE2O2LGGz7jLyZWSscH
+	    ...
+	    Fz2i8y6qhmfhj48dhf84hf3fnGrFP2mX2Bil48BoIVc9tXlXFPstJe1bz8xpo=
+	    -----END RSA PRIVATE KEY-----
+
+
 
 #### Configure connection to your enterprise directory
 
@@ -761,6 +774,7 @@ enterprise:
   client_secret: "Client secret goes here"
   tech_acct: "Tech account ID goes here"
   priv_key_path: "Path to private.key goes here"
+  # priv_key_data: "actual key data goes here" # This is an alternative to priv_key_path
 ```
 
 ### Testing your configuration
@@ -1688,9 +1702,9 @@ detailed in the next two sections.
 
 #### Storing Credentials in OS Level Storage
 
-To setup User Sync to pull credentials from the Python Keyring OS credential store, set the connector-umapi.yaml and connector-ldap.yaml files as follows:
+To setup User Sync to pull credentials from the Python Keyring OS credential store, set the connector-umapi.yml and connector-ldap.yml files as follows:
 
-connector-umapi.yaml
+connector-umapi.yml
 
 	server:
 	
@@ -1701,20 +1715,36 @@ connector-umapi.yaml
 	  tech_acct: your tech account@techacct.adobe.com
 	  secure_priv_key_data_key: umapi_private_key_data
 
-Note the change of api_key, client_secret, and priv_key_path to secure_api_key_key, secure_client_secret_key, and secure_priv_key_data_key, respectively.  These alternate configuration values give the key names to be looked up in keyring (or the equivalent service on other platforms) to retrieve the actual credential values.  In this example, the credential key names are get_credential, umapi_client_secret, and
-umapi_private_key_data.
+Note the change of `api_key`, `client_secret`, and `priv_key_path` to `secure_api_key_key`, `secure_client_secret_key`, and `secure_priv_key_data_key`, respectively.  These alternate configuration values give the key names to be looked up in keyring (or the equivalent service on other platforms) to retrieve the actual credential values.  In this example, the credential key names are `umapi_api_key`, `umapi_client_secret`, and `umapi_private_key_data`.
+
+The contents of the private key file is used as the value of `umapi_private_key_data` in the credential store.
 
 The credential values will be looked up using the specified key names with the user being the org_id value.
 
 
-connector-ldap.yaml
+connector-ldap.yml
 
 	username: "your ldap account username"
 	secure_password_key: ldap_password 
 	host: "ldap://ldap server name"
 	base_dn: "DC=domain name,DC=com"
 
-The LDAP access password will be looked up using the specified key name with the user being the specified username value.
+The LDAP access password will be looked up using the specified key name
+(`ldap_password` in this example) with the user being the specified username
+config value.
+
+Credentials are stored in the underlying operating system secure store.  The specific storage system depends in the operating system.
+
+| OS | Credential Store |
+|------------|--------------|
+|Windows | Windows Credential Vault |
+| Mac OS X | Keychain |
+| Linux | Freedesktop Secret Service or KWallet |
+
+On Linux, the secure storage application would have been installed and configured by the OS vendor.
+
+The credentials are added to the OS secure storage and given the username and credential id that you will use to specify the credential.  For umapi credentials, the username is the organization id.  For the LDAP password credential, the username is the LDAP username.  You can pick any identifier you wish for the specific credentials; they must match between what is in the credential store and the name used in the configuration file.  Suggested values for the key names are shown in the examples above.
+
 
 #### Storing Credential Files in External Management Systems
 
@@ -1725,19 +1755,19 @@ This is done by specifying, in the main User Sync configuration file, a command 
 To set this up, use the following items in the main configuration file.
 
 
-user-sync-config.yaml (showing partial file only)
+user-sync-config.yml (showing partial file only)
 
 	adobe_users:
-	  connectors:
-	    # umapi: connector-umapi.yaml   # instead of this file reference, use:
-		umapi: $(read_umapi_config_from_s3)
-	    # if a working directory is required:
-		# umapi $([temp]read_umapi_config_from_s3) # runs command in "temp" folder
+	   connectors:
+	      # umapi: connector-umapi.yml   # instead of this file reference, use:
+	      umapi: $(read_umapi_config_from_s3)
+	      # if a working directory is required:
+	      # umapi $([temp]read_umapi_config_from_s3) # runs command in "temp" folder
 	
 	directory_users:
 	   connectors:
-		# ldap: connector-ldap.yaml # instead of this file reference, use:
-	    ldap: $(read_ldap_config_from_server)
+	      # ldap: connector-ldap.yml # instead of this file reference, use:
+	      ldap: $(read_ldap_config_from_server)
  
 The general format for external command references is
 
@@ -1745,7 +1775,7 @@ The general format for external command references is
 
 The working directory pathname is optional.  If present, it is enclosed
 in square brackets.  If the working directory pathname is not fully qualified
-it is interpreted as relative to the configuration file containing
+it is interpreted as relative to the folder of the configuration file containing
 the reference.
 
 The remainder of the line is the shell command name
@@ -1753,9 +1783,12 @@ followed by any arguments.  A command shell is launched by User Sync which
 runs the command.  The standard output from the command is captured and that
 output is used as the umapi or ldap configuration file.
 
-If the command terminates abnormally User Sync terminates with an error.
+If the command terminates abnormally, User Sync will terminate with an error.
 
 The command can reference a new or existing program or a script.
+
+Note: If you use this technique for the connector-umapi.yml file, you will want to embed the private key data in connector-umapi-yml directly by using the priv_key_data key and the private key value.  If you use the priv_key_path and the filename containing the private key, you would also need to store the private key somewhere 
+secure and have a command that retrieves it in the file reference.
 
 ### Scheduled task examples
 
