@@ -233,25 +233,24 @@ def create_config_loader_options(args):
 
     # --users
     users_args = args.users
-    if users_args is not None:
-        users_action = None if len(users_args) == 0 else user_sync.helper.normalize_string(users_args.pop(0))
-        if (users_action == None or users_action == 'all'):
-            config_options['directory_connector_module_name'] = 'user_sync.connector.directory_ldap'
-        elif (users_action == 'file'):
-            if len(users_args) == 0:
-                raise AssertionException('Missing file path for --users %s [file_path]' % users_action)
-            config_options['directory_connector_module_name'] = 'user_sync.connector.directory_csv'
-            config_options['directory_connector_overridden_options'] = {'file_path': users_args.pop(0)}
-        elif (users_action == 'mapped'):
-            config_options['directory_connector_module_name'] = 'user_sync.connector.directory_ldap'
-            config_options['directory_group_mapped'] = True
-        elif (users_action == 'group'):
-            if len(users_args) == 0:
-                raise AssertionException('Missing groups for --users %s [groups]' % users_action)
-            config_options['directory_connector_module_name'] = 'user_sync.connector.directory_ldap'
-            config_options['directory_group_filter'] = users_args.pop(0).split(',')
-        else:
-            raise AssertionException('Unknown argument --users %s' % users_action)
+    users_action = None if not users_args else user_sync.helper.normalize_string(users_args.pop(0))
+    if (users_action == None or users_action == 'all'):
+        config_options['directory_connector_module_name'] = 'user_sync.connector.directory_ldap'
+    elif (users_action == 'file'):
+        if len(users_args) == 0:
+            raise AssertionException('Missing file path for --users %s [file_path]' % users_action)
+        config_options['directory_connector_module_name'] = 'user_sync.connector.directory_csv'
+        config_options['directory_connector_overridden_options'] = {'file_path': users_args.pop(0)}
+    elif (users_action == 'mapped'):
+        config_options['directory_connector_module_name'] = 'user_sync.connector.directory_ldap'
+        config_options['directory_group_mapped'] = True
+    elif (users_action == 'group'):
+        if len(users_args) == 0:
+            raise AssertionException('Missing groups for --users %s [groups]' % users_action)
+        config_options['directory_connector_module_name'] = 'user_sync.connector.directory_ldap'
+        config_options['directory_group_filter'] = users_args.pop(0).split(',')
+    else:
+        raise AssertionException('Unknown argument --users %s' % users_action)
 
     username_filter_pattern = args.username_filter_pattern
     if (username_filter_pattern):
