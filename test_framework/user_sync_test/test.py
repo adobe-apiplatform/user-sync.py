@@ -32,9 +32,6 @@ TEST_SET_TEMPLATE_KEYS = {
     '/user_sync/user_sync_path': (True, False, "../../dist/user-sync"),
     }
 
-# '/user_sync/record_output_filename': (False, False, "record/output.txt"),
-# '/user_sync/canned_output_filename': (False, False, "canned/output.txt"),
-
 TEST_TEMPLATE_KEYS = {
     '/user_sync/live/working_dir': (False, False, "live"),
     '/user_sync/live/output_dir': (False, False, "live/out"),
@@ -42,6 +39,8 @@ TEST_TEMPLATE_KEYS = {
     '/user_sync/recorded/output_dir': (False, False, "rec/out"),
     '/server_profile/cassette_filename': (False, False, 'live/cassette.yml'),
     }
+
+IS_NT_PLATFORM = os.name == 'nt'
 
 class ConfigFileLoader:
     # these are set by load_from_yaml to hold the current state of what key_path is being searched for in what file in
@@ -324,7 +323,7 @@ class UserSyncTest:
         service.run()
 
         with open(output_filename, 'w') as output_file:
-            subprocess.call(args, cwd=working_dir, stdout=output_file, stderr=output_file, shell=True)
+            subprocess.call(args, cwd=working_dir, stdout=output_file, stderr=output_file, shell=IS_NT_PLATFORM)
 
         service.stop()
 
@@ -392,8 +391,8 @@ class UserSyncTest:
 
             args = [self.test_config['user_sync_path']]
             if self.test_config['user_sync_common_args']:
-                args.extend(shlex.split(self.test_config['user_sync_common_args'], posix=False))
-            args.extend(shlex.split(self.test_config['user_sync_args'], posix=False))
+                args.extend(shlex.split(self.test_config['user_sync_common_args'], posix=not IS_NT_PLATFORM))
+            args.extend(shlex.split(self.test_config['user_sync_args'], posix=not IS_NT_PLATFORM))
 
             output_filename = os.path.join(self.test_config['live_output_dir'], 'out.txt')
             self._run(args, self.test_config['live_working_dir'], output_filename)
@@ -416,9 +415,9 @@ class UserSyncTest:
 
             args = [self.test_config['user_sync_path']]
             if self.test_config['user_sync_common_args']:
-                args.extend(shlex.split(self.test_config['user_sync_common_args'], posix=False))
+                args.extend(shlex.split(self.test_config['user_sync_common_args'], posix=not IS_NT_PLATFORM))
             args.extend(['--bypass-authentication-mode'])
-            args.extend(shlex.split(self.test_config['user_sync_args'], posix=False))
+            args.extend(shlex.split(self.test_config['user_sync_args'], posix=not IS_NT_PLATFORM))
 
             live_output_filename = os.path.join(self.test_config['live_output_dir'], 'out.txt')
             output_filename = os.path.join(self.test_config['rec_output_dir'], 'out.txt')

@@ -42,12 +42,20 @@ class UserSyncTestService:
         self.config.update(config)
         self.server = None
         self.server_thread = None
-        
+
     def run(self):
         '''
         Starts the service by starting the test server on another thread.
         '''
-        self.server = UserSyncTestServer((self.config['proxy_host'], self.config['proxy_port']), UserSyncTestServerHandler, config=self.config)
+        record_mode = 'all' if self.config['pass_through'] else 'none'
+        recorder = vcr.VCR(
+            record_mode=record_mode,
+            decode_compressed_response=True
+        )
+        cassette = recorder.use_cassette(self.config['cassette_filename'])
+        cassette.__enter__()
+
+        self.server = UserSyncTestServer((self.config['proxy_host'], self.config['proxy_port']), UserSyncTestServerHandler, config=self.config, cassette=cassette)
         self.server_thread = threading.Thread(target = self.server.serve_forever)
         self.server_thread.daemon = True
         self.server_thread.start()
@@ -61,9 +69,10 @@ class UserSyncTestService:
         '''
         self.server.shutdown()
         self.server_thread.join()
+        self.server.cassette.__exit__()
         
 class UserSyncTestServer(HTTPServer):
-    def __init__(self, server_address, RequestHandlerClass, config=None, bind_and_activate=True):
+    def __init__(self, server_address, RequestHandlerClass, config=None, bind_and_activate=True, cassette=None):
         '''
         Initialize the test server. TestServer basically subclasses HTTPServer to keep track of the configuration
         context, as the base HTTPServer class takes in a class for the handler rather than an instance, and there is no
@@ -71,6 +80,7 @@ class UserSyncTestServer(HTTPServer):
         '''
         HTTPServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate)
         self.config = config
+        self.cassette = cassette
         
 class UserSyncTestServerHandler(BaseHTTPRequestHandler):
     def _prepare_request(self):
@@ -82,12 +92,7 @@ class UserSyncTestServerHandler(BaseHTTPRequestHandler):
         url = 'https://' + self.server.config['destination_host'] + self.path
         request_headers = self.headers.dict
         request_headers['host'] = self.server.config['destination_host']
-        record_mode = 'all' if self.server.config['pass_through'] else 'none'
-        test_vcr = vcr.VCR(
-            record_mode=record_mode,
-            decode_compressed_response=True
-        )
-        return url, request_headers, test_vcr
+        return url, request_headers
 
     def _send_response(self, response):
         '''
@@ -128,19 +133,17 @@ class UserSyncTestServerHandler(BaseHTTPRequestHandler):
         Handles get request via proxy through vcr. The response is obtained by either using the get cassette file, or by
         passing along the request to the live server, depending whether the test server is in record mode.
         '''
-        url, request_headers, test_vcr = self._prepare_request()
-        with test_vcr.use_cassette(self.server.config['cassette_filename']) as cass:
-            response = requests.get(url, headers=request_headers)
-            cass.dirty = True
+        url, request_headers = self._prepare_request()
+        response = requests.get(url, headers=request_headers)
+        self.server.cassette.dirty = True
         self._send_response(response)
 
     def do_POST(self):
         '''
         Same as do_GET, but executes post using a post cassette file.
         '''
-        url, request_headers, test_vcr = self._prepare_request()
-        with test_vcr.use_cassette(self.server.config['cassette_filename']) as cass:
-            data = self.rfile.read(int(self.headers['Content-Length']))
-            response = requests.post(url, headers=request_headers, data=data)
-            cass.dirty = True
+        url, request_headers = self._prepare_request()
+        data = self.rfile.read(int(self.headers['Content-Length']))
+        response = requests.post(url, headers=request_headers, data=data)
+        self.server.cassette.dirty = True
         self._send_response(response)
