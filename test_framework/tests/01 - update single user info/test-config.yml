@@ -4,11 +4,11 @@ user_sync:
     
     live:
         working_dir: live
-	output_dir: live/out
+        output_dir: live/out
 
     recorded:
         working_dir: rec
-	output_dir: rec/out
+        output_dir: rec/out
 
 server:
     # these paths are relative to this configuration file. These are the default values.

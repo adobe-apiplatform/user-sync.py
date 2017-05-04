@@ -48,12 +48,8 @@ def init_console_log():
     root_logger = logging.getLogger()
     root_logger.addHandler(console_log_handler)
     root_logger.setLevel(logging.DEBUG)
-    vcr_stubs_logger = logging.getLogger('vcr.stubs')
-    vcr_stubs_logger.setLevel(logging.WARNING)
-    vcr_cassette_logger = logging.getLogger('vcr.cassette')
-    vcr_cassette_logger.setLevel(logging.WARNING)
-    vcr_cassette_logger = logging.getLogger('requests.packages.urllib3.connectionpool')
-    vcr_cassette_logger.setLevel(logging.WARNING)
+    logging.getLogger('vcr').setLevel(logging.WARNING)
+    logging.getLogger('requests').setLevel(logging.WARNING)
     return console_log_handler
 
 def log_test_set_summary(test_set):
