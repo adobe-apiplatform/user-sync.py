@@ -52,15 +52,21 @@ def init_console_log():
     logging.getLogger('requests').setLevel(logging.WARNING)
     return console_log_handler
 
-def log_test_set_summary(test_set):
+def log_test_set_summary(test_set, record_mode):
     '''
     Outputs the summary for the test set.
     :param test_set: UserSyncTestSet
     '''
-    COUNTER_MAP = [
-        ('tests succeeded', test_set.success_count),
-        ('tests failed', test_set.fail_count)
-    ]
+    if record_mode:
+        COUNTER_MAP = [
+            ('tests recorded', test_set.success_count),
+            ('tests not recorded', test_set.fail_count)
+        ]
+    else:
+        COUNTER_MAP = [
+            ('tests succeeded', test_set.success_count),
+            ('tests failed', test_set.fail_count)
+        ]
 
     max_name_len = 0
     for (k, v) in COUNTER_MAP:
@@ -89,7 +95,7 @@ def main():
         test_set = UserSyncTestSet(args.config_filename, config)
         test_set.run()
 
-        log_test_set_summary(test_set)
+        log_test_set_summary(test_set, args.record_mode)
 
     except error.AssertionException as e:
         if not e.is_reported():
