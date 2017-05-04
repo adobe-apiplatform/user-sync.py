@@ -40,6 +40,8 @@ TEST_TEMPLATE_KEYS = {
     '/server_profile/cassette_filename': (False, False, 'live/cassette.yml'),
     }
 
+TEST_CONFIG_FILENAME = 'test-config.yml'
+
 IS_NT_PLATFORM = os.name == 'nt'
 
 class ConfigFileLoader:
@@ -167,8 +169,8 @@ class UserSyncTestSet:
         self.logger = logging.getLogger('user-sync-test-set')
 
         config_filename = os.path.abspath(config_filename)
-        test_set_path = os.path.dirname(config_filename)
         test_set_config = ConfigFileLoader.load_from_yaml(config_filename, TEST_SET_TEMPLATE_KEYS)
+        self.test_set_path = test_set_path = os.path.dirname(config_filename)
 
         user_sync_common_args = test_set_config['user_sync']['common_arguments'] if 'common_arguments' in test_set_config['user_sync'] else None
         user_sync_path = test_set_config['user_sync']['user_sync_path']
@@ -188,10 +190,15 @@ class UserSyncTestSet:
             'destination_host': test_set_config['umapi']['destination_host']
         }
 
-        if self.test_set_config['test_name']:
-            self.test_paths = [os.path.join(test_set_path, self.test_set_config['test_name'])]
+        test_name = self.test_set_config['test_name']
+        if test_name:
+            if not (os.path.isfile(os.path.join(test_set_path,test_name,'test-config.yml'))):
+                raise error.AssertionException(
+                    'test-config.yml not found for test %s.' % (test_name))
+
+            self.test_names = [test_name]
         else:
-            self.test_paths = [os.path.join(test_set_path,f) for f in os.listdir(test_set_path) if os.path.isfile(os.path.join(test_set_path,f,'test-config.yml'))]
+            self.test_names = [f for f in os.listdir(test_set_path) if os.path.isfile(os.path.join(test_set_path, f, TEST_CONFIG_FILENAME))]
 
         self.success_count = 0
         self.fail_count = 0
@@ -202,7 +209,10 @@ class UserSyncTestSet:
         sub-folders containing the file test-config.yml. It then goes through the tests configurations individually, and
         creates and runs each test configuration instance.
         '''
-        for test_path in self.test_paths:
+        for test_name in self.test_names:
+            self.logger.info('running test "%s"...' % (test_name))
+
+            test_path = os.path.join(self.test_set_path, test_name)
             test = UserSyncTest(test_path, self.test_set_config, self.server_config)
             if self.test_set_config['record_mode']:
                 test.run_live()
