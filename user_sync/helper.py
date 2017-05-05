@@ -37,9 +37,11 @@ def open_file(name, mode, buffering = -1):
 
 def normalize_string(string_value):
     '''
-    :type string_value: str
+    Normalize a unicode or regular string
+    :param string_value: either a unicode or regular string or None
+    :return: the same type that came in
     '''
-    return string_value.strip().lower() if string_value != None else None    
+    return string_value.strip().lower() if string_value is not None else None
     
 def guess_delimiter_from_filename(filename):
     '''

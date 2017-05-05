@@ -43,8 +43,9 @@ setup(name='user-sync',
           'pycrypto',
           'python-ldap==2.4.25',
           'PyYAML',
-          'umapi-client>=2.2',
+          'umapi-client>=2.4.1',
           'psutil',
+          'keyring'
       ],
       setup_requires=['nose>=1.0'],
       tests_require=[

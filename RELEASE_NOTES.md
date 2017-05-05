@@ -1,100 +1,12 @@
-# Release Notes for User Sync Tool Version 2.0
+# Release Notes for User Sync Tool Version 2.1
 
-These notes apply to v2.0 of 2017-04-10.
-
-## New Arguments & Configuration Syntax
-
-There has been an extensive overhaul of both the configuration file
-syntax and the command-line argument syntax.  See
-[Issue 95](https://github.com/adobe-apiplatform/user-sync.py/issues/95)
-and the [docs](https://adobe-apiplatform.github.io/user-sync.py/)
-for details.
+These notes apply to v2.1rc1 of 2017-05-05.
 
 ## New Features
 
-1. You can now exclude dashboard users from being updated or
-deleted by User Sync. See the
-[docs](https://adobe-apiplatform.github.io/user-sync.py/) for
-details.
-2. There is more robust reporting for errors in configuration
-files.
-3. The log now reports the User Sync version and gives the
-details of how it was invoked.
-4. You can now create and manage users of all identity types,
-including Adobe IDs, both when operating from an LDAP
-directory and from CSV files.
-5. You can now distinguish, when a customer directory user is
-disabled or removed, whether to remove the matching Adobe-side
-user's product configurations and user groups, to remove the
-user but leave his cloud storage, or to delete his storage as well.
-   
-## Significant Bug Fixes
-
-1. There were many bugs fixed related to managing users of
-identity types other than Federated ID.
-2. There were many bugs fixes related to managing group
-membership of all identity types.
-3. There was a complete overhaul of how users who have
-adobe group memberships in multiple organizations are
-managed.
-
-## Changes in Behavior
-
-All options now apply to users of all identity types. Previously,
-some had applied only to Federated ID and some to Enterprise ID.
+1. We now have full Unicode support.  See [Issue 167](https://github.com/adobe-apiplatform/user-sync.py/issues/167) for details.
+2. We now support secure handling for all credential settings and credential files.  See [Issue 159](https://github.com/adobe-apiplatform/user-sync.py/issues/159) for design discussion, and read [the docs](https://adobe-apiplatform.github.io/user-sync.py/) for associated config changes.
 
 ## Compatibility with Prior Versions
 
-All existing configuration files, user input files,
-and command-line scripts will need to be revamped
-to be compatible with the new formats.  Here is a quick
-cheat sheet of what needs to be done.
-
-### Configuration Files
-
-* replace `dashboard:` with `adobe_users:`
-* replace `directory:` with `directory_users:`
-* add a `connectors:` section under `adobe_users:` similar
-to the one under `directory_users`
-* change `owning` to be `umapi` and put it under `connectors`
-* if you access multiple organizations, remove
-`secondaries`, and put
-all the umapi specifications under `umapi` as a list,
-like this:
-```yaml
-adobe_users:
-  connectors:
-    umapi:
-      - primary-config.yml
-      - org1: org1-config.yml
-      - org2: org2-config.yml
-```
-* change `dashboard_groups` to `adobe_groups`
-* under `limits`, change `max_missing_users` to
-`max_adobe_only_users` and remove all other
-settings
-* if you have an extension, do the following:
-  * remove the per-context: user setting
-  * move all the settings under it to the top level in
-a new file, call it `extension.yaml`
-  * change `extensions` to `extension`, move it into
-the `directory_users` section, and put the relative
-path to the new `extension.yaml` file as its value.
-
-### User Input Files
-
-If you have a file that lists users for input (`--users file` _f_),
-the column head `user` should be changed to `username`.
-
-### Removed User Input Files
-
-The format for files containing users to be removed/deleted has
-changed, and you will need to regenerate these files rather than
-using any existing ones.
-
-### Command Line Scripts
-
-* All of the options related to Adobe user removal have been
-changed to use the new ``--adobe-only-user-action` argument.
-* The `--source-filter` argument has been removed.  Use the
-configuration setting `all_users_filter` instead.
+This version is fully backward-compatible with version 2.0.  There may be subtle behavioral changes due to bug fixes around support for non-Ascii characters.  There are also new configuration file options and a new command line argument that didn't exist in 2.0.
