@@ -56,6 +56,7 @@ class CSVDirectoryConnector(object):
         caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('delimiter', None)
+        builder.set_string_value('string_encoding', 'utf-8')
         builder.set_string_value('first_name_column_name', 'firstname')
         builder.set_string_value('last_name_column_name', 'lastname')
         builder.set_string_value('email_column_name', 'email')
@@ -73,6 +74,8 @@ class CSVDirectoryConnector(object):
         logger.debug('%s initialized with options: %s', self.name, options)
         caller_config.report_unused_values(logger)
 
+        # encoding of column values
+        self.encoding = options['string_encoding']
         # identity type for new users if not specified in column
         self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
 
@@ -190,7 +193,4 @@ class CSVDirectoryConnector(object):
         :type column_name: str
         '''
         value = row.get(column_name)
-        if (value == ''):
-            value = None
-        return value
-    
+        return value.decode(self.encoding) if value else None

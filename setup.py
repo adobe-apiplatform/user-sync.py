@@ -43,7 +43,7 @@ setup(name='user-sync',
           'pycrypto',
           'python-ldap==2.4.25',
           'PyYAML',
-          'umapi-client>=2.3',
+          'umapi-client>=2.4.1',
           'psutil',
           'keyring'
       ],

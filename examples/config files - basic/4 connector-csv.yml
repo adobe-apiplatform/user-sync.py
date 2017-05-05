@@ -20,6 +20,14 @@
 # To set it to a specific value, uncomment this setting:
 #delimiter: ","
 
+# (optional) string_encoding (default value given below)
+# string_encoding specifies the Unicode string encoding used in the CSV file.
+# All values retrieved from the file are converted to Unicode before being
+# sent to or compared with values on the Adobe side, to avoid encoding issues.
+# The value must be a Python codec name or alias, such as 'latin1' or 'utf-8.
+# See https://docs.python.org/2/library/codecs.html#standard-encodings for details.
+#string_encoding: utf-8
+
 # (optional) email_column_name (default "email")
 # The column name that contains the user's email address.
 # Values in this column must be valid, unquoted email addresses.

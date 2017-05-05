@@ -29,9 +29,9 @@ import config
 import user_sync.config
 import user_sync.connector.directory
 import user_sync.connector.umapi
-from user_sync.error import AssertionException
 import user_sync.lockfile
 import user_sync.rules
+from user_sync.error import AssertionException
 from user_sync.version import __version__ as APP_VERSION
 
 LOG_STRING_FORMAT = '%(asctime)s %(process)d %(levelname)s %(name)s - %(message)s'
@@ -85,6 +85,12 @@ def process_args():
                              "When using this option, you must also specify what you want done with Adobe-only "
                              "users by also including --adobe-only-user-action and one of its arguments",
                         metavar='input_path', dest='stray_list_input_path')
+    parser.add_argument('--config-file-encoding',
+                        help="config files are expected to contain only ASCII characters; if you "
+                             "use an extended character set (e.g., to specify group names), then "
+                             "specify the encoding of your configuration files with this argument. "
+                             "All encoding names understood by Python are allowed.",
+                        dest='encoding_name', default='ascii')
     return parser.parse_args()
 
 
@@ -137,7 +143,7 @@ def init_log(logging_config):
         fileHandler.setLevel(file_log_level)
         fileHandler.setFormatter(logging.Formatter(LOG_STRING_FORMAT, LOG_DATE_FORMAT))
         logging.getLogger().addHandler(fileHandler)
-        if (unknown_file_log_level == True):
+        if unknown_file_log_level:
             logger.log(logging.WARNING, 'Unknown file log level: %s setting to info' % options['file_log_level'])
 
 
@@ -200,6 +206,7 @@ def begin_work(config_loader):
 def create_config_loader(args):
     config_bootstrap_options = {
         'main_config_filename': args.config_filename,
+        'config_file_encoding': args.encoding_name,
     }
     config_loader = user_sync.config.ConfigLoader(config_bootstrap_options)
     return config_loader

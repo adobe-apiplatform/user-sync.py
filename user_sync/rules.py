@@ -93,6 +93,7 @@ class RuleProcessor(object):
         # in the secondary umapis (and exclude all that don't match).  Finally,
         # we keep track of user keys (in any umapi) that we have updated, so
         # we can correctly report their count.
+        self.adobe_user_count = 0
         self.included_user_keys = set()
         self.excluded_user_count = 0
         self.updated_user_keys = set()
@@ -172,7 +173,7 @@ class RuleProcessor(object):
         self.action_summary['directory_users_read'] = len(self.directory_user_by_user_key)
         self.action_summary['directory_users_selected'] = len(self.filtered_directory_user_by_user_key)
         # find the total number of adobe users and excluded users
-        self.action_summary['adobe_users_read'] = len(self.included_user_keys) + self.excluded_user_count
+        self.action_summary['adobe_users_read'] = self.adobe_user_count
         self.action_summary['adobe_users_excluded'] = self.excluded_user_count
         self.action_summary['adobe_users_updated'] = len(self.updated_user_keys)
         # find out the number of users that have no changes; this depends on whether
@@ -752,6 +753,7 @@ class RuleProcessor(object):
 
     def is_umapi_user_excluded(self, in_primary_org, user_key, current_groups):
         if in_primary_org:
+            self.adobe_user_count += 1
             # in the primary umapi, we actually check the exclusion conditions
             identity_type, username, domain = self.parse_user_key(user_key)
             if identity_type in self.exclude_identity_types:
@@ -886,7 +888,7 @@ class RuleProcessor(object):
             domain = ""
         elif not domain:
             return None
-        return id_type + ',' + username + ',' + domain
+        return unicode(id_type) + u',' + unicode(username) + u',' + unicode(domain)
 
     def parse_user_key(self, user_key):
         '''Returns the identity_type, username, and domain for the user.

@@ -20,7 +20,6 @@
 
 import string
 
-import keyring
 import ldap.controls.libldap
 
 import user_sync.config
@@ -64,6 +63,7 @@ class LDAPDirectoryConnector(object):
         builder.set_string_value('group_filter_format', '(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))')
         builder.set_string_value('all_users_filter', '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))')
         builder.set_bool_value('require_tls_cert', False)
+        builder.set_string_value('string_encoding', 'utf-8')
         builder.set_string_value('user_identity_type_format', None)
         builder.set_string_value('user_email_format', '{mail}')
         builder.set_string_value('user_username_format', None)
@@ -79,6 +79,7 @@ class LDAPDirectoryConnector(object):
         self.logger = logger = user_sync.connector.helper.create_logger(options)
         logger.debug('%s initialized with options: %s', self.name, options)
 
+        LDAPValueFormatter.encoding = options['string_encoding']
         self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
         self.user_identity_type_formatter = LDAPValueFormatter(options['user_identity_type_format'])
         self.user_email_formatter = LDAPValueFormatter(options['user_email_format'])
@@ -367,19 +368,20 @@ class LDAPDirectoryConnector(object):
             raise
         
 class LDAPValueFormatter(object):
+    encoding = 'utf-8'
+
     def __init__(self, string_format):
         '''
         :type string_format: str
-        '''        
-        if (string_format == None): 
+        '''
+        if (string_format == None):
             attribute_names = []
         else:
             formatter = string.Formatter()
             attribute_names = [item[1] for item in formatter.parse(string_format) if item[1]]
-            
         self.string_format = string_format        
         self.attribute_names = attribute_names
-        
+
     def get_attribute_names(self):
         '''
         :rtype list(str)
@@ -402,11 +404,11 @@ class LDAPValueFormatter(object):
                     break
                 values[attribute_name] = value
             if values is not None:
-                result = self.string_format.format(**values)
+                result = self.string_format.format(**values).decode(self.encoding)
         return (result, attribute_name)
 
-    @staticmethod
-    def get_attribute_value(attributes, attribute_name):
+    @classmethod
+    def get_attribute_value(cls, attributes, attribute_name):
         '''
         :type attributes: dict
         :type attribute_name: str
@@ -414,5 +416,5 @@ class LDAPValueFormatter(object):
         if attribute_name in attributes:
             attribute_value = attributes[attribute_name]
             if (len(attribute_value) > 0):
-                return attribute_value[0]
+                return attribute_value[0].decode(cls.encoding)
         return None
