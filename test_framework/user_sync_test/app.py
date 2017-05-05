@@ -50,6 +50,8 @@ def init_console_log():
     root_logger.setLevel(logging.DEBUG)
     logging.getLogger('vcr').setLevel(logging.WARNING)
     logging.getLogger('requests').setLevel(logging.WARNING)
+    logging.getLogger('BaseHTTPServer').setLevel(logging.WARNING)
+    logging.getLogger('user-sync-test-server').setLevel(logging.INFO)
     return console_log_handler
 
 def log_test_set_summary(test_set, record_mode):
