@@ -22,13 +22,16 @@ password: "LDAP password goes here"
 host: "LDAP host URL goes here.  e.g. ldap://ldap.example.com"
 base_dn: "defines the base DN. e.g. DC=example,DC=com"
 
-#(optional)
-credential_manager:
-    #This will pull credential from Windows Credential Manager in Control Panel.
-    #value: windows_credential_manager
-    type: windows_credential_manager
-    #service_name is Required for Windows Credential Manger
-    service_name: "Internet or Network Address field in Credential Manager"
+# (optional) You can store credentials in the operating system credential store
+# (Windows Credential Manager, Mac Keychain, Linux Freedesktop Secret Service
+# or KWallet - these will be built into the Linux distribution).
+# To use this feature, uncomment the following entry and remove the 
+# password entry above.
+# The actual credential value are placed in the credential store with the
+# username as the username field value, and the key name (perhaps called internet 
+# or network address) as the value below.
+#secure_password_key: ldap_password
+
 
 # (optional) user_identity_type (default is inherited from main configuration)
 # user_identity_type specifies a default identity type for when directory users
