@@ -90,7 +90,7 @@ def process_args():
                              "use an extended character set (e.g., to specify group names), then "
                              "specify the encoding of your configuration files with this argument. "
                              "All encoding names understood by Python are allowed.",
-                        dest='encoding_name')
+                        dest='encoding_name', default='ascii')
     return parser.parse_args()
 
 
