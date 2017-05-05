@@ -4,7 +4,7 @@ title: User Manual
 advertise: User Manual
 ---
 
-Version 2.1, released 2017-05-05
+Version 2.1rc1, released 2017-05-05
 
 This document has all the information you need to get up and
 running with User Sync. It presumes familiarity with the use of
@@ -305,7 +305,7 @@ any file containing sensitive information except from the user
 account that runs the sync process.
 
 If you choose to use the operating system to store credentials,
-you still setup the same configuration files but rather than storing
+you still create the same configuration files but rather than storing
 the actual credentials, they store key ids that are used to look up
 the actual credentials.  Details are shown in
 [Security recommendations](#security-recommendations).
@@ -444,11 +444,16 @@ secure them properly**, as described in the
 [Security Considerations](#security-considerations) section of
 this document.
 
-The sample configuration files include entries that define the actual
-credential values and entries that reference credentials in the operating system 
-credential store.  You would keep only one of each pair and comment out or 
-remove the other.  Another example user-sync-config.yaml show how to reference
-umapi and ldap configuration files stored in a secure store that you define.
+There are three techniques supported by User Sync for securing credentials.
+
+1. Credentials can be placed in the connector-umapi.yml and connector-ldap.yml files directly and the files protected with operating system access control.
+2. Credentials can be placed in the operating system secure credential store and referenced from the two configuration files.
+3. The two files in their entirety can be stored securely or encrypted and a program that returns their contents is referenced from the main configuration file.
+
+
+The example configuration files include entries that illustrate each of
+these techniques.  You would keep only one set of configuration items
+and comment out or remove the others.
 
 #### Configure connection to the Adobe Admin Console (UMAPI)
 
@@ -1697,7 +1702,7 @@ Starting in User Sync 2.1, there are two additional techniques available
 for protecting credentials.  The first uses the operating system credential
 store to store individual configuration credential values.  The second uses
 a mechanism you must provide to store the entire configuration file for umapi
-and ldap access which includes all the credentials required.  These are
+and/or ldap which includes all the credentials required.  These are
 detailed in the next two sections.
 
 #### Storing Credentials in OS Level Storage
@@ -1715,7 +1720,7 @@ connector-umapi.yml
 	  tech_acct: your tech account@techacct.adobe.com
 	  secure_priv_key_data_key: umapi_private_key_data
 
-Note the change of `api_key`, `client_secret`, and `priv_key_path` to `secure_api_key_key`, `secure_client_secret_key`, and `secure_priv_key_data_key`, respectively.  These alternate configuration values give the key names to be looked up in keyring (or the equivalent service on other platforms) to retrieve the actual credential values.  In this example, the credential key names are `umapi_api_key`, `umapi_client_secret`, and `umapi_private_key_data`.
+Note the change of `api_key`, `client_secret`, and `priv_key_path` to `secure_api_key_key`, `secure_client_secret_key`, and `secure_priv_key_data_key`, respectively.  These alternate configuration values give the key names to be looked up in the user keychain (or the equivalent service on other platforms) to retrieve the actual credential values.  In this example, the credential key names are `umapi_api_key`, `umapi_client_secret`, and `umapi_private_key_data`.
 
 The contents of the private key file is used as the value of `umapi_private_key_data` in the credential store.
 
@@ -1761,8 +1766,6 @@ user-sync-config.yml (showing partial file only)
 	   connectors:
 	      # umapi: connector-umapi.yml   # instead of this file reference, use:
 	      umapi: $(read_umapi_config_from_s3)
-	      # if a working directory is required:
-	      # umapi $([temp]read_umapi_config_from_s3) # runs command in "temp" folder
 	
 	directory_users:
 	   connectors:
@@ -1771,17 +1774,16 @@ user-sync-config.yml (showing partial file only)
  
 The general format for external command references is
 
-	$([working directory pathname]command args)
+	$(command args)
 
-The working directory pathname is optional.  If present, it is enclosed
-in square brackets.  If the working directory pathname is not fully qualified
-it is interpreted as relative to the folder of the configuration file containing
-the reference.
+The above examples assume there is a command with the name `read_umapi_config_from_s3`
+and `read_ldap_config_from_server` that you have supplied.
 
-The remainder of the line is the shell command name
-followed by any arguments.  A command shell is launched by User Sync which
+A command shell is launched by User Sync which
 runs the command.  The standard output from the command is captured and that
 output is used as the umapi or ldap configuration file.
+
+The command is run with the working directory as the directory containing the configuration file.
 
 If the command terminates abnormally, User Sync will terminate with an error.
 
