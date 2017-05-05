@@ -274,7 +274,6 @@ class StringComparator:
 
         return False
 
-
 class UserSyncTest:
     def __init__(self, config_path, test_set_config, server_config):
         '''
@@ -369,12 +368,9 @@ class UserSyncTest:
             raise error.AssertionException('Output compare error: canned output file "%s" not found.' % (rec_output_filename))
 
         with open(live_output_filename, 'r') as rfile:
-            rlines = rfile.readlines()
+            rlines = rfile.read().splitlines()
         with open(rec_output_filename, 'r') as cfile:
-            clines = cfile.readlines()
-
-        if not (len(rlines) == len(clines)):
-            raise error.AssertionException('Output compare error: expected %d lines, got %d lines.' % (len(rlines), len(clines)))
+            clines = cfile.read().splitlines()
 
         line_index = 0
         for rline, cline in zip(rlines, clines):
@@ -388,6 +384,9 @@ class UserSyncTest:
                 raise error.AssertionException('Output compare error: unexpected output at line %d\nrecord: %s\noutput: %s' % (line_index, rline, cline))
 
             line_index = line_index + 1
+
+        if not (len(rlines) == len(clines)):
+            raise error.AssertionException('Output compare error: expected %d lines, got %d lines.' % (len(rlines), len(clines)))
 
     def run_live(self):
         '''
@@ -441,3 +440,4 @@ class UserSyncTest:
             if not e.is_reported():
                 self.logger.error('user-sync test error: %s' % (e.message))
                 e.set_reported()
+

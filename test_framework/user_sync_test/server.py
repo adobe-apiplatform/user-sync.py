@@ -27,6 +27,7 @@ import requests
 import time
 import gzip
 import StringIO
+import logging
 
 class UserSyncTestService:
     def __init__(self, config):
@@ -81,7 +82,8 @@ class UserSyncTestServer(HTTPServer):
         HTTPServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate)
         self.config = config
         self.cassette = cassette
-        
+        self.logger = logging.getLogger('user-sync-test-server')
+
 class UserSyncTestServerHandler(BaseHTTPRequestHandler):
     def _prepare_request(self):
         '''
@@ -147,3 +149,6 @@ class UserSyncTestServerHandler(BaseHTTPRequestHandler):
         response = requests.post(url, headers=request_headers, data=data)
         self.server.cassette.dirty = True
         self._send_response(response)
+
+    def log_message(self, format, *args):
+        self.server.logger.debug("%s - - [%s] %s" % (self.client_address[0], self.log_date_time_string(), format % args))
