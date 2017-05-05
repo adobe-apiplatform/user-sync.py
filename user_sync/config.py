@@ -351,19 +351,6 @@ class ConfigLoader(object):
         options = self.get_dict_from_sources(connector_config_sources)
         options['test_mode'] = self.options['test_mode']
         options['bypass_authentication_mode'] = self.options['bypass_authentication_mode']
-        enterprise_section = options.get('enterprise')
-        if isinstance(enterprise_section, dict):
-            org_id = enterprise_section.get('org_id')
-            if (org_id != None):
-                # credentials are None, a dict, or a config filename to read to get a dict
-                credentials = credential_manager.get_credentials(credential_manager.UMAPI_CREDENTIAL_TYPE,
-                                                                 org_id,
-                                                                 config = enterprise_section,
-                                                                 config_loader = self)
-                if isinstance(credentials, types.StringTypes):
-                    credentials = ConfigFileLoader.load_other_config(credentials)
-                if isinstance(credentials, dict):
-                    options['enterprise'] = self.combine_dicts([enterprise_section, credentials])
         return options
 
     def check_unused_config_keys(self):
