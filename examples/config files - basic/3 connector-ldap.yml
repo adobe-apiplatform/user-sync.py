@@ -65,6 +65,14 @@ all_users_filter: "(&(objectClass=user)(objectCategory=person)(!(userAccountCont
 # or this one for OpenLDAP: "(&(|(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
 group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
 
+# (optional) string_encoding (default value given below)
+# string_encoding specifies the Unicode string encoding used by the directory.
+# All values retrieved from the directory are converted to Unicode before being
+# sent to or compared with values on the Adobe side, to avoid encoding issues.
+# The value must be a Python codec name or alias, such as 'latin1' or 'utf-8.
+# See https://docs.python.org/2/library/codecs.html#standard-encodings for details.
+#string_encoding: utf-8
+
 # (optional) user_identity_type_format (no default)
 # user_identity_type_format specifies how to construct a user's desired identity
 # type on the Adobe side by combining constant strings with attribute values.
@@ -86,6 +94,8 @@ group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objec
 # The default value used here is simple, and suitable for OpenLDAP systems.  If you
 # are using a non-email-aware AD system, which holds the username separately
 # from the domain name, you may want: "{sAMAccountName}@mydomain.com"
+# NOTE: for this and every format setting, the constant strings must be in
+# the encoding specified by the string_encoding setting, above.
 user_email_format: "{mail}"
 
 # (optional) user_domain_format (no default value)

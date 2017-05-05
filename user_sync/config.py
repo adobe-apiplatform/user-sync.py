@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import codecs
 import logging
 import os
 import re
@@ -41,6 +42,7 @@ class ConfigLoader(object):
         self.options = options = {
             # these are in alphabetical order!  Always add new ones that way!
             'delete_strays': False,
+            'config_file_encoding': 'ascii',
             'directory_connector_module_name': None,
             'directory_connector_overridden_options': None,
             'directory_group_filter': None,
@@ -56,14 +58,15 @@ class ConfigLoader(object):
             'update_user_info': True,
             'username_filter_regex': None,
         }
-        options.update(caller_options)     
-
+        options.update(caller_options)
         main_config_filename = options.get('main_config_filename')
+        config_encoding = options['config_file_encoding']
+        try:
+            codecs.lookup(config_encoding)
+        except LookupError:
+            raise AssertionException("Unknown encoding '%s' specified with --config-file-encoding" % config_encoding)
+        ConfigFileLoader.config_encoding = config_encoding
         main_config_content = ConfigFileLoader.load_root_config(main_config_filename)
-        
-        if (not os.path.isfile(main_config_filename)):
-            raise AssertionException('Config file does not exist: %s' % (main_config_filename))  
-        
         self.logger = logger = logging.getLogger('config')
         logger.info("Using main config file: %s", main_config_filename)                
         self.main_config = DictConfig("<%s>" % main_config_filename, main_config_content)
@@ -606,6 +609,10 @@ class ConfigFileLoader:
     '''
     Loads config files and does pathname expansion on settings that refer to files or directories
     '''
+    # config files can contain Unicode characters, so an encoding for them
+    # can be specified as a command line argument.  This defaults to ascii.
+    config_encoding = 'ascii'
+
     # key_paths in the root configuration file that should have filename values
     # mapped to their value options.  See load_from_yaml for the option meanings.
     ROOT_CONFIG_PATH_KEYS = {'/adobe_users/connectors/umapi': (True, True, None),
@@ -680,9 +687,11 @@ class ConfigFileLoader:
                 cmd = filename[3:-1]
             try:
                 bytes = subprocess.check_output(cmd, cwd=dir, shell=True)
-                yml = yaml.load(bytes)
+                yml = yaml.load(bytes.decode(cls.config_encoding, 'strict'))
             except subprocess.CalledProcessError as e:
                 raise AssertionException("Error executing process '%s' in dir '%s': %s" % (cmd, dir, e))
+            except UnicodeDecodeError as e:
+                raise AssertionException('Encoding error in process output: %s' % e)
             except yaml.error.MarkedYAMLError as e:
                 raise AssertionException('Error parsing process YAML data: %s' % e)
         else:
@@ -693,17 +702,20 @@ class ConfigFileLoader:
             cls.filename = os.path.split(cls.filepath)[1]
             cls.dirpath = os.path.dirname(cls.filepath)
             try:
-                with open(filename, 'r', 1) as input_file:
-                    yml = yaml.load(input_file)
+                with open(filename, 'rb', 1) as input_file:
+                    bytes = input_file.read()
+                    yml = yaml.load(bytes.decode(cls.config_encoding, 'strict'))
             except IOError as e:
                 # if a file operation error occurred while loading the
-                # configuration file, swallow up the exception and re-raise this
+                # configuration file, swallow up the exception and re-raise it
                 # as an configuration loader exception.
-                raise AssertionException('Error reading configuration file: %s' % e)
+                raise AssertionException("Error reading configuration file '%s': %s" % (cls.filepath, e))
+            except UnicodeDecodeError as e:
+                # as above, but in case of encoding errors
+                raise AssertionException("Encoding error in configuration file '%s: %s" % (cls.filepath, e))
             except yaml.error.MarkedYAMLError as e:
-                # same as above, but indicate this problem has to do with
-                # parsing the configuration file.
-                raise AssertionException('Error parsing configuration file: %s' % e)
+                # as above, but in case of parse errors
+                raise AssertionException("Error parsing configuration file '%s': %s" % (cls.filepath, e))
 
         # process the content of the dict
         for path_key, options in path_keys.iteritems():
