@@ -1,22 +1,22 @@
-2017-05-04 14:16:35 49836 INFO config - Using main config file: ../config/user-sync-config.yml
-2017-05-04 14:16:35 49836 INFO main - ========== Start Run (User Sync version: 2.0) ==============
-2017-05-04 14:16:35 49836 INFO main - ------- Invocation parameters -------
-2017-05-04 14:16:35 49836 INFO main - /Users/imak/github-adobe/user-sync.py/dist/user-sync -c ../config/user-sync-config.yml --update-user-info --users file ../config/users.csv
-2017-05-04 14:16:35 49836 INFO main - -------------------------------------
-2017-05-04 14:16:37 49836 INFO processor - ---------- Start Load from Directory -----------------------
-2017-05-04 14:16:37 49836 WARNING csv - In file '../config/users.csv': unrecognized column names: ['bc', 'subco']
-2017-05-04 14:16:37 49836 INFO processor - ---------- End Load from Directory (Total time: 0:00:00) ---
-2017-05-04 14:16:37 49836 INFO processor - ---------- Start Sync Umapi --------------------------------
-2017-05-04 14:16:39 49836 INFO processor - Updating info for user key: enterpriseID,cce1@ensemble.ca, changes: {'email': 'cce1@ensemble.ca'}
-2017-05-04 14:16:39 49836 INFO processor - ---------- End Sync Umapi (Total time: 0:00:02) ------------
-2017-05-04 14:16:39 49836 INFO processor - ---------------------------------- Action Summary ----------------------------------
-2017-05-04 14:16:39 49836 INFO processor -                         Number of directory users read: 1
-2017-05-04 14:16:39 49836 INFO processor -           Number of directory users selected for input: 1
-2017-05-04 14:16:39 49836 INFO processor -                             Number of Adobe users read: 80
-2017-05-04 14:16:39 49836 INFO processor -            Number of Adobe users excluded from updates: 17
-2017-05-04 14:16:39 49836 INFO processor -     Number of non-excluded Adobe users with no changes: 62
-2017-05-04 14:16:39 49836 INFO processor -                        Number of new Adobe users added: 0
-2017-05-04 14:16:39 49836 INFO processor -                 Number of matching Adobe users updated: 1
-2017-05-04 14:16:39 49836 INFO processor -   Number of UMAPI actions sent (total, success, error): (1, 1, 0)
-2017-05-04 14:16:39 49836 INFO processor - ------------------------------------------------------------------------------------
-2017-05-04 14:16:39 49836 INFO main - ========== End Run (User Sync version: 2.0) (Total time: 0:00:03) 
+2017-05-05 17:00:34 55139 INFO config - Using main config file: ../config/user-sync-config.yml
+2017-05-05 17:00:34 55139 INFO main - ========== Start Run (User Sync version: 2.1rc1) ===========
+2017-05-05 17:00:34 55139 INFO main - ------- Invocation parameters -------
+2017-05-05 17:00:34 55139 INFO main - /Users/imak/github-adobe/user-sync.py/dist/user-sync -c ../config/user-sync-config.yml --update-user-info --users file ../config/users.csv
+2017-05-05 17:00:34 55139 INFO main - -------------------------------------
+2017-05-05 17:00:35 55139 INFO processor - ---------- Start Load from Directory -----------------------
+2017-05-05 17:00:35 55139 WARNING csv - In file '../config/users.csv': unrecognized column names: ['bc', 'subco']
+2017-05-05 17:00:35 55139 INFO processor - ---------- End Load from Directory (Total time: 0:00:00) ---
+2017-05-05 17:00:35 55139 INFO processor - ---------- Start Sync Umapi --------------------------------
+2017-05-05 17:00:36 55139 INFO processor - Updating info for user key: enterpriseID,cce1@ensemble.ca, changes: {'email': u'cce1@ensemble.ca'}
+2017-05-05 17:00:37 55139 INFO processor - ---------- End Sync Umapi (Total time: 0:00:02) ------------
+2017-05-05 17:00:37 55139 INFO processor - ---------------------------------- Action Summary ----------------------------------
+2017-05-05 17:00:37 55139 INFO processor -                         Number of directory users read: 1
+2017-05-05 17:00:37 55139 INFO processor -           Number of directory users selected for input: 1
+2017-05-05 17:00:37 55139 INFO processor -                             Number of Adobe users read: 79
+2017-05-05 17:00:37 55139 INFO processor -            Number of Adobe users excluded from updates: 17
+2017-05-05 17:00:37 55139 INFO processor -     Number of non-excluded Adobe users with no changes: 61
+2017-05-05 17:00:37 55139 INFO processor -                        Number of new Adobe users added: 0
+2017-05-05 17:00:37 55139 INFO processor -                 Number of matching Adobe users updated: 1
+2017-05-05 17:00:37 55139 INFO processor -   Number of UMAPI actions sent (total, success, error): (1, 1, 0)
+2017-05-05 17:00:37 55139 INFO processor - ------------------------------------------------------------------------------------
+2017-05-05 17:00:37 55139 INFO main - ========== End Run (User Sync version: 2.1rc1) (Total time: 0:00:03) 

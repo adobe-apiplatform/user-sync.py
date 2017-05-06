@@ -1,1 +1,1 @@
-2017-05-04 14:30:47 49928 CRITICAL main - No such configuration file: /Users/imak/github-adobe/user-sync.py/test_framework/tests/07 - missing config file/config/user-sync-config.yml
+2017-05-05 17:01:20 55162 CRITICAL main - No such configuration file: /Users/imak/github-adobe/user-sync.py/test_framework/tests/07 - missing config file/config/user-sync-config.yml

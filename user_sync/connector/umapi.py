@@ -158,8 +158,9 @@ class UmapiConnector(object):
             else:
                 auth_dict['private_key_data'] = enterprise_config.get_credential('priv_key_data', org_id)
 
-            um_endpoint = server_options['protocol'] + server_options['host'] + server_options['endpoint']
-            logger.debug('%s: creating connection for org %s at endpoint %s', self.name, org_id, um_endpoint)
+        um_endpoint = server_options['protocol'] + server_options['host'] + server_options['endpoint']
+        logger.debug('%s: creating connection for org %s at endpoint %s', self.name, org_id, um_endpoint)
+
         try:
             self.connection = connection = umapi_client.Connection(
                 org_id=org_id,
