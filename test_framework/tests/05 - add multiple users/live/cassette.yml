@@ -4,280 +4,186 @@ interactions:
     headers:
       accept: [application/json]
       accept-encoding: ['gzip, deflate']
-      authorization: [Bearer eyJ4NXUiOiJpbXNfbmExLWtleS0xLmNlciIsImFsZyI6IlJTMjU2In0.eyJmZyI6IlJNVE1PUFlCUElIUUFBQUFBQUFBQUFDQUFBPT09PT09IiwiYXMiOiJpbXMtbmExIiwiYyI6InArSlFaeXYwSUhFc2tzVDFnUmVONHc9PSIsInVzZXJfaWQiOiIwRTNCNkE5OTU4MDZDNEJFMEE0OTVDQzdAdGVjaGFjY3QuYWRvYmUuY29tIiwibW9pIjoiNzM3YTYwZDciLCJzY29wZSI6Im9wZW5pZCx1c2VyX21hbmFnZW1lbnRfc2RrLEFkb2JlSUQiLCJjcmVhdGVkX2F0IjoiMTQ5Mzg1MDY2MjI4NSIsImlkIjoiMTQ5Mzg1MDY2MjI4NS03ZTYwNmIzZC0wOWE2LTQ2OTMtOWUzNy1kY2JlOGYxNTJhODEiLCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiZXhwaXJlc19pbiI6Ijg2NDAwMDAwIiwiY2xpZW50X2lkIjoiNDgzOTQ4NGZhOTAxNDdkNmJiODhmOGRiMGM3OTFmZjEifQ.gks8SxHzWh6rMOkHvrx2ecDkGQYrAveNybcNv5V0nqziGJ5MLIFWivRbe4wjgmmrCr1J30KQlcn5CTxVtMd6NRUV2g9Wvu8H39ooBFvdxUnom3ml43sfGKBhl8uVW5iF8ylqzYwEkdiQzRpBfeOqZvXkunHduFrU8TntP1-0lpafTA23aJRbLD7NrdKcCReMYvpzW5lH2JeegRhJu7tvrOl8ljXogmglVLqFr75nHgpSYIegIqK5odfJCP389T6lSG9rzx-JhQ9GQ9N8MrVrZ7NR7j3Cs9G61jNsEv3kK_NvdIf62QzHGWdXiBKtutsbm3rxDhacPt-7IhxCI2U5PQ]
+      authorization: [Bearer eyJ4NXUiOiJpbXNfbmExLWtleS0xLmNlciIsImFsZyI6IlJTMjU2In0.eyJmZyI6IlJNWkdDUFlCUElIUUFBQUFBQUFBQUFDQUFBPT09PT09IiwiYXMiOiJpbXMtbmExIiwiYyI6IjMvWk1mT0JsUHhrQ3cvZnBIbnFWNXc9PSIsInVzZXJfaWQiOiIwRTNCNkE5OTU4MDZDNEJFMEE0OTVDQzdAdGVjaGFjY3QuYWRvYmUuY29tIiwibW9pIjoiZmZlMmQ2ZSIsInNjb3BlIjoib3BlbmlkLHVzZXJfbWFuYWdlbWVudF9zZGssQWRvYmVJRCIsImNyZWF0ZWRfYXQiOiIxNDk0MDI4ODYwODIxIiwiaWQiOiIxNDk0MDI4ODYwODIxLWIwZTRhYzc5LTBlYWYtNGM4NC1iNzJkLTRkMjM5YjQ3ZjMzOSIsInR5cGUiOiJhY2Nlc3NfdG9rZW4iLCJleHBpcmVzX2luIjoiODY0MDAwMDAiLCJjbGllbnRfaWQiOiI0ODM5NDg0ZmE5MDE0N2Q2YmI4OGY4ZGIwYzc5MWZmMSJ9.eo9EnH4j2CTS5YR1_alAnAuB1qniENyrmrLG2ApdektPRYqWOy01-ea3SDS0BaqSBPLL791A7NYXI4QN9EDkGeuEz2alyFQnYllBCtL1CVTJ1UQyN9BguLZicAxU3c12Nr78orGWZwl_triud59-6w1TnSfoVtxeOrky0xB-FrAM8GiANE5xpH2kWgMQ_aoW4nDFZjIrT9A0J_IPZjk47aW6PPodQtwCB9sgmTmhwbSz14Rv2_9XMelc0VUcnt8qKzmbFNqH-tYv-tx8WLYlr-4LuGcILVerpMd_mPK2qShWC_9dvuWtHwbGGnZ96m853wgnTC2VI-0j3elFYTfPeg]
       connection: [keep-alive]
       content-type: [application/json]
       host: [usermanagement.adobe.io]
-      user-agent: ['user-sync/2.0 umapi-client/2.3 Python/2.7.10 (Darwin Kernel Version
-          14.5.0: Fri Feb 17 10:33:20 PST 2017; root:xnu-2782.50.9.1.1~1/RELEASE_X86_64)']
+      user-agent: ['user-sync/2.1rc1 umapi-client/2.4.1 Python/2.7.10 (Darwin Kernel
+          Version 14.5.0: Fri Feb 17 10:33:20 PST 2017; root:xnu-2782.50.9.1.1~1/RELEASE_X86_64)']
       x-api-key: [4839484fa90147d6bb88f8db0c791ff1]
     method: GET
     uri: https://usermanagement.adobe.io/v2/usermanagement/users/210DB41957FFDC210A495E53@AdobeOrg/0
   response:
-    body: {string: "{\"result\":\"success\",\"users\":[{\"email\":\"bhunut@adobe.com\",\"lastname\":\"Bhunut\",\"firstname\":\"Kevin\",\"country\":\"US\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"bhunut@adobe.com\",\"domain\":\"adobe.com\",\"adminRoles\":[\"org\"]},{\"email\":\"CCE0@ensemble.ca\",\"lastname\":\"0\",\"firstname\":\"CcE
+    body: {string: "{\"result\":\"success\",\"users\":[{\"email\":\"asmith@k.on-the-side.net\",\"lastname\":\"Smith\",\"firstname\":\"Andr\xE9\",\"country\":\"FR\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"asmith\",\"domain\":\"k.on-the-side.net\",\"groups\":[\"DBrotsky
+        Test UG\",\"Ber\xE7u Test Gr\xF8\xFCp\"]},{\"email\":\"bhunut@adobe.com\",\"lastname\":\"Bhunut\",\"firstname\":\"Kevin\",\"country\":\"US\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"bhunut@adobe.com\",\"domain\":\"adobe.com\",\"adminRoles\":[\"org\"]},{\"email\":\"CCE0@ensemble.ca\",\"lastname\":\"0\",\"firstname\":\"CcE
         \u4E2D\u6587\u8003\u8BD5\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"CCE0@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]},{\"email\":\"CCE1@ensemble.ca\",\"lastname\":\"1\",\"firstname\":\"Fed\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"CCE1@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"CCE1@ensemble.ca\",\"lastname\":\"1\",\"firstname\":\"Fed\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"CCE1@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\",\"groups\":[\"Default
         Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\",\"Default
         Adobe Document Cloud for enterprise configuration\"]},{\"email\":\"cce1010101@ensemble.ca\",\"lastname\":\"1010101\",\"firstname\":\"CCE\",\"country\":\"NZ\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"CCE1010101@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]},{\"email\":\"CCE2@ensemble.ca\",\"lastname\":\"2\",\"firstname\":\"CCE\",\"country\":\"UD\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"CCE2@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]},{\"email\":\"CCE3@ensemble.ca\",\"lastname\":\"3\",\"firstname\":\"CCE
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"CCE2@ensemble.ca\",\"lastname\":\"2\",\"firstname\":\"CCE\",\"country\":\"UD\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"CCE2@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"CCE3@ensemble.ca\",\"lastname\":\"3\",\"firstname\":\"CCE
         \u4E2D\u6587\u8003\u8BD5 TEST\",\"country\":\"UD\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"CCE3@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\",\"Default All Apps plan - 100 GB configuration\",\"Default
-        Adobe Enterprise Support Program configuration\"]},{\"email\":\"CCE4@ensemble.ca\",\"lastname\":\"4\",\"firstname\":\"CCE\",\"country\":\"UD\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"CCE4@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]},{\"email\":\"CCE5@ensemble.ca\",\"lastname\":\"5.1\",\"firstname\":\"CCE\",\"country\":\"US\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"CCE5@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]},{\"email\":\"CCE6@ensemble.ca\",\"lastname\":\"6\",\"firstname\":\"cce\",\"country\":\"UD\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"CCE6@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]},{\"email\":\"CCE7@ensemble.ca\",\"lastname\":\"7\",\"firstname\":\"CCE\",\"country\":\"CH\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"CCE7@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]},{\"email\":\"ccf1@ensemble-systems.com\",\"lastname\":\"1\",\"firstname\":\"ccf\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"ccf1@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]},{\"email\":\"CHESTERL@ENSEMBLE.COM\",\"lastname\":\"Loke\",\"firstname\":\"Chester\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"CHESTERL@ENSEMBLE.COM\",\"domain\":\"ENSEMBLE.COM\",\"adminRoles\":[\"org\"]},{\"email\":\"CTULLER@ADOBE.COM\",\"lastname\":\"Tuller\",\"firstname\":\"Chris\",\"country\":\"US\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"CTULLER@ADOBE.COM\",\"domain\":\"ADOBE.COM\",\"groups\":[\"8362241USERGROUP_ADMIN_GROUP_NAME_SUFFIX\"],\"adminRoles\":[\"org\",\"Freemantle
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"CCE4@ensemble.ca\",\"lastname\":\"4\",\"firstname\":\"CCE\",\"country\":\"UD\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"CCE4@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"CCE5@ensemble.ca\",\"lastname\":\"5.1\",\"firstname\":\"CCE\",\"country\":\"US\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"CCE5@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"CCE6@ensemble.ca\",\"lastname\":\"6\",\"firstname\":\"cce\",\"country\":\"UD\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"CCE6@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"CCE7@ensemble.ca\",\"lastname\":\"7\",\"firstname\":\"CCE\",\"country\":\"CH\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"CCE7@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"ccewin_accessor3@ensemble.ca\",\"lastname\":\"003\",\"country\":\"GB\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"CCEWIN_ACCESSOR3@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\"},{\"email\":\"ccewin1@ensemble.ca\",\"lastname\":\"001\",\"country\":\"GB\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"CCEWIN1@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\",\"groups\":[\"Default
+        All Apps plan - 100 GB configuration\",\"Default Adobe Enterprise Support
+        Program configuration\"]},{\"email\":\"ccewin2@ensemble.ca\",\"lastname\":\"002\",\"country\":\"GB\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"CCEWIN2@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"DBrotsky Test All Apps\",\"Ensemble Test\",\"Ensemble
+        Test 2\"]},{\"email\":\"ccewin4@ensemble-systems.com\",\"lastname\":\"004\",\"country\":\"GB\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"ccewin4@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\",\"groups\":[\"Default
+        Adobe Enterprise Support Program configuration\"]},{\"email\":\"ccf1@ensemble-systems.com\",\"lastname\":\"1\",\"firstname\":\"ccf\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"ccf1@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"CHESTERL@ENSEMBLE.COM\",\"lastname\":\"Loke\",\"firstname\":\"Chester\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"CHESTERL@ENSEMBLE.COM\",\"domain\":\"ENSEMBLE.COM\",\"adminRoles\":[\"org\"]},{\"email\":\"CTULLER@ADOBE.COM\",\"lastname\":\"Tuller\",\"firstname\":\"Chris\",\"country\":\"US\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"CTULLER@ADOBE.COM\",\"domain\":\"ADOBE.COM\",\"groups\":[\"8362241USERGROUP_ADMIN_GROUP_NAME_SUFFIX\"],\"adminRoles\":[\"org\",\"Freemantle
         Australia\"]},{\"email\":\"DAVIDY@ENSEMBLE.COM\",\"lastname\":\"Yue\",\"firstname\":\"David\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"DAVIDY@ENSEMBLE.COM\",\"domain\":\"ENSEMBLE.COM\",\"adminRoles\":[\"org\"]},{\"email\":\"DBROTSKY@ADOBE.COM\",\"lastname\":\"Brotsky\",\"firstname\":\"Daniel\",\"country\":\"US\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"dbrotsky@adobe.com\",\"domain\":\"ADOBE.COM\",\"groups\":[\"Freemantle
         Australia\",\"Fremantle Australia Photo Editors\",\"Freemanle Australia Layout
         Artist\"],\"adminRoles\":[\"org\"]},{\"email\":\"deanw@ensemble.com\",\"lastname\":\"Wang\",\"firstname\":\"Dean\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"DEANW@ENSEMBLE.COM\",\"domain\":\"ensemble.com\",\"adminRoles\":[\"org\"]},{\"email\":\"fed1@ensemble-systems.com\",\"lastname\":\"1\",\"firstname\":\"Federate\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"fed1@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]},{\"email\":\"fed2@ensemble-systems.com\",\"lastname\":\"2\",\"firstname\":\"Federate\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"fed2@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]},{\"email\":\"fed3@ensemble-systems.com\",\"lastname\":\"3\",\"firstname\":\"Fed\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"fed3@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]},{\"email\":\"hook1@test1.on-the-side.net\",\"lastname\":\"User\",\"firstname\":\"Hook1\",\"country\":\"JP\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"HOOK1@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\",\"Company 1 Users\"]},{\"email\":\"hook2@k.on-the-side.net\",\"lastname\":\"User\",\"firstname\":\"Hook2\",\"country\":\"GB\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"user-hook2\",\"domain\":\"k.on-the-side.net\",\"groups\":[\"Company
-        2 Users\"]},{\"email\":\"hook3@brotsky.com\",\"lastname\":\"Brotsky\",\"firstname\":\"Daniel\",\"country\":\"US\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"hook3@brotsky.com\",\"domain\":\"brotsky.com\"},{\"email\":\"hook3@test1.on-the-side.net\",\"lastname\":\"User\",\"firstname\":\"Hook3\",\"country\":\"FR\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"HOOK3@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]},{\"email\":\"hook4@k.on-the-side.net\",\"lastname\":\"User\",\"firstname\":\"Hook4\",\"country\":\"US\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"user-hook4\",\"domain\":\"k.on-the-side.net\",\"groups\":[\"Company
-        1 Users\"]},{\"email\":\"imak@ensemble-systems.com\",\"lastname\":\"10\",\"firstname\":\"Ian\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"imak@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]},{\"email\":\"IMAK@ENSEMBLE.COM\",\"lastname\":\"Mak\",\"firstname\":\"Ian\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"IMAK@ENSEMBLE.COM\",\"domain\":\"ENSEMBLE.COM\",\"adminRoles\":[\"org\"]},{\"email\":\"jamesg@ensemble.com\",\"lastname\":\"Green\",\"firstname\":\"James\",\"country\":\"GB\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"jamesg@ensemble.com\",\"domain\":\"ensemble.com\",\"adminRoles\":[\"org\"]},{\"email\":\"jsmith1@k.on-the-side.net\",\"lastname\":\"Smith\",\"firstname\":\"John\",\"country\":\"US\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"jsmith1\",\"domain\":\"k.on-the-side.net\"},{\"email\":\"jsmith1@test1.on-the-side.net\",\"lastname\":\"Smith\",\"firstname\":\"John\",\"country\":\"US\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"JSMITH1@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\",\"DBrotsky Test All Apps\",\"DBrotsky
-        Test UG\"]},{\"email\":\"jsmith2@k.on-the-side.net\",\"lastname\":\"Smith\",\"firstname\":\"John\",\"country\":\"US\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"jsmith2\",\"domain\":\"k.on-the-side.net\"},{\"email\":\"jsmith2@test1.on-the-side.net\",\"lastname\":\"Smith\",\"firstname\":\"John\",\"country\":\"US\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"JSMITH2@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\",\"DBrotsky Test UG\"]},{\"email\":\"jsmith3@k.on-the-side.net\",\"lastname\":\"Smith\",\"firstname\":\"John\",\"country\":\"US\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"jsmith3\",\"domain\":\"k.on-the-side.net\"},{\"email\":\"jsmith3@test1.on-the-side.net\",\"lastname\":\"Smith\",\"firstname\":\"John\",\"country\":\"US\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"JSMITH3@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\",\"DBrotsky Test All Apps\"]},{\"email\":\"jsmith4@k.on-the-side.net\",\"lastname\":\"Smith\",\"firstname\":\"John\",\"country\":\"US\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"jsmith4\",\"domain\":\"k.on-the-side.net\"},{\"email\":\"jsmith4@test1.on-the-side.net\",\"lastname\":\"Smith\",\"firstname\":\"John\",\"country\":\"US\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"JSMITH4@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]},{\"email\":\"leoc@ensemble.com\",\"lastname\":\"Cheng\",\"firstname\":\"Leo\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"LEOC@ENSEMBLE.COM\",\"domain\":\"ensemble.com\",\"adminRoles\":[\"org\"]},{\"email\":\"LESAVAGE@ADOBE.COM\",\"lastname\":\"Savage\",\"firstname\":\"Lea\",\"country\":\"GB\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"LESAVAGE@ADOBE.COM\",\"domain\":\"ADOBE.COM\",\"adminRoles\":[\"org\"]},{\"email\":\"MIKEJ@ENSEMBLE.COM\",\"lastname\":\"Joe\",\"firstname\":\"Mike\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"MIKEJ@ENSEMBLE.COM\",\"domain\":\"ENSEMBLE.COM\",\"adminRoles\":[\"org\"]},{\"email\":\"NAHOOVER@ADOBE.COM\",\"lastname\":\"Hoover\",\"firstname\":\"Nathan\",\"country\":\"US\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"NAHOOVER@ADOBE.COM\",\"domain\":\"ADOBE.COM\",\"adminRoles\":[\"org\"]},{\"email\":\"newuser007@test1.on-the-side.net\",\"lastname\":\"bond\",\"firstname\":\"james\",\"country\":\"UD\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"NEWUSER007@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]},{\"email\":\"PLEVY@ADOBE.COM\",\"lastname\":\"Levy\",\"firstname\":\"Philip\",\"country\":\"US\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"PLEVY@ADOBE.COM\",\"domain\":\"ADOBE.COM\",\"adminRoles\":[\"org\"]},{\"email\":\"raymondf@ensemble.com\",\"lastname\":\"Fung\",\"firstname\":\"Raymond\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"raymondf@ensemble.com\",\"domain\":\"ensemble.com\",\"adminRoles\":[\"org\"]},{\"email\":\"typetest-a1@brotsky.com\",\"lastname\":\"User\",\"firstname\":\"TypetestA1\",\"country\":\"US\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"typetest-a1@brotsky.com\",\"domain\":\"brotsky.com\"},{\"email\":\"typetest-a2@brotsky.com\",\"lastname\":\"User\",\"firstname\":\"TypetestA2\",\"country\":\"US\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"typetest-a2@brotsky.com\",\"domain\":\"brotsky.com\"},{\"email\":\"typetest-e1@test1.on-the-side.net\",\"lastname\":\"User\",\"firstname\":\"AA-TypetestE1\",\"country\":\"US\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TYPETEST-E1@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\",\"DBrotsky Test UG\"]},{\"email\":\"typetest-e2@test1.on-the-side.net\",\"lastname\":\"User\",\"firstname\":\"AA-TypetestE2\",\"country\":\"US\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TYPETEST-E2@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]},{\"email\":\"typetest-e3@test1.on-the-side.net\",\"lastname\":\"User\",\"firstname\":\"AA-TypetestE3\",\"country\":\"US\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TYPETEST-E3@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\",\"DBrotsky Test UG\"]},{\"email\":\"typetest-e4@test1.on-the-side.net\",\"lastname\":\"User\",\"firstname\":\"AA-TypetestE4\",\"country\":\"US\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TYPETEST-E4@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]},{\"email\":\"typetest-f1@k.on-the-side.net\",\"lastname\":\"User\",\"firstname\":\"AA-TypetestF1\",\"country\":\"US\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"user-typetest2\",\"domain\":\"k.on-the-side.net\",\"groups\":[\"DBrotsky
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"fed2@ensemble-systems.com\",\"lastname\":\"2\",\"firstname\":\"Federate\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"fed2@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"fed3@ensemble-systems.com\",\"lastname\":\"3\",\"firstname\":\"Fed\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"fed3@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"hook1@test1.on-the-side.net\",\"lastname\":\"User\",\"firstname\":\"Hook1\",\"country\":\"JP\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"HOOK1@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"hook2@k.on-the-side.net\",\"lastname\":\"User\",\"firstname\":\"Hook2\",\"country\":\"GB\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"user-hook2\",\"domain\":\"k.on-the-side.net\"},{\"email\":\"hook3@brotsky.com\",\"lastname\":\"Brotsky\",\"firstname\":\"Daniel\",\"country\":\"US\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"hook3@brotsky.com\",\"domain\":\"brotsky.com\"},{\"email\":\"hook3@test1.on-the-side.net\",\"lastname\":\"User\",\"firstname\":\"Hook3\",\"country\":\"FR\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"HOOK3@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"hook4@k.on-the-side.net\",\"lastname\":\"User\",\"firstname\":\"Hook4\",\"country\":\"US\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"user-hook4\",\"domain\":\"k.on-the-side.net\"},{\"email\":\"imak@ensemble-systems.com\",\"lastname\":\"10\",\"firstname\":\"Ian\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"imak@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"IMAK@ENSEMBLE.COM\",\"lastname\":\"Mak\",\"firstname\":\"Ian\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"IMAK@ENSEMBLE.COM\",\"domain\":\"ENSEMBLE.COM\",\"adminRoles\":[\"org\"]},{\"email\":\"jamesg@ensemble.com\",\"lastname\":\"Green\",\"firstname\":\"James\",\"country\":\"GB\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"jamesg@ensemble.com\",\"domain\":\"ensemble.com\",\"adminRoles\":[\"org\"]},{\"email\":\"jbercu@k.on-the-side.net\",\"lastname\":\"Ber\xE7u\",\"firstname\":\"Jean\",\"country\":\"FR\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"jbercu\",\"domain\":\"k.on-the-side.net\",\"groups\":[\"DBrotsky
+        Test UG\"]},{\"email\":\"jsmith1@k.on-the-side.net\",\"lastname\":\"Smith\",\"firstname\":\"John\",\"country\":\"US\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"jsmith1\",\"domain\":\"k.on-the-side.net\"},{\"email\":\"jsmith1@test1.on-the-side.net\",\"lastname\":\"Smith\",\"firstname\":\"John\",\"country\":\"US\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"JSMITH1@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\",\"DBrotsky
+        Test All Apps\",\"DBrotsky Test UG\"]},{\"email\":\"jsmith2@k.on-the-side.net\",\"lastname\":\"Smith\",\"firstname\":\"John\",\"country\":\"US\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"jsmith2\",\"domain\":\"k.on-the-side.net\"},{\"email\":\"jsmith2@test1.on-the-side.net\",\"lastname\":\"Smith\",\"firstname\":\"John\",\"country\":\"US\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"JSMITH2@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\",\"DBrotsky
+        Test UG\"]},{\"email\":\"jsmith3@k.on-the-side.net\",\"lastname\":\"Smith\",\"firstname\":\"John\",\"country\":\"US\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"jsmith3\",\"domain\":\"k.on-the-side.net\"},{\"email\":\"jsmith3@test1.on-the-side.net\",\"lastname\":\"Smith\",\"firstname\":\"John\",\"country\":\"US\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"JSMITH3@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\",\"DBrotsky
+        Test All Apps\"]},{\"email\":\"jsmith4@k.on-the-side.net\",\"lastname\":\"Smith\",\"firstname\":\"John\",\"country\":\"US\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"jsmith4\",\"domain\":\"k.on-the-side.net\"},{\"email\":\"jsmith4@test1.on-the-side.net\",\"lastname\":\"Smith\",\"firstname\":\"John\",\"country\":\"US\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"JSMITH4@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"leoc@ensemble.com\",\"lastname\":\"Cheng\",\"firstname\":\"Leo\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"LEOC@ENSEMBLE.COM\",\"domain\":\"ensemble.com\",\"adminRoles\":[\"org\"]},{\"email\":\"LESAVAGE@ADOBE.COM\",\"lastname\":\"Savage\",\"firstname\":\"Lea\",\"country\":\"GB\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"LESAVAGE@ADOBE.COM\",\"domain\":\"ADOBE.COM\",\"adminRoles\":[\"org\"]},{\"email\":\"lwalesa@test1.on-the-side.net\",\"lastname\":\"Wa\u0142\u0119sa\",\"firstname\":\"Lech\",\"country\":\"PL\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"LWALESA@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\"},{\"email\":\"MIKEJ@ENSEMBLE.COM\",\"lastname\":\"Joe\",\"firstname\":\"Mike\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"MIKEJ@ENSEMBLE.COM\",\"domain\":\"ENSEMBLE.COM\",\"adminRoles\":[\"org\"]},{\"email\":\"NAHOOVER@ADOBE.COM\",\"lastname\":\"Hoover\",\"firstname\":\"Nathan\",\"country\":\"US\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"NAHOOVER@ADOBE.COM\",\"domain\":\"ADOBE.COM\",\"adminRoles\":[\"org\"]},{\"email\":\"newuser007@test1.on-the-side.net\",\"lastname\":\"bond\",\"firstname\":\"james\",\"country\":\"UD\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"NEWUSER007@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"PLEVY@ADOBE.COM\",\"lastname\":\"Levy\",\"firstname\":\"Philip\",\"country\":\"US\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"PLEVY@ADOBE.COM\",\"domain\":\"ADOBE.COM\",\"adminRoles\":[\"org\"]},{\"email\":\"raymondf@ensemble.com\",\"lastname\":\"Fung\",\"firstname\":\"Raymond\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"raymondf@ensemble.com\",\"domain\":\"ensemble.com\",\"adminRoles\":[\"org\"]},{\"email\":\"test00@ensemble-systems.com\",\"lastname\":\"00\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"test00@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\"},{\"email\":\"test03@ensemble-systems.com\",\"lastname\":\"03\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"test03@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\"},{\"email\":\"test06@ensemble-systems.com\",\"lastname\":\"06\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"test06@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\"},{\"email\":\"test07@ensemble.ca\",\"lastname\":\"07\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TEST07@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\"},{\"email\":\"test10@ensemble-systems.com\",\"lastname\":\"10\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"test10@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\"},{\"email\":\"test11@ensemble-systems.com\",\"lastname\":\"11\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"test11@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\"},{\"email\":\"test12@ensemble-systems.com\",\"lastname\":\"12\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"test12@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\"},{\"email\":\"test14@ensemble.ca\",\"lastname\":\"14\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TEST14@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\"},{\"email\":\"test16@ensemble.ca\",\"lastname\":\"16\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TEST16@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\"},{\"email\":\"test18@ensemble.ca\",\"lastname\":\"18\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TEST18@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\"},{\"email\":\"test20@ensemble.ca\",\"lastname\":\"20\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TEST20@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\"},{\"email\":\"test21@ensemble.ca\",\"lastname\":\"21\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TEST21@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\"},{\"email\":\"test24@test1.on-the-side.net\",\"lastname\":\"24\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TEST24@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\"},{\"email\":\"test26@test1.on-the-side.net\",\"lastname\":\"26\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TEST26@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\"},{\"email\":\"test27@ensemble.ca\",\"lastname\":\"27\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TEST27@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\"},{\"email\":\"test29@ensemble.ca\",\"lastname\":\"29\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TEST29@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\"},{\"email\":\"test32@ensemble-systems.com\",\"lastname\":\"32\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"test32@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\"},{\"email\":\"test33@ensemble-systems.com\",\"lastname\":\"33\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"test33@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\"},{\"email\":\"test34@ensemble.ca\",\"lastname\":\"34\",\"firstname\":\"Test\",\"country\":\"CA\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TEST34@ENSEMBLE.CA\",\"domain\":\"ensemble.ca\"},{\"email\":\"tkolar@test1.on-the-side.net\",\"lastname\":\"Kol\xE1\u0159\",\"firstname\":\"Tom\xE1\u0161\",\"country\":\"CZ\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TKOLAR@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Ber\xE7u
+        Test Gr\xF8\xFCp\"]},{\"email\":\"typetest-a1@brotsky.com\",\"lastname\":\"User\",\"firstname\":\"TypetestA1\",\"country\":\"US\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"typetest-a1@brotsky.com\",\"domain\":\"brotsky.com\"},{\"email\":\"typetest-a2@brotsky.com\",\"lastname\":\"User\",\"firstname\":\"TypetestA2\",\"country\":\"US\",\"status\":\"active\",\"type\":\"adobeID\",\"username\":\"typetest-a2@brotsky.com\",\"domain\":\"brotsky.com\"},{\"email\":\"typetest-e1@test1.on-the-side.net\",\"lastname\":\"User\",\"firstname\":\"AA-TypetestE1\",\"country\":\"US\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TYPETEST-E1@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\",\"DBrotsky
+        Test UG\"]},{\"email\":\"typetest-e2@test1.on-the-side.net\",\"lastname\":\"User\",\"firstname\":\"AA-TypetestE2\",\"country\":\"US\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TYPETEST-E2@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"typetest-e3@test1.on-the-side.net\",\"lastname\":\"User\",\"firstname\":\"AA-TypetestE3\",\"country\":\"US\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TYPETEST-E3@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\",\"DBrotsky
+        Test UG\"]},{\"email\":\"typetest-e4@test1.on-the-side.net\",\"lastname\":\"User\",\"firstname\":\"AA-TypetestE4\",\"country\":\"US\",\"status\":\"active\",\"type\":\"enterpriseID\",\"username\":\"TYPETEST-E4@TEST1.ON-THE-SIDE.NET\",\"domain\":\"test1.on-the-side.net\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"typetest-f1@k.on-the-side.net\",\"lastname\":\"User\",\"firstname\":\"AA-TypetestF1\",\"country\":\"US\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"user-typetest2\",\"domain\":\"k.on-the-side.net\",\"groups\":[\"DBrotsky
         Test UG\"]},{\"email\":\"typetest-f2@ensemble-systems.com\",\"lastname\":\"User\",\"firstname\":\"AA-TypetestF2\",\"country\":\"US\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"typetest-f2@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]},{\"email\":\"typetest-f3@ensemble-systems.com\",\"lastname\":\"User\",\"firstname\":\"AA-TypetestF3\",\"country\":\"US\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"typetest-f3@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\",\"DBrotsky Test UG\"]},{\"email\":\"typetest-f4@ensemble-systems.com\",\"lastname\":\"User\",\"firstname\":\"AA-TypetestF4\",\"country\":\"US\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"typetest-f4@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\",\"groups\":[\"Default
-        Photoshop CC - 100 GB configuration\"]}],\"lastPage\":true}"}
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]},{\"email\":\"typetest-f3@ensemble-systems.com\",\"lastname\":\"User\",\"firstname\":\"AA-TypetestF3\",\"country\":\"US\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"typetest-f3@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\",\"DBrotsky
+        Test UG\"]},{\"email\":\"typetest-f4@ensemble-systems.com\",\"lastname\":\"User\",\"firstname\":\"AA-TypetestF4\",\"country\":\"US\",\"status\":\"active\",\"type\":\"federatedID\",\"username\":\"typetest-f4@ensemble-systems.com\",\"domain\":\"ensemble-systems.com\",\"groups\":[\"Default
+        Acrobat Pro DC configuration\",\"Default Photoshop CC - 100 GB configuration\"]}],\"lastPage\":true}"}
     headers:
       cache-control: [no-cache="set-cookie"]
       connection: [keep-alive]
-      content-length: ['12473']
+      content-length: ['18836']
       content-type: [application/json]
-      date: ['Wed, 03 May 2017 22:31:03 GMT']
+      date: ['Sat, 06 May 2017 00:01:01 GMT']
       server: [APIP]
       set-cookie: [AWSELB=D76BDFED16399693AEB011A9296087A3745D7B73361771968954DFCBD14BA47CF0A6CD81095A5E3F1A333662BEFAB7A16DC244B4E3C0A8505761589DB0B541DA3081DAA6F8;PATH=/;MAX-AGE=604800]
       vary: [Accept-Encoding]
       x-current-page: ['0']
       x-page-count: ['1']
-      x-page-size: ['55']
+      x-page-size: ['82']
       x-powered-by: [Undertow/1]
-      x-request-id: [wG3rKgqtr8SwEBXCsGgv5fX9Fe189vZN, wG3rKgqtr8SwEBXCsGgv5fX9Fe189vZN]
-      x-total-count: ['55']
+      x-request-id: [WmyrI6f8uScHr49l3gdveTyPljk7vmWd, WmyrI6f8uScHr49l3gdveTyPljk7vmWd]
+      x-total-count: ['82']
     status: {code: 200, message: OK}
 - request:
-    body: !!python/unicode '[{"do": [{"createFederatedID": {"lastname": "12", "country":
-      "CA", "email": "test12@ensemble-systems.com", "firstname": "Test", "option":
-      "updateIfAlreadyExists"}}], "requestID": "action_1", "user": "test12@ensemble-systems.com"},
-      {"do": [{"createFederatedID": {"lastname": "11", "country": "CA", "email": "test11@ensemble-systems.com",
-      "firstname": "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_2",
-      "user": "test11@ensemble-systems.com"}, {"do": [{"createEnterpriseID": {"lastname":
-      "27", "country": "CA", "email": "test27@ensemble.ca", "firstname": "Test", "option":
-      "updateIfAlreadyExists"}}], "requestID": "action_3", "user": "test27@ensemble.ca"},
-      {"do": [{"createEnterpriseID": {"lastname": "18", "country": "CA", "email":
-      "test18@ensemble.ca", "firstname": "Test", "option": "updateIfAlreadyExists"}}],
-      "requestID": "action_4", "user": "test18@ensemble.ca"}, {"do": [{"createEnterpriseID":
-      {"lastname": "14", "country": "CA", "email": "test14@ensemble.ca", "firstname":
-      "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_5", "user":
-      "test14@ensemble.ca"}, {"do": [{"createFederatedID": {"lastname": "32", "country":
-      "CA", "email": "test32@ensemble-systems.com", "firstname": "Test", "option":
-      "updateIfAlreadyExists"}}], "requestID": "action_6", "user": "test32@ensemble-systems.com"},
-      {"do": [{"createEnterpriseID": {"lastname": "24", "country": "CA", "email":
-      "test24@test1.on-the-side.net", "firstname": "Test", "option": "updateIfAlreadyExists"}}],
-      "requestID": "action_7", "user": "test24@test1.on-the-side.net"}, {"do": [{"createEnterpriseID":
-      {"lastname": "29", "country": "CA", "email": "test29@ensemble.ca", "firstname":
-      "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_8", "user":
-      "test29@ensemble.ca"}, {"do": [{"createFederatedID": {"lastname": "10", "country":
-      "CA", "email": "test10@ensemble-systems.com", "firstname": "Test", "option":
-      "updateIfAlreadyExists"}}], "requestID": "action_9", "user": "test10@ensemble-systems.com"},
-      {"do": [{"createEnterpriseID": {"lastname": "30", "country": "CA", "email":
-      "test30@test1.on-the-side.net", "firstname": "Test", "option": "updateIfAlreadyExists"}}],
-      "requestID": "action_10", "user": "test30@test1.on-the-side.net"}]'
-    headers:
-      Content-Length: ['2239']
-      accept: [application/json]
-      accept-encoding: ['gzip, deflate']
-      authorization: [Bearer eyJ4NXUiOiJpbXNfbmExLWtleS0xLmNlciIsImFsZyI6IlJTMjU2In0.eyJmZyI6IlJNVE1PUFlCUElIUUFBQUFBQUFBQUFDQUFBPT09PT09IiwiYXMiOiJpbXMtbmExIiwiYyI6InArSlFaeXYwSUhFc2tzVDFnUmVONHc9PSIsInVzZXJfaWQiOiIwRTNCNkE5OTU4MDZDNEJFMEE0OTVDQzdAdGVjaGFjY3QuYWRvYmUuY29tIiwibW9pIjoiNzM3YTYwZDciLCJzY29wZSI6Im9wZW5pZCx1c2VyX21hbmFnZW1lbnRfc2RrLEFkb2JlSUQiLCJjcmVhdGVkX2F0IjoiMTQ5Mzg1MDY2MjI4NSIsImlkIjoiMTQ5Mzg1MDY2MjI4NS03ZTYwNmIzZC0wOWE2LTQ2OTMtOWUzNy1kY2JlOGYxNTJhODEiLCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiZXhwaXJlc19pbiI6Ijg2NDAwMDAwIiwiY2xpZW50X2lkIjoiNDgzOTQ4NGZhOTAxNDdkNmJiODhmOGRiMGM3OTFmZjEifQ.gks8SxHzWh6rMOkHvrx2ecDkGQYrAveNybcNv5V0nqziGJ5MLIFWivRbe4wjgmmrCr1J30KQlcn5CTxVtMd6NRUV2g9Wvu8H39ooBFvdxUnom3ml43sfGKBhl8uVW5iF8ylqzYwEkdiQzRpBfeOqZvXkunHduFrU8TntP1-0lpafTA23aJRbLD7NrdKcCReMYvpzW5lH2JeegRhJu7tvrOl8ljXogmglVLqFr75nHgpSYIegIqK5odfJCP389T6lSG9rzx-JhQ9GQ9N8MrVrZ7NR7j3Cs9G61jNsEv3kK_NvdIf62QzHGWdXiBKtutsbm3rxDhacPt-7IhxCI2U5PQ]
-      connection: [keep-alive]
-      content-type: [application/json]
-      cookie: [AWSELB=D76BDFED16399693AEB011A9296087A3745D7B73361771968954DFCBD14BA47CF0A6CD81095A5E3F1A333662BEFAB7A16DC244B4E3C0A8505761589DB0B541DA3081DAA6F8]
-      host: [usermanagement.adobe.io]
-      user-agent: ['user-sync/2.0 umapi-client/2.3 Python/2.7.10 (Darwin Kernel Version
-          14.5.0: Fri Feb 17 10:33:20 PST 2017; root:xnu-2782.50.9.1.1~1/RELEASE_X86_64)']
-      x-api-key: [4839484fa90147d6bb88f8db0c791ff1]
-    method: POST
-    uri: https://usermanagement.adobe.io/v2/usermanagement/action/210DB41957FFDC210A495E53@AdobeOrg
-  response:
-    body: {string: !!python/unicode '{"completed":10,"notCompleted":0,"completedInTestMode":0,"result":"success"}'}
-    headers:
-      connection: [keep-alive]
-      content-length: ['76']
-      content-type: [application/json]
-      date: ['Wed, 03 May 2017 22:31:07 GMT']
-      server: [APIP]
-      vary: [Accept-Encoding]
-      x-powered-by: [Undertow/1]
-      x-request-id: [hEbIGJ0aZfCnngylyq1PkDzJhQY7xGn2, hEbIGJ0aZfCnngylyq1PkDzJhQY7xGn2]
-    status: {code: 200, message: OK}
-- request:
-    body: !!python/unicode '[{"do": [{"createFederatedID": {"lastname": "33", "country":
-      "CA", "email": "test33@ensemble-systems.com", "firstname": "Test", "option":
-      "updateIfAlreadyExists"}}], "requestID": "action_11", "user": "test33@ensemble-systems.com"},
+    body: !!python/unicode '[{"do": [{"createEnterpriseID": {"lastname": "30", "country":
+      "CA", "email": "test30@test1.on-the-side.net", "firstname": "Test", "option":
+      "updateIfAlreadyExists"}}], "requestID": "action_1", "user": "test30@test1.on-the-side.net"},
       {"do": [{"createEnterpriseID": {"lastname": "02", "country": "CA", "email":
       "test02@test1.on-the-side.net", "firstname": "Test", "option": "updateIfAlreadyExists"}}],
-      "requestID": "action_12", "user": "test02@test1.on-the-side.net"}, {"do": [{"createEnterpriseID":
-      {"lastname": "26", "country": "CA", "email": "test26@test1.on-the-side.net",
-      "firstname": "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_13",
-      "user": "test26@test1.on-the-side.net"}, {"do": [{"createFederatedID": {"lastname":
-      "15", "country": "CA", "email": "test15@k.on-the-side.net", "firstname": "Test",
-      "option": "updateIfAlreadyExists"}}], "requestID": "action_14", "user": "test15@k.on-the-side.net"},
-      {"do": [{"createFederatedID": {"lastname": "28", "country": "CA", "email": "test28@k.on-the-side.net",
-      "firstname": "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_15",
-      "user": "test28@k.on-the-side.net"}, {"do": [{"createFederatedID": {"lastname":
-      "25", "country": "CA", "email": "test25@k.on-the-side.net", "firstname": "Test",
-      "option": "updateIfAlreadyExists"}}], "requestID": "action_16", "user": "test25@k.on-the-side.net"},
-      {"do": [{"createEnterpriseID": {"lastname": "22", "country": "CA", "email":
-      "test22@test1.on-the-side.net", "firstname": "Test", "option": "updateIfAlreadyExists"}}],
-      "requestID": "action_17", "user": "test22@test1.on-the-side.net"}, {"do": [{"createEnterpriseID":
-      {"lastname": "16", "country": "CA", "email": "test16@ensemble.ca", "firstname":
-      "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_18", "user":
-      "test16@ensemble.ca"}, {"do": [{"createEnterpriseID": {"lastname": "04", "country":
-      "CA", "email": "test04@test1.on-the-side.net", "firstname": "Test", "option":
-      "updateIfAlreadyExists"}}], "requestID": "action_19", "user": "test04@test1.on-the-side.net"},
-      {"do": [{"createFederatedID": {"lastname": "17", "country": "CA", "email": "test17@k.on-the-side.net",
-      "firstname": "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_20",
-      "user": "test17@k.on-the-side.net"}]'
+      "requestID": "action_2", "user": "test02@test1.on-the-side.net"}, {"do": [{"createFederatedID":
+      {"lastname": "15", "country": "CA", "email": "test15@k.on-the-side.net", "firstname":
+      "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_3", "user":
+      "test15@k.on-the-side.net"}, {"do": [{"createFederatedID": {"lastname": "28",
+      "country": "CA", "email": "test28@k.on-the-side.net", "firstname": "Test", "option":
+      "updateIfAlreadyExists"}}], "requestID": "action_4", "user": "test28@k.on-the-side.net"},
+      {"do": [{"createFederatedID": {"lastname": "25", "country": "CA", "email": "test25@k.on-the-side.net",
+      "firstname": "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_5",
+      "user": "test25@k.on-the-side.net"}, {"do": [{"createEnterpriseID": {"lastname":
+      "22", "country": "CA", "email": "test22@test1.on-the-side.net", "firstname":
+      "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_6", "user":
+      "test22@test1.on-the-side.net"}, {"do": [{"createEnterpriseID": {"lastname":
+      "04", "country": "CA", "email": "test04@test1.on-the-side.net", "firstname":
+      "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_7", "user":
+      "test04@test1.on-the-side.net"}, {"do": [{"createFederatedID": {"lastname":
+      "17", "country": "CA", "email": "test17@k.on-the-side.net", "firstname": "Test",
+      "option": "updateIfAlreadyExists"}}], "requestID": "action_8", "user": "test17@k.on-the-side.net"},
+      {"do": [{"createEnterpriseID": {"lastname": "09", "country": "CA", "email":
+      "test09@test1.on-the-side.net", "firstname": "Test", "option": "updateIfAlreadyExists"}}],
+      "requestID": "action_9", "user": "test09@test1.on-the-side.net"}, {"do": [{"createFederatedID":
+      {"lastname": "05", "country": "CA", "email": "test05@k.on-the-side.net", "firstname":
+      "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_10", "user":
+      "test05@k.on-the-side.net"}]'
     headers:
-      Content-Length: ['2281']
+      Content-Length: ['2286']
       accept: [application/json]
       accept-encoding: ['gzip, deflate']
-      authorization: [Bearer eyJ4NXUiOiJpbXNfbmExLWtleS0xLmNlciIsImFsZyI6IlJTMjU2In0.eyJmZyI6IlJNVE1PUFlCUElIUUFBQUFBQUFBQUFDQUFBPT09PT09IiwiYXMiOiJpbXMtbmExIiwiYyI6InArSlFaeXYwSUhFc2tzVDFnUmVONHc9PSIsInVzZXJfaWQiOiIwRTNCNkE5OTU4MDZDNEJFMEE0OTVDQzdAdGVjaGFjY3QuYWRvYmUuY29tIiwibW9pIjoiNzM3YTYwZDciLCJzY29wZSI6Im9wZW5pZCx1c2VyX21hbmFnZW1lbnRfc2RrLEFkb2JlSUQiLCJjcmVhdGVkX2F0IjoiMTQ5Mzg1MDY2MjI4NSIsImlkIjoiMTQ5Mzg1MDY2MjI4NS03ZTYwNmIzZC0wOWE2LTQ2OTMtOWUzNy1kY2JlOGYxNTJhODEiLCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiZXhwaXJlc19pbiI6Ijg2NDAwMDAwIiwiY2xpZW50X2lkIjoiNDgzOTQ4NGZhOTAxNDdkNmJiODhmOGRiMGM3OTFmZjEifQ.gks8SxHzWh6rMOkHvrx2ecDkGQYrAveNybcNv5V0nqziGJ5MLIFWivRbe4wjgmmrCr1J30KQlcn5CTxVtMd6NRUV2g9Wvu8H39ooBFvdxUnom3ml43sfGKBhl8uVW5iF8ylqzYwEkdiQzRpBfeOqZvXkunHduFrU8TntP1-0lpafTA23aJRbLD7NrdKcCReMYvpzW5lH2JeegRhJu7tvrOl8ljXogmglVLqFr75nHgpSYIegIqK5odfJCP389T6lSG9rzx-JhQ9GQ9N8MrVrZ7NR7j3Cs9G61jNsEv3kK_NvdIf62QzHGWdXiBKtutsbm3rxDhacPt-7IhxCI2U5PQ]
+      authorization: [Bearer eyJ4NXUiOiJpbXNfbmExLWtleS0xLmNlciIsImFsZyI6IlJTMjU2In0.eyJmZyI6IlJNWkdDUFlCUElIUUFBQUFBQUFBQUFDQUFBPT09PT09IiwiYXMiOiJpbXMtbmExIiwiYyI6IjMvWk1mT0JsUHhrQ3cvZnBIbnFWNXc9PSIsInVzZXJfaWQiOiIwRTNCNkE5OTU4MDZDNEJFMEE0OTVDQzdAdGVjaGFjY3QuYWRvYmUuY29tIiwibW9pIjoiZmZlMmQ2ZSIsInNjb3BlIjoib3BlbmlkLHVzZXJfbWFuYWdlbWVudF9zZGssQWRvYmVJRCIsImNyZWF0ZWRfYXQiOiIxNDk0MDI4ODYwODIxIiwiaWQiOiIxNDk0MDI4ODYwODIxLWIwZTRhYzc5LTBlYWYtNGM4NC1iNzJkLTRkMjM5YjQ3ZjMzOSIsInR5cGUiOiJhY2Nlc3NfdG9rZW4iLCJleHBpcmVzX2luIjoiODY0MDAwMDAiLCJjbGllbnRfaWQiOiI0ODM5NDg0ZmE5MDE0N2Q2YmI4OGY4ZGIwYzc5MWZmMSJ9.eo9EnH4j2CTS5YR1_alAnAuB1qniENyrmrLG2ApdektPRYqWOy01-ea3SDS0BaqSBPLL791A7NYXI4QN9EDkGeuEz2alyFQnYllBCtL1CVTJ1UQyN9BguLZicAxU3c12Nr78orGWZwl_triud59-6w1TnSfoVtxeOrky0xB-FrAM8GiANE5xpH2kWgMQ_aoW4nDFZjIrT9A0J_IPZjk47aW6PPodQtwCB9sgmTmhwbSz14Rv2_9XMelc0VUcnt8qKzmbFNqH-tYv-tx8WLYlr-4LuGcILVerpMd_mPK2qShWC_9dvuWtHwbGGnZ96m853wgnTC2VI-0j3elFYTfPeg]
       connection: [keep-alive]
       content-type: [application/json]
       cookie: [AWSELB=D76BDFED16399693AEB011A9296087A3745D7B73361771968954DFCBD14BA47CF0A6CD81095A5E3F1A333662BEFAB7A16DC244B4E3C0A8505761589DB0B541DA3081DAA6F8]
       host: [usermanagement.adobe.io]
-      user-agent: ['user-sync/2.0 umapi-client/2.3 Python/2.7.10 (Darwin Kernel Version
-          14.5.0: Fri Feb 17 10:33:20 PST 2017; root:xnu-2782.50.9.1.1~1/RELEASE_X86_64)']
+      user-agent: ['user-sync/2.1rc1 umapi-client/2.4.1 Python/2.7.10 (Darwin Kernel
+          Version 14.5.0: Fri Feb 17 10:33:20 PST 2017; root:xnu-2782.50.9.1.1~1/RELEASE_X86_64)']
       x-api-key: [4839484fa90147d6bb88f8db0c791ff1]
     method: POST
     uri: https://usermanagement.adobe.io/v2/usermanagement/action/210DB41957FFDC210A495E53@AdobeOrg
   response:
-    body: {string: !!python/unicode '{"completed":6,"notCompleted":4,"completedInTestMode":0,"errors":[{"index":3,"step":0,"requestID":"action_14","user":"test15@k.on-the-side.net","message":"Username
-        is invalid: test15@k.on-the-side.net","errorCode":"error.user.name.contains.email"},{"index":4,"step":0,"requestID":"action_15","user":"test28@k.on-the-side.net","message":"Username
-        is invalid: test28@k.on-the-side.net","errorCode":"error.user.name.contains.email"},{"index":5,"step":0,"requestID":"action_16","user":"test25@k.on-the-side.net","message":"Username
-        is invalid: test25@k.on-the-side.net","errorCode":"error.user.name.contains.email"},{"index":9,"step":0,"requestID":"action_20","user":"test17@k.on-the-side.net","message":"Username
-        is invalid: test17@k.on-the-side.net","errorCode":"error.user.name.contains.email"}],"result":"partial"}'}
+    body: {string: !!python/unicode '{"completed":5,"notCompleted":5,"completedInTestMode":0,"errors":[{"index":2,"step":0,"requestID":"action_3","user":"test15@k.on-the-side.net","message":"Username
+        is invalid: test15@k.on-the-side.net","errorCode":"error.user.name.contains.email"},{"index":3,"step":0,"requestID":"action_4","user":"test28@k.on-the-side.net","message":"Username
+        is invalid: test28@k.on-the-side.net","errorCode":"error.user.name.contains.email"},{"index":4,"step":0,"requestID":"action_5","user":"test25@k.on-the-side.net","message":"Username
+        is invalid: test25@k.on-the-side.net","errorCode":"error.user.name.contains.email"},{"index":7,"step":0,"requestID":"action_8","user":"test17@k.on-the-side.net","message":"Username
+        is invalid: test17@k.on-the-side.net","errorCode":"error.user.name.contains.email"},{"index":9,"step":0,"requestID":"action_10","user":"test05@k.on-the-side.net","message":"Username
+        is invalid: test05@k.on-the-side.net","errorCode":"error.user.name.contains.email"}],"result":"partial"}'}
     headers:
       connection: [keep-alive]
-      content-length: ['814']
+      content-length: ['992']
       content-type: [application/json]
-      date: ['Wed, 03 May 2017 22:31:10 GMT']
+      date: ['Sat, 06 May 2017 00:01:04 GMT']
       server: [APIP]
       vary: [Accept-Encoding]
       x-powered-by: [Undertow/1]
-      x-request-id: [w9ugiOwW2y1YDjXd4W3xDP9rIVEqlHqL, w9ugiOwW2y1YDjXd4W3xDP9rIVEqlHqL]
+      x-request-id: [NCNziNME1tGTH9RHyry6a56uwGn33Wmi, NCNziNME1tGTH9RHyry6a56uwGn33Wmi]
     status: {code: 200, message: OK}
 - request:
-    body: !!python/unicode '[{"do": [{"createEnterpriseID": {"lastname": "09", "country":
-      "CA", "email": "test09@test1.on-the-side.net", "firstname": "Test", "option":
-      "updateIfAlreadyExists"}}], "requestID": "action_21", "user": "test09@test1.on-the-side.net"},
-      {"do": [{"createFederatedID": {"lastname": "06", "country": "CA", "email": "test06@ensemble-systems.com",
-      "firstname": "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_22",
-      "user": "test06@ensemble-systems.com"}, {"do": [{"createFederatedID": {"lastname":
-      "05", "country": "CA", "email": "test05@k.on-the-side.net", "firstname": "Test",
-      "option": "updateIfAlreadyExists"}}], "requestID": "action_23", "user": "test05@k.on-the-side.net"},
-      {"do": [{"createFederatedID": {"lastname": "03", "country": "CA", "email": "test03@ensemble-systems.com",
-      "firstname": "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_24",
-      "user": "test03@ensemble-systems.com"}, {"do": [{"createEnterpriseID": {"lastname":
-      "34", "country": "CA", "email": "test34@ensemble.ca", "firstname": "Test", "option":
-      "updateIfAlreadyExists"}}], "requestID": "action_25", "user": "test34@ensemble.ca"},
-      {"do": [{"createFederatedID": {"lastname": "19", "country": "CA", "email": "test19@k.on-the-side.net",
-      "firstname": "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_26",
-      "user": "test19@k.on-the-side.net"}, {"do": [{"createEnterpriseID": {"lastname":
-      "07", "country": "CA", "email": "test07@ensemble.ca", "firstname": "Test", "option":
-      "updateIfAlreadyExists"}}], "requestID": "action_27", "user": "test07@ensemble.ca"},
-      {"do": [{"createFederatedID": {"lastname": "01", "country": "CA", "email": "test01@k.on-the-side.net",
-      "firstname": "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_28",
-      "user": "test01@k.on-the-side.net"}, {"do": [{"createEnterpriseID": {"lastname":
-      "23", "country": "CA", "email": "test23@test1.on-the-side.net", "firstname":
-      "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_29", "user":
-      "test23@test1.on-the-side.net"}, {"do": [{"createEnterpriseID": {"lastname":
-      "08", "country": "CA", "email": "test08@test1.on-the-side.net", "firstname":
-      "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_30", "user":
-      "test08@test1.on-the-side.net"}]'
+    body: !!python/unicode '[{"do": [{"createFederatedID": {"lastname": "19", "country":
+      "CA", "email": "test19@k.on-the-side.net", "firstname": "Test", "option": "updateIfAlreadyExists"}}],
+      "requestID": "action_11", "user": "test19@k.on-the-side.net"}, {"do": [{"createFederatedID":
+      {"lastname": "01", "country": "CA", "email": "test01@k.on-the-side.net", "firstname":
+      "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_12", "user":
+      "test01@k.on-the-side.net"}, {"do": [{"createEnterpriseID": {"lastname": "23",
+      "country": "CA", "email": "test23@test1.on-the-side.net", "firstname": "Test",
+      "option": "updateIfAlreadyExists"}}], "requestID": "action_13", "user": "test23@test1.on-the-side.net"},
+      {"do": [{"createEnterpriseID": {"lastname": "08", "country": "CA", "email":
+      "test08@test1.on-the-side.net", "firstname": "Test", "option": "updateIfAlreadyExists"}}],
+      "requestID": "action_14", "user": "test08@test1.on-the-side.net"}, {"do": [{"createEnterpriseID":
+      {"lastname": "31", "country": "CA", "email": "test31@test1.on-the-side.net",
+      "firstname": "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_15",
+      "user": "test31@test1.on-the-side.net"}, {"do": [{"createEnterpriseID": {"lastname":
+      "13", "country": "CA", "email": "test13@test1.on-the-side.net", "firstname":
+      "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_16", "user":
+      "test13@test1.on-the-side.net"}]'
     headers:
-      Content-Length: ['2267']
+      Content-Length: ['1386']
       accept: [application/json]
       accept-encoding: ['gzip, deflate']
-      authorization: [Bearer eyJ4NXUiOiJpbXNfbmExLWtleS0xLmNlciIsImFsZyI6IlJTMjU2In0.eyJmZyI6IlJNVE1PUFlCUElIUUFBQUFBQUFBQUFDQUFBPT09PT09IiwiYXMiOiJpbXMtbmExIiwiYyI6InArSlFaeXYwSUhFc2tzVDFnUmVONHc9PSIsInVzZXJfaWQiOiIwRTNCNkE5OTU4MDZDNEJFMEE0OTVDQzdAdGVjaGFjY3QuYWRvYmUuY29tIiwibW9pIjoiNzM3YTYwZDciLCJzY29wZSI6Im9wZW5pZCx1c2VyX21hbmFnZW1lbnRfc2RrLEFkb2JlSUQiLCJjcmVhdGVkX2F0IjoiMTQ5Mzg1MDY2MjI4NSIsImlkIjoiMTQ5Mzg1MDY2MjI4NS03ZTYwNmIzZC0wOWE2LTQ2OTMtOWUzNy1kY2JlOGYxNTJhODEiLCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiZXhwaXJlc19pbiI6Ijg2NDAwMDAwIiwiY2xpZW50X2lkIjoiNDgzOTQ4NGZhOTAxNDdkNmJiODhmOGRiMGM3OTFmZjEifQ.gks8SxHzWh6rMOkHvrx2ecDkGQYrAveNybcNv5V0nqziGJ5MLIFWivRbe4wjgmmrCr1J30KQlcn5CTxVtMd6NRUV2g9Wvu8H39ooBFvdxUnom3ml43sfGKBhl8uVW5iF8ylqzYwEkdiQzRpBfeOqZvXkunHduFrU8TntP1-0lpafTA23aJRbLD7NrdKcCReMYvpzW5lH2JeegRhJu7tvrOl8ljXogmglVLqFr75nHgpSYIegIqK5odfJCP389T6lSG9rzx-JhQ9GQ9N8MrVrZ7NR7j3Cs9G61jNsEv3kK_NvdIf62QzHGWdXiBKtutsbm3rxDhacPt-7IhxCI2U5PQ]
+      authorization: [Bearer eyJ4NXUiOiJpbXNfbmExLWtleS0xLmNlciIsImFsZyI6IlJTMjU2In0.eyJmZyI6IlJNWkdDUFlCUElIUUFBQUFBQUFBQUFDQUFBPT09PT09IiwiYXMiOiJpbXMtbmExIiwiYyI6IjMvWk1mT0JsUHhrQ3cvZnBIbnFWNXc9PSIsInVzZXJfaWQiOiIwRTNCNkE5OTU4MDZDNEJFMEE0OTVDQzdAdGVjaGFjY3QuYWRvYmUuY29tIiwibW9pIjoiZmZlMmQ2ZSIsInNjb3BlIjoib3BlbmlkLHVzZXJfbWFuYWdlbWVudF9zZGssQWRvYmVJRCIsImNyZWF0ZWRfYXQiOiIxNDk0MDI4ODYwODIxIiwiaWQiOiIxNDk0MDI4ODYwODIxLWIwZTRhYzc5LTBlYWYtNGM4NC1iNzJkLTRkMjM5YjQ3ZjMzOSIsInR5cGUiOiJhY2Nlc3NfdG9rZW4iLCJleHBpcmVzX2luIjoiODY0MDAwMDAiLCJjbGllbnRfaWQiOiI0ODM5NDg0ZmE5MDE0N2Q2YmI4OGY4ZGIwYzc5MWZmMSJ9.eo9EnH4j2CTS5YR1_alAnAuB1qniENyrmrLG2ApdektPRYqWOy01-ea3SDS0BaqSBPLL791A7NYXI4QN9EDkGeuEz2alyFQnYllBCtL1CVTJ1UQyN9BguLZicAxU3c12Nr78orGWZwl_triud59-6w1TnSfoVtxeOrky0xB-FrAM8GiANE5xpH2kWgMQ_aoW4nDFZjIrT9A0J_IPZjk47aW6PPodQtwCB9sgmTmhwbSz14Rv2_9XMelc0VUcnt8qKzmbFNqH-tYv-tx8WLYlr-4LuGcILVerpMd_mPK2qShWC_9dvuWtHwbGGnZ96m853wgnTC2VI-0j3elFYTfPeg]
       connection: [keep-alive]
       content-type: [application/json]
       cookie: [AWSELB=D76BDFED16399693AEB011A9296087A3745D7B73361771968954DFCBD14BA47CF0A6CD81095A5E3F1A333662BEFAB7A16DC244B4E3C0A8505761589DB0B541DA3081DAA6F8]
       host: [usermanagement.adobe.io]
-      user-agent: ['user-sync/2.0 umapi-client/2.3 Python/2.7.10 (Darwin Kernel Version
-          14.5.0: Fri Feb 17 10:33:20 PST 2017; root:xnu-2782.50.9.1.1~1/RELEASE_X86_64)']
+      user-agent: ['user-sync/2.1rc1 umapi-client/2.4.1 Python/2.7.10 (Darwin Kernel
+          Version 14.5.0: Fri Feb 17 10:33:20 PST 2017; root:xnu-2782.50.9.1.1~1/RELEASE_X86_64)']
       x-api-key: [4839484fa90147d6bb88f8db0c791ff1]
     method: POST
     uri: https://usermanagement.adobe.io/v2/usermanagement/action/210DB41957FFDC210A495E53@AdobeOrg
   response:
-    body: {string: !!python/unicode '{"completed":7,"notCompleted":3,"completedInTestMode":0,"errors":[{"index":2,"step":0,"requestID":"action_23","user":"test05@k.on-the-side.net","message":"Username
-        is invalid: test05@k.on-the-side.net","errorCode":"error.user.name.contains.email"},{"index":5,"step":0,"requestID":"action_26","user":"test19@k.on-the-side.net","message":"Username
-        is invalid: test19@k.on-the-side.net","errorCode":"error.user.name.contains.email"},{"index":7,"step":0,"requestID":"action_28","user":"test01@k.on-the-side.net","message":"Username
+    body: {string: !!python/unicode '{"completed":4,"notCompleted":2,"completedInTestMode":0,"errors":[{"index":0,"step":0,"requestID":"action_11","user":"test19@k.on-the-side.net","message":"Username
+        is invalid: test19@k.on-the-side.net","errorCode":"error.user.name.contains.email"},{"index":1,"step":0,"requestID":"action_12","user":"test01@k.on-the-side.net","message":"Username
         is invalid: test01@k.on-the-side.net","errorCode":"error.user.name.contains.email"}],"result":"partial"}'}
     headers:
       connection: [keep-alive]
-      content-length: ['632']
+      content-length: ['450']
       content-type: [application/json]
-      date: ['Wed, 03 May 2017 22:31:12 GMT']
+      date: ['Sat, 06 May 2017 00:01:07 GMT']
       server: [APIP]
       vary: [Accept-Encoding]
       x-powered-by: [Undertow/1]
-      x-request-id: [EM2cu5XWDU6wl1hT4m0BzaotXQU81X8t, EM2cu5XWDU6wl1hT4m0BzaotXQU81X8t]
-    status: {code: 200, message: OK}
-- request:
-    body: !!python/unicode '[{"do": [{"createEnterpriseID": {"lastname": "31", "country":
-      "CA", "email": "test31@test1.on-the-side.net", "firstname": "Test", "option":
-      "updateIfAlreadyExists"}}], "requestID": "action_31", "user": "test31@test1.on-the-side.net"},
-      {"do": [{"createEnterpriseID": {"lastname": "21", "country": "CA", "email":
-      "test21@ensemble.ca", "firstname": "Test", "option": "updateIfAlreadyExists"}}],
-      "requestID": "action_32", "user": "test21@ensemble.ca"}, {"do": [{"createFederatedID":
-      {"lastname": "00", "country": "CA", "email": "test00@ensemble-systems.com",
-      "firstname": "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_33",
-      "user": "test00@ensemble-systems.com"}, {"do": [{"createEnterpriseID": {"lastname":
-      "13", "country": "CA", "email": "test13@test1.on-the-side.net", "firstname":
-      "Test", "option": "updateIfAlreadyExists"}}], "requestID": "action_34", "user":
-      "test13@test1.on-the-side.net"}, {"do": [{"createEnterpriseID": {"lastname":
-      "20", "country": "CA", "email": "test20@ensemble.ca", "firstname": "Test", "option":
-      "updateIfAlreadyExists"}}], "requestID": "action_35", "user": "test20@ensemble.ca"}]'
-    headers:
-      Content-Length: ['1127']
-      accept: [application/json]
-      accept-encoding: ['gzip, deflate']
-      authorization: [Bearer eyJ4NXUiOiJpbXNfbmExLWtleS0xLmNlciIsImFsZyI6IlJTMjU2In0.eyJmZyI6IlJNVE1PUFlCUElIUUFBQUFBQUFBQUFDQUFBPT09PT09IiwiYXMiOiJpbXMtbmExIiwiYyI6InArSlFaeXYwSUhFc2tzVDFnUmVONHc9PSIsInVzZXJfaWQiOiIwRTNCNkE5OTU4MDZDNEJFMEE0OTVDQzdAdGVjaGFjY3QuYWRvYmUuY29tIiwibW9pIjoiNzM3YTYwZDciLCJzY29wZSI6Im9wZW5pZCx1c2VyX21hbmFnZW1lbnRfc2RrLEFkb2JlSUQiLCJjcmVhdGVkX2F0IjoiMTQ5Mzg1MDY2MjI4NSIsImlkIjoiMTQ5Mzg1MDY2MjI4NS03ZTYwNmIzZC0wOWE2LTQ2OTMtOWUzNy1kY2JlOGYxNTJhODEiLCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiZXhwaXJlc19pbiI6Ijg2NDAwMDAwIiwiY2xpZW50X2lkIjoiNDgzOTQ4NGZhOTAxNDdkNmJiODhmOGRiMGM3OTFmZjEifQ.gks8SxHzWh6rMOkHvrx2ecDkGQYrAveNybcNv5V0nqziGJ5MLIFWivRbe4wjgmmrCr1J30KQlcn5CTxVtMd6NRUV2g9Wvu8H39ooBFvdxUnom3ml43sfGKBhl8uVW5iF8ylqzYwEkdiQzRpBfeOqZvXkunHduFrU8TntP1-0lpafTA23aJRbLD7NrdKcCReMYvpzW5lH2JeegRhJu7tvrOl8ljXogmglVLqFr75nHgpSYIegIqK5odfJCP389T6lSG9rzx-JhQ9GQ9N8MrVrZ7NR7j3Cs9G61jNsEv3kK_NvdIf62QzHGWdXiBKtutsbm3rxDhacPt-7IhxCI2U5PQ]
-      connection: [keep-alive]
-      content-type: [application/json]
-      cookie: [AWSELB=D76BDFED16399693AEB011A9296087A3745D7B73361771968954DFCBD14BA47CF0A6CD81095A5E3F1A333662BEFAB7A16DC244B4E3C0A8505761589DB0B541DA3081DAA6F8]
-      host: [usermanagement.adobe.io]
-      user-agent: ['user-sync/2.0 umapi-client/2.3 Python/2.7.10 (Darwin Kernel Version
-          14.5.0: Fri Feb 17 10:33:20 PST 2017; root:xnu-2782.50.9.1.1~1/RELEASE_X86_64)']
-      x-api-key: [4839484fa90147d6bb88f8db0c791ff1]
-    method: POST
-    uri: https://usermanagement.adobe.io/v2/usermanagement/action/210DB41957FFDC210A495E53@AdobeOrg
-  response:
-    body: {string: !!python/unicode '{"completed":5,"notCompleted":0,"completedInTestMode":0,"result":"success"}'}
-    headers:
-      connection: [keep-alive]
-      content-length: ['75']
-      content-type: [application/json]
-      date: ['Wed, 03 May 2017 22:31:15 GMT']
-      server: [APIP]
-      vary: [Accept-Encoding]
-      x-powered-by: [Undertow/1]
-      x-request-id: [1yjAPjzyUWe1KzbhWbA8vKgjAhHg1H2U, 1yjAPjzyUWe1KzbhWbA8vKgjAhHg1H2U]
+      x-request-id: [W98F9sR7OwyE9t1iZeZwMOFxXU26314R, W98F9sR7OwyE9t1iZeZwMOFxXU26314R]
     status: {code: 200, message: OK}
 version: 1
