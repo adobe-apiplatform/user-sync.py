@@ -37,7 +37,7 @@ TEST_TEMPLATE_KEYS = {
     '/user_sync/live/output_dir': (False, False, "live/out"),
     '/user_sync/recorded/working_dir': (False, False, "rec"),
     '/user_sync/recorded/output_dir': (False, False, "rec/out"),
-    '/server_profile/cassette_filename': (False, False, 'live/cassette.yml'),
+    '/server/cassette_filename': (False, False, 'live/cassette.yml'),
     }
 
 TEST_CONFIG_FILENAME = 'test-config.yml'
@@ -285,7 +285,7 @@ class UserSyncTest:
         self.server_config = server_config
         self.server_config.update({
             'test_folder_path': config_path,
-            'cassette_filename': config['server_profile']['cassette_filename'],
+            'cassette_filename': config['server']['cassette_filename'],
         })
 
         self.test_config = test_set_config.copy()

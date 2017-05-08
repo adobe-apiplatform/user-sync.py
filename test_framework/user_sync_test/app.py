@@ -2,7 +2,6 @@ import sys
 import argparse
 import logging
 import error
-import vcr
 
 from test import UserSyncTestSet
 from version import __version__ as APP_VERSION
