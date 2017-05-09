@@ -115,6 +115,9 @@ class ConfigFileLoader:
             elif dictionary.has_key(key):
                 if isinstance(dictionary[key], dict):
                     cls.process_path_key(dictionary[key], keys, level+1, must_exist, can_have_subdict, default_val)
+                elif not dictionary[key]:
+                    dictionary[key] = {}
+                    cls.process_path_key(dictionary[key], keys, level+1, must_exist, can_have_subdict, default_val)
             elif default_val:
                 dictionary[key] = {}
                 cls.process_path_key(dictionary[key], keys, level+1, must_exist, can_have_subdict, default_val)
@@ -349,8 +352,8 @@ class UserSyncTest:
 
         LINE_COMPARE_MAP = [
             StringComparator(
-                r"^%s INFO main - %s (.*)$", [timestamp_re, re.escape(user_sync_path)],
-                r"^%s INFO main - %s --bypass-authentication-mode %s$", [timestamp_re, re.escape(user_sync_path), None]
+                r"^%s INFO main - .*user-sync(?:\.pex)? (.*)$", [timestamp_re],
+                r"^%s INFO main - .*user-sync(?:\.pex)? --bypass-authentication-mode %s$", [timestamp_re, None]
             ),
             StringComparator(
                 r"^%s (.*)\(Total time: \d:\d\d:\d\d\)(.*)$", [timestamp_re],
