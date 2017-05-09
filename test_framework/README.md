@@ -52,9 +52,11 @@ The test framework can basically be run in either live or recorded mode.
 
 In live mode, when the user-sync tool is run, the tool communicates through the framework to the live server. All requests, responses and outputs are recorded by the framework. When the user-sync tool completes execution, the framework does not test execution success or failure, the user must review the recorded data to ensure the recordings and output is correct, as this recorded data is used to ensure a subsequent non-live run of the user-sync tool responds identically.
 
-In recorded mode, user-sync tool requests and fulfilled using the data recorded during the live run, and the resulting output is compared against the output generated in the live run. The test is considered a success if the output matches the output from the live run.
+In recorded mode, user-sync tool requests are fulfilled using the data recorded during the live run, and the resulting output is compared against the output generated in the live run. The test is considered a success if the output matches the output from the live run.
 
 When comparing recorded run output against live mode output, the content must be identical except where there are timestamps and the --bypass-authentication-mode argument on the user-sync arguments line.
+
+TODO: the user-sync path in the arguments line may be different except for the executable name, need to add support for matching lines with paths that may be different when run on another environment where the framework might be placed in a different path.
 
 ## User Sync Test command line
 
@@ -65,6 +67,20 @@ When comparing recorded run output against live mode output, the content must be
 | `-c` _filename_ | The complete path to the main test set configuration file, absolute or relative to the working folder. Default filename is "test-set-config.yml" |
 | `-t` _test_name_ | (Optional)The name of the test to run. The name of the test is defined as the name of the folder in which the test is in. If no test name is specified, all tests in the test set are run. |
 | `-r` | (Optional) Starts the test framework in live mode, which will record requests, responses, and output. If not set, the framework will run the user-sync tool using the recorded data to respond to the tool's umapi requests. In non-live mode, the output text file will be compared against the live output file, to assert that the tool gives the same output as when run live. |
+
+## Examples
+
+To run the entire test set, navigate to the test_framework/dist folder and enter the following command:
+
+`./user-sync-test -c ../tests/test-set-config.yml`
+
+To run a single test, specify it using the -t argument:
+
+`./user-sync-test -c ../tests/test-set-config.yml -t "01 - update single user info"`
+
+To run a single test in live mode, use the -r argument:
+
+`./user-sync-test -c ../tests/test-set-config.yml -t "01 - update single user info" -r`
 
 # Configuration
 
