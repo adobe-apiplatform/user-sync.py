@@ -12,12 +12,16 @@
       <div>
           <div class="nav-area">
             <ul>
-            
+
              {% assign current_level = 1 %}
              {% assign page_list = (site.pages) %}
              {% assign filtered_list = page_list | where_exp: 'nav_order', "nav_order" %}
-             {% assign final_list = filtered_list | sort: 'nav_order' %}
-             {% for my_page in final_list %}
+             {% for my_page in filtered_list %}
+             ---{{my_page.lang}} --- {{my_page.url}} --- {{my_page.nav_order}}<br/>
+             {% endfor %}
+
+             { % assign final_list = filtered_list | sort: 'nav_order' % }
+             {% for my_page in filtered_list %}
                 {% if my_page.nav_link and my_page.nav_link != blank %}
                    {% if my_page.nav_level > current_level %}
                        <ul>
