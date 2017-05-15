@@ -15,14 +15,15 @@
 
              {% assign current_level = 1 %}
              {% assign page_list = (site.pages) %}
-             {% assign filtered_list = page_list | where_exp: 'page', "page.nav_order != blank" %}
+             {% assign filtered_list = page_list | where_exp: 'page', "page.url contains 'en/'" %}
              {% for my_page in filtered_list %}
              ---{{my_page.lang}} --- {{my_page.url}} --- {{my_page.nav_order}}<br/>
              {% endfor %}
 
              { % assign final_list = filtered_list | sort: 'nav_order' % }
+             {% capture lang %}/{{ my_page.lang }}/{% endcapture %}
              {% for my_page in filtered_list %}
-                {% if my_page.nav_link and my_page.nav_link != blank and my_page.lang and my_page.lang != blank and my_page.url contains my_page.lang %}
+                {% if my_page.nav_link and my_page.nav_link != blank and my_page.lang and my_page.lang != blank and my_page.url contains lang %}
                    {% if my_page.nav_level > current_level %}
                        <ul>
                        {% assign current_level = my_page.nav_level %}
