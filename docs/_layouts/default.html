@@ -22,7 +22,7 @@
 
              { % assign final_list = filtered_list | sort: 'nav_order' % }
              {% for my_page in filtered_list %}
-                {% if my_page.nav_link and my_page.nav_link != blank my_page.lang and my_page.lang != blank and my_page.url contains my_page.lang%}
+                {% if my_page.nav_link and my_page.nav_link != blank my_page.lang and my_page.lang != blank and my_page.url contains my_page.lang %}
                    {% if my_page.nav_level > current_level %}
                        <ul>
                        {% assign current_level = my_page.nav_level %}
