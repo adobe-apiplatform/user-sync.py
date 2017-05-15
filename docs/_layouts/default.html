@@ -15,7 +15,7 @@
 
              {% assign current_level = 1 %}
              {% assign page_list = (site.pages) %}
-             {% assign filtered_list = page_list | where_exp: 'nav_order', "nav_order != ''" %}
+             {% assign filtered_list = page_list | where_exp: 'page', "page.nav_order != blank" %}
              {% for my_page in filtered_list %}
              ---{{my_page.lang}} --- {{my_page.url}} --- {{my_page.nav_order}}<br/>
              {% endfor %}
