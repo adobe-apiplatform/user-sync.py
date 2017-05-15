@@ -21,7 +21,7 @@
              {% endfor %}
 
              { % assign final_list = filtered_list | sort: 'nav_order' % }
-             {% capture lang %}/{{ my_page.lang }}/{% endcapture %}
+             {% capture lang %}/{{ page.lang }}/{% endcapture %}
              {% for my_page in filtered_list %}
                 |{{my_page.lang}}|{{lang}}|<br>
                 {% if my_page.nav_link and my_page.nav_link != blank and my_page.lang and my_page.lang != blank and my_page.url contains lang %}
