@@ -1,5 +1,9 @@
 ---
 layout: default
+lang: en
+nav_link: Configuration Files
+nav_level: 2
+nav_order: 280
 ---
 
 # Setup Configuration Files

@@ -1,5 +1,9 @@
 ---
 layout: default
+lang: en
+nav_link: Layout Products
+nav_level: 2
+nav_order: 230
 ---
 
 # Layout Your Adobe Products, Product Configurations, and User Groups

@@ -14,7 +14,7 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 title: User Sync
-email: dbrotsky@adobe.com
+email: 
 description: > # this means to ignore newlines until "baseurl:"
   User Sync is a tool for synchronizing Adobe customer directories
   with their Adobe Admin Consoles via the User Management API.
@@ -24,7 +24,7 @@ github_username:  adobe-apiplatform
 
 # Build settings
 markdown: kramdown
-theme: minima
+theme: minima-adobe
 gems:
   - jekyll-feed
 exclude:

@@ -1,5 +1,9 @@
 ---
 layout: default
+lang: en
+nav_link: Test Run
+nav_level: 2
+nav_order: 290
 ---
 
 # Make a Test Run To Check Configuration

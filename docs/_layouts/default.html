@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="{{ page.lang | default: site.lang | default: "en" }}">
+
+  {% include head.html %}
+
+  <body>
+
+    {% include header.html %}
+
+    <main class="page-content" aria-label="Content">
+      
+      <div>
+          <div class="nav-area">
+            <ul>
+             {% assign current_level = 1 %}
+             {% assign page_list = (site.pages | sort: 'nav_order') %}
+             {% for my_page in page_list %}
+                {% if my_page.nav_link and my_page.nav_link != blank %}
+                   {% if my_page.nav_level > current_level %}
+                       <ul>
+                       {% assign current_level = my_page.nav_level %}
+                   {% elsif my_page.nav_level < current_level %}
+                                                           </ul>
+                         {% assign current_level = my_page.nav_level %}
+                   {% endif %}
+                   <li><a class="page-link" href="{{ my_page.url | relative_url }}">{{ my_page.nav_link | escape }}</a></li>
+                {% endif %}
+             {% endfor %}
+            </ul>
+          </div>
+          <div class="wrapper">
+            {{ content }}
+          </div>
+      </div>
+    </main>
+
+    {% include footer.html %}
+
+  </body>
+
+</html>

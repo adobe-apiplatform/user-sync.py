@@ -2,6 +2,7 @@
 layout: page
 title: User Sync Frequently Asked Questions
 advertise: FAQ
+lang: en
 ---
 ### Table of Contents
 {:."no_toc"}

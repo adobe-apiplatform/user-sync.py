@@ -1,5 +1,9 @@
 ---
 layout: default
+lang: en
+nav_link: Account Deletion
+nav_level: 2
+nav_order: 240
 ---
 
 # Decide How You Will Handle Account Deletion

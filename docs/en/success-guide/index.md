@@ -2,6 +2,10 @@
 layout: page
 title: Setup and Success Guide
 advertise: Setup and Success Guide
+lang: en
+nav_link: Setup Guide Contents
+nav_level: 1
+nav_order: 30
 ---
 
 Version 1.1, released 2017-03-06

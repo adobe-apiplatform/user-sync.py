@@ -1,5 +1,9 @@
 ---
 layout: default
+lang: en
+nav_link: Install User Sync
+nav_level: 2
+nav_order: 270
 ---
 
 # Install User Sync
