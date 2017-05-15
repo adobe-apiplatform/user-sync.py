@@ -65,7 +65,7 @@ class UmapiConnector(object):
         options['enterprise'] = enterprise_options = enterprise_builder.get_options() 
         self.options = options
         self.logger = logger = helper.create_logger(options)
-        server_config.report_unused_values(logger)
+        if server_config: server_config.report_unused_values(logger)
         logger.debug('UMAPI initialized with options: %s', options)
 
         # set up the auth dict for umapi-client
@@ -302,46 +302,53 @@ class ActionManager(object):
         '''
         :type action: umapi_client.UserAction
         '''
-        sent = 0
         try:
             _, sent, _ = self.connection.execute_single(action)
         except umapi_client.BatchError as e:
-            self.logger.critical("Unexpected response! Actions may have failed: %s", e)
-            sent = e.statistics[1]
-        finally:
+            self.process_sent_items(e.statistics[1], e)
+        else:
             self.process_sent_items(sent)
 
-    def process_sent_items(self, total_sent):
-        if (total_sent > 0):
-            sent_items = self.items[0:total_sent]
-            self.items = self.items[total_sent:]        
-            for sent_item in sent_items:
-                action = sent_item['action']
-                action_errors = action.execution_errors()
-                is_success = not action_errors or len(action_errors) == 0
-                
-                if (not is_success):
+    def flush(self):
+        try:
+            _, sent, _ = self.connection.execute_queued()
+        except umapi_client.BatchError as e:
+            self.process_sent_items(e.statistics[1], e)
+        else:
+            self.process_sent_items(sent)
+
+    def process_sent_items(self, total_sent, batch_error=None):
+        '''
+        Note items as sent, log any processing errors, and invoke any callbacks
+        :param total_sent: number of sent items from queue, must be >= 0
+        :param batch_error: a batch-level error that affected all items, if there was one
+        :return: 
+        '''
+        # update queue
+        sent_items, self.items = self.items[:total_sent], self.items[total_sent:]
+
+        # collect sent actions, their errors, their callbacks
+        details = [(item['action'], item['action'].execution_errors(), item['callback']) for item in sent_items]
+
+        # log errors
+        if batch_error:
+            request_ids = str([action.frame.get("requestID") for action, _, _ in details])
+            self.logger.critical("Unexpected response! Sent actions %s may have failed: %s", request_ids, batch_error)
+            self.error_count += total_sent
+        else:
+            for action, errors, _ in details:
+                if errors:
                     self.error_count += 1
-                    for error in action_errors:
+                    for error in errors:
                         self.logger.error('Error in requestID: %s (User: %s, Command: %s): code: "%s" message: "%s"',
                                           action.frame.get("requestID"),
                                           error.get("target", "<Unknown>"), error.get("command", "<Unknown>"),
                                           error.get('errorCode', "<None>"), error.get('message', "<None>"))
-                
-                item_callback = sent_item['callback']
-                if (callable(item_callback)):
-                    item_callback({
-                        "action": action, 
-                        "is_success": is_success, 
-                        "errors": action_errors
-                    })
-
-    def flush(self):
-        sent = 0
-        try:
-            _, sent, _ = self.connection.execute_queued()
-        except umapi_client.BatchError as e:
-            self.logger.critical("Unexpected response! Actions may have failed: %s", e)
-            sent = e.statistics[1]
-        finally:
-            self.process_sent_items(sent)
+        # invoke callbacks
+        for action, errors, callback in details:
+            if (callable(callback)):
+                callback({
+                    "action": action,
+                    "is_success": not batch_error and not errors,
+                    "errors": batch_error or errors
+                })
