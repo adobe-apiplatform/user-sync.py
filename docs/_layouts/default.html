@@ -17,12 +17,12 @@
              {% assign page_list = (site.pages) %}
              {% assign filtered_list = page_list | where_exp: 'page', "page.nav_level > 0" %}
              {% for my_page in filtered_list %}
-             ---{{my_page.lang}} --- {{my_page.url}} --- {{my_page.nav_order}}<br/>
+             {% comment %}---{{my_page.lang}} --- {{my_page.url}} --- {{my_page.nav_order}}<br/>{% endcomment %}
              {% endfor %}
 
-             {% assign final_list = filtered_list | sort: 'nav_order' %}
+             { % assign final_list = filtered_list | sort: 'nav_order' % }
              {% capture lang %}/{{ page.lang }}/{% endcapture %}
-             {% for my_page in final_list %}
+             {% for my_page in filtered_list %}
                 {% if my_page.nav_link and my_page.nav_link != blank and my_page.lang and my_page.lang != blank and my_page.url contains lang %}
                    {% if my_page.nav_level > current_level %}
                        <ul>
