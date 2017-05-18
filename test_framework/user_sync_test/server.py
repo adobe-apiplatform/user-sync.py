@@ -51,6 +51,7 @@ class UserSyncTestService:
         record_mode = 'all' if self.config['pass_through'] else 'none'
         recorder = vcr.VCR(
             record_mode=record_mode,
+            match_on=('method', 'scheme', 'host', 'port', 'path', 'query', 'body'),
             decode_compressed_response=True
         )
         cassette = recorder.use_cassette(self.config['cassette_filename'])

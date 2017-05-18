@@ -71,7 +71,7 @@ def iter_csv_rows(file_path, delimiter = None, recognized_column_names = None, l
         if (recognized_column_names != None):
             unrecognized_column_names = [column_name for column_name in reader.fieldnames if column_name not in recognized_column_names] 
             if (len(unrecognized_column_names) > 0 and logger != None):
-                logger.warn("In file '%s': unrecognized column names: %s", file_path, unrecognized_column_names)
+                logger.warn("In file [[%s]]: unrecognized column names: %s", file_path, unrecognized_column_names)
 
         for row in reader:
             yield row
