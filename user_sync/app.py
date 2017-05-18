@@ -356,7 +356,7 @@ def log_parameters(args):
     :return: None
     """
     logger.info('------- Invocation parameters -------')
-    logger.info(' '.join(sys.argv))
+    logger.info('[[%s]]' % (' '.join(sys.argv)))
     logger.debug('-------- Internal parameters --------')
     for parameter_name, parameter_value in six.iteritems(args.__dict__):
         logger.debug('  %s: %s', parameter_name, parameter_value)

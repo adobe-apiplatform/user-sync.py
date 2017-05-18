@@ -134,16 +134,11 @@ class UmapiConnector(object):
         if caller_options['bypass_authentication_mode']:
             auth = umapi_client.auth.Auth('test', 'test')
         else:
-            api_key = enterprise_options['api_key']
-            private_key_file_path = enterprise_options['priv_key_path']
-            logger.debug('Creating connection for org id: "%s" using private key file: "%s"', org_id,
-                         private_key_file_path)
             auth_dict = {
                 "org_id": org_id,
                 "tech_acct_id": enterprise_options['tech_acct'],
-                "api_key": api_key,
-                "client_secret": enterprise_options['client_secret'],
-                "private_key_file": private_key_file_path
+                "api_key": enterprise_config.get_credential('api_key', org_id),
+                "client_secret": enterprise_config.get_credential('client_secret', org_id),
             }
 
             # get the private key

@@ -352,8 +352,8 @@ class UserSyncTest:
 
         LINE_COMPARE_MAP = [
             StringComparator(
-                r"^%s INFO main - .*user-sync(?:\.pex)? (.*)$", [timestamp_re],
-                r"^%s INFO main - .*user-sync(?:\.pex)? --bypass-authentication-mode %s$", [timestamp_re, None]
+                r"^%s (.*)\[\[.*\]\](.*)$", [timestamp_re],
+                r"^%s %s\[\[.*\]\]%s$", [timestamp_re, None, None]
             ),
             StringComparator(
                 r"^%s (.*)\(Total time: \d:\d\d:\d\d\)(.*)$", [timestamp_re],
