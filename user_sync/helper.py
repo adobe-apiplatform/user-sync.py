@@ -19,8 +19,10 @@
 # SOFTWARE.
 
 import csv
+import unicodecsv as csv
 import datetime
 import os
+import types
 
 import user_sync.error
 
@@ -76,6 +78,34 @@ def iter_csv_rows(file_path, delimiter = None, recognized_column_names = None, l
         for row in reader:
             yield row
             
+def write_dict_to_csv(file_path, directory_users):
+    '''
+    Write directory users to the file path in csv format with the order specified in csv header list  
+    :param file_path: string
+    :param directory_users: iterable(dict)
+    :return:
+    '''
+    with open(file_path, 'wb') as csv_file:
+        writer = csv.writer(csv_file, encoding='utf-8')
+        header = _get_csv_header()
+        writer.writerow(header)
+        for directory_user in sorted(directory_users):
+            user_row = []
+            for key in header:
+                value = directory_user.get(key)
+                if isinstance(value, types.ListType):
+                    value = ",".join(value)
+                user_row.append(value)
+            writer.writerow(user_row)
+
+def _get_csv_header():
+    '''
+    Get a list of CSV header, the header is use to define what goes into the directory csv export
+    :return: list(string)
+    '''
+    header = ["firstname","lastname","email","country","groups","identity_type","username","domain"]
+    return header
+
 class JobStats(object):
     line_left_count = 10
     line_width = 60

@@ -95,6 +95,10 @@ def process_args():
                         help='authentication with the Adobe server is skipped. This is used for testing only.',
                         default=False,
                         action='store_true', dest='bypass_authentication_mode')
+    parser.add_argument('--export-directory-to_csv',
+                        help='write directory content to csv. The path will be relative to the working directory. '
+                             'When this option is use, the tool will only export directory content to csv',
+                        metavar='path_to_csv_file', dest='directory_to_csv_file_path')
     return parser.parse_args()
 
 
@@ -150,6 +154,19 @@ def init_log(logging_config):
         if unknown_file_log_level:
             logger.log(logging.WARNING, 'Unknown file log level: %s setting to info' % options['file_log_level'])
 
+def write_directory_content_to_csv(csv_filename, directory_groups, directory_connector, extended_attributes):
+    '''
+    load users from directory and export it to a csv file
+    :param csv_filename: 
+    :param directory_groups: 
+    :param directory_connector: 
+    :param extended_attributes: 
+    :return: 
+    '''
+    directory_users = directory_connector.load_users_and_groups(directory_groups, extended_attributes)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    user_sync.helper.write_dict_to_csv(dir_path + "/" + csv_filename, directory_users)
+
 
 def begin_work(config_loader):
     '''
@@ -192,19 +209,25 @@ def begin_work(config_loader):
             directory_connector_options['user_identity_type'] = rule_config['new_account_type']
         directory_connector.initialize(directory_connector_options)
 
-    primary_name = '.primary' if secondary_umapi_configs else ''
-    umapi_primary_connector = user_sync.connector.umapi.UmapiConnector(primary_name, primary_umapi_config)
-    umapi_other_connectors = {}
-    for secondary_umapi_name, secondary_config in secondary_umapi_configs.iteritems():
-        umapi_secondary_conector = user_sync.connector.umapi.UmapiConnector(".secondary.%s" % secondary_umapi_name,
-                                                                            secondary_config)
-        umapi_other_connectors[secondary_umapi_name] = umapi_secondary_conector
-    umapi_connectors = user_sync.rules.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
+    # if dump from directory to csv is enabled with a csv filename.
+    # Sync tool will dump directory to csv instead of preforming sync action
+    if config_loader.options['directory_to_csv_file_path']:
+        write_directory_content_to_csv(config_loader.options['directory_to_csv_file_path'], directory_groups,
+                                       directory_connector, rule_config['extended_attributes'])
+    else:
+        primary_name = '.primary' if secondary_umapi_configs else ''
+        umapi_primary_connector = user_sync.connector.umapi.UmapiConnector(primary_name, primary_umapi_config)
+        umapi_other_connectors = {}
+        for secondary_umapi_name, secondary_config in secondary_umapi_configs.iteritems():
+            umapi_secondary_conector = user_sync.connector.umapi.UmapiConnector(".secondary.%s" % secondary_umapi_name,
+                                                                                secondary_config)
+            umapi_other_connectors[secondary_umapi_name] = umapi_secondary_conector
+        umapi_connectors = user_sync.rules.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
 
-    rule_processor = user_sync.rules.RuleProcessor(rule_config)
-    if (len(directory_groups) == 0 and rule_processor.will_manage_groups()):
-        logger.warn('no groups mapped in config file')
-    rule_processor.run(directory_groups, directory_connector, umapi_connectors)
+        rule_processor = user_sync.rules.RuleProcessor(rule_config)
+        if (len(directory_groups) == 0 and rule_processor.will_manage_groups()):
+            logger.warn('no groups mapped in config file')
+        rule_processor.run(directory_groups, directory_connector, umapi_connectors)
 
 
 def create_config_loader(args):
@@ -241,6 +264,7 @@ def create_config_loader_options(args):
         'test_mode': args.test_mode,
         'update_user_info': args.update_user_info,
         'username_filter_regex': None,
+        'directory_to_csv_file_path': args.directory_to_csv_file_path,
     }
 
     # --users
