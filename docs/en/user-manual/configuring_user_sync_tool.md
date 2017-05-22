@@ -1,5 +1,5 @@
 ---
-layout: page
+layout: default
 lang: en
 nav_link: Configuring the User Sync Tool
 nav_level: 2

@@ -1,5 +1,5 @@
 ---
-layout: page
+layout: default
 lang: en
 nav_link: Deployment Best Practices
 nav_level: 2

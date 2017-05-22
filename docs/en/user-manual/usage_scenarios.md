@@ -1,14 +1,12 @@
 ---
-layout: page
+layout: default
 lang: en
 nav_link: Usage Scenarios
 nav_level: 2
 nav_order: 50
 ---
 
-
-
-# Usage ScenariosX
+# Usage Scenarios
 
 There are various ways to integrate the User Sync tool into
 your enterprise processes, such as:

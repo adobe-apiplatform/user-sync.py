@@ -1,5 +1,5 @@
 ---
-layout: page
+layout: default
 lang: en
 nav_link: Advanced Configuration
 nav_level: 2
