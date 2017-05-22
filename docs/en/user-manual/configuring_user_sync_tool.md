@@ -23,7 +23,7 @@ folder as the command-line executable.
 If you need to set up access to Adobe groups in other organizations that
 have granted you access, you can include additional configuration
 files. For details, see the
-[advanced configuration instructions](#accessing-groups-in-other-organizations)
+[advanced configuration instructions](advanced_configuration.md#accessing-groups-in-other-organizations)
 below.
 
 ## Setting up configuration files
@@ -78,7 +78,7 @@ enterprise LDAP directory. In order to isolate the sensitive
 information needed to connect to the two systems, all actual
 credential details are confined to these two files. **Be sure to
 secure them properly**, as described in the
-[Security Considerations](#security-considerations) section of
+[Security Considerations](deployment_best_practices.md#security-considerations) section of
 this document.
 
 There are three techniques supported by User Sync for securing credentials.
@@ -162,7 +162,7 @@ the connectors field.
     - The adobe_users section also can contain exclude_identity_types, 
 exclude_adobe_groups, and exclude_users which limit the scope of users
 affected by User Sync.  See the later section
-[Protecting Specific Accounts from User Sync Deletion](#protecting-specific-accounts-from-user-sync-deletion)
+[Protecting Specific Accounts from User Sync Deletion](advanced_configuration.md#protecting-specific-accounts-from-user-sync-deletion)
 which describes this more fully.
 - The **directory_users** subsection contains two subsections,
 connectors and groups:
@@ -209,7 +209,7 @@ Before you can synchronize user groups and entitlements, you must
 create user groups and product configurations in the
 Adobe Admin Console, and corresponding groups in your enterprise
 directory, as described above in
-[Set up product-access synchronization](#set-up-product-access-synchronization).
+[Set up product-access synchronization](setup_and_installation.md#set-up-product-access-synchronization).
 
 **NOTE:** All groups must exist and have the specified names on
 both sides. User Sync does not create any groups on either side;

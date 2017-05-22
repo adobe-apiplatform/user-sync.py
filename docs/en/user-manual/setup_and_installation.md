@@ -103,7 +103,7 @@ might be called “all_apps”.
 Make a note of the names you choose for these groups, and which
 Adobe groups they correspond to. You will use this to set up a
 mapping in the main User Sync configuration file. See details in
-the [Configure group mapping](#configure-group-mapping) section
+the [Configure group mapping](configuring_user_sync_tool.md#configure-group-mapping) section
 below.
 
 It is a best practice to note in the description field of the Product Configuration or User Group that the group is managed by User Sync and should not be edited in the Admin Console.
@@ -164,7 +164,7 @@ files in the package are optional and/or alternate versions for
 specific purposes. You can copy these to your root folder, then
 rename and edit them to make your own configuration files. (See
 the following section,
-[Configuring the User Sync Tool](#configuring-the-user-sync-tool).)
+[Configuring the User Sync Tool](configuring_user_sync_tool./md#configuring-the-user-sync-tool).)
 
 5. **In Windows only:**
 
@@ -198,7 +198,7 @@ User Sync release 2.1 or later allow you to store credentials in
 the operating system's secure credential store as an alternative
 to storing them in files and securing those files, or to store
 umapi and ldap configuration files in a secure way that you can
-define.  See section [Security recommendations](#security-recommendations)
+define.  See section [Security recommendations](deployment_best_practices.md#security-recommendations)
 for more details.
 
 ##### Configuration files
@@ -216,7 +216,7 @@ If you choose to use the operating system to store credentials,
 you still create the same configuration files but rather than storing
 the actual credentials, they store key ids that are used to look up
 the actual credentials.  Details are shown in
-[Security recommendations](#security-recommendations).
+[Security recommendations](deployment_best_practices.md#security-recommendations).
 
 If you are having User Sync access your corporate directory, it
 must be configured to read from the directory server using a

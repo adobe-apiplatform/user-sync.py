@@ -8,6 +8,8 @@ nav_level: 1
 nav_order: 600
 ---
 
+# About User Sync
+
 User Sync, from Adobe, is a command-line tool that moves user and
 group information from your organization's enterprise directory
 system (such as an Active Directory or other LDAP system) to your
