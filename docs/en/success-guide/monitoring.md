@@ -3,7 +3,7 @@ layout: default
 lang: en
 nav_link: Monitoring
 nav_level: 2
-nav_order: 2A0
+nav_order: 300
 ---
 
 # Monitoring the User Sync Process

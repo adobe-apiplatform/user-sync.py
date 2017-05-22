@@ -3,7 +3,7 @@ layout: default
 lang: en
 nav_link: Scheduling
 nav_level: 2
-nav_order: 2C0
+nav_order: 320
 ---
 
 # Setup Scheduled Ongoing Execution of User Sync
