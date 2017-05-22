@@ -1,9 +1,12 @@
 ---
 layout: page
-title: User Sync Documentation
+title: About User Sync
+nav_link: About User Sync
+nav_level: 1
+nav_order: 1
 ---
 
-Welcome to the documentation center for [User Sync from Adobe](https://github.com/adobe-apiplatform/user-sync.py/releases/latest).
+Welcome to the documentation center for [User Sync from Adobe](https://github.com/adobe-apiplatform/user-sync.py).
 
 # What is User Sync?
 
