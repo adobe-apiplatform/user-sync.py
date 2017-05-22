@@ -1,5 +1,5 @@
 ---
-layout: page
+layout: default
 title: About
 advertise: About
 nav_link: About User Sync
