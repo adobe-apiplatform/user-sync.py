@@ -26,7 +26,7 @@ files. For details, see the
 [advanced configuration instructions](#accessing-groups-in-other-organizations)
 below.
 
-### Setting up configuration files
+## Setting up configuration files
 
 Examples of the three required files are provided in the `config
 files - basic` folder in the release artifact
@@ -70,7 +70,7 @@ adobe_groups:
   - Photoshop Users
 ```
 
-### Create and secure connection configuration files
+## Create and secure connection configuration files
 
 The two connection configuration files store the credentials that
 give User Sync access to the Adobe Admin Console and to your
@@ -92,7 +92,7 @@ The example configuration files include entries that illustrate each of
 these techniques.  You would keep only one set of configuration items
 and comment out or remove the others.
 
-#### Configure connection to the Adobe Admin Console (UMAPI)
+### Configure connection to the Adobe Admin Console (UMAPI)
 
 When you have obtained access and set up an integration with User
 Management in the Adobe I/O
@@ -135,7 +135,7 @@ the private key directly in the configuration file.  Rather than using the
 
 
 
-#### Configure connection to your enterprise directory
+### Configure connection to your enterprise directory
 
 Open your copy of the connector-ldap.yml file in a plain-text
 editor, and set these values to enable access to your enterprise
@@ -148,7 +148,7 @@ host: "FQDN.of.host"
 base_dn: "base_dn.of.directory"
 ```
 
-### Configuration options
+## Configuration options
 
 The main configuration file, user-sync-config.yml, is divided
 into several main sections: **adobe_users**, **directory_users**,
@@ -183,7 +183,7 @@ in case of misconfiguration or other errors.  This is a required item.
 - The **logging** section specifies an audit trail path and
 controls how much information is written to the log.
 
-#### Configure connection files
+### Configure connection files
 
 The main User Sync configuration file contains only the names of
 the connection configuration files that actually contain the
@@ -203,7 +203,7 @@ directory_users:
     ldap: connector-ldap.yml
 ```
 
-#### Configure group mapping
+### Configure group mapping
 
 Before you can synchronize user groups and entitlements, you must
 create user groups and product configurations in the
@@ -248,7 +248,7 @@ groups:
       - Accounting_Department
 ```
 
-#### Configure limits
+### Configure limits
 
 User accounts are removed from the Adobe system when
 corresponding users are not present in the directory and the tool
@@ -281,7 +281,7 @@ This configuration causes User Sync to check if more than
 200 user accounts present in Adobe are not found in the enterprise directory (as filtered),
 and if so no existing Adobe accounts are updated and an error message is logged.
 
-####  Configure logging
+###  Configure logging
 
 Log entries are written to the console from which the tool was
 invoked, and optionally to a log file. A new
@@ -348,12 +348,12 @@ the warning message. In this case, User Sync attempted to add the
 user "cceuser2@ensemble.ca". The add action failed because the
 user was not found.
 
-### Example configurations
+## Example configurations
 
 These examples show the configuration file structures and
 illustrate possible configuration values.
 
-##### user-sync-config.yml
+### user-sync-config.yml
 
 ```YAML
 adobe_users:
@@ -388,7 +388,7 @@ logging:
   console_log_level: debug
 ```
 
-##### connector-ldap.yml
+### connector-ldap.yml
 
 ```YAML
 username: "LDAP_username"
@@ -400,7 +400,7 @@ group_filter_format: "(&(objectClass=posixGroup)(cn={group}))"
 all_users_filter: "(&(objectClass=person)(objectClass=top))"
 ```
 
-##### connector-umapi.yml
+### connector-umapi.yml
 
 ```YAML
 server:
@@ -419,7 +419,7 @@ enterprise:
   # priv_key_data: "actual key data goes here" # This is an alternative to priv_key_path
 ```
 
-### Testing your configuration
+## Testing your configuration
 
 Use these test cases to ensure that your configuration is working
 correctly, and that the product configurations are correctly
@@ -427,7 +427,7 @@ mapped to your enterprise directory security groups . Run the
 tool in test mode first (by supplying the -t parameter), so that
 you can see the result before running live.
 
-#####  User Creation
+###  User Creation
 
 1. Create one or more test users in enterprise directory.
 
@@ -439,7 +439,7 @@ you can see the result before running live.
 
 4. Check that test users were created in Adobe Admin Console.
 
-##### User Update
+### User Update
 
 1. Modify group membership of one or more test user in the directory.
 
@@ -448,7 +448,7 @@ you can see the result before running live.
 2. Check that test users in Adobe Admin Console were updated to
 reflect new product configuration membership.
 
-#####  User Disable
+###  User Disable
 
 1. Remove or disable one or more existing test users in your
 enterprise directory.
