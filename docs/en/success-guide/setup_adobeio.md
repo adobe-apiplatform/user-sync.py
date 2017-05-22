@@ -3,7 +3,7 @@ layout: default
 lang: en
 nav_link: Adobe.io Integration
 nav_level: 2
-nav_order: 250
+nav_order: 150
 ---
 
 # Setup an Adobe.io Integration

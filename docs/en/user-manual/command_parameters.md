@@ -1,10 +1,9 @@
 ---
 layout: page
-title: User Manual
-advertise: User Manual
+title: User Manual - Command Line Parameters
 lang: en
 nav_link: Command Line Parameters
-nav_level: 1
+nav_level: 2
 nav_order: 40
 ---
 

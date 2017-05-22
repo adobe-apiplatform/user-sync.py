@@ -3,7 +3,7 @@ layout: page
 title: User Manual
 advertise: User Manual
 lang: en
-nav_link: Introduction
+nav_link: User Manual
 nav_level: 1
 nav_order: 10
 ---

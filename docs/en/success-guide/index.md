@@ -5,7 +5,7 @@ advertise: Setup and Success Guide
 lang: en
 nav_link: Setup Guide Contents
 nav_level: 1
-nav_order: 30
+nav_order: 100
 ---
 
 Version 1.1, released 2017-03-06

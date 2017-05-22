@@ -3,7 +3,7 @@ layout: default
 lang: en
 nav_link: Setup Server
 nav_level: 2
-nav_order: 260
+nav_order: 160
 ---
 
 # Identify and Setup the Server Where User Sync Will Run
