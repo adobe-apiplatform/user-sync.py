@@ -4,6 +4,7 @@ title: About User Sync
 nav_link: About User Sync
 nav_level: 1
 nav_order: 1
+lang:en
 ---
 
 Welcome to the documentation center for [User Sync from Adobe](https://github.com/adobe-apiplatform/user-sync.py).
