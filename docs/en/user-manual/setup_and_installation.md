@@ -1,5 +1,5 @@
 ---
-layout: page
+layout: default
 lang: en
 nav_link: Setup and Installation
 nav_level: 2

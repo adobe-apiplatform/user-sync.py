@@ -17,6 +17,7 @@ nav_order: 60
 
 ---
 
+
 User Sync requires additional configuration to synchronize user
 data in environments with more complex data structuring.
 

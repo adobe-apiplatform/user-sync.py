@@ -48,8 +48,8 @@ By default, only users whose identity type is Enterprise ID or
 Federated ID will be created, removed, or have their group
 memberships managed by User Sync, because generally Adobe ID
 users are not managed in the directory. See the
-[description below](#managing-users-with-adobe-ids) under
-[Advanced Configuration](#advanced-configuration) if this is how
+[description below](advanced_configuration.md#managing-users-with-adobe-ids) under
+[Advanced Configuration](advanced_configuration.md#advanced-configuration) if this is how
 your organization works.
 
 This example assumes that the configuration file,
