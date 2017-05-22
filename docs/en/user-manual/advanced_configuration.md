@@ -1,6 +1,5 @@
 ---
 layout: page
-title: User Manual - Advanced Configuration
 lang: en
 nav_link: Advanced Configuration
 nav_level: 2

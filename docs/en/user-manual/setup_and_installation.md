@@ -1,6 +1,5 @@
 ---
 layout: page
-title: User Manual - Setup and Installation
 lang: en
 nav_link: Setup and Installation
 nav_level: 2

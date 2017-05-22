@@ -1,6 +1,5 @@
 ---
 layout: page
-title: User Manual - Deployment Best Practices
 lang: en
 nav_link: Deployment Best Practices
 nav_level: 2

@@ -1,6 +1,5 @@
 ---
 layout: page
-title: User Manual - Usage Scenarios
 lang: en
 nav_link: Usage Scenarios
 nav_level: 2

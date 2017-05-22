@@ -1,6 +1,5 @@
 ---
 layout: page
-title: User Manual - Configuring the User Sync Tool
 lang: en
 nav_link: Configuring the User Sync Tool
 nav_level: 2
