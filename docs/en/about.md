@@ -3,6 +3,9 @@ layout: page
 title: About
 permalink: /about/
 advertise: About
+nav_link: About User Sync
+nav_level: 1
+nav_order: 600
 ---
 
 User Sync, from Adobe, is a command-line tool that moves user and

@@ -3,6 +3,9 @@ layout: page
 title: User Sync Frequently Asked Questions
 advertise: FAQ
 lang: en
+nav_link: FAQ
+nav_level: 1
+nav_order: 500
 ---
 ### Table of Contents
 {:."no_toc"}
