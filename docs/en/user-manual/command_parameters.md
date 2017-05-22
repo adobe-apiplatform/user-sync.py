@@ -7,7 +7,7 @@ nav_order: 40
 ---
 
 
-## Command Parameters
+# Command Parameters
 
 Once the configuration files are set up, you can run the User
 Sync tool on the command line or in a script. To run the tool,

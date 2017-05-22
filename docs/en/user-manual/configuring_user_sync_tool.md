@@ -7,7 +7,7 @@ nav_order: 30
 ---
 
 
-## Configuring the User Sync Tool
+# Configuring the User Sync Tool
 
 The operation of the User Sync tool is controlled by a set of
 configuration files with these file names, located (by default) in the same

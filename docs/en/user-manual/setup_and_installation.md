@@ -14,7 +14,7 @@ nav_order: 20
 
 
 
-## Setup and Installation
+# Setup and Installation
 
 The use of the User Sync tool depends on your enterprise having
 set up product configurations in the Adobe Admin

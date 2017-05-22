@@ -7,7 +7,7 @@ nav_order: 70
 ---
 
 
-## Deployment Best Practices
+# Deployment Best Practices
 
 The User Sync tool is designed to run with limited or no human
 interaction, once it is properly configured. You can use a
