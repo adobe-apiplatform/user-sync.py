@@ -3,9 +3,9 @@ layout: page
 title: User Manual
 advertise: User Manual
 lang: en
-nav_link: User Manual
+nav_link: Introduction
 nav_level: 1
-nav_order: 2C0
+nav_order: 10
 ---
 
 Version 2.1rc1, released 2017-05-05
