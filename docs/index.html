@@ -13,10 +13,10 @@
     <link rel="alternate" type="application/rss+xml" title="User Sync" href="/feed.xml">
     <script type="text/javascript">
           var userLang = navigator.language || navigator.userLanguage;
-          if (userLang == "en") {
+          if (userLang.startsWith ("en")) {
               document.location.href = "en";
           }
-          else if (userLang == "fr") {
+          else if (userLang.startsWith("fr")) {
               document.location.href = "fr"
           }
           // else show this page
