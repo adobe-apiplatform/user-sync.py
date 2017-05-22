@@ -17,7 +17,7 @@
              {% assign page_list = (site.pages) %}
              {% assign filtered_list = page_list | where_exp: 'page', "page.nav_level > 0" %}
              {% for my_page in filtered_list %}
-             { % comment % }---{{my_page.lang}} --- {{my_page.url}} --- {{my_page.nav_order}}<br/>{ % endcomment % }
+             {% comment %}---{{my_page.lang}} --- {{my_page.url}} --- {{my_page.nav_order}}<br/>{% endcomment %}
              {% endfor %}
 
              {% assign final_list = filtered_list | sort: 'nav_order' %}
