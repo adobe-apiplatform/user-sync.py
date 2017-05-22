@@ -6,15 +6,15 @@ nav_level: 2
 nav_order: 20
 ---
 
-### Table of Contents
+# Setup and Installation
+
+#### In This Section
 {:."no_toc"}
 
 * TOC Placeholder
 {:toc}
 
-
-
-# Setup and Installation
+---
 
 The use of the User Sync tool depends on your enterprise having
 set up product configurations in the Adobe Admin

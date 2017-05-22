@@ -9,6 +9,14 @@ nav_order: 30
 
 # Configuring the User Sync Tool
 
+#### In This Section
+{:."no_toc"}
+
+* TOC Placeholder
+{:toc}
+
+---
+
 The operation of the User Sync tool is controlled by a set of
 configuration files with these file names, located (by default) in the same
 folder as the command-line executable.

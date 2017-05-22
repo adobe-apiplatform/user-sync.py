@@ -9,6 +9,14 @@ nav_order: 70
 
 # Deployment Best Practices
 
+#### In This Section
+{:."no_toc"}
+
+* TOC Placeholder
+{:toc}
+
+---
+
 The User Sync tool is designed to run with limited or no human
 interaction, once it is properly configured. You can use a
 scheduler in your environment to run the tool with whatever

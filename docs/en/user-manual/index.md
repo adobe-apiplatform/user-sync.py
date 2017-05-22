@@ -8,7 +8,7 @@ nav_level: 1
 nav_order: 10
 ---
 
-Version 2.1rc1, released 2017-05-05
+Version 2.1rc3, released 2017-05-22
 
 This document has all the information you need to get up and
 running with User Sync. It presumes familiarity with the use of
@@ -19,7 +19,7 @@ systems.
 
 # Introduction
 
-### Table of Contents
+#### In This Section
 {:."no_toc"}
 
 * TOC Placeholder

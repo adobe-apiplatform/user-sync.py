@@ -9,6 +9,14 @@ nav_order: 60
 
 # Advanced Configuration
 
+#### In This Section
+{:."no_toc"}
+
+* TOC Placeholder
+{:toc}
+
+---
+
 User Sync requires additional configuration to synchronize user
 data in environments with more complex data structuring.
 

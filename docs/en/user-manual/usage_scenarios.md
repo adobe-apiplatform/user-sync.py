@@ -8,6 +8,14 @@ nav_order: 50
 
 # Usage Scenarios
 
+#### In This Section
+{:."no_toc"}
+
+* TOC Placeholder
+{:toc}
+
+---
+
 There are various ways to integrate the User Sync tool into
 your enterprise processes, such as:
 
