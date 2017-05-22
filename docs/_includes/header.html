@@ -16,7 +16,7 @@
       <div class="trigger">
         {% for my_page in site.pages %}
           {% if my_page.advertise %}
-          <a class="page-link" href="{{ my_page.url | relative_url }}">{{ my_page.advertise | escape }}</a>
+          {% comment %}<a class="page-link" href="{{ my_page.url | relative_url }}">{{ my_page.advertise | escape }}</a>{% endcomment %}
           {% endif %}
         {% endfor %}
       </div>
