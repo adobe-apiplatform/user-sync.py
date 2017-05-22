@@ -12,16 +12,15 @@
     <link rel="canonical" href="/">
     <link rel="alternate" type="application/rss+xml" title="User Sync" href="/feed.xml">
     <script type="text/javascript">
-        document.ready(function(){
           var userLang = navigator.language || navigator.userLanguage;
           if (userLang == "en") {
-              window.location.href = "en";
+              document.location.href = "en";
           }
           else if (userLang == "fr") {
-              window.location.href = "fr"
+              document.location.href = "fr"
           }
           // else show this page
-      });
+      
     </script>
   </head>
 
