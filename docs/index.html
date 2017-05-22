@@ -2,15 +2,27 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>User Sync</title>
-  <meta name="description" content="User Sync is a tool for synchronizing Adobe customer directories with their Adobe Admin Consoles via the User Management API.">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>User Sync Docs Select Language</title>
+    <meta name="description" content="User Sync is a tool for synchronizing Adobe customer directories with their Adobe Admin Consoles via the User Management API.">
 
-  <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="/">
-  <link rel="alternate" type="application/rss+xml" title="User Sync" href="/feed.xml">
+    <link rel="stylesheet" href="/assets/main.css">
+    <link rel="canonical" href="/">
+    <link rel="alternate" type="application/rss+xml" title="User Sync" href="/feed.xml">
+    <script type="text/javascript">
+      $( document ).ready(function(){
+          var userLang = navigator.language || navigator.userLanguage;
+          if (userLang == "en") {
+              window.location.href = "en";
+          }
+          else if (userLang == "fr") {
+              window.location.href = "fr"
+          }
+          // else show this page
+      });
+    </script>
   </head>
 
 
