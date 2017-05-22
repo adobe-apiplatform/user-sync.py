@@ -1,7 +1,6 @@
 ---
 layout: default
 title: About
-advertise: About
 nav_link: About User Sync
 nav_level: 1
 nav_order: 600
