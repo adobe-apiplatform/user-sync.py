@@ -1,7 +1,6 @@
 ---
 layout: page
 title: About
-permalink: /about/
 advertise: About
 nav_link: About User Sync
 nav_level: 1
