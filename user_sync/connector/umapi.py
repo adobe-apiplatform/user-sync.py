@@ -170,7 +170,7 @@ class Commands(object):
             self.do_list.append(('add_to_groups', params))
 
     def remove_all_groups(self):
-        self.do_list.append(('remove_from_groups', 'all'))
+        self.do_list.append(('remove_from_groups', {'all_groups': True}))
 
     def remove_groups(self, groups_to_remove):
         '''
