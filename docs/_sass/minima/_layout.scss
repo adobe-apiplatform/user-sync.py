@@ -24,6 +24,13 @@
   }
 }
 
+.selected-page-link {
+    font-style: italic;
+    font-weight: 600;
+    color: darkviolet;
+    font-size: 1.2em;
+}
+
 .site-nav {
   float: right;
   line-height: 56px;
@@ -40,12 +47,6 @@
     &:not(:last-child) {
       margin-right: 20px;
     }
-  }
-  .selected-page-link {
-      font-style: italic;
-      font-weight: 600;
-      color: darkviolet;
-      font-size: 1.2em;
   }
 
 
