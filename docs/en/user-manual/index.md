@@ -29,6 +29,7 @@ systems.
 
 [Next Section](setup_and_installation.md)
 
+---
 
 User Sync, from Adobe, is a command-line tool that moves user and
 group information from your organization's LDAP-compatible

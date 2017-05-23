@@ -19,6 +19,8 @@ nav_order: 70
 
 [Previous Section](advanced_configuration.md)
 
+---
+
 The User Sync tool is designed to run with limited or no human
 interaction, once it is properly configured. You can use a
 scheduler in your environment to run the tool with whatever

@@ -19,6 +19,7 @@ nav_order: 60
 
 [Previous Section](usage_scenarios.md)  \| [Next Section](deployment_best_practices.md)
 
+---
 
 User Sync requires additional configuration to synchronize user
 data in environments with more complex data structuring.

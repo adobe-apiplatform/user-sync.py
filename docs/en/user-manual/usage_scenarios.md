@@ -18,6 +18,8 @@ nav_order: 50
 
 [Previous Section](command_parameters.md)  \| [Next Section](advanced_configuration.md)
 
+---
+
 There are various ways to integrate the User Sync tool into
 your enterprise processes, such as:
 

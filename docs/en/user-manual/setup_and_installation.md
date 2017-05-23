@@ -18,6 +18,8 @@ nav_order: 20
 
 [Previous Section](index.md)  \| [Next Section](configuring_user_sync_tool.md)
 
+---
+
 The use of the User Sync tool depends on your enterprise having
 set up product configurations in the Adobe Admin
 Console. For more information about how to do this, see the
