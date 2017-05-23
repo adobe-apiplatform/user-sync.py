@@ -31,7 +31,11 @@
                                                            </ul>
                          {% assign current_level = my_page.nav_level %}
                    {% endif %}
-                   <li><a class="page-link" href="{{ my_page.url | relative_url }}">{{ my_page.nav_link | escape }}</a></li>
+                   {% if my_page.url == page.url %}
+                     <li><a class="page-link selected-page-link" href="{{ my_page.url | relative_url }}">{{ my_page.nav_link | escape }}</a></li>
+                   {% else %}
+                     <li><a class="page-link" href="{{ my_page.url | relative_url }}">{{ my_page.nav_link | escape }}</a></li>
+                   {% endif %}
                 {% endif %}
              {% endfor %}
             </ul>
