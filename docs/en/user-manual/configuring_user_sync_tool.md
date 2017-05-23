@@ -6,10 +6,11 @@ nav_level: 2
 nav_order: 30
 ---
 
+[Previous Section](setup_and_installation.md)  \| [Next Section](command_parameters.md)
 
 # Configuring the User Sync Tool
 
-#### In This Section
+## In This Section
 {:."no_toc"}
 
 * TOC Placeholder
@@ -471,3 +472,5 @@ configurations in the Adobe Admin Console.
 5. Check that the user accounts are removed from the Adobe Admin Console.
 
 ---
+
+[Previous Section](setup_and_installation.md)  \| [Next Section](command_parameters.md)
