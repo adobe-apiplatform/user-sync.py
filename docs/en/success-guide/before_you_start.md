@@ -1,7 +1,7 @@
 ---
 layout: default
 lang: en
-nav_link: Create Apps
+nav_link: Before You Start
 nav_level: 2
 nav_order: 110
 ---
