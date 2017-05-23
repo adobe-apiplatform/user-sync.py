@@ -8,7 +8,9 @@ nav_order: 20
 
 # Setup and Installation
 
-#### In This Section
+[Previous Section](index.md)  \| [Next Section](configuring_user_sync_tool.md)
+
+## In This Section
 {:."no_toc"}
 
 * TOC Placeholder
@@ -22,7 +24,7 @@ Console. For more information about how to do this, see the
 [Configure Services](https://helpx.adobe.com/enterprise/help/configure-services.html#configure_services_for_group)
 help page.
 
-### Set up a User Management API integration on Adobe I/O
+## Set up a User Management API integration on Adobe I/O
 
 The User Sync tool is a client of the User Management API. Before
 you install the tool, you must register it as a client of the API
@@ -46,7 +48,7 @@ User Sync tool, you must provide these as configuration
 values that the tool requires to access your organization's user
 information store in Adobe.
 
-### Set up product-access synchronization
+## Set up product-access synchronization
 
 If you plan to use the User Sync tool to update user access to
 Adobe products, you must create groups in your own enterprise
@@ -70,7 +72,7 @@ in the main configuration file. To do this, you must ensure that
 the groups exist on both sides, and that you know the exact
 corresponding names.
 
-#### Check your products and product configurations
+### Check your products and product configurations
 
 Before you start configuring User Sync, you must know what Adobe
 products your enterprise uses, and what product
@@ -92,7 +94,7 @@ products that are enabled for your enterprise. Click a product to
 see the details of product configurations that have been
 defined for that product.
 
-#### Create corresponding groups in your enterprise directory
+### Create corresponding groups in your enterprise directory
 
 Once you have defined user groups and product configurations in
 the Adobe Admin Console, you must create and name corresponding
@@ -110,9 +112,9 @@ It is a best practice to note in the description field of the Product Configurat
 
 ![Figure 2: Group Mapping Overview](media/group-mapping.png)
 
-### Installing the User Sync tool
+## Installing the User Sync tool
 
-#### System requirements
+### System requirements
 
 The User Sync tool is implemented using Python, and requires
 Python version 2.7.9 or higher. For each environment in which you
@@ -133,7 +135,7 @@ installed before running the script. If it is not present in your
 system, you must install it before you install the User Sync
 tool.
 
-#### Installation
+### Installation
 
 The User Sync Tool is available from the
 [User Sync repository on GitHub](https://github.com/adobe-apiplatform/user-sync.py). To
@@ -187,7 +189,7 @@ the cache location, which prevents the path from exceeding the
 6. To run the User Sync tool, run the Python executable file,
 `user-sync` (or execute `python user-sync.pex` on Windows).
 
-#### Security Considerations
+### Security Considerations
 
 Because the User Sync application accesses sensitive information
 on both the enterprise and Adobe sides, its use involves a number
@@ -201,7 +203,7 @@ umapi and ldap configuration files in a secure way that you can
 define.  See section [Security recommendations](deployment_best_practices.md#security-recommendations)
 for more details.
 
-##### Configuration files
+#### Configuration files
 
 Configuration files must include sensitive information, such as
 your Adobe User Management API key, the path to your certificate
@@ -225,7 +227,7 @@ it is recommended that it _not_ be given write access (so that
 unauthorized disclousre of the credential does not allow write
 access to whomever receives it).
 
-##### Certificate files
+#### Certificate files
 
 The files that contains the public and private keys, but
 especially the private key, contain sensitive information. You
@@ -238,7 +240,7 @@ and password. The best practice is to store the key files in a
 credential management system or use file system protection so
 that it can only be accessed by authorized users.
 
-##### Log files
+#### Log files
 
 Logging is enabled by default, and outputs all transactions
 against the User Management API to the console. You can configure
@@ -263,7 +265,7 @@ tool to disable logging to file. The tool continues to output the
 log transactions to the console, where the data is stored
 temporarily in memory during execution.
 
-### Support for the User Sync tool
+## Support for the User Sync tool
 
 Adobe Enterprise customers can use their normal support channels to
 get support for User Sync.
@@ -277,3 +279,5 @@ information).
 
 
 ---
+
+[Previous Section](index.md)  \| [Next Section](configuring_user_sync_tool.md)
