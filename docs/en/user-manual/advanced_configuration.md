@@ -485,6 +485,9 @@ that are not named in the group map in the config file.
 
 ## Working With Nested Directory Groups in Active Directory
 
+Note: The approach originally defined in this section did not quite work.  It will have to wait 
+for future bug fix release.
+
 If your directory groups are structured in a nested manner so that users are 
 not in one simple named directory group, you will need to run more complex
 LDAP queries to enumerate the list of users.  For example you might have a group
@@ -499,26 +502,8 @@ nesting structure like this:
 		       User3@example.com
 		       User4@example.com
 
+A future release of user sync will support this transparently.
 
-To handle this type of nesting structure, in your LDAP config file, 
-set the value of group_filter_format as follows:
-
-    group_filter_format: "(memberOf:1.2.840.113556.1.4.1941:=cn={group},cn=users,DC=example,DC=com)"
-    
-where this part of the query:
-
-    cn={group},cn=users,DC=example,DC=com
-
-is the full distinguished name of the group.  The entry {group} will be replaced by the actual group when User Sync runs the group membership query.  This example assumes the group is located in the 
-directory in users.example.com.  If the group is located elsewhere in the directory, you
-would need to provide the appropriate path to reference it.  (example.com would be replaced by
-your actual domain name also.) 
-
-Once this is set, you can use `All_Divisions` in the group map as the directory group and/or specify `--users group All_Divisions` as the source for users.
-
-How this works is explained in the accepted answer to this [StackOverflow](http://stackoverflow.com/questions/6195812/ldap-nested-group-membership) question and in this [MS technote](https://msdn.microsoft.com/en-us/library/aa746475%28VS.85%29.aspx). AD supports the LDAP_MATCHING_RULE_IN_CHAIN predicate which will search the entire ancestry tree to find containment.  1.2.840.113556.1.4.1941 is the precise OID you must specify to use that predicate.
-
-This can be a very expensive filter, and should be used very carefully.
 
 ---
 
