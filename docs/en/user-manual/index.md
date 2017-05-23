@@ -19,7 +19,9 @@ systems.
 
 # Introduction
 
-#### In This Section
+[Next Section](setup_and_installation.md)
+
+## In This Section
 {:."no_toc"}
 
 * TOC Placeholder
@@ -34,7 +36,7 @@ Each time you run User Sync it looks for differences between the
 user information in the two systems, and updates the Adobe
 directory to match your directory.
 
-### Prerequisites
+## Prerequisites
 
 You run User Sync on the command line or from a script, from a
 server that your enterprise operates, which must have Python
@@ -61,7 +63,7 @@ user groups and product configurations. Membership in
 these groups controls which users in your organization can access
 which products.
 
-### Operation overview
+## Operation overview
 
 User Sync communicates with your enterprise directory through
 LDAP protocols. It communicates with Adobe's Admin Console
@@ -85,7 +87,7 @@ the User Sync configuration files.
 - User Sync makes the required changes to the Adobe Admin Console
 through the User Management API.
 
-### Usage models
+## Usage models
 
 The User Sync tool can fit into your business model in various
 ways, to help you automate the process of tracking and
@@ -110,3 +112,5 @@ For more information about usage models and how to implement
 them, see the [Usage Scenarios](usage_scenarios.md#usage-scenarios) section below.
 
 ---
+
+[Next Section](setup_and_installation.md)
