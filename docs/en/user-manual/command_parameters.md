@@ -9,14 +9,11 @@ nav_order: 40
 
 # Command Parameters
 
-#### In This Section
-{:."no_toc"}
-
-* TOC Placeholder
-{:toc}
-
 ---
 
+[Previous Section](configuring_user_sync_tool.md)  \| [Next Section](usage_scenarios.md)
+
+---
 Once the configuration files are set up, you can run the User
 Sync tool on the command line or in a script. To run the tool,
 execute the following command in a command shell or from a
@@ -43,3 +40,5 @@ specific behavior in various situations.
 {: .bordertablestyle }
 
 ---
+
+[Previous Section](configuring_user_sync_tool.md)  \| [Next Section](usage_scenarios.md)

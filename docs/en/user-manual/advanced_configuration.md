@@ -9,13 +9,15 @@ nav_order: 60
 
 # Advanced Configuration
 
-#### In This Section
+## In This Section
 {:."no_toc"}
 
 * TOC Placeholder
 {:toc}
 
 ---
+
+[Previous Section](usage_scenarios.md)  \| [Next Section](deployment_best_practices.md)
 
 
 User Sync requires additional configuration to synchronize user
@@ -33,7 +35,7 @@ those customizations.
 - When you want to use username (rather than email) based logins.
 - When you want to manage some user accounts manually through the Adobe Admin Console in addition to using User Sync
 
-### Managing Users with Adobe IDs
+## Managing Users with Adobe IDs
 
 There is a configuration option `exclude_identity_types` (in 
 the `adobe_users` section of the main config file) which
@@ -72,7 +74,7 @@ by using the other exclude configuration items.  See
 [Protecting Specific Accounts from User Sync Deletion](#Protecting-Specific-Accounts-from-User-Sync-Deletion)
 for more information.
 
-### Accessing Users in Other Organizations
+## Accessing Users in Other Organizations
 
 A large enterprise can include multiple Adobe organizations. For
 example, suppose a company, Geometrixx, has multiple departments,
@@ -106,7 +108,7 @@ credentials of the organization that defines the groups, and be
 able to identify groups as belonging to an external organization.
 
 
-### Accessing Groups in Other Organizations
+## Accessing Groups in Other Organizations
 
 To configure for access to groups in other organizations, you
 must:
@@ -115,7 +117,7 @@ must:
 - Tell User Sync how to access these files.
 - Identify the groups that are defined in another organization.
 
-##### 1. Include additional configuration files
+### 1. Include additional configuration files
 
 For each additional organization to which you require access, you
 must add a configuration file that provides the access
@@ -126,7 +128,7 @@ For example, suppose the additional organization is named "department 37".  The 
 
 `department37-config.yml`
 
-##### 2. Configure User Sync to access the additional files
+### 2. Configure User Sync to access the additional files
 
 
 The `adobe-users` section of the main configuration file must
@@ -150,7 +152,7 @@ Note that, like your own connection
 configuration file, they contain sensitive information that must
 be protected.
 
-##### 3. Identify groups defined externally
+### 3. Identify groups defined externally
 
 When you specify your group mappings, you can map an enterprise
 directory group to an Adobe user group or product configuration defined in another
@@ -166,7 +168,7 @@ group name. Join them with "::". For example:
     - "d37::Special Ops Group"
 ```
 
-### Custom Attributes and Mappings
+## Custom Attributes and Mappings
 
 It is possible to define custom mappings of directory attribute
 or other values to the fields used to define and update users:
@@ -219,7 +221,7 @@ extensions:
         pass # custom python code goes here
 ```
 
-#### Adding custom attributes
+### Adding custom attributes
 
 By default, User Sync captures these standard attributes for each
 user from the enterprise directory system:
@@ -255,7 +257,7 @@ directory information for a user, those attributes are
 ignored. Code references to such attributes will return the
 Python `None` value, which is normal and not an error.
 
-#### Adding custom mappings
+### Adding custom mappings
 
 Custom mapping code is configured using an extensions section in
 the main (user sync) config file. Within extensions, a per-user
@@ -312,12 +314,12 @@ set of Adobe groups that are considered . See
 [Advanced Group and Product Management](#advanced-group-and-product-management)
 for more information.
 
-#### Hook code variables
+### Hook code variables
 
 The code in the `after_mapping_hook` is isolated from the rest of
 the User Sync program except for the following variables.
 
-##### Input values
+#### Input values
 
 The following variables can be read in the custom code.  They
 should not be written, and writes tot them have no effect; they
@@ -331,7 +333,7 @@ exist to express the source directory data about the user.
 * `source_groups`: A frozen set of directory groups found for a
 specific user while traversing configured directory groups.
 
-##### Input/output values
+#### Input/output values
 
 The following variables can be read and written by the custom
 code. They come in carrying data set by the default attribute and
@@ -367,7 +369,7 @@ place to store the code objects created by compiling these files.
 * `logger`: An object of type `logging.logger` which outputs to
 the console and/or file log (as per the logging configuration).
 
-### Advanced Group and Product Management
+## Advanced Group and Product Management
 
 The **group** section of the main configuration file defines a
 mapping of directory groups to Adobe user groups and product
@@ -408,7 +410,7 @@ group in its group map.  It updates membership in the user group,
 which indirectly updates the membership in the product
 configuration.
 
-### Removing Group Mappings
+## Removing Group Mappings
 
 There is potential confusion when removing a mapped group. Say a 
 directory group `acrobat_users` is mapped to the Adobe group `Acrobat`. 
@@ -428,7 +430,7 @@ not in the directory group and
 they will all be moved.  Once this has happened, you can remove
 the entire mapping from the configuration file.
 
-### Working with Username-Based Login
+## Working with Username-Based Login
 
 On the Adobe Admin Console, you can configure a federated domain to use email-based user login names or username-based (i.e., non-email-based) login.   Username-based login can be used when email addresses are expected to change often or your organization does not allow email addresses to be used for login.  Ultimately, whether to use username-based login or email-based login depends on a company's overall identity strategy.
 
@@ -447,7 +449,7 @@ For domains that use username-based login, the `user_username_format` configurat
 
 If you are using username-based login, you must still provide a unique email address for every user, and that email address must be in a domain that the organization has claimed and owns. User Sync will not add a user to the Adobe organization without an email address.
 
-### Protecting Specific Accounts from User Sync Deletion
+## Protecting Specific Accounts from User Sync Deletion
 
 If you drive account creation and removal through User Sync, and want to manually create a few accounts, you may need this feature to keep User Sync from deleting the manually created accounts.
 
@@ -481,7 +483,7 @@ that are not named in the group map in the config file.
 - `exclude_identity_types`:  The values of this configuration item is a list of strings that can be "adobeID", "enterpriseID", and "federatedID".  This causes any account that is of the listed type(s) to be preserved and never deleted as Adobe-only users.
 
 
-### Working With Nested Directory Groups in Active Directory
+## Working With Nested Directory Groups in Active Directory
 
 If your directory groups are structured in a nested manner so that users are 
 not in one simple named directory group, you will need to run more complex
@@ -519,3 +521,6 @@ How this works is explained in the accepted answer to this [StackOverflow](http:
 This can be a very expensive filter, and should be used very carefully.
 
 ---
+
+[Previous Section](usage_scenarios.md)  \| [Next Section](deployment_best_practices.md)
+

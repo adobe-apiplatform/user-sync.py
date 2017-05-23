@@ -8,8 +8,6 @@ nav_order: 20
 
 # Setup and Installation
 
-[Previous Section](index.md)  \| [Next Section](configuring_user_sync_tool.md)
-
 ## In This Section
 {:."no_toc"}
 
@@ -17,6 +15,8 @@ nav_order: 20
 {:toc}
 
 ---
+
+[Previous Section](index.md)  \| [Next Section](configuring_user_sync_tool.md)
 
 The use of the User Sync tool depends on your enterprise having
 set up product configurations in the Adobe Admin

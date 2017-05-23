@@ -9,13 +9,15 @@ nav_order: 70
 
 # Deployment Best Practices
 
-#### In This Section
+## In This Section
 {:."no_toc"}
 
 * TOC Placeholder
 {:toc}
 
 ---
+
+[Previous Section](advanced_configuration.md)
 
 The User Sync tool is designed to run with limited or no human
 interaction, once it is properly configured. You can use a
@@ -34,7 +36,7 @@ enterprise directory changes, and how quickly you want the changes
 to show up on the Adobe side.
 - Running User Sync more often than once every 2 hours is not recommended.
 
-### Security recommendations
+## Security recommendations
 
 Given the nature of the data in the configuration and log files,
 a server should be dedicated for this task and locked down with
@@ -69,7 +71,7 @@ a mechanism you must provide to store the entire configuration file for umapi
 and/or ldap which includes all the credentials required.  These are
 detailed in the next two sections.
 
-#### Storing Credentials in OS Level Storage
+### Storing Credentials in OS Level Storage
 
 To setup User Sync to pull credentials from the Python Keyring OS credential store, set the connector-umapi.yml and connector-ldap.yml files as follows:
 
@@ -115,7 +117,7 @@ On Linux, the secure storage application would have been installed and configure
 The credentials are added to the OS secure storage and given the username and credential id that you will use to specify the credential.  For umapi credentials, the username is the organization id.  For the LDAP password credential, the username is the LDAP username.  You can pick any identifier you wish for the specific credentials; they must match between what is in the credential store and the name used in the configuration file.  Suggested values for the key names are shown in the examples above.
 
 
-#### Storing Credential Files in External Management Systems
+### Storing Credential Files in External Management Systems
 
 As an alternative to storing credentials in the local credential store, it is possible to integrate User Sync with some other system or encryption mechanism.  To support such integrations, it is possible to store the entire configuration files for umapi and ldap externally in some other system or format.
 
@@ -156,7 +158,7 @@ The command can reference a new or existing program or a script.
 Note: If you use this technique for the connector-umapi.yml file, you will want to embed the private key data in connector-umapi-yml directly by using the priv_key_data key and the private key value.  If you use the priv_key_path and the filename containing the private key, you would also need to store the private key somewhere 
 secure and have a command that retrieves it in the file reference.
 
-### Scheduled task examples
+## Scheduled task examples
 
 You can use a scheduler provided by your operating system to run
 the User Sync tool periodically, as required by your
@@ -173,7 +175,7 @@ logging:
   console_log_level: info
 ```
 
-#### Run with log analysis in Windows
+### Run with log analysis in Windows
 
 The following example shows how to set up a batch file `run_sync.bat` in
 Windows.
@@ -188,7 +190,7 @@ sendmail -s “Adobe User Sync Report for today” UserSyncAdmins@example.com < 
 is no standard email command-line tool in Windows.  Several are
 available commercially.
 
-#### Run with log analysis on Unix platforms
+### Run with log analysis on Unix platforms
 
 The following example shows how to set up a shell file
 `run_sync.sh` on Linux or Mac OS X:
@@ -197,9 +199,9 @@ The following example shows how to set up a shell file
 user-sync --users file users-file.csv --process-groups | grep "CRITICAL\|WARNING\|ERROR\|=====\|-----\|number of\|Number of" | mail -s “Adobe User Sync Report for `date +%F-%a`” UserSyncAdmins@example.com
 ```
 
-#### Schedule a UserSync task
+### Schedule a UserSync task
 
-##### Cron
+#### Cron
 
 This entry in the Unix crontab will run the User Sync tool at 4
 AM each day:
@@ -212,7 +214,7 @@ Cron can also be setup to email results to a specified user or
 mailing list. Check the documentation on cron for your system
 for more details.
 
-##### Windows Task Scheduler
+#### Windows Task Scheduler
 
 This command uses the Windows task scheduler to run the User Sync
 tool every day starting at 4:00 PM:
@@ -227,3 +229,7 @@ schtasks`) for more details.
 There is also a GUI for managing windows scheduled tasks. You can
 find the Task Scheduler in the Windows administrative control
 panel.
+
+---
+
+[Previous Section](advanced_configuration.md)

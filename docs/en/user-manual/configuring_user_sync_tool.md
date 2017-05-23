@@ -6,8 +6,6 @@ nav_level: 2
 nav_order: 30
 ---
 
-[Previous Section](setup_and_installation.md)  \| [Next Section](command_parameters.md)
-
 # Configuring the User Sync Tool
 
 ## In This Section
@@ -15,6 +13,10 @@ nav_order: 30
 
 * TOC Placeholder
 {:toc}
+
+---
+
+[Previous Section](setup_and_installation.md)  \| [Next Section](command_parameters.md)
 
 ---
 
