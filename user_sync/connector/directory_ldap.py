@@ -280,7 +280,7 @@ class LDAPDirectoryConnector(object):
                 try:
                     user['identity_type'] = user_sync.identity_type.parse_identity_type(identity_type)
                 except AssertionException as e:
-                    self.logger.warning('Skipping user with dn %s: %s', dn, e.message)
+                    self.logger.warning('Skipping user with dn %s: %s', dn, e)
                     continue
 
             username, last_attribute_name = self.user_username_formatter.generate_value(record)
