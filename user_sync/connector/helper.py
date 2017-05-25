@@ -20,19 +20,21 @@
 
 import logging
 
+
 def create_logger(options):
-    '''
+    """
     :type options: dict
-    '''        
+    """
     logger_name = options.get('logger_name')
-    if (logger_name == None):
+    if logger_name is None:
         logger_name = 'connector'
     return logging.getLogger(logger_name)
      
+
 def create_blank_user():
-    '''
+    """
     :rtype dict
-    '''
+    """
     user = {
         "identity_type": None,
         "username": None,
@@ -43,5 +45,5 @@ def create_blank_user():
         "groups": [],
         "country": None,
     }
-    return user;
+    return user
 

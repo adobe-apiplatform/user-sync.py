@@ -21,6 +21,7 @@
 import os
 import psutil
 
+
 class ProcessLock(object):
     def __init__(self, path):
         self.path = path

@@ -37,18 +37,19 @@ try:
 except:
     pass
 
+
 class UmapiConnector(object):
     def __init__(self, name, caller_options):
-        '''
+        """
         :type name: str
         :type caller_options: dict
-        '''
+        """
         self.name = 'umapi' + name
         caller_config = user_sync.config.DictConfig(self.name + ' configuration', caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('logger_name', self.name)
         builder.set_bool_value('test_mode', False)
-        options = builder.get_options()        
+        options = builder.get_options()
 
         server_config = caller_config.get_dict_config('server', True)
         server_builder = user_sync.config.OptionsBuilder(server_config)
@@ -62,10 +63,11 @@ class UmapiConnector(object):
         enterprise_builder = user_sync.config.OptionsBuilder(enterprise_config)
         enterprise_builder.require_string_value('org_id')
         enterprise_builder.require_string_value('tech_acct')
-        options['enterprise'] = enterprise_options = enterprise_builder.get_options() 
+        options['enterprise'] = enterprise_options = enterprise_builder.get_options()
         self.options = options
         self.logger = logger = helper.create_logger(options)
-        if server_config: server_config.report_unused_values(logger)
+        if server_config:
+            server_config.report_unused_values(logger)
         logger.debug('UMAPI initialized with options: %s', options)
 
         # set up the auth dict for umapi-client
@@ -109,7 +111,7 @@ class UmapiConnector(object):
         logger.debug('%s: connection established', self.name)
         # wrap the connection in an action manager
         self.action_manager = ActionManager(connection, org_id, logger)
-    
+
     def get_users(self):
         return list(self.iter_users())
 
@@ -118,52 +120,53 @@ class UmapiConnector(object):
         for u in umapi_client.UsersQuery(self.connection):
             email = u['email']
             if not (email in users):
-                users[email] = u            
+                users[email] = u
                 yield u
-    
+
     def get_action_manager(self):
         return self.action_manager
-    
-    def send_commands(self, commands, callback = None):
-        '''
+
+    def send_commands(self, commands, callback=None):
+        """
         :type commands: Commands
         :type callback: callable(dict)
-        '''
-        if (len(commands) > 0):
-            action_manager = self.get_action_manager()            
+        """
+        if len(commands) > 0:
+            action_manager = self.get_action_manager()
             action = action_manager.create_action(commands)
             action_manager.add_action(action, callback)
 
+
 class Commands(object):
-    def __init__(self, identity_type = None, email = None, username = None, domain = None):
-        '''
+    def __init__(self, identity_type=None, email=None, username=None, domain=None):
+        """
         :type identity_type: str
         :type email: str
         :type username: str
         :type domain: str
-        '''
+        """
         self.identity_type = identity_type
         self.email = email
         self.username = username
         self.domain = domain
         self.do_list = []
-        
+
     def update_user(self, attributes):
-        '''
+        """
         :type attributes: dict
-        '''
+        """
         if self.identity_type == user_sync.identity_type.ADOBEID_IDENTITY_TYPE:
             # shouldn't happen, but ignore it if it does
             return
-        if (attributes != None and len(attributes) > 0):
+        if attributes is not None and len(attributes) > 0:
             params = self.convert_user_attributes_to_params(attributes)
             self.do_list.append(('update', params))
 
     def add_groups(self, groups_to_add):
-        '''
+        """
         :type groups_to_add: set(str)
-        '''
-        if (groups_to_add != None and len(groups_to_add) > 0):
+        """
+        if groups_to_add is not None and len(groups_to_add) > 0:
             params = {
                 "groups": groups_to_add
             }
@@ -173,45 +176,45 @@ class Commands(object):
         self.do_list.append(('remove_from_groups', 'all'))
 
     def remove_groups(self, groups_to_remove):
-        '''
+        """
         :type groups_to_remove: set(str)
-        '''
-        if (groups_to_remove != None and len(groups_to_remove) > 0):
+        """
+        if groups_to_remove is not None and len(groups_to_remove) > 0:
             params = {
                 'groups': groups_to_remove
             }
             self.do_list.append(('remove_from_groups', params))
-    
+
     def add_user(self, attributes):
-        '''
+        """
         :type attributes: dict
-        '''
+        """
         if self.identity_type == user_sync.identity_type.ADOBEID_IDENTITY_TYPE:
             email = self.email if self.email else self.username
             if not email:
-                errorMessage = "ERROR: you must specify an email with an Adobe ID"
-                raise AssertionException(errorMessage)
+                error_message = "ERROR: you must specify an email with an Adobe ID"
+                raise AssertionException(error_message)
             params = self.convert_user_attributes_to_params({'email': email})
         else:
             params = self.convert_user_attributes_to_params(attributes)
 
-        onConflictValue = None
+        on_conflict_value = None
         option = params.pop('option', None)
-        if (option == "updateIfAlreadyExists"):
-            onConflictValue = umapi_client.IfAlreadyExistsOptions.updateIfAlreadyExists
-        elif (option == "ignoreIfAlreadyExists"):
-            onConflictValue = umapi_client.IfAlreadyExistsOptions.ignoreIfAlreadyExists
-        if (onConflictValue != None):
-            params['on_conflict'] = onConflictValue
-            
+        if option == "updateIfAlreadyExists":
+            on_conflict_value = umapi_client.IfAlreadyExistsOptions.updateIfAlreadyExists
+        elif option == "ignoreIfAlreadyExists":
+            on_conflict_value = umapi_client.IfAlreadyExistsOptions.ignoreIfAlreadyExists
+        if on_conflict_value is not None:
+            params['on_conflict'] = on_conflict_value
+
         self.do_list.append(('create', params))
 
     def remove_from_org(self, delete_account):
-        '''
+        """
         Removes a user from the organization. If delete_account is set, it
         will delete the user on the Adobe side as well.
         :type delete_account: bool
-        '''
+        """
         params = {
             "delete_account": True if delete_account else False
         }
@@ -219,27 +222,27 @@ class Commands(object):
 
     def __len__(self):
         return len(self.do_list)
-            
+
     def convert_user_attributes_to_params(self, attributes):
-        params = {} 
+        params = {}
         for key, value in attributes.iteritems():
-            if (key == 'firstname'):
+            if key == 'firstname':
                 key = 'first_name'
-            elif (key == 'lastname'):
+            elif key == 'lastname':
                 key = 'last_name'
             params[key] = value
         return params
-    
-    
+
+
 class ActionManager(object):
     next_request_id = 1
 
     def __init__(self, connection, org_id, logger):
-        '''
+        """
         :type connection: umapi_client.Connection
         :type org_id: str
         :type logger: logging.Logger
-        '''
+        """
         self.action_count = 0
         self.error_count = 0
         self.items = []
@@ -248,9 +251,9 @@ class ActionManager(object):
         self.logger = logger.getChild('action')
 
     def get_statistics(self):
-        '''Return the count of actions sent so far, and how many had errors.'''
+        """Return the count of actions sent so far, and how many had errors."""
         return self.action_count, self.error_count
-        
+
     def get_next_request_id(self):
         request_id = 'action_%d' % ActionManager.next_request_id
         ActionManager.next_request_id += 1
@@ -262,30 +265,33 @@ class ActionManager(object):
         username = commands.username
         domain = commands.domain
 
-        if (username.find('@') > 0):
-            if (email == None):
+        if username.find('@') > 0:
+            if email is None:
                 email = username
-            if (identity_type == None):
-                identity_type = user_sync.identity_type.FEDERATED_IDENTITY_TYPE if username != user_sync.helper.normalize_string(email) else user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
-        elif (identity_type == None):
+            if identity_type is None:
+                identity_type = (user_sync.identity_type.FEDERATED_IDENTITY_TYPE
+                                 if username != user_sync.helper.normalize_string(email)
+                                 else user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE)
+        elif identity_type is None:
             identity_type = user_sync.identity_type.FEDERATED_IDENTITY_TYPE
         try:
             umapi_identity_type = umapi_client.IdentityTypes[identity_type]
         except KeyError:
             umapi_identity_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
-        
-        action = umapi_client.UserAction(umapi_identity_type, email, username, domain, requestID=self.get_next_request_id()) 
+
+        action = umapi_client.UserAction(umapi_identity_type, email, username, domain,
+                                         requestID=self.get_next_request_id())
         for command in commands.do_list:
             command_name, command_param = command
-            command_function = getattr(action, command_name) 
+            command_function = getattr(action, command_name)
             command_function(**command_param)
         return action
 
-    def add_action(self, action, callback = None):
-        '''
+    def add_action(self, action, callback=None):
+        """
         :type action: umapi_client.UserAction
         :type callback: callable(umapi_client.UserAction, bool, dict)
-        '''
+        """
         item = {
             'action': action,
             'callback': callback
@@ -294,14 +300,14 @@ class ActionManager(object):
         self.action_count += 1
         self.logger.debug('Added action: %s', json.dumps(action.wire_dict()))
         self._execute_action(action)
-    
+
     def has_work(self):
-        return len(self.items) > 0  
-    
-    def _execute_action(self, action):      
-        '''
+        return len(self.items) > 0
+
+    def _execute_action(self, action):
+        """
         :type action: umapi_client.UserAction
-        '''
+        """
         try:
             _, sent, _ = self.connection.execute_single(action)
         except umapi_client.BatchError as e:
@@ -318,12 +324,12 @@ class ActionManager(object):
             self.process_sent_items(sent)
 
     def process_sent_items(self, total_sent, batch_error=None):
-        '''
+        """
         Note items as sent, log any processing errors, and invoke any callbacks
         :param total_sent: number of sent items from queue, must be >= 0
         :param batch_error: a batch-level error that affected all items, if there was one
         :return: 
-        '''
+        """
         # update queue
         sent_items, self.items = self.items[:total_sent], self.items[total_sent:]
 
@@ -346,7 +352,7 @@ class ActionManager(object):
                                           error.get('errorCode', "<None>"), error.get('message', "<None>"))
         # invoke callbacks
         for action, errors, callback in details:
-            if (callable(callback)):
+            if callable(callback):
                 callback({
                     "action": action,
                     "is_success": not batch_error and not errors,
