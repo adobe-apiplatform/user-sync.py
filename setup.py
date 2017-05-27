@@ -18,11 +18,30 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import sys
+
 from setuptools import setup
 
 version_namespace = {}
 with open('user_sync/version.py') as f:
     exec(f.read(), version_namespace)
+
+install_requires = [
+    'pycrypto',
+    'python-ldap==2.4.25',
+    'PyYAML',
+    'umapi-client>=2.5',
+    'psutil',
+    'keyring'
+]
+
+print "platform: %s" % sys.platform
+
+if not (sys.platform == 'win32' or sys.platform == 'darwin'):
+    install_requires.extend([
+        'secretstorage',
+        'dbus-python'
+    ])
 
 setup(name='user-sync',
       version=version_namespace['__version__'],
@@ -39,14 +58,7 @@ setup(name='user-sync',
       maintainer_email='dbrotsky@adobe.com',
       license='MIT',
       packages=['user_sync', 'user_sync.connector'],
-      install_requires=[
-          'pycrypto',
-          'python-ldap==2.4.25',
-          'PyYAML',
-          'umapi-client>=2.5',
-          'psutil',
-          'keyring'
-      ],
+      install_requires=install_requires,
       setup_requires=['nose>=1.0'],
       tests_require=[
           'mock',
