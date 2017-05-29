@@ -23,7 +23,7 @@ endif
 endif
 
 ifeq ($(needs_secure_credential_backend_packages), yes)
-	secure_credential_requirements := misc/build/linux/secure-credential-requirements.txt
+	secure_credential_requirements := misc/build/Linux/secure-credential-requirements.txt
 endif
 
 output_dir = dist
