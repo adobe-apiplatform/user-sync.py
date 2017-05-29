@@ -162,14 +162,14 @@ def init_log(logging_config):
             logger.log(logging.WARNING, 'Unknown file log level: %s setting to info' % options['file_log_level'])
 
 def write_directory_content_to_csv(csv_filename, directory_groups, directory_connector, extended_attributes):
-    '''
+    """
     load users from directory and export it to a csv file
     :param csv_filename: 
     :param directory_groups: 
     :param directory_connector: 
     :param extended_attributes: 
     :return: 
-    '''
+    """
     directory_users = directory_connector.load_users_and_groups(directory_groups, extended_attributes)
     user_sync.helper.write_dict_to_csv(csv_filename, directory_users)
 
