@@ -30,8 +30,6 @@ output_dir = dist
 output_filename = user-sync
 
 pex:
-	echo $(OS)
-
 	pip install --upgrade pip
 	pip install pex requests wheel
 	pip wheel -w wheelhouse -r misc/build/requirements.txt -r $(python_ldap_requirements) -r $(secure_credential_requirements)

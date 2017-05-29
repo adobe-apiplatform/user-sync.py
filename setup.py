@@ -35,8 +35,6 @@ install_requires = [
     'keyring'
 ]
 
-print "platform: %s" % sys.platform
-
 if not (sys.platform == 'win32' or sys.platform == 'darwin'):
     install_requires.extend([
         'secretstorage',
