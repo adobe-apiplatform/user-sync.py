@@ -164,8 +164,7 @@ def write_directory_content_to_csv(csv_filename, directory_groups, directory_con
     :return: 
     '''
     directory_users = directory_connector.load_users_and_groups(directory_groups, extended_attributes)
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    user_sync.helper.write_dict_to_csv(dir_path + "/" + csv_filename, directory_users)
+    user_sync.helper.write_dict_to_csv(csv_filename, directory_users)
 
 
 def begin_work(config_loader):
