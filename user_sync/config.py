@@ -352,6 +352,7 @@ class ConfigLoader(object):
     def create_umapi_options(self, connector_config_sources):
         options = self.get_dict_from_sources(connector_config_sources)
         options['test_mode'] = self.options['test_mode']
+        options['bypass_authentication_mode'] = self.options['bypass_authentication_mode']
         return options
 
     def check_unused_config_keys(self):
@@ -710,13 +711,13 @@ class ConfigFileLoader:
                 # if a file operation error occurred while loading the
                 # configuration file, swallow up the exception and re-raise it
                 # as an configuration loader exception.
-                raise AssertionException("Error reading configuration file '%s': %s" % (cls.filepath, e))
+                raise AssertionException("Error reading configuration file [[%s]]: %s" % (cls.filepath, e))
             except UnicodeDecodeError as e:
                 # as above, but in case of encoding errors
-                raise AssertionException("Encoding error in configuration file '%s: %s" % (cls.filepath, e))
+                raise AssertionException("Encoding error in configuration file [[%s]]: %s" % (cls.filepath, e))
             except yaml.error.MarkedYAMLError as e:
                 # as above, but in case of parse errors
-                raise AssertionException("Error parsing configuration file '%s': %s" % (cls.filepath, e))
+                raise AssertionException("Error parsing configuration file [[%s]]: %s" % (cls.filepath, e))
 
         # process the content of the dict
         for path_key, options in path_keys.iteritems():
@@ -803,7 +804,7 @@ class ConfigFileLoader:
         returns an absolute path that is resolved relative to the file being loaded
         """
         if not isinstance(val, types.StringTypes):
-            raise AssertionException("Expected pathname for setting %s in config file %s" %
+            raise AssertionException("Expected pathname for setting %s in config file [[%s]]" %
                                      (cls.key_path, cls.filename))
         if val.startswith('$(') and val.endswith(')'):
             # this presumes
@@ -811,7 +812,7 @@ class ConfigFileLoader:
         if cls.dirpath and not os.path.isabs(val):
             val = os.path.abspath(os.path.join(cls.dirpath, val))
         if must_exist and not os.path.isfile(val):
-            raise AssertionException('In setting %s in config file %s: No such file %s' %
+            raise AssertionException('In setting %s in config file %s: No such file [[%s]]' %
                                      (cls.key_path, cls.filename, val))
         return val
 

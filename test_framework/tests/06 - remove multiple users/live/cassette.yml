@@ -1,0 +1,169 @@
+interactions:
+- request:
+    body: !!python/unicode '[{"do": [{"removeFromOrg": {"deleteAccount": true}}],
+      "requestID": "action_1", "user": "test12@ensemble-systems.com"}, {"do": [{"removeFromOrg":
+      {"deleteAccount": true}}], "requestID": "action_2", "user": "test27@ensemble.ca"},
+      {"do": [{"removeFromOrg": {"deleteAccount": true}}], "requestID": "action_3",
+      "user": "test18@ensemble.ca"}, {"do": [{"removeFromOrg": {"deleteAccount": true}}],
+      "requestID": "action_4", "user": "test14@ensemble.ca"}, {"do": [{"removeFromOrg":
+      {"deleteAccount": true}}], "requestID": "action_5", "user": "test32@ensemble-systems.com"},
+      {"do": [{"removeFromOrg": {"deleteAccount": true}}], "requestID": "action_6",
+      "user": "test02@test1.on-the-side.net"}, {"do": [{"removeFromOrg": {"deleteAccount":
+      true}}], "requestID": "action_7", "user": "test29@ensemble.ca"}, {"do": [{"removeFromOrg":
+      {"deleteAccount": true}}], "requestID": "action_8", "user": "test10@ensemble-systems.com"},
+      {"do": [{"removeFromOrg": {"deleteAccount": true}}], "requestID": "action_9",
+      "user": "test30@test1.on-the-side.net"}, {"do": [{"removeFromOrg": {"deleteAccount":
+      true}}], "requestID": "action_10", "user": "test33@ensemble-systems.com"}]'
+    headers:
+      Content-Length: ['1147']
+      accept: [application/json]
+      accept-encoding: ['gzip, deflate']
+      authorization: [Bearer eyJ4NXUiOiJpbXNfbmExLWtleS0xLmNlciIsImFsZyI6IlJTMjU2In0.eyJmZyI6IlJOM0EyUFlCUElQUUFBQUFBQUFBQUFEWEFBPT09PT09IiwiYXMiOiJpbXMtbmExIiwiYyI6ImxjMDc3VzN0Mks3TjlVdW8rc2JXalE9PSIsInVzZXJfaWQiOiIwRTNCNkE5OTU4MDZDNEJFMEE0OTVDQzdAdGVjaGFjY3QuYWRvYmUuY29tIiwibW9pIjoiYThhMzBjMjAiLCJzY29wZSI6Im9wZW5pZCx1c2VyX21hbmFnZW1lbnRfc2RrLEFkb2JlSUQiLCJjcmVhdGVkX2F0IjoiMTQ5NTA2ODMzMjUwNCIsImlkIjoiMTQ5NTA2ODMzMjUwNC1iYzIwMzc5Yy05ZTM5LTRiNTYtOTgwZS03MmI4ZGFlNDhmODkiLCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiZXhwaXJlc19pbiI6Ijg2NDAwMDAwIiwiY2xpZW50X2lkIjoiNDgzOTQ4NGZhOTAxNDdkNmJiODhmOGRiMGM3OTFmZjEifQ.KZTMQUtqqxjG8tMML3Q7f5lPx6MC-sC86hphkU1XhsJKJg5q-js9AZnGfC2JvFMj1JPocDlFuI7yH2GfOT4jvjnexaxr0BKNtzqQZ8s3bQgwyXh-ohfgwFUsdWV8XyyrRr8eduUdrPC_Pmgkc_uBoXeWd6ihcPdtcz-uZVEXjKCKVQ7R0nhl2Y3Qy1qH3MYWSGrMgjX5v1xjB_BCoJSBgzSQ2fILlH56830V61w16tm4ushgl-Wnd0kUmqZr4ro7cBvN3tok-r_7Cgxk5hyOW9uzt0RNcX2-UWPdtAtGuUixsIdEPdNQKOi6ckLZ_vvkQRhoFVMDZ0YHJ-oQ5lFxfQ]
+      connection: [keep-alive]
+      content-type: [application/json]
+      host: [usermanagement.adobe.io]
+      user-agent: ['user-sync/2.1 umapi-client/2.5 Python/2.7.10 (Darwin Kernel Version
+          14.5.0: Fri Feb 17 10:33:20 PST 2017; root:xnu-2782.50.9.1.1~1/RELEASE_X86_64)']
+      x-api-key: [4839484fa90147d6bb88f8db0c791ff1]
+    method: POST
+    uri: https://usermanagement.adobe.io/v2/usermanagement/action/210DB41957FFDC210A495E53@AdobeOrg
+  response:
+    body: {string: !!python/unicode '{"completed":10,"notCompleted":0,"completedInTestMode":0,"result":"success"}'}
+    headers:
+      cache-control: [no-cache="set-cookie"]
+      connection: [keep-alive]
+      content-length: ['76']
+      content-type: [application/json]
+      date: ['Thu, 18 May 2017 00:45:34 GMT']
+      server: [APIP]
+      set-cookie: [AWSELB=D76BDFED16399693AEB011A9296087A3745D7B7336FB65E5E711C63F8F1F669F23D77E923678D2D7CA30AC2E7D0A22A152DAA4064A3BB1AE41F5D7366FC70F9CA3F87F7633;PATH=/;MAX-AGE=604800]
+      vary: [Accept-Encoding]
+      x-powered-by: [Undertow/1]
+      x-request-id: [RDbpJMrTphkW3zhqcTATgprk5Gmyooo2, RDbpJMrTphkW3zhqcTATgprk5Gmyooo2]
+    status: {code: 200, message: OK}
+- request:
+    body: !!python/unicode '[{"do": [{"removeFromOrg": {"deleteAccount": true}}],
+      "requestID": "action_11", "user": "test24@test1.on-the-side.net"}, {"do": [{"removeFromOrg":
+      {"deleteAccount": true}}], "requestID": "action_12", "user": "test26@test1.on-the-side.net"},
+      {"do": [{"removeFromOrg": {"deleteAccount": true}}], "requestID": "action_13",
+      "user": "test15@k.on-the-side.net"}, {"do": [{"removeFromOrg": {"deleteAccount":
+      true}}], "requestID": "action_14", "user": "test20@ensemble.ca"}, {"do": [{"removeFromOrg":
+      {"deleteAccount": true}}], "requestID": "action_15", "user": "test25@k.on-the-side.net"},
+      {"do": [{"removeFromOrg": {"deleteAccount": true}}], "requestID": "action_16",
+      "user": "test04@test1.on-the-side.net"}, {"do": [{"removeFromOrg": {"deleteAccount":
+      true}}], "requestID": "action_17", "user": "test28@k.on-the-side.net"}, {"do":
+      [{"removeFromOrg": {"deleteAccount": true}}], "requestID": "action_18", "user":
+      "test16@ensemble.ca"}, {"do": [{"removeFromOrg": {"deleteAccount": true}}],
+      "requestID": "action_19", "user": "test22@test1.on-the-side.net"}, {"do": [{"removeFromOrg":
+      {"deleteAccount": true}}], "requestID": "action_20", "user": "test17@k.on-the-side.net"}]'
+    headers:
+      Content-Length: ['1164']
+      accept: [application/json]
+      accept-encoding: ['gzip, deflate']
+      authorization: [Bearer eyJ4NXUiOiJpbXNfbmExLWtleS0xLmNlciIsImFsZyI6IlJTMjU2In0.eyJmZyI6IlJOM0EyUFlCUElQUUFBQUFBQUFBQUFEWEFBPT09PT09IiwiYXMiOiJpbXMtbmExIiwiYyI6ImxjMDc3VzN0Mks3TjlVdW8rc2JXalE9PSIsInVzZXJfaWQiOiIwRTNCNkE5OTU4MDZDNEJFMEE0OTVDQzdAdGVjaGFjY3QuYWRvYmUuY29tIiwibW9pIjoiYThhMzBjMjAiLCJzY29wZSI6Im9wZW5pZCx1c2VyX21hbmFnZW1lbnRfc2RrLEFkb2JlSUQiLCJjcmVhdGVkX2F0IjoiMTQ5NTA2ODMzMjUwNCIsImlkIjoiMTQ5NTA2ODMzMjUwNC1iYzIwMzc5Yy05ZTM5LTRiNTYtOTgwZS03MmI4ZGFlNDhmODkiLCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiZXhwaXJlc19pbiI6Ijg2NDAwMDAwIiwiY2xpZW50X2lkIjoiNDgzOTQ4NGZhOTAxNDdkNmJiODhmOGRiMGM3OTFmZjEifQ.KZTMQUtqqxjG8tMML3Q7f5lPx6MC-sC86hphkU1XhsJKJg5q-js9AZnGfC2JvFMj1JPocDlFuI7yH2GfOT4jvjnexaxr0BKNtzqQZ8s3bQgwyXh-ohfgwFUsdWV8XyyrRr8eduUdrPC_Pmgkc_uBoXeWd6ihcPdtcz-uZVEXjKCKVQ7R0nhl2Y3Qy1qH3MYWSGrMgjX5v1xjB_BCoJSBgzSQ2fILlH56830V61w16tm4ushgl-Wnd0kUmqZr4ro7cBvN3tok-r_7Cgxk5hyOW9uzt0RNcX2-UWPdtAtGuUixsIdEPdNQKOi6ckLZ_vvkQRhoFVMDZ0YHJ-oQ5lFxfQ]
+      connection: [keep-alive]
+      content-type: [application/json]
+      cookie: [AWSELB=D76BDFED16399693AEB011A9296087A3745D7B7336FB65E5E711C63F8F1F669F23D77E923678D2D7CA30AC2E7D0A22A152DAA4064A3BB1AE41F5D7366FC70F9CA3F87F7633]
+      host: [usermanagement.adobe.io]
+      user-agent: ['user-sync/2.1 umapi-client/2.5 Python/2.7.10 (Darwin Kernel Version
+          14.5.0: Fri Feb 17 10:33:20 PST 2017; root:xnu-2782.50.9.1.1~1/RELEASE_X86_64)']
+      x-api-key: [4839484fa90147d6bb88f8db0c791ff1]
+    method: POST
+    uri: https://usermanagement.adobe.io/v2/usermanagement/action/210DB41957FFDC210A495E53@AdobeOrg
+  response:
+    body: {string: !!python/unicode '{"completed":6,"notCompleted":4,"completedInTestMode":0,"result":"partial","errors":[{"index":2,"step":0,"message":"User
+        Id does not exist: test15@k.on-the-side.net","errorCode":"error.user.nonexistent","requestID":"action_13","user":"test15@k.on-the-side.net"},{"index":4,"step":0,"message":"User
+        Id does not exist: test25@k.on-the-side.net","errorCode":"error.user.nonexistent","requestID":"action_15","user":"test25@k.on-the-side.net"},{"index":6,"step":0,"message":"User
+        Id does not exist: test28@k.on-the-side.net","errorCode":"error.user.nonexistent","requestID":"action_17","user":"test28@k.on-the-side.net"},{"index":9,"step":0,"message":"User
+        Id does not exist: test17@k.on-the-side.net","errorCode":"error.user.nonexistent","requestID":"action_20","user":"test17@k.on-the-side.net"}]}'}
+    headers:
+      connection: [keep-alive]
+      content-length: ['794']
+      content-type: [application/json]
+      date: ['Thu, 18 May 2017 00:45:36 GMT']
+      server: [APIP]
+      vary: [Accept-Encoding]
+      x-powered-by: [Undertow/1]
+      x-request-id: [Pfc6pS45AeWocJGZbijbJeaTJcYRcrnl, Pfc6pS45AeWocJGZbijbJeaTJcYRcrnl]
+    status: {code: 200, message: OK}
+- request:
+    body: !!python/unicode '[{"do": [{"removeFromOrg": {"deleteAccount": true}}],
+      "requestID": "action_21", "user": "test09@test1.on-the-side.net"}, {"do": [{"removeFromOrg":
+      {"deleteAccount": true}}], "requestID": "action_22", "user": "test06@ensemble-systems.com"},
+      {"do": [{"removeFromOrg": {"deleteAccount": true}}], "requestID": "action_23",
+      "user": "test05@k.on-the-side.net"}, {"do": [{"removeFromOrg": {"deleteAccount":
+      true}}], "requestID": "action_24", "user": "test03@ensemble-systems.com"}, {"do":
+      [{"removeFromOrg": {"deleteAccount": true}}], "requestID": "action_25", "user":
+      "test34@ensemble.ca"}, {"do": [{"removeFromOrg": {"deleteAccount": true}}],
+      "requestID": "action_26", "user": "test19@k.on-the-side.net"}, {"do": [{"removeFromOrg":
+      {"deleteAccount": true}}], "requestID": "action_27", "user": "test07@ensemble.ca"},
+      {"do": [{"removeFromOrg": {"deleteAccount": true}}], "requestID": "action_28",
+      "user": "test01@k.on-the-side.net"}, {"do": [{"removeFromOrg": {"deleteAccount":
+      true}}], "requestID": "action_29", "user": "test23@test1.on-the-side.net"},
+      {"do": [{"removeFromOrg": {"deleteAccount": true}}], "requestID": "action_30",
+      "user": "test08@test1.on-the-side.net"}]'
+    headers:
+      Content-Length: ['1166']
+      accept: [application/json]
+      accept-encoding: ['gzip, deflate']
+      authorization: [Bearer eyJ4NXUiOiJpbXNfbmExLWtleS0xLmNlciIsImFsZyI6IlJTMjU2In0.eyJmZyI6IlJOM0EyUFlCUElQUUFBQUFBQUFBQUFEWEFBPT09PT09IiwiYXMiOiJpbXMtbmExIiwiYyI6ImxjMDc3VzN0Mks3TjlVdW8rc2JXalE9PSIsInVzZXJfaWQiOiIwRTNCNkE5OTU4MDZDNEJFMEE0OTVDQzdAdGVjaGFjY3QuYWRvYmUuY29tIiwibW9pIjoiYThhMzBjMjAiLCJzY29wZSI6Im9wZW5pZCx1c2VyX21hbmFnZW1lbnRfc2RrLEFkb2JlSUQiLCJjcmVhdGVkX2F0IjoiMTQ5NTA2ODMzMjUwNCIsImlkIjoiMTQ5NTA2ODMzMjUwNC1iYzIwMzc5Yy05ZTM5LTRiNTYtOTgwZS03MmI4ZGFlNDhmODkiLCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiZXhwaXJlc19pbiI6Ijg2NDAwMDAwIiwiY2xpZW50X2lkIjoiNDgzOTQ4NGZhOTAxNDdkNmJiODhmOGRiMGM3OTFmZjEifQ.KZTMQUtqqxjG8tMML3Q7f5lPx6MC-sC86hphkU1XhsJKJg5q-js9AZnGfC2JvFMj1JPocDlFuI7yH2GfOT4jvjnexaxr0BKNtzqQZ8s3bQgwyXh-ohfgwFUsdWV8XyyrRr8eduUdrPC_Pmgkc_uBoXeWd6ihcPdtcz-uZVEXjKCKVQ7R0nhl2Y3Qy1qH3MYWSGrMgjX5v1xjB_BCoJSBgzSQ2fILlH56830V61w16tm4ushgl-Wnd0kUmqZr4ro7cBvN3tok-r_7Cgxk5hyOW9uzt0RNcX2-UWPdtAtGuUixsIdEPdNQKOi6ckLZ_vvkQRhoFVMDZ0YHJ-oQ5lFxfQ]
+      connection: [keep-alive]
+      content-type: [application/json]
+      cookie: [AWSELB=D76BDFED16399693AEB011A9296087A3745D7B7336FB65E5E711C63F8F1F669F23D77E923678D2D7CA30AC2E7D0A22A152DAA4064A3BB1AE41F5D7366FC70F9CA3F87F7633]
+      host: [usermanagement.adobe.io]
+      user-agent: ['user-sync/2.1 umapi-client/2.5 Python/2.7.10 (Darwin Kernel Version
+          14.5.0: Fri Feb 17 10:33:20 PST 2017; root:xnu-2782.50.9.1.1~1/RELEASE_X86_64)']
+      x-api-key: [4839484fa90147d6bb88f8db0c791ff1]
+    method: POST
+    uri: https://usermanagement.adobe.io/v2/usermanagement/action/210DB41957FFDC210A495E53@AdobeOrg
+  response:
+    body: {string: !!python/unicode '{"completed":7,"notCompleted":3,"completedInTestMode":0,"result":"partial","errors":[{"index":2,"step":0,"message":"User
+        Id does not exist: test05@k.on-the-side.net","errorCode":"error.user.nonexistent","requestID":"action_23","user":"test05@k.on-the-side.net"},{"index":5,"step":0,"message":"User
+        Id does not exist: test19@k.on-the-side.net","errorCode":"error.user.nonexistent","requestID":"action_26","user":"test19@k.on-the-side.net"},{"index":7,"step":0,"message":"User
+        Id does not exist: test01@k.on-the-side.net","errorCode":"error.user.nonexistent","requestID":"action_28","user":"test01@k.on-the-side.net"}]}'}
+    headers:
+      connection: [keep-alive]
+      content-length: ['617']
+      content-type: [application/json]
+      date: ['Thu, 18 May 2017 00:45:37 GMT']
+      server: [APIP]
+      vary: [Accept-Encoding]
+      x-powered-by: [Undertow/1]
+      x-request-id: [JGgdTY8zUfzbH7eD0CvavQBxJYF0yhib, JGgdTY8zUfzbH7eD0CvavQBxJYF0yhib]
+    status: {code: 200, message: OK}
+- request:
+    body: !!python/unicode '[{"do": [{"removeFromOrg": {"deleteAccount": true}}],
+      "requestID": "action_31", "user": "test21@ensemble.ca"}, {"do": [{"removeFromOrg":
+      {"deleteAccount": true}}], "requestID": "action_32", "user": "test31@test1.on-the-side.net"},
+      {"do": [{"removeFromOrg": {"deleteAccount": true}}], "requestID": "action_33",
+      "user": "test11@ensemble-systems.com"}, {"do": [{"removeFromOrg": {"deleteAccount":
+      true}}], "requestID": "action_34", "user": "test00@ensemble-systems.com"}, {"do":
+      [{"removeFromOrg": {"deleteAccount": true}}], "requestID": "action_35", "user":
+      "test13@test1.on-the-side.net"}]'
+    headers:
+      Content-Length: ['588']
+      accept: [application/json]
+      accept-encoding: ['gzip, deflate']
+      authorization: [Bearer eyJ4NXUiOiJpbXNfbmExLWtleS0xLmNlciIsImFsZyI6IlJTMjU2In0.eyJmZyI6IlJOM0EyUFlCUElQUUFBQUFBQUFBQUFEWEFBPT09PT09IiwiYXMiOiJpbXMtbmExIiwiYyI6ImxjMDc3VzN0Mks3TjlVdW8rc2JXalE9PSIsInVzZXJfaWQiOiIwRTNCNkE5OTU4MDZDNEJFMEE0OTVDQzdAdGVjaGFjY3QuYWRvYmUuY29tIiwibW9pIjoiYThhMzBjMjAiLCJzY29wZSI6Im9wZW5pZCx1c2VyX21hbmFnZW1lbnRfc2RrLEFkb2JlSUQiLCJjcmVhdGVkX2F0IjoiMTQ5NTA2ODMzMjUwNCIsImlkIjoiMTQ5NTA2ODMzMjUwNC1iYzIwMzc5Yy05ZTM5LTRiNTYtOTgwZS03MmI4ZGFlNDhmODkiLCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiZXhwaXJlc19pbiI6Ijg2NDAwMDAwIiwiY2xpZW50X2lkIjoiNDgzOTQ4NGZhOTAxNDdkNmJiODhmOGRiMGM3OTFmZjEifQ.KZTMQUtqqxjG8tMML3Q7f5lPx6MC-sC86hphkU1XhsJKJg5q-js9AZnGfC2JvFMj1JPocDlFuI7yH2GfOT4jvjnexaxr0BKNtzqQZ8s3bQgwyXh-ohfgwFUsdWV8XyyrRr8eduUdrPC_Pmgkc_uBoXeWd6ihcPdtcz-uZVEXjKCKVQ7R0nhl2Y3Qy1qH3MYWSGrMgjX5v1xjB_BCoJSBgzSQ2fILlH56830V61w16tm4ushgl-Wnd0kUmqZr4ro7cBvN3tok-r_7Cgxk5hyOW9uzt0RNcX2-UWPdtAtGuUixsIdEPdNQKOi6ckLZ_vvkQRhoFVMDZ0YHJ-oQ5lFxfQ]
+      connection: [keep-alive]
+      content-type: [application/json]
+      cookie: [AWSELB=D76BDFED16399693AEB011A9296087A3745D7B7336FB65E5E711C63F8F1F669F23D77E923678D2D7CA30AC2E7D0A22A152DAA4064A3BB1AE41F5D7366FC70F9CA3F87F7633]
+      host: [usermanagement.adobe.io]
+      user-agent: ['user-sync/2.1 umapi-client/2.5 Python/2.7.10 (Darwin Kernel Version
+          14.5.0: Fri Feb 17 10:33:20 PST 2017; root:xnu-2782.50.9.1.1~1/RELEASE_X86_64)']
+      x-api-key: [4839484fa90147d6bb88f8db0c791ff1]
+    method: POST
+    uri: https://usermanagement.adobe.io/v2/usermanagement/action/210DB41957FFDC210A495E53@AdobeOrg
+  response:
+    body: {string: !!python/unicode '{"completed":5,"notCompleted":0,"completedInTestMode":0,"result":"success"}'}
+    headers:
+      connection: [keep-alive]
+      content-length: ['75']
+      content-type: [application/json]
+      date: ['Thu, 18 May 2017 00:45:38 GMT']
+      server: [APIP]
+      vary: [Accept-Encoding]
+      x-powered-by: [Undertow/1]
+      x-request-id: [d6wLBkOJspnQ3ZvHtg3DHceY3L32v0IN, d6wLBkOJspnQ3ZvHtg3DHceY3L32v0IN]
+    status: {code: 200, message: OK}
+version: 1

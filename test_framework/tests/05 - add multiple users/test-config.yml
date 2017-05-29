@@ -1,0 +1,6 @@
+user_sync:
+    # relative path in this argument is relative to working directory
+    arguments: -c ../config/user-sync-config.yml --users file ../config/users.csv --update-user-info
+
+server:
+    # cassette_filename: cassette/get.yml

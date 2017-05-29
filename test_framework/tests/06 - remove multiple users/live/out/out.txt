@@ -1,0 +1,64 @@
+2017-05-17 17:45:32 71613 INFO config - Using main config file: [[../config/user-sync-config.yml]]
+2017-05-17 17:45:32 71613 INFO main - ========== Start Run (User Sync version: 2.1) ==============
+2017-05-17 17:45:32 71613 INFO main - ------- Invocation parameters -------
+2017-05-17 17:45:32 71613 INFO main - [[/Users/imak/github-adobe/user-sync.py/dist/user-sync -c ../config/user-sync-config.yml --adobe-only-user-list ../config/users.csv --adobe-only-user-action delete]]
+2017-05-17 17:45:32 71613 INFO main - -------------------------------------
+2017-05-17 17:45:32 71613 INFO main - --adobe-only-user-list specified, so not reading or comparing directory and Adobe users
+2017-05-17 17:45:32 71613 INFO processor - Reading Adobe-only users from: ../config/users.csv
+2017-05-17 17:45:32 71613 INFO processor - Read 35 Adobe-only users.
+2017-05-17 17:45:32 71613 INFO processor - ---------- Start Sync Umapi --------------------------------
+2017-05-17 17:45:32 71613 INFO processor - Deleting Adobe-only user: federatedID,test12@ensemble-systems.com,
+2017-05-17 17:45:32 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test27@ensemble.ca,
+2017-05-17 17:45:32 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test18@ensemble.ca,
+2017-05-17 17:45:32 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test14@ensemble.ca,
+2017-05-17 17:45:32 71613 INFO processor - Deleting Adobe-only user: federatedID,test32@ensemble-systems.com,
+2017-05-17 17:45:32 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test02@test1.on-the-side.net,
+2017-05-17 17:45:32 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test29@ensemble.ca,
+2017-05-17 17:45:32 71613 INFO processor - Deleting Adobe-only user: federatedID,test10@ensemble-systems.com,
+2017-05-17 17:45:32 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test30@test1.on-the-side.net,
+2017-05-17 17:45:32 71613 INFO processor - Deleting Adobe-only user: federatedID,test33@ensemble-systems.com,
+2017-05-17 17:45:34 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test24@test1.on-the-side.net,
+2017-05-17 17:45:34 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test26@test1.on-the-side.net,
+2017-05-17 17:45:34 71613 INFO processor - Deleting Adobe-only user: federatedID,test15@k.on-the-side.net,
+2017-05-17 17:45:34 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test20@ensemble.ca,
+2017-05-17 17:45:34 71613 INFO processor - Deleting Adobe-only user: federatedID,test25@k.on-the-side.net,
+2017-05-17 17:45:34 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test04@test1.on-the-side.net,
+2017-05-17 17:45:34 71613 INFO processor - Deleting Adobe-only user: federatedID,test28@k.on-the-side.net,
+2017-05-17 17:45:34 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test16@ensemble.ca,
+2017-05-17 17:45:34 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test22@test1.on-the-side.net,
+2017-05-17 17:45:34 71613 INFO processor - Deleting Adobe-only user: federatedID,test17@k.on-the-side.net,
+2017-05-17 17:45:36 71613 ERROR umapi.action - Error in requestID: action_13 (User: {'requestID': 'action_13', 'user': u'test15@k.on-the-side.net'}, Command: {'removeFromOrg': {'deleteAccount': True}}): code: "error.user.nonexistent" message: "User Id does not exist: test15@k.on-the-side.net"
+2017-05-17 17:45:36 71613 ERROR umapi.action - Error in requestID: action_15 (User: {'requestID': 'action_15', 'user': u'test25@k.on-the-side.net'}, Command: {'removeFromOrg': {'deleteAccount': True}}): code: "error.user.nonexistent" message: "User Id does not exist: test25@k.on-the-side.net"
+2017-05-17 17:45:36 71613 ERROR umapi.action - Error in requestID: action_17 (User: {'requestID': 'action_17', 'user': u'test28@k.on-the-side.net'}, Command: {'removeFromOrg': {'deleteAccount': True}}): code: "error.user.nonexistent" message: "User Id does not exist: test28@k.on-the-side.net"
+2017-05-17 17:45:36 71613 ERROR umapi.action - Error in requestID: action_20 (User: {'requestID': 'action_20', 'user': u'test17@k.on-the-side.net'}, Command: {'removeFromOrg': {'deleteAccount': True}}): code: "error.user.nonexistent" message: "User Id does not exist: test17@k.on-the-side.net"
+2017-05-17 17:45:36 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test09@test1.on-the-side.net,
+2017-05-17 17:45:36 71613 INFO processor - Deleting Adobe-only user: federatedID,test06@ensemble-systems.com,
+2017-05-17 17:45:36 71613 INFO processor - Deleting Adobe-only user: federatedID,test05@k.on-the-side.net,
+2017-05-17 17:45:36 71613 INFO processor - Deleting Adobe-only user: federatedID,test03@ensemble-systems.com,
+2017-05-17 17:45:36 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test34@ensemble.ca,
+2017-05-17 17:45:36 71613 INFO processor - Deleting Adobe-only user: federatedID,test19@k.on-the-side.net,
+2017-05-17 17:45:36 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test07@ensemble.ca,
+2017-05-17 17:45:36 71613 INFO processor - Deleting Adobe-only user: federatedID,test01@k.on-the-side.net,
+2017-05-17 17:45:36 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test23@test1.on-the-side.net,
+2017-05-17 17:45:36 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test08@test1.on-the-side.net,
+2017-05-17 17:45:37 71613 ERROR umapi.action - Error in requestID: action_23 (User: {'requestID': 'action_23', 'user': u'test05@k.on-the-side.net'}, Command: {'removeFromOrg': {'deleteAccount': True}}): code: "error.user.nonexistent" message: "User Id does not exist: test05@k.on-the-side.net"
+2017-05-17 17:45:37 71613 ERROR umapi.action - Error in requestID: action_26 (User: {'requestID': 'action_26', 'user': u'test19@k.on-the-side.net'}, Command: {'removeFromOrg': {'deleteAccount': True}}): code: "error.user.nonexistent" message: "User Id does not exist: test19@k.on-the-side.net"
+2017-05-17 17:45:37 71613 ERROR umapi.action - Error in requestID: action_28 (User: {'requestID': 'action_28', 'user': u'test01@k.on-the-side.net'}, Command: {'removeFromOrg': {'deleteAccount': True}}): code: "error.user.nonexistent" message: "User Id does not exist: test01@k.on-the-side.net"
+2017-05-17 17:45:37 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test21@ensemble.ca,
+2017-05-17 17:45:37 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test31@test1.on-the-side.net,
+2017-05-17 17:45:37 71613 INFO processor - Deleting Adobe-only user: federatedID,test11@ensemble-systems.com,
+2017-05-17 17:45:37 71613 INFO processor - Deleting Adobe-only user: federatedID,test00@ensemble-systems.com,
+2017-05-17 17:45:37 71613 INFO processor - Deleting Adobe-only user: enterpriseID,test13@test1.on-the-side.net,
+2017-05-17 17:45:39 71613 INFO processor - ---------- End Sync Umapi (Total time: 0:00:06) ------------
+2017-05-17 17:45:39 71613 INFO processor - ---------------------------------- Action Summary ----------------------------------
+2017-05-17 17:45:39 71613 INFO processor -                         Number of directory users read: 0
+2017-05-17 17:45:39 71613 INFO processor -           Number of directory users selected for input: 0
+2017-05-17 17:45:39 71613 INFO processor -                             Number of Adobe users read: 0
+2017-05-17 17:45:39 71613 INFO processor -            Number of Adobe users excluded from updates: 0
+2017-05-17 17:45:39 71613 INFO processor -     Number of non-excluded Adobe users with no changes: 0
+2017-05-17 17:45:39 71613 INFO processor -                        Number of new Adobe users added: 0
+2017-05-17 17:45:39 71613 INFO processor -                 Number of matching Adobe users updated: 0
+2017-05-17 17:45:39 71613 INFO processor -                     Number of Adobe-only users deleted: 35
+2017-05-17 17:45:39 71613 INFO processor -   Number of UMAPI actions sent (total, success, error): (35, 28, 7)
+2017-05-17 17:45:39 71613 INFO processor - ------------------------------------------------------------------------------------
+2017-05-17 17:45:39 71613 INFO main - ========== End Run (User Sync version: 2.1) (Total time: 0:00:06) 

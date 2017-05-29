@@ -1,0 +1,18 @@
+user_sync:
+    # relative path in this argument is relative to working directory
+    arguments: -c ../config/user-sync-config.yml --users file ../config/users.csv --process-groups
+    #
+    # live:
+    #     working_dir: live
+    #     output_dir: live/out
+    #
+    # recorded:
+    #     working_dir: rec
+    #     output_dir: rec/out
+
+server:
+    # these paths are relative to this configuration file. These are the default values.
+    # cassette_filename: live/cassette.yml
+    #    
+    # if we use shared profiles, we would specify it like this
+    # profile_set: 5_users

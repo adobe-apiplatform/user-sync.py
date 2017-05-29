@@ -21,10 +21,10 @@
 from setuptools import setup
 
 version_namespace = {}
-with open('user_sync/version.py') as f:
+with open('config_test/version.py') as f:
     exec(f.read(), version_namespace)
 
-setup(name='user-sync',
+setup(name='config-test',
       version=version_namespace['__version__'],
       description='Application for synchronizing customer directories with the Adobe Enterprise Admin Console',
       classifiers=[
@@ -38,24 +38,16 @@ setup(name='user-sync',
       maintainer='Daniel Brotsky',
       maintainer_email='dbrotsky@adobe.com',
       license='MIT',
-      packages=['user_sync', 'user_sync.connector'],
+      packages=['config_test'],
       install_requires=[
-          'pycrypto',
-          'python-ldap==2.4.25',
-          'PyYAML',
-          'umapi-client>=2.5',
-          'psutil',
-          'keyring',
-          'unicodecsv'
+      	  'PyYAML'
       ],
       setup_requires=['nose>=1.0'],
       tests_require=[
-          'mock',
-          'nose>=1.0',
       ],
       entry_points={
           'console_scripts': [
-              'user_sync = user_sync.app:main'
+              'config_test = config_test.app:main'
           ]
       },
       zip_safe=False)

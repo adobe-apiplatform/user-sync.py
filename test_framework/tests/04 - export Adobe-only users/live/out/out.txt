@@ -1,0 +1,24 @@
+2017-05-17 17:45:10 71606 INFO config - Using main config file: [[../config/user-sync-config.yml]]
+2017-05-17 17:45:10 71606 INFO main - ========== Start Run (User Sync version: 2.1) ==============
+2017-05-17 17:45:10 71606 INFO main - ------- Invocation parameters -------
+2017-05-17 17:45:10 71606 INFO main - [[/Users/imak/github-adobe/user-sync.py/dist/user-sync -c ../config/user-sync-config.yml --users file ../config/users.csv --adobe-only-user-action write-file out/users.csv]]
+2017-05-17 17:45:10 71606 INFO main - -------------------------------------
+2017-05-17 17:45:10 71606 INFO processor - ---------- Start Load from Directory -----------------------
+2017-05-17 17:45:10 71606 WARNING csv - In file [[../config/users.csv]]: unrecognized column names: ['bc', 'subco']
+2017-05-17 17:45:10 71606 INFO processor - ---------- End Load from Directory (Total time: 0:00:00) ---
+2017-05-17 17:45:10 71606 INFO processor - ---------- Start Sync Umapi --------------------------------
+2017-05-17 17:45:11 71606 INFO processor - Writing Adobe-only users to: [[out/users.csv]]
+2017-05-17 17:45:11 71606 INFO processor - Wrote 47 Adobe-only users.
+2017-05-17 17:45:11 71606 INFO processor - ---------- End Sync Umapi (Total time: 0:00:00) ------------
+2017-05-17 17:45:11 71606 INFO processor - ---------------------------------- Action Summary ----------------------------------
+2017-05-17 17:45:11 71606 INFO processor -                         Number of directory users read: 1
+2017-05-17 17:45:11 71606 INFO processor -           Number of directory users selected for input: 1
+2017-05-17 17:45:11 71606 INFO processor -                             Number of Adobe users read: 70
+2017-05-17 17:45:11 71606 INFO processor -            Number of Adobe users excluded from updates: 22
+2017-05-17 17:45:11 71606 INFO processor -     Number of non-excluded Adobe users with no changes: 48
+2017-05-17 17:45:11 71606 INFO processor -                        Number of new Adobe users added: 0
+2017-05-17 17:45:11 71606 INFO processor -                 Number of matching Adobe users updated: 0
+2017-05-17 17:45:11 71606 INFO processor -       Number of Adobe-only users with groups processed: 0
+2017-05-17 17:45:11 71606 INFO processor -   Number of UMAPI actions sent (total, success, error): (0, 0, 0)
+2017-05-17 17:45:11 71606 INFO processor - ------------------------------------------------------------------------------------
+2017-05-17 17:45:11 71606 INFO main - ========== End Run (User Sync version: 2.1) (Total time: 0:00:01) 

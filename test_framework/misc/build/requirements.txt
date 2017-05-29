@@ -1,0 +1,5 @@
+PyYAML
+vcrpy
+mock
+six
+requests
