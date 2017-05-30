@@ -1,5 +1,0 @@
-pycrypto
-PyYAML
-psutil
-umapi-client>=2.5
-keyring
