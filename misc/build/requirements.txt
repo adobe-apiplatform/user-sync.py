@@ -1,5 +1,5 @@
 pycrypto
 PyYAML
 psutil
-umapi-client>=2.0.2
+umapi-client>=2.5
 keyring
