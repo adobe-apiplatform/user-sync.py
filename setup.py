@@ -32,7 +32,8 @@ install_requires = [
     'PyYAML',
     'umapi-client>=2.5',
     'psutil',
-    'keyring'
+    'keyring',
+    'pywin32-ctypes==0.0.1'
 ]
 
 if not (sys.platform == 'win32' or sys.platform == 'darwin'):
