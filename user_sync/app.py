@@ -241,7 +241,7 @@ def create_config_loader_options(args):
     # --users
     users_args = args.users
     users_action = None if not users_args else user_sync.helper.normalize_string(users_args.pop(0))
-    if users_action is not None or users_action == 'all':
+    if users_action is None or users_action == 'all':
         config_options['directory_get_config_name'] = True
     elif users_action == 'file':
         if len(users_args) == 0:

@@ -58,42 +58,40 @@ class OktaDirectoryConnector(object):
     name = 'okta'
 
     def __init__(self, caller_options):
-        caller_config = user_sync.config.DictConfig('"%s options"' % OktaDirectoryConnector.name, caller_options)
+        caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('group_filter_format',
                                  '{group}')
         builder.set_string_value('all_users_filter',
-                                 'status eq "ACTIVE"')
-        # builder.set_string_value('user_email_format', '{email}')
+                                 'user.status == "ACTIVE"')
         builder.set_string_value('user_identity_type', None)
-        builder.set_string_value('logger_name', 'connector.' + OktaDirectoryConnector.name)
-        builder.set_dict_value('source_filters', {})
-
-        okta_url = builder.require_string_value('okta_url')
-        if 'https' not in okta_url:
-            okta_url = "https://" + okta_url
+        builder.set_string_value('logger_name', self.name)
+        host = builder.require_string_value('okta_url')
         api_token = builder.require_string_value('api_token')
 
         options = builder.get_options()
 
-        # self.user_email_formatter = OKTAValueFormatter(options['user_email_format'])
-
         self.users_client = None
         self.groups_client = None
         self.logger = logger = user_sync.connector.helper.create_logger(options)
-
         self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
-
         self.options = options
+        caller_config.report_unused_values(logger)
+
+        if not host.startswith('https://'):
+            if "://" in host:
+                raise AssertionException("Okta protocol must be https")
+            host = "https://" + host
+
         self.user_by_uid = {}
 
-        logger.debug('Initialized with options: %s', options)
+        logger.debug('%s initialized with options: %s', self.name, options)
 
-        logger.info('Connecting to: %s', okta_url)
+        logger.info('Connecting to: %s', host)
 
         try:
-            self.users_client = okta.UsersClient(okta_url, api_token)
-            self.groups_client = okta.UserGroupsClient(okta_url, api_token)
+            self.users_client = okta.UsersClient(host, api_token)
+            self.groups_client = okta.UserGroupsClient(host, api_token)
         except Exception as e:
             raise user_sync.error.AssertionException(repr(e))
 
@@ -107,18 +105,7 @@ class OktaDirectoryConnector(object):
         """
 
         options = self.options
-
         all_users_filter = options['all_users_filter']
-
-        is_using_source_filter = False
-        source_filters = options['source_filters']
-        source_filter = source_filters.get('all_users_filter')
-        if source_filter:
-            users_filter = "(%s) and (%s)" % (all_users_filter, source_filter)
-            is_using_source_filter = True
-            self.logger.info('Applied source filter: %s', users_filter)
-        else:
-            users_filter = all_users_filter
 
         self.logger.info('Loading users...')
         self.user_by_uid = user_by_uid = {}
@@ -126,7 +113,7 @@ class OktaDirectoryConnector(object):
         for group in groups:
             total_group_members = 0
             total_group_users = 0
-            for user in self.iter_group_members(group, users_filter, extended_attributes):
+            for user in self.iter_group_members(group, all_users_filter, extended_attributes):
                 total_group_members += 1
 
                 uid = user.get('uid')
@@ -157,7 +144,7 @@ class OktaDirectoryConnector(object):
             raise user_sync.error.AssertionException(repr(e))
 
         if results is None:
-            raise user_sync.error.AssertionException("Group not found for: %s" % group)
+            self.logger.warning("No group found for: %s", group)
         else:
             for result in results:
                 if result.profile.name == group:
@@ -185,13 +172,10 @@ class OktaDirectoryConnector(object):
                 self.logger.warning("Unable to get_group_users")
                 raise user_sync.error.AssertionException(repr(e))
             #Filtering users based all_users_filter query in config
-            if filter_string:
-                members = self.filter_user(members,filter_string)
-            for member in members:
+            for member in self.filter_users(members, filter_string):
                 profile = member.profile
                 if not profile.email:
-                    # if (last_attribute_name != None):
-                    self.logger.warn('No email attribute for login: %s', profile.login)
+                    self.logger.warning('No email attribute for login: %s', profile.login)
                     continue
 
                 user = self.convert_user(member, extended_attributes)
@@ -217,7 +201,7 @@ class OktaDirectoryConnector(object):
             try:
                 user['identity_type'] = user_sync.identity_type.parse_identity_type(user_identity_type)
             except user_sync.error.AssertionException as e:
-                self.logger.warning('Skipping user %s: %s', profile.login, e.message)
+                self.logger.warning('Skipping user %s: %s', profile.login, e)
                 return None
 
         source_attributes['login'] = profile.login
@@ -270,11 +254,11 @@ class OktaDirectoryConnector(object):
             raise user_sync.error.AssertionException(repr(e))
         return users
 
-    def filter_user(self, users, filter_string):
+    def filter_users(self, users, filter_string):
         try:
-            result = list(filter(lambda user: eval(filter_string), users))
+            result = filter(lambda user: eval(filter_string), users)
         except Exception as e:
-            raise AssertionException("Error filtering user: %s" % e)
+            raise AssertionException("Error filtering users: %s" % e)
         return result
 
 class OKTAValueFormatter(object):

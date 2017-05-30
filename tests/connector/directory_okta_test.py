@@ -54,7 +54,7 @@ class TestOktaErrors(unittest.TestCase):
 
         OktaDirectoryConnector.__init__ = mock.Mock(return_value=None)
         directory = OktaDirectoryConnector({})
-        directory.options = {'source_filters': {}, 'all_users_filter': None, 'group_filter_format': '{group}'}
+        directory.options = {'all_users_filter': None, 'group_filter_format': '{group}'}
         directory.logger = mock.create_autospec(logging.Logger)
         directory.groups_client = okta.UserGroupsClient('example.com', 'xyz')
 
@@ -112,7 +112,7 @@ class TestOktaGroupFilter(unittest.TestCase):
              "objectClass": ["okta:user_group"], "type": "OKTA_GROUP",
              "profile": {"name": "Group 1", "description": "null"}}])
         directory = self.directory
-        directory.options = {'source_filters': {}, 'all_users_filter': None, 'group_filter_format': '{group}'}
+        directory.options = {'all_users_filter': None, 'group_filter_format': '{group}'}
         result = directory.find_group("Group 1")
         self.assertEqual(result.profile.name, "Group 1")
 
@@ -123,7 +123,7 @@ class TestOktaGroupFilter(unittest.TestCase):
 
         mock_requests.get.return_value = self.mock_response(200, [])
         directory = self.directory
-        directory.options = {'source_filters': {}, 'all_users_filter': None,
+        directory.options = {'all_users_filter': None,
                              'group_filter_format': '(BADFILTER){group}'}
         result = directory.find_group("Group 1")
         self.assertEqual(result, None)
@@ -133,7 +133,7 @@ class TestOktaGroupFilter(unittest.TestCase):
         # This should throw an exception
 
         directory = self.directory
-        directory.options = {'source_filters': {}, 'all_users_filter': None,
+        directory.options = {'all_users_filter': None,
                              'group_filter_format': '{groupA}'}
         self.assertRaises(AssertionException, directory.find_group, "Group 1")
 
@@ -144,7 +144,7 @@ class TestOktaUsersGroups(unittest.TestCase):
 
         OktaDirectoryConnector.__init__ = mock.Mock(return_value=None)
         directory = OktaDirectoryConnector({})
-        directory.options = {'source_filters': {}, 'all_users_filter': None, 'group_filter_format': '{group}'}
+        directory.options = {'all_users_filter': None, 'group_filter_format': '{group}'}
         directory.logger = mock.create_autospec(logging.Logger)
         directory.groups_client = okta.UserGroupsClient('example.com', 'xyz')
 
@@ -267,6 +267,7 @@ class TestOktaIterGroupMember(unittest.TestCase):
         # Should return requested Extended Attribute Key in result['source_attributes']
 
         mock_requests.get.return_value = self.mock_response(200, [{"id": "00u9s60df0cO5cU3Y0h7",
+                                                                   "status": "ACTIVE",
                                                                    "profile": {"login": "testuser@xyz.com",
                                                                                "mobilePhone": None,
                                                                                "email": "testuser@xyz.com",
@@ -279,9 +280,9 @@ class TestOktaIterGroupMember(unittest.TestCase):
         mock_find_group.return_value = mockID
 
         directory = self.directory
-        directory.options = {'source_filters': {}, 'all_users_filter': None, 'group_filter_format': '{group}'}
+        directory.options = {'all_users_filter': 'user.status == "ACTIVE"', 'group_filter_format': '{group}'}
         extended_attributes = ['firstName', 'lastName', 'login', 'email', 'countryCode', 'additionalTest']
-        iterGroupResponse = directory.iter_group_members("testGroup", extended_attributes)
+        iterGroupResponse = directory.iter_group_members("testGroup",directory.options['all_users_filter'], extended_attributes)
         temp_var = list(iterGroupResponse)
 
         self.assertIn('additionalTest', temp_var[0]['source_attributes'])
@@ -293,6 +294,7 @@ class TestOktaIterGroupMember(unittest.TestCase):
         # Should return requested Extended Attribute value in result['source_attributes']
 
         mock_requests.get.return_value = self.mock_response(200, [{"id": "00u9s60df0cO5cU3Y0h7",
+                                                                   "status": "ACTIVE",
                                                                    "profile": {"login": "testuser@xyz.com",
                                                                                "mobilePhone": None,
                                                                                "email": "testuser@xyz.com",
@@ -305,9 +307,10 @@ class TestOktaIterGroupMember(unittest.TestCase):
         mock_find_group.return_value = mockID
 
         directory = self.directory
-        directory.options = {'source_filters': {}, 'all_users_filter': None, 'group_filter_format': '{group}'}
+        directory.options = {'all_users_filter': 'user.status == "ACTIVE"', 'group_filter_format': '{group}'}
         extended_attributes = ['firstName', 'lastName', 'login', 'email', 'countryCode', 'additionalTest']
-        iterGroupResponse = directory.iter_group_members("testGroup", extended_attributes)
+        iterGroupResponse = directory.iter_group_members("testGroup", directory.options['all_users_filter'],
+                                                         extended_attributes)
         temp_var = list(iterGroupResponse)
 
         self.assertEqual(temp_var[0]['source_attributes']['additionalTest'], 'TestValue1234')
@@ -319,6 +322,7 @@ class TestOktaIterGroupMember(unittest.TestCase):
         # user object should contain badattribute eventhough it does not exist in Okta User Profile
 
         mock_requests.get.return_value = self.mock_response(200, [{"id": "00u9s60df0cO5cU3Y0h7",
+                                                                   "status": "ACTIVE",
                                                                    "profile": {"login": "testuser@xyz.com",
                                                                                "mobilePhone": None,
                                                                                "email": "testuser@xyz.com",
@@ -331,9 +335,10 @@ class TestOktaIterGroupMember(unittest.TestCase):
         mock_find_group.return_value = mockID
 
         directory = self.directory
-        directory.options = {'source_filters': {}, 'all_users_filter': None, 'group_filter_format': '{group}'}
+        directory.options = {'all_users_filter': 'user.status == "ACTIVE"', 'group_filter_format': '{group}'}
         extended_attributes = ['firstName', 'lastName', 'login', 'email', 'countryCode', 'badattribute']
-        iterGroupResponse = directory.iter_group_members("testGroup", extended_attributes)
+        iterGroupResponse = directory.iter_group_members("testGroup", directory.options['all_users_filter'],
+                                                         extended_attributes)
         temp_var = list(iterGroupResponse)
 
         self.assertIn('badattribute', temp_var[0]['source_attributes'])
@@ -345,6 +350,7 @@ class TestOktaIterGroupMember(unittest.TestCase):
         # user object should contain badattribute key eventhough it does not exist in Okta User Profile
 
         mock_requests.get.return_value = self.mock_response(200, [{"id": "00u9s60df0cO5cU3Y0h7",
+                                                                   "status": "ACTIVE",
                                                                    "profile": {"login": "testuser@xyz.com",
                                                                                "mobilePhone": None,
                                                                                "email": "testuser@xyz.com",
@@ -357,9 +363,10 @@ class TestOktaIterGroupMember(unittest.TestCase):
         mock_find_group.return_value = mockID
 
         directory = self.directory
-        directory.options = {'source_filters': {}, 'all_users_filter': None, 'group_filter_format': '{group}'}
+        directory.options = {'all_users_filter': 'user.status == "ACTIVE"', 'group_filter_format': '{group}'}
         extended_attributes = ['firstName', 'lastName', 'login', 'email', 'countryCode', 'badattribute']
-        iterGroupResponse = directory.iter_group_members("testGroup", extended_attributes)
+        iterGroupResponse = directory.iter_group_members("testGroup", directory.options['all_users_filter'],
+                                                         extended_attributes)
         temp_var = list(iterGroupResponse)
         self.assertEqual(temp_var[0]['source_attributes']['badattribute'], None)
 
@@ -370,6 +377,7 @@ class TestOktaIterGroupMember(unittest.TestCase):
         # user object should contain badattribute value of None eventhough it does not exist in Okta User Profile
 
         mock_requests.get.return_value = self.mock_response(200, [{"id": "00u9s60df0cO5cU3Y0h7",
+                                                                   "status": "ACTIVE",
                                                                    "profile": {"login": "testuser@xyz.com",
                                                                                "mobilePhone": None,
                                                                                "email": "testuser@xyz.com",
@@ -382,8 +390,9 @@ class TestOktaIterGroupMember(unittest.TestCase):
         mock_find_group.return_value = mockID
 
         directory = self.directory
-        directory.options = {'source_filters': {}, 'all_users_filter': None, 'group_filter_format': '{group}'}
+        directory.options = {'all_users_filter': 'user.status == "ACTIVE"', 'group_filter_format': '{group}'}
         extended_attributes = ['firstName', 'lastName', 'login', 'email', 'countryCode', 'badattribute']
-        iterGroupResponse = directory.iter_group_members("testGroup", extended_attributes)
+        iterGroupResponse = directory.iter_group_members("testGroup", directory.options['all_users_filter'],
+                                                         extended_attributes)
         temp_var = list(iterGroupResponse)
         self.assertEqual(temp_var[0]['source_attributes']['badattribute'], None)
