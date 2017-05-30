@@ -3,3 +3,4 @@ PyYAML
 psutil
 umapi-client>=2.0.2
 keyring
+unicodecsv
