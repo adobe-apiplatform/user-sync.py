@@ -96,7 +96,8 @@ class JobStats(object):
 
         left_count = JobStats.line_left_count
         left_side = left_count * divider
-        right_count = (JobStats.line_width - len(header)) / len(divider) - left_count
+        # use floor division, as regular division in python 3 returns a float
+        right_count = (JobStats.line_width - len(header)) // len(divider) - left_count
         if right_count < 0:
             right_count = 0
         right_side = right_count * divider
