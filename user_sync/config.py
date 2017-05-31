@@ -476,11 +476,14 @@ class DictConfig(ObjectConfig):
         self.value = value
         self.accessed_keys = set()
 
+    def __iter__(self):
+        return self.iter_keys()
+
     def has_key(self, key):
         return key in self.value
 
     def iter_keys(self):
-        return self.value.iterkeys()
+        return iter(self.value.keys())
 
     def iter_unused_keys(self):
         for key in self.iter_keys():
