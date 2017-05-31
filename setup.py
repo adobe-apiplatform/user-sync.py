@@ -26,22 +26,6 @@ version_namespace = {}
 with open('user_sync/version.py') as f:
     exec(f.read(), version_namespace)
 
-install_requires = [
-    'pycrypto',
-    'python-ldap==2.4.25',
-    'PyYAML',
-    'umapi-client>=2.5',
-    'psutil',
-    'keyring',
-    'pywin32-ctypes==0.0.1'
-]
-
-if not (sys.platform == 'win32' or sys.platform == 'darwin'):
-    install_requires.extend([
-        'secretstorage',
-        'dbus-python'
-    ])
-
 setup(name='user-sync',
       version=version_namespace['__version__'],
       description='Application for synchronizing customer directories with the Adobe Enterprise Admin Console',
@@ -57,7 +41,23 @@ setup(name='user-sync',
       maintainer_email='dbrotsky@adobe.com',
       license='MIT',
       packages=['user_sync', 'user_sync.connector'],
-      install_requires=install_requires,
+      install_requires=[
+          'pycrypto',
+          'python-ldap==2.4.25',
+          'PyYAML',
+          'umapi-client>=2.5',
+          'psutil',
+          'keyring',
+      ],
+      extras_require={
+          ':sys_platform=="linux" or sys_platform=="linux2"':[
+              'secretstorage',
+              'dbus-python'
+          ],
+          ':sys_platform=="win32"':[
+              'pywin32-ctypes==0.0.1'
+          ]
+      },
       setup_requires=['nose>=1.0'],
       tests_require=[
           'mock',
