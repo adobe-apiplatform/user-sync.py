@@ -20,6 +20,7 @@
 
 import json
 import logging
+# import helper
 
 import jwt
 import six
@@ -66,12 +67,12 @@ class UmapiConnector(object):
         enterprise_builder.require_string_value('org_id')
         enterprise_builder.require_string_value('tech_acct')
         enterprise_builder.require_string_value('priv_key_path')
-        options['enterprise'] = enterprise_options = enterprise_builder.get_options() 
+        options['enterprise'] = enterprise_options = enterprise_builder.get_options()
 
-        self.options = options;        
+        self.options = options;
         self.logger = logger = user_sync.connector.helper.create_logger(options)
         caller_config.report_unused_values(logger)
-        
+
         ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
         auth_dict = {
@@ -241,7 +242,7 @@ class Commands(object):
     def convert_user_attributes_to_params(self, attributes):
         params = {}
         for key, value in six.iteritems(attributes):
-            if (key == 'firstname'):
+            if key == 'firstname':
                 key = 'first_name'
             elif key == 'lastname':
                 key = 'last_name'

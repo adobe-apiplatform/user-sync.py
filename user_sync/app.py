@@ -164,7 +164,7 @@ def begin_work(config_loader):
     rule_config = config_loader.get_rule_options()
 
     # process mapped configuration after the directory groups have been loaded, as mapped setting depends on this.
-    if (rule_config['directory_group_mapped']):
+    if rule_config['directory_group_mapped']:
         rule_config['directory_group_filter'] = set(six.iterkeys(directory_groups))
 
     # make sure that all the adobe groups are from known umapi connector names

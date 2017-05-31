@@ -18,7 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import ldap.controls.libldap
 import six
 import string
 
@@ -167,7 +166,6 @@ class LDAPDirectoryConnector(object):
         options = self.options
         base_dn = options['base_dn']
         group_filter_format = options['group_filter_format']
-
         res = connection.search_s(
             base_dn,
             ldap.SCOPE_SUBTREE,
@@ -207,9 +205,6 @@ class LDAPDirectoryConnector(object):
                     if current_tuple[0] is not None:
                         attributes = current_tuple[1]
 
-            if (attributes == None):
-                break;
-                                        
             for current_attribute_name, current_attribute_values in six.iteritems(attributes):
                 current_attribute_name_parts = current_attribute_name.split(';')
                 if current_attribute_name_parts[0] == attribute_name:

@@ -228,7 +228,7 @@ class RuleProcessor(object):
         if umapi_connectors.get_secondary_connectors():
             spacer = ' '
             connectors = [('primary', umapi_connectors.get_primary_connector())]
-            connectors.extend(umapi_connectors.get_secondary_connectors().iteritems())
+            connectors.extend(six.iteritems(umapi_connectors.get_secondary_connectors()))
         else:
             spacer = ''
             connectors = [('', umapi_connectors.get_primary_connector())]
@@ -288,7 +288,7 @@ class RuleProcessor(object):
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
 
         directory_groups = set(six.iterkeys(mappings))
-        if (directory_group_filter != None):
+        if directory_group_filter is not None:
             directory_groups.update(directory_group_filter)
         directory_users = directory_connector.load_users_and_groups(directory_groups, extended_attributes)
 
