@@ -269,7 +269,7 @@ class LDAPDirectoryConnector(object):
                 continue
 
             email, last_attribute_name = self.user_email_formatter.generate_value(record)
-            if email is None:
+            if not email:
                 if last_attribute_name is not None:
                     self.logger.warning('Skipping user with dn %s: empty email attribute (%s)', dn, last_attribute_name)
                 continue
@@ -296,10 +296,13 @@ class LDAPDirectoryConnector(object):
 
             username, last_attribute_name = self.user_username_formatter.generate_value(record)
             source_attributes['username'] = username
-            if last_attribute_name and not username:
-                self.logger.warning('No username attribute (%s) for user with dn: %s, default to email (%s)',
-                                    last_attribute_name, dn, email)
-            user['username'] = username if username is not None else email
+            if username:
+                user['username'] = username
+            else:
+                if last_attribute_name:
+                    self.logger.warning('No username attribute (%s) for user with dn: %s, default to email (%s)',
+                                        last_attribute_name, dn, email)
+                user['username'] = email
 
             domain, last_attribute_name = self.user_domain_formatter.generate_value(record)
             source_attributes['domain'] = domain
