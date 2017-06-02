@@ -46,3 +46,4 @@ We have compiled a [FAQ document](FAQ/index.md) that answers many questions we h
 * [French](../fr)
 * [German](../de)
 * [Japanese](../jp)
+* [Spanish](../es)

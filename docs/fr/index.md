@@ -1,41 +1,34 @@
 ---
 layout: page
-title: User Sync Documentation
+title: À propos de User Sync
+nav_link: À propos de User Sync
+nav_level: 1
+nav_order: 1
 lang: fr
 ---
 
-French version
+Bienvenue dans le centre de documentation de l’[outil User Sync d’Adobe](https://github.com/adobe-apiplatform/user-sync.py).
 
-Welcome to the documentation center for [User Sync from Adobe](https://github.com/adobe-apiplatform/user-sync.py/releases/latest).
+# À quoi sert User Sync ?
 
-# What is User Sync?
+User Sync est un outil de ligne de commande qui transfère les informations relatives aux utilisateurs et aux groupes du système d’annuaire de votre entreprise (tel qu’Active Directory ou autre système LDAP) vers l’annuaire de votre entreprise dans Adobe Admin Console.
 
-User Sync is a command-line tool that moves user and group
-information from your organization's enterprise directory system
-(such as an Active Directory or other LDAP system) to your
-organization's directory in the Adobe Admin Console.
+Chaque fois que vous exécutez User Sync, il recherche les différences entre les données des utilisateurs et des groupes dans les deux systèmes, puis met à jour l’annuaire Adobe afin que ses informations correspondent à celles de votre annuaire.
 
-Each time you run User Sync, it looks for differences between the
-user and group information in the two systems, and updates the
-Adobe directory to match the information in your directory.
+# [Guide d’installation](success-guide/index.md)
 
-# Setup and Success Guide
+Pour prendre en main rapidement l’outil User Sync, l’idéal est de lire le [Guide d’installation](success-guide/index.md), qui explique en détail comment paramétrer les fichiers de configuration requis et exécuter l’outil.
 
-The fastest way to get started with User Sync is to read the
-[Setup and Success Guide](success-guide/index.md), which gives
-step-by-step instructions for setting up the needed configuration
-files and running the tool.
+# [Manuel d’utilisation](user-manual/index.md)
 
-# User Manual
+Pour tout savoir sur le fonctionnement de User Sync, y compris sur la configuration de l’outil pour différents scénarios d’utilisation courants, consultez le [Manuel d’utilisation](user-manual/index.md). Ce guide vous aidera également à personnaliser le comportement de l’outil User Sync, grâce aux instructions fournies pour réaliser des mappages personnalisés entre les informations de l’annuaire client et les données des systèmes Adobe.
 
-For all the details of using User Sync, including how to set it
-up for a number of different typical usage scenarios, dive into
-the [User Manual](user-manual/index.md). It's also your starting
-point for customizing the behavior of User Sync, as it includes
-instructions for doing custom mappings between customer directory
-information and data on the Adobe side.
+# [Forum aux questions](FAQ/index.md)
 
-# Frequently Asked Questions  
+Nous avons compilé un [Forum aux questions](FAQ/index.md) qui répond à de nombreuses questions qui nous ont été posées ou que nous jugeons utiles de clarifier.
 
-We have compiled a [FAQ document](FAQ/index.md) that answers many questions we have been asked and others we expected to be asked.
-
+# Traductions disponibles
+* [Anglais](../en)
+* [Français](../fr)
+* [Allemand](../de)
+* [Japonais](../jp)

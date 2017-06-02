@@ -1,21 +1,15 @@
 ---
-layout: page
-title: About
-permalink: /about/
-advertise: About
-lang: fr
+layout: default
+title: À propos
+nav_link: À propos de User Sync
+nav_level: 1
+nav_order: 600
 ---
 
-French version
+# À propos de User Sync
 
-User Sync, from Adobe, is a command-line tool that moves user and
-group information from your organization's enterprise directory
-system (such as an Active Directory or other LDAP system) to your
-organization's directory in the Adobe Admin Console.
+L’utilitaire User Sync, proposé par Adobe, est un outil de ligne de commande qui transfère les informations relatives aux utilisateurs et aux groupes du système d’annuaire de votre entreprise (tel qu’Active Directory ou autre système LDAP) vers l’annuaire de votre entreprise dans Adobe Admin Console.
 
-Each time you run User Sync, it looks for differences between the
-user and group information in the two systems, and updates the
-Adobe directory to match the information in your directory.
+Chaque fois que vous exécutez User Sync, il recherche les différences entre les données des utilisateurs et des groupes dans les deux systèmes, puis met à jour l’annuaire Adobe afin que ses informations correspondent à celles de votre annuaire.
 
-This site provides all the documentation you need to configure
-and use User Sync for your organization.
+Ce site fournit toute la documentation nécessaire pour configurer et utiliser User Sync au sein de votre entreprise.

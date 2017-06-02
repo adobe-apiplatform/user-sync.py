@@ -1,37 +1,36 @@
 ---
 layout: default
 lang: fr
-nav_link: Setup Server FR
+nav_link: Configuration du serveur
 nav_level: 2
-nav_order: 260
+nav_order: 160
 ---
 
-# Identify and Setup the Server Where User Sync Will Run
+# Identification et configuration du serveur sur lequel doit s’exécuter User Sync
 
-[Previous Section](setup_adobeio.md) \| [Back to Contents](index.md) \|  [Next Section](install_sync.md)
+[Section précédente](setup_adobeio.md) \| [Revenir au sommaire](index.md) \|  [Section suivante](install_sync.md)
 
-En Francais
 
-User Sync can be run manually, but most companies will want to set up automation where User Sync runs once to a few times per day automatically.
+User Sync peut être exécuté manuellement, mais la plupart des entreprises préféreront l’automatiser afin qu’il s’exécute automatiquement une ou plusieurs fois par jour.
 
-It needs to be installed and run on a server that:
+Il doit être installé et exécuté sur un serveur qui :
 
-  - Can access Adobe via the internet
-  - Can access your directory service such as LDAP or AD
-  - Is protected and secure (your administrative credentials will be stored or accessed there)
-  - Stays up and is reliable
-  - Has some backup and recovery capability.
-  - Ideally can send email so reports can be sent by User Sync to administrators
+  - Peut accéder à Adobe par le biais d’Internet
+  - Peut accéder à votre service d’annuaire tel que LDAP ou AD
+  - Est protégé et sécurisé (vos identifiants d’administrateur y seront stockés ou lus)
+  - Est fiable et fonctionne en continu
+  - A certaines fonctions de sauvegarde et de restauration
+  - Peut idéalement envoyer des e-mails afin que les rapports puissent être envoyés par User Sync aux administrateurs
 
-You’ll need to work with your IT department to identify such a server and get access to it.
-Unix, OSX, or Windows are all supported by User Sync.
+Il vous faudra voir avec votre service informatique pour identifier un serveur de ce type et obtenir les droits d’accès associés.
+Les plates-formes Unix, OS X et Windows sont toutes prises en charge par User Sync.
 
-&#9744; Get a server allocated for the purpose of running User Sync.  Note that you can do initial setup and experiments using User Sync on some other machine such as your laptop or desktop machine as long as it meets the criteria above.
+&#9744; Allouez un serveur à l’exécution de l’outil User Sync. Notez que vous pouvez réaliser la configuration initiale et tester User Sync sur une autre machine, telle qu’un ordinateur portable ou de bureau, tant que celle-ci répond aux critères ci-dessus.
 
-&#9744; Get a login to that machine that has sufficient capability to install and run sync.  This can usually be a non-privileged account.
-
+&#9744; Obtenez un identifiant pour cet ordinateur qui possède des droits suffisants pour installer et exécuter User Sync. Un compte sans privilèges peut généralement suffire.
 
 
 
-[Previous Section](setup_adobeio.md) \| [Back to Contents](index.md) \|  [Next Section](install_sync.md)
+
+[Section précédente](setup_adobeio.md) \| [Revenir au sommaire](index.md) \|  [Section suivante](install_sync.md)
 
