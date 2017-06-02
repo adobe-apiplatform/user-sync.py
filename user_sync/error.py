@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
 class AssertionException(Exception):
     def __init__(self, message):
         super(AssertionException, self).__init__(message)
