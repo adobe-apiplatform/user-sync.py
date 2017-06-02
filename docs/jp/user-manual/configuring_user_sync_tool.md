@@ -1,6 +1,6 @@
 ---
 layout: default
-lang: ja
+lang: jp
 nav_link: User Sync の構成
 nav_level: 2
 nav_order: 30

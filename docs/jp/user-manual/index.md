@@ -2,7 +2,7 @@
 layout: page
 title: ユーザーマニュアル
 advertise: ユーザーマニュアル
-lang: ja
+lang: jp
 nav_link: ユーザーマニュアル
 nav_level: 1
 nav_order: 10

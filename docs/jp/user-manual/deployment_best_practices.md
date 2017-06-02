@@ -1,6 +1,6 @@
 ---
 layout: default
-lang: ja
+lang: jp
 nav_link: デプロイメントのベストプラクティス
 nav_level: 2
 nav_order: 70
