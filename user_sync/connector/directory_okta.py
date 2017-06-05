@@ -66,7 +66,7 @@ class OktaDirectoryConnector(object):
                                  'user.status == "ACTIVE"')
         builder.set_string_value('user_identity_type', None)
         builder.set_string_value('logger_name', self.name)
-        host = builder.require_string_value('okta_url')
+        host = builder.require_string_value('host')
         api_token = builder.require_string_value('api_token')
 
         options = builder.get_options()

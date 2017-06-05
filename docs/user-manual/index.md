@@ -1888,7 +1888,7 @@ If an Okta config comes before an LDAP config, then the Okta config will be load
 
 Option | Type | Description | Example
 --- | --- | --- | ---
-`okta_url` | String | Base URL/Host of Okta instance | `https://dev-XXXXX.oktapreview.com`
+`host` | String | Base URL/Host of Okta instance | `https://dev-XXXXX.oktapreview.com`
 `api_token` | String | Secret API token | n/a
 `group_filter_format` | String | Templatized group filter (default: `{group}` | `{group}`
 `all_users_filter` | String | Filter to identify active users (default: `status eq "ACTIVE"`) See [Okta's filter documentation](http://developer.okta.com/docs/api/resources/users.html#list-users-with-a-filter) for more information| `profile.email sw "test.user."` (only sync users whose email addresses start with "test.user.")
@@ -1900,7 +1900,7 @@ since Okta uses email address as the primary ID of all users.
 #### Config Example
 
 ```yaml
-okta_url: "Okta URL goes here ie. youcompany.okta.com"
+host: "Okta URL goes here ie. youcompany.okta.com"
 
 #For more detail on getting Okta API Token: http://developer.okta.com/docs/api/getting_started/getting_a_token.html
 api_token: "API token goes here"

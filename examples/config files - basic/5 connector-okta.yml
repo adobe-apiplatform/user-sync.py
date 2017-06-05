@@ -1,4 +1,4 @@
-okta_url: "Your Okta URL goes here ie. youcompany.okta.com"
+host: "Your Okta URL goes here ie. youcompany.okta.com"
 
 #For more detail on getting Okta API Token: http://developer.okta.com/docs/api/getting_started/getting_a_token.html
 api_token: "API token goes here"
