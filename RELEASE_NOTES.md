@@ -1,11 +1,15 @@
 # Release Notes for User Sync Tool Version 2.1
 
-These notes apply to v2.1rc1 of 2017-05-05.
+These notes apply to v2.1 of 2017-05-12.
 
 ## New Features
 
 1. We now have full Unicode support.  See [Issue 167](https://github.com/adobe-apiplatform/user-sync.py/issues/167) for details.
 2. We now support secure handling for all credential settings and credential files.  See [Issue 159](https://github.com/adobe-apiplatform/user-sync.py/issues/159) for design discussion, and read [the docs](https://adobe-apiplatform.github.io/user-sync.py/) for associated config changes.
+
+## Bug Fixes
+
+Fixes for [Issue 181](https://github.com/adobe-apiplatform/user-sync.py/issues/181) and [Issue 189](https://github.com/adobe-apiplatform/user-sync.py/issues/189).
 
 ## Compatibility with Prior Versions
 

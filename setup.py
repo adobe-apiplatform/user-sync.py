@@ -18,6 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import sys
+
 from setuptools import setup
 
 version_namespace = {}
@@ -43,11 +45,20 @@ setup(name='user-sync',
           'pycrypto',
           'python-ldap==2.4.25',
           'PyYAML',
-          'umapi-client>=2.4.1',
+          'umapi-client>=2.5',
           'psutil',
           'keyring',
           'okta==0.0.3',
       ],
+      extras_require={
+          ':sys_platform=="linux" or sys_platform=="linux2"':[
+              'secretstorage',
+              'dbus-python'
+          ],
+          ':sys_platform=="win32"':[
+              'pywin32-ctypes==0.0.1'
+          ]
+      },
       setup_requires=['nose>=1.0'],
       tests_require=[
           'mock',
