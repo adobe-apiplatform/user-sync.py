@@ -21,9 +21,8 @@
 import user_sync.config
 import user_sync.connector.helper
 import user_sync.error
-import user_sync.helper
 import user_sync.identity_type
-
+from user_sync.helper import CSVAdapter
 
 def connector_metadata():
     metadata = {
@@ -127,10 +126,11 @@ class CSVDirectoryConnector(object):
         recognized_column_names += extended_attributes
 
         line_read = 0
-        rows = user_sync.helper.iter_csv_rows(file_path,
-                                              delimiter=options['delimiter'],
-                                              recognized_column_names=recognized_column_names,
-                                              logger=logger)
+        rows = CSVAdapter.read_csv_rows(file_path,
+                                        recognized_column_names=recognized_column_names,
+                                        logger=logger,
+                                        encoding=self.encoding,
+                                        delimiter=options['delimiter'])
         for row in rows:
             line_read += 1
             email = self.get_column_value(row, email_column_name)
@@ -199,4 +199,7 @@ class CSVDirectoryConnector(object):
         :type column_name: str
         """
         value = row.get(column_name)
-        return value.decode(self.encoding) if value else None
+        if not value:
+            return None
+        else:
+            return value.decode(self.encoding)

@@ -12,19 +12,19 @@
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import csv
 import logging
 
 import user_sync.connector.umapi
 import user_sync.error
-import user_sync.helper
 import user_sync.identity_type
+from user_sync.helper import normalize_string, CSVAdapter, JobStats
 
 GROUP_NAME_DELIMITER = '::'
 PRIMARY_UMAPI_NAME = None
@@ -149,7 +149,7 @@ class RuleProcessor(object):
         self.prepare_umapi_infos()
 
         if directory_connector is not None:
-            load_directory_stats = user_sync.helper.JobStats("Load from Directory", divider="-")
+            load_directory_stats = JobStats("Load from Directory", divider="-")
             load_directory_stats.log_start(logger)
             self.read_desired_user_groups(directory_groups, directory_connector)
             load_directory_stats.log_end(logger)
@@ -158,7 +158,7 @@ class RuleProcessor(object):
             # no directory users to sync with
             should_sync_umapi_users = False
 
-        umapi_stats = user_sync.helper.JobStats("Sync Umapi", divider="-")
+        umapi_stats = JobStats("Sync Umapi", divider="-")
         umapi_stats.log_start(logger)
         if should_sync_umapi_users:
             self.process_umapi_users(umapi_connectors)
@@ -791,7 +791,7 @@ class RuleProcessor(object):
         result = set()
         if group_names is not None:
             for group_name in group_names:
-                normalized_group_name = user_sync.helper.normalize_string(group_name)
+                normalized_group_name = normalize_string(group_name)
                 result.add(normalized_group_name)
         return result
 
@@ -881,9 +881,9 @@ class RuleProcessor(object):
         :return: string "id_type,username,domain" (or None)
         """
         id_type = user_sync.identity_type.parse_identity_type(id_type)
-        email = user_sync.helper.normalize_string(email) if email else None
-        username = user_sync.helper.normalize_string(username) or email
-        domain = user_sync.helper.normalize_string(domain)
+        email = normalize_string(email) if email else None
+        username = normalize_string(username) or email
+        domain = normalize_string(domain)
 
         if not id_type:
             return None
@@ -917,13 +917,13 @@ class RuleProcessor(object):
         user_column_name = 'username'
         domain_column_name = 'domain'
         ummapi_name_column_name = 'umapi'
-        rows = user_sync.helper.iter_csv_rows(file_path,
-                                              delimiter=delimiter,
-                                              recognized_column_names=[
-                                                  id_type_column_name, user_column_name, domain_column_name,
-                                                  ummapi_name_column_name,
-                                              ],
-                                              logger=self.logger)
+        rows = CSVAdapter.read_csv_rows(file_path,
+                                        recognized_column_names=[
+                                            id_type_column_name, user_column_name, domain_column_name,
+                                            ummapi_name_column_name,
+                                        ],
+                                        logger=self.logger,
+                                        delimiter=delimiter)
         for row in rows:
             umapi_name = row.get(ummapi_name_column_name) or PRIMARY_UMAPI_NAME
             id_type = row.get(id_type_column_name)
@@ -952,26 +952,25 @@ class RuleProcessor(object):
         # figure out if we should include a umapi column
         secondary_count = 0
         fieldnames = ['type', 'username', 'domain']
+        rows = []
+        # count the secondaries, and if there are any add the name as a column
         for umapi_name in self.stray_key_map:
             if umapi_name != PRIMARY_UMAPI_NAME and self.get_stray_keys(umapi_name):
                 if not secondary_count:
                     fieldnames.append('umapi')
                 secondary_count += 1
-        with open(file_path, 'wb') as output_file:
-            delimiter = user_sync.helper.guess_delimiter_from_filename(file_path)
-            writer = csv.DictWriter(output_file, fieldnames=fieldnames, delimiter=delimiter)
-            writer.writeheader()
-            # None sorts before strings, so sorting the keys in the map
-            # puts the primary umapi first in the output, which is handy
-            for umapi_name in sorted(self.stray_key_map.keys()):
-                for user_key in self.get_stray_keys(umapi_name):
-                    id_type, username, domain = self.parse_user_key(user_key)
-                    umapi = umapi_name if umapi_name else ""
-                    if secondary_count:
-                        row_dict = {'type': id_type, 'username': username, 'domain': domain, 'umapi': umapi}
-                    else:
-                        row_dict = {'type': id_type, 'username': username, 'domain': domain}
-                    writer.writerow(row_dict)
+        # None sorts before strings, so sorting the keys in the map
+        # puts the primary umapi first in the output, which is handy
+        for umapi_name in sorted(self.stray_key_map.keys()):
+            for user_key in self.get_stray_keys(umapi_name):
+                id_type, username, domain = self.parse_user_key(user_key)
+                umapi = umapi_name if umapi_name else ""
+                if secondary_count:
+                    row_dict = {'type': id_type, 'username': username, 'domain': domain, 'umapi': umapi}
+                else:
+                    row_dict = {'type': id_type, 'username': username, 'domain': domain}
+                rows.append(row_dict)
+        CSVAdapter.write_csv_rows(file_path, fieldnames, rows)
         user_count = len(self.stray_key_map.get(PRIMARY_UMAPI_NAME, []))
         user_plural = "" if user_count == 1 else "s"
         if secondary_count > 0:
@@ -1116,7 +1115,7 @@ class UmapiTargetInfo(object):
         """
         :type group: str
         """
-        normalized_group_name = user_sync.helper.normalize_string(group)
+        normalized_group_name = normalize_string(group)
         self.mapped_groups.add(normalized_group_name)
 
     def get_mapped_groups(self):
@@ -1141,7 +1140,7 @@ class UmapiTargetInfo(object):
         if desired_groups is None:
             self.desired_groups_by_user_key[user_key] = desired_groups = set()
         if group is not None:
-            normalized_group_name = user_sync.helper.normalize_string(group)
+            normalized_group_name = normalize_string(group)
             desired_groups.add(normalized_group_name)
 
     def add_umapi_user(self, user_key, user):
