@@ -1863,3 +1863,72 @@ schtasks`) for more details.
 There is also a GUI for managing windows scheduled tasks. You can
 find the Task Scheduler in the Windows administrative control
 panel.
+
+## Okta User Sync
+
+In addition to LDAP and CSV, the User Sync tool supports [Okta](https://www.okta.com) as a source for user identity and product entitlement sync.
+
+Okta customers must obtain an API token for use with the Okta Users API.  See [Okta's Developer Documentation](http://developer.okta.com/docs/api/getting_started/api_test_client.html) 
+for more information.
+
+### Configuration
+
+To load an Okta config, use the key "okta" in `user-sync-config.yml`.
+
+```yaml
+directory:
+  connectors:
+    okta: connector-okta.yml
+```
+
+Note: If both an Okta and an LDAP config are specified, the User Sync tool will load the config for the first key specified. 
+If an Okta config comes before an LDAP config, then the Okta config will be loaded and the LDAP config will be ignored.
+
+#### Config Options
+
+Option | Type | Description | Example
+--- | --- | --- | ---
+`host` | String | Base URL/Host of Okta instance | `https://dev-XXXXX.oktapreview.com`
+`api_token` | String | Secret API token | n/a
+`group_filter_format` | String | Templatized group filter (default: `{group}` | `{group}`
+`all_users_filter` | String | Filter to identify active users (default: `status eq "ACTIVE"`) See [Okta's filter documentation](http://developer.okta.com/docs/api/resources/users.html#list-users-with-a-filter) for more information| `profile.email sw "test.user."` (only sync users whose email addresses start with "test.user.")
+`user_identity_type` | String | Type of identity to create in the Admin Console (`enterpriseID` or `federatedID`, default: `enterpriseID`) | `federatedID`
+
+**Note:** `user_username_format` and `user_domain_format` are not supported.  Username-based Federated IDs are not possible with Okta,
+since Okta uses email address as the primary ID of all users.
+
+#### Config Example
+
+```yaml
+host: "Okta URL goes here ie. youcompany.okta.com"
+
+#For more detail on getting Okta API Token: http://developer.okta.com/docs/api/getting_started/getting_a_token.html
+api_token: "API token goes here"
+
+# specifies the string format used to construct a group query.
+# {group} is replaced with the name of the group to find. Default is:
+# example for OKTA
+group_filter_format: "{group}"
+
+# specifies the string filter used to find all users in the directory.
+# For more detail: http://developer.okta.com/docs/api/resources/users.html#list-users-with-a-filter
+# Default, intending for Okta, is:
+all_users_filter: 'status eq "ACTIVE"'
+
+# specifies the identity type of the dashboard user to create.
+# the valid values are: enterpriseID, federatedID
+#
+# If not specified, the default identity type from the main config file is used.
+#
+# example for enterprise ID:
+user_identity_type: federatedID
+```
+
+### Running Okta Sync
+
+The process for running sync with Okta is the same as running sync against LDAP or CSV.  All command-line parameters are supported (including `--users group`).  
+
+### Extension Support ###
+
+Okta sync can use extended groups, attributes and after-mapping hooks.  Extended attributes must be valid Okta profile fields.
+See the [User Manual](#custom-attributes-and-mappings) for more information on extension functionality.

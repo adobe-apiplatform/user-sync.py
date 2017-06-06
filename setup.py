@@ -48,6 +48,7 @@ setup(name='user-sync',
           'umapi-client>=2.5',
           'psutil',
           'keyring',
+          'okta==0.0.3',
       ],
       extras_require={
           ':sys_platform=="linux" or sys_platform=="linux2"':[

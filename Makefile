@@ -24,7 +24,7 @@ output_filename = user-sync
 pex:
 	pip install --upgrade pip
 	pip install pex requests wheel
-	pip wheel -w wheelhouse -r $(python_ldap_requirements)
+	pip wheel -w wheelhouse -r $(python_ldap_requirements) -r misc/build/requirements-okta.txt
 	-$(MKDIR) wheelhouse
 	-$(RM) $(output_dir)
 	pex \
