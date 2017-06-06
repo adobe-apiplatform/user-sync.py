@@ -21,8 +21,8 @@
 import user_sync.config
 import user_sync.connector.helper
 import user_sync.error
-import user_sync.helper
 import user_sync.identity_type
+from user_sync.helper import CSVAdapter
 
 def connector_metadata():
     metadata = {
@@ -30,28 +30,31 @@ def connector_metadata():
     }
     return metadata
 
+
 def connector_initialize(options):
-    '''
+    """
     :type options: dict
-    '''
+    """
     state = CSVDirectoryConnector(options)
     return state
 
+
 def connector_load_users_and_groups(state, groups, extended_attributes):
-    '''
+    """
     :type state: CSVDirectoryConnector
     :type groups: list(str)
     :type extended_attributes: list(str)
     :rtype (bool, iterable(dict))
-    '''
+    """
 
-    # CSV supports arbitrary aka "extended" attrs by default, so the value of extended_attributes has no impact on this particular connector
-
+    # CSV supports arbitrary aka "extended" attrs by default,
+    # so the value of extended_attributes has no impact on this particular connector
     return state.load_users_and_groups(groups, extended_attributes)
+
 
 class CSVDirectoryConnector(object):
     name = 'csv'
-    
+
     def __init__(self, caller_options):
         caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
@@ -80,10 +83,11 @@ class CSVDirectoryConnector(object):
         self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
 
     def load_users_and_groups(self, groups, extended_attributes):
-        '''
+        """
         :type groups: list(str)
+        :type extended_attributes: list
         :rtype (bool, iterable(dict))
-        '''        
+        """
         options = self.options
         file_path = options['file_path']
         self.logger.debug('Reading from: %s', file_path)
@@ -92,15 +96,16 @@ class CSVDirectoryConnector(object):
         return users.itervalues()
 
     def read_users(self, file_path, extended_attributes):
-        '''
+        """
         :type file_path
+        :type extended_attributes: list
         :rtype dict
-        '''
+        """
         users = {}
-        
+
         options = self.options
         logger = self.logger
-        
+
         recognized_column_names = []
 
         def get_column_name(key):
@@ -119,66 +124,67 @@ class CSVDirectoryConnector(object):
 
         # extended attributes appear after the standard ones (if no header row)
         recognized_column_names += extended_attributes
-        
+
         line_read = 0
-        rows = user_sync.helper.iter_csv_rows(file_path, 
-                                                delimiter = options['delimiter'], 
-                                                recognized_column_names = recognized_column_names, 
-                                                logger = logger)
+        rows = CSVAdapter.read_csv_rows(file_path,
+                                        recognized_column_names=recognized_column_names,
+                                        logger=logger,
+                                        encoding=self.encoding,
+                                        delimiter=options['delimiter'])
         for row in rows:
             line_read += 1
             email = self.get_column_value(row, email_column_name)
             if email is None or email.find('@') < 0:
                 logger.warning('Missing or invalid email at row: %d; skipping', line_read)
                 continue
-            
+
             user = users.get(email)
             if user is None:
                 user = user_sync.connector.helper.create_blank_user()
                 user['email'] = email
                 users[email] = user
-            
+
             first_name = self.get_column_value(row, first_name_column_name)
             if first_name is not None:
                 user['firstname'] = first_name
             else:
                 logger.debug('No value firstname for: %s', email)
-                
+
             last_name = self.get_column_value(row, last_name_column_name)
-            if last_name is not None:    
+            if last_name is not None:
                 user['lastname'] = last_name
             else:
                 logger.debug('No value lastname for: %s', email)
-    
+
             country = self.get_column_value(row, country_column_name)
-            if country is not None:    
+            if country is not None:
                 user['country'] = country
-                
+
             groups = self.get_column_value(row, groups_column_name)
             if groups is not None:
                 user['groups'].extend(groups.split(','))
-                
+
             username = self.get_column_value(row, username_column_name)
             if username is None:
                 username = email
             user['username'] = username
-                
+
             identity_type = self.get_column_value(row, identity_type_column_name)
             if identity_type:
                 try:
                     user['identity_type'] = user_sync.identity_type.parse_identity_type(identity_type)
                 except user_sync.error.AssertionException as e:
-                    logger.error('%s for user: %s', e.message, username)
-                    e.set_reported()
-                    raise e
+                    self.logger.warning('Skipping user %s: %s', username, e)
+                    del users[email]
+                    continue
             else:
-                identity_type = self.user_identity_type
+                user['identity_type'] = self.user_identity_type
 
             domain = self.get_column_value(row, domain_column_name)
             if domain:
                 user['domain'] = domain
             elif username != email:
-                user['domain'] = email[email.find('@')+1:]
+                user['domain'] = email[email.find('@') + 1:]
 
             sa = {}
             for col in recognized_column_names:
@@ -186,11 +192,14 @@ class CSVDirectoryConnector(object):
             user['source_attributes'] = sa
 
         return users
-    
+
     def get_column_value(self, row, column_name):
-        '''
+        """
         :type row: dict
         :type column_name: str
-        '''
+        """
         value = row.get(column_name)
-        return value.decode(self.encoding) if value else None
+        if not value:
+            return None
+        else:
+            return value.decode(self.encoding)
