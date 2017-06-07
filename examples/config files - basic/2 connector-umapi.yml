@@ -66,6 +66,6 @@ enterprise:
   # by User Sync to decrypt the private key file (or private key data), as in:
   #priv_key_pass: "my passphrase for my private key"
   # For better security, you should save your passphrase into the secure credential store
-  # on your platform (username = your org ID, service/internet address = "umapi_passphrase")
+  # on your platform (username = your org ID, service/internet address = "umapi_private_key_passphrase")
   # and then uncomment this setting:
   #secure_priv_pass_key: umapi_private_key_passphrase
