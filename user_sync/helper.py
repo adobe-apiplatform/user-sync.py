@@ -22,19 +22,7 @@ import csv
 import datetime
 import os
 
-import user_sync.error
-
-
-def open_file(name, mode, buffering=-1):
-    """
-    :type name: str
-    :type mode: str
-    :type buffering: int
-    """
-    try:
-        return open(str(name), mode, buffering)
-    except IOError as e:
-        raise user_sync.error.AssertionException(str(e))
+from user_sync.error import AssertionException
 
 
 def normalize_string(string_value):
@@ -46,43 +34,85 @@ def normalize_string(string_value):
     return string_value.strip().lower() if string_value is not None else None
 
 
-def guess_delimiter_from_filename(filename):
+class CSVAdapter:
     """
-    :type filename
-    :rtype str
+    Read and write CSV files to and from lists of dictionaries
     """
-    _base_name, extension = os.path.os.path.splitext(filename)
-    normalized_extension = normalize_string(extension)
-    if normalized_extension == '.csv':
-        return ','
-    if normalized_extension == '.tsv':
+    @staticmethod
+    def open_csv_file(name, mode, encoding=None):
+        """
+        :type name: str
+        :type mode: str
+        :type encoding: str, but ignored in py2
+        :rtype file
+        """
+        try:
+            if mode == 'r':
+                return open(str(name), 'rb', buffering=1)
+            elif mode == 'w':
+                return open(str(name), 'wb')
+            else:
+                raise ValueError("File mode (%s) must be 'r' or 'w'" % mode)
+        except IOError as e:
+            raise AssertionException("Can't open file '%s': %s" % (name, e))
+
+    @staticmethod
+    def guess_delimiter_from_filename(filename):
+        """
+        :type filename
+        :rtype str
+        """
+        _base_name, extension = os.path.splitext(filename)
+        normalized_extension = normalize_string(extension)
+        if normalized_extension == '.csv':
+            return ','
+        if normalized_extension == '.tsv':
+            return '\t'
         return '\t'
-    return '\t'
+
+    @classmethod
+    def read_csv_rows(cls, file_path, recognized_column_names=None, logger=None, encoding=None, delimiter=None):
+        """
+        :type file_path: str
+        :type recognized_column_names: list(str)
+        :type logger: logging.Logger
+        :type encoding: str
+        :type delimiter: str
+        """
+        with cls.open_csv_file(file_path, 'r', encoding) as input_file:
+            if delimiter is None:
+                delimiter = cls.guess_delimiter_from_filename(file_path)
+            try:
+                reader = csv.DictReader(input_file, delimiter=delimiter)
+                if recognized_column_names is not None:
+                    unrecognized_column_names = [column_name for column_name in reader.fieldnames
+                                                 if column_name not in recognized_column_names]
+                    if len(unrecognized_column_names) > 0 and logger is not None:
+                        logger.warn("In file '%s': unrecognized column names: %s", file_path, unrecognized_column_names)
+                for row in reader:
+                    yield row
+            except UnicodeError as e:
+                raise AssertionException("Encoding error in file '%s': %s" % (file_path, e))
+
+    @classmethod
+    def write_csv_rows(cls, file_path, field_names, rows, encoding=None, delimiter=None):
+        """
+        :type file_path: str
+        :type field_names: list(str)
+        :type rows: list(dict)
+        :type encoding: str
+        :type delimiter: str
+        """
+        with cls.open_csv_file(file_path, 'w', encoding=encoding) as output_file:
+            if delimiter is None:
+                delimiter = cls.guess_delimiter_from_filename(file_path)
+            writer = csv.DictWriter(output_file, fieldnames=field_names, delimiter=delimiter)
+            writer.writeheader()
+            for row in rows:
+                writer.writerow(row)
 
 
-def iter_csv_rows(file_path, delimiter=None, recognized_column_names=None, logger=None):
-    """
-    :type file_path: str
-    :type delimiter: str
-    :type recognized_column_names: list(str)
-    :type logger: logging.Logger
-    """
-    with open_file(file_path, 'r', 1) as input_file:
-        if delimiter is None:
-            delimiter = guess_delimiter_from_filename(file_path)
-        reader = csv.DictReader(input_file, delimiter=delimiter)
-
-        if recognized_column_names is not None:
-            unrecognized_column_names = [column_name for column_name in reader.fieldnames
-                                         if column_name not in recognized_column_names]
-            if len(unrecognized_column_names) > 0 and logger is not None:
-                logger.warn("In file '%s': unrecognized column names: %s", file_path, unrecognized_column_names)
-
-        for row in reader:
-            yield row
-
-
-class JobStats(object):
+class JobStats:
     line_left_count = 10
     line_width = 60
 

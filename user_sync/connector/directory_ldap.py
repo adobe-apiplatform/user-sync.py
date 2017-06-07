@@ -269,7 +269,8 @@ class LDAPDirectoryConnector(object):
                 continue
 
             email, last_attribute_name = self.user_email_formatter.generate_value(record)
-            if email is None:
+            email = email.strip() if email else None
+            if not email:
                 if last_attribute_name is not None:
                     self.logger.warning('Skipping user with dn %s: empty email attribute (%s)', dn, last_attribute_name)
                 continue
@@ -295,13 +296,18 @@ class LDAPDirectoryConnector(object):
                     continue
 
             username, last_attribute_name = self.user_username_formatter.generate_value(record)
+            username = username.strip() if username else None
             source_attributes['username'] = username
-            if last_attribute_name and not username:
-                self.logger.warning('No username attribute (%s) for user with dn: %s, default to email (%s)',
-                                    last_attribute_name, dn, email)
-            user['username'] = username if username is not None else email
+            if username:
+                user['username'] = username
+            else:
+                if last_attribute_name:
+                    self.logger.warning('No username attribute (%s) for user with dn: %s, default to email (%s)',
+                                        last_attribute_name, dn, email)
+                user['username'] = email
 
             domain, last_attribute_name = self.user_domain_formatter.generate_value(record)
+            domain = domain.strip() if domain else None
             source_attributes['domain'] = domain
             if domain:
                 user['domain'] = domain
@@ -380,7 +386,7 @@ class LDAPValueFormatter(object):
 
     def __init__(self, string_format):
         """
-        :type string_format: str
+        :type string_format: unicode
         """
         if string_format is None:
             attribute_names = []
@@ -399,7 +405,7 @@ class LDAPValueFormatter(object):
     def generate_value(self, record):
         """
         :type record: dict
-        :rtype (str, str)
+        :rtype (unicode, unicode)
         """
         result = None
         attribute_name = None
@@ -412,17 +418,20 @@ class LDAPValueFormatter(object):
                     break
                 values[attribute_name] = value
             if values is not None:
-                result = self.string_format.format(**values).decode(self.encoding)
+                result = self.string_format.format(**values)
         return result, attribute_name
 
     @classmethod
     def get_attribute_value(cls, attributes, attribute_name):
         """
         :type attributes: dict
-        :type attribute_name: str
+        :type attribute_name: unicode
         """
         if attribute_name in attributes:
             attribute_value = attributes[attribute_name]
             if len(attribute_value) > 0:
-                return attribute_value[0].decode(cls.encoding)
+                try:
+                    return attribute_value[0].decode(cls.encoding)
+                except UnicodeError as e:
+                    raise AssertionException("Encoding error in value of attribute '%s': %s" % (attribute_name, e))
         return None
