@@ -142,9 +142,10 @@ Credentials are stored in the underlying operating system secure store.  The spe
 
 | OS | Credential Store |
 |------------|--------------|
-|Windows | Windows Credential Vault |
+| Windows | Windows Credential Vault |
 | Mac OS X | Keychain |
 | Linux | Freedesktop Secret Service or KWallet |
+{: .bordertablestyle }
 
 On Linux, the secure storage application would have been installed and configured by the OS vendor.
 
