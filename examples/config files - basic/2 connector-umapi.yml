@@ -48,7 +48,7 @@ enterprise:
   # (optional) You can store credentials in the operating system credential store
   # (Windows Credential Manager, Mac Keychain, Linux Freedesktop Secret Service
   # or KWallet - these will be built into the Linux distribution).
-  # To use this feature, uncomment the following entries and remove the 
+  # To use this feature, uncomment the following entries and remove the
   # api_key, client_secret, and priv_key_data above.
   # The actual credential values are placed in the credential store with the
   # username as the org_id value, and the key name (perhaps called internet 
@@ -56,3 +56,16 @@ enterprise:
   #secure_api_key_key: umapi_api_key
   #secure_client_secret_key: umapi_client_secret
   #secure_priv_key_data_key: umapi_private_key_data
+  # Note: the Windows credential store generally can't store data as large as a private
+  # key, so the recommended path for securing your private key on windows is given next.
+
+  # (optional): You can secure your private key data by encrypting it, as with
+  #     openssl rsa -in private.key -des3 -out private.encrypted.key
+  # which prompts for a passphrase and creates a passphrase-encrypted file in PKCS#5 format.
+  # Having done this, you can use the setting priv_key_pass to specify the passphrase needed
+  # by User Sync to decrypt the private key file (or private key data), as in:
+  #priv_key_pass: "my passphrase for my private key"
+  # For better security, you should save your passphrase into the secure credential store
+  # on your platform (username = your org ID, service/internet address = "umapi_passphrase")
+  # and then uncomment this setting:
+  #secure_priv_pass_key: umapi_private_key_passphrase
