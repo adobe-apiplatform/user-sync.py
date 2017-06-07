@@ -42,7 +42,7 @@ setup(name='user-sync',
       license='MIT',
       packages=['user_sync', 'user_sync.connector'],
       install_requires=[
-          'pycrypto',
+          'pycryptodome',
           'python-ldap==2.4.25',
           'PyYAML',
           'umapi-client>=2.5',

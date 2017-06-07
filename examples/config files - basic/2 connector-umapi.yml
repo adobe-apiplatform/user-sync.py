@@ -60,8 +60,8 @@ enterprise:
   # key, so the recommended path for securing your private key on windows is given next.
 
   # (optional): You can secure your private key data by encrypting it, as with
-  #     openssl rsa -in private.key -des3 -out private.encrypted.key
-  # which prompts for a passphrase and creates a passphrase-encrypted file in PKCS#5 format.
+  #     openssl pkcs8 -in private.key -topk8 -v2 des3 -out private-encrypted.key
+  # which prompts for a passphrase and creates a passphrase-encrypted file in PKCS#8 format.
   # Having done this, you can use the setting priv_key_pass to specify the passphrase needed
   # by User Sync to decrypt the private key file (or private key data), as in:
   #priv_key_pass: "my passphrase for my private key"
