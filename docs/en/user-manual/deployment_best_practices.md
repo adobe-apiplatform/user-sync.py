@@ -69,7 +69,7 @@ of time before trying to execute again.
 Starting in User Sync 2.1, there are two additional techniques available
 for protecting credentials.  The first uses the operating system credential
 store to store individual configuration credential values.  The second uses
-a mechanism you must provide to store the entire configuration file for umapi
+a mechanism you must provide to securely store the entire configuration file for umapi
 and/or ldap which includes all the credentials required.  These are
 detailed in the next two sections.
 
@@ -93,7 +93,7 @@ Note the change of `api_key`, `client_secret`, and `priv_key_path` to `secure_ap
 The contents of the private key file is used as the value of `umapi_private_key_data` in the credential store.  This can only be done on platforms other than Windows.  See below for how to secure the
 private key file on Windows.
 
-The credential values will be looked up using the specified key names with the user being the org_id value.
+The credential values will be looked up in the secure store using org_id as the username value and the key names in the config file as the key name.
 
 A slight variant on this approach is available (in User Sync version 2.1.1 or later) to encrypt the
 private key file using the standard RSA encrypted representation for private keys (known as the
@@ -102,10 +102,13 @@ able to store strings longer than 512 bytes which prevents its use with private 
 can also be used on the other platforms if you wish.
 
 To store the private key in encrypted format proceed as follows.  First, create an encrypted
-version of the private key file.  Select a long and difficult to guess passphrase and encrypt the
+version of the private key file.  Select a passphrase and encrypt the
 private key file:
 
     openssl pkcs8 -in private.key -topk8 -v2 des3 -out private-encrypted.key
+
+On Windows, you will need to run openssl from Cygwin or some other provider; it is not included
+in the standard Windows distribution.
 
 Next, use the following configuration items in connector-umapi.yml.  The last two items below cause
 the decryption passphrase to be obtained from the secure credential store, and reference the encrypted
@@ -126,6 +129,7 @@ name as `umapi_private_key_passphrase` to match the `secure_priv_pass_key` confi
 as the passphrase.  (You can also inline the encrypted private key by placing the data in the
 connector-umapi.yml file under the key `priv_key_data` instead of using `priv_key_path`.)
 
+This ends the description of the variant where the RSA private key encryption is used.
 
 connector-ldap.yml
 
