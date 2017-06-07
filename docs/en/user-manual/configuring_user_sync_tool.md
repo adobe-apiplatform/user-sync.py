@@ -159,6 +159,9 @@ host: "FQDN.of.host"
 base_dn: "base_dn.of.directory"
 ```
 
+See the section [Security Considerations](deployment_best_practices.md#security-considerations) for
+details of how to store the password more securely in User Sync version 2.1 or later.
+
 ## Configuration options
 
 The main configuration file, user-sync-config.yml, is divided

@@ -90,9 +90,41 @@ connector-umapi.yml
 
 Note the change of `api_key`, `client_secret`, and `priv_key_path` to `secure_api_key_key`, `secure_client_secret_key`, and `secure_priv_key_data_key`, respectively.  These alternate configuration values give the key names to be looked up in the user keychain (or the equivalent service on other platforms) to retrieve the actual credential values.  In this example, the credential key names are `umapi_api_key`, `umapi_client_secret`, and `umapi_private_key_data`.
 
-The contents of the private key file is used as the value of `umapi_private_key_data` in the credential store.
+The contents of the private key file is used as the value of `umapi_private_key_data` in the credential store.  This can only be done on platforms other than Windows.  See below for how to secure the
+private key file on Windows.
 
 The credential values will be looked up using the specified key names with the user being the org_id value.
+
+A slight variant on this approach is available (in User Sync version 2.1.1 or later) to encrypt the
+private key file using the standard RSA encrypted representation for private keys (known as the
+PKCS#8 format).  This approach must be used on Windows because the Windows secure store is not
+able to store strings longer than 512 bytes which prevents its use with private keys. This approach
+can also be used on the other platforms if you wish.
+
+To store the private key in encrypted format proceed as follows.  First, create an encrypted
+version of the private key file.  Select a long and difficult to guess passphrase and encrypt the
+private key file:
+
+    openssl pkcs8 -in private.key -topk8 -v2 des3 -out private-encrypted.key
+
+Next, use the following configuration items in connector-umapi.yml.  The last two items below cause
+the decryption passphrase to be obtained from the secure credential store, and reference the encrypted
+private key file, respectively:
+
+	server:
+	
+	enterprise:
+	  org_id: your org id
+	  secure_api_key_key: umapi_api_key
+	  secure_client_secret_key: umapi_client_secret
+	  tech_acct: your tech account@techacct.adobe.com
+	  secure_priv_pass_key: umapi_private_key_passphrase
+	  priv_key_path: private-encrypted.key
+
+Finally, add the passphrase to the secure store as an entry with the username or url as the org Id, the key
+name as `umapi_private_key_passphrase` to match the `secure_priv_pass_key` config file entry, and the value
+as the passphrase.  (You can also inline the encrypted private key by placing the data in the
+connector-umapi.yml file under the key `priv_key_data` instead of using `priv_key_path`.)
 
 
 connector-ldap.yml

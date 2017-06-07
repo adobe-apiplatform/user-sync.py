@@ -238,8 +238,9 @@ replaced. If you lose it or it is compromised, you must delete
 the corresponding certificate from your account. If necessary,
 you must create and upload a new certificate. You must protect
 these files at least as well as you would protect an account name
-and password. The best practice is to store the key files in a
-credential management system or use file system protection so
+and password. The best practice is to store the private key file in a
+credential management system, in the operating system secure storage,
+or use file system protection so
 that it can only be accessed by authorized users.
 
 #### Log files
