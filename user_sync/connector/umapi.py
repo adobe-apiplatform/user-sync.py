@@ -23,6 +23,7 @@ import logging
 
 import jwt
 import umapi_client
+from Crypto.PublicKey import RSA
 
 import helper
 import user_sync.config
@@ -87,9 +88,23 @@ class UmapiConnector(object):
                 raise AssertionException('%s: cannot specify both "priv_key_path" and "%s"' %
                                          (enterprise_config.get_full_scope(), data_setting))
             logger.debug('%s: reading private key data from file %s', self.name, key_path)
-            auth_dict['private_key_file'] = key_path
+            try:
+                with open(key_path, 'r') as f:
+                    key_data = f.read()
+            except IOError as e:
+                raise AssertionException('%s: cannot read file "%s": %s' %
+                                         (enterprise_config.get_full_scope(), key_path, e))
         else:
-            auth_dict['private_key_data'] = enterprise_config.get_credential('priv_key_data', org_id)
+            key_data = enterprise_config.get_credential('priv_key_data', org_id)
+        # decrypt the private key, if needed
+        passphrase = enterprise_config.get_credential('priv_key_pass', org_id, True)
+        if passphrase:
+            try:
+                key_data = RSA.importKey(key_data, passphrase=passphrase).exportKey()
+            except (ValueError, IndexError, TypeError) as e:
+                raise AssertionException('%s: Error decrypting private key, either the password is wrong or: %s' %
+                                         (enterprise_config.get_full_scope(), e))
+        auth_dict['private_key_data'] = key_data
         # this check must come after we fetch all the settings
         enterprise_config.report_unused_values(logger)
         # open the connection
