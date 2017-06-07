@@ -1,9 +1,9 @@
 <hr/>
 <ul>
     {% capture lang %}/{{page.lang}}/{%endcapture%}
-	<li><a href="{{page.url | replace: lang, '/de/'}}">Deutsch</a></li>
-	<li><a href="../en">English</a></li>
-	<li><a href="../es">Español</a></li>
-	<li><a href="../fr">Français</a></li>
-	<li><a href="../jp">日本語</a></li>
+	<li><a href="{{page.url | relative_url | replace: lang, '/de/'}}">Deutsch</a></li>
+	<li><a href="{{page.url | relative_url | replace: lang, '/en/'}}">English</a></li>
+	<li><a href="{{page.url | relative_url | replace: lang, '/es/'}}">Español</a></li>
+	<li><a href="{{page.url | relative_url | replace: lang, '/fr/'}}">Français</a></li>
+	<li><a href="{{page.url | relative_url | replace: lang, '/jp/'}}">日本語</a></li>
 </ul>
