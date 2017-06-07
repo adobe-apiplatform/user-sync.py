@@ -1,6 +1,7 @@
 <hr/>
 <ul>
-	<li><a href="../de">Deutsch</a></li>
+    {% capture lang %}/{{page.lang}}/{%endcapture%}
+	<li><a href="{{page.url | replace: lang, '/de/'}}">Deutsch</a></li>
 	<li><a href="../en">English</a></li>
 	<li><a href="../es">Español</a></li>
 	<li><a href="../fr">Français</a></li>
