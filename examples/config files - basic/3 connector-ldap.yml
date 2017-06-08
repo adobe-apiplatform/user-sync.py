@@ -58,6 +58,12 @@ require_tls_cert: False
 # directories might be much simpler: "(&(objectClass=person)(objectClass=top))"
 all_users_filter: "(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
 
+# (optional) all_groups_filter (default value given below)
+# all_groups_filter specifies the query used to find all groups in the directory.
+# This is used to build a list of nested users for a given directory group. The value
+# specified here will work with both AD and OpenLDAP.
+all_groups_filter: "(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))"
+
 # (optional) group_filter_format (default value given below)
 # group_filter_format specifies the format string used to construct a group query,
 # as needed by the --users groups or --users mapped command-line arguments.
@@ -67,6 +73,13 @@ all_users_filter: "(&(objectClass=user)(objectCategory=person)(!(userAccountCont
 # such as this one for Active Directory: "(&(objectCategory=group)(cn={group}))"
 # or this one for OpenLDAP: "(&(|(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
 group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
+
+# (optional) group_uid_filter_format (default value given below)
+# group_uid_filter_format is identical to group_filter_format in terms of format and
+# usage, but accepts a group uid instead of a cn when the filter is applied. Either
+# group_filter_format or group_uid_filter_format is used depending on what information
+# from the ldap service is available when building the nested members list.
+group_uid_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(uid={group_uid}))"
 
 # (optional) string_encoding (default value given below)
 # string_encoding specifies the Unicode string encoding used by the directory.

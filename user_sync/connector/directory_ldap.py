@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import re
 import string
 
 import ldap.controls.libldap
@@ -27,7 +28,6 @@ import user_sync.connector.helper
 import user_sync.error
 import user_sync.identity_type
 from user_sync.error import AssertionException
-
 
 def connector_metadata():
     metadata = {
@@ -53,6 +53,8 @@ def connector_load_users_and_groups(state, groups, extended_attributes):
     """
     return state.load_users_and_groups(groups, extended_attributes)
 
+class DirectoryGroupException(AssertionException):
+    pass
 
 class LDAPDirectoryConnector(object):
     name = 'ldap'
@@ -75,6 +77,17 @@ class LDAPDirectoryConnector(object):
                                                      '(objectCategory=person)'
                                                      '(!(userAccountControl:1.2.840.113556.1.4.803:=2))'
                                                      ')')
+        builder.set_string_value('group_uid_filter_format', '(&'
+                                                            '(|(objectCategory=group)'
+                                                            '(objectClass=groupOfNames)''
+                                                            '(objectClass=posixGroup))''
+                                                            '(uid={group_uid})'
+                                                            ')')
+        builder.set_string_value('all_groups_filter', '(|'
+                                                      '(objectCategory=group)'
+                                                      '(objectClass=groupOfNames)'
+                                                      '(objectClass=posixGroup)'
+                                                      ')')
         builder.set_bool_value('require_tls_cert', False)
         builder.set_string_value('string_encoding', 'utf-8')
         builder.set_string_value('user_identity_type_format', None)
@@ -114,6 +127,22 @@ class LDAPDirectoryConnector(object):
         except Exception as e:
             raise AssertionException('LDAP connection failure: ' + repr(e))
         self.connection = connection
+
+        try:
+            all_groups_filter = options['all_groups_filter']
+            base_dn = options['base_dn']
+
+            groups = connection.search_s(
+                base_dn,
+                ldap.SCOPE_SUBTREE,
+                filterstr=all_groups_filter,
+                attrlist=[self.group_member_uid_attribute]
+            )
+            self.group_dns = set([group_dn for group_dn, group_attr in groups if group_dn])
+        except Exception as e:
+            raise AssertionException('LDAP group information retrieval failure: ' + repr(e))
+
+
         logger.debug('Connected')
 
     def load_users_and_groups(self, groups, extended_attributes):
@@ -156,15 +185,20 @@ class LDAPDirectoryConnector(object):
 
     def find_ldap_group(self, group, attribute_list=None):
         """
+        Searches for the specified LDAP group, and returns a tuple containing the group's distinguished name, as well as
+        any attributes specified in the attributes list. If the member attribute is specified (or no attributes are
+        specified), then all nested members of the group are returned as the member attribute.
         :type group: str
         :type attribute_list: list(str)
         :rtype (str, dict)
         """
-
         connection = self.connection
         options = self.options
         base_dn = options['base_dn']
         group_filter_format = options['group_filter_format']
+        group_cn_reg = re.compile(r'(?:^|,)(?:cn|CN)=([^,]*)')
+        group_uid_reg = re.compile(r'(?:^|,)(?:uid|UID)=([^,]*)')
+        group_dns = self.group_dns
 
         res = connection.search_s(
             base_dn,
@@ -180,6 +214,66 @@ class LDAPDirectoryConnector(object):
                     raise AssertionException("Multiple LDAP groups found for: %s" % group)
                 group_tuple = current_tuple
 
+        if not attribute_list or self.group_member_uid_attribute in attribute_list:
+            members = set()
+
+            def find_ldap_nested_users(group_dn):
+                '''
+                Helper function to recursively build a list of nested members, given the specified group or sub-group's
+                distinguished name. The function first loads the group's information by determining the group's most
+                significant cn or uid, and searches for the group (this seems to be the most compatible approach across
+                AD and OpenLDAP). It then determines which members are groups by comparing the individual member dn's
+                to the universal list of group dn's, and either drills down into members identified as groups to further
+                build the nested user list, or adds the non-group member as a user.
+                :param group: group's distinguished name
+                '''
+                try:
+                    group_filter = None
+                    group_matches = group_cn_reg.match(group_dn)
+                    if group_matches.group(1):
+                        group_filter = group_filter_format.format(group=group_matches.group(1))
+                    else:
+                        group_matches = group_uid_reg.match(group_dn)
+                        if group_matches.group(1):
+                            group_filter = group_filter_format.format(group=group_matches.group(1))
+                        else:
+                            raise DirectoryGroupException('Group name "%s" does not contain a common name or uid.' % (group_dn))
+
+                    group_cn = group_matches.group(1)
+                    res = connection.search_s(
+                        base_dn,
+                        ldap.SCOPE_SUBTREE,
+                        filterstr=group_filter_format.format(group=group_cn),
+                        attrlist=[self.group_member_uid_attribute, self.group_member_attribute]
+                    )
+
+                    group_attr = None
+                    group_found = False
+                    for filt_group_dn, filt_group_attr in res:
+                        if filt_group_dn == group_dn:
+                            group_attr = filt_group_attr
+                            group_found = True
+                            break
+
+                    if not group_found:
+                        raise DirectoryGroupException('Directory lookup for group with name "%s" failed' % (group_dn))
+
+                    if self.group_member_attribute in group_attr:
+                        for member_dn in group_attr[self.group_member_attribute]:
+                            if member_dn in group_dns:
+                                find_ldap_nested_users(member_dn)
+                            else:
+                                members.add(member_dn)
+
+                except DirectoryGroupException as e:
+                    self.logger.warning(e.message)
+
+            if group_tuple:
+                find_ldap_nested_users(group_tuple[0])
+                members = list(members)
+                members.sort()
+                group_tuple[1][self.group_member_attribute] = members
+        
         return group_tuple
 
     def iter_attribute_values(self, dn, attribute_name, attributes=None):
