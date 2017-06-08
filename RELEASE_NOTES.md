@@ -4,7 +4,7 @@ These notes apply to v2.1.1rc1 of 2017-06-06.
 
 ## New Features
 
-There are no new features in this release; bug fixes only.
+To address [Issue 198](https://github.com/adobe-apiplatform/user-sync.py/issues/198), we have added support for [private key encryption](https://github.com/kjur/jsrsasign/wiki/Tutorial-for-PKCS5-and-PKCS8-PEM-private-key-formats-differences) in both PKCS#5 and PKCS#8 formats, and allowed the passphrase for an encrypted private key to be stored in the platform secure credential store.  See [the docs](https://adobe-apiplatform.github.io/user-sync.py/) for details on the new feature.
 
 ## Bug Fixes
 
@@ -14,8 +14,6 @@ User Sync no longer crashes if a user's LDAP email address is present but empty:
 
 The proper packages were not present for secure credential storage on Linux platforms: [Issue 199](https://github.com/adobe-apiplatform/user-sync.py/issues/199).
 
-Still to come: a fix for secure key storage on Windows: [Issue 198](https://github.com/adobe-apiplatform/user-sync.py/issues/198).
-
 ## Compatibility with Prior Versions
 
-This version is fully backward-compatible with version 2.1.
+This version is fully backwards-compatible with version 2.1.
