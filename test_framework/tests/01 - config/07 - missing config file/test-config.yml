@@ -1,0 +1,3 @@
+user_sync:
+    # relative path in this argument is relative to working directory
+    arguments: -c ../config/user-sync-config.yml --update-user-info --users file ../../../config-common/users.csv

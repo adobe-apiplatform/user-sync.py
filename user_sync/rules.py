@@ -27,6 +27,8 @@ import user_sync.error
 import user_sync.identity_type
 from user_sync.helper import normalize_string, CSVAdapter, JobStats
 
+from helper import output_path
+
 GROUP_NAME_DELIMITER = '::'
 PRIMARY_UMAPI_NAME = None
 
@@ -992,7 +994,7 @@ class RuleProcessor(object):
     def write_stray_key_map(self):
         file_path = self.stray_list_output_path
         logger = self.logger
-        logger.info('Writing Adobe-only users to: [[%s]]', file_path)
+        logger.info('Writing Adobe-only users to: %s', output_path(file_path))
         # figure out if we should include a umapi column
         secondary_count = 0
         fieldnames = ['type', 'username', 'domain']

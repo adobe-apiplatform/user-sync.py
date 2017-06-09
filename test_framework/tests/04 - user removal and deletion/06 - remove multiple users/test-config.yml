@@ -1,0 +1,2 @@
+user_sync:
+    arguments: -c ../config/user-sync-config.yml --adobe-only-user-list ../config/users.csv --adobe-only-user-action delete

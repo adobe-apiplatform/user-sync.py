@@ -29,8 +29,10 @@ import gzip
 import StringIO
 import logging
 
-class UserSyncTestService:
-    def __init__(self, config):
+
+
+class TestService:
+    def __init__(self, config, cassette, request_json_builder = None):
         '''
         Initializes the test service given the configuration, but does not start the service.
         '''
@@ -38,26 +40,18 @@ class UserSyncTestService:
             'proxy_host': 'localhost',
             'proxy_port': 8888,
             'destination_host': 'usermanagement.adobe.io',
-            'pass_through': True
         }
         self.config.update(config)
+        self.cassette = cassette
         self.server = None
         self.server_thread = None
+        self.request_json_builder = request_json_builder
 
     def run(self):
         '''
         Starts the service by starting the test server on another thread.
         '''
-        record_mode = 'all' if self.config['pass_through'] else 'none'
-        recorder = vcr.VCR(
-            record_mode=record_mode,
-            match_on=('method', 'scheme', 'host', 'port', 'path', 'query', 'body'),
-            decode_compressed_response=True
-        )
-        cassette = recorder.use_cassette(self.config['cassette_filename'])
-        cassette.__enter__()
-
-        self.server = UserSyncTestServer((self.config['proxy_host'], self.config['proxy_port']), UserSyncTestServerHandler, config=self.config, cassette=cassette)
+        self.server = TestServer((self.config['proxy_host'], self.config['proxy_port']), TestServerHandler, config=self.config, cassette=self.cassette, request_json_builder=self.request_json_builder)
         self.server_thread = threading.Thread(target = self.server.serve_forever)
         self.server_thread.daemon = True
         self.server_thread.start()
@@ -71,10 +65,10 @@ class UserSyncTestService:
         '''
         self.server.shutdown()
         self.server_thread.join()
-        self.server.cassette.__exit__()
+
         
-class UserSyncTestServer(HTTPServer):
-    def __init__(self, server_address, RequestHandlerClass, config=None, bind_and_activate=True, cassette=None):
+class TestServer(HTTPServer):
+    def __init__(self, server_address, RequestHandlerClass, config = None, bind_and_activate = True, cassette = None, request_json_builder = None):
         '''
         Initialize the test server. TestServer basically subclasses HTTPServer to keep track of the configuration
         context, as the base HTTPServer class takes in a class for the handler rather than an instance, and there is no
@@ -83,9 +77,11 @@ class UserSyncTestServer(HTTPServer):
         HTTPServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate)
         self.config = config
         self.cassette = cassette
-        self.logger = logging.getLogger('user-sync-test-server')
+        self.logger = logging.getLogger('test-server')
+        self.request_json_builder = request_json_builder
 
-class UserSyncTestServerHandler(BaseHTTPRequestHandler):
+
+class TestServerHandler(BaseHTTPRequestHandler):
     def _prepare_request(self):
         '''
         Builds and preprocesses variables needed for the http proxy target request, including the url, request headers,
@@ -150,6 +146,9 @@ class UserSyncTestServerHandler(BaseHTTPRequestHandler):
         response = requests.post(url, headers=request_headers, data=data)
         self.server.cassette.dirty = True
         self._send_response(response)
+
+        if self.server.request_json_builder:
+            self.server.request_json_builder.extend_with_json_string(data)
 
     def log_message(self, format, *args):
         self.server.logger.debug("%s - - [%s] %s" % (self.client_address[0], self.log_date_time_string(), format % args))

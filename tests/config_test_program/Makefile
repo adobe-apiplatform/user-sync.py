@@ -15,14 +15,11 @@ output_filename = config-test
 pex:
 	pip install --upgrade pip
 	pip install pex requests wheel
-	pip wheel -w wheelhouse -r requirements.txt
 	-$(RM) $(output_dir)
 	pex \
 		-v -o $(output_dir)/$(output_filename)$(output_file_extension) -m config_test.app \
-		-f wheelhouse \
 		--disable-cache \
 		--not-zip-safe .
-	-$(RM) wheelhouse
 
 test:
 	nosetests --no-byte-compile tests

@@ -27,6 +27,9 @@ import shutil
 import six
 import re
 import logging
+import vcr
+
+import helper
 
 TEST_SET_TEMPLATE_KEYS = {
     '/user_sync/user_sync_path': (True, False, "../../dist/user-sync"),
@@ -35,12 +38,16 @@ TEST_SET_TEMPLATE_KEYS = {
 TEST_TEMPLATE_KEYS = {
     '/user_sync/live/working_dir': (False, False, "live"),
     '/user_sync/live/output_dir': (False, False, "live/out"),
-    '/user_sync/recorded/working_dir': (False, False, "rec"),
-    '/user_sync/recorded/output_dir': (False, False, "rec/out"),
+    '/user_sync/test/working_dir': (False, False, "test"),
+    '/user_sync/test/output_dir': (False, False, "test/out"),
     '/server/cassette_filename': (False, False, 'live/cassette.yml'),
     }
 
 TEST_CONFIG_FILENAME = 'test-config.yml'
+
+REQUEST_JSON_IGNORE_PATHS = set(
+    '/do/requestID'
+)
 
 IS_NT_PLATFORM = os.name == 'nt'
 
@@ -158,8 +165,7 @@ class ConfigFileLoader:
         return val
 
 
-
-class UserSyncTestSet:
+class TestSuite:
     def __init__(self, config_filename, config):
         '''
         Sets up a user sync test set, given a path to the test set's configuration file. This basically maps
@@ -169,11 +175,11 @@ class UserSyncTestSet:
         test set configuration accordingly.
         :type config_filename: str
         '''
-        self.logger = logging.getLogger('user-sync-test-set')
+        self.logger = logging.getLogger('test-suite')
 
         config_filename = os.path.abspath(config_filename)
         test_set_config = ConfigFileLoader.load_from_yaml(config_filename, TEST_SET_TEMPLATE_KEYS)
-        self.test_set_path = test_set_path = os.path.dirname(config_filename)
+        self.test_suite_path = test_suite_path = os.path.dirname(config_filename)
 
         user_sync_common_args = test_set_config['user_sync']['common_arguments'] if 'common_arguments' in test_set_config['user_sync'] else None
         user_sync_path = test_set_config['user_sync']['user_sync_path']
@@ -181,103 +187,72 @@ class UserSyncTestSet:
             user_sync_common_args = user_sync_path if not user_sync_common_args else "\"%s\" %s" % (user_sync_path, user_sync_common_args)
             user_sync_path = "python"
 
-        self.test_set_config = config
-        self.test_set_config.update({
+        self.test_suite_config = config
+        self.test_suite_config.update({
             'user_sync_path': user_sync_path,
             'user_sync_common_args': user_sync_common_args
         })
 
-        self.server_config = {
-            'pass_through': config['record_mode'],
+        self.test_server_config = {
+            'live_mode': config['live_mode'],
             'proxy_host': test_set_config['umapi']['proxy_host'],
             'destination_host': test_set_config['umapi']['destination_host']
         }
 
-        test_name = self.test_set_config['test_name']
-        if test_name:
-            if not (os.path.isfile(os.path.join(test_set_path,test_name,'test-config.yml'))):
-                raise error.AssertionException(
-                    'test-config.yml not found for test %s.' % (test_name))
-
-            self.test_names = [test_name]
+        test_group_name = self.test_suite_config['test_group_name']
+        if test_group_name:
+            if not os.path.isdir(os.path.join(test_suite_path,test_group_name)):
+                raise error.AssertionException('test group "%s" not found.' % (test_group_name))
+            self.test_group_names = [test_group_name]
         else:
-            self.test_names = [f for f in os.listdir(test_set_path) if os.path.isfile(os.path.join(test_set_path, f, TEST_CONFIG_FILENAME))]
-
-        self.success_count = 0
-        self.fail_count = 0
+            self.test_group_names = [f for f in os.listdir(test_suite_path) if os.path.isdir(os.path.join(test_suite_path, f))]
 
     def run(self):
         '''
-        Runs all the tests in the test set. It first identifies tests by searching in the test set folder for all
-        sub-folders containing the file test-config.yml. It then goes through the tests configurations individually, and
-        creates and runs each test configuration instance.
+        Runs the selected test groups in the test suite.
+        '''
+        for test_group_name in self.test_group_names:
+            self.logger.info('Running test group "%s"...' % (test_group_name))
+            test_group_path = os.path.join(self.test_suite_path, test_group_name)
+            test_group = TestGroup(test_group_path, self.test_suite_config, self.test_server_config)
+            test_group.run()
+
+
+class TestGroup:
+    def __init__(self, test_group_path, test_suite_config, test_server_config):
+        '''
+        Manages a test group, which is basically a directory in the same path as the suite configuration file.
+        :type config_filename: str
+        '''
+        self.logger = logging.getLogger('test-group')
+        self.test_group_path = test_group_path
+        self.test_suite_config = test_suite_config
+        self.test_server_config = test_server_config
+
+        test_name = self.test_suite_config['test_name']
+        if test_name:
+            if not (os.path.isfile(os.path.join(test_group_path,test_name,TEST_CONFIG_FILENAME))):
+                raise error.AssertionException('test-config.yml not found for test %s.' % (test_name))
+            self.test_names = [test_name]
+        else:
+            self.test_names = [f for f in os.listdir(test_group_path) if os.path.isfile(os.path.join(test_group_path, f, TEST_CONFIG_FILENAME))]
+
+    def run(self):
+        '''
+        Runs the selected tests in the test group.
         '''
         for test_name in self.test_names:
             self.logger.info('running test "%s"...' % (test_name))
 
-            test_path = os.path.join(self.test_set_path, test_name)
-            test = UserSyncTest(test_path, self.test_set_config, self.server_config)
-            if self.test_set_config['record_mode']:
+            test_path = os.path.join(self.test_group_path, test_name)
+            test = Test(test_path, self.test_suite_config, self.test_server_config)
+            if self.test_suite_config['live_mode']:
                 test.run_live()
             else:
                 test.run()
 
-            if test.success:
-                self.success_count += 1
-            else:
-                self.fail_count += 1
 
-class StringComparator:
-    def __init__(self, str1_expr, str1_args, str2_expr, str2_args):
-        '''
-        Defines a string comparator where their equality is determined by the specified regular expressions. The line
-        arguments parameters are used as format parameters that are applied to the string before performing the matches.
-        Capture groups define in string1_expr must be matched exactly in the second string.
-        :type str1_expr: str defining the regular expression for the first line used for comparison. You can define
-            capture groups that can be used for one to one comparison in the second line.
-        :type str1_args: list(str) defining the arguments used in formatting the str1_expr, which is applied just
-            before running the regular expression match.
-        :type str2_expr: str defining the regular expression for the second line used for the comparison.
-        :type str2_args: list(str) like str1_expr, defines the arguments used in formatting the str2_expr. You can
-            add None elements in the list, which will be populated with the capture group values from the str1_expr
-            match just before applying the arguments to the str2_expr formatting.
-        '''
-        self.str1_expr = str1_expr
-        self.str1_args = str1_args
-        self.str2_expr = str2_expr
-        self.str2_args = str2_args
-
-    def compare(self, str1, str2):
-        '''
-        Compares two lines using the comparator's str1/str2 expressions. Capture groups specified in str1 expression
-        are applied to str2 arguments, where any None entry is replaced with a capture group value in order of
-        occurance.
-        The expression for str1 is first matched. If that succeeds, the expression for str 2 is matched with the 
-        specified arguements and capture groups applied. The compare is considered successful if the second match
-        succeeds.
-        :param str1: str representing the first string to match
-        :param str2: str representing the second string that the first will me matched to.
-        :return: bool
-        '''
-        m = re.match(self.str1_expr % tuple(self.str1_args), str1)
-        if m:
-            str1_groups = m.groups()
-            str2_args = list(self.str2_args)
-            str2_group_indexes = [index for index in range(1, len(str2_args)) if str2_args[index] is None]
-
-            if not (len(str1_groups) == len(str2_group_indexes)):
-                raise error.AssertionException(
-                    'Output compare error: expected %d captures, got %d captures.' % (len(str2_group_indexes), len(str1_groups)))
-
-            for str1_group, str2_group_index in zip(str1_groups, str2_group_indexes):
-                str2_args[str2_group_index] = re.escape(str1_group)
-
-            if re.match(self.str2_expr % tuple(str2_args), str2):
-                return True
-
-        return False
-
-class UserSyncTest:
+class Test:
     def __init__(self, config_path, test_set_config, server_config):
         '''
         Sets up a user sync test, given a path to the test's configuration file.
@@ -297,11 +272,11 @@ class UserSyncTest:
             'user_sync_args': config['user_sync']['arguments'],
             'live_working_dir': config['user_sync']['live']['working_dir'],
             'live_output_dir': config['user_sync']['live']['output_dir'],
-            'rec_working_dir': config['user_sync']['recorded']['working_dir'],
-            'rec_output_dir': config['user_sync']['recorded']['output_dir'],
+            'test_working_dir': config['user_sync']['test']['working_dir'],
+            'test_output_dir': config['user_sync']['test']['output_dir'],
         })
 
-        self.logger = logging.getLogger('user-sync-test')
+        self.logger = logging.getLogger('test')
         self.success = False
 
     def _reset_output_file(self,filename):
@@ -319,81 +294,127 @@ class UserSyncTest:
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
-    def _run(self, args, working_dir, output_filename):
+    def _run(self, args, working_dir, output_filename, request_json_builder = None, live_request_json_builder = None):
         '''
-        Runs the test given the command line arguments, and the output filename. The output file is deleted first if
-        it exists, then the user-sync test service is started. The test service is stopped once the user-sync command
-        has been run.
+        Runs the test given the command line arguments, and the output filename.
         :type args: list(str) representing the components of the command line argument.
         :c output_filename: str represents the filename of the file to write the command line output to.
         '''
         self.logger.info("%s" % (' '.join(args)))
-
         self._reset_output_file(output_filename)
 
-        service = server.UserSyncTestService(self.server_config)
-        service.run()
+        record_mode = 'all' if self.server_config['live_mode'] else 'none'
+        recorder = vcr.VCR(
+            record_mode=record_mode,
+            match_on=('method', 'scheme', 'host', 'port', 'path', 'query'),
+            decode_compressed_response=True
+        )
 
-        with open(output_filename, 'w') as output_file:
-            subprocess.call(args, cwd=working_dir, stdout=output_file, stderr=output_file, shell=IS_NT_PLATFORM)
+        with recorder.use_cassette(self.server_config['cassette_filename']) as cassette:
+            service = server.TestService(self.server_config, cassette, request_json_builder)
+            service.run()
 
-        service.stop()
+            with open(output_filename, 'w') as output_file:
+                subprocess.call(args, cwd=working_dir, stdout=output_file, stderr=output_file, shell=IS_NT_PLATFORM)
 
-    def _compare_output(self, live_output_filename, rec_output_filename, user_sync_path):
+            service.stop()
+
+            if live_request_json_builder:
+                for stored_request, stored_response in cassette.data:
+                    if stored_request.body:
+                        live_request_json_builder.extend_with_json_string(stored_request.body)
+
+    def _compare_output(self, output_filename, live_output_filename):
         '''
-        Compares the contents of the specified output filenames. Contents are compared by ignoring the timestamp,
-        references to the total time, and the --bypass-authentication-mode part of the command line arguments. If a
-        difference is encountered, an exception is raised detailing the line number and the mismatched lines.
+        Compares the contents of the specified output filenames. The comparison is made by first stripping out the log
+        entry timestamp, as well as certain string occurances, such as timestamps within the entry body, the actionID,
+        and characters enclosed in double square brackets. Both the output file as well as the recorded output file are
+        processed in this manner, then both have their lines sorted, then a line by line comparison is made. If a
+        mismatch is found, an error is thrown detailing the two output lines and their respective line numbers.
+        :type output_filename: str
         :type live_output_filename: str
-        :type rec_output_filename: str
         '''
         # log format defined in app.py (date, time, pid)
         timestamp_re = r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d+'
 
-        LINE_COMPARE_MAP = [
-            StringComparator(
-                r"^%s (.*)\[\[.*\]\](.*)$", [timestamp_re],
-                r"^%s %s\[\[.*\]\]%s$", [timestamp_re, None, None]
+        LINE_TRANSFORM_MAP = [
+            helper.StringTransformer(
+                r"^%s (.*)\[\[.*\]\](.*)$" % (timestamp_re),
+                r"%s\[\[\]\]%s"
             ),
-            StringComparator(
-                r"^%s (.*)\(Total time: \d:\d\d:\d\d\)(.*)$", [timestamp_re],
-                r"^%s %s\(Total time: \d:\d\d:\d\d\)%s$", [timestamp_re, None, None]
+            helper.StringTransformer(
+                r"^%s (.*)requestID: action_\d+(.*)'requestID': 'action_\d+'(.*)$" % (timestamp_re),
+                r"%srequestID: action_%s'requestID': 'action_'%s"
             ),
-            StringComparator(
-                r"^%s (.*)$", [timestamp_re],
-                r"^%s %s$", [timestamp_re, None]
+            helper.StringTransformer(
+                r"^%s (.*\(Total time: )\d:\d\d:\d\d(\).*)$" % (timestamp_re),
+                r"%s%s"
+            ),
+            helper.StringTransformer(
+                r"^%s (.*)$" % (timestamp_re),
+                r"%s"
             ),
         ]
 
+        if not os.path.isfile(output_filename):
+            raise error.AssertionException('OUTPUT COMPARE ERROR: Output file "%s" not found.' % (output_filename))
         if not os.path.isfile(live_output_filename):
-            raise error.AssertionException('Output compare error: recorded output file "%s" not found.'% (live_output_filename))
-        if not os.path.isfile(rec_output_filename):
-            raise error.AssertionException('Output compare error: canned output file "%s" not found.' % (rec_output_filename))
+            raise error.AssertionException('OUTPUT COMPARE ERROR: Recorded output file "%s" not found.'% (live_output_filename))
 
+        with open(output_filename, 'r') as file:
+            lines = file.read().splitlines()
         with open(live_output_filename, 'r') as rfile:
-            rlines = rfile.read().splitlines()
-        with open(rec_output_filename, 'r') as cfile:
-            clines = cfile.read().splitlines()
+            lines_rec = rfile.read().splitlines()
 
-        line_index = 0
-        for rline, cline in zip(rlines, clines):
-            matched = False
-            for comparator in LINE_COMPARE_MAP:
-                if comparator.compare(rline, cline):
-                    matched = True
-                    break
+        def transform_lines(lines):
+            '''
+            Transforms the specified list of strings to a a list of strings in which each string is passed through the
+            transform map.
+            :param lines: list(str)
+            :return: list(str)
+            '''
+            lines_out = []
+            for line in lines:
+                for transform in LINE_TRANSFORM_MAP:
+                    line_out = transform.transform(line)
+                    if line_out is not None:
+                        break
+                lines_out.append(line_out if lines_out is not None else line)
+            return lines_out
 
-            if not matched:
-                raise error.AssertionException('Output compare error: unexpected output at line %d\nrecord: %s\noutput: %s' % (line_index, rline, cline))
+        def compare_line_tuple(line_tuple1, line_tuple2):
+            index1, line1 = line_tuple1
+            index2, line2 = line_tuple2
+            return 1 if line1 > line2 else -1 if line1 < line2 else 0
 
-            line_index = line_index + 1
+        lines = transform_lines(lines)
+        lines = zip(range(0, len(lines)), lines)
+        lines.sort(compare_line_tuple)
+        lines_rec = transform_lines(lines_rec)
+        lines_rec = zip(range(0, len(lines_rec)), lines_rec)
+        lines_rec.sort(compare_line_tuple)
 
-        if not (len(rlines) == len(clines)):
-            raise error.AssertionException('Output compare error: expected %d lines, got %d lines.' % (len(rlines), len(clines)))
+        for line_tuple1, line_tuple2 in zip(lines, lines_rec):
+            if not compare_line_tuple(line_tuple1, line_tuple2)==0:
+                index1, line1 = line_tuple1
+                index2, line2 = line_tuple2
+                raise AssertionError('OUTPUT COMPARE ERROR: Output line mismatch\nOUTPUT (line %d):\n%s\nRECORDED OUTPUT (line %d):\n%s' % (index1, line1, index2, line2))
+
+        if not len(lines) == len(lines_rec):
+            raise error.AssertionException('OUTPUT COMPARE ERROR: Expected %d output lines, got %d lines.' % (len(lines_rec), len(lines)))
+
+
+    def _compare_request_jsons(self, request_jsons, live_request_jsons):
+        for request_json, live_request_json in zip(request_jsons, live_request_jsons):
+            if not helper.deep_compare(request_json, live_request_json) == 0:
+                raise AssertionError("Failed to match request json\n\nJSON ENTRY:%s\n\nRECORDED JSON ENTRY:%s" % (request_json, live_request_json))
+
+        if not len(request_jsons) == len(live_request_jsons):
+            raise AssertionError("Number of request JSON's do not match the pre-recorded number")
 
     def run_live(self):
         '''
-        Runs the test in record mode. It first removes the existing recorded data, then runs the user-sync test service
+        Runs the test in live mode. It first removes the existing recorded data, then runs the user-sync test service
         in record mode (allowing the user-sync service to pass through the service and connect to the live Adobe
         server). It ends by saving the recorded requests and responses, as well as the user-sync tool output.
         '''
@@ -410,8 +431,9 @@ class UserSyncTest:
             self._run(args, self.test_config['live_working_dir'], output_filename)
 
             self.logger.info('successfully recorded %s' % (self.test_config['config_path']))
-            self.success = True
+            helper.JobStats.inc_test_success_count()
         except error.AssertionException as e:
+            helper.JobStats.inc_test_fail_count()
             if not e.is_reported():
                 self.logger.error('user-sync test error: %s' % (e.message))
                 e.set_reported()
@@ -423,7 +445,7 @@ class UserSyncTest:
         test ends by saving the user-sync tool output to the configured path.
         '''
         try:
-            self._reset_output_file(self.test_config['rec_output_dir'])
+            self._reset_output_file(self.test_config['test_output_dir'])
 
             args = [self.test_config['user_sync_path']]
             if self.test_config['user_sync_common_args']:
@@ -431,15 +453,24 @@ class UserSyncTest:
             args.extend(['--bypass-authentication-mode'])
             args.extend(shlex.split(self.test_config['user_sync_args'], posix=not IS_NT_PLATFORM))
 
-            live_output_filename = os.path.join(self.test_config['live_output_dir'], 'out.txt')
-            output_filename = os.path.join(self.test_config['rec_output_dir'], 'out.txt')
-            self._run(args, self.test_config['rec_working_dir'], output_filename)
+            test_request_json_builder = helper.JSONBuilder()
+            live_request_json_builder = helper.JSONBuilder()
 
-            self._compare_output(live_output_filename, output_filename, self.test_config['user_sync_path'])
+            live_output_filename = os.path.join(self.test_config['live_output_dir'], 'out.txt')
+            output_filename = os.path.join(self.test_config['test_output_dir'], 'out.txt')
+            self._run(args, self.test_config['test_working_dir'], output_filename, test_request_json_builder, live_request_json_builder)
+            self._compare_output(output_filename, live_output_filename)
+
+            test_request_json = test_request_json_builder.json_val
+            test_request_json.sort(helper.deep_compare)
+            live_request_json = live_request_json_builder.json_val
+            live_request_json.sort(helper.deep_compare)
+            self._compare_request_jsons(test_request_json, live_request_json)
 
             self.logger.info('successfully ran and verified output for %s' % (self.test_config['config_path']))
-            self.success = True
+            helper.JobStats.inc_test_success_count()
         except error.AssertionException as e:
+            helper.JobStats.inc_test_fail_count()
             if not e.is_reported():
                 self.logger.error('user-sync test error: %s' % (e.message))
                 e.set_reported()

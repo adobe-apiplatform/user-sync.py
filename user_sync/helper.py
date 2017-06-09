@@ -28,6 +28,15 @@ import six
 from user_sync.error import AssertionException
 
 
+def output_path(path):
+    '''
+    formats the path for display output. The formatting is used by the test framework.
+    :param path: str
+    :return: str
+    '''
+    return "[[%s]]" % (path)
+
+
 def is_py2():
     return sys.version_info.major == 2
 
@@ -84,6 +93,29 @@ class CSVAdapter:
         if normalized_extension == '.tsv':
             return '\t'
         return '\t'
+
+
+def iter_csv_rows(file_path, delimiter=None, recognized_column_names=None, logger=None):
+    """
+    :type file_path: str
+    :type delimiter: str
+    :type recognized_column_names: list(str)
+    :type logger: logging.Logger
+    """
+    with open_file(file_path, 'r', 1) as input_file:
+        if delimiter is None:
+            delimiter = guess_delimiter_from_filename(file_path)
+        reader = csv.DictReader(input_file, delimiter=delimiter)
+
+        if recognized_column_names is not None:
+            unrecognized_column_names = [column_name for column_name in reader.fieldnames
+                                         if column_name not in recognized_column_names]
+            if len(unrecognized_column_names) > 0 and logger is not None:
+                logger.warn("In file '%s': unrecognized column names: %s", output_path(file_path), unrecognized_column_names)
+
+        for row in reader:
+            yield row
+
 
     @classmethod
     def read_csv_rows(cls, file_path, recognized_column_names=None, logger=None, encoding='utf8', delimiter=None):

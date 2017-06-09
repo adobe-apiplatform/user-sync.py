@@ -3,7 +3,8 @@ import argparse
 import logging
 import error
 
-from test import UserSyncTestSet
+import helper
+from test import TestSuite
 from version import __version__ as APP_VERSION
 
 LOG_STRING_FORMAT = '%(asctime)s %(process)d %(levelname)s %(name)s - %(message)s'
@@ -20,20 +21,25 @@ def process_args():
     parser.add_argument("-v", "--version",
                         action="version",
                         version="%(prog)s " + APP_VERSION)
-    parser.add_argument("-c", "--config-filename",
-                        help="main test set config filename.",
+    parser.add_argument("-c", "--test-suite-config-filename",
+                        help="main test suite config filename.",
                         metavar="filename",
                         dest="config_filename",
                         default=DEFAULT_CONFIG_FILENAME)
-    parser.add_argument("-t", "--test-name",
+    parser.add_argument("-g", "--test-group-name",
+                        help="test group to limit testing to.",
+                        metavar="group",
+                        dest="test_group_name",
+                        default=None)
+    parser.add_argument("-t", "--test",
                         help="test name",
                         metavar="name of test",
                         dest="test_name",
                         default=None)
-    parser.add_argument("-r", "--record",
-                        help="sets the user-sync-test tool in record mode",
+    parser.add_argument("-l", "--live",
+                        help="sets the user-sync-test tool in live mode, which directs user-sync to communicate with the live servers, and overwrites the recorded session with the communication and output from this new live session.",
                         action="store_true",
-                        dest="record_mode",
+                        dest="live_mode",
                         default=False)
     return parser.parse_args()
 
@@ -50,23 +56,23 @@ def init_console_log():
     logging.getLogger('vcr').setLevel(logging.WARNING)
     logging.getLogger('requests').setLevel(logging.WARNING)
     logging.getLogger('BaseHTTPServer').setLevel(logging.WARNING)
-    logging.getLogger('user-sync-test-server').setLevel(logging.INFO)
+    logging.getLogger('test-server').setLevel(logging.INFO)
     return console_log_handler
 
-def log_test_set_summary(test_set, record_mode):
+def log_test_set_summary(live_mode):
     '''
     Outputs the summary for the test set.
     :param test_set: UserSyncTestSet
     '''
-    if record_mode:
+    if live_mode:
         COUNTER_MAP = [
-            ('tests recorded', test_set.success_count),
-            ('tests not recorded', test_set.fail_count)
+            ('tests recorded', helper.JobStats.test_success_count),
+            ('tests not recorded', helper.JobStats.test_fail_count)
         ]
     else:
         COUNTER_MAP = [
-            ('tests succeeded', test_set.success_count),
-            ('tests failed', test_set.fail_count)
+            ('tests succeeded', helper.JobStats.test_success_count),
+            ('tests failed', helper.JobStats.test_fail_count)
         ]
 
     max_name_len = 0
@@ -89,14 +95,18 @@ def main():
 
         config = {
             'config_filename': args.config_filename,
-            'record_mode': args.record_mode,
+            'test_group_name': args.test_group_name,
+            'live_mode': args.live_mode,
             'test_name': args.test_name
         }
 
-        test_set = UserSyncTestSet(args.config_filename, config)
+        if not config['test_group_name'] and config['test_name']:
+            raise AssertionError('You must specify the test group name if test name is provided.')
+
+        test_set = TestSuite(args.config_filename, config)
         test_set.run()
 
-        log_test_set_summary(test_set, args.record_mode)
+        log_test_set_summary(args.live_mode)
 
     except error.AssertionException as e:
         if not e.is_reported():
