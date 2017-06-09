@@ -42,6 +42,7 @@ setup(name='user-sync',
       license='MIT',
       packages=['user_sync', 'user_sync.connector'],
       install_requires=[
+          'pycryptodome',
           'python-ldap==2.4.25',
           'PyYAML',
           'umapi-client>=2.5',
@@ -54,11 +55,7 @@ setup(name='user-sync',
               'dbus-python'
           ],
           ':sys_platform=="win32"':[
-              'pywin32-ctypes==0.0.1',
-              'pycryptodome==3.3.1'
-          ],
-          ':sys_platform!="win32"': [
-              'pycryptodome',
+              'pywin32-ctypes==0.0.1'
           ]
       },
       setup_requires=['nose>=1.0'],
