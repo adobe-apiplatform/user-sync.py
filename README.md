@@ -13,8 +13,8 @@ Copyright (c) 2016-2017 Adobe Systems Incorporated.
 # Quick Links
 
 - [User Sync Overview](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/UserSyncTool.html)
-- [User Manual](https://adobe-apiplatform.github.io/user-sync.py/user-manual/)
-- [Step-by-Step Setup](https://adobe-apiplatform.github.io/user-sync.py/success-guide/)
+- [User Manual](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/)
+- [Step-by-Step Setup](https://adobe-apiplatform.github.io/user-sync.py/en/success-guide/)
 - [Non-Technical Overview](https://spark.adobe.com/page/E3hSsLq3G1iVz/)
 
 
@@ -60,7 +60,7 @@ To set up PyCharm for debugging,
 
 # Basic Usage
 
-##User Sync command line
+## User Sync command line
 
 
 | Parameters&nbsp;and&nbsp;argument&nbsp;specifications | Description |
@@ -75,6 +75,8 @@ To set up PyCharm for debugging,
 | `--process-groups` | When supplied, synchronizes group membership information. If the membership in mapped groups differs between the enterprise directory side and the Adobe side, the group membership is updated on the Adobe side to match. This includes removal of group membership for Adobe users not listed in the directory side (unless the `--adobe-only-user-action exclude` option is also selected).|
 | `--adobe-only-user-action preserve`<br />`--adobe-only-user-action remove-adobe-groups`<br />`--adobe-only-user-action  remove`<br />`--adobe-only-user-action delete`<br /><br/>`--adobe-only-user-action  write-file`&nbsp;filename<br/><br/>`--adobe-only-user-action  exclude` | When supplied, if user accounts are found on the Adobe side that are not in the directory, take the indicated action.  <br/><br/>`preserve`: no action concerning account deletion is taken. This is the default.  There may still be group membership changes if the `--process-groups` option was specified.<br/><br/>`remove-adobe-groups`: The account is removed from user groups and product configurations, freeing any licenses it held, but is left as an active account in the organization.<br><br/>`remove`: In addition to remove-adobe-groups, the account is also removed from the organization, but is left as an existing account.<br/><br/>`delete`: In addition to the action for remove, the account is deleted if owned by the organization.<br/><br/>`write-file`: the list of user account present on the Adobe side but not in the directory is written to the file indicated.  No other account action is taken.  You can then pass this file to the `--adobe-only-user-list` argument in a subsequent run.<br/><br/>`exclude`: No update of any kind is applied to users found only on the Adobe side.  This is used when doing updates of specific users via a file (--users file f) where only users needing explicit updates are listed in the file and all other users should be left alone.<br/><br>Only permitted actions will be applied.  Accounts of type adobeID are owned by the user so the delete action will do the equivalent of remove.  The same is true of Adobe accounts owned by other organizations. |
 | `adobe-only-user-list` _filename_ | Specifies a file from which a list of users will be read.  This list is used as the definitive list of "Adobe only" user accounts to be acted upon.  One of the `--adobe-only-user-action` directives must also be specified and its action will be applied to user accounts in the list.  The `--users` option is disallowed if this option is present: only account removal actions can be processed.  |
+| `--config-file-encoding` _encoding_name_ | Optional.  Specifies the character encoding for the contents of the configuration files themselves.  This includes the main configuration file, "user-sync-config.yml" as well as other configuration files it may reference.  Default is `ascii`.  Character encoding in the user source data (whether csv or ldap) is declared by the connector configurations, and that encoding can be different than the encoding used for the configuration files (e.g., you could have a latin-1 configuration file but a CSV source file that uses utf-8 encoding).  The available encodings are dependent on the Python version used; see the documentation [here](https://docs.python.org/2.7/library/codecs.html#standard-encodings) for more information.  |
+
 
 # Configuration
 
