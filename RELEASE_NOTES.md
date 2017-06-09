@@ -17,3 +17,9 @@ The proper packages were not present for secure credential storage on Linux plat
 ## Compatibility with Prior Versions
 
 This version is fully backwards-compatible with version 2.1.
+
+There are new UMAPI config file settings in this release to enable the use of encyrpted keys, see [this section of the docs](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/deployment_best_practices.html#storing-credentials-in-os-level-storage) for full details.
+
+## Known Issues
+
+On the Win64 platform, due to a change in the encryption support library used by User Sync, there are very long pathnames embedded in the released build artifact `user-sync.pex`.  It will likely be necessary to set the `PEX_ROOT` environment variable on Windows (as described [in the docs here](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/setup_and_installation.html)) to be a very short path (e.g., `env:$PEX_ROOT="C:\pex"`) in order to launch User Sync successfully.  We hope to avoid the need for this workaround in a future release.
