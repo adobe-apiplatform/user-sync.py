@@ -28,3 +28,7 @@ class AssertionException(Exception):
 
     def is_reported(self):
         return self.reported
+
+class VerificationException(AssertionException):
+    def __init__(self, err_msg):
+        super(VerificationException, self).__init__(err_msg)

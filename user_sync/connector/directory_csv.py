@@ -26,6 +26,9 @@ import user_sync.error
 import user_sync.identity_type
 from user_sync.helper import CSVAdapter
 
+from user_sync.helper import OutFm
+
+
 def connector_metadata():
     metadata = {
         'name': CSVDirectoryConnector.name
@@ -91,7 +94,7 @@ class CSVDirectoryConnector(object):
         """
         options = self.options
         file_path = options['file_path']
-        self.logger.debug('Reading from: %s', user_sync.helper.output_path(file_path))
+        self.logger.debug('Reading from: %s', OutFm.mark(file_path))
         self.users = users = self.read_users(file_path, extended_attributes)
         self.logger.debug('Number of users loaded: %d', len(users))
         return six.itervalues(users)

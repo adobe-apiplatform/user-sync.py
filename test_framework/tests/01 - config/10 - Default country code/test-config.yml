@@ -1,0 +1,2 @@
+user_sync:
+    arguments: -c ../../../config-common/user-sync-config-country-code.yml --users file ../../../config-common/users.csv

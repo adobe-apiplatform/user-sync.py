@@ -18,29 +18,40 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import os
-import yaml
 import subprocess
 import server
 import error
 import shlex
 import shutil
-import six
+import config
 import re
 import logging
 import vcr
 
 import helper
 
+IS_NT_PLATFORM = os.name == 'nt'
+
 TEST_SET_TEMPLATE_KEYS = {
-    '/user_sync/user_sync_path': (True, False, "../../dist/user-sync"),
+    '/user_sync/user_sync_path': (True, not IS_NT_PLATFORM, "../../dist/user-sync"),
+    '/user_sync/user_sync_path_win': (True, IS_NT_PLATFORM, "../../dist/user-sync.pex"),
     }
 
 TEST_TEMPLATE_KEYS = {
-    '/user_sync/live/working_dir': (False, False, "live"),
-    '/user_sync/live/output_dir': (False, False, "live/out"),
-    '/user_sync/test/working_dir': (False, False, "test"),
-    '/user_sync/test/output_dir': (False, False, "test/out"),
-    '/server/cassette_filename': (False, False, 'live/cassette.yml'),
+    '/disabled': (False, False, False),
+    '/user_sync/live/working_dir': (True, False, "live"),
+    '/user_sync/live/output_dir': (True, False, "live/out"),
+    '/user_sync/test/working_dir': (True, False, "test"),
+    '/user_sync/test/output_dir': (True, False, "test/out"),
+    '/server/cassette_filename': (True, False, 'live/cassette.yml'),
+    '/verification/configuration_output/temp_path': (True, False, None),
+    '/verification/configuration_output/temp_freeze_path': (False, False, None),
+    '/verification/text_files': (False, False, []),
+    '/verification/text_files/*': (True, True, None),
+    '/verification/unordered_text_files': (False, False, []),
+    '/verification/unordered_text_files/*': (True, True, None),
+    '/verification/filtered_log_files': (False, False, []),
+    '/verification/filtered_log_files/*': (False, False, None),
     }
 
 TEST_CONFIG_FILENAME = 'test-config.yml'
@@ -49,124 +60,30 @@ REQUEST_JSON_IGNORE_PATHS = set(
     '/do/requestID'
 )
 
-IS_NT_PLATFORM = os.name == 'nt'
-
-class ConfigFileLoader:
-    # these are set by load_from_yaml to hold the current state of what key_path is being searched for in what file in
-    # what directory
-    filepath = None # absolute path of file currently being loaded
-    filename = None # filename of file currently being loaded
-    dirpath = None  # directory path of file currently being loaded
-    key_path = None # the full pathname of the setting key being processed
-
-    @classmethod
-    def load_from_yaml(cls, filename, template_keys):
-        '''
-        loads a yaml file, processes the loaded dict given the specified template keys. Essentially the same as the
-        ConfigFileLoader in the UserSync app.
-        :param filename: the file to load yaml from
-        :param template_keys: a dict whose keys are "template_keys" such as /key1/key2/key3 and whose values are tuples:
-            (must_exist, can_have_subdict, default_val) which are options on the value of the key whose values are path
-            expanded: must the path exist, can it be a list of paths that contains sub-dictionaries whose values are
-            paths, and does the key have a default value so that must be added to the dictionary if there is not already
-            a value found.
-        '''
-        cls.filepath = os.path.abspath(filename)
-        cls.filename = os.path.split(cls.filepath)[1]
-        cls.dirpath = os.path.dirname(cls.filepath)
-
-        if not os.path.isfile(cls.filepath):
-            raise error.AssertionException('No such configuration file: %s' % (cls.filepath))
-
-        with open(filename, 'r', 1) as input_file:
-            yml = yaml.load(input_file)
-
-        for template_key, options in template_keys.iteritems():
-            cls.key_path = template_key
-            keys = template_key.split('/')
-            cls.process_path_key(yml, keys, 1, *options)
-        return yml
-
-    @classmethod
-    def process_path_key(cls, dictionary, keys, level, must_exist, can_have_subdict, default_val):
-        '''
-        this function is given the list of keys in the current key_path, and searches recursively into the given
-        dictionary until it finds the designated value, and then resolves relative values in that value to abspaths
-        based on the current filename. If a default value for the key_path is given, and no value is found in the
-        dictionary, then the key_path is added to the dictionary with the expanded default value.
-        type dictionary: dict
-        type keys: list
-        type level: int
-        type must_exist: boolean
-        type can_have_subdict: boolean
-        type default_val: any
-        '''
-        if level == len(keys)-1:
-            key = keys[level]
-            # if a wildcard is specified at this level, that means we should process all keys as path values
-            if key == "*":
-                for key, val in dictionary.iteritems():
-                    dictionary[key] = cls.process_path_value(val, must_exist, can_have_subdict)
-            elif dictionary.has_key(key):
-                dictionary[key] = cls.process_path_value(dictionary[key], must_exist, can_have_subdict)
-            elif default_val:
-                dictionary[key] = cls.relative_path(default_val, must_exist)
-        elif level < len(keys)-1:
-            key = keys[level]
-            # if a wildcard is specified at this level, this indicates this should select all keys that have dict type
-            # values, and recurse into them at the next level
-            if key == "*":
-                for key in dictionary.keys():
-                    if isinstance(dictionary[key],dict):
-                        cls.process_path_key(dictionary[key], keys, level+1, must_exist, can_have_subdict, default_val)
-            elif dictionary.has_key(key):
-                if isinstance(dictionary[key], dict):
-                    cls.process_path_key(dictionary[key], keys, level+1, must_exist, can_have_subdict, default_val)
-                elif not dictionary[key]:
-                    dictionary[key] = {}
-                    cls.process_path_key(dictionary[key], keys, level+1, must_exist, can_have_subdict, default_val)
-            elif default_val:
-                dictionary[key] = {}
-                cls.process_path_key(dictionary[key], keys, level+1, must_exist, can_have_subdict, default_val)
-
-    @classmethod
-    def process_path_value(cls, val, must_exist, can_have_subdict):
-        '''
-        does the relative path processing for a value from the dictionary, which can be a string, a list of strings, or
-        a list of strings and "tagged" strings (sub-dictionaries whose values are strings)
-        :param key: the key whose value we are processing, for error messages
-        :param val: the value we are processing, for error messages
-        '''
-        if isinstance(val, six.types.StringTypes):
-            return cls.relative_path(val, must_exist)
-        elif isinstance(val, list):
-            vals = []
-            for entry in val:
-                if can_have_subdict and isinstance(entry, dict):
-                    for subkey, subval in entry.iteritems():
-                        vals.append({subkey: cls.relative_path(subval, must_exist)})
-                else:
-                    vals.append(cls.relative_path(entry, must_exist))
-            return vals
-
-    @classmethod
-    def relative_path(cls, val, must_exist):
-        '''
-        returns an absolute path that is resolved relative to the file being loaded
-        '''
-        if not isinstance(val, six.types.StringTypes):
-            raise error.AssertionException("Expected pathname for setting %s in config file %s" %
-                                     (cls.key_path, cls.filename))
-        if cls.dirpath and not os.path.isabs(val):
-            val = os.path.abspath(os.path.join(cls.dirpath, val))
-        if must_exist and not os.path.isfile(val):
-            raise error.AssertionException('In setting %s in config file %s: No such file %s' %
-                                     (cls.key_path, cls.filename, val))
-        return val
+# log format defined in app.py (date, time, pid)
+TIMESTAMP_RE = r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d+'
+LINE_TRANSFORM_MAP = [
+    helper.StringTransformer(
+        r"^%s (.*)\[\[.*\]\](.*)$" % (TIMESTAMP_RE),
+        r"%s\[\[\]\]%s"
+    ),
+    helper.StringTransformer(
+        r"^%s (.*)requestID: action_\d+(.*)'requestID': 'action_\d+'(.*)$" % (TIMESTAMP_RE),
+        r"%srequestID: action_%s'requestID': 'action_'%s"
+    ),
+    helper.StringTransformer(
+        r"^%s (.*\(Total time: )\d:\d\d:\d\d(\).*)$" % (TIMESTAMP_RE),
+        r"%s%s"
+    ),
+    helper.StringTransformer(
+        r"^%s (.*)$" % (TIMESTAMP_RE),
+        r"%s"
+    ),
+]
 
 
 class TestSuite:
-    def __init__(self, config_filename, config):
+    def __init__(self, config_filename, app_config):
         '''
         Sets up a user sync test set, given a path to the test set's configuration file. This basically maps
         configuration settings from the configuration file and options constructed from the command line arguments to
@@ -178,23 +95,25 @@ class TestSuite:
         self.logger = logging.getLogger('test-suite')
 
         config_filename = os.path.abspath(config_filename)
-        test_set_config = ConfigFileLoader.load_from_yaml(config_filename, TEST_SET_TEMPLATE_KEYS)
+        test_set_config = config.ConfigFileLoader.load_from_yaml(config_filename, TEST_SET_TEMPLATE_KEYS)
         self.test_suite_path = test_suite_path = os.path.dirname(config_filename)
 
         user_sync_common_args = test_set_config['user_sync']['common_arguments'] if 'common_arguments' in test_set_config['user_sync'] else None
-        user_sync_path = test_set_config['user_sync']['user_sync_path']
-        if re.match(r"^.*\.pex$", user_sync_path, re.IGNORECASE):
+        if IS_NT_PLATFORM:
+            user_sync_path = test_set_config['user_sync']['user_sync_path_win']
             user_sync_common_args = user_sync_path if not user_sync_common_args else "\"%s\" %s" % (user_sync_path, user_sync_common_args)
             user_sync_path = "python"
+        else:
+            user_sync_path = test_set_config['user_sync']['user_sync_path']
 
-        self.test_suite_config = config
+        self.test_suite_config = app_config
         self.test_suite_config.update({
             'user_sync_path': user_sync_path,
             'user_sync_common_args': user_sync_common_args
         })
 
         self.test_server_config = {
-            'live_mode': config['live_mode'],
+            'live_mode': app_config['live_mode'],
             'proxy_host': test_set_config['umapi']['proxy_host'],
             'destination_host': test_set_config['umapi']['destination_host']
         }
@@ -242,39 +161,51 @@ class TestGroup:
         Runs the selected tests in the test group.
         '''
         for test_name in self.test_names:
-            self.logger.info('running test "%s"...' % (test_name))
-
             test_path = os.path.join(self.test_group_path, test_name)
             test = Test(test_path, self.test_suite_config, self.test_server_config)
-            if self.test_suite_config['live_mode']:
-                test.run_live()
+            if test.disabled:
+                self.logger.info('test "%s" disabled.' % (test_name))
+                helper.JobStats.inc_test_skip_count()
             else:
-                test.run()
+                self.logger.info('running test "%s"...' % (test_name))
+                if self.test_suite_config['live_mode']:
+                    test.run_live()
+                else:
+                    test.run()
 
 
 class Test:
-    def __init__(self, config_path, test_set_config, server_config):
+    def __init__(self, config_path, test_suite_config, server_config):
         '''
         Sets up a user sync test, given a path to the test's configuration file.
         :type config_path: str
         '''
-        config = ConfigFileLoader.load_from_yaml(os.path.join(config_path, 'test-config.yml'), TEST_TEMPLATE_KEYS)
+        test_config = config.ConfigFileLoader.load_from_yaml(os.path.join(config_path, 'test-config.yml'), TEST_TEMPLATE_KEYS)
 
         self.server_config = server_config
         self.server_config.update({
             'test_folder_path': config_path,
-            'cassette_filename': config['server']['cassette_filename'],
+            'cassette_filename': test_config['server']['cassette_filename'],
         })
 
-        self.test_config = test_set_config.copy()
-        self.test_config.update({
-            'config_path': config_path,
-            'user_sync_args': config['user_sync']['arguments'],
-            'live_working_dir': config['user_sync']['live']['working_dir'],
-            'live_output_dir': config['user_sync']['live']['output_dir'],
-            'test_working_dir': config['user_sync']['test']['working_dir'],
-            'test_output_dir': config['user_sync']['test']['output_dir'],
-        })
+        self.test_suite_config = test_suite_config.copy()
+        self.config_path = config_path
+        self.disabled = test_config['disabled']
+        self.user_sync_args = test_config['user_sync']['arguments']
+        self.live_working_dir = test_config['user_sync']['live']['working_dir']
+        self.live_output_dir = test_config['user_sync']['live']['output_dir']
+        self.test_working_dir = test_config['user_sync']['test']['working_dir']
+        self.test_output_dir = test_config['user_sync']['test']['output_dir']
+        self.verification_text_files = test_config['verification']['text_files']
+        self.verification_unordered_text_files = test_config['verification']['unordered_text_files']
+        self.verification_filtered_log_files = test_config['verification']['filtered_log_files']
+        self.temp_path = test_config['verification']['configuration_output']['temp_path']
+        self.temp_freeze_path = test_config['verification']['configuration_output']['temp_freeze_path']
+
+        self.temp_freeze = self.temp_path is not None and self.temp_freeze_path is not None
+
+        if self.user_sync_args is None:
+            self.user_sync_args = ""
 
         self.logger = logging.getLogger('test')
         self.success = False
@@ -293,6 +224,16 @@ class Test:
         dirname = os.path.dirname(filename)
         if not os.path.exists(dirname):
             os.makedirs(dirname)
+
+    def _copy_dir(self,srcpath,dstpath):
+        '''
+        Duplicates the specified directory into the destination folder.
+        :type filename: str
+        '''
+        if not os.path.isdir(srcpath):
+            raise error.AssertionException("specified path is not a folder")
+
+        shutil.copytree(srcpath,dstpath)
 
     def _run(self, args, working_dir, output_filename, request_json_builder = None, live_request_json_builder = None):
         '''
@@ -315,7 +256,11 @@ class Test:
             service.run()
 
             with open(output_filename, 'w') as output_file:
-                subprocess.call(args, cwd=working_dir, stdout=output_file, stderr=output_file, shell=IS_NT_PLATFORM)
+                subprocess.call(args, cwd=working_dir, stdin=None, stdout=output_file, stderr=output_file, shell=IS_NT_PLATFORM)
+                # p = subprocess.Popen(args, cwd=working_dir, stdout=output_file, stderr=output_file)
+                # output_bytes = subprocess.check_output(cmd, cwd=working_dir, shell=True)
+                # output_file.write(output_bytes.decode())
+                # p.communicate()
 
             service.stop()
 
@@ -323,86 +268,6 @@ class Test:
                 for stored_request, stored_response in cassette.data:
                     if stored_request.body:
                         live_request_json_builder.extend_with_json_string(stored_request.body)
-
-    def _compare_output(self, output_filename, live_output_filename):
-        '''
-        Compares the contents of the specified output filenames. The comparison is made by first stripping out the log
-        entry timestamp, as well as certain string occurances, such as timestamps within the entry body, the actionID,
-        and characters enclosed in double square brackets. Both the output file as well as the recorded output file are
-        processed in this manner, then both have their lines sorted, then a line by line comparison is made. If a
-        mismatch is found, an error is thrown detailing the two output lines and their respective line numbers.
-        :type output_filename: str
-        :type live_output_filename: str
-        '''
-        # log format defined in app.py (date, time, pid)
-        timestamp_re = r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d+'
-
-        LINE_TRANSFORM_MAP = [
-            helper.StringTransformer(
-                r"^%s (.*)\[\[.*\]\](.*)$" % (timestamp_re),
-                r"%s\[\[\]\]%s"
-            ),
-            helper.StringTransformer(
-                r"^%s (.*)requestID: action_\d+(.*)'requestID': 'action_\d+'(.*)$" % (timestamp_re),
-                r"%srequestID: action_%s'requestID': 'action_'%s"
-            ),
-            helper.StringTransformer(
-                r"^%s (.*\(Total time: )\d:\d\d:\d\d(\).*)$" % (timestamp_re),
-                r"%s%s"
-            ),
-            helper.StringTransformer(
-                r"^%s (.*)$" % (timestamp_re),
-                r"%s"
-            ),
-        ]
-
-        if not os.path.isfile(output_filename):
-            raise error.AssertionException('OUTPUT COMPARE ERROR: Output file "%s" not found.' % (output_filename))
-        if not os.path.isfile(live_output_filename):
-            raise error.AssertionException('OUTPUT COMPARE ERROR: Recorded output file "%s" not found.'% (live_output_filename))
-
-        with open(output_filename, 'r') as file:
-            lines = file.read().splitlines()
-        with open(live_output_filename, 'r') as rfile:
-            lines_rec = rfile.read().splitlines()
-
-        def transform_lines(lines):
-            '''
-            Transforms the specified list of strings to a a list of strings in which each string is passed through the
-            transform map.
-            :param lines: list(str)
-            :return: list(str)
-            '''
-            lines_out = []
-            for line in lines:
-                for transform in LINE_TRANSFORM_MAP:
-                    line_out = transform.transform(line)
-                    if line_out is not None:
-                        break
-                lines_out.append(line_out if lines_out is not None else line)
-            return lines_out
-
-        def compare_line_tuple(line_tuple1, line_tuple2):
-            index1, line1 = line_tuple1
-            index2, line2 = line_tuple2
-            return 1 if line1 > line2 else -1 if line1 < line2 else 0
-
-        lines = transform_lines(lines)
-        lines = zip(range(0, len(lines)), lines)
-        lines.sort(compare_line_tuple)
-        lines_rec = transform_lines(lines_rec)
-        lines_rec = zip(range(0, len(lines_rec)), lines_rec)
-        lines_rec.sort(compare_line_tuple)
-
-        for line_tuple1, line_tuple2 in zip(lines, lines_rec):
-            if not compare_line_tuple(line_tuple1, line_tuple2)==0:
-                index1, line1 = line_tuple1
-                index2, line2 = line_tuple2
-                raise AssertionError('OUTPUT COMPARE ERROR: Output line mismatch\nOUTPUT (line %d):\n%s\nRECORDED OUTPUT (line %d):\n%s' % (index1, line1, index2, line2))
-
-        if not len(lines) == len(lines_rec):
-            raise error.AssertionException('OUTPUT COMPARE ERROR: Expected %d output lines, got %d lines.' % (len(lines_rec), len(lines)))
-
 
     def _compare_request_jsons(self, request_jsons, live_request_jsons):
         for request_json, live_request_json in zip(request_jsons, live_request_jsons):
@@ -420,17 +285,27 @@ class Test:
         '''
         try:
             self._reset_output_file(self.server_config['cassette_filename'])
-            self._reset_output_file(self.test_config['live_output_dir'])
+            self._reset_output_file(self.live_output_dir)
+            if self.temp_freeze:
+                temp_freeze_path = os.path.join(self.live_output_dir, self.temp_freeze_path)
+                self._reset_output_file(self.temp_path)
+                self._reset_output_file(temp_freeze_path)
 
-            args = [self.test_config['user_sync_path']]
-            if self.test_config['user_sync_common_args']:
-                args.extend(shlex.split(self.test_config['user_sync_common_args'], posix=not IS_NT_PLATFORM))
-            args.extend(shlex.split(self.test_config['user_sync_args'], posix=not IS_NT_PLATFORM))
+            args = [self.test_suite_config['user_sync_path']]
+            if self.test_suite_config['user_sync_common_args']:
+                args.extend(shlex.split(self.test_suite_config['user_sync_common_args'], posix=not IS_NT_PLATFORM))
+                # args.extend(shlex.split(self.test_suite_config['user_sync_common_args']))
+            args.extend(['--test-framework','live'])
+            # args.extend(shlex.split(self.user_sync_args, posix=not IS_NT_PLATFORM))
+            args.extend(shlex.split(self.user_sync_args, posix=not IS_NT_PLATFORM))
 
-            output_filename = os.path.join(self.test_config['live_output_dir'], 'out.txt')
-            self._run(args, self.test_config['live_working_dir'], output_filename)
+            output_filename = os.path.join(self.live_output_dir, 'out.txt')
+            self._run(args, self.live_working_dir, output_filename)
 
-            self.logger.info('successfully recorded %s' % (self.test_config['config_path']))
+            if self.temp_freeze:
+                self._copy_dir(self.temp_path, temp_freeze_path)
+
+            self.logger.info('successfully recorded %s' % (self.config_path))
             helper.JobStats.inc_test_success_count()
         except error.AssertionException as e:
             helper.JobStats.inc_test_fail_count()
@@ -441,37 +316,80 @@ class Test:
     def run(self):
         '''
         Runs the test using canned data. This simply sets the user-sync test service to use the recorded data, instead
-        of connecting to the live Adobe server, and launches the user-sync tool with --bypass-authentication-mode. Then
+        of connecting to the live Adobe server, and launches the user-sync tool with --test-framework. Then
         test ends by saving the user-sync tool output to the configured path.
         '''
         try:
-            self._reset_output_file(self.test_config['test_output_dir'])
+            self._reset_output_file(self.test_output_dir)
+            if self.temp_freeze:
+                temp_freeze_path = os.path.join(self.test_output_dir, self.temp_freeze_path)
+                self._reset_output_file(self.temp_path)
+                self._reset_output_file(temp_freeze_path)
 
-            args = [self.test_config['user_sync_path']]
-            if self.test_config['user_sync_common_args']:
-                args.extend(shlex.split(self.test_config['user_sync_common_args'], posix=not IS_NT_PLATFORM))
-            args.extend(['--bypass-authentication-mode'])
-            args.extend(shlex.split(self.test_config['user_sync_args'], posix=not IS_NT_PLATFORM))
+            args = [self.test_suite_config['user_sync_path']]
+            if self.test_suite_config['user_sync_common_args']:
+                args.extend(shlex.split(self.test_suite_config['user_sync_common_args'], posix=not IS_NT_PLATFORM))
+            args.extend(['--test-framework','test'])
+            args.extend(shlex.split(self.user_sync_args, posix=not IS_NT_PLATFORM))
 
             test_request_json_builder = helper.JSONBuilder()
             live_request_json_builder = helper.JSONBuilder()
 
-            live_output_filename = os.path.join(self.test_config['live_output_dir'], 'out.txt')
-            output_filename = os.path.join(self.test_config['test_output_dir'], 'out.txt')
-            self._run(args, self.test_config['test_working_dir'], output_filename, test_request_json_builder, live_request_json_builder)
-            self._compare_output(output_filename, live_output_filename)
+            live_output_filename = os.path.join(self.live_output_dir, 'out.txt')
+            output_filename = os.path.join(self.test_output_dir, 'out.txt')
+            self._run(args, self.test_working_dir, output_filename, test_request_json_builder, live_request_json_builder)
 
+            if self.temp_freeze:
+                self._copy_dir(self.temp_path, temp_freeze_path)
+
+            helper.verify_unordered_text_files(output_filename, live_output_filename, LINE_TRANSFORM_MAP)
+
+            # smart match umapi requests
             test_request_json = test_request_json_builder.json_val
             test_request_json.sort(helper.deep_compare)
             live_request_json = live_request_json_builder.json_val
             live_request_json.sort(helper.deep_compare)
             self._compare_request_jsons(test_request_json, live_request_json)
 
-            self.logger.info('successfully ran and verified output for %s' % (self.test_config['config_path']))
+            # compare files indicated by user for verification
+            for text_file in self.verification_text_files:
+                live_text_filename = os.path.join(self.live_output_dir,text_file)
+                test_text_filename = os.path.join(self.test_output_dir,text_file)
+                helper.verify_text_files(live_text_filename, test_text_filename)
+
+            # compare file indicated by user with unordered text lines for verification
+            for text_file in self.verification_unordered_text_files:
+                live_text_filename = os.path.join(self.live_output_dir,text_file)
+                test_text_filename = os.path.join(self.test_output_dir,text_file)
+                helper.verify_unordered_text_files(live_text_filename, test_text_filename)
+
+            def find_matching_file(dirpath, filename_re):
+                filename = None
+                for r,d,f in os.walk(dirpath):
+                    for file in f:
+                        if re.match(filename_re, file):
+                            if filename is not None:
+                                raise error.VerificationException('multiple files match verification file expression "%s"' % (filename_re))
+                            filename = os.path.join(r,file)
+                if filename is None:
+                    raise error.VerificationException('No files match verification file expression "%s"' % (filename_re))
+                return filename
+
+            for log_filename_re in self.verification_filtered_log_files:
+                live_log_filename = find_matching_file(self.live_output_dir, log_filename_re)
+                test_log_filename = find_matching_file(self.test_output_dir, log_filename_re)
+                helper.verify_unordered_text_files(test_log_filename, live_log_filename, LINE_TRANSFORM_MAP)
+
+            self.logger.info('successfully ran and verified output for %s' % (self.config_path))
             helper.JobStats.inc_test_success_count()
+        except error.VerificationException as e:
+            helper.JobStats.inc_test_fail_count()
+            if not e.is_reported():
+                self.logger.error('OUTPUT VERIFICATION ERROR: %s' % (e.message))
+                e.set_reported()
         except error.AssertionException as e:
             helper.JobStats.inc_test_fail_count()
             if not e.is_reported():
-                self.logger.error('user-sync test error: %s' % (e.message))
+                self.logger.error(e.message)
                 e.set_reported()
 

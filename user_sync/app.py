@@ -36,7 +36,7 @@ import user_sync.rules
 
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as APP_VERSION
-from helper import output_path
+from user_sync.helper import OutFm
 
 LOG_STRING_FORMAT = '%(asctime)s %(process)d %(levelname)s %(name)s - %(message)s'
 LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
@@ -122,6 +122,10 @@ def process_args():
                         help='authentication with the Adobe server is skipped. This is used for testing only.',
                         default=False,
                         action='store_true', dest='bypass_authentication_mode')
+    parser.add_argument('--test-framework',
+                        help="sets user-sync in test framework mode. Output is formatted to support test framework,"
+                             "and in live mode, authentication with Adobe servers is skipped.",
+                        metavar=('live|test'), dest='test_framework', default='disabled')
     return parser.parse_args()
 
 
@@ -245,7 +249,7 @@ def create_config_loader_options(args):
     :return: the configured options for the config loader.
     """
     config_options = {
-        'bypass_authentication_mode': args.bypass_authentication_mode,
+        'test_framework': args.test_framework,
         'delete_strays': False,
         'directory_connector_overridden_options': None,
         'directory_connector_type': None,
@@ -358,7 +362,7 @@ def log_parameters(args):
     :return: None
     """
     logger.info('------- Invocation parameters -------')
-    logger.info('%s' % (output_path(' '.join(sys.argv))))
+    logger.info('%s' % (OutFm.mark(' '.join(sys.argv))))
     logger.debug('-------- Internal parameters --------')
     for parameter_name, parameter_value in six.iteritems(args.__dict__):
         logger.debug('  %s: %s', parameter_name, parameter_value)
@@ -372,6 +376,9 @@ def main():
             args = process_args()
         except SystemExit:
             return
+
+        # set output formatting to test mode immediately, to ensure all log output is properly formatted.
+        OutFm.test = args.test_framework is not None
 
         config_loader = create_config_loader(args)
         init_log(config_loader.get_logging_config())

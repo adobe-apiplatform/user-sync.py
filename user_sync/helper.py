@@ -26,15 +26,51 @@ import sys
 import six
 
 from user_sync.error import AssertionException
+import collections
 
 
-def output_path(path):
-    '''
-    formats the path for display output. The formatting is used by the test framework.
-    :param path: str
-    :return: str
-    '''
-    return "[[%s]]" % (path)
+class OutFm(object):
+    test = False
+
+    @classmethod
+    def mark(cls, val):
+        '''
+        marks the value for display output, if in test mode. The formatting is used by the test framework.
+        :param val: str
+        :return: str
+        '''
+        return "[[%s]]" % (val) if cls.test else val
+
+    @classmethod
+    def val(cls, val):
+        '''
+        formats the value to optimize for testing display output. This basically recursively processes the value, and
+        replaces dicts with OrderedDict, where the keys are sorted.
+        :param val: any
+        :return: any
+        '''
+        def process_val(val):
+            if isinstance(val,dict):
+                ordd = collections.OrderedDict()
+                keys = val.keys()
+                keys.sort()
+                for key in keys:
+                    ordd[key] = process_val(val[key])
+                return ordd
+            elif isinstance(val,list):
+                items = []
+                for item in val:
+                    items.append(process_val(item))
+                return items
+            elif isinstance(val,tuple):
+                items = []
+                for item in tuple:
+                    items.append(process_val(item))
+                return tuple(items)
+            else:
+                return val
+
+        return process_val(val) if cls.test else val
 
 
 def is_py2():
@@ -111,7 +147,7 @@ def iter_csv_rows(file_path, delimiter=None, recognized_column_names=None, logge
             unrecognized_column_names = [column_name for column_name in reader.fieldnames
                                          if column_name not in recognized_column_names]
             if len(unrecognized_column_names) > 0 and logger is not None:
-                logger.warn("In file '%s': unrecognized column names: %s", output_path(file_path), unrecognized_column_names)
+                logger.warn("In file '%s': unrecognized column names: %s", OutFm.mark(file_path), unrecognized_column_names)
 
         for row in reader:
             yield row

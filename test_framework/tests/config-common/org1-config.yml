@@ -1,0 +1,10 @@
+server:
+  protocol: http://
+  host: localhost:8888
+
+enterprise:
+  org_id: [Your organization ID]
+  api_key: [Your API key]
+  client_secret: [Your client secret]
+  tech_acct: [Your tech account]
+  priv_key_path: private2.key

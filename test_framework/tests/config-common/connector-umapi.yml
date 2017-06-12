@@ -4,8 +4,8 @@ server:
   host: localhost:8888
 
 enterprise:
-  org_id: [ your org ID ]
-  api_key: [ Adobe API key ]
-  client_secret: [ client secret ]
-  tech_acct: [ Adobe Tech Account ID ]
-  priv_key_path: [ Path to private key ]
+  org_id: [Your Org ID]
+  api_key: [Your API Key]
+  client_secret: [Your client secret]
+  tech_acct: [Your tech account]
+  priv_key_path: private1.key

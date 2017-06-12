@@ -67,12 +67,14 @@ def log_test_set_summary(live_mode):
     if live_mode:
         COUNTER_MAP = [
             ('tests recorded', helper.JobStats.test_success_count),
-            ('tests not recorded', helper.JobStats.test_fail_count)
+            ('tests not recorded', helper.JobStats.test_fail_count),
+            ('tests skipped', helper.JobStats.test_skip_count)
         ]
     else:
         COUNTER_MAP = [
             ('tests succeeded', helper.JobStats.test_success_count),
-            ('tests failed', helper.JobStats.test_fail_count)
+            ('tests failed', helper.JobStats.test_fail_count),
+            ('tests skipped', helper.JobStats.test_skip_count)
         ]
 
     max_name_len = 0

@@ -20,6 +20,8 @@
 
 import json
 import re
+import os
+import error
 
 def val_type_pre(val):
     val_type = type(val)
@@ -157,6 +159,7 @@ class StringTransformer:
 class JobStats:
     test_success_count = 0
     test_fail_count = 0
+    test_skip_count = 0
 
     @classmethod
     def inc_test_success_count(cls):
@@ -165,3 +168,84 @@ class JobStats:
     @classmethod
     def inc_test_fail_count(cls):
         JobStats.test_fail_count += 1
+
+    @classmethod
+    def inc_test_skip_count(cls):
+        JobStats.test_skip_count += 1
+
+def read_lines(filename):
+    if not os.path.isfile(filename):
+        raise error.AssertionException('File "%s" not found.' % (filename))
+    with open(filename, 'r') as file:
+        return file.read().splitlines()
+
+
+def verify_unordered_text_files(filename1, filename2, line_transform_map=[]):
+    '''
+    Compares the contents of the specified output filenames. The comparison is made by first stripping out the log entry
+    timestamp, as well as certain string occurances, such as timestamps within the entry body, the actionID, and
+    characters enclosed in double square brackets. Both the output file as well as the recorded output file are 
+    processed in this manner, then both have their lines sorted, then a line by line comparison is made. If a mismatch
+    is found, an error is thrown detailing the two output lines and their respective line numbers.
+    :type filename1: str
+    :type filename2: str
+    :type live_output_filename: str
+    '''
+    lines1 = read_lines(filename1)
+    lines2 = read_lines(filename2)
+
+    def transform_lines(lines):
+        '''
+        Transforms the specified list of strings to a a list of strings in which each string is passed through the
+        transform map.
+        :param lines: list(str)
+        :return: list(str)
+        '''
+        lines_out = []
+        for line in lines:
+            line_out = None
+            for transform in line_transform_map:
+                line_out = transform.transform(line)
+                if line_out is not None:
+                    break
+            lines_out.append(line_out if line_out is not None else line)
+        return lines_out
+
+    def compare_line_tuple(line_tuple1, line_tuple2):
+        index1, line1 = line_tuple1
+        index2, line2 = line_tuple2
+        return 1 if line1 > line2 else -1 if line1 < line2 else 0
+
+    tlines1 = transform_lines(list(lines1))
+    tlines1 = zip(range(0, len(tlines1)), tlines1)
+    tlines1.sort(compare_line_tuple)
+    tlines2 = transform_lines(list(lines2))
+    tlines2 = zip(range(0, len(tlines2)), tlines2)
+    tlines2.sort(compare_line_tuple)
+
+    for line_tuple1, line_tuple2 in zip(tlines1, tlines2):
+        if not compare_line_tuple(line_tuple1, line_tuple2)==0:
+            index1, line1 = line_tuple1
+            index2, line2 = line_tuple2
+            raise error.VerificationException('Output line mismatch\n%s (LINE %d):\n%s\n%s (LINE %d):\n%s' % (filename1, index1, lines1[index1], filename2, index2, lines2[index2]))
+
+    if not len(lines1) == len(lines2):
+        raise error.VerificationException('Expected %d output lines, got %d lines.' % (len(lines2), len(lines1)))
+
+def verify_text_files(filename1, filename2):
+    '''
+    Verifies that the text lines of files indicated by the specified file names match exactly.
+    :type filename1: str
+    :type filename2: str
+    '''
+    lines1 = read_lines(filename1)
+    lines2 = read_lines(filename2)
+
+    line_index = 0
+    for line1, line2 in zip(lines1, lines2):
+        if not line1 == line2:
+            raise error.VerificationException('Output line mismatch\n%s (LINE %d):\n%s\n%s (LINE %d):\n%s' % (filename1, line_index, line1, filename2, line_index, line2))
+        line_index += 1
+
+    if not len(lines1) == len(lines2):
+        raise error.VerificationException('Expected %d output lines, got %d lines.' % (len(lines1), len(lines2)))
