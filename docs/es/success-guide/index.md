@@ -12,7 +12,7 @@ Versión 1.1 publicada el 06/03/2017
 
 Este documento le guiará a través de los pasos necesarios para entender y configurar la herramienta User Sync.
 
-A lo largo de este documento, los pasos que necesita para completar se marcan con el símbolo de cuadro & #9744;. Los pasos siguientes requieren que recopile información para un paso posterior, o que tome algunas medidas específicas.
+A lo largo de este documento, los pasos que necesita para completar se marcan con el símbolo de cuadro &#9744;. Los pasos siguientes requieren que recopile información para un paso posterior, o que tome algunas medidas específicas.
 
 ## Tabla de contenido
 

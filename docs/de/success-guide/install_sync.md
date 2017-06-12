@@ -20,7 +20,7 @@ Erste Schritte:
 
 &#9744; Richten Sie ein Benutzer- und Dateiverzeichnis für die Installation und Ausführung der Synchronisation ein.  In diesem Beispiel erstellen wir den Ordner „/home/user_sync/user_sync_tool“ und den Benutzer „user_sync“.  Unter Windows lautet das Verzeichnis z. B. „C:\Benutzer\user_sync\user_sync_tool“.
 
-&#9744; Nur Windows: Legen Sie die Umgebungsvariable **PEX\_ROOT** auf **C:\user_sync\.pex ** fest.
+&#9744; Nur Windows: Legen Sie die Umgebungsvariable **PEX\_ROOT** auf **C:\user_sync\.pex** fest.
 
 &#9744; Nur Windows: Installieren Sie Python 2.7.13 (oder eine höhere Version der 2.7-Serie), 64-Bit-Version. 
 

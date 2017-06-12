@@ -27,7 +27,7 @@ User Sync requiere configuración adicional para sincronizar los datos de usuari
 - Si su empresa incluye varias organizaciones de Adobe, puede configurar la herramienta para añadir los usuarios de la organización en grupos definidos de otras organizaciones.
 - Cuando los datos de usuario de empresa incluyen atributos y asignaciones personalizados, debe configurar la herramienta para poder reconocer dichas personalizaciones.
 - Cuando desea utilizar inicios de sesión basados en nombre de usuario (en lugar de correo electrónico).
-- Cuando desea gestionar algunas cuentas de usuario manualmente a través de Adobe Admin Console además de utilizar User Sync
+- Cuando desea gestionar algunas cuentas de usuario manualmente a través de Adobe Admin Console además de utilizar User Sync.
 
 ## Gestión de usuarios con Adobe ID
 
@@ -39,7 +39,7 @@ La eliminación de usuarios de Adobe ID mediante User Sync podría no tener el e
 
 * Si especifica que los usuarios de adobeID deben eliminarse de la organización, tendrá que volver a invitarlos
 (y conseguir su nueva aceptación) si desea volver a añadirlos más adelante.
-* Los administradores del sistema a menudo usan Adobe ID, por lo que la eliminación de los usuarios de Adobe ID puede quitar accidentalmente administradores del sistema (incluido usted mismo)
+* Los administradores del sistema a menudo usan Adobe ID, por lo que la eliminación de los usuarios de Adobe ID puede quitar accidentalmente administradores del sistema (incluido usted mismo).
 
 Una práctica mejor al gestionar usuarios de Adobe ID es simplemente añadirlos y gestionar sus miembros de grupo, pero nunca eliminarlos. Mediante la gestión de los miembros de grupo puede desactivar sus derechos sin necesidad de una nueva invitación, si más adelante desea volver a activarlos.
 

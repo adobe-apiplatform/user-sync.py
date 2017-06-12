@@ -29,7 +29,8 @@ Hemos compilado un [Documento de preguntas frecuentes](FAQ/index.md) que respond
 
 # Traducciones disponibles
 
-* [Inglés](../en)
-* [Francés](../fr)
-* [Alemán](../de)
-* [Japonés](../jp)
+* [Englisch](../en)
+* [Deutsch](../de)
+* [Français](../fr)
+* [日本語](../jp)
+* [Español](../es)

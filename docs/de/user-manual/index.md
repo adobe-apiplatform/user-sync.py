@@ -27,13 +27,13 @@ Dieses Dokument enthält alle Informationen, die Sie zum Arbeiten mit dem Benutz
 
 ---
 
-Beim Benutzer-Synchronisationstool von Adobe handelt es sich um ein Befehlszeilentool, mit dem Benutzer- und Gruppeninformationen aus dem LDAP-kompatiblen Unternehmensverzeichnissystem Ihrer Organisation (z. B. Active Directory) in das Benutzerverwaltungssystem von Adobe verschoben werden.
+Beim Benutzer-Synchronisationstool von Adobe handelt es sich um ein Befehlszeilentool, mit dem Benutzer- und Gruppeninformationen aus dem LDAP-kompatiblen Unternehmensverzeichnissystem Ihrer Organisation (z. B. Active Directory) in das Benutzerverwaltungssystem von Adobe übertragen werden.
 
 Jedes Mal, wenn Sie das Benutzer-Synchronisationstool ausführen, wird nach Unterschieden zwischen den Benutzerinformationen in den beiden Systemen gesucht. Dann wird das Adobe-Verzeichnis aktualisiert, sodass es mit Ihrem Verzeichnis übereinstimmt.
 
 ## Voraussetzungen
 
-Sie können das Benutzer-Synchronisationstool über die Befehlszeile oder mit einem Skript ausführen, auf einem von Ihrem Unternehmen betriebenen Server, auf dem Python 2.7.9 oder höher installiert sein muss. Der Server muss über eine Internetverbindung verfügen und auf das Benutzerverwaltungssystem von Adobe sowie das Verzeichnissystem Ihres Unternehmens zugreifen können.
+Sie können das Benutzer-Synchronisationstool über die Befehlszeile oder mit einem Skript auf einem von Ihrem Unternehmen betriebenen Server ausführen, auf dem Python 2.7.9 oder höher installiert sein muss. Über die Mitgliedschaft in diesen Gruppen wird gesteuert, welche Benutzer in Ihrer Organisation auf welche Produkte zugreifen können.
 
 Das Benutzer-Synchronisationstool ist ein Client der User Management API (UMAPI). Damit Sie es verwenden können, müssen Sie es zunächst als API-Client in der [Adobe I/O-Konsole](https://www.adobe.io/console/) registrieren und dann das Tool wie unten beschrieben installieren und konfigurieren.
 

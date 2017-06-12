@@ -29,12 +29,12 @@ Opciones disponibles para la gestión de la eliminación de cuentas de Adobe a t
 
 Algunas cosas que hay que saber sobre la eliminación de la cuenta:
 
-  - Eliminar la cuenta de Adobe puede eliminar activos, ajustes, etc., que pueden resultar necesarios posteriormente
+  - Eliminar la cuenta de Adobe puede eliminar activos, ajustes, etc., que pueden resultar necesarios posteriormente.
  
   - Solo puede “eliminar” cuentas si se encuentran en un dominio del que la organización es propietaria.
   - Es posible que tenga usuarios en su organización que se encuentran en dominios propiedad de otras organizaciones. Esto sucede a través de la solicitud de acceso a otro dominio propiedad de una organización diferente que, a continuación, le permite añadir los usuarios de ese dominio a su propia organización y otorgar a dichos usuarios las licencias que posee.
     - Puede recuperar las licencias que ha otorgado a dichos usuarios
-    - Puede eliminarlas de su organización, pero no puede eliminar esas cuentas porque son propiedad de una organización diferente.
+    - Puede eliminarlas de su organización, pero no puede eliminar esas cuentas porque son propiedad de una organización diferente
     - Si intenta eliminar una cuenta de este tipo, tiene el mismo efecto que eliminar al usuario de la organización
 
 ![organizaciones](images/decide_deletion_multi_org.png)

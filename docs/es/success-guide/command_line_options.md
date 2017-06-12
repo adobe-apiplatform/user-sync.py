@@ -10,7 +10,7 @@ nav_order: 310
 
 [Sección anterior](monitoring.md) \| [Regresar al contenido](index.md) \|  [Sección siguiente](scheduling.md)
 
-La línea de comandos de User Sync selecciona el conjunto de los usuarios que se procesará, especifica si debe gestionarse el abono de grupos de usuarios y confirmaciones de productos, especifica cómo debe manejarse la eliminación de cuentas y algunas opciones adicionales.
+La línea de comandos de User Sync selecciona el conjunto de los usuarios que se procesará, especifica si debe gestionarse el abono de la PC y el grupo de usuarios, precisa cómo debe manejarse la eliminación de cuentas e indica algunas opciones adicionales.
 
 ## Usuarios
 
@@ -48,8 +48,8 @@ Tenga en cuenta que solo los usuarios devueltos por la consulta del directorio y
 |   `--adobe-only-user-action exclude`                        |  No sea necesaria ninguna acción en las cuentas que existen solo en Adobe y que no tienen ninguna cuenta de directorio correspondiente. Los abonos del grupo de Adobe no se actualizan aunque `--process-groups` esté presente. |
 |   `--adobe-only-user-action preserve`                        |  No se eliminen ni se supriman las cuentas que existen solo en Adobe y que no tienen ninguna cuenta de directorio correspondiente. Los abonos del grupo de Adobe se actualizan si `--process-groups` está presente. |
 |   `--adobe-only-user-action remove-adobe-groups` |    La cuenta de Adobe permanece pero los abonos de licencias y grupos <br>se han eliminado. |
-|   `--adobe-only-user-action remove`  |    La cuenta de Adobe permanece, pero se eliminan los abonos de licencias y grupos y los listados de la Admin Console de Adobe   |
-|   `--adobe-only-user-action delete`  |    Cuenta de Adobe que se va a eliminar: quítela de las<br>configuraciones de producto de Adobe y los grupos de usuarios; se ha eliminado la cuenta y se ha liberado todo el almacenamiento y la configuración. |
+|   `--adobe-only-user-action remove`  |    La cuenta de Adobe permanece, pero se eliminan los abonos de licencias y grupos y los listados de la Admin Console de Adobe.   |
+|   `--adobe-only-user-action delete`  |    Cuenta de Adobe que se va a eliminar: quítela de las configuraciones de producto de Adobe y los grupos de usuarios; se ha eliminado la cuenta y se ha liberado todo el almacenamiento y la configuración.|
 |   `--adobe-only-user-action write-file f.csv`    |  No debe realizarse ninguna acción en la cuenta. Se ha escrito el nombre de usuario en el archivo para la acción posterior. |
 
 
