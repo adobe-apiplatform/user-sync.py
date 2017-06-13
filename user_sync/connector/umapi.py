@@ -66,17 +66,12 @@ class UmapiConnector(object):
         enterprise_builder = user_sync.config.OptionsBuilder(enterprise_config)
         enterprise_builder.require_string_value('org_id')
         enterprise_builder.require_string_value('tech_acct')
-        enterprise_builder.require_string_value('priv_key_path')
         options['enterprise'] = enterprise_options = enterprise_builder.get_options()
         self.options = options
         self.logger = logger = user_sync.connector.helper.create_logger(options)
         if server_config:
             server_config.report_unused_values(logger)
         logger.debug('UMAPI initialized with options: %s', options)
-
-        self.options = options;
-        self.logger = logger = user_sync.connector.helper.create_logger(options)
-        caller_config.report_unused_values(logger)
 
         ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']

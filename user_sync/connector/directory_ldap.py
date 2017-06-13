@@ -204,6 +204,8 @@ class LDAPDirectoryConnector(object):
                     current_tuple = result_response[0]
                     if current_tuple[0] is not None:
                         attributes = current_tuple[1]
+            if attributes is None:
+                break
 
             for current_attribute_name, current_attribute_values in six.iteritems(attributes):
                 current_attribute_name_parts = current_attribute_name.split(';')
