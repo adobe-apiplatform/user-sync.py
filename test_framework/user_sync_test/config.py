@@ -52,6 +52,8 @@ class ConfigFileLoader:
 
         with open(filename, 'r', 1) as input_file:
             yml = yaml.load(input_file)
+            if yml is None:
+                yml = {}
 
         for template_key, options in template_keys.iteritems():
             cls.key_path = template_key

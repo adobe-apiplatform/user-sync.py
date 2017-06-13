@@ -1,0 +1,10 @@
+Groups - Add User to Multiple
+
+Preconditions:
+User is in directory group that points to multiple Adobe groups.
+
+Actions:
+1. Run user-sync with --users pattern --process-groups
+
+Result
+User is added to all Adobe mapped groups. No changes are made to groups not mentioned in the config.

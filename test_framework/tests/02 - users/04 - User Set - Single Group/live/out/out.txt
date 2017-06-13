@@ -1,0 +1,36 @@
+2017-06-12 15:57:56 76647 INFO config - Using main config file: [[../../../config-common/user-sync-config.yml]]
+2017-06-12 15:57:56 76647 INFO main - ========== Start Run (User Sync version: 2.1) ==============
+2017-06-12 15:57:56 76647 INFO main - ------- Invocation parameters -------
+2017-06-12 15:57:56 76647 INFO main - [[/Users/imak/github-adobe/user-sync.py/dist/user-sync --test-framework live -c ../../../config-common/user-sync-config.yml --users group CCE AD Group 1 --update-user-info]]
+2017-06-12 15:57:56 76647 INFO main - -------------------------------------
+2017-06-12 15:57:57 76647 INFO processor - ---------- Start Load from Directory -----------------------
+2017-06-12 15:57:57 76647 WARNING ldap - Skipping user with dn CN=ADFS User,CN=Users,DC=ensemble,DC=com: empty email attribute (mail)
+2017-06-12 15:57:57 76647 WARNING ldap - Skipping user with dn CN=DPSMain1,CN=Users,DC=ensemble,DC=com: empty email attribute (mail)
+2017-06-12 15:57:57 76647 ERROR main - Unhandled exception
+Traceback (most recent call last):
+  File "/Users/imak/.pex/install/user_sync-2.1-py2-none-any.whl.beea264ec274334764e8de3cc97712e3e8cc5873/user_sync-2.1-py2-none-any.whl/user_sync/app.py", line 362, in main
+    begin_work(config_loader)
+  File "/Users/imak/.pex/install/user_sync-2.1-py2-none-any.whl.beea264ec274334764e8de3cc97712e3e8cc5873/user_sync-2.1-py2-none-any.whl/user_sync/app.py", line 216, in begin_work
+    rule_processor.run(directory_groups, directory_connector, umapi_connectors)
+  File "/Users/imak/.pex/install/user_sync-2.1-py2-none-any.whl.beea264ec274334764e8de3cc97712e3e8cc5873/user_sync-2.1-py2-none-any.whl/user_sync/rules.py", line 156, in run
+    self.read_desired_user_groups(directory_groups, directory_connector)
+  File "/Users/imak/.pex/install/user_sync-2.1-py2-none-any.whl.beea264ec274334764e8de3cc97712e3e8cc5873/user_sync-2.1-py2-none-any.whl/user_sync/rules.py", line 294, in read_desired_user_groups
+    directory_users = directory_connector.load_users_and_groups(directory_groups, extended_attributes)
+  File "/Users/imak/.pex/install/user_sync-2.1-py2-none-any.whl.beea264ec274334764e8de3cc97712e3e8cc5873/user_sync-2.1-py2-none-any.whl/user_sync/connector/directory.py", line 56, in load_users_and_groups
+    return self.implementation.connector_load_users_and_groups(self.state, groups, extended_attributes)
+  File "/Users/imak/.pex/install/user_sync-2.1-py2-none-any.whl.beea264ec274334764e8de3cc97712e3e8cc5873/user_sync-2.1-py2-none-any.whl/user_sync/connector/directory_ldap.py", line 54, in connector_load_users_and_groups
+    return state.load_users_and_groups(groups, extended_attributes)
+  File "/Users/imak/.pex/install/user_sync-2.1-py2-none-any.whl.beea264ec274334764e8de3cc97712e3e8cc5873/user_sync-2.1-py2-none-any.whl/user_sync/connector/directory_ldap.py", line 130, in load_users_and_groups
+    for user_dn, user in self.iter_users(all_users_filter, extended_attributes):
+  File "/Users/imak/.pex/install/user_sync-2.1-py2-none-any.whl.beea264ec274334764e8de3cc97712e3e8cc5873/user_sync-2.1-py2-none-any.whl/user_sync/connector/directory_ldap.py", line 267, in iter_users
+    for dn, record in result_iter:
+  File "/Users/imak/.pex/install/user_sync-2.1-py2-none-any.whl.beea264ec274334764e8de3cc97712e3e8cc5873/user_sync-2.1-py2-none-any.whl/user_sync/connector/directory_ldap.py", line 355, in iter_search_result
+    result_type, response_data, _rmsgid, serverctrls = connection.result3(msgid)
+  File "/Users/imak/.pex/install/python_ldap-2.4.25-cp27-cp27m-macosx_10_10_x86_64.whl.49894bc766cf9e02fa1198acab536b0985a31896/python_ldap-2.4.25-cp27-cp27m-macosx_10_10_x86_64.whl/ldap/ldapobject.py", line 514, in result3
+    resp_ctrl_classes=resp_ctrl_classes
+  File "/Users/imak/.pex/install/python_ldap-2.4.25-cp27-cp27m-macosx_10_10_x86_64.whl.49894bc766cf9e02fa1198acab536b0985a31896/python_ldap-2.4.25-cp27-cp27m-macosx_10_10_x86_64.whl/ldap/ldapobject.py", line 521, in result4
+    ldap_result = self._ldap_call(self._l.result4,msgid,all,timeout,add_ctrls,add_intermediates,add_extop)
+  File "/Users/imak/.pex/install/python_ldap-2.4.25-cp27-cp27m-macosx_10_10_x86_64.whl.49894bc766cf9e02fa1198acab536b0985a31896/python_ldap-2.4.25-cp27-cp27m-macosx_10_10_x86_64.whl/ldap/ldapobject.py", line 106, in _ldap_call
+    result = func(*args,**kwargs)
+KeyboardInterrupt
+2017-06-12 15:57:57 76647 INFO main - ========== End Run (User Sync version: 2.1) (Total time: 0:00:01) 

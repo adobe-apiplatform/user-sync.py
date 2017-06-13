@@ -32,10 +32,16 @@ import helper
 
 IS_NT_PLATFORM = os.name == 'nt'
 
-TEST_SET_TEMPLATE_KEYS = {
+TEST_SUITE_TEMPLATE_KEYS = {
     '/user_sync/user_sync_path': (True, not IS_NT_PLATFORM, "../../dist/user-sync"),
     '/user_sync/user_sync_path_win': (True, IS_NT_PLATFORM, "../../dist/user-sync.pex"),
-    }
+    '/umapi/users_request_matcher': (False, False, "https://usermanagement.adobe.io/v2/usermanagement/users/(.*)"),
+    '/umapi/actions_request_matcher': (False, False, "https://usermanagement.adobe.io/v2/usermanagement/action/(.*)"),
+}
+
+TEST_GROUP_TEMPLATE_KEYS = {
+    '/disabled': (False, False, False)
+}
 
 TEST_TEMPLATE_KEYS = {
     '/disabled': (False, False, False),
@@ -54,6 +60,7 @@ TEST_TEMPLATE_KEYS = {
     '/verification/filtered_log_files/*': (False, False, None),
     }
 
+TEST_GROUP_CONFIG_FILENAME = 'test-group-config.yml'
 TEST_CONFIG_FILENAME = 'test-config.yml'
 
 REQUEST_JSON_IGNORE_PATHS = set(
@@ -95,27 +102,29 @@ class TestSuite:
         self.logger = logging.getLogger('test-suite')
 
         config_filename = os.path.abspath(config_filename)
-        test_set_config = config.ConfigFileLoader.load_from_yaml(config_filename, TEST_SET_TEMPLATE_KEYS)
+        test_suite_config = config.ConfigFileLoader.load_from_yaml(config_filename, TEST_SUITE_TEMPLATE_KEYS)
         self.test_suite_path = test_suite_path = os.path.dirname(config_filename)
 
-        user_sync_common_args = test_set_config['user_sync']['common_arguments'] if 'common_arguments' in test_set_config['user_sync'] else None
+        user_sync_common_args = test_suite_config['user_sync']['common_arguments'] if 'common_arguments' in test_suite_config['user_sync'] else None
         if IS_NT_PLATFORM:
-            user_sync_path = test_set_config['user_sync']['user_sync_path_win']
+            user_sync_path = test_suite_config['user_sync']['user_sync_path_win']
             user_sync_common_args = user_sync_path if not user_sync_common_args else "\"%s\" %s" % (user_sync_path, user_sync_common_args)
             user_sync_path = "python"
         else:
-            user_sync_path = test_set_config['user_sync']['user_sync_path']
+            user_sync_path = test_suite_config['user_sync']['user_sync_path']
 
         self.test_suite_config = app_config
         self.test_suite_config.update({
             'user_sync_path': user_sync_path,
-            'user_sync_common_args': user_sync_common_args
+            'user_sync_common_args': user_sync_common_args,
+            'users_request_matcher': test_suite_config['umapi']['users_request_matcher'],
+            'actions_request_matcher': test_suite_config['umapi']['actions_request_matcher']
         })
 
         self.test_server_config = {
             'live_mode': app_config['live_mode'],
-            'proxy_host': test_set_config['umapi']['proxy_host'],
-            'destination_host': test_set_config['umapi']['destination_host']
+            'proxy_host': test_suite_config['umapi']['proxy_host'],
+            'destination_host': test_suite_config['umapi']['destination_host']
         }
 
         test_group_name = self.test_suite_config['test_group_name']
@@ -124,7 +133,7 @@ class TestSuite:
                 raise error.AssertionException('test group "%s" not found.' % (test_group_name))
             self.test_group_names = [test_group_name]
         else:
-            self.test_group_names = [f for f in os.listdir(test_suite_path) if os.path.isdir(os.path.join(test_suite_path, f))]
+            self.test_group_names = [f for f in os.listdir(test_suite_path) if os.path.isfile(os.path.join(test_suite_path, f, TEST_GROUP_CONFIG_FILENAME))]
 
     def run(self):
         '''
@@ -143,7 +152,10 @@ class TestGroup:
         Manages a test group, which is basically a directory in the same path as the suite configuration file.
         :type config_filename: str
         '''
+        test_group_config = config.ConfigFileLoader.load_from_yaml(os.path.join(test_group_path, TEST_GROUP_CONFIG_FILENAME), TEST_GROUP_TEMPLATE_KEYS)
+
         self.logger = logging.getLogger('test-group')
+        self.test_group_disabled = test_group_config['disabled']
         self.test_group_path = test_group_path
         self.test_suite_config = test_suite_config
         self.test_server_config = test_server_config
@@ -163,7 +175,7 @@ class TestGroup:
         for test_name in self.test_names:
             test_path = os.path.join(self.test_group_path, test_name)
             test = Test(test_path, self.test_suite_config, self.test_server_config)
-            if test.disabled:
+            if self.test_group_disabled or test.disabled:
                 self.logger.info('test "%s" disabled.' % (test_name))
                 helper.JobStats.inc_test_skip_count()
             else:
@@ -244,12 +256,33 @@ class Test:
         self.logger.info("%s" % (' '.join(args)))
         self._reset_output_file(output_filename)
 
+        def match_um_requests_on(r1, r2):
+            '''
+            Custom uri matcher for use with vcrpy. Basically it provides custom matching for user and action UM
+            requests, which ignores the org ID portion of the request. Otherwise, the request uri must match exactly.
+            :param r1: 
+            :param r2: 
+            :return: 
+            '''
+            if re.match(self.test_suite_config['users_request_matcher'], r1.uri):
+                if re.match(self.test_suite_config['users_request_matcher'], r2.uri):
+                    return True
+
+            if re.match(self.test_suite_config['actions_request_matcher'], r2.uri):
+                if re.match(self.test_suite_config['actions_request_matcher'], r2.uri):
+                    return True
+
+            return r1.uri == r2.uri
+
         record_mode = 'all' if self.server_config['live_mode'] else 'none'
         recorder = vcr.VCR(
             record_mode=record_mode,
-            match_on=('method', 'scheme', 'host', 'port', 'path', 'query'),
-            decode_compressed_response=True
+            match_on=['um_request'],
+            # match_on=match_um_requests_on,
+            decode_compressed_response=True,
+            filter_headers=['authorization']
         )
+        recorder.register_matcher('um_request',match_um_requests_on)
 
         with recorder.use_cassette(self.server_config['cassette_filename']) as cassette:
             service = server.TestService(self.server_config, cassette, request_json_builder)

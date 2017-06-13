@@ -18,6 +18,7 @@ directory_users:
 
   connectors:
     csv: "connector-csv.yml"
+    ldap: "connector-ldap.yml"
 
   groups:
     - directory_group: CSV Multi Group 1

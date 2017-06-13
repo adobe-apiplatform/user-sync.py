@@ -1,0 +1,9 @@
+firstname,lastname,email,country,groups,bc,subco,type,username,domain
+Test,00,typetest-f2@ensemble-systems.com,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",federatedID
+Test,03,fed1@ensemble-systems.com,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",federatedID
+Test,06,fed2@ensemble-systems.com,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",federatedID
+Test,10,imak@ensemble-systems.com,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",federatedID
+Test,11,typetest-f4@ensemble-systems.com,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",federatedID
+Test,12,ccf1@ensemble-systems.com,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",federatedID
+Test,32,typetest-f3@ensemble-systems.com,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",federatedID
+Test,33,fed3@ensemble-systems.com,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",federatedID

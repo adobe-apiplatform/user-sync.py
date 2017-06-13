@@ -52,7 +52,7 @@ def init_console_log():
     console_log_handler.setFormatter(logging.Formatter(LOG_STRING_FORMAT, LOG_DATE_FORMAT))
     root_logger = logging.getLogger()
     root_logger.addHandler(console_log_handler)
-    root_logger.setLevel(logging.DEBUG)
+    root_logger.setLevel(logging.INFO)
     logging.getLogger('vcr').setLevel(logging.WARNING)
     logging.getLogger('requests').setLevel(logging.WARNING)
     logging.getLogger('BaseHTTPServer').setLevel(logging.WARNING)

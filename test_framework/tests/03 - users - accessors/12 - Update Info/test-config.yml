@@ -1,0 +1,2 @@
+user_sync:
+    arguments: -c ../../../config-common/user-sync-config-accessors.yml --users file ../../../config-common/users-multiple-modified.csv --update-user-info

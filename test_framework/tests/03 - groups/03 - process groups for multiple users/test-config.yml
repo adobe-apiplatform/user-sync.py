@@ -1,2 +1,0 @@
-user_sync:
-    arguments: -c ../config/user-sync-config.yml --users file ../config/users.csv --process-groups
