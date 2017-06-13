@@ -42,13 +42,8 @@ setup(name='user-sync',
       license='MIT',
       packages=['user_sync', 'user_sync.connector'],
       install_requires=[
-<<<<<<< 8340a7edebe5e025bf21710b74929b6bff508e9d
           'pycryptodome',
           'python-ldap==2.4.25',
-=======
-          'pycrypto',
-          'pyldap>=2.4.28',
->>>>>>> update python 2/3 compatibility support to latest v2 base
           'PyYAML',
           'umapi-client>=2.5',
           'psutil',

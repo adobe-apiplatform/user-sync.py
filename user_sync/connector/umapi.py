@@ -68,6 +68,11 @@ class UmapiConnector(object):
         enterprise_builder.require_string_value('tech_acct')
         enterprise_builder.require_string_value('priv_key_path')
         options['enterprise'] = enterprise_options = enterprise_builder.get_options()
+        self.options = options
+        self.logger = logger = user_sync.connector.helper.create_logger(options)
+        if server_config:
+            server_config.report_unused_values(logger)
+        logger.debug('UMAPI initialized with options: %s', options)
 
         self.options = options;
         self.logger = logger = user_sync.connector.helper.create_logger(options)
