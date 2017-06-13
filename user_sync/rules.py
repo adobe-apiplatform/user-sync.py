@@ -293,6 +293,9 @@ class RuleProcessor(object):
 
         for directory_user in directory_users:
             user_key = self.get_directory_user_key(directory_user)
+            if not user_key:
+                self.logger.warning("Ignoring directory user with empty user key: %s", directory_user)
+                continue
             directory_user_by_user_key[user_key] = directory_user
 
             if not self.is_directory_user_in_groups(directory_user, directory_group_filter):
@@ -709,6 +712,9 @@ class RuleProcessor(object):
         for umapi_user in umapi_connector.iter_users():
             # get the basic data about this user; initialize change markers to "no change"
             user_key = self.get_umapi_user_key(umapi_user)
+            if not user_key:
+                self.logger.warning("Ignoring umapi user with empty user key: %s", umapi_user)
+                continue
             umapi_info.add_umapi_user(user_key, umapi_user)
             attribute_differences = {}
             current_groups = self.normalize_groups(umapi_user.get('groups'))
