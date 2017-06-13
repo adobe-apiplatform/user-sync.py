@@ -49,3 +49,22 @@ verification:
     # are sorted before the content is tested for equality.
     # unordered_text_files:
     #     - user_list2.csv
+
+    configuration_output:
+        # (optional) temp_path (default value is None)
+        # specifies folder where the user-sync configuration files outputs the log files, and treats the destination
+        # like a temporary path. The folder is cleared before running user-sync. This path references is relative to
+        # the parent directory of the main user-sync configuration file.
+        # temp_path = '../../config-common/temp'
+
+        # (optional) temp_freeze_path (default value is None)
+        # specifies the folder in which to duplicate the temp file output to, relative to the live or test output
+        # folder, for later verification.
+        # temp_freeze_path: 'config'
+
+        # (optional) filtered_log_files (default value is empty list)
+        # specifies a list of regular expressions used to identify log files to compare, in both the live and test
+        # output files. The file must be in the test's output folder, and each filter must result in one match on both
+        # the live and test output files, in order to identify which files to compare.
+        # filtered_log_files:
+        #     - .*\.log$
