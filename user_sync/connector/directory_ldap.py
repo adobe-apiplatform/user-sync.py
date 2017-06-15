@@ -44,21 +44,20 @@ def connector_initialize(options):
     return connector
 
 
-def connector_load_users_and_groups(state, groups, extended_attributes):
+def connector_load_users_and_groups(state, groups=None, extended_attributes=None, all_users=True):
     """
     :type state: LDAPDirectoryConnector
-    :type groups: list(str)
-    :type extended_attributes: list(str)
+    :type groups: Optional(list(str))
+    :type extended_attributes: Optional(list(str))
+    :type all_users: bool
     :rtype (bool, iterable(dict))
     """
-    return state.load_users_and_groups(groups, extended_attributes)
+    return state.load_users_and_groups(groups or [], extended_attributes or [], all_users)
 
 
 class LDAPDirectoryConnector(object):
     name = 'ldap'
 
-    group_member_uid_attribute = "memberUid"
-    group_member_attribute = "member"
     expected_result_types = [ldap.RES_SEARCH_RESULT, ldap.RES_SEARCH_ENTRY]
 
     def __init__(self, caller_options):
@@ -75,6 +74,7 @@ class LDAPDirectoryConnector(object):
                                                      '(objectCategory=person)'
                                                      '(!(userAccountControl:1.2.840.113556.1.4.803:=2))'
                                                      ')')
+        builder.set_string_value('group_member_filter_format', '(memberOf={group_dn})')
         builder.set_bool_value('require_tls_cert', False)
         builder.set_string_value('string_encoding', 'utf-8')
         builder.set_string_value('user_identity_type_format', None)
@@ -115,146 +115,77 @@ class LDAPDirectoryConnector(object):
             raise AssertionException('LDAP connection failure: ' + repr(e))
         self.connection = connection
         logger.debug('Connected')
+        self.user_by_dn = {}
 
-    def load_users_and_groups(self, groups, extended_attributes):
+    def load_users_and_groups(self, groups, extended_attributes, all_users):
         """
         :type groups: list(str)
         :type extended_attributes: list(str)
+        :type all_users: bool
         :rtype (bool, iterable(dict))
         """
         options = self.options
         all_users_filter = options['all_users_filter']
+        group_member_filter_format = options['group_member_filter_format']
 
-        self.user_by_dn = user_by_dn = {}
-        self.user_by_uid = user_by_uid = {}
-        for user_dn, user in self.iter_users(all_users_filter, extended_attributes):
-            uid = user.get('uid')
-            if uid is not None:
-                user_by_uid[uid] = user
-            user_by_dn[user_dn] = user
-
-        self.logger.debug('Total users loaded: %d', len(user_by_dn))
-
+        # for each group that's required, do one search for the users of that group
         for group in groups:
-            total_group_members = 0
-            total_group_users = 0
-            group_members = self.iter_ldap_group_members(group)
-            for group_member_attribute, group_member in group_members:
-                total_group_members += 1
-                if group_member_attribute == self.group_member_uid_attribute:
-                    user = user_by_uid.get(group_member)
+            group_dn = self.find_ldap_group_dn(group)
+            if not group_dn:
+                self.logger.warning("No group found for: %s", group)
+                continue
+            group_member_subfilter = group_member_filter_format.format(group_dn=group_dn)
+            if not group_member_subfilter.startswith("("):
+                group_member_subfilter = '(' + group_member_subfilter + ')'
+            user_subfilter = all_users_filter
+            if not user_subfilter.startswith("("):
+                user_subfilter = '(' + user_subfilter + ')'
+            group_user_filter = '(&' + group_member_subfilter + user_subfilter + ')'
+            group_users = 0
+            for user_dn, user in self.iter_users(group_user_filter, extended_attributes):
+                user['groups'].append(group)
+                group_users += 1
+            self.logger.debug('Count of users in group "%s": %d', group, group_users)
+
+        # if all users are requested, do an additional search for all of them
+        if all_users:
+            ungrouped_users = 0
+            grouped_users = 0
+            for user_dn, user in self.iter_users(all_users_filter, extended_attributes):
+                if not user['groups']:
+                    ungrouped_users += 1
                 else:
-                    user = user_by_dn.get(group_member)
-                if user is not None:
-                    total_group_users += 1
-                    user_groups = user['groups']
-                    if group not in user_groups:
-                        user_groups.append(group)
-            self.logger.debug('Group %s members: %d users: %d', group, total_group_members, total_group_users)
+                    grouped_users += 1
+            self.logger.debug('Count of users in any groups: %d', grouped_users)
+            self.logger.debug('Count of users not in any groups: %d', ungrouped_users)
 
-        return user_by_dn.itervalues()
+        self.logger.debug('Total users loaded: %d', len(self.user_by_dn))
+        return self.user_by_dn.itervalues()
 
-    def find_ldap_group(self, group, attribute_list=None):
+    def find_ldap_group_dn(self, group):
         """
         :type group: str
-        :type attribute_list: list(str)
-        :rtype (str, dict)
+        :rtype str
         """
-
         connection = self.connection
         options = self.options
         base_dn = options['base_dn']
         group_filter_format = options['group_filter_format']
-
-        res = connection.search_s(
-            base_dn,
-            ldap.SCOPE_SUBTREE,
-            filterstr=group_filter_format.format(group=group),
-            attrlist=attribute_list
-        )
-
-        group_tuple = None
+        res = connection.search_s(base_dn, ldap.SCOPE_SUBTREE,
+                                  filterstr=group_filter_format.format(group=group), attrsonly=1)
+        group_dn = None
         for current_tuple in res:
-            if current_tuple[0] is not None:
-                if group_tuple is not None:
+            if current_tuple[0]:
+                if group_dn:
                     raise AssertionException("Multiple LDAP groups found for: %s" % group)
-                group_tuple = current_tuple
-
-        return group_tuple
-
-    def iter_attribute_values(self, dn, attribute_name, attributes=None):
-        """
-        :type dn: str
-        :type attribute_name: str
-        :type attributes: dict(str, list)
-        :rtype iterator
-        """
-
-        connection = self.connection
-
-        msgid = None
-        if attributes is None:
-            msgid = connection.search(dn, ldap.SCOPE_BASE, attrlist=[attribute_name])
-
-        while True:
-            if msgid is not None:
-                result_type, result_response = connection.result(msgid)
-                msgid = None
-                if result_type in self.expected_result_types and len(result_response) > 0:
-                    current_tuple = result_response[0]
-                    if current_tuple[0] is not None:
-                        attributes = current_tuple[1]
-            if attributes is None:
-                break
-
-            for current_attribute_name, current_attribute_values in attributes.iteritems():
-                current_attribute_name_parts = current_attribute_name.split(';')
-                if current_attribute_name_parts[0] == attribute_name:
-                    if len(current_attribute_name_parts) > 1:
-                        upper_bound = self.get_range_upper_bound(current_attribute_name_parts[1])
-                        if upper_bound is not None and upper_bound != '*':
-                            next_attribute_name = "%s;range=%s-*" % (attribute_name, str(int(upper_bound) + 1))
-                            msgid = connection.search(dn, ldap.SCOPE_BASE, attrlist=[next_attribute_name])
-                    for current_attribute_value in current_attribute_values:
-                        try:
-                            yield current_attribute_value
-                        except GeneratorExit:
-                            if msgid is not None:
-                                connection.abandon(msgid)
-                            raise
-            attributes = None
-
-    def get_range_upper_bound(self, range_statement):
-        result = None
-        if range_statement is not None:
-            statement_parts = range_statement.split('=')
-            if statement_parts[0] == 'range' and len(statement_parts) > 1:
-                range_parts = statement_parts[1].split('-')
-                if len(range_parts) > 1:
-                    result = range_parts[1]
-        return result
-
-    def iter_ldap_group_members(self, group):
-        """
-        :type group: str
-        :rtype iterator(str, str)
-        """
-        attributes = [self.group_member_attribute, self.group_member_uid_attribute]
-        group_tuple = self.find_ldap_group(group, attributes)
-        if group_tuple is None:
-            self.logger.warning("No group found for: %s", group)
-        else:
-            group_dn, group_attributes = group_tuple
-            for attribute in attributes:
-                attribute_values = self.iter_attribute_values(group_dn, attribute, group_attributes)
-                for attribute_value in attribute_values:
-                    yield (attribute, attribute_value)
+                group_dn = current_tuple[0]
+        return group_dn
 
     def iter_users(self, users_filter, extended_attributes):
         options = self.options
         base_dn = options['base_dn']
 
-        user_attribute_names = ["givenName", "sn", "c", "uid"]
+        user_attribute_names = ['givenName', 'sn', 'c']
         user_attribute_names.extend(self.user_identity_type_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
@@ -266,6 +197,9 @@ class LDAPDirectoryConnector(object):
         result_iter = self.iter_search_result(base_dn, ldap.SCOPE_SUBTREE, users_filter, user_attribute_names)
         for dn, record in result_iter:
             if dn is None:
+                continue
+            if dn in self.user_by_dn:
+                yield (dn, self.user_by_dn[dn])
                 continue
 
             email, last_attribute_name = self.user_email_formatter.generate_value(record)
@@ -338,6 +272,9 @@ class LDAPDirectoryConnector(object):
                     source_attributes[extended_attribute] = extended_attribute_value
 
             user['source_attributes'] = source_attributes.copy()
+            if 'groups' not in user:
+                user['groups'] = []
+            self.user_by_dn[dn] = user
 
             yield (dn, user)
 

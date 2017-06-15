@@ -59,14 +59,25 @@ require_tls_cert: False
 all_users_filter: "(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
 
 # (optional) group_filter_format (default value given below)
-# group_filter_format specifies the format string used to construct a group query,
-# as needed by the --users groups or --users mapped command-line arguments.
+# group_filter_format specifies the format string used to get the distinguished
+# name of a group given its common name (as specified in the directory to Adobe
+# group mapping, or in the --users group "name1,name2" command-line argument).
 # {group} is replaced with the name of the group to find.  The default value here is
 # complex, because it's meant to work for both AD-style and OpenLDAP-style directories.
 # You will likely want to replace it with a simpler query customized for your directory,
 # such as this one for Active Directory: "(&(objectCategory=group)(cn={group}))"
 # or this one for OpenLDAP: "(&(|(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
 group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
+
+# (optional) group_member_filter_format (default value given below)
+# group_users_filter specifies the query used to find all members of a group,
+# where the string {group_dn} is replaced with the group distinguished name.
+# The default value just finds users who are immediate members of the group,
+# not those who are "indirectly" members by virtue of membership in a group
+# that is contained in the group.  If you want indirect containment, then
+# use this value instead of the default:
+# group_member_filter_format: "(memberOf:1.2.840.113556.1.4.1941:={group_dn})"
+group_member_filter_format: "(memberOf={group_dn})"
 
 # (optional) string_encoding (default value given below)
 # string_encoding specifies the Unicode string encoding used by the directory.

@@ -286,10 +286,12 @@ class RuleProcessor(object):
         directory_user_by_user_key = self.directory_user_by_user_key
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
 
-        directory_groups = set(mappings.iterkeys())
+        directory_groups = set(mappings.iterkeys()) if self.will_manage_groups() else set()
         if directory_group_filter is not None:
             directory_groups.update(directory_group_filter)
-        directory_users = directory_connector.load_users_and_groups(directory_groups, extended_attributes)
+        directory_users = directory_connector.load_users_and_groups(groups=directory_groups,
+                                                                    extended_attributes=extended_attributes,
+                                                                    all_users=directory_group_filter is None)
 
         for directory_user in directory_users:
             user_key = self.get_directory_user_key(directory_user)
@@ -879,6 +881,7 @@ class RuleProcessor(object):
         :param email: (optional) email of the user
         :param id_type: (required) id_type of the user
         :return: string "id_type,username,domain" (or None)
+        :rtype: str
         """
         id_type = user_sync.identity_type.parse_identity_type(id_type)
         email = normalize_string(email) if email else None
@@ -1134,7 +1137,7 @@ class UmapiTargetInfo(object):
     def add_desired_group_for(self, user_key, group):
         """
         :type user_key: str
-        :type group: str
+        :type group: Optional(str)
         """
         desired_groups = self.get_desired_groups(user_key)
         if desired_groups is None:
