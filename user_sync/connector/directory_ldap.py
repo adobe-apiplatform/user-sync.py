@@ -112,7 +112,7 @@ class LDAPDirectoryConnector(object):
             connection.set_option(ldap.OPT_REFERRALS, 0)
             connection.simple_bind_s(username, password)
         except Exception as e:
-            raise AssertionException('LDAP connection failure: ' + repr(e))
+            raise AssertionException('LDAP connection failure: %s' % e)
         self.connection = connection
         logger.debug('Connected')
         self.user_by_dn = {}
@@ -142,22 +142,28 @@ class LDAPDirectoryConnector(object):
                 user_subfilter = '(' + user_subfilter + ')'
             group_user_filter = '(&' + group_member_subfilter + user_subfilter + ')'
             group_users = 0
-            for user_dn, user in self.iter_users(group_user_filter, extended_attributes):
-                user['groups'].append(group)
-                group_users += 1
-            self.logger.debug('Count of users in group "%s": %d', group, group_users)
+            try:
+                for user_dn, user in self.iter_users(group_user_filter, extended_attributes):
+                    user['groups'].append(group)
+                    group_users += 1
+                self.logger.debug('Count of users in group "%s": %d', group, group_users)
+            except Exception as e:
+                raise AssertionException('Unexpected LDAP failure reading group members: %s' % e)
 
         # if all users are requested, do an additional search for all of them
         if all_users:
             ungrouped_users = 0
             grouped_users = 0
-            for user_dn, user in self.iter_users(all_users_filter, extended_attributes):
-                if not user['groups']:
-                    ungrouped_users += 1
-                else:
-                    grouped_users += 1
-            self.logger.debug('Count of users in any groups: %d', grouped_users)
-            self.logger.debug('Count of users not in any groups: %d', ungrouped_users)
+            try:
+                for user_dn, user in self.iter_users(all_users_filter, extended_attributes):
+                    if not user['groups']:
+                        ungrouped_users += 1
+                    else:
+                        grouped_users += 1
+                self.logger.debug('Count of users in any groups: %d', grouped_users)
+                self.logger.debug('Count of users not in any groups: %d', ungrouped_users)
+            except Exception as e:
+                raise AssertionException('Unexpected LDAP failure reading all users: %s' % e)
 
         self.logger.debug('Total users loaded: %d', len(self.user_by_dn))
         return self.user_by_dn.itervalues()
@@ -171,8 +177,11 @@ class LDAPDirectoryConnector(object):
         options = self.options
         base_dn = options['base_dn']
         group_filter_format = options['group_filter_format']
-        res = connection.search_s(base_dn, ldap.SCOPE_SUBTREE,
-                                  filterstr=group_filter_format.format(group=group), attrsonly=1)
+        try:
+            res = connection.search_s(base_dn, ldap.SCOPE_SUBTREE,
+                                      filterstr=group_filter_format.format(group=group), attrsonly=1)
+        except Exception as e:
+            raise AssertionException('Unexpected LDAP failure reading group info: %s' % e)
         group_dn = None
         for current_tuple in res:
             if current_tuple[0]:
