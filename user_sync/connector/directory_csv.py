@@ -39,17 +39,16 @@ def connector_initialize(options):
     return state
 
 
-def connector_load_users_and_groups(state, groups, extended_attributes):
+def connector_load_users_and_groups(state, groups=None, extended_attributes=None, all_users=True):
     """
     :type state: CSVDirectoryConnector
-    :type groups: list(str)
-    :type extended_attributes: list(str)
+    :type groups: Optional(list(str))
+    :type extended_attributes: Optional(list(str))
+    :type all_users: bool
     :rtype (bool, iterable(dict))
     """
-
-    # CSV supports arbitrary aka "extended" attrs by default,
-    # so the value of extended_attributes has no impact on this particular connector
-    return state.load_users_and_groups(groups, extended_attributes)
+    # CSV always reads all users, so we don't bother passing the all_users parameter into the implementation
+    return state.load_users_and_groups(groups or [], extended_attributes or [])
 
 
 class CSVDirectoryConnector(object):

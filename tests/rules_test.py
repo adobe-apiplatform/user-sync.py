@@ -40,21 +40,21 @@ class RulesTest(unittest.TestCase):
             directory_group_1: [user_sync.rules.AdobeGroup(primary_group_11, primary_umapi_name), user_sync.rules.AdobeGroup('acrobat12', secondary_1_umapi_name)],
             directory_group_2: [user_sync.rules.AdobeGroup(primary_group_21, primary_umapi_name)]
         }
-        all_users = [tests.helper.create_test_user([directory_group_1]), 
+        everybody = [tests.helper.create_test_user([directory_group_1]),
             tests.helper.create_test_user([directory_group_2]),
             tests.helper.create_test_user([])]
         
-        for user in all_users:
+        for user in everybody:
             user['username'] = user['email']
             user['domain'] = None
             
         primary_users = []
-        primary_user_1 = all_users[1].copy()
+        primary_user_1 = everybody[1].copy()
         primary_user_1['groups'] = [primary_group_11]
         primary_users.append(primary_user_1)
         
-        def mock_load_users_and_groups(groups, extended_attributes=None):
-            return list(all_users)
+        def mock_load_users_and_groups(groups=None, extended_attributes=None, all_users=True):
+            return list(everybody)
         mock_directory_connector = mock.mock.create_autospec(user_sync.connector.directory.DirectoryConnector)
         mock_directory_connector.load_users_and_groups = mock_load_users_and_groups
         
@@ -75,25 +75,25 @@ class RulesTest(unittest.TestCase):
 
         expected_primary_commands_list = []
         
-        user = all_users[1]
+        user = everybody[1]
         commands = tests.helper.create_umapi_commands(user)
         commands.add_groups(set([primary_group_21]))
         commands.remove_groups(set([primary_group_11]))
         expected_primary_commands_list.append(commands)
         
-        user = all_users[0]
+        user = everybody[0]
         commands = tests.helper.create_umapi_commands(user)
         commands.add_user(self.create_user_attributes_for_commands(user, rule_options['update_user_info']))
         commands.add_groups(set([primary_group_11]))
         expected_primary_commands_list.append(commands)
         
-        user = all_users[2]
+        user = everybody[2]
         commands = tests.helper.create_umapi_commands(user)
         commands.add_user(self.create_user_attributes_for_commands(user, rule_options['update_user_info']))
         expected_primary_commands_list.append(commands)
                 
         expected_secondary_commands_list = []
-        user = all_users[0]
+        user = everybody[0]
         commands = tests.helper.create_umapi_commands(user)
         commands.add_groups(set([primary_group_12]))
         expected_secondary_commands_list.append(commands)
