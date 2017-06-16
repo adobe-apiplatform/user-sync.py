@@ -26,7 +26,7 @@ La herramienta User Sync independiente de la nube (CC, CE, DC) sirve como un cat
 
 Cuando se ejecuta User Sync, recupera una lista de usuarios de Active Directory de la organización (u otra fuente de datos) y la compara con la lista de los usuarios de la Admin Console. A continuación, llama a la API de gestión de usuarios de Adobe para que la Admin Console se sincronice con el directorio de la organización. El flujo de cambios es totalmente unidireccional; los cambios realizados en la Admin Console no se expulsan del directorio.
 
-Las herramientas permiten que el administrador del sistema asigne grupos de usuarios en el directorio del cliente con la configuración de producto y grupos de usuarios en la Admin Console
+Las herramientas permiten que el administrador del sistema asigne grupos de usuarios en el directorio del cliente con la configuración de producto y grupos de usuarios en la Admin Console.
 
 Para configurar User Sync, la organización debe crear un conjunto de credenciales de la misma forma que lo haría para utilizar la API de administración de usuarios.
  

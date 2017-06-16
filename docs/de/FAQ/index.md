@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Häufige gestellte Fragen zur Benutzersynchronisation
+title: Häufige Fragen zur Benutzersynchronisation
 advertise: Häufige Fragen
 lang: de
 nav_link: Häufige Fragen
@@ -80,11 +80,11 @@ Für alle Typen von IDs (Adobe, Enterprise und Federated) unterstützt das Benut
 
 ### Ist das Benutzer-Synchronisationstool auf ein bestimmtes Betriebssystem ausgelegt?
 
-Das Benutzer-Synchronisationstool ist ein Open-Source-Python-Projekt, das Benutzer für das gewünschte Betriebssystem erstellen können. Wir stellen Builds für die Plattformen Windows, OS X, Ubuntu und Cent OS 7 bereit.
+Das Benutzer-Synchronisationstool ist ein Open-Source-Python-Projekt, das Benutzer für das gewünschte Betriebssystem erstellen können. Wir stellen Builds für die Plattformen Windows, OS X, Ubuntu und CentOS 7 bereit.
 
 ### Wurde dies unter Python 3.5 getestet?
 
-Die Benutzersynchronisation wurde erfolgreich unter Python 3.x ausgeführt. Der Großteil unserer Verwendung und der Tests erfolgte jedoch für Python 2.7. Daher stellen Sie möglicherweise Probleme fest und wir stellen nur Builds für Python 2.7 bereit. Probleme (und mögliche Behebungen) können Sie jederzeit melden auf der Open-Source-Website unter https://github.com/adobe-apiplatform/user-sync.py.
+Die Benutzersynchronisation wurde erfolgreich unter Python 3.x ausgeführt. Der Großteil unserer Verwendung und der Tests erfolgte jedoch für Python 2.7. Daher stellen Sie möglicherweise Probleme fest und wir stellen nur Builds für Python 2.7 bereit. Probleme (und mögliche Behebungen) können Sie jederzeit auf der Open-Source-Website unter https://github.com/adobe-apiplatform/user-sync.py melden.
 
 ### Wenn Änderungen in der API auftreten (z. B. ein neues Feld beim Erstellen von Benutzern), wie werden die Aktualisierungen auf das Benutzer-Synchronisationstool angewendet?
 
@@ -98,7 +98,7 @@ Im Allgemeinen ist dies nicht der Fall. Die Benutzersynchronisation stellt ledig
 
 Als Netzwerkclient erfordert die Benutzersynchronisation jedoch ausgehenden SSL-Zugriff (Port 443) über Firewalls des Kundennetzwerks, damit Verbindungen mit den Adobe-Servern hergestellt werden können. Zudem müssen Kundennetzwerke der Benutzersynchronisation (sofern derart konfiguriert) das Herstellen von Verbindungen mit dem LDAP/AD-Server des Kunden an dem Port erlauben, der in der Konfiguration des Benutzer-Synchronisationstools angegeben ist (in der Standardeinstellung Port 389).
 
-### Stellt das Benutzer-Synchronisationstool einen Teil des Adobe-Angebots für EVIP-Kunden dar?
+### Stellt das Benutzer-Synchronisationstool einen Teil des Adobe-Angebots für E-VIP-Kunden dar?
  
 Ja, alle Unternehmenskunden haben Zugriff auf die UMAPI und die Benutzersynchronisation, ungeachtet ihres Kaufprogramms (E-VIP, ETLA oder Enterprise Agreement).
  
@@ -107,6 +107,6 @@ Ja, alle Unternehmenskunden haben Zugriff auf die UMAPI und die Benutzersynchron
 Python 2.7 (die Sprache, in der das Tool geschrieben ist) unterscheidet zwischen „str“ (8-Bit-Zeichenfolgen) und „unicode“ (8-Bit-Zeichenfolgen mit erzwungener UTF-8-Codierung) und im Code des Benutzer-Synchronisationstools wird durchgehend „str“ und nicht „unicode“ verwendet. Sämtliche Ausgaben des Tools sind jedoch UTF-8-codiert, und wenn die Eingaben UTF-8-codiert sind, sollten keine Probleme auftreten. Dies wurde oberflächlich getestet, wobei keine Probleme festgestellt wurden – weitere Tests sind geplant.
 
 Wir planen eine Erweiterung, um die Ausführung des Tools sowohl in Python 3 als auch in Python 2 zu ermöglichen. 
-Derzeit können wir sicher sein, dass mit Unicode keinerlei Probleme auftreten werden, da die Typen in Python 3 zusammengeführt werden. Kunden, für die dies relevant ist, sollten ihre Build-Vorgänge mit Python 3 ausführen.
+Derzeit können wir sicher sein, dass mit Unicode keinerlei Probleme auftreten werden, da die Typen in Python 3 zusammengeführt werden. Kunden, für die dies relevant ist, sollten einen Build für Python 3 erstellen.
  
  

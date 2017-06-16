@@ -24,7 +24,7 @@ nav_order: 70
 User Sync est conçu pour fonctionner avec peu d’interaction humaine (voire aucune), lorsqu’il est configuré correctement. Vous pouvez utiliser un planificateur dans votre environnement pour exécuter l’outil à la fréquence qui vous convient.
 
 - Les premières exécutions de l’outil User Sync peuvent prendre du temps, en fonction du nombre d’utilisateurs devant être ajoutés au portail Adobe Admin Console. Nous vous recommandons d’effectuer ces exécutions initiales manuellement, avant de configurer l’outil pour une exécution en tant que tâche planifiée, afin d’éviter d’avoir plusieurs instances actives en même temps.
-- Les exécutions suivantes sont généralement plus rapides, car elles doivent uniquement mettre à jour les données utilisateur si nécessaire. La fréquence à laquelle vous choisissez d’exécuter User Sync’utilisateur dépend de la fréquence à laquelle votre annuaire d’entreprise change, et de la rapidité avec laquelle vous souhaitez que les changements soient répercutés dans les systèmes Adobe.
+- Les exécutions suivantes sont généralement plus rapides, car elles doivent uniquement mettre à jour les données utilisateur si nécessaire. La fréquence à laquelle vous choisissez d’exécuter User Sync dépend de la fréquence à laquelle votre annuaire d’entreprise change, et de la rapidité avec laquelle vous souhaitez que les changements soient répercutés dans les systèmes Adobe.
 - Il est déconseillé d’exécuter User Sync plus que toutes les 2 heures.
 
 ## Recommandations de sécurité
@@ -76,6 +76,7 @@ Les identifiants de connexion sont stockés dans le référentiel sécurisé sou
 |Windows | Service d’archivage sécurisé des identifiants de connexion Windows |
 | Mac OS X | Keychain |
 | Linux | Service Secret Freedesktop ou KWallet |
+{: .bordertablestyle }
 
 Sous Linux, l’application de stockage sécurisé est installée et configurée par le fournisseur du système d’exploitation.
 

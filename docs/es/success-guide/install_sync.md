@@ -10,7 +10,7 @@ nav_order: 270
 
 [Sección anterior](identify_server.md) \| [Regresar al contenido](index.md) \| [Sección siguiente](setup_config_files.md)
 
-Una vez que tenga acceso al servidor donde se ejecutará User Sync, elija un directorio donde se instalará y operará User Sync
+Una vez que tenga acceso al servidor donde se ejecutará User Sync, elija un directorio donde se instalará y operará User Sync.
 
 En Windows, deberá instalar Python.  A partir de este documento, se recomienda la versión 2.7.13.  Windows y Python deben ser versiones de 64 bits.
 
@@ -26,7 +26,7 @@ Primeros pasos:
 
 Las siguientes secciones muestran el proceso de instalación.
 
-Para encontrar la versión más reciente: Empiece aquí: 
+Para encontrar la versión más reciente, empiece aquí: 
 [https://github.com/adobe-apiplatform/user-sync.py](https://github.com/adobe-apiplatform/user-sync.py "https://github.com/adobe-apiplatform/user-sync.py")
 
 ![instalación](images/install_finding_releases.png)

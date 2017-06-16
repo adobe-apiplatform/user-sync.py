@@ -287,13 +287,18 @@ class RuleProcessor(object):
         directory_user_by_user_key = self.directory_user_by_user_key
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
 
-        directory_groups = set(six.iterkeys(mappings))
+        directory_groups = set(six.iterkeys(mappings)) if self.will_manage_groups() else set()
         if directory_group_filter is not None:
             directory_groups.update(directory_group_filter)
-        directory_users = directory_connector.load_users_and_groups(directory_groups, extended_attributes)
+        directory_users = directory_connector.load_users_and_groups(groups=directory_groups,
+                                                                    extended_attributes=extended_attributes,
+                                                                    all_users=directory_group_filter is None)
 
         for directory_user in directory_users:
             user_key = self.get_directory_user_key(directory_user)
+            if not user_key:
+                self.logger.warning("Ignoring directory user with empty user key: %s", directory_user)
+                continue
             directory_user_by_user_key[user_key] = directory_user
 
             if not self.is_directory_user_in_groups(directory_user, directory_group_filter):
@@ -710,6 +715,9 @@ class RuleProcessor(object):
         for umapi_user in umapi_connector.iter_users():
             # get the basic data about this user; initialize change markers to "no change"
             user_key = self.get_umapi_user_key(umapi_user)
+            if not user_key:
+                self.logger.warning("Ignoring umapi user with empty user key: %s", umapi_user)
+                continue
             umapi_info.add_umapi_user(user_key, umapi_user)
             attribute_differences = {}
             current_groups = self.normalize_groups(umapi_user.get('groups'))
@@ -880,6 +888,7 @@ class RuleProcessor(object):
         :param email: (optional) email of the user
         :param id_type: (required) id_type of the user
         :return: string "id_type,username,domain" (or None)
+        :rtype: str
         """
         id_type = user_sync.identity_type.parse_identity_type(id_type)
         email = normalize_string(email) if email else None
@@ -1135,7 +1144,7 @@ class UmapiTargetInfo(object):
     def add_desired_group_for(self, user_key, group):
         """
         :type user_key: str
-        :type group: str
+        :type group: Optional(str)
         """
         desired_groups = self.get_desired_groups(user_key)
         if desired_groups is None:
@@ -1153,7 +1162,7 @@ class UmapiTargetInfo(object):
 
     def iter_umapi_users(self):
         return six.iteritems(self.umapi_user_by_user_key)
-    
+
     def get_umapi_user(self, user_key):
         """
         :type user_key: str

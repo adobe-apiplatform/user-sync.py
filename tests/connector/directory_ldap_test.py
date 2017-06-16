@@ -1,27 +1,20 @@
-import mock.mock
 import re
-import six
 import unittest
 
+import mock.mock
+
+import tests.helper
 import user_sync.connector.directory
 import user_sync.connector.directory_ldap
-import tests.helper
+
 
 class LDAPDirectoryTest(unittest.TestCase):
 
     def test_normal(self):
-        user1 = tests.helper.create_test_user(['Acrobat1', 'Acrobat2'])
-        user2 = tests.helper.create_test_user(['Acrobat3'])
+        user1 = tests.helper.create_test_user([])
+        user2 = tests.helper.create_test_user([])
         user3 = tests.helper.create_test_user([])
         all_users = [user1, user2, user3]
-
-        users_by_group = {}
-        for user in all_users:
-            for group in user['groups']:
-                users_with_same_group = users_by_group.get(group)
-                if (users_with_same_group == None):
-                    users_by_group[group] = users_with_same_group = []
-                users_with_same_group.append(user)
 
         ldap_options = {
             'host': 'test_host', 
@@ -44,19 +37,8 @@ class LDAPDirectoryTest(unittest.TestCase):
         def mock_search_s(*args, **kwargs):
             search_result = re.search('cn=(.*?)\)', kwargs['filterstr'])            
             group_name = search_result.group(1)
-            users = users_by_group.get(group_name, [])
-            return [(group_name, {
-                'member': [user['firstname'] for user in users if group_name in user['groups']]
-            })]
+            return [(group_name, {})]
 
-        def mock_result(*args, **kwargs):
-            rtype = ldap.RES_SEARCH_RESULT
-            rdata = []
-            return rtype, rdata
-
-        def mock_search(*args, **kwargs):
-            return kwargs['filterstr']
-    
         def mock_search_ext(*args, **kwargs):
             return kwargs['filterstr']
     
@@ -77,12 +59,10 @@ class LDAPDirectoryTest(unittest.TestCase):
         connection.search_s = mock_search_s
         connection.search_ext = mock_search_ext
         connection.result3 = mock_result3
-        connection.search = mock_search
-        connection.result = mock_result
 
         directory_connector = user_sync.connector.directory.DirectoryConnector(user_sync.connector.directory_ldap)
         directory_connector.initialize(ldap_options)
  
-        actual_users = directory_connector.load_users_and_groups(six.iterkeys(users_by_group)
+        actual_users = directory_connector.load_users_and_groups(None)
 
         tests.helper.assert_equal_users(self, all_users, actual_users)

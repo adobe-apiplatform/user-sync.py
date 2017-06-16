@@ -36,9 +36,9 @@ Si las licencias de una organización se utilizan por los usuarios en la otra or
 
 Necesitará:
 
-- &#9744; Acceso de administrador a cada una de las organizaciones de Adobe
+- &#9744; Acceso de administrador a cada una de las organizaciones de Adobe.
 
-- &#9744; La consulta LDAP para cada conjunto de usuarios
+- &#9744; La consulta LDAP para cada conjunto de usuarios.
 
 -  Estar preparado para configurar varias instalaciones de User Sync más adelante.
 
@@ -51,7 +51,7 @@ Necesitará:
 
 ## Directorio y organización múltiples
 
-Esto son, básicamente, dos instancias de todo. Tendrá que ejecutar dos configuraciones de sincronización, una para cada directorio y organización
+Esto son, básicamente, dos instancias de todo. Tendrá que ejecutar dos configuraciones de sincronización, una para cada directorio y organización.
 
 Si las licencias de una organización se utilizan por los usuarios en la otra organización, la configuración será más compleja.
 
@@ -62,9 +62,9 @@ Si las licencias de una organización se utilizan por los usuarios en la otra or
 
 Necesitará:
 
-- &#9744; Acceso de administrador a cada una de las organizaciones de Adobe
+- &#9744; Acceso de administrador a cada una de las organizaciones de Adobe.
 
-- &#9744; La consulta LDAP para cada conjunto de usuarios
+- &#9744; La consulta LDAP para cada conjunto de usuarios.
 
 -  Estar preparado para configurar varias instalaciones de User Sync más adelante.
 
@@ -85,9 +85,9 @@ Cuando se configura de esta manera, User Sync no puede eliminar los usuarios. Es
 
 Necesitará:
 
-- &#9744; Acceso de administrador a la organización de Adobe
+- &#9744; Acceso de administrador a la organización de Adobe.
 
-- &#9744; La consulta LDAP para cada conjunto de usuarios
+- &#9744; La consulta LDAP para cada conjunto de usuarios.
 
 -  Estar preparado para configurar varias instalaciones de User Sync más adelante.
 

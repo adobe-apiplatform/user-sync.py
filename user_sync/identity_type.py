@@ -34,8 +34,8 @@ NORMALIZED_IDENTITY_TYPE_MAP = {
 
 def parse_identity_type(value, message_format=None):
     """
-    :type value: str
-    :type message_format: str
+    :type value: basestring
+    :type message_format: basestring
     :rtype str
     """
     result = None

@@ -359,6 +359,11 @@ def main():
         if not e.is_reported():
             logger.critical(e.message)
             e.set_reported()
+    except KeyboardInterrupt:
+        try:
+            logger.critical('Keyboard interrupt, exiting immediately.')
+        except:
+            pass
     except:
         try:
             logger.error('Unhandled exception', exc_info=sys.exc_info())

@@ -62,7 +62,7 @@ En règle générale, une entreprise exécute l’outil en tant que tâche plani
 
 L’outil offre également des options pour d’autres workflows. Vous pouvez choisir de mettre à jour uniquement les informations utilisateur, par exemple, et de gérer les appartenances aux groupes pour l’accès aux produits directement dans Adobe Admin Console. Vous pouvez décider de mettre à jour tous les utilisateurs, ou uniquement des sous-ensembles spécifiques d’utilisateurs. En outre, vous pouvez séparer les tâches d’ajout et de mise à jour des informations de la tâche de retrait des utilisateurs ou des appartenances. Il existe plusieurs options pour gérer la tâche de retrait.
 
-Pour plus d’informations sur les modèles d’utilisation et la façon de les appliquer, reportez-vous à la section [Scénarios d’utilisation](usage_scenarios.md#scénarios-d-utilisation) ci-dessous.
+Pour plus d’informations sur les modèles d’utilisation et la façon de les appliquer, reportez-vous à la section [Scénarios d’utilisation](usage_scenarios.md#scénarios-d-utilisation) ci-après.
 
 ---
 

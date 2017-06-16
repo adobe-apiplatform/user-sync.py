@@ -38,7 +38,7 @@ Si vous souhaitez utiliser l’outil de cette façon, vous devez mapper les grou
 
 ### Vérification de vos produits et de vos configurations de produits
 
-Avant de commencer à configurer User Sync, vous devez savoir quels produits Adobe votre entreprise utilise, et quels configurations de produits et groupes d’utilisateurs sont définis dans le système Adobe de gestion des utilisateurs. Pour en savoir plus, consultez la page d’aide [Configuration des services d’entreprise](https://helpx.adobe.com/fr/enterprise/help/configure-services.html#configure_services_for_group).
+Avant de commencer à configurer User Sync, vous devez savoir quels produits Adobe votre entreprise utilise, et quelles configurations de produits et quels groupes d’utilisateurs sont définis dans le système Adobe de gestion des utilisateurs. Pour en savoir plus, consultez la page d’aide [Configuration des services d’entreprise](https://helpx.adobe.com/fr/enterprise/help/configure-services.html#configure_services_for_group).
 
 Si vous n’avez pas encore de configurations de produits, vous pouvez utiliser Admin Console pour les créer. Vous devez disposer de quelques configurations de produits, et les groupes correspondants doivent figurer dans l’annuaire d’entreprise, pour pouvoir configurer User Sync de manière à mettre à jour les informations sur les droits de vos utilisateurs.
 
@@ -81,7 +81,7 @@ L’outil User Sync est disponible à partir du [référentiel User Sync sur Git
 3. Recherchez le fichier exécutable Python (`user-sync` ou `user-sync.pex` pour Windows) et placez-le dans votre dossier User Sync.
 
 
-4. Téléchargez l’archive `example-configurations.tar.gz` d’exemples de fichiers de configuration. L’archive contient le dossier « config files – basic ». Les trois premiers fichiers de ce dossier sont nécessaires. Les autres fichiers du package sont facultatifs et/ou des versions secondaires destinées à des fins spécifiques. Vous pouvez les copier dans votre dossier racine, puis les renommer et les modifier afin d’établir vos propres fichiers de configuration. (Voir la section suivante, [Configuration de l’outil User Sync](configuring_user_sync_tool./md#configuration-de-l-outil-user-sync).).)
+4. Téléchargez l’archive `example-configurations.tar.gz` d’exemples de fichiers de configuration. L’archive contient le dossier « config files – basic ». Les trois premiers fichiers de ce dossier sont nécessaires. Les autres fichiers du package sont facultatifs et/ou des versions secondaires destinées à des fins spécifiques. Vous pouvez les copier dans votre dossier racine, puis les renommer et les modifier afin d’établir vos propres fichiers de configuration. (Voir la section suivante, [Configuration de l’outil User Sync](configuring_user_sync_tool./md#configuration-de-l-outil-user-sync).)
 
 
 5. **Sous Windows uniquement :**
@@ -111,7 +111,7 @@ Si vous laissez User Sync accéder à votre annuaire d’entreprise, il doit êt
 
 #### Fichiers de certificats
 
-Les fichiers qui contiennent les clés publiques et privées, en particulier les clés privées, contiennent des informations sensibles. Vous devez garder chaque clé privée en sécurité. Elle ne peut pas être récupérée, ni remplacée. Si vous la perdez ou si elle est compromise, vous devez supprimer le certificat correspondant de votre compte. Si nécessaire, vous devez créer et charger un nouveau certificat. Vous devez protéger ces fichiers au moins avec le même niveau de protection que pour un nom de compte et un mot de passe. Les bonnes pratiques consistent à stocker les fichiers de clés dans un système de gestion des identifiants ou d’utiliser la protection du système de fichiers, de sorte que seuls les utilisateurs autorisés puissent y avoir accès.
+Les fichiers qui contiennent les clés publiques et privées, en particulier les clés privées, contiennent des informations sensibles. Vous devez garder chaque clé privée en sécurité. Elle ne peut pas être récupérée, ni remplacée. Si vous la perdez ou si elle est compromise, vous devez supprimer le certificat correspondant de votre compte. Si nécessaire, vous devez créer et charger un nouveau certificat. Vous devez protéger ces fichiers au moins avec le même niveau de protection que pour un nom de compte et un mot de passe. Les bonnes pratiques consistent à stocker les fichiers de clés dans un système de gestion des identifiants ou à utiliser la protection du système de fichiers, de sorte que seuls les utilisateurs autorisés puissent y avoir accès.
 
 #### Fichiers journaux
 
