@@ -10,10 +10,13 @@
 # in order to enhance the readability of your file.
 
 # (optional) UMAPI server settings (defaults as shown)
-# These settings specify how to contact the Adobe servers which
+# The host and endpoint settings specify the Adobe endpoints which
 # host the UMAPI services and those which provide authorization.
-# You will never need to alter these settings unless you are provided
-# alternate values as part of a pilot program with Adobe.  It is
+# The timeout and retries settings control how much delay (in seconds)
+# can be tolerated in server responses, and also how many times a request
+# that fails due to server timeout or server throttling will be retried.
+# You will *never* need to alter these settings unless you are provided
+# alternate values by Adobe as part of a support engagement.  It is
 # highly recommended that you leave these values commented out
 # so that the default values are guaranteed to be used.
 server:
@@ -21,6 +24,8 @@ server:
   #endpoint: /v2/usermanagement
   #ims_host: ims-na1.adobelogin.com
   #ims_endpoint_jwt: /ims/exchange/jwt
+  #timeout: 120
+  #retries: 3
 
 # (required) enterprise organization settings
 # You must specify all five of these settings.  Consult the
