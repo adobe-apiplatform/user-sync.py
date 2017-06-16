@@ -10,7 +10,7 @@ nav_order: 130
 
 [Sección anterior](layout_orgs.md) \| [Regresar al contenido](index.md) \| [Sección siguiente](decide_deletion_policy.md)
 
-Las configuraciones de producto (PC) son estructuras similares a un grupo en el sistema de administración de usuarios de Adobe. Cada PC está asociada a un producto que haya adquirido. Los usuarios asignados a una PC se les concede acceso y obtienen una licencia para utilizar el producto correspondiente. (El usuario no recibe nada en este proceso que no sea una notificación opcional de que se le ha concedido acceso. La gestión de todas las licencias se controla por sistemas internos).
+Las configuraciones de producto (PC) son estructuras similares a un grupo en el sistema de administración de usuarios de Adobe. Cada PC está asociada a un producto que haya adquirido. A los usuarios asignados a una PC se les concede acceso y obtienen una licencia para utilizar el producto correspondiente. (El usuario no recibe nada en este proceso que no sea una notificación opcional de que se le ha concedido acceso. La gestión de todas las licencias se controla por sistemas internos.)
 
 Al crear una PC (que se realiza en la Admin Console de Adobe), puede añadir opciones personalizadas que determinen cómo los usuarios utilizarán el producto de Adobe específico.
 

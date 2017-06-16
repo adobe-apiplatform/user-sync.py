@@ -33,9 +33,9 @@ Angesichts der Art der Daten in den Konfigurations- und Protokolldateien sollte 
 
 Die Applikation sendet GET- und POST-Anforderungen von der User Management API an einen HTTPS-Endpunkt. Dabei werden JSON-Daten zum Darstellen der Änderungen erstellt, die in die Admin Console geschrieben werden müssen, und die Daten werden im Textkörper einer POST-Anforderung an die User Management API angefügt.
 
-Um die Verfügbarkeit der Backend-Benutzeridentitätssysteme von Adobe zu schützen, legt die User Management API Einschränkungen für den Clientzugriff auf die Daten fest. Es gelten Grenzwerte für die Anzahl der Aufrufe, die ein einzelner Client innerhalb eines bestimmten Zeitintervalls senden kann, und es gelten globale Grenzwerte für den Zugriff aller Clients innerhalb des angegebenen Zeitraums. Das Benutzer-Synchronisationstool implementiert Logik für Back-off und Wiederholung, damit das Skript nicht kontinuierlich die User Management API aufruft, wenn die Grenzwerte erreicht wurden. Es ist normal, dass Meldungen in der Konsole anzeigt werden, dass das Skript für eine kurze Zeit unterbrochen wird, bevor die Ausführung wiederholt wird.
+Um die Verfügbarkeit der Back-End-Benutzeridentitätssysteme von Adobe zu schützen, legt die User Management API Einschränkungen für den Clientzugriff auf die Daten fest. Es gelten Grenzwerte für die Anzahl der Aufrufe, die ein einzelner Client innerhalb eines bestimmten Zeitintervalls senden kann, und es gelten globale Grenzwerte für den Zugriff aller Clients innerhalb des angegebenen Zeitraums. Das Benutzer-Synchronisationstool implementiert Logik für Back-off und Wiederholung, damit das Skript nicht kontinuierlich die User Management API aufruft, wenn die Grenzwerte erreicht wurden. Es ist normal, dass Meldungen in der Konsole anzeigt werden, dass das Skript für eine kurze Zeit unterbrochen wird, bevor die Ausführung wiederholt wird.
 
-Bei Version 2.1 des Benutzer-Synchronisationstools sind zwei zusätzliche Verfahren zum Schutz von Anmeldeinformationen verfügbar. Beim ersten Verfahren wird der Anmeldeinformationsspeicher des Betriebssystems verwendet, um die Konfigurationswerte für die Anmeldeinformationen zu speichern. Beim zweiten Verfahren wird mit einem Mechanismus, den Sie bereitstellen müssen, die gesamte Konfigurationsdatei für umapi und/oder ldap gespeichert, die alle erforderlichen Anmeldeinformationen enthält. Diese Verfahren werden in den nächsten beiden Abschnitten beschrieben.
+Bei Version 2.1 des Benutzer-Synchronisationstools sind zwei zusätzliche Verfahren zum Schutz von Anmeldeinformationen verfügbar. Beim ersten Verfahren wird der Anmeldeinformationsspeicher des Betriebssystems verwendet, um die Konfigurationswerte für die Anmeldeinformationen zu speichern. Beim zweiten Verfahren wird mit einem Mechanismus, den Sie bereitstellen müssen, die gesamte Konfigurationsdatei für UMAPI und/oder LDAP gespeichert, die alle erforderlichen Anmeldeinformationen enthält. Diese Verfahren werden in den nächsten beiden Abschnitten beschrieben.
 
 ### Speichern von Anmeldeinformationen im Speicher auf Betriebssystemebene
 
@@ -76,6 +76,7 @@ Anmeldeinformationen werden im sicheren Speicher des zugrunde liegenden Betriebs
 |Windows | Windows-Tresor für Anmeldeinformationen |
 | Mac OS X | Schlüsselbund |
 | Linux | Freedesktop Secret Service oder KWallet |
+{: .bordertablestyle }
 
 Unter Linux wird die Applikation für sicheren Speicher vom Betriebssystemanbieter installiert und konfiguriert.
 
@@ -130,9 +131,9 @@ logging:
   console_log_level: info
 ```
 
-### Ausführen mit Protokollanalyse in Windows
+### Ausführen mit Protokollanalyse unter Windows
 
-Im folgenden Beispiel wird das Einrichten einer Batchdatei `run_sync.bat` in Windows veranschaulicht.
+Im folgenden Beispiel wird das Einrichten einer Batchdatei `run_sync.bat` unter Windows veranschaulicht.
 
 ```sh
 python C:\\...\\user-sync.pex --users file users-file.csv --process-groups | findstr /I "WARNING ERROR CRITICAL ---- ==== Number" > temp.file.txt
@@ -140,7 +141,7 @@ rem email the contents of temp.file.txt to the user sync administration
 sendmail -s “Adobe User Sync Report for today” UserSyncAdmins@example.com < temp.file.txt
 ```
 
-*HINWEIS*: In diesem Beispiel wird zwar die Verwendung von `sendmail` dargestellt, es gibt jedoch kein standardmäßiges E-Mail-Befehlszeilentool in Windows. Es sind verschiedene Tools erhältlich.
+*HINWEIS*: In diesem Beispiel wird zwar die Verwendung von `sendmail` dargestellt, es gibt jedoch kein standardmäßiges E-Mail-Befehlszeilentool unter Windows. Es sind verschiedene Tools erhältlich.
 
 ### Ausführen mit Protokollanalyse auf Unix-Plattformen
 

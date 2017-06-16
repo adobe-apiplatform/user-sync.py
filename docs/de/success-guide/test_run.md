@@ -44,7 +44,7 @@ Mit dem zweiten Befehl oben (mit der Option --process-groups) wird versucht, den
 
 	./user-sync --users all --user-filter bart@example.com --process-groups --adobe-only-user-action exclude
 
-&#9744; Überprüfen Sie als Nächsten in der Adobe Admin Console, ob der Benutzer angezeigt wird und die Gruppenmitgliedschaft hinzugefügt wurde.
+&#9744; Überprüfen Sie als Nächstes in der Adobe Admin Console, ob der Benutzer angezeigt wird und die Gruppenmitgliedschaft hinzugefügt wurde.
 
 &#9744; Führen Sie dann den gleichen Befehl erneut aus. Durch die Benutzersynchronisation sollte nicht versucht werden, den Benutzer nochmals zu erstellen und erneut Gruppen hinzuzufügen. Das Tool sollte erkennen, dass der Benutzer bereits vorhanden und Mitglied der Benutzergruppe oder Produktkonfiguration ist, und keine Aktion ausführen.
 

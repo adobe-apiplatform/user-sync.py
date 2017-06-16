@@ -76,6 +76,7 @@ LDAP アクセスパスワードは指定したキー名
 |Windows | Windows Credential Vault |
 | Mac OS X | Keychain |
 | Linux | Freedesktop Secret Service or KWallet |
+{: .bordertablestyle }
 
 Linux では、OS ベンダーによって安全なストレージアプリケーションがインストールおよび構成されているはずです。
 

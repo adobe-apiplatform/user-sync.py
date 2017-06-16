@@ -33,7 +33,7 @@ User Sync ツールをエンタープライズプロセスに統合するには�
 
 これは、最も一般的なタイプの呼び出しです。User Sync はエンタープライズ側で、ユーザーの情報およびグループメンバーシップの情報に対するすべての変更を見つけます。そしてユーザー、ユーザーグループ、製品構成メンバーシップを追加、アップデート、および取り除いてアドビ側を同期します。
 
-デフォルトでは、ID タイプが Enterprise ID または Federated ID のユーザーのみ作成される、取り除かれる、または User Sync によってグループメンバーシップが管理されます。なぜなら、一般に Adobe ID ユーザーはディレクトリ内で管理されないからです。ユーザーの組織がこのような仕組みになっている場合は、後述の「[説明](advanced_configuration.md#adobe-id-によるユーザーの管理)[詳細な構成](advanced_configuration.md#詳細な構成)」を参照してください。
+デフォルトでは、ID タイプが Enterprise ID または Federated ID のユーザーのみ作成される、取り除かれる、または User Sync によってグループメンバーシップが管理されます。なぜなら、一般に Adobe ID ユーザーはディレクトリ内で管理されないからです。ユーザーの組織がこのような仕組みになっている場合は、「[詳細な構成](advanced_configuration.md#詳細な構成)」の[後述の説明](advanced_configuration.md#adobe-id-によるユーザーの管理)を参照してください。
 
 この例では、構成ファイル user-sync-config.yml に、ディレクトリグループから **Default Acrobat Pro DC configuration** という名前のアドビ製品構成へのマッピングが含まれることを前提とします。
 

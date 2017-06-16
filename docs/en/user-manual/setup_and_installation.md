@@ -184,7 +184,7 @@ execute properly.
     By default, the temporary cache is in your home folder, which may
 cause pathnames to exceed the limit. To work around this issue,
 create an environment variable in Windows called PEX\_ROOT, a set
-the path to C:\\user-sync\\.pex. The OS uses this variable for
+the path to C:\\pex. The OS uses this variable for
 the cache location, which prevents the path from exceeding the
 260 character limit.
 
