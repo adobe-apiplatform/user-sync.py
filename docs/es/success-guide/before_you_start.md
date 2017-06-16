@@ -27,7 +27,7 @@ Por último, para los directorios de gran tamaño, es posible ejecutar User Sync
 ## Terminología
 
 - Grupo de usuarios: un grupo con nombre de los usuarios que aparecen en el sistema de administración de usuarios de Adobe
-- PC: una configuración de producto. Un mecanismo similar a un grupo de Adobe en el que, cuando los usuarios se añaden a la PC, se les concede acceso a un determinado producto de Adobe.
+- PC: una configuración de producto. Un mecanismo similar a un grupo de Adobe en el que, cuando los usuarios se añaden a la PC, se les concede acceso a un determinado producto de Adobe
 - Directorio: un término general para un sistema de directorio de usuarios, como Active Directory (AD), LDAP o un archivo csv que enumera los usuarios
 - Grupo de directorios: un grupo con nombre de los usuarios que aparecen en el directorio
 
@@ -55,7 +55,7 @@ User Sync puede manejar la creación de usuarios y actualizar también la gesti�
 Hay varias opciones disponibles para la gestión de la eliminación de cuentas. Es recomendable que las cuentas de Adobe se eliminen inmediatamente cuando se elimine la cuenta correspondiente de la empresa, o es posible que tenga algún otro proceso preparado para abandonar la cuenta de Adobe hasta que alguien compruebe si hay activos en esa cuenta para recuperarla. User Sync puede manejar una serie de procesos de eliminación que incluye estos.
 
 
-## User Sync se ejecuta en sus sistemas. 
+## User Sync se ejecuta en sus sistemas
 Necesitará un servidor en el que alojarlo. User Sync es una aplicación de Python de código abierto. Puede utilizar un paquete de Python anterior a la compilación o crearlo usted mismo a partir de la fuente.
 
 ## Qué debe saber y hacer
@@ -70,17 +70,17 @@ Deberá entender que los usuarios del directorio deben ser usuarios de Adobe.
 ### Temas del proceso
 Tendrá que establecer un proceso continuo y tener a alguien que lo supervise.
 
-Tendrá que entender cómo deben manejarse los productos (quién puede acceder y cómo, por ejemplo) en su empresa
+Tendrá que entender cómo deben manejarse los productos (quién puede acceder y cómo, por ejemplo) en su empresa.
 
 Tendrá que decidir si gestionará únicamente a los usuarios, o a los usuarios y las licencias de productos.
 
 Tendrá que decidir cómo desea controlar la eliminación de cuentas cuando se eliminan los usuarios desde el directorio.
 
 ### Entorno de Adobe
-Deberá tener un buen conocimiento de los productos de Adobe de que dispone
+Deberá tener un buen conocimiento de los productos de Adobe de que dispone.
 
 Tendrá que entender qué organizaciones de Adobe están configuradas y qué usuarios entrarán en qué organizaciones.
 
-Necesitará acceso administrativo a sus organizaciones de Adobe
+Necesitará acceso administrativo a sus organizaciones de Adobe.
 
 [Regresar al contenido](index.md) \|  [Sección siguiente](layout_orgs.md)

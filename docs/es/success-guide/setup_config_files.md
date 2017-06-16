@@ -19,7 +19,7 @@ Ahora viene el paso en el que se reúnen todos los datos. Necesitará:
 - Las credenciales de acceso al sistema de directorio y la información acerca de cómo se organizan los usuarios
 - La decisión de si está gestionando el acceso a los productos a través de User Sync
   - Los nombres de configuración de producto y los nombres de grupo de usuario de cómo desea que se organicen las licencias en Adobe
-  - Las configuraciones de producto y los grupos de usuarios ya tienen que haberse creado en la Admin Console de Adobe.
+  - Las configuraciones de producto y los grupos de usuarios ya tienen que haberse creado en la Admin Console de Adobe
 
 Asegúrese de utilizar un editor de texto, no un editor de procesamiento de textos.
 
@@ -64,7 +64,7 @@ Edite el archivo user-sync-config.yml.
 	  # default_country_code: US
 
 
-&#9744; Si el directorio no enumera un país para cada usuario, puede establecer aquí un país de forma predeterminada. Quite la “# ” desde la línea de código del país predeterminado, de modo que tiene este aspecto
+&#9744; Si el directorio no enumera un país para cada usuario, puede establecer aquí un país de forma predeterminada. Quite la “#” desde la línea de código del país predeterminado, de modo que tiene este aspecto
 
 	  default_country_code: US
 
@@ -97,7 +97,7 @@ Si no gestiona las licencias a través de User Sync, puede omitir esta sección 
 Puede proporcionar las cuentas de usuario añadiéndolas a un grupo de directorio de empresa con las herramientas LDAP y Active Directory en lugar de la Admin Console de Adobe. A continuación, el archivo de configuración define una asignación de los grupos de directorio para las configuraciones de productos de Adobe. Si un usuario es un abonado de un grupo de directorio, User Sync las añadirá a la configuración de producto correspondiente Igual para la eliminación.
 
 
-&#9744; Edición de la parte de la asignación de grupo del archivo. Para cada D de grupo de directorio que deba asignarse a una configuración de producto de Adobe o P de grupo de usuario, añada una entrada después de “grupos:” del formulario
+&#9744; Edición de la parte de la asignación de grupo del archivo. Para cada D de grupo de directorio que deba asignarse a una configuración de producto de Adobe o P de grupo de usuario, añada una entrada después de “grupos:” del formulario.
 
 	    - directory_group: D
 	      adobe_groups: 
@@ -176,7 +176,7 @@ log\_to\_file activa o desactiva el registro del archivo.
 
 Los mensajes pueden tener un nivel de importancia sobre 5 y se puede elegir la menor importancia que se incluirá para el registro de archivo o el registro de salida estándar de la consola. Los valores predeterminados son para producir el registro de archivo y para incluir mensajes de nivel “info” o superior. Este es el ajuste recomendado.
 
-&#9744; Revisa la configuración de registros y realice los cambios que desee. El nivel de registro recomendado es info (que es el valor predeterminado).
+&#9744; Revise la configuración de registros y realice los cambios que desee. El nivel de registro recomendado es info (que es el valor predeterminado).
 
 	logging:
 	  # especifica si desea generar un archivo de registro

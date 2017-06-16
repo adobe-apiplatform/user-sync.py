@@ -30,7 +30,7 @@ In diesem Code wird die Aufgabenplanung von Windows verwendet, um das Benutzer-S
 
 Einzelheiten können Sie der Dokumentation zur Windows-Aufgabenplanung (help schtasks) entnehmen.
 
-Beachten Sie, dass Befehle, die von der Befehlszeile funktionen, beim Einrichten von geplanten Aufgaben nicht mehr funktionieren, weil sich das aktuelle Verzeichnis oder die Benutzer-ID unterscheidet. Wenn Sie die geplante Aufgabe zum ersten Mal ausführen, sollten Sie einen der Testmodusbefehle ausführen (wie im Abschnitt „Ausführen eines Testlaufs“ beschrieben).
+Beachten Sie, dass Befehle, die von der Befehlszeile problemlos ausgeführt werden können, beim Einrichten von geplanten Aufgaben oft nicht mehr funktionieren, weil sich das aktuelle Verzeichnis oder die Benutzer-ID unterscheidet. Wenn Sie die geplante Aufgabe zum ersten Mal ausführen, sollten Sie einen der Testmodusbefehle ausführen (wie im Abschnitt „Ausführen eines Testlaufs“ beschrieben).
 
 
 ## Einrichten der Ausführung nach einem Zeitplan auf Unix-Systemen
@@ -50,7 +50,7 @@ Durch diesen Eintrag in der Unix-Crontab wird das Benutzer-Synchronisationstool 
 
 Cron kann auch so eingerichtet werden, dass Ergebnisse per E-Mail an einen bestimmten Benutzer oder Verteiler versendet werden. Weitere Einzelheiten können Sie der Cron-Dokumentation für Ihr Unix-System entnehmen.
 
-Beachten Sie, dass Befehle, die von der Befehlszeile funktionen, beim Einrichten von geplanten Aufgaben nicht mehr funktionieren, weil sich das aktuelle Verzeichnis oder die Benutzer-ID unterscheidet. Wenn Sie die geplante Aufgabe zum ersten Mal ausführen, sollten Sie einen der Testmodusbefehle ausführen (wie im Abschnitt „Ausführen eines Testlaufs“ beschrieben).
+Beachten Sie, dass Befehle, die von der Befehlszeile problemlos ausgeführt werden können, beim Einrichten von geplanten Aufgaben oft nicht mehr funktionieren, weil sich das aktuelle Verzeichnis oder die Benutzer-ID unterscheidet. Wenn Sie die geplante Aufgabe zum ersten Mal ausführen, sollten Sie einen der Testmodusbefehle ausführen (wie im Abschnitt „Ausführen eines Testlaufs“ beschrieben).
 
 
 [Voriger Abschnitt](command_line_options.md) \| [Nächster Abschnitt](index.md) 

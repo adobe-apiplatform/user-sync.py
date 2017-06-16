@@ -21,14 +21,14 @@ In dem jetzt folgenden Schritt wird alles zusammengeführt. Voraussetzungen:
   - Die Namen der Produktkonfigurationen und Benutzergruppen für die Organisationen von Lizenzen auf Adobe-Seite
   - Produktkonfigurationen und Benutzergruppen müssen bereits in der Adobe Admin Console erstellt worden sein.
 
-Verwenden Sie einen Texteditor und keinen Textverarbeitungseditor.
+Verwenden Sie einen Texteditor und kein Textverarbeitungsprogramm.
 
 Verwenden Sie in .yml-Dateien Leerzeichen und keine Tabstopps.
 
 
 ## Konfigurationsdateien einrichten
 
-Sie haben in den vorherigen Schritten ein Dateisystemverzeichnis für den Python-Code und die Konfigurationsdateien des Benutzer-Synchronisationstools eingerichtet. Jetzt müssen drei Konfigurationsdateien eingerichtet werden. Eine ist für den Zugriff auf das Verzeichnissystem, eine ist für den Zugriff auf die Adobe-Organisation und eine definiert die Gruppenzuordnung und konfiguriert weitere Funktionen des Benutzer-Synchronisationstools. 
+Sie haben in den vorherigen Schritten ein Dateisystemverzeichnis für den Python-Code und die Konfigurationsdateien des Benutzer-Synchronisationstools eingerichtet. Jetzt müssen drei Konfigurationsdateien eingerichtet werden: eine für den Zugriff auf das Verzeichnissystem, eine für den Zugriff auf die Adobe-Organisation und eine definiert die Gruppenzuordnung und konfiguriert weitere Funktionen des Benutzer-Synchronisationstools. 
 
 ### Konfigurationsdatei für den Verzeichniszugriff
 
@@ -47,7 +47,7 @@ Möglicherweise benötigen Sie eine vom Standard abweichende LDAP-Abfrage, um de
 
 &#9744; Bearbeiten Sie die Datei „connector-umapi.yml“. Geben Sie die Informationen aus der Adobe.io-Integration ein, die Sie zuvor erstellt haben. Diese lauten org\_id, api\_key, client\_secret und tech\_acct.
 
-&#9744; Geben die Datei mit dem privaten Schlüssel im Ordner user_sync_tool ein. Das Konfigurationsdateielement „priv\_key\_path“ wird dann auf den Namen dieser Datei festgelegt.
+&#9744; Speichern Sie die Datei mit dem privaten Schlüssel im Ordner „user_sync_tool“. Das Konfigurationsdateielement „priv\_key\_path“ wird dann auf den Namen dieser Datei festgelegt.
 
 ![](images/setup_config_umapi.png)
 
@@ -64,7 +64,7 @@ Bearbeiten Sie die Datei „user-sync-config.yml“.
 	  # default_country_code: US
 
 
-&#9744; Wenn im Verzeichnis nicht für jeden Benutzer ein Land aufgelistet ist, können Sie hier ein Standardland festlegen. Entfernen Sie „# “ aus der Zeile für den Standard-Ländercode, sodass sie folgendermaßen aussieht
+&#9744; Wenn im Verzeichnis nicht für jeden Benutzer ein Land aufgelistet ist, können Sie hier ein Standardland festlegen. Entfernen Sie „# “ aus der Zeile für den Standard-Ländercode, sodass sie folgendermaßen aussieht:
 
 	  default_country_code: US
 
@@ -185,10 +185,10 @@ Meldungen können eine von fünf Ebenen der Wichtigkeit aufweisen. Sie können d
 	  # Ausgabepfad für Protokolle
 	  file_log_directory: logs
 	  # Ebene der Dateiprotokollierung: kann „debug“, „info“, „warning“, „error“ oder „critical“ lauten. 
-	  # Diese Werte sind in aufsteigender Reihenfolge angegeben, d. h. „debug“ &lt; „critical“.
+	  # Diese Werte sind in aufsteigender Reihenfolge angegeben, d. h. „debug“ < „critical“.
 	  file_log_level: debug
 	  # Ebene der Protokollierung in der Konsole: kann „debug“, „info“, „warning“, „error“ oder „critical“ lauten. 
-	  # Diese Werte sind in aufsteigender Reihenfolge angegeben, d. h. „debug“ &lt; „critical“. Standardwert:
+	  # Diese Werte sind in aufsteigender Reihenfolge angegeben, d. h. „debug“ < „critical“. Standardwert:
 	  # console_log_level: debug
 
 

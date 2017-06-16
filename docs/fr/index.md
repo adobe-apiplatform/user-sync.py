@@ -28,7 +28,9 @@ Pour tout savoir sur le fonctionnement de User Sync, y compris sur la configurat
 Nous avons compilé un [Forum aux questions](FAQ/index.md) qui répond à de nombreuses questions qui nous ont été posées ou que nous jugeons utiles de clarifier.
 
 # Traductions disponibles
-* [Anglais](../en)
+
+* [Englisch](../en)
+* [Deutsch](../de)
 * [Français](../fr)
-* [Allemand](../de)
-* [Japonais](../jp)
+* [日本語](../jp)
+* [Español](../es)

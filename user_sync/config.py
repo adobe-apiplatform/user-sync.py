@@ -844,7 +844,7 @@ class OptionsBuilder(object):
     def set_string_value(self, key, default_value):
         """
         :type key: str
-        :type default_value: str
+        :type default_value: Optional(str)
         """
         self.set_value(key, types.StringTypes, default_value)
 

@@ -188,7 +188,7 @@ groups:
 
 ### Configuración de los límites
 
-Las cuentas de usuario se eliminan del sistema de Adobe cuando los usuarios correspondientes no están presentes en el directorio y se invoca la herramienta con una de las opciones
+Las cuentas de usuario se eliminan del sistema de Adobe cuando los usuarios correspondientes no están presentes en el directorio y se invoca la herramienta con una de las opciones.
 
 - `--adobe-only-user-action delete`
 - `--adobe-only-user-action remove`

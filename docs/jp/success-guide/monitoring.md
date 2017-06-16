@@ -1,7 +1,7 @@
 ---
 layout: default
 lang: jp
-nav_link: モニタリング
+nav_link: 監視
 nav_level: 2
 nav_order: 300
 ---

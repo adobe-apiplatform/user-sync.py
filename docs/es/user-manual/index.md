@@ -10,7 +10,7 @@ nav_order: 10
 
 Versión 2.1rc3, publicada el 22/05/2017
 
-Este documento contiene toda la información que necesita para comenzar a utilizar User Sync. Presupone que está familiarizado con el uso de herramientas de línea de comandos en el sistema operativo local y posee una comprensión general del funcionamiento de los sistemas de directorio de empresas.
+Este documento contiene toda la información que necesita para comenzar a utilizar User Sync. Se da por supuesto que el usuario está familiarizado con el uso de herramientas de línea de comandos en el sistema operativo local y que posee una comprensión general del funcionamiento de los sistemas de directorio de empresas.
 
 
 # Introducción
@@ -35,11 +35,11 @@ Cada vez que se ejecuta User Sync, busca las diferencias entre la información d
 
 Ejecute User Sync en la línea de comandos o desde un script, desde un servidor que utilice su empresa, que debe tener instalado Python 2.7.9 o una versión posterior. El servidor debe tener conexión a Internet y poder acceder al sistema de gestión de usuarios de Adobe y a su propio sistema de directorio de empresa.
 
-La herramienta User Sync es un cliente de la API de gestión de usuarios (UMAPI). Para poder utilizarlo, debe primero registrarlo como cliente de la API de la [consola Adobe I/O](https://www.adobe.io/console/) y, a continuación, instalar y configurar la herramienta, como se describe a continuación.
+La herramienta User Sync es un cliente de la API de gestión de usuarios (UMAPI). Para su uso, primero se debe registrar como cliente de la API de la [consola Adobe I/O](https://www.adobe.io/console/) y, a continuación, instalar y configurar la herramienta, como se describe a continuación.
 
 El funcionamiento de la herramienta se controla mediante archivos de configuración locales y parámetros de invocación de comandos que proporcionan soporte para una variedad de configuraciones. Puede controlar, por ejemplo, los usuarios que van a sincronizarse, la forma de asignar los grupos de directorio a los grupos de Adobe y configuraciones de productos, así como otras opciones.
 
-La herramienta presupone que la empresa ha adquirido licencias de producto de Adobe. Debe utilizar [Adobe Admin Console](https://adminconsole.adobe.com/enterprise/) para definir grupos de usuarios y configuraciones de productos. La pertenencia a estos grupos controla los usuarios de la organización que pueden acceder a los productos.
+La herramienta presupone que la empresa ha adquirido licencias de producto de Adobe. Debe utilizar [Adobe Admin Console](https://adminconsole.adobe.com/enterprise/) para definir grupos de usuarios y configuraciones de productos. La suscripción a estos grupos permite controlar el acceso a los productos por parte de los usuarios.
 
 ## Descripción general del funcionamiento
 

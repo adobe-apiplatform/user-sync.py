@@ -32,7 +32,7 @@ class CSVDirectoryTest(unittest.TestCase):
         }
         directory_connector.initialize(options)
         
-        actual_users = directory_connector.load_users_and_groups(all_groups)
+        actual_users = directory_connector.load_users_and_groups(groups=all_groups)
                 
         tests.helper.assert_equal_users(self, all_users, actual_users)
 

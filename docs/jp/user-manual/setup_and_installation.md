@@ -81,7 +81,7 @@ User Sync ツールは [GitHub の User Sync リポジトリ](https://github.com
 3. Python 実行可能ファイル（Windows 用の `user-sync` または `user-sync.pex`）を見つけて、User Sync フォルダー内に置きます。
 
 
-4. サンプル構成ファイルの `example-configurations.tar.gz` アーカイブをダウンロードします。アーカイブ内に、「config files – basic」のフォルダーがあります。このフォルダーの最初の 3 つのファイルは必須です。パッケージ内の他のファイルは、特定の目的用のオプションのバージョンまたは別のバージョン、あるいはその両方です。それらをルートフォルダーにコピーし、名前を変更して編集し、独自の構成ファイルを作成できます。「[User Sync ツールの構成](configuring_user_sync_tool./md#User-Sync-ツールの構成).)」を参照してください。
+4. サンプル構成ファイルの `example-configurations.tar.gz` アーカイブをダウンロードします。アーカイブ内に、「config files – basic」のフォルダーがあります。このフォルダーの最初の 3 つのファイルは必須です。パッケージ内の他のファイルは、特定の目的用のオプションのバージョンまたは別のバージョン、あるいはその両方です。それらをルートフォルダーにコピーし、名前を変更して編集し、独自の構成ファイルを作成できます。「[User Sync ツールの構成](configuring_user_sync_tool./md#User-Sync-ツールの構成)」を参照してください。
 
 
 5. **Windows のみ**
