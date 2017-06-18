@@ -875,7 +875,10 @@ class RuleProcessor(object):
         :type umapi_user: dict
         """
         id_type = self.get_identity_type_from_umapi_user(umapi_user)
-        return self.get_user_key(id_type, umapi_user['username'], umapi_user['domain'], umapi_user['email'])
+        if id_type == user_sync.identity_type.ADOBEID_IDENTITY_TYPE:
+            return self.get_user_key(id_type, '', '', umapi_user['email'])
+        else:
+            return self.get_user_key(id_type, umapi_user['username'], umapi_user['domain'], umapi_user['email'])
 
     def get_user_key(self, id_type, username, domain, email=None):
         """
