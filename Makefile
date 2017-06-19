@@ -24,7 +24,7 @@ pex:
 ifeq ($(USE_MISC_BUILD),yes)
 	pex \
 		-v -o $(output_dir)/$(output_filename)$(output_file_extension) -m user_sync.app \
-		-f misc_build_location \
+		-f $(misc_build_location) \
 		--disable-cache \
 		--not-zip-safe .
 	-$(RM) wheelhouse
