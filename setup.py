@@ -43,7 +43,7 @@ setup(name='user-sync',
       packages=['user_sync', 'user_sync.connector'],
       install_requires=[
           'pycryptodome',
-          'python-ldap==2.4.25',
+          'pyldap',
           'PyYAML',
           'umapi-client>=2.5',
           'psutil',

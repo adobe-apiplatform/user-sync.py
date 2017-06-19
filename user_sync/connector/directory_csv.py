@@ -200,7 +200,4 @@ class CSVDirectoryConnector(object):
         :type column_name: str
         """
         value = row.get(column_name)
-        if not value:
-            return None
-        else:
-            return value.decode(self.encoding)
+        return value if value else None
