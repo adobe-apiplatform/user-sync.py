@@ -210,15 +210,22 @@ class RuleProcessor(object):
 
         # English text description for action summary log.
         # The action summary will be shown the same order as they are defined in this list
-        action_summary_description = [
-            ['directory_users_read', 'Number of directory users read'],
-            ['directory_users_selected', 'Number of directory users selected for input'],
-            ['adobe_users_read', 'Number of Adobe users read'],
-            ['adobe_users_excluded', 'Number of Adobe users excluded from updates'],
-            ['adobe_users_unchanged', 'Number of non-excluded Adobe users with no changes'],
-            ['adobe_users_created', 'Number of new Adobe users added'],
-            ['adobe_users_updated', 'Number of matching Adobe users updated'],
-        ]
+        if self.sync_umapi:
+            action_summary_description = [
+                ['directory_users_read', 'Number of directory users read'],
+                ['directory_users_selected', 'Number of directory users selected for input'],
+                ['adobe_users_read', 'Number of Adobe users read'],
+                ['adobe_users_excluded', 'Number of Adobe users excluded from updates'],
+                ['adobe_users_unchanged', 'Number of non-excluded Adobe users with no changes'],
+                ['adobe_users_created', 'Number of new Adobe users added'],
+                ['adobe_users_updated', 'Number of matching Adobe users updated'],
+            ]
+        else:
+            action_summary_description = [
+                ['directory_users_read', 'Number of directory users read'],
+                ['directory_users_selected', 'Number of directory users selected for input'],
+                ['adobe_users_created', 'Number of directory users pushed to Adobe'],
+            ]
         if self.will_process_strays:
             if self.options['delete_strays']:
                 action = 'deleted'
