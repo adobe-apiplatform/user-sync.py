@@ -102,10 +102,14 @@ class LDAPDirectoryConnector(object):
         if not options['require_tls_cert']:
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
         try:
+            # Be careful in Py2!!  We are setting bytes_mode = False, so we must give all attribute names
+            # and other protocol-defined strings (such as username) as Unicode.  But the PyYAML parser
+            # will always return ascii strings as str type (rather than Unicode).  So we must be careful
+            # to upconvert all parameter strings to unicode when passing them in.
             connection = ldap.initialize(host, bytes_mode=False)
             connection.protocol_version = ldap.VERSION3
             connection.set_option(ldap.OPT_REFERRALS, 0)
-            connection.simple_bind_s(username, password)
+            connection.simple_bind_s(six.text_type(username), six.text_type(password))
         except Exception as e:
             raise AssertionException('LDAP connection failure: %s' % e)
         self.connection = connection
@@ -323,11 +327,12 @@ class LDAPValueFormatter(object):
 
     def __init__(self, string_format):
         """
-        :type string_format: unicode
+        The format string must be a unicode or ascii string: see notes above about being careful in Py2!
         """
         if string_format is None:
             attribute_names = []
         else:
+            string_format = six.text_type(string_format)    # force unicode so attribute values are unicode
             formatter = string.Formatter()
             attribute_names = [item[1] for item in formatter.parse(string_format) if item[1]]
         self.string_format = string_format
