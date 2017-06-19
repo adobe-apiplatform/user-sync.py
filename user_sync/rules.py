@@ -53,6 +53,7 @@ class RuleProcessor(object):
             'max_adobe_only_users': 200,
             'new_account_type': user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
             'remove_strays': False,
+            'strategy': 'sync',
             'stray_list_input_path': None,
             'stray_list_output_path': None,
             'test_mode': False,
@@ -111,6 +112,13 @@ class RuleProcessor(object):
         self.will_process_strays = (not options['exclude_strays']) and (options['stray_list_output_path'] or
                                                                         self.will_manage_strays)
 
+        # specifying a push strategy disables a lot of processing
+        self.sync_umapi = True
+        if options['strategy'] == 'push':
+            self.sync_umapi = False
+            self.will_manage_strays = False
+            self.will_process_strays = False
+
         # in/out variables for per-user after-mapping-hook code
         self.after_mapping_hook_scope = {
             # in: attributes retrieved from customer directory system (eg 'c', 'givenName')
@@ -154,15 +162,14 @@ class RuleProcessor(object):
             load_directory_stats.log_start(logger)
             self.read_desired_user_groups(directory_groups, directory_connector)
             load_directory_stats.log_end(logger)
-            should_sync_umapi_users = True
-        else:
-            # no directory users to sync with
-            should_sync_umapi_users = False
 
-        umapi_stats = JobStats("Sync Umapi", divider="-")
+        umapi_stats = JobStats('Sync Umapi' if self.sync_umapi else 'Push to Umapi', divider="-")
         umapi_stats.log_start(logger)
-        if should_sync_umapi_users:
-            self.process_umapi_users(umapi_connectors)
+        if directory_connector is not None:
+            if self.sync_umapi:
+                self.sync_umapi_users(umapi_connectors)
+            else:
+                self.push_umapi_users(umapi_connectors)
         if self.will_process_strays:
             self.process_strays(umapi_connectors)
         umapi_connectors.execute_actions()
@@ -368,7 +375,7 @@ class RuleProcessor(object):
                 return True
         return False
 
-    def process_umapi_users(self, umapi_connectors):
+    def sync_umapi_users(self, umapi_connectors):
         """
         This is where we actually "do the sync"; that is, where we match users on the two sides.
         When we get here, we have loaded all the directory users *and* we have loaded all the adobe users,
@@ -393,7 +400,7 @@ class RuleProcessor(object):
         # Handle creates for new users.  This also drives adding the new user to the secondaries,
         # but the secondary adobe groups will be managed below in the usual way.
         for user_key, groups_to_add in six.iteritems(primary_adds_by_user_key):
-            self.add_umapi_user(user_key, groups_to_add, umapi_connectors)
+            self.add_umapi_user(user_key, groups_to_add, umapi_connectors, add_secondary_groups=False)
         # we just did a bunch of adds, we need to flush the connections before we can sync groups
         umapi_connectors.execute_actions()
 
@@ -407,6 +414,20 @@ class RuleProcessor(object):
             if secondary_updates_by_user_key:
                 self.logger.critical("Shouldn't happen! In secondary umapi %s, the following users were not found: %s",
                                      umapi_name, secondary_updates_by_user_key.keys())
+
+    def push_umapi_users(self, umapi_connectors):
+        """
+        This is where we push directory users to the Adobe side "as is".
+        :type umapi_connectors: UmapiConnectors
+        """
+        if umapi_connectors.get_secondary_connectors():
+            self.logger.debug('Pushing users to primary umapi...')
+        else:
+            self.logger.debug('Pushing users to umapi...')
+        primary_umapi_info = self.get_umapi_info(PRIMARY_UMAPI_NAME)
+        # Create all the users, putting them in their groups
+        for user_key, groups_to_add in six.iteritems(primary_umapi_info.get_desired_groups_by_user_key()):
+            self.add_umapi_user(user_key, groups_to_add, umapi_connectors, add_secondary_groups=True)
 
     def is_selected_user_key(self, user_key):
         """
@@ -576,10 +597,10 @@ class RuleProcessor(object):
                                                       directory_user['username'], directory_user['domain'])
         return commands
 
-    def add_umapi_user(self, user_key, groups_to_add, umapi_connectors):
+    def add_umapi_user(self, user_key, groups_to_add, umapi_connectors, add_secondary_groups=True):
         """
-        Add the user to the primary umapi with groups, and create in group-using secondaries without groups.  
-        The secondary group mappings should be taken care of by caller when the secondaries are walked.
+        Add the user to the primary umapi with the given groups, and create the user in any secondaries
+        in which he should be in a group.  If directed, also add the user to those groups in the secondary.
         :type user_key: str
         :type groups_to_add: list
         :type umapi_connectors: UmapiConnectors
@@ -603,16 +624,14 @@ class RuleProcessor(object):
                 # Enterprise users are allowed to have undefined country
                 country = 'UD'
             else:
-                self.logger.error("User %s cannot be added as it has a blank country code"
-                                  " and no default has been specified.", user_key)
+                self.logger.error("Federated user cannot be added without a specified country code: %s", user_key)
                 return
         attributes['country'] = country
         if attributes.get('firstname') is None:
             attributes.pop('firstname', None)
         if attributes.get('lastname') is None:
             attributes.pop('lastname', None)
-        attributes['option'] = "updateIfAlreadyExists" if update_user_info else 'ignoreIfAlreadyExists'
-
+        attributes['option'] = 'updateIfAlreadyExists' if update_user_info else 'ignoreIfAlreadyExists'
         # add the user to primary with groups
         self.logger.info('Adding directory user with user key: %s', user_key)
         self.action_summary['adobe_users_created'] += 1
@@ -620,14 +639,18 @@ class RuleProcessor(object):
         if manage_groups:
             primary_commands.add_groups(groups_to_add)
         umapi_connectors.get_primary_connector().send_commands(primary_commands)
-        # add the user to secondaries without groups
+        # add the user to secondaries, maybe with groups
+        attributes['option'] = 'ignoreIfAlreadyExists'  # can only update in the owning org
         for umapi_name, umapi_connector in six.iteritems(umapi_connectors.secondary_connectors):
             secondary_umapi_info = self.get_umapi_info(umapi_name)
             # only add the user to this secondary if he is in groups in this secondary
-            if secondary_umapi_info.get_desired_groups(user_key):
+            secondary_groups = secondary_umapi_info.get_desired_groups(user_key)
+            if secondary_groups:
                 self.logger.info('Adding directory user to %s with user key: %s', umapi_name, user_key)
                 secondary_commands = self.create_commands_from_directory_user(directory_user, identity_type)
                 secondary_commands.add_user(attributes)
+                if add_secondary_groups and manage_groups:
+                    secondary_commands.add_groups(secondary_groups)
                 umapi_connector.send_commands(secondary_commands)
 
     def update_umapi_user(self, umapi_info, user_key, umapi_connector,
