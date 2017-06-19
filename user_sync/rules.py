@@ -400,7 +400,7 @@ class RuleProcessor(object):
         # Handle creates for new users.  This also drives adding the new user to the secondaries,
         # but the secondary adobe groups will be managed below in the usual way.
         for user_key, groups_to_add in six.iteritems(primary_adds_by_user_key):
-            self.add_umapi_user(user_key, groups_to_add, umapi_connectors, add_secondary_groups=False)
+            self.add_umapi_user(user_key, groups_to_add, umapi_connectors, manage_secondary_groups=False)
         # we just did a bunch of adds, we need to flush the connections before we can sync groups
         umapi_connectors.execute_actions()
 
@@ -427,7 +427,7 @@ class RuleProcessor(object):
         primary_umapi_info = self.get_umapi_info(PRIMARY_UMAPI_NAME)
         # Create all the users, putting them in their groups
         for user_key, groups_to_add in six.iteritems(primary_umapi_info.get_desired_groups_by_user_key()):
-            self.add_umapi_user(user_key, groups_to_add, umapi_connectors, add_secondary_groups=True)
+            self.add_umapi_user(user_key, groups_to_add, umapi_connectors, manage_secondary_groups=True)
 
     def is_selected_user_key(self, user_key):
         """
@@ -597,10 +597,11 @@ class RuleProcessor(object):
                                                       directory_user['username'], directory_user['domain'])
         return commands
 
-    def add_umapi_user(self, user_key, groups_to_add, umapi_connectors, add_secondary_groups=True):
+    def add_umapi_user(self, user_key, groups_to_add, umapi_connectors, manage_secondary_groups=True):
         """
         Add the user to the primary umapi with the given groups, and create the user in any secondaries
         in which he should be in a group.  If directed, also add the user to those groups in the secondary.
+        If we are managing groups, we also remove the user from any mapped groups he shouldn't be in.
         :type user_key: str
         :type groups_to_add: list
         :type umapi_connectors: UmapiConnectors
@@ -638,19 +639,21 @@ class RuleProcessor(object):
         primary_commands.add_user(attributes)
         if manage_groups:
             primary_commands.add_groups(groups_to_add)
+            primary_commands.remove_groups(self.get_umapi_info(PRIMARY_UMAPI_NAME).get_mapped_groups() - groups_to_add)
         umapi_connectors.get_primary_connector().send_commands(primary_commands)
         # add the user to secondaries, maybe with groups
         attributes['option'] = 'ignoreIfAlreadyExists'  # can only update in the owning org
         for umapi_name, umapi_connector in six.iteritems(umapi_connectors.secondary_connectors):
             secondary_umapi_info = self.get_umapi_info(umapi_name)
             # only add the user to this secondary if he is in groups in this secondary
-            secondary_groups = secondary_umapi_info.get_desired_groups(user_key)
-            if secondary_groups:
+            groups_to_add = secondary_umapi_info.get_desired_groups(user_key)
+            if groups_to_add:
                 self.logger.info('Adding directory user to %s with user key: %s', umapi_name, user_key)
                 secondary_commands = self.create_commands_from_directory_user(directory_user, identity_type)
                 secondary_commands.add_user(attributes)
-                if add_secondary_groups and manage_groups:
-                    secondary_commands.add_groups(secondary_groups)
+                if manage_secondary_groups and manage_groups:
+                    secondary_commands.add_groups(groups_to_add)
+                    secondary_commands.remove_groups(secondary_umapi_info.get_mapped_groups() - groups_to_add)
                 umapi_connector.send_commands(secondary_commands)
 
     def update_umapi_user(self, umapi_info, user_key, umapi_connector,
