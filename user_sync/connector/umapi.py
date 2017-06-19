@@ -20,12 +20,14 @@
 
 import json
 import logging
+# import helper
 
 import jwt
+import six
 import umapi_client
 from Crypto.PublicKey import RSA
 
-import helper
+import user_sync.connector.helper
 import user_sync.config
 import user_sync.helper
 import user_sync.identity_type
@@ -68,12 +70,11 @@ class UmapiConnector(object):
         enterprise_builder.require_string_value('tech_acct')
         options['enterprise'] = enterprise_options = enterprise_builder.get_options()
         self.options = options
-        self.logger = logger = helper.create_logger(options)
+        self.logger = logger = user_sync.connector.helper.create_logger(options)
         if server_config:
             server_config.report_unused_values(logger)
         logger.debug('UMAPI initialized with options: %s', options)
 
-        # set up the auth dict for umapi-client
         ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
         auth_dict = {
@@ -247,7 +248,7 @@ class Commands(object):
 
     def convert_user_attributes_to_params(self, attributes):
         params = {}
-        for key, value in attributes.iteritems():
+        for key, value in six.iteritems(attributes):
             if key == 'firstname':
                 key = 'first_name'
             elif key == 'lastname':

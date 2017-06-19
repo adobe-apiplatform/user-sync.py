@@ -1,10 +1,12 @@
-import mock.mock
 import re
 import unittest
 
+import mock.mock
+
+import tests.helper
 import user_sync.connector.directory
 import user_sync.connector.directory_ldap
-import tests.helper
+
 
 class LDAPDirectoryTest(unittest.TestCase):
 

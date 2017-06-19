@@ -32,6 +32,9 @@ setup(name='user-sync',
       classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Programming Language :: Python :: 2.7',
+          'Programming Language :: Python :: 3.4',
+          'Programming Language :: Python :: 3.5',
+          'Programming Language :: Python :: 3.6',
           'License :: OSI Approved :: MIT License',
           'Intended Audience :: Developers',
           'Intended Audience :: System Administrators',
@@ -43,11 +46,12 @@ setup(name='user-sync',
       packages=['user_sync', 'user_sync.connector'],
       install_requires=[
           'pycryptodome',
-          'python-ldap==2.4.25',
+          'pyldap',
           'PyYAML',
           'umapi-client>=2.5',
           'psutil',
           'keyring',
+          'six'
       ],
       extras_require={
           ':sys_platform=="linux" or sys_platform=="linux2"':[

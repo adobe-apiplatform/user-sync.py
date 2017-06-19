@@ -20,6 +20,7 @@
 # SOFTWARE.
 
 import logging
+import six
 
 import user_sync.connector.umapi
 import user_sync.error
@@ -227,7 +228,7 @@ class RuleProcessor(object):
         if umapi_connectors.get_secondary_connectors():
             spacer = ' '
             connectors = [('primary', umapi_connectors.get_primary_connector())]
-            connectors.extend(umapi_connectors.get_secondary_connectors().iteritems())
+            connectors.extend(six.iteritems(umapi_connectors.get_secondary_connectors()))
         else:
             spacer = ''
             connectors = [('', umapi_connectors.get_primary_connector())]
@@ -286,7 +287,7 @@ class RuleProcessor(object):
         directory_user_by_user_key = self.directory_user_by_user_key
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
 
-        directory_groups = set(mappings.iterkeys()) if self.will_manage_groups() else set()
+        directory_groups = set(six.iterkeys(mappings)) if self.will_manage_groups() else set()
         if directory_group_filter is not None:
             directory_groups.update(directory_group_filter)
         directory_users = directory_connector.load_users_and_groups(groups=directory_groups,
@@ -352,8 +353,8 @@ class RuleProcessor(object):
         if self.logger.isEnabledFor(logging.DEBUG):
             self.logger.debug('Group work list: %s', dict([(umapi_name, umapi_info.get_desired_groups_by_user_key())
                                                            for umapi_name, umapi_info
-                                                           in self.umapi_info_by_name.iteritems()]))
-
+                                                           in six.iteritems(self.umapi_info_by_name)]))
+    
     def is_directory_user_in_groups(self, directory_user, groups):
         """
         :type directory_user: dict
@@ -391,13 +392,13 @@ class RuleProcessor(object):
 
         # Handle creates for new users.  This also drives adding the new user to the secondaries,
         # but the secondary adobe groups will be managed below in the usual way.
-        for user_key, groups_to_add in primary_adds_by_user_key.iteritems():
+        for user_key, groups_to_add in six.iteritems(primary_adds_by_user_key):
             self.add_umapi_user(user_key, groups_to_add, umapi_connectors)
         # we just did a bunch of adds, we need to flush the connections before we can sync groups
         umapi_connectors.execute_actions()
 
         # Now manage the adobe groups in the secondaries
-        for umapi_name, umapi_connector in umapi_connectors.get_secondary_connectors().iteritems():
+        for umapi_name, umapi_connector in six.iteritems(umapi_connectors.get_secondary_connectors()):
             secondary_umapi_info = self.get_umapi_info(umapi_name)
             if len(secondary_umapi_info.get_mapped_groups()) == 0:
                 continue
@@ -490,7 +491,7 @@ class RuleProcessor(object):
             return user_sync.connector.umapi.Commands(identity_type=id_type, username=username, domain=domain)
 
         # do the secondary umapis first, in case we are deleting user accounts from the primary umapi at the end
-        for umapi_name, umapi_connector in umapi_connectors.get_secondary_connectors().iteritems():
+        for umapi_name, umapi_connector in six.iteritems(umapi_connectors.get_secondary_connectors()):
             secondary_strays = self.get_stray_keys(umapi_name)
             for user_key in primary_strays:
                 if user_key in secondary_strays:
@@ -620,7 +621,7 @@ class RuleProcessor(object):
             primary_commands.add_groups(groups_to_add)
         umapi_connectors.get_primary_connector().send_commands(primary_commands)
         # add the user to secondaries without groups
-        for umapi_name, umapi_connector in umapi_connectors.secondary_connectors.iteritems():
+        for umapi_name, umapi_connector in six.iteritems(umapi_connectors.secondary_connectors):
             secondary_umapi_info = self.get_umapi_info(umapi_name)
             # only add the user to this secondary if he is in groups in this secondary
             if secondary_umapi_info.get_desired_groups(user_key):
@@ -854,7 +855,7 @@ class RuleProcessor(object):
     def get_user_attribute_difference(self, directory_user, umapi_user):
         differences = {}
         attributes = self.get_user_attributes(directory_user)
-        for key, value in attributes.iteritems():
+        for key, value in six.iteritems(attributes):
             umapi_value = umapi_user.get(key)
             if value != umapi_value:
                 differences[key] = value
@@ -874,7 +875,10 @@ class RuleProcessor(object):
         :type umapi_user: dict
         """
         id_type = self.get_identity_type_from_umapi_user(umapi_user)
-        return self.get_user_key(id_type, umapi_user['username'], umapi_user['domain'], umapi_user['email'])
+        if id_type == user_sync.identity_type.ADOBEID_IDENTITY_TYPE:
+            return self.get_user_key(id_type, '', '', umapi_user['email'])
+        else:
+            return self.get_user_key(id_type, umapi_user['username'], umapi_user['domain'], umapi_user['email'])
 
     def get_user_key(self, id_type, username, domain, email=None):
         """
@@ -902,7 +906,7 @@ class RuleProcessor(object):
             domain = ""
         elif not domain:
             return None
-        return unicode(id_type) + u',' + unicode(username) + u',' + unicode(domain)
+        return six.text_type(id_type) + u',' + six.text_type(username) + u',' + six.text_type(domain)
 
     def parse_user_key(self, user_key):
         """
@@ -1013,7 +1017,7 @@ class UmapiConnectors(object):
         self.secondary_connectors = secondary_connectors
 
         connectors = [primary_connector]
-        connectors.extend(secondary_connectors.itervalues())
+        connectors.extend(six.itervalues(secondary_connectors))
         self.connectors = connectors
 
     def get_primary_connector(self):
@@ -1100,7 +1104,7 @@ class AdobeGroup(object):
 
     @classmethod
     def iter_groups(cls):
-        return cls.index_map.itervalues()
+        return six.itervalues(cls.index_map)
 
 
 class UmapiTargetInfo(object):
@@ -1160,7 +1164,7 @@ class UmapiTargetInfo(object):
         self.umapi_user_by_user_key[user_key] = user
 
     def iter_umapi_users(self):
-        return self.umapi_user_by_user_key.iteritems()
+        return six.iteritems(self.umapi_user_by_user_key)
 
     def get_umapi_user(self, user_key):
         """

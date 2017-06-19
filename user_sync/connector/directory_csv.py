@@ -18,6 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import six
+
 import user_sync.config
 import user_sync.connector.helper
 import user_sync.error
@@ -92,7 +94,7 @@ class CSVDirectoryConnector(object):
         self.logger.debug('Reading from: %s', file_path)
         self.users = users = self.read_users(file_path, extended_attributes)
         self.logger.debug('Number of users loaded: %d', len(users))
-        return users.itervalues()
+        return six.itervalues(users)
 
     def read_users(self, file_path, extended_attributes):
         """
@@ -198,7 +200,4 @@ class CSVDirectoryConnector(object):
         :type column_name: str
         """
         value = row.get(column_name)
-        if not value:
-            return None
-        else:
-            return value.decode(self.encoding)
+        return value if value else None

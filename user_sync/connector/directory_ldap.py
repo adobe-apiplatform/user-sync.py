@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import six
 import string
 
 import ldap.controls.libldap
@@ -63,22 +64,16 @@ class LDAPDirectoryConnector(object):
     def __init__(self, caller_options):
         caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
-        builder.set_string_value('group_filter_format', '(&'
-                                                        '(|(objectCategory=group)'
-                                                        '(objectClass=groupOfNames)'
-                                                        '(objectClass=posixGroup))'
-                                                        '(cn={group})'
-                                                        ')')
-        builder.set_string_value('all_users_filter', '(&'
-                                                     '(objectClass=user)'
-                                                     '(objectCategory=person)'
-                                                     '(!(userAccountControl:1.2.840.113556.1.4.803:=2))'
-                                                     ')')
-        builder.set_string_value('group_member_filter_format', '(memberOf={group_dn})')
+        builder.set_string_value('group_filter_format', six.text_type(
+            '(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))'))
+        builder.set_string_value('all_users_filter', six.text_type(
+            '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))'))
+        builder.set_string_value('group_member_filter_format', six.text_type(
+            '(memberOf={group_dn})'))
         builder.set_bool_value('require_tls_cert', False)
-        builder.set_string_value('string_encoding', 'utf-8')
+        builder.set_string_value('string_encoding', 'utf8')
         builder.set_string_value('user_identity_type_format', None)
-        builder.set_string_value('user_email_format', '{mail}')
+        builder.set_string_value('user_email_format', six.text_type('{mail}'))
         builder.set_string_value('user_username_format', None)
         builder.set_string_value('user_domain_format', None)
         builder.set_string_value('user_identity_type', None)
@@ -107,7 +102,7 @@ class LDAPDirectoryConnector(object):
         if not options['require_tls_cert']:
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
         try:
-            connection = ldap.initialize(host)
+            connection = ldap.initialize(host, bytes_mode=False)
             connection.protocol_version = ldap.VERSION3
             connection.set_option(ldap.OPT_REFERRALS, 0)
             connection.simple_bind_s(username, password)
@@ -125,8 +120,8 @@ class LDAPDirectoryConnector(object):
         :rtype (bool, iterable(dict))
         """
         options = self.options
-        all_users_filter = options['all_users_filter']
-        group_member_filter_format = options['group_member_filter_format']
+        all_users_filter = six.text_type(options['all_users_filter'])
+        group_member_filter_format = six.text_type(options['group_member_filter_format'])
 
         # for each group that's required, do one search for the users of that group
         for group in groups:
@@ -135,12 +130,12 @@ class LDAPDirectoryConnector(object):
                 self.logger.warning("No group found for: %s", group)
                 continue
             group_member_subfilter = group_member_filter_format.format(group_dn=group_dn)
-            if not group_member_subfilter.startswith("("):
-                group_member_subfilter = '(' + group_member_subfilter + ')'
+            if not group_member_subfilter.startswith('('):
+                group_member_subfilter = six.text_type('(') + group_member_subfilter + six.text_type(')')
             user_subfilter = all_users_filter
-            if not user_subfilter.startswith("("):
-                user_subfilter = '(' + user_subfilter + ')'
-            group_user_filter = '(&' + group_member_subfilter + user_subfilter + ')'
+            if not user_subfilter.startswith('('):
+                user_subfilter = six.text_type('(') + user_subfilter + six.text_type(')')
+            group_user_filter = six.text_type('(&') + group_member_subfilter + user_subfilter + six.text_type(')')
             group_users = 0
             try:
                 for user_dn, user in self.iter_users(group_user_filter, extended_attributes):
@@ -160,13 +155,14 @@ class LDAPDirectoryConnector(object):
                         ungrouped_users += 1
                     else:
                         grouped_users += 1
-                self.logger.debug('Count of users in any groups: %d', grouped_users)
-                self.logger.debug('Count of users not in any groups: %d', ungrouped_users)
+                if groups:
+                    self.logger.debug('Count of users in any groups: %d', grouped_users)
+                    self.logger.debug('Count of users not in any groups: %d', ungrouped_users)
             except Exception as e:
                 raise AssertionException('Unexpected LDAP failure reading all users: %s' % e)
 
         self.logger.debug('Total users loaded: %d', len(self.user_by_dn))
-        return self.user_by_dn.itervalues()
+        return six.itervalues(self.user_by_dn)
 
     def find_ldap_group_dn(self, group):
         """
@@ -175,8 +171,8 @@ class LDAPDirectoryConnector(object):
         """
         connection = self.connection
         options = self.options
-        base_dn = options['base_dn']
-        group_filter_format = options['group_filter_format']
+        base_dn = six.text_type(options['base_dn'])
+        group_filter_format = six.text_type(options['group_filter_format'])
         try:
             res = connection.search_s(base_dn, ldap.SCOPE_SUBTREE,
                                       filterstr=group_filter_format.format(group=group), attrsonly=1)
@@ -192,9 +188,9 @@ class LDAPDirectoryConnector(object):
 
     def iter_users(self, users_filter, extended_attributes):
         options = self.options
-        base_dn = options['base_dn']
+        base_dn = six.text_type(options['base_dn'])
 
-        user_attribute_names = ['givenName', 'sn', 'c']
+        user_attribute_names = [six.text_type('givenName'), six.text_type('sn'), six.text_type('c')]
         user_attribute_names.extend(self.user_identity_type_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
@@ -257,23 +253,18 @@ class LDAPDirectoryConnector(object):
             elif last_attribute_name:
                 self.logger.warning('No domain attribute (%s) for user with dn: %s', last_attribute_name, dn)
 
-            given_name_value = LDAPValueFormatter.get_attribute_value(record, 'givenName')
+            given_name_value = LDAPValueFormatter.get_attribute_value(record, six.text_type('givenName'))
             source_attributes['givenName'] = given_name_value
             if given_name_value is not None:
                 user['firstname'] = given_name_value
-            sn_value = LDAPValueFormatter.get_attribute_value(record, 'sn')
+            sn_value = LDAPValueFormatter.get_attribute_value(record, six.text_type('sn'))
             source_attributes['sn'] = sn_value
             if sn_value is not None:
                 user['lastname'] = sn_value
-            c_value = LDAPValueFormatter.get_attribute_value(record, 'c')
+            c_value = LDAPValueFormatter.get_attribute_value(record, six.text_type('c'))
             source_attributes['c'] = c_value
             if c_value is not None:
                 user['country'] = c_value
-
-            uid = LDAPValueFormatter.get_attribute_value(record, 'uid')
-            source_attributes['uid'] = uid
-            if uid is not None:
-                user['uid'] = uid
 
             if extended_attributes is not None:
                 for extended_attribute in extended_attributes:
