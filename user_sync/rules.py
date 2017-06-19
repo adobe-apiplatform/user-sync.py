@@ -163,7 +163,7 @@ class RuleProcessor(object):
             self.read_desired_user_groups(directory_groups, directory_connector)
             load_directory_stats.log_end(logger)
 
-        umapi_stats = JobStats('Sync Umapi' if self.sync_umapi else 'Push to Umapi', divider="-")
+        umapi_stats = JobStats('Sync with UMAPI' if self.sync_umapi else 'Push to UMAPI', divider="-")
         umapi_stats.log_start(logger)
         if directory_connector is not None:
             if self.sync_umapi:
