@@ -2,6 +2,7 @@ import re
 import unittest
 
 import mock.mock
+import six
 
 import tests.helper
 import user_sync.connector.directory
@@ -46,11 +47,11 @@ class LDAPDirectoryTest(unittest.TestCase):
             rtype = ldap.RES_SEARCH_RESULT
             rmsgid = None
             serverctrls = []
-            rdata = [(user['firstname'], {
-                'givenName': [user['firstname']],
-                'sn': [user['lastname']],
-                'c': [user['country']],
-                'mail': [user['email']],
+            rdata = [(user['firstname'].encode('utf8', 'strict'), {
+                'givenName': [user['firstname'].encode('utf8', 'strict')],
+                'sn': [user['lastname'].encode('utf8', 'strict')],
+                'c': [user['country'].encode('utf8', 'strict')],
+                'mail': [user['email'].encode('utf8', 'strict')],
             }) for user in all_users]
             return rtype, rdata, rmsgid, serverctrls
 

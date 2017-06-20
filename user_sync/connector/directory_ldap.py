@@ -366,6 +366,7 @@ class LDAPValueFormatter(object):
     @classmethod
     def get_attribute_value(cls, attributes, attribute_name):
         """
+        The attribute value type must be decodable (str in py2, bytes in py3)
         :type attributes: dict
         :type attribute_name: unicode
         """

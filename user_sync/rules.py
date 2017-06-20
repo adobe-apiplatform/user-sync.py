@@ -407,7 +407,7 @@ class RuleProcessor(object):
         # Handle creates for new users.  This also drives adding the new user to the secondaries,
         # but the secondary adobe groups will be managed below in the usual way.
         for user_key, groups_to_add in six.iteritems(primary_adds_by_user_key):
-            self.add_umapi_user(user_key, groups_to_add, umapi_connectors, manage_secondary_groups=False)
+            self.add_umapi_user(user_key, groups_to_add, umapi_connectors)
         # we just did a bunch of adds, we need to flush the connections before we can sync groups
         umapi_connectors.execute_actions()
 
@@ -434,7 +434,7 @@ class RuleProcessor(object):
         primary_umapi_info = self.get_umapi_info(PRIMARY_UMAPI_NAME)
         # Create all the users, putting them in their groups
         for user_key, groups_to_add in six.iteritems(primary_umapi_info.get_desired_groups_by_user_key()):
-            self.add_umapi_user(user_key, groups_to_add, umapi_connectors, manage_secondary_groups=True)
+            self.add_umapi_user(user_key, groups_to_add, umapi_connectors)
 
     def is_selected_user_key(self, user_key):
         """
@@ -604,11 +604,13 @@ class RuleProcessor(object):
                                                       directory_user['username'], directory_user['domain'])
         return commands
 
-    def add_umapi_user(self, user_key, groups_to_add, umapi_connectors, manage_secondary_groups=True):
+    def add_umapi_user(self, user_key, groups_to_add, umapi_connectors):
         """
         Add the user to the primary umapi with the given groups, and create the user in any secondaries
-        in which he should be in a group.  If directed, also add the user to those groups in the secondary.
-        If we are managing groups, we also remove the user from any mapped groups he shouldn't be in.
+        in which he should be in a group.  If we are syncing, that's all we do.  If we are pushing rather
+        than syncing, we also add the user to the correct group in the secondaries, and we remove
+        the user from any mapped groups he shouldn't be in both in the primary and in the secondaries.
+        (This way, when we push blindly, we manage his entire set of mapped groups rather than just some.)
         :type user_key: str
         :type groups_to_add: list
         :type umapi_connectors: UmapiConnectors
@@ -617,6 +619,7 @@ class RuleProcessor(object):
         options = self.options
         update_user_info = options['update_user_info']
         manage_groups = self.will_manage_groups()
+        doing_push = not self.sync_umapi
 
         # put together the user's attributes
         directory_user = self.directory_user_by_user_key[user_key]
@@ -646,7 +649,9 @@ class RuleProcessor(object):
         primary_commands.add_user(attributes)
         if manage_groups:
             primary_commands.add_groups(groups_to_add)
-            primary_commands.remove_groups(self.get_umapi_info(PRIMARY_UMAPI_NAME).get_mapped_groups() - groups_to_add)
+            if doing_push:
+                groups_to_remove = self.get_umapi_info(PRIMARY_UMAPI_NAME).get_mapped_groups() - groups_to_add
+                primary_commands.remove_groups(groups_to_remove)
         umapi_connectors.get_primary_connector().send_commands(primary_commands)
         # add the user to secondaries, maybe with groups
         attributes['option'] = 'ignoreIfAlreadyExists'  # can only update in the owning org
@@ -658,9 +663,10 @@ class RuleProcessor(object):
                 self.logger.info('Adding directory user to %s with user key: %s', umapi_name, user_key)
                 secondary_commands = self.create_commands_from_directory_user(directory_user, identity_type)
                 secondary_commands.add_user(attributes)
-                if manage_secondary_groups and manage_groups:
+                if manage_groups and doing_push:
                     secondary_commands.add_groups(groups_to_add)
-                    secondary_commands.remove_groups(secondary_umapi_info.get_mapped_groups() - groups_to_add)
+                    groups_to_remove = secondary_umapi_info.get_mapped_groups() - groups_to_add
+                    secondary_commands.remove_groups(groups_to_remove)
                 umapi_connector.send_commands(secondary_commands)
 
     def update_umapi_user(self, umapi_info, user_key, umapi_connector,
