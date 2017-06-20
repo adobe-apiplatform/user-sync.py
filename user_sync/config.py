@@ -125,18 +125,17 @@ class ConfigLoader(object):
         :rtype str
         """
         options = self.options
-        get_config_name = options.get('directory_get_config_name')
-        if get_config_name:
-            module_type = self.main_config.child_configs['directory_users'].value['connectors'].keys()[0]
+        connector_type = options.get('directory_connector_type')
+        if connector_type:
             group_filter = options.get('directory_group_filter')
             group_mapped = options.get('directory_group_mapped')
 
-            if module_type == 'okta' and not group_filter and not group_mapped:
+            if connector_type == 'okta' and not group_filter and not group_mapped:
                 raise AssertionException('Okta connector module does not support "--users all"')
 
-            return 'user_sync.connector.directory_' + module_type
+            return 'user_sync.connector.directory_' + connector_type
         else:
-            return options['directory_connector_module_name']
+            raise AssertionException('Connector type is None')
 
     def get_directory_connector_configs(self):
         connectors_config = None
