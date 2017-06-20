@@ -107,6 +107,10 @@ def process_args():
                              "specify the encoding of your configuration files with this argument. "
                              "All encoding names understood by Python are allowed.",
                         dest='encoding_name', default='ascii')
+    parser.add_argument('--strategy',
+                        help="whether to fetch and sync the Adobe directory against the customer directory "
+                             "or just to push each customer user to the Adobe side.  Default is to fetch and sync.",
+                        dest='strategy', metavar='sync|push', default='sync')
     return parser.parse_args()
 
 
@@ -238,6 +242,7 @@ def create_config_loader_options(args):
         'exclude_strays': False,
         'manage_groups': args.manage_groups,
         'remove_strays': False,
+        'strategy': 'sync',
         'stray_list_input_path': None,
         'stray_list_output_path': None,
         'test_mode': args.test_mode,
@@ -307,6 +312,12 @@ def create_config_loader_options(args):
         config_options['directory_connector_module_name'] = None
         logger.info('--adobe-only-user-list specified, so not reading or comparing directory and Adobe users')
         config_options['stray_list_input_path'] = stray_list_input_path
+
+    # --strategy
+    if user_sync.helper.normalize_string(args.strategy) == 'push':
+        config_options['strategy'] = 'push'
+        if stray_list_input_path or adobe_action_args is not None:
+            raise AssertionException("You cannot specify '--strategy push' and any '--adobe-only-user' options")
 
     return config_options
 
