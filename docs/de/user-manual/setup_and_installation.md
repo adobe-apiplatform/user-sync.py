@@ -26,11 +26,11 @@ Damit Sie das Benutzer-Synchronisationstool verwenden können, müssen in Ihrem 
 
 Das Benutzer-Synchronisationstool ist ein Client der User Management API. Bevor Sie das Tool installieren, müssen Sie es als Client der API registrieren, indem Sie eine *Integration* im Adobe I/O-[Entwicklerportal](https://www.adobe.io/console/) hinzufügen. Sie müssen eine Unternehmensschlüssel-Integration hinzufügen, um die für den Zugriff auf das Adobe-Benutzerverwaltungssystem benötigten Anmeldeinformationen abzurufen.
 
-Die zum Erstellen einer Integration erforderlichen Schritte werden ausführlich im Abschnitt zum [Einrichten des Zugriffs](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/setup.html) auf der Adobe I/O-Website für die User Management API erläutert. Hierfür müssen Sie ein integrationsspezifisches Zertifikat erstellen, das selbstsigniert sein kann. Wenn der Vorgang abgeschlossen ist, werden Ihnen ein **API key**, eine  **Technical account ID**, eine  **Organization ID** und ein  **client secret** zugewiesen, die das Tool verwendet. Außerdem erhalten Sie Zertifikatinformationen, um sicher mit der Admin Console kommunizieren zu können. Wenn Sie das Benutzer-Synchronisationstool installieren, müssen Sie diese Informationen als Konfigurationswerte angeben, die das Tool zum Zugriff auf die in Adobe gespeicherten Benutzerinformationen Ihrer Organisation benötigt.
+Die zum Erstellen einer Integration erforderlichen Schritte werden ausführlich im Abschnitt zum [Einrichten des Zugriffs](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/setup.html) auf der Adobe I/O-Website für die User Management API erläutert. Hierfür müssen Sie ein integrationsspezifisches Zertifikat erstellen, das selbstsigniert sein kann. Wenn der Vorgang abgeschlossen ist, werden Ihnen ein **API Key**, eine  **Technical Account ID**, eine  **Organization ID** und ein  **Client Secret** zugewiesen, die das Tool verwendet. Außerdem erhalten Sie Zertifikatinformationen, um sicher mit der Admin Console kommunizieren zu können. Wenn Sie das Benutzer-Synchronisationstool installieren, müssen Sie diese Informationen als Konfigurationswerte angeben, die das Tool zum Zugriff auf die in Adobe gespeicherten Benutzerinformationen Ihrer Organisation benötigt.
 
 ## Einrichten der Synchronisation für den Produktzugriff
 
-Wenn Sie das Benutzer-Synchronisationstool zum Aktualisieren des Benutzerzugriffs auf Adobe-Produkte verwenden möchten, müssen Sie Gruppen in Ihrem Unternehmensverzeichnis erstellen, die den in der [Adobe Admin Console](https://www.adobe.io/console/) konfigurierten Benutzergruppen und Produktkonfigurationen entsprechen. Die Mitgliedschaft in einer Produktkonfiguration ermöglicht den Zugriff auf eine bestimmte Gruppe von Adobe-Produkten. Sie können den Zugriff für Benutzer oder definierte Benutzergruppen gewähren oder widerrufen, indem Sie sie in einer Produktkonfiguration hinzufügen bzw. entfernen.
+Wenn Sie das Benutzer-Synchronisationstool zum Aktualisieren des Benutzerzugriffs auf Adobe-Produkte verwenden möchten, müssen Sie Gruppen in Ihrem Unternehmensverzeichnis erstellen, die den in der [Adobe I/O Console](https://www.adobe.io/console/) konfigurierten Benutzergruppen und Produktkonfigurationen entsprechen. Die Mitgliedschaft in einer Produktkonfiguration ermöglicht den Zugriff auf eine bestimmte Gruppe von Adobe-Produkten. Sie können den Zugriff für Benutzer oder definierte Benutzergruppen gewähren oder widerrufen, indem Sie sie in einer Produktkonfiguration hinzufügen bzw. entfernen.
 
 Das Benutzer-Synchronisationstool kann Benutzern den Produktzugriff erlauben, indem Benutzer auf Grundlage ihrer Mitgliedschaften im Unternehmensverzeichnis zu Gruppen und Produktkonfigurationen hinzugefügt werden. Hierfür müssen die Gruppennamen korrekt zugewiesen werden und das Tool muss mit der Option zum Verarbeiten von Gruppenmitgliedschaften ausgeführt werden.
 
@@ -58,13 +58,13 @@ Als Best Practice sollten Sie im Beschreibungsfeld der Produktkonfiguration oder
 
 ### Systemanforderungen
 
-Das Benutzer-Synchronisationstool wird mit Python implementiert, wobei Python-Version 2.7.9 oder höher erforderlich ist. Für jede Umgebung, in der Sie das Skript installieren, konfigurieren und ausführen möchten, müssen Sie sicherstellen, dass Python im Betriebssystem installiert wurde, bevor Sie mit dem nächsten Schritt fortfahren. Weitere Informationen finden Sie auf der [Python-Website](https://www.python.org/).
+Das Benutzer-Synchronisationstool ist in Python implementiert, wobei Python-Version 2.7.9 oder höher erforderlich ist. Für jede Umgebung, in der Sie das Skript installieren, konfigurieren und ausführen möchten, müssen Sie sicherstellen, dass Python im Betriebssystem installiert wurde, bevor Sie mit dem nächsten Schritt fortfahren. Weitere Informationen finden Sie auf der [Python-Website](https://www.python.org/).
 
 Das Tool wird mit dem Python-LDAP-Paket `pyldap` erstellt, das wiederum auf der OpenLDAP-Clientbibliothek basiert. Unter Windows Server, Apple OS X und vielen Varianten von Linux ist bereits ein OpenLDAP-Client installiert. Bei einigen UNIX-Betriebssystemen wie OpenBSD und FreeBSD ist dieser jedoch nicht in der Basisinstallation enthalten.
 
 Vergewissern Sie sich, dass in Ihrer Umgebung ein OpenLDAP-Client installiert ist, bevor Sie das Skript ausführen. Wenn kein solcher Client vorhanden ist, müssen Sie ihn vor der Installation des Benutzer-Synchronisationstools installieren.
 
-### Installationsfehler
+### Installation
 
 Sie können das Benutzer-Synchronisationstool im [User Sync-Repository auf GitHub](https://github.com/adobe-apiplatform/user-sync.py) herunterladen. So installieren Sie das Tool:
 
@@ -75,25 +75,25 @@ Sie können das Benutzer-Synchronisationstool im [User Sync-Repository auf GitHu
 1. Klicken Sie auf den Link **Releases**, um das aktuelle Release zu suchen. Dieses umfasst Versionshinweise, diese Dokumentation, Beispielkonfigurationsdateien und alle Build-Versionen (sowie Quellarchive).
 
 
-2. Wählen Sie das komprimierte Paket für Ihre Plattform aus und laden Sie es herunter (Datei mit der Erweiterung `.tar.gz`). Es sind Builds für Windows, OS X und Ubuntu verfügbar. (Wenn Sie selbst einen Build aus dem Quellcode erstellen möchten, können Sie das Quellcodepaket für den Release herunterladen oder die aktuelle Quelle in der Master-Verzweigung verwenden.)
+2. Wählen Sie das komprimierte Paket für Ihre Plattform aus und laden Sie es herunter (Datei mit der Erweiterung `.tar.gz`). Es sind Builds für Windows, OS X und Ubuntu verfügbar. (Wenn Sie selbst einen Build aus dem Quellcode erstellen möchten, können Sie das Quellcodepaket für das Release herunterladen oder die aktuelle Quelle in der Master-Verzweigung verwenden.)
 
 
 3. Suchen Sie die ausführbare Python-Datei (`user-sync` oder `user-sync.pex` für Windows) und speichern Sie sie in Ihrem Ordner für das Benutzer-Synchronisationstool.
 
 
-4. Laden Sie das Archiv `example-configurations.tar.gz` mit Beispielkonfigurationsdateien herunter. Im Archiv befindet sich ein Ordner für „config files – basic“. Die ersten 3 Dateien in diesem Ordner werden benötigt. Die anderen Dateien im Paket sind optional und/oder Alternativversionen für bestimmte Zwecke. Sie können diese Dateien in Ihren Stammordner kopieren und dann umbenennen und bearbeiten, um so eigene Konfigurationsdateien zu erstellen. (Weitere Informationen finden Sie im folgenden Abschnitt [Konfigurieren des Benutzer-Synchronisationstools](configuring_user_sync_tool./md#konfigurieren-des-benutzer-synchronisationstools).)
+4. Laden Sie das Archiv `example-configurations.tar.gz` mit Beispielkonfigurationsdateien herunter. Im Archiv befindet sich ein Ordner für „config files – basic“. Die ersten 3 Dateien in diesem Ordner werden benötigt. Die anderen Dateien im Paket sind optional und/oder Alternativversionen für bestimmte Zwecke. Sie können diese Dateien in Ihren Stammordner kopieren und dann umbenennen und bearbeiten, um so eigene Konfigurationsdateien zu erstellen. (Weitere Informationen finden Sie im folgenden Abschnitt [Konfigurieren des Benutzer-Synchronisationstools](configuring_user_sync_tool.md#konfigurieren-des-benutzer-synchronisationstools).)
 
 
 5. **Nur Windows:**
 
-    Bevor Sie die ausführbare Datei „user-sync.pex“ in Windows ausführen, müssen Sie möglicherweise ein Problem umgehen, das nur beim Ausführen von Python unter Windows auftritt:
+    Bevor Sie die ausführbare Datei „user-sync.pex“ unter Windows ausführen, müssen Sie möglicherweise ein Problem umgehen, das nur beim Ausführen von Python unter Windows auftritt:
 
     Das Windows-Betriebssystem erzwingt eine Längenbeschränkung für Dateipfade von 260 Zeichen. Beim Ausführen einer Python-PEX-Datei wird ein temporärer Speicherort zum Extrahieren des Paketinhalts erstellt. Wenn der Pfad zu diesem Speicherort länger als 260 Zeichen ist, wird das Skript nicht richtig ausgeführt.
 
-    Standardmäßig befindet sich der temporäre Cache in Ihrem Basisordner, wodurch die Dateipfade die Längenbeschränkung überschreiten können. Erstellen Sie zum Umgehen dieses Problems in Windows die Umgebungsvariable PEX\_ROOT und legen Sie den Pfad auf „C:\\user-sync\\.pex“ fest. Das Betriebssystem verwendet diese Variable für den Cache-Speicherort, wodurch der Pfad die Längenbeschränkung von 260 Zeichen nicht überschreitet.
+    Standardmäßig befindet sich der temporäre Cache in Ihrem Basisordner, wodurch die Dateipfade die Längenbeschränkung überschreiten können. Erstellen Sie zum Umgehen dieses Problems unter Windows die Umgebungsvariable PEX\_ROOT und legen Sie den Pfad auf „C:\user-sync\.pex“ fest. Das Betriebssystem verwendet diese Variable für den Cache-Speicherort, wodurch der Pfad die Längenbeschränkung von 260 Zeichen nicht überschreitet.
 
 
-6. Führen Sie zum Ausführen des Benutzer-Synchronisationstools die ausführbare Python-Datei `user-sync` aus (oder führen Sie in Windows `python user-sync.pex` aus).
+6. Führen Sie zum Ausführen des Benutzer-Synchronisationstools die ausführbare Python-Datei `user-sync` aus (oder führen Sie unter Windows `python user-sync.pex` aus).
 
 ### Hinweise zur Sicherheit
 

@@ -35,11 +35,11 @@ Es gibt eine Konfigurationsoption `exclude_identity_types` (im Abschnitt `adobe_
 
 Sie möchten wahrscheinlich einen separaten Synchronisationsauftrag speziell für diese Benutzer einrichten, möglicherweise unter Verwendung von CSV-Eingaben anstelle von Eingaben aus dem Unternehmensverzeichnis. Achten Sie in diesem Fall darauf, dass Sie diesen Synchronisationsauftrag so konfigurieren, dass Enterprise ID- und Federated ID-Benutzer ignoriert werden. Andernfalls werden diese mit hoher Wahrscheinlichkeit aus dem Verzeichnis entfernt!
 
-Das Entfernen von Adobe ID-Benutzern über die Benutzersynchronisation hat möglicherweise nicht gewünschten Effekt:
+Das Entfernen von Adobe ID-Benutzern über die Benutzersynchronisation hat möglicherweise nicht den gewünschten Effekt:
 
 * Wenn Sie angeben, dass adobeID-Benutzer aus Ihrer Organisation entfernt werden sollen, müssen Sie sie erneut einladen
 (und sie wieder akzeptieren), wenn Sie sie später wieder hinzufügen möchten.
-* Systemadministratoren verwenden häufig Adobe-IDs. Somit können beim Entfernen von Adobe ID-Benutzern versehentlich Systemadministratoren entfernt werden (u. a. auch Sie selbst).
+* Systemadministratoren verwenden häufig Adobe IDs. Somit können beim Entfernen von Adobe ID-Benutzern versehentlich Systemadministratoren entfernt werden (u. a. auch Sie selbst).
 
 Eine bessere Vorgehensweise beim Verwalten von Adobe ID-Benutzern besteht darin, sie einfach hinzuzufügen und ihre Gruppenmitgliedschaften zu verwalten, sie jedoch nie zu entfernen. Durch Verwalten von Gruppenmitgliedschaften können Sie ihre Berechtigungen entfernen, ohne dass es später einer erneuten Einladung bedarf, wenn Sie sie wieder aktivieren möchten.
 
@@ -53,7 +53,7 @@ Ein großes Unternehmen kann mehrere Adobe-Organisationen umfassen. Das Unterneh
 
 Wenn ein Unternehmen Enterprise IDs oder Federated IDs verwendet, muss eine Domäne beansprucht werden. In einem kleineren Unternehmen würde die einzige Organisation die Domäne **geometrixx.com** beanspruchen. Eine Domäne kann jedoch nur von einer einzigen Organisation beansprucht werden. Wenn mehrere Organisationen demselben Unternehmen gehören, sollen u. U. einige davon oder alle Benutzer einschließen, die der Unternehmensdomäne angehören.
 
-In diesem Fall möchte der Systemadministrator diese Domäne zur Identifizierung für jede der Abteilungen beanspruchen. Es ist in der Adobe Admin Console nicht möglich, dass mehrere Abteilungen dieselbe Domäne beanspruchen. Sobald eine Abteilung eine Domäne beansprucht hat, können andere Abteilungen jedoch Zugriff darauf anfordern. Die erste Abteilung, welche die Domäne beansprucht, ist der *Eigentümer* dieser Domäne. Diese Abteilung ist verantwortlich für die Genehmigung von Zugriffsanforderungen durch andere Abteilungen; diese können dann auf Benutzer in der Domäne zugreifen, ohne dass spezielle Konfigurationsanforderungen vorliegen.
+In diesem Fall sollte der Systemadministrator diese Domäne zur Identifizierung für jede der Abteilungen beanspruchen. Es ist in der Adobe Admin Console nicht möglich, dass mehrere Abteilungen dieselbe Domäne beanspruchen. Sobald eine Abteilung eine Domäne beansprucht hat, können andere Abteilungen jedoch Zugriff darauf anfordern. Die erste Abteilung, welche die Domäne beansprucht, ist der *Eigentümer* dieser Domäne. Diese Abteilung ist verantwortlich für die Genehmigung von Zugriffsanforderungen durch andere Abteilungen; diese können dann auf Benutzer in der Domäne zugreifen, ohne dass spezielle Konfigurationsanforderungen vorliegen.
 
 Es ist keine spezielle Konfiguration erforderlich, um auf Benutzer in einer Domäne zuzugreifen, auf die Ihnen der Zugriff gewährt wurde. Wenn Sie jedoch Benutzer Benutzergruppen oder Produktkonfigurationen hinzufügen möchten, die in anderen Organisationen definiert sind, müssen Sie das Benutzer-Synchronisationstool für den Zugriff auf die betreffenden Organisationen konfigurieren. Das Tool muss in der Lage sein, die Anmeldeinformationen der Organisation zu finden, welche die Gruppen definiert. Zudem muss es erkennen können, dass die Gruppen einer externen Organisation gehören.
 
@@ -114,7 +114,7 @@ Dazu müssen Sie die Benutzersynchronisation so konfigurieren, dass alle nicht s
 
 - Werte für Benutzername, Gruppen, Land oder E-Mail-Adresse, die in einem nicht standardmäßigen Attribut im Verzeichnis enthalten sind oder auf einem solchen basieren.
 - Werte für Benutzername, Gruppen, Land oder E-Mail-Adresse, die anhand von Verzeichnisinformationen berechnet werden müssen.
-- Zusätzliche Benutzergruppen oder Produkte, die in der Liste für ausgewählte oder einige Benutzer hinzugefügt oder entfernt werden müssen.
+- Zusätzliche Benutzergruppen oder Produkte, die in der Liste für ausgewählte oder alle Benutzer hinzugefügt oder entfernt werden müssen.
 
 In der Konfigurationsdatei müssen alle benutzerdefinierten Attribute angegeben sein, die aus dem Verzeichnis abzurufen sind. Darüber hinaus müssen alle benutzerdefinierten Zuordnungen für diese Attribute sowie jegliche Berechnungen oder Aktionen angegeben sein, die zum Synchronisieren der Werte auszuführen sind. Die benutzerdefinierte Aktion wird mithilfe eines kleinen Python-Codeblocks festgelegt. Beispiele und Standardblöcke werden zur Verfügung gestellt.
 
@@ -168,7 +168,7 @@ Wenn eines oder mehrere der angegebenen Attribute in den Verzeichnisinformatione
 
 ### Hinzufügen von benutzerdefinierten Zuordnungen
 
-Code für benutzerdefinierte Zuordnungen wird mithilfe eines Abschnitts „Erweiterungen“ in der Hauptkonfigurationsdatei („user sync“) konfiguriert. In „extensions“ steuert ein benutzerspezifischer Abschnitt benutzerdefinierten Code, der einmal pro Benutzer aufgerufen wird.
+Code für benutzerdefinierte Zuordnungen wird mithilfe eines Abschnitts „extensions“ in der Hauptkonfigurationsdatei („user sync“) konfiguriert. In „extensions“ steuert ein benutzerspezifischer Abschnitt benutzerdefinierten Code, der einmal pro Benutzer aufgerufen wird.
 
 Der angegebene Code wird einmal pro Benutzer ausgeführt, nachdem Attribute und Gruppenmitgliedschaften aus dem Verzeichnissystem abgerufen wurden, jedoch bevor Aktionen für Adobe generiert wurden.
 
@@ -226,9 +226,9 @@ Die folgenden Variablen können vom benutzerdefinierten Code gelesen und geschri
     * `lastName` – für AdobeID ignoriert, an anderer Stelle verwendet
     * `email` – überall verwendet
     * `country` – für AdobeID ignoriert, an anderer Stelle verwendet
-    * `username` – für alle außer Federated ID ignoriert
-      [mit benutzernamenbasierter Anmeldung konfiguriert](https://helpx.adobe.com/de/enterprise/help/configure-sso.html)
-    * `domain` – für alle außer Federated ID ignoriert [mit benutzernamenbasierter Anmeldung konfiguriert](https://helpx.adobe.com/de/enterprise/help/configure-sso.html)
+    * `username` – für alle ignoriert außer für Federated ID 
+      [bei Konfiguration mit benutzernamenbasierter Anmeldung](https://helpx.adobe.com/de/enterprise/help/configure-sso.html)
+    * `domain` – für alle ignoriert außer für Federated ID [bei Konfiguration mit benutzernamenbasierter Anmeldung](https://helpx.adobe.com/de/enterprise/help/configure-sso.html)
 * `target_groups`: Ein Python-Satz für einzelne Benutzer, mit dem die Benutzergruppen und Produktkonfigurationen auf Adobe-Seite erfasst werden, denen der Benutzer hinzugefügt wird, wenn `process-groups` für die Synchronisation angegeben wird. Bei jedem Wert handelt es sich um einen Satz von Namen. Der Satz wird initialisiert, indem die Gruppenzuordnungen in der Hauptkonfigurationsdatei angewendet werden. Durch Änderungen an diesem Satz (hinzugefügte oder entfernte Elemente) wird der Satz von Gruppen geändert, die auf Adobe-Seite auf den Benutzer angewendet werden.
 * `hook_storage`: Ein Python-Wörterbuch für einzelne Benutzer, das beim ersten Übergeben an benutzerdefinierten Code leer ist und über Aufrufe hinweg erhalten bleibt. Mit benutzerdefiniertem Code können alle privaten Daten in diesem Wörterbuch gespeichert werden. Wenn Sie externe Skript-Dateien verwenden, ist dies ein geeigneter Speicherort für die Code-Objekte, die durch Kompilieren dieser Dateien erstellt wurden.
 * `logger`: Ein Objekt vom Typ `logging.logger`, dessen Ausgaben in der Konsole und/oder im Dateiprotokoll erfolgen (entsprechend der Protokollierungskonfiguration).
@@ -263,13 +263,13 @@ Zum Konfigurieren des Benutzer-Synchronisationstools für die Verwendung mit der
 In der Datei `connector-ldap.yml`:
 
 - Legen Sie den Wert von `user_username_format` auf einen Wert wie {attrname} fest, wobei „attrname“ den Namen des Verzeichnisattributs angibt, dessen Wert für den Benutzernamen verwendet wird.
-- Legen Sie den Wert von `user_domain_format` auf einen Wert wie {attrname} fest, wenn der Namen der Domäne aus dem benannten Verzeichnisattribut stammt, oder auf einen festen Zeichenfolgenwert wie „Beispiel.de“.
+- Legen Sie den Wert von `user_domain_format` auf einen Wert wie {attrname} fest, wenn der Name der Domäne aus dem benannten Verzeichnisattribut stammt, oder auf einen festen Zeichenfolgenwert wie „Beispiel.de“.
 
 Beim Verarbeiten des Verzeichnisses übernimmt das Benutzer-Synchronisationstool den Benutzernamen und die Domänenwerte aus diesen Feldern (oder Werten).
 
 Bei den für diese Konfigurationselemente angegebenen Werten kann es sich um eine Kombination aus Zeichenfolgen und einem oder mehreren Attributnamen in geschweiften Klammern ({}) handeln. Die festen Zeichen werden mit dem Attributwert kombiniert, um daraus die Zeichenfolge zum Verarbeiten des Benutzers zu erstellen.
 
-Bei Domänen, die die benutzernamenbasierte Anmeldung verwenden, sollte das Konfigurationselement `user_username_format` keine E-Mail-Adresse erzeugen. Das Zeichen „@“ ist in Benutzernamen für die benutzernamenbasierte Anmeldung nicht zulässig.
+Bei Domänen, die die benutzernamenbasierte Anmeldung verwenden, sollte das Konfigurationselement `user_username_format` keine E-Mail-Adresse ergeben. Das Zeichen „@“ ist in Benutzernamen für die benutzernamenbasierte Anmeldung nicht zulässig.
 
 Wenn Sie die benutzernamenbasierte Anmeldung verwenden, müssen Sie trotzdem eine eindeutige E-Mail-Adresse für jeden Benutzer angeben. Diese E-Mail-Adresse muss sich in einer Domäne befinden, die die Organisation beansprucht hat und besitzt. Das Benutzer-Synchronisationstool fügt keine Benutzer ohne E-Mail-Adresse zur Adobe-Organisation hinzu.
 
@@ -296,7 +296,7 @@ Dies sind optionale Konfigurationselemente. Sie geben einzelne Konten oder Grupp
 
 Wenn Sie verhindern möchten, dass das Benutzer-Synchronisationstool diese Konten aus Gruppen entfernt, fügen Sie sie nur in Gruppen hinzu, die nicht mit dem Benutzer-Synchronisationstool gesteuert werden, d. h. in Gruppen, die nicht in der Gruppenzuordnung in der Konfigurationsdatei aufgeführt werden.
 
-- `exclude_adobe_groups`: Bei den Werten dieses Konfigurationselements handelt es sich um eine Liste von Zeichenfolgen, die Adobe-Benutzergruppen oder PCs angeben. Alle Benutzer in diesen Gruppen werden beibehalten und nie als „Nur Adobe“-Benutzer gelöscht.
+- `exclude_adobe_groups`: Bei den Werten dieses Konfigurationselements handelt es sich um eine Liste von Zeichenfolgen, die Adobe-Benutzergruppen oder Produktkonfigurationen angeben. Alle Benutzer in diesen Gruppen werden beibehalten und nie als „Nur Adobe“-Benutzer gelöscht.
 - `exclude_users`: Bei den Werten dieses Konfigurationselements handelt es sich um eine Liste von Zeichenfolgen, die Muster darstellen, die Adobe-Benutzernamen entsprechen können. Alle übereinstimmenden Benutzer werden beibehalten und nie als „Nur Adobe“-Benutzer gelöscht.
 - `exclude_identity_types`: Bei den Werten für dieses Konfigurationselement handelt es sich um eine Liste von Zeichenfolgen, die „adobeID“, „enterpriseID“, und „federatedID“ sein können. Dies führt dazu, dass alle Konten mit den aufgeführten Typen beibehalten und nie als „Nur Adobe“-Benutzer gelöscht werden.
 

@@ -12,7 +12,7 @@ nav_order: 110
 
 ## Einführung in die Benutzersynchronisation
 
-Die Adobe-Benutzersynchronisation ist ein Befehlszeilentool, das Benutzer- und Gruppeninformationen aus dem Unternehmensverzeichnissystem (z. B. einem Active Directory- oder sonstigen LDAP-System) oder aus anderen Quellen in das Adobe-Benutzerverwaltungssystem verschiebt. Der Benutzersynchronisation liegt das Konzept zugrunde, dass das Unternehmensverzeichnissystem die maßgebliche Quelle für Informationen über Benutzer ist. Benutzerinformationen werden von dort in das Adobe-Benutzerverwaltungssystem verschoben. Dieser Vorgang wird durch eine Reihe von Konfigurationsdateien und Befehlszeilenoptionen für die Benutzersynchronisation gesteuert.
+Die Adobe-Benutzersynchronisation ist ein Befehlszeilentool, das Benutzer- und Gruppeninformationen aus dem Unternehmensverzeichnissystem (z. B. einem Active Directory- oder sonstigen LDAP-System) oder aus anderen Quellen in das Adobe-Benutzerverwaltungssystem verschiebt. Der Benutzersynchronisation liegt das Konzept zugrunde, dass das Unternehmensverzeichnissystem die maßgebliche Quelle für Informationen über Benutzer ist. Benutzerinformationen werden von dort in das Adobe-Benutzerverwaltungssystem übertragen. Dieser Vorgang wird durch eine Reihe von Konfigurationsdateien und Befehlszeilenoptionen für die Benutzersynchronisation gesteuert.
 
 Bei jeder Ausführung des Tools wird nach Unterschieden zwischen den Benutzerinformationen in beiden Systemen gesucht und das Adobe-System wird so aktualisiert, dass es dem Unternehmensverzeichnis entspricht.
 
@@ -20,7 +20,7 @@ Mit der Benutzersynchronisation können Sie ein neues Adobe-Konto erstellen, wen
 
 Mit benutzerdefinierten Verzeichnisattributen haben Sie außerdem die Kontrolle über die Werte, die in das Adobe-Konto importiert werden.
 
-Die Synchronisation ist auch ohne Unternehmensverzeichnissystem möglich, es genügt auch eine einfache CSV-Datei. Diese Lösung eignet sich für kleine Unternehmen und Abteilungen, die über kein zentral verwaltetes Verzeichnissystem verfügen.
+Die Synchronisation ist auch ohne Unternehmensverzeichnissystem möglich, es genügt eine einfache CSV-Datei. Diese Lösung eignet sich für kleine Unternehmen und Abteilungen, die über kein zentral verwaltetes Verzeichnissystem verfügen.
 
 Wenn Sie hingegen über ein großes Verzeichnis verfügen, können Sie die Benutzersynchronisation auch über Push-Benachrichtigungen bei Änderungen im Verzeichnissystem veranlassen, statt eine große Anzahl von Benutzerkonten zu vergleichen.
 
@@ -48,14 +48,14 @@ Jede Adobe-Organisation besteht aus mehreren Benutzern. Jeder Benutzer muss eine
 
 Enterprise IDs und Federated IDs müssen sich in einer Domäne befinden, die das Unternehmen beansprucht hat und deren Eigentümer es ist. Die Domäne muss für die Adobe-Organisation mit der Adobe Admin Console eingerichtet werden.
 
-Wenn Sie über mehr als eine Adobe-Organisation verfügen, sollten Sie wissen, welche Domänen und Benutzer welcher Organisation angehören und wie diese Gruppen mit den Konten, die im Verzeichnissystem vorhanden sind, in Zusammenhang stehen. Entweder haben Sie eine einfache Konfiguration mit einem einzigen Verzeichnissystem und einer Adobe-Organisation. Wenn von beiden mehrere vorhanden sind, sollten Sie eine Karte anfertigen, die zeigt, welche Systeme Benutzerinformationen an welche Adobe-Organisationen senden. Möglicherweise arbeiten Sie mit mehreren Instanzen der Benutzersynchronisation, von denen jede nur für eine bestimmte Adobe-Organisation verwendet wird.
+Wenn Sie über mehr als eine Adobe-Organisation verfügen, sollten Sie wissen, welche Domänen und Benutzer welcher Organisation angehören und wie diese Gruppen mit den Konten, die im Verzeichnissystem vorhanden sind, in Zusammenhang stehen. Vielleicht haben Sie eine einfache Konfiguration mit einem einzigen Verzeichnissystem und einer Adobe-Organisation. Wenn von beiden mehrere vorhanden sind, sollten Sie eine Karte anfertigen, die zeigt, welche Systeme Benutzerinformationen an welche Adobe-Organisationen senden. Möglicherweise arbeiten Sie mit mehreren Instanzen der Benutzersynchronisation, von denen jede nur für eine bestimmte Adobe-Organisation verwendet wird.
 
 Mit der Benutzersynchronisation können Sie Benutzer erstellen und aktualisieren sowie Lizenzen verwalten. Für die Lizenzverwaltung ist die Benutzersynchronisation optional. Die entsprechenden Funktionen sind von anderen Funktionen der Benutzersynchronisation unabhängig. Über die Adobe Admin Console oder eine andere Applikation können Sie Lizenzen manuell verwalten.
 
 Zum Löschen von Konten gibt es eine Reihe von Möglichkeiten. Sie können Adobe-Konten, wenn das entsprechende Unternehmenskonto entfernt wird, sofort löschen. Wenn Sie eine andere Vorgehensweise verwenden möchten, können die Adobe-Konten allerdings auch verfügbar bleiben, bis überprüft wird, ob Assets aus diesem Konto abgerufen werden müssen. Die Benutzersynchronisation kann diese und eine Reihe anderer Löschvorgänge ausführen.
 
 
-## Die Benutzersynchronisation wird auf Ihren Systemen ausgeführt. 
+## Die Benutzersynchronisation wird auf Ihren Systemen ausgeführt 
 Sie benötigen einer Server, auf dem sie gehostet wird. Die Benutzersynchronisation ist eine Python-Open-Source-Applikation. Sie können ein vorkonfiguriertes Python-Paket verwenden oder einen eigenen Build erstellen.
 
 ## Voraussetzungen

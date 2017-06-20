@@ -45,12 +45,16 @@ class DirectoryConnector(object):
             options = {}
         self.state = self.implementation.connector_initialize(options)
 
-    def load_users_and_groups(self, groups, extended_attributes=None):
+    def load_users_and_groups(self, groups, extended_attributes=None, all_users=True):
         """
         :type groups: list(str)
-        :type extended_attributes: list(str)
+        :type extended_attributes: Optional(list(str))
+        :type all_users: bool
         :rtype (bool, iterable(dict))
         """
         if extended_attributes is None:
             extended_attributes = []
-        return self.implementation.connector_load_users_and_groups(self.state, groups, extended_attributes)
+        return self.implementation.connector_load_users_and_groups(self.state,
+                                                                   groups=groups,
+                                                                   extended_attributes=extended_attributes,
+                                                                   all_users=all_users)

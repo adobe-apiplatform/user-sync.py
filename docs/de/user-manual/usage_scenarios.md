@@ -60,9 +60,9 @@ In diesem Aufruf werden die Parameter „users“ und „process-groups“ angeg
 2017-01-20 16:51:07 6840 INFO main - ========== End Run (Total time: 0:00:05) ==========
 ```
 
-### Anzeigen des Ergebnisses
+### Ergebnis anzeigen
 
-Bei erfolgreicher Synchronisation wird die Adobe Admin Console aktualisiert. Nach der Ausführung dieses Befehls zeigen Ihre Benutzerliste und die Produktkonfiguration-Benutzerliste in der Admin Console, dass der „Default Acrobat Pro DC configuration.“ ein Benutzer mit einer Federated Identity hinzugefügt wurde.
+Bei erfolgreicher Synchronisation wird die Adobe Admin Console aktualisiert. Nach der Ausführung dieses Befehls zeigen Ihre Benutzerliste und die Produktkonfiguration-Benutzerliste in der Admin Console, dass der „Default Acrobat Pro DC configuration“ ein Benutzer mit einer Federated Identity hinzugefügt wurde.
 
 ![Figure 3: Screenshot der Admin Console](media/edit-product-config.png)
 
@@ -175,7 +175,7 @@ Diese Datei wird dann für das Benutzer-Synchronisationstool bereitgestellt:
 ./user-sync --users file updated-users.csv --process-groups --update-users --adobe-only-user-action exclude
 ```
 
---adobe-only-user-action exclude bewirkt, dass die Benutzersynchronisation nur in der Datei „updated-users.csv“ enthaltene Benutzer aktualisiert und alle übrigen ignoriert.
+„--adobe-only-user-action exclude“ bewirkt, dass die Benutzersynchronisation nur in der Datei „updated-users.csv“ enthaltene Benutzer aktualisiert und alle übrigen ignoriert.
 
 Löschungen werden ebenso behandelt. Erstellen Sie eine Datei `deleted-users.csv` basierend auf dem Format von `remove-list.csv` im gleichen Beispielordner und führen Sie das Benutzer-Synchronisationstool aus:
 
@@ -198,7 +198,7 @@ Erfasste Statistiken:
 - **Number of Adobe users created:** Anzahl der Adobe-Benutzer, die während dieser Ausführung erstellt wurden
 - **Number of Adobe users updated:** Anzahl der Adobe-Benutzer, die während dieser Ausführung aktualisiert wurden
 - **Number of Adobe users removed:** Anzahl der Adobe-Benutzer, die auf Adobe-Seite aus dem Unternehmen entfernt wurden
-- **Number of Adobe users deleted:** Anzahl der Adobe-Benutzer, die aus dem Unternehmen entfernt und Enterprise/Federated-Benutzerkonten, die auf Adobe-Seite gelöscht wurden
+- **Number of Adobe users deleted:** Anzahl der Adobe-Benutzer, die aus dem Unternehmen entfernt wurden, und der Enterprise/Federated-Benutzerkonten, die auf Adobe-Seite gelöscht wurden
 - **Number of Adobe users with updated groups:** Anzahl der Adobe-Benutzer, die einer oder mehreren Benutzergruppen hinzugefügt wurden
 - **Number of Adobe users removed from mapped groups:** Anzahl der Adobe-Benutzer, die aus einer oder mehreren Benutzergruppen entfernt wurden
 - **Number of Adobe users with no changes:** Anzahl der Adobe-Benutzer, die während dieser Ausführung nicht geändert wurden

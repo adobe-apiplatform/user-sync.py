@@ -18,32 +18,16 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import user_sync.error
-import user_sync.helper
+import six
 
-ENTERPRISE_IDENTITY_TYPE = 'enterpriseID'
-FEDERATED_IDENTITY_TYPE = 'federatedID'
-ADOBEID_IDENTITY_TYPE = 'adobeID'
-
-NORMALIZED_IDENTITY_TYPE_MAP = {
-    user_sync.helper.normalize_string(ADOBEID_IDENTITY_TYPE): ADOBEID_IDENTITY_TYPE,
-    user_sync.helper.normalize_string(ENTERPRISE_IDENTITY_TYPE): ENTERPRISE_IDENTITY_TYPE,
-    user_sync.helper.normalize_string(FEDERATED_IDENTITY_TYPE): FEDERATED_IDENTITY_TYPE,
-}
-
-
-def parse_identity_type(value, message_format=None):
-    """
-    :type value: basestring
-    :type message_format: basestring
-    :rtype str
-    """
-    result = None
-    if value is not None:
-        normalized_value = user_sync.helper.normalize_string(value)
-        result = NORMALIZED_IDENTITY_TYPE_MAP.get(normalized_value)
-        if result is None:
-            validation_message = 'Unrecognized identity type: "%s"' % value
-            message = validation_message if message_format is None else message_format % validation_message
-            raise user_sync.error.AssertionException(message)
-    return result
+if six.PY3:
+    string_type = str
+    list_type = list
+    integer_type = int
+    boolean_type = bool
+else:
+    import types
+    string_type = types.StringType
+    list_type = types.ListType
+    integer_type = types.IntType
+    boolean_type = types.BooleanType

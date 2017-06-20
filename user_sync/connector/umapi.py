@@ -20,12 +20,14 @@
 
 import json
 import logging
+# import helper
 
 import jwt
+import six
 import umapi_client
 from Crypto.PublicKey import RSA
 
-import helper
+import user_sync.connector.helper
 import user_sync.config
 import user_sync.helper
 import user_sync.identity_type
@@ -58,6 +60,8 @@ class UmapiConnector(object):
         server_builder.set_string_value('endpoint', '/v2/usermanagement')
         server_builder.set_string_value('ims_host', 'ims-na1.adobelogin.com')
         server_builder.set_string_value('ims_endpoint_jwt', '/ims/exchange/jwt')
+        server_builder.set_int_value('timeout', 120)
+        server_builder.set_int_value('retries', 3)
         options['server'] = server_options = server_builder.get_options()
 
         enterprise_config = caller_config.get_dict_config('enterprise')
@@ -66,12 +70,11 @@ class UmapiConnector(object):
         enterprise_builder.require_string_value('tech_acct')
         options['enterprise'] = enterprise_options = enterprise_builder.get_options()
         self.options = options
-        self.logger = logger = helper.create_logger(options)
+        self.logger = logger = user_sync.connector.helper.create_logger(options)
         if server_config:
             server_config.report_unused_values(logger)
         logger.debug('UMAPI initialized with options: %s', options)
 
-        # set up the auth dict for umapi-client
         ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
         auth_dict = {
@@ -120,6 +123,8 @@ class UmapiConnector(object):
                 test_mode=options['test_mode'],
                 user_agent="user-sync/" + APP_VERSION,
                 logger=self.logger,
+                timeout_seconds=float(server_options['timeout']),
+                retry_max_attempts=server_options['retries'] + 1,
             )
         except Exception as e:
             raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))
@@ -132,11 +137,14 @@ class UmapiConnector(object):
 
     def iter_users(self):
         users = {}
-        for u in umapi_client.UsersQuery(self.connection):
-            email = u['email']
-            if not (email in users):
-                users[email] = u
-                yield u
+        try:
+            for u in umapi_client.UsersQuery(self.connection):
+                email = u['email']
+                if not (email in users):
+                    users[email] = u
+                    yield u
+        except umapi_client.UnavailableError as e:
+            raise AssertionException("Error contacting UMAPI server: %s" % e)
 
     def get_action_manager(self):
         return self.action_manager
@@ -240,7 +248,7 @@ class Commands(object):
 
     def convert_user_attributes_to_params(self, attributes):
         params = {}
-        for key, value in attributes.iteritems():
+        for key, value in six.iteritems(attributes):
             if key == 'firstname':
                 key = 'first_name'
             elif key == 'lastname':
@@ -327,6 +335,8 @@ class ActionManager(object):
             _, sent, _ = self.connection.execute_single(action)
         except umapi_client.BatchError as e:
             self.process_sent_items(e.statistics[1], e)
+        except umapi_client.UnavailableError as e:
+            raise AssertionException("Error contacting UMAPI server: %s" % e)
         else:
             self.process_sent_items(sent)
 
@@ -335,6 +345,8 @@ class ActionManager(object):
             _, sent, _ = self.connection.execute_queued()
         except umapi_client.BatchError as e:
             self.process_sent_items(e.statistics[1], e)
+        except umapi_client.UnavailableError as e:
+            raise AssertionException("Error contacting UMAPI server: %s" % e)
         else:
             self.process_sent_items(sent)
 

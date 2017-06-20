@@ -76,6 +76,7 @@ Las credenciales se almacenan en el almacén seguro del sistema operativo subyac
 |Windows | Depósito de credenciales de Windows |
 | Mac OS X | Cadena de llave |
 | Linux | Servicio secreto de Freedesktop o KWallet |
+{: .bordertablestyle }
 
 En Linux, la aplicación de almacenamiento seguro la habría instalado y configurado el proveedor del sistema operativo.
 
@@ -123,7 +124,7 @@ Nota: si utiliza esta técnica para el archivo connector-umapi.yml, deberá inte
 
 Puede utilizar un programador suministrado por el sistema operativo para ejecutar la herramienta User Sync periódicamente, según los requisitos de la empresa. Estos ejemplos ilustran cómo puede configurar los programadores Unix y Windows.
 
-Podría querer configurar un archivo de comandos que ejecutara UserSync con parámetros específicos y luego extrajera un resumen de registro y lo enviara por correo electrónico a los encargados de supervisar el proceso de sincronización. Estos ejemplos funcionan mejor con el nivel de registro de la consola definidos en INFO
+Podría querer configurar un archivo de comandos que ejecutara UserSync con parámetros específicos y luego extrajera un resumen de registro y lo enviara por correo electrónico a los encargados de supervisar el proceso de sincronización. Estos ejemplos funcionan mejor con el nivel de registro de la consola definidos en INFO.
 
 ```YAML
 logging:

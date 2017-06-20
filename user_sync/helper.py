@@ -21,8 +21,15 @@
 import csv
 import datetime
 import os
+import sys
+
+import six
 
 from user_sync.error import AssertionException
+
+
+def is_py2():
+    return sys.version_info.major == 2
 
 
 def normalize_string(string_value):
@@ -48,9 +55,17 @@ class CSVAdapter:
         """
         try:
             if mode == 'r':
-                return open(str(name), 'rb', buffering=1)
+                if is_py2():
+                    return open(str(name), 'rb', buffering=1)
+                else:
+                    kwargs = dict(buffering=1, newline='', encoding=encoding)
+                    return open(str(name), 'r', **kwargs)
             elif mode == 'w':
-                return open(str(name), 'wb')
+                if is_py2():
+                    return open(str(name), 'wb')
+                else:
+                    kwargs = dict(newline='')
+                    return open(str(name), 'w', **kwargs)
             else:
                 raise ValueError("File mode (%s) must be 'r' or 'w'" % mode)
         except IOError as e:
@@ -71,7 +86,7 @@ class CSVAdapter:
         return '\t'
 
     @classmethod
-    def read_csv_rows(cls, file_path, recognized_column_names=None, logger=None, encoding=None, delimiter=None):
+    def read_csv_rows(cls, file_path, recognized_column_names=None, logger=None, encoding='utf8', delimiter=None):
         """
         :type file_path: str
         :type recognized_column_names: list(str)
@@ -79,6 +94,12 @@ class CSVAdapter:
         :type encoding: str
         :type delimiter: str
         """
+        if is_py2():
+            # in py2, we need to encode the column names, because the file is read as bytes
+            encoded_names = []
+            for name in recognized_column_names:
+                encoded_names.append(name.encode(encoding, 'strict'))
+            recognized_column_names = encoded_names
         with cls.open_csv_file(file_path, 'r', encoding) as input_file:
             if delimiter is None:
                 delimiter = cls.guess_delimiter_from_filename(file_path)
@@ -90,12 +111,18 @@ class CSVAdapter:
                     if len(unrecognized_column_names) > 0 and logger is not None:
                         logger.warn("In file '%s': unrecognized column names: %s", file_path, unrecognized_column_names)
                 for row in reader:
+                    if is_py2():
+                        # in py2, we need to decode both the column names *and* the values
+                        newrow = {}
+                        for key, val in six.iteritems(row):
+                            newrow[key.decode(encoding, 'strict')] = val.decode(encoding, 'strict') if val else None
+                        row = newrow
                     yield row
             except UnicodeError as e:
                 raise AssertionException("Encoding error in file '%s': %s" % (file_path, e))
 
     @classmethod
-    def write_csv_rows(cls, file_path, field_names, rows, encoding=None, delimiter=None):
+    def write_csv_rows(cls, file_path, field_names, rows, encoding='utf8', delimiter=None):
         """
         :type file_path: str
         :type field_names: list(str)
@@ -107,8 +134,19 @@ class CSVAdapter:
             if delimiter is None:
                 delimiter = cls.guess_delimiter_from_filename(file_path)
             writer = csv.DictWriter(output_file, fieldnames=field_names, delimiter=delimiter)
-            writer.writeheader()
+            if is_py2():
+                # in py2, we need to encode the field names in the header, because the file is written as bytes
+                header_row = {}
+                for name in field_names:
+                    header_row[name] = name.encode(encoding, 'strict')
+                writer.writerow(header_row)
+            else:
+                writer.writeheader()
             for row in rows:
+                if is_py2():
+                    # in py2, we have to encode the field values, because the file is written as bytes
+                    for name, val in six.iteritems(row):
+                        row[name] = val.encode(encoding, 'strict')
                 writer.writerow(row)
 
 
@@ -126,7 +164,8 @@ class JobStats:
 
         left_count = JobStats.line_left_count
         left_side = left_count * divider
-        right_count = (JobStats.line_width - len(header)) / len(divider) - left_count
+        # use floor division, as regular division in python 3 returns a float
+        right_count = (JobStats.line_width - len(header)) // len(divider) - left_count
         if right_count < 0:
             right_count = 0
         right_side = right_count * divider

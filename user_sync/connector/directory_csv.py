@@ -18,6 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import six
+
 import user_sync.config
 import user_sync.connector.helper
 import user_sync.error
@@ -39,17 +41,16 @@ def connector_initialize(options):
     return state
 
 
-def connector_load_users_and_groups(state, groups, extended_attributes):
+def connector_load_users_and_groups(state, groups=None, extended_attributes=None, all_users=True):
     """
     :type state: CSVDirectoryConnector
-    :type groups: list(str)
-    :type extended_attributes: list(str)
+    :type groups: Optional(list(str))
+    :type extended_attributes: Optional(list(str))
+    :type all_users: bool
     :rtype (bool, iterable(dict))
     """
-
-    # CSV supports arbitrary aka "extended" attrs by default,
-    # so the value of extended_attributes has no impact on this particular connector
-    return state.load_users_and_groups(groups, extended_attributes)
+    # CSV always reads all users, so we don't bother passing the all_users parameter into the implementation
+    return state.load_users_and_groups(groups or [], extended_attributes or [])
 
 
 class CSVDirectoryConnector(object):
@@ -59,7 +60,7 @@ class CSVDirectoryConnector(object):
         caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('delimiter', None)
-        builder.set_string_value('string_encoding', 'utf-8')
+        builder.set_string_value('string_encoding', 'utf8')
         builder.set_string_value('first_name_column_name', 'firstname')
         builder.set_string_value('last_name_column_name', 'lastname')
         builder.set_string_value('email_column_name', 'email')
@@ -93,7 +94,7 @@ class CSVDirectoryConnector(object):
         self.logger.debug('Reading from: %s', file_path)
         self.users = users = self.read_users(file_path, extended_attributes)
         self.logger.debug('Number of users loaded: %d', len(users))
-        return users.itervalues()
+        return six.itervalues(users)
 
     def read_users(self, file_path, extended_attributes):
         """
@@ -199,7 +200,4 @@ class CSVDirectoryConnector(object):
         :type column_name: str
         """
         value = row.get(column_name)
-        if not value:
-            return None
-        else:
-            return value.decode(self.encoding)
+        return value if value else None

@@ -15,7 +15,7 @@ nav_order: 310
 ## Benutzer
 
 
-| Befehlszeilenoption „users“  | Verwendung           |
+| Befehlszeilen-option „users“  | Verwendung           |
 | ------------- |:-------------| 
 |   `--users all` |    Alle Benutzer im Verzeichnis werden eingeschlossen. |
 |   `--users group "g1,g2,g3"`  |    Die benannten Verzeichnisgruppen werden als Auswahl der Benutzer herangezogen. <br>Die Liste umfasst Benutzer, die Mitglied in einer dieser Gruppen sind. |
@@ -28,7 +28,7 @@ Wenn Sie alle im Verzeichnis aufgelisteten Benutzer mit Adobe synchronisieren m�
 
 Wenn Sie kein Verzeichnissystem verwenden, können Sie die Benutzer mit dem Befehl `--users file f` aus einer CSV-Datei auslesen. Welches Format Sie dazu verwenden, sehen Sie in der Beispieldatei mit Benutzern („csv inputs - user and remove lists/1 users-file.csv“). Die in CSV-Dateien aufgeführten Gruppen stellen die Namen dar, aus den Sie wählen können. Die Zuordnung zu Adobe-Benutzergruppen oder Produktkonfigurationen entspricht der Zuordnung zu Verzeichnisgruppen.
 
-## Groups
+## Gruppen
 
 Wenn Sie keine Produktlizenzen mit der Benutzersynchronisation verwalten, müssen Sie die Gruppenzuordnung in der Konfigurationsdatei nicht angeben und keine Befehlszeilenparameter für die Gruppenverarbeitung hinzufügen.
 
@@ -43,7 +43,7 @@ Nur solche Benutzer, die bei der Verzeichnisabfrage und -filterung zurückgegebe
 
 
 
-| Befehlszeilenoption       ...........| Verwendung           |
+| Befehlszeilen-option       ...........| Verwendung           |
 | ------------- |:-------------| 
 |   `--adobe-only-user-action exclude`                        |  Bei Konten, die nur in Adobe vorhanden sind und denen kein Verzeichniskonto entspricht, wird keine Aktion ausgeführt. Adobe-Gruppenmitgliedschaften werden auch dann nicht aktualisiert, wenn die Option `--process-groups` angegeben ist. |
 |   `--adobe-only-user-action preserve`                        |  Konten, die nur in Adobe vorhanden sind und denen kein Verzeichniskonto entspricht, werden nicht entfernt und nicht gelöscht. Adobe-Gruppenmitgliedschaften werden aktualisiert, wenn die Option `--process-groups` angegeben wird. |
@@ -78,7 +78,7 @@ Einige Beispiele:
 
 Sie können mit einigen Testläufen beginnen, ohne Optionen zum Löschen anzugeben.
 
-&#9744;Stellen Sie die gewünschten Befehlszeilenoptionen für die Benutzersynchronisation zusammen.
+&#9744; Stellen Sie die gewünschten Befehlszeilenoptionen für die Benutzersynchronisation zusammen.
 
 
 [Voriger Abschnitt](monitoring.md) \| [Zurück zum Inhaltsverzeichnis](index.md) \|  [Nächster Abschnitt](scheduling.md)

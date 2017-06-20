@@ -59,8 +59,9 @@ require_tls_cert: False
 all_users_filter: "(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
 
 # (optional) group_filter_format (default value given below)
-# group_filter_format specifies the format string used to construct a group query,
-# as needed by the --users groups or --users mapped command-line arguments.
+# group_filter_format specifies the format string used to get the distinguished
+# name of a group given its common name (as specified in the directory to Adobe
+# group mapping, or in the --users group "name1,name2" command-line argument).
 # {group} is replaced with the name of the group to find.  The default value here is
 # complex, because it's meant to work for both AD-style and OpenLDAP-style directories.
 # You will likely want to replace it with a simpler query customized for your directory,
@@ -68,13 +69,23 @@ all_users_filter: "(&(objectClass=user)(objectCategory=person)(!(userAccountCont
 # or this one for OpenLDAP: "(&(|(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
 group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
 
+# (optional) group_member_filter_format (default value given below)
+# group_users_filter specifies the query used to find all members of a group,
+# where the string {group_dn} is replaced with the group distinguished name.
+# The default value just finds users who are immediate members of the group,
+# not those who are "indirectly" members by virtue of membership in a group
+# that is contained in the group.  If you want indirect containment, then
+# use this value instead of the default:
+# group_member_filter_format: "(memberOf:1.2.840.113556.1.4.1941:={group_dn})"
+group_member_filter_format: "(memberOf={group_dn})"
+
 # (optional) string_encoding (default value given below)
 # string_encoding specifies the Unicode string encoding used by the directory.
 # All values retrieved from the directory are converted to Unicode before being
 # sent to or compared with values on the Adobe side, to avoid encoding issues.
-# The value must be a Python codec name or alias, such as 'latin1' or 'utf-8.
+# The value must be a Python codec name or alias, such as 'latin1' or 'big5'.
 # See https://docs.python.org/2/library/codecs.html#standard-encodings for details.
-#string_encoding: utf-8
+#string_encoding: utf8
 
 # (optional) user_identity_type_format (no default)
 # user_identity_type_format specifies how to construct a user's desired identity

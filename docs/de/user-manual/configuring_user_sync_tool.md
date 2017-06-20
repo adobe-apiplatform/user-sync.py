@@ -41,7 +41,7 @@ Beispiele für die drei erforderlichen Dateien finden Sie im Ordner `config file
 3 connector-ldap.yml
 ```
 
-Um eine eigene Konfiguration zu erstellen, kopieren Sie die Beispieldateien in den Stammordner des Benutzer-Synchronisationstools und benennen Sie sie um (Entfernen der vorangestellten Zahl). Passen Sie die kopierten Konfigurationsdateien in einem Nur-Text-Editor für Ihre Umgebung und Ihr Verwendungsmodell an. Die Beispiele enthalten Kommentare, in denen alle möglichen Konfigurationselemente angegeben werden. Sie können Elemente auskommentieren, die Sie verwenden möchten.
+Um eine eigene Konfiguration zu erstellen, kopieren Sie die Beispieldateien in den Stammordner des Benutzer-Synchronisationstools und benennen Sie sie um (Entfernen der vorangestellten Zahl). Passen Sie die kopierten Konfigurationsdateien in einem Nur-Text-Editor für Ihre Umgebung und Ihr Verwendungsmodell an. Die Beispiele enthalten Kommentare, in denen alle möglichen Konfigurationselemente angegeben werden. Sie können bei Elementen, die Sie verwenden möchten, die Kommentarzeichen entfernen.
 
 Konfigurationsdateien liegen im [YAML-Format](http://yaml.org/spec/) vor und weisen das `yml`-Suffix auf. Beim Bearbeiten von YAML sind einige wichtige Regeln zu beachten:
 
@@ -63,12 +63,12 @@ adobe_groups:
 
 ## Erstellen und Sichern von Verbindungskonfigurationsdateien
 
-In den beiden Verbindungskonfigurationsdateien werden die Anmeldeinformationen gespeichert, mit denen das Benutzer-Synchronisationstool auf die Adobe Admin Console und das LDAP-Verzeichnis Ihres Unternehmens zugreift. Zum Isolieren der vertraulichen Informationen, die zum Verbinden der beiden Systeme erforderlich sind, sind alle tatsächlichen Details zu Anmeldeinformationen ausschließlich auf diese zwei Dateien beschränkt. **Sichern Sie sie ordnungsgemäß** entsprechend der Beschreibung im Abschnitt [Überlegungen zur Sicherheit](deployment_best_practices.md#überlegungen-zur-sicherheit) in diesem Dokument.
+In den beiden Verbindungskonfigurationsdateien werden die Anmeldeinformationen gespeichert, mit denen das Benutzer-Synchronisationstool auf die Adobe Admin Console und das LDAP-Verzeichnis Ihres Unternehmens zugreift. Zum Isolieren der vertraulichen Informationen, die zum Verbinden der beiden Systeme erforderlich sind, sind alle tatsächlichen Details zu Anmeldeinformationen ausschließlich auf diese zwei Dateien beschränkt. **Sichern Sie sie ordnungsgemäß** entsprechend der Beschreibung im Abschnitt [Sicherheitsempfehlungen](deployment_best_practices.md#sicherheitsempfehlungen) in diesem Dokument.
 
 Es gibt drei Verfahren zum Sichern von Anmeldeinformationen, die vom Benutzer-Synchronisationstool unterstützt werden.
 
 
-1. Anmeldeinformationen können direkt in den Dateien „connector-umapi.yml“ und „connector-ldap.yml“ abgelegt werden und die Dateien werden über die Zugriffskontrolle des Betriebssystems geschützt.
+1. Anmeldeinformationen können direkt in den Dateien „connector-umapi.yml“ und „connector-ldap.yml“ gespeichert werden und die Dateien werden über die Zugriffskontrolle des Betriebssystems geschützt.
 
 2. Sie können Anmeldeinformationen im sicheren Speicher für Anmeldeinformationen des Betriebssystems platzieren und Sie verweisen aus den beiden Konfigurationsdateien darauf.
 
@@ -79,7 +79,7 @@ Die Beispielkonfigurationsdateien enthalten Einträge, die jedes dieser Verfahre
 
 ### Konfigurieren der Verbindung mit der Adobe Admin Console (UMAPI)
 
-Wenn Sie Zugriff erhalten haben und eine Integration mit der Benutzerverwaltung im Adobe E/A-[Entwicklerportal](https://www.adobe.io/console/) einrichten, notieren Sie sich die Konfigurationselemente, die Sie erstellt haben oder die Ihrer Organisation zugewiesen wurden:
+Wenn Sie Zugriff erhalten haben und eine Integration mit der Benutzerverwaltung im Adobe I/O-[Entwicklerportal](https://www.adobe.io/console/) einrichten, notieren Sie sich die Konfigurationselemente, die Sie erstellt haben oder die Ihrer Organisation zugewiesen wurden:
 
 - Organisations-ID
 - API-Schlüssel
@@ -100,7 +100,7 @@ enterprise:
 
 **Hinweis:** Die Datei mit dem privaten Schlüssel muss an dem in `priv_key_path` angegebenen Speicherort abgelegt sein und sie darf nur für das Benutzerkonto lesbar sein, unter dem das Tool ausgeführt wird.
 
-In Version 2.1 oder höher des Benutzer-Synchronisationstools besteht die Möglichkeit, den privaten Schlüssel alternativ in einer separaten Datei zu speichern. Sie können den privaten Schlüssel auch direkt in der Konfigurationsdatei platzieren. Verwenden Sie nicht den Schlüssel `priv_key_path`, sondern `priv_key_data`, und gehen Sie dabei wie folgt vor:
+In Version 2.1 oder höher des Benutzer-Synchronisationstools besteht die Möglichkeit, den privaten Schlüssel alternativ in einer separaten Datei zu speichern. Sie können den privaten Schlüssel auch direkt in der Konfigurationsdatei platzieren. Verwenden Sie nicht den Schlüssel `priv_key_path`, sondern `priv_key_data` wie folgt:
 
 	  priv_key_data: |
 	    -----BEGIN RSA PRIVATE KEY-----
@@ -155,7 +155,7 @@ directory_users:
 
 ### Konfigurieren der Gruppenzuordnung
 
-Bevor Sie Benutzergruppen und Berechtigungen synchronisieren können, müssen Sie Benutzergruppen und Produktkonfigurationen in der Adobe Admin Console sowie entsprechende Gruppen in Ihrem Unternehmensverzeichnis erstellen. Siehe dazu die Beschreibung weiter oben unter [Einrichten der Produktzugriffssynchronisation](setup_and_installation.md#einrichten-der-produktzugriffssynchronisation).
+Bevor Sie Benutzergruppen und Berechtigungen synchronisieren können, müssen Sie Benutzergruppen und Produktkonfigurationen in der Adobe Admin Console sowie entsprechende Gruppen in Ihrem Unternehmensverzeichnis erstellen. Siehe dazu die Beschreibung weiter oben unter [Einrichten der Synchronisation für den Produktzugriff](setup_and_installation.md#einrichten-der-synchronisation-für-den-produktzugriff).
 
 **HINWEIS:** Alle Gruppen müssen vorhanden sein und auf beiden Seiten die angegebenen Namen aufweisen. Das Benutzer-Synchronisationstool erstellt auf keiner Seite Gruppen; wenn eine benannte Gruppe nicht gefunden wird, protokolliert das Benutzer-Synchronisationstool einen Fehler.
 
@@ -211,7 +211,7 @@ Eine solche Konfiguration bewirkt, dass das Benutzer-Konfigurationstool prüft, 
 
 Protokolleinträge werden in die Konsole geschrieben, von der aus das Tool gestartet wurde, sowie optional in eine Protokolldatei. Bei jeder Ausführung der Benutzersynchronisation wird ein neuer Eintrag mit einem Datums-/Zeitstempel in das Protokoll geschrieben.
 
-Im Abschnitt **logging** können Sie die Protokollierung in einer Datei aktivieren und deaktivieren; zudem können Sie dort die Menge der Informationen steuern, die in das Protokoll und die Konsolenausgabe geschrieben wird.
+Im Abschnitt **logging** können Sie die Protokollierung in einer Datei aktivieren und deaktivieren; zudem können Sie dort die Ausführlichkeit der Informationen steuern, die in das Protokoll und die Konsolenausgabe geschrieben werden.
 
 ```YAML
 logging:
@@ -228,7 +228,7 @@ Wenn die Protokollierung in einer Datei aktiviert ist, ist der Wert von „file_
 - Geben Sie einen absoluten Pfad oder einen relativen Pfad zum Ordner mit dieser Konfigurationsdatei an.
 - Stellen Sie sicher, dass für die Datei und den Ordner die entsprechenden Lese-/Schreibberechtigungen festgelegt sind.
 
-Mit Werten für die Protokollebene wird festgelegt, welche Menge von Informationen in die Protokolldatei oder die Konsole geschrieben wird.
+Mit Werten für die Protokollebene wird festgelegt, mit welcher Ausführlichkeit Informationen in die Protokolldatei oder die Konsole geschrieben werden.
 
 - Bei der untersten Ebene („debug“) werden die meisten Informationen und bei der obersten Ebene („critical“) die wenigsten Informationen aufgezeichnet.
 - Sie können für die Datei und für die Konsole unterschiedliche Werte für die Protokollierungsebene festlegen.
@@ -238,7 +238,7 @@ Protokolleinträge, die die Begriffe WARNING, ERROR oder CRITICAL (WARNUNG, FEHL
 > `2017-01-19 12:54:04 7516 WARNING
 console.trustee.org1.action - Error requestID: action_5 code: `"error.user.not_found" message: "No valid users were found in the request"`
 
-In diesem Beispiel wurde während der Ausführung eine Warnung am 19.01.2017 um 12:54:04 Uhr protokolliert. Eine Aktion verursachte einen Fehler mit dem Code „error.user.not_found“. Die zum Fehlercode gehörende Beschreibung ist vorhanden.
+In diesem Beispiel wurde während der Ausführung eine Warnung am 19.01.2017 um 12:54:04 Uhr protokolliert. Eine Aktion verursachte einen Fehler mit dem Code „error.user.not_found“. Die zum Fehlercode gehörende Beschreibung ist ebenfalls angegeben.
 
 Sie können mithilfe des requestID-Werts nach der genauen Anforderung suchen, die den gemeldeten Fehler verursacht hat. Wenn Sie beispielsweise nach „action_5“ suchen, werden die folgenden Details zurückgegeben:
 
@@ -363,7 +363,7 @@ Stellen Sie mithilfe von Testfällen sicher, dass Ihre Konfiguration ordnungsgem
 3. Vergewissern Sie sich, dass Benutzer aus konfigurierten Produktkonfigurationen in der Adobe Admin Console entfernt wurden.
 
 
-4. Führen Sie die Benutzersynchronisation aus, um die Benutzer zu entfernen (`./user-sync -t --users all --process-groups --adobe-only-user-action delete`) Führen Sie das Tool anschließend ohne den -t-Parameter aus. Vorsicht: Vergewissern Sie sich, dass bei der Ausführung mit -t nur der gewünschte Benutzer entfernt wurde. Bei dieser Ausführung (ohne -t) werden Benutzer tatsächlich gelöscht.
+4. Führen Sie die Benutzersynchronisation aus, um die Benutzer zu entfernen (`./user-sync -t --users all --process-groups --adobe-only-user-action delete`). Führen Sie das Tool anschließend ohne den -t-Parameter aus. Vorsicht: Vergewissern Sie sich, dass bei der Ausführung mit -t nur der gewünschte Benutzer entfernt wurde. Bei dieser Ausführung (ohne -t) werden Benutzer tatsächlich gelöscht.
 
 
 5. Vergewissern Sie sich, dass die Benutzerkonten aus der Adobe Admin Console entfernt wurden.
