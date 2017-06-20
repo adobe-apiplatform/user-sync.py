@@ -12,6 +12,8 @@ These notes apply to v2.2rc1 of 2017-06-18.
 
 [#236](https://github.com/adobe-apiplatform/user-sync.py/issues/236): Directory users can now be pushed directly to Adobe, rather than synchronized with a fetch of Adobe users.  A new command-line argument `--strategy push` (as opposed to the default `--strategy sync`) controls this.
 
+[#237](https://github.com/adobe-apiplatform/user-sync.py/issues/237): The default encoding for all inputs (config files, CSV files, LDAP attribute values) is now assumed to be `utf8` rather than ASCII.  This is a backward-compatible change that makes it unnecessary (but still allowed) to specify `utf8` explicitly.
+
 ## Bug Fixes
 
 This release contains bug fixes for:

@@ -102,11 +102,10 @@ def process_args():
                              "users by also including --adobe-only-user-action and one of its arguments",
                         metavar='input_path', dest='stray_list_input_path')
     parser.add_argument('--config-file-encoding',
-                        help="config files are expected to contain only ASCII characters; if you "
-                             "use an extended character set (e.g., to specify group names), then "
-                             "specify the encoding of your configuration files with this argument. "
+                        help="configuration files are expected to be utf8-encoded (which includes ascii); if you "
+                             "use a different character set, then specify it with this argument. "
                              "All encoding names understood by Python are allowed.",
-                        dest='encoding_name', default='ascii')
+                        dest='encoding_name', default='utf8')
     parser.add_argument('--strategy',
                         help="whether to fetch and sync the Adobe directory against the customer directory "
                              "or just to push each customer user to the Adobe side.  Default is to fetch and sync.",

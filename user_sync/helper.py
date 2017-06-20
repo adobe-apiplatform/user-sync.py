@@ -86,7 +86,7 @@ class CSVAdapter:
         return '\t'
 
     @classmethod
-    def read_csv_rows(cls, file_path, recognized_column_names=None, logger=None, encoding=None, delimiter=None):
+    def read_csv_rows(cls, file_path, recognized_column_names=None, logger=None, encoding='utf8', delimiter=None):
         """
         :type file_path: str
         :type recognized_column_names: list(str)
@@ -115,14 +115,14 @@ class CSVAdapter:
                         # in py2, we need to decode both the column names *and* the values
                         newrow = {}
                         for key, val in six.iteritems(row):
-                            newrow[key.decode(encoding, 'strict')] = val.decode(encoding, 'strict')
+                            newrow[key.decode(encoding, 'strict')] = val.decode(encoding, 'strict') if val else None
                         row = newrow
                     yield row
             except UnicodeError as e:
                 raise AssertionException("Encoding error in file '%s': %s" % (file_path, e))
 
     @classmethod
-    def write_csv_rows(cls, file_path, field_names, rows, encoding='ascii', delimiter=None):
+    def write_csv_rows(cls, file_path, field_names, rows, encoding='utf8', delimiter=None):
         """
         :type file_path: str
         :type field_names: list(str)

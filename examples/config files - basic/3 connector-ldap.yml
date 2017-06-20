@@ -83,9 +83,9 @@ group_member_filter_format: "(memberOf={group_dn})"
 # string_encoding specifies the Unicode string encoding used by the directory.
 # All values retrieved from the directory are converted to Unicode before being
 # sent to or compared with values on the Adobe side, to avoid encoding issues.
-# The value must be a Python codec name or alias, such as 'latin1' or 'utf-8.
+# The value must be a Python codec name or alias, such as 'latin1' or 'big5'.
 # See https://docs.python.org/2/library/codecs.html#standard-encodings for details.
-#string_encoding: utf-8
+#string_encoding: utf8
 
 # (optional) user_identity_type_format (no default)
 # user_identity_type_format specifies how to construct a user's desired identity

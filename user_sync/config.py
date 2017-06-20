@@ -46,7 +46,7 @@ class ConfigLoader(object):
         self.options = options = {
             # these are in alphabetical order!  Always add new ones that way!
             'delete_strays': False,
-            'config_file_encoding': 'ascii',
+            'config_file_encoding': 'utf8',
             'directory_connector_module_name': None,
             'directory_connector_overridden_options': None,
             'directory_group_filter': None,
@@ -616,8 +616,8 @@ class ConfigFileLoader:
     Loads config files and does pathname expansion on settings that refer to files or directories
     """
     # config files can contain Unicode characters, so an encoding for them
-    # can be specified as a command line argument.  This defaults to ascii.
-    config_encoding = 'ascii'
+    # can be specified as a command line argument.  This defaults to utf8.
+    config_encoding = 'utf8'
 
     # key_paths in the root configuration file that should have filename values
     # mapped to their value options.  See load_from_yaml for the option meanings.
@@ -724,6 +724,12 @@ class ConfigFileLoader:
                 raise AssertionException("Error parsing configuration file '%s': %s" % (cls.filepath, e))
 
         # process the content of the dict
+        if yml is None:
+            # empty YML files are parsed as None
+            yml = {}
+        elif not isinstance(yml, dict):
+            # malformed YML files produce a non-dictionary
+            raise AssertionException("Configuration file '%s' does not contain settings" % cls.filepath)
         for path_key, options in six.iteritems(path_keys):
             cls.key_path = path_key
             keys = path_key.split('/')

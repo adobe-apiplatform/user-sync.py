@@ -323,7 +323,7 @@ class LDAPDirectoryConnector(object):
 
 
 class LDAPValueFormatter(object):
-    encoding = 'utf-8'
+    encoding = 'utf8'
 
     def __init__(self, string_format):
         """

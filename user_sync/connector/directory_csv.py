@@ -60,7 +60,7 @@ class CSVDirectoryConnector(object):
         caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('delimiter', None)
-        builder.set_string_value('string_encoding', 'utf-8')
+        builder.set_string_value('string_encoding', 'utf8')
         builder.set_string_value('first_name_column_name', 'firstname')
         builder.set_string_value('last_name_column_name', 'lastname')
         builder.set_string_value('email_column_name', 'email')
