@@ -24,8 +24,8 @@ import logging
 import os
 import re
 import sys
+import six
 
-import config
 import user_sync.config
 import user_sync.connector.directory
 import user_sync.connector.umapi
@@ -65,7 +65,7 @@ def process_args():
                         action='store_true', dest='test_mode')
     parser.add_argument('-c', '--config-filename',
                         help='main config filename. (default: "%(default)s")',
-                        default=config.DEFAULT_MAIN_CONFIG_FILENAME, metavar='filename', dest='config_filename')
+                        default=user_sync.config.DEFAULT_MAIN_CONFIG_FILENAME, metavar='filename', dest='config_filename')
     parser.add_argument('--users',
                         help="specify the users to be considered for sync. Legal values are 'all' (the default), "
                              "'group names' (one or more specified groups), 'mapped' (all groups listed in "
@@ -102,11 +102,14 @@ def process_args():
                              "users by also including --adobe-only-user-action and one of its arguments",
                         metavar='input_path', dest='stray_list_input_path')
     parser.add_argument('--config-file-encoding',
-                        help="config files are expected to contain only ASCII characters; if you "
-                             "use an extended character set (e.g., to specify group names), then "
-                             "specify the encoding of your configuration files with this argument. "
+                        help="configuration files are expected to be utf8-encoded (which includes ascii); if you "
+                             "use a different character set, then specify it with this argument. "
                              "All encoding names understood by Python are allowed.",
-                        dest='encoding_name', default='ascii')
+                        dest='encoding_name', default='utf8')
+    parser.add_argument('--strategy',
+                        help="whether to fetch and sync the Adobe directory against the customer directory "
+                             "or just to push each customer user to the Adobe side.  Default is to fetch and sync.",
+                        dest='strategy', metavar='sync|push', default='sync')
     return parser.parse_args()
 
 
@@ -165,16 +168,16 @@ def begin_work(config_loader):
 
     # process mapped configuration after the directory groups have been loaded, as mapped setting depends on this.
     if rule_config['directory_group_mapped']:
-        rule_config['directory_group_filter'] = set(directory_groups.iterkeys())
+        rule_config['directory_group_filter'] = set(six.iterkeys(directory_groups))
 
     # make sure that all the adobe groups are from known umapi connector names
     referenced_umapi_names = set()
-    for groups in directory_groups.itervalues():
+    for groups in six.itervalues(directory_groups):
         for group in groups:
             umapi_name = group.umapi_name
             if umapi_name != user_sync.rules.PRIMARY_UMAPI_NAME:
                 referenced_umapi_names.add(umapi_name)
-    referenced_umapi_names.difference_update(secondary_umapi_configs.iterkeys())
+    referenced_umapi_names.difference_update(six.iterkeys(secondary_umapi_configs))
 
     if len(referenced_umapi_names) > 0:
         raise AssertionException('Adobe groups reference unknown umapi connectors: %s' % referenced_umapi_names)
@@ -198,7 +201,7 @@ def begin_work(config_loader):
     primary_name = '.primary' if secondary_umapi_configs else ''
     umapi_primary_connector = user_sync.connector.umapi.UmapiConnector(primary_name, primary_umapi_config)
     umapi_other_connectors = {}
-    for secondary_umapi_name, secondary_config in secondary_umapi_configs.iteritems():
+    for secondary_umapi_name, secondary_config in six.iteritems(secondary_umapi_configs):
         umapi_secondary_conector = user_sync.connector.umapi.UmapiConnector(".secondary.%s" % secondary_umapi_name,
                                                                             secondary_config)
         umapi_other_connectors[secondary_umapi_name] = umapi_secondary_conector
@@ -238,6 +241,7 @@ def create_config_loader_options(args):
         'exclude_strays': False,
         'manage_groups': args.manage_groups,
         'remove_strays': False,
+        'strategy': 'sync',
         'stray_list_input_path': None,
         'stray_list_output_path': None,
         'test_mode': args.test_mode,
@@ -308,6 +312,12 @@ def create_config_loader_options(args):
         logger.info('--adobe-only-user-list specified, so not reading or comparing directory and Adobe users')
         config_options['stray_list_input_path'] = stray_list_input_path
 
+    # --strategy
+    if user_sync.helper.normalize_string(args.strategy) == 'push':
+        config_options['strategy'] = 'push'
+        if stray_list_input_path or adobe_action_args is not None:
+            raise AssertionException("You cannot specify '--strategy push' and any '--adobe-only-user' options")
+
     return config_options
 
 
@@ -320,7 +330,7 @@ def log_parameters(args):
     logger.info('------- Invocation parameters -------')
     logger.info(' '.join(sys.argv))
     logger.debug('-------- Internal parameters --------')
-    for parameter_name, parameter_value in args.__dict__.iteritems():
+    for parameter_name, parameter_value in six.iteritems(args.__dict__):
         logger.debug('  %s: %s', parameter_name, parameter_value)
     logger.info('-------------------------------------')
 
@@ -359,6 +369,11 @@ def main():
         if not e.is_reported():
             logger.critical(e.message)
             e.set_reported()
+    except KeyboardInterrupt:
+        try:
+            logger.critical('Keyboard interrupt, exiting immediately.')
+        except:
+            pass
     except:
         try:
             logger.error('Unhandled exception', exc_info=sys.exc_info())

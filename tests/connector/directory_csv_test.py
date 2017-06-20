@@ -1,4 +1,3 @@
-import string
 import tempfile
 import unittest
 
@@ -22,7 +21,7 @@ class CSVDirectoryTest(unittest.TestCase):
             csv_user = user.copy();
             user_groups = user['groups']
             all_groups.update(user_groups)
-            csv_user['groups'] = string.join(user_groups, ',')
+            csv_user['groups'] = ','.join(user_groups)
             csv_users.append(csv_user)
         tests.helper.write_to_separated_value_file(field_names, ',', csv_users, file_path);
         
@@ -32,7 +31,7 @@ class CSVDirectoryTest(unittest.TestCase):
         }
         directory_connector.initialize(options)
         
-        actual_users = directory_connector.load_users_and_groups(all_groups)
+        actual_users = directory_connector.load_users_and_groups(groups=all_groups)
                 
         tests.helper.assert_equal_users(self, all_users, actual_users)
 

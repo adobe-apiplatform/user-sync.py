@@ -23,6 +23,7 @@ import unittest
 import os
 import os.path
 import yaml
+import six.moves
 
 import mock
 import tests.helper
@@ -42,7 +43,7 @@ class ConfigFileLoaderTest(unittest.TestCase):
         '''
         self.assertEqual(result, expected, error_message + '\nexpected: %s, got: %s' % (expected, result))
     
-    @mock.patch('__builtin__.open')
+    @mock.patch('six.moves.builtins.open')
     @mock.patch('yaml.load')
     @mock.patch('os.path.isfile')
     def test_load_root_config(self, mock_isfile, mock_yaml, mock_open):
@@ -92,7 +93,7 @@ class ConfigFileLoaderTest(unittest.TestCase):
             self.assert_eq(yml['other']['test-list'][2]['test-string-3'], 'xyz',
                            '/other/test-list/[2] value should not change')
 
-    @mock.patch('__builtin__.open')
+    @mock.patch('six.moves.builtins.open')
     @mock.patch('yaml.load')
     @mock.patch('os.path.isfile')
     def test_load_root_default_config(self, mock_isfile, mock_yaml, mock_open):
@@ -122,7 +123,7 @@ class ConfigFileLoaderTest(unittest.TestCase):
             self.assert_eq(yml['adobe_users']['connectors']['umapi'], os.path.abspath('config-test-2/test-123'),
                            'default primary umapi configuration path is incorrect')
 
-    @mock.patch('__builtin__.open')
+    @mock.patch('six.moves.builtins.open')
     @mock.patch('yaml.load')
     @mock.patch('os.path.isfile')
     def test_load_sub_config(self, mock_isfile, mock_yaml, mock_open):
