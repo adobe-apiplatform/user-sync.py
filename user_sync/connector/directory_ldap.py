@@ -254,6 +254,8 @@ class LDAPDirectoryConnector(object):
             source_attributes['domain'] = domain
             if domain:
                 user['domain'] = domain
+            elif username != email:
+                user['domain'] = email[email.find('@') + 1:]
             elif last_attribute_name:
                 self.logger.warning('No domain attribute (%s) for user with dn: %s', last_attribute_name, dn)
 
