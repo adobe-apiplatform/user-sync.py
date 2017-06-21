@@ -87,8 +87,10 @@ a "retry-after" header indicating when capacity will be available again.  User s
  
 ###  Is there a local list of users created/updated (on the user sync side) in order to reduce Adobe server calls?
 
-No, User sync always queries the Adobe user management systems to get 
-current information when it is run.
+User sync always queries the Adobe user management systems to get 
+current information when it is run.  There is an option available in 
+User Sync release 2.2 or later to push updates to Adobe without regard to the current
+state of users in Adobe's user management system, which reduces information transfer.
  
 ### Is the user sync tool limited to federated Ids or can any type of ID can be created?
 
@@ -148,10 +150,9 @@ and “unicode” (enforced UTF-8-encoded 8 bit character strings), and the user
 sync code uses “str” not “unicode” everywhere.  However, all of the output of 
 the tools are UTF-8 encoded, and as long as UTF-8 encoding is used on the 
 input things should work fine.  This has been lightly tested and no problems were 
-found.  Further testing is planned.
+found.
 
-We have an enhancement planned to port the tool to run in Python 3 as well as Python 2.  
-At that point we can be assured that unicode will work fine, as the types are merged 
-in Python 3.  Customers for whom this is critical should build using Python 3.
- 
+User Sync version 2.2 and beyond support and run in Python 3.  
+Unicode should work fine; customers for whom this is critical should build using Python 3.  The default encoding is utf8.
+
  

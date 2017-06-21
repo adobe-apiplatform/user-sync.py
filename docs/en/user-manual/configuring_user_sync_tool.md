@@ -29,6 +29,7 @@ folder as the command-line executable.
 | user-sync-config.yml | Required. Contains configuration options that define the mapping of directory groups to Adobe product configurations and user groups, and that control the update behavior.  Also contains references to the other config files.|
 | connector&#x2011;umapi.yml&nbsp;&nbsp; | Required. Contains credentials and access information for calling the Adobe User Management API. |
 | connector-ldap.yml | Required. Contains credentials and access information for accessing the enterprise directory. |
+{: .bordertablestyle }
 
 
 If you need to set up access to Adobe groups in other organizations that
@@ -144,7 +145,16 @@ the private key directly in the configuration file.  Rather than using the
 	    Fz2i8y6qhmfhj48dhf84hf3fnGrFP2mX2Bil48BoIVc9tXlXFPstJe1bz8xpo=
 	    -----END RSA PRIVATE KEY-----
 
+In User Sync 2.2 or later, there are some additional parameters to control
+connection timeout and retry.  These should never need to be used, however,
+in case there is some unusual situation you can set them in the `server` section:
 
+  server:
+    timeout: 120
+    retries: 3
+
+`timeout` sets the maximum wait time, in seconds, for a call to complete.
+`retries` sets the number of times to retry an operation if it fails due to a non-specific problem such as server error or timeout.
 
 ### Configure connection to your enterprise directory
 
@@ -441,6 +451,10 @@ mapped to your enterprise directory security groups . Run the
 tool in test mode first (by supplying the -t parameter), so that
 you can see the result before running live.
 
+The following examples use `--users all` to select users, but you may want to use
+`--users mapped` to select only users in directory groups listed in your configuration file,
+or `--users file f.csv` to select a smaller set of test users listed in a file.
+
 ###  User Creation
 
 1. Create one or more test users in enterprise directory.
@@ -457,7 +471,7 @@ you can see the result before running live.
 
 1. Modify group membership of one or more test user in the directory.
 
-1. Run User Sync. (`./user-sync -t --users all --process-groups --adobe-only-user-action exclude`)
+1. Run User Sync. (`./user-sync --users all --process-groups --adobe-only-user-action exclude`)
 
 2. Check that test users in Adobe Admin Console were updated to
 reflect new product configuration membership.
@@ -467,7 +481,7 @@ reflect new product configuration membership.
 1. Remove or disable one or more existing test users in your
 enterprise directory.
 
-2. Run User Sync. (`./user-sync -t --users all --process-groups --adobe-only-user-action exclude`)
+2. Run User Sync. (`./user-sync --users all --process-groups --adobe-only-user-action remove-adobe-groups`)  You may want to run in test mode (-t) first.
 
 3. Check that users were removed from configured product
 configurations in the Adobe Admin Console.

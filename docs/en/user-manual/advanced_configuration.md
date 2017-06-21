@@ -486,24 +486,25 @@ that are not named in the group map in the config file.
 
 ## Working With Nested Directory Groups in Active Directory
 
-Note: The approach originally defined in this section did not quite work.  It will have to wait 
-for future bug fix release.
+Note: Prior to release 2.2, nested groups were not supported by User Sync.
 
-If your directory groups are structured in a nested manner so that users are 
-not in one simple named directory group, you will need to run more complex
-LDAP queries to enumerate the list of users.  For example you might have a group
-nesting structure like this:
-
+You might have a group nesting structure like this:
 
     All_Divisions
-		Blue_Division
-		       User1@example.com
-		       User2@example.com
-		Green_Division
-		       User3@example.com
-		       User4@example.com
+  		Blue_Division
+  		       User1@example.com
+  		       User2@example.com
+  		Green_Division
+  		       User3@example.com
+  		       User4@example.com
 
-A future release of user sync will support this transparently.
+You can map All_Divisions to an Adobe user group or product configuration in
+the `groups:` section of the configuration file.  The effect of this is to 
+treat all users contained directly in All_Divisions or in any group contained 
+directly or indirectly in All_Divisions as a member of the All_Divisions 
+directory group.  No additional configuration parameters are required.
+
+Starting in release 2.2, nested directory groups are supported by default by User Sync.
 
 
 ---
