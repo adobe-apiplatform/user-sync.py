@@ -571,30 +571,30 @@ some other source.
 Create a file “users-file.csv” with information on users to add or update. An example of
 the file is:
 
-  firstname,lastname,email,country,groups,type,username,domain
-  Jane 1,Doe,jdoe1+1@example.com,US,Sync-CC-INCREMENTAL
-  Jane 2,Doe,jdoe2+2@example.com,US,Sync-CC-INCREMENTAL
+    firstname,lastname,email,country,groups,type,username,domain
+    Jane 1,Doe,jdoe1+1@example.com,US,Sync-CC-INCREMENTAL
+    Jane 2,Doe,jdoe2+2@example.com,US,Sync-CC-INCREMENTAL
 
 The command line to push updates from the file is:
 
-  user-sync –t --strategy push --process-groups --users file users-file.csv
+    user-sync –t --strategy push --process-groups --users file users-file.csv
 
 Run without the `-t` when you are ready for the actions to take effect.
 
 To remove users, a separate file is created with a different format.  Example contents could be:
 
-  type,username,domain
-  adobeID,jimbo@gmail.com,
-  enterpriseID,jsmith1@ent-domain-example.com,
-  federatedID,jsmith2,user-login-fed-domain.com
-  federatedID,jsmith3@email-login-fed-domain.com,
+    type,username,domain
+    adobeID,jimbo@gmail.com,
+    enterpriseID,jsmith1@ent-domain-example.com,
+    federatedID,jsmith2,user-login-fed-domain.com
+    federatedID,jsmith3@email-login-fed-domain.com,
 
 Each entry must include the identity type, user email or user name, and, for a federated identity type
 that is set for username login, the domain.
 
 The command line to process deletions based on a file like this (say remove-list.csv) is:
 
-  user-sync -t --adobe-only-user-list remove-list.csv --adobe-only-user-action remove
+    user-sync -t --adobe-only-user-list remove-list.csv --adobe-only-user-action remove
 
 The action "remove" could be "remove-adobe-groups" or "delete" to keep the account in the organization
 or to delete it, respectively.
