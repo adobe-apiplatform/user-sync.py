@@ -488,24 +488,116 @@ that are not named in the group map in the config file.
 
 Note: Prior to release 2.2, nested groups were not supported by User Sync.
 
+Starting in release 2.2, User Sync can be configured to recognize all users 
+in nested directory groups, and the example configuration files show how to 
+do this.  Specifically, in the `connector-ldap.yml` configuration file, set 
+the `group_member_filter` as follows:
+
+    group_member_filter_format: "(memberOf:1.2.840.113556.1.4.1941:={group_dn})"
+
+This finds group members who are either directly in a named group, or indirectly in the group.
+
 You might have a group nesting structure like this:
 
     All_Divisions
-  		Blue_Division
-  		       User1@example.com
-  		       User2@example.com
-  		Green_Division
-  		       User3@example.com
-  		       User4@example.com
+      Blue_Division
+             User1@example.com
+             User2@example.com
+      Green_Division
+             User3@example.com
+             User4@example.com
 
 You can map All_Divisions to an Adobe user group or product configuration in
-the `groups:` section of the configuration file.  The effect of this is to 
-treat all users contained directly in All_Divisions or in any group contained 
-directly or indirectly in All_Divisions as a member of the All_Divisions 
-directory group.  No additional configuration parameters are required.
+the `groups:` section of the main configuration file, and set group_member_filter 
+as shown above.  The effect of this is to treat all users contained directly in All_Divisions or in any group contained directly or indirectly in All_Divisions as a member of the All_Divisions directory group.
 
-Starting in release 2.2, nested directory groups are supported by default by User Sync.
+## Using Push Techniques to Drive User Sync
 
+Starting with User Sync version 2.2 it is easier to drive push notifications directly to
+Adobe's user management system without having to read all information from Adobe and
+your enterprise directory.  Using push notifications has the advantage of minimizing 
+processing time and communication traffic, but the disadvantage of not being self-correcting
+for changes made in other ways, or in case of some errors.  More
+careful management of changes to be made is also required.
+
+To use push notification, you will need to be able to gather updates to be made 
+unconditionally into a separate file or directory group.  User deletions also must 
+be segregated from user additions and updates.  Updates and deletions are then run
+in separate invocations of the User Sync tool.
+
+### Using a special directory group to drive User Sync push
+
+Create directory groups to collect users to be updated and deleted.  For example, 
+use a directory group Sync-CC-INCREMENTAL for new users that you want to sync in
+and provision for Creative Cloud.  In this example, we will only consider one
+product; you would need additional directory and Adobe groups for other products.
+
+In the main config file, Sync-CC-INCREMENTAL is mapped to the user group or product 
+configuration representing Creative Cloud users.
+
+Create another directory group, Sync-REVOKED, that you can move deleted users into 
+if you want to remove their product access.  
+
+The command-line to use to process the additions and updates is:
+
+    user-sync –t --strategy push --process-groups --users group Sync-CC-INCREMENTAL
+
+Notice the “--strategy push” on the command line: that’s what causes User Sync NOT
+to try to read the Adobe-side directory first, and to instead just push the updates
+to Adobe.
+
+Also notice the `-t` on the command line to run in "test mode".  If the actions appear
+to be as you expect, remove the -t to have User Sync actually make the changes.
+
+When `--strategy push` is specified, users are pushed over to Adobe with all of their mapped groups *added* and any mapped groups they are not supposed to be in *removed*.  That way moving a user from one directory group to another, where they have different mappings, will cause that user to be switched on the Adobe side at the next push.
+
+The command-line you will want to use to process the deletions is:
+
+    user-sync –t --strategy push --process-groups --users group Sync-REVOKED
+
+The users to be removed will need to have been removed from any other mapped groups
+before this command is run.  It will not delete or remove accounts, but will revoke
+access to any products and free licenses.
+
+To delete accounts, a different approach is needed which is described in the next section.
+
+### Using a file to drive User Sync push
+
+You can use a file as the input to User Sync.  In this case, the directory itself
+is not accessed by User Sync.  You can create the files (one for adds and updates
+and one for deletions) manually or using a script that obtains information from
+some other source.
+
+Create a file “users-file.csv” with information on users to add or update. An example of
+the file is:
+
+  firstname,lastname,email,country,groups,type,username,domain
+  Jane 1,Doe,jdoe1+1@example.com,US,Sync-CC-INCREMENTAL
+  Jane 2,Doe,jdoe2+2@example.com,US,Sync-CC-INCREMENTAL
+
+The command line to push updates from the file is:
+
+  user-sync –t --strategy push --process-groups --users file users-file.csv
+
+Run without the `-t` when you are ready for the actions to take effect.
+
+To remove users, a separate file is created with a different format.  Example contents could be:
+
+  type,username,domain
+  adobeID,jimbo@gmail.com,
+  enterpriseID,jsmith1@ent-domain-example.com,
+  federatedID,jsmith2,user-login-fed-domain.com
+  federatedID,jsmith3@email-login-fed-domain.com,
+
+Each entry must include the identity type, user email or user name, and, for a federated identity type
+that is set for username login, the domain.
+
+The command line to process deletions based on a file like this (say remove-list.csv) is:
+
+  user-sync -t --adobe-only-user-list remove-list.csv --adobe-only-user-action remove
+
+The action "remove" could be "remove-adobe-groups" or "delete" to keep the account in the organization
+or to delete it, respectively.
 
 ---
 
