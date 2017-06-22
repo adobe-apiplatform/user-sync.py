@@ -522,9 +522,12 @@ careful management of changes to be made is also required.
 
 You should consider using a push strategy if:
 
-- You have a very, very large population of Adobe users
-- You are making relatively few changes to existing users; that is, you are mostly adding new users and deleting ones who leave.
-- You have a process or tools that can identify new and departing users in an automated way.
+- You have a very, very large population of Adobe users.
+- You are making few adds/changes/deletions relative to the total user population.
+- You have a process or tools that can identify users who have been changed (added, 
+removed, attribute changes, or group changes) in an automated way.
+- You have a process that first removes product entitlements from departing users, and 
+then (after a waiting period) fully deletes their accounts.
 
 The push strategy avoids all the overhead of reading large numbers of users from either side, and
 you can only do that if you can isolate the specific users that need to be updated (e.g., by
