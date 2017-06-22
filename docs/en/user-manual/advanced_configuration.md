@@ -513,53 +513,91 @@ as shown above.  The effect of this is to treat all users contained directly in 
 
 ## Using Push Techniques to Drive User Sync
 
-Starting with User Sync version 2.2 it is easier to drive push notifications directly to
+Starting with User Sync version 2.2 it is possible to drive push notifications directly to
 Adobe's user management system without having to read all information from Adobe and
 your enterprise directory.  Using push notifications has the advantage of minimizing 
 processing time and communication traffic, but the disadvantage of not being self-correcting
 for changes made in other ways, or in case of some errors.  More
 careful management of changes to be made is also required.
 
+You should consider using a push strategy if:
+
+- You have a very, very large population of Adobe users
+- You are making relatively few changes to existing users; that is, you are mostly adding new users and deleting ones who leave.
+- You have a process or tools that can identify new and departing users in an automated way.
+
+The push strategy avoids all the overhead of reading large numbers of users from either side, and
+you can only do that if you can isolate the specific users that need to be updated (e.g., by
+putting them in a special group).
+
 To use push notification, you will need to be able to gather updates to be made 
 unconditionally into a separate file or directory group.  User deletions also must 
 be segregated from user additions and updates.  Updates and deletions are then run
 in separate invocations of the User Sync tool.
 
+Many approaches are possible using push techniques with User Sync.  The next sections
+describe one recommended approach.  To make it concrete, let us assume there are two
+Adobe products that have been purchased and are to be managed using User Sync: Creative Cloud,
+and Acrobat Pro.  To grant access, assume you have created two product configurations named
+Creative_Cloud and Acrobat_Pro, and two directory groups named cc_users and acrobat_users.
+The map in the User Sync configuration file would look like this:
+
+    groups:
+      - directory_group: acrobat_users
+        adobe_groups:
+          - "Acrobat_Pro"
+      - directory_group: cc_users
+        adobe_groups:
+          - "Creative_Cloud"
+
+
+
 ### Using a special directory group to drive User Sync push
 
-Create directory groups to collect users to be updated and deleted.  For example, 
-use a directory group Sync-CC-INCREMENTAL for new users that you want to sync in
-and provision for Creative Cloud.  In this example, we will only consider one
-product; you would need additional directory and Adobe groups for other products.
-
-In the main config file, Sync-CC-INCREMENTAL is mapped to the user group or product 
-configuration representing Creative Cloud users.
-
-Create another directory group, Sync-REVOKED, that you can move deleted users into 
-if you want to remove their product access.  
+An additional directory group is created to collect users to be updated.  For example, 
+use a directory group `updated_adobe_users` for new or updated users (those whose group membership
+has changed).  Removing users from both of the mapped groups revokes any product access
+and frees licenses held by users. 
 
 The command-line to use to process the additions and updates is:
 
-    user-sync –t --strategy push --process-groups --users group Sync-CC-INCREMENTAL
+    user-sync –t --strategy push --process-groups --users group updated_adobe_users
 
-Notice the “--strategy push” on the command line: that’s what causes User Sync NOT
+Notice the `--strategy push` on the command line: that’s what causes User Sync NOT
 to try to read the Adobe-side directory first, and to instead just push the updates
 to Adobe.
 
 Also notice the `-t` on the command line to run in "test mode".  If the actions appear
 to be as you expect, remove the -t to have User Sync actually make the changes.
 
-When `--strategy push` is specified, users are pushed over to Adobe with all of their mapped groups *added* and any mapped groups they are not supposed to be in *removed*.  That way moving a user from one directory group to another, where they have different mappings, will cause that user to be switched on the Adobe side at the next push.
+When `--strategy push` is specified, users are pushed over to Adobe with all of their 
+mapped groups *added* and any mapped groups they are not supposed to be in *removed*.  
+That way moving a user from one directory group to another, where they have different 
+mappings, will cause that user to be switched on the Adobe side at the next push.
 
-The command-line you will want to use to process the deletions is:
+This approach will not delete or remove accounts, but will revoke
+access to any products and free licenses.  To delete accounts, a different approach is 
+needed which is described in the next section.
 
-    user-sync –t --strategy push --process-groups --users group Sync-REVOKED
+The process to support this approach consists of the following steps:
 
-The users to be removed will need to have been removed from any other mapped groups
-before this command is run.  It will not delete or remove accounts, but will revoke
-access to any products and free licenses.
+- Whenever you add a new user, or change a user’s groups in the directory (including 
+removing from all groups, which essentially disables all product entitlements), you also
+add that user to the “updated_adobe_users” group.
+- Once a day (or at a frequency you choose), you run a sync job with the parameters
+shown above.
+- This job causes all the updated users to be created if necessary and to have their 
+mapped groups updated on the Adobe side.
+- Once the job has run, you remove the users from the updated_adobe_users group (because 
+their changes have been pushed).
 
-To delete accounts, a different approach is needed which is described in the next section.
+At any time, you can also run a User Sync job in regular (non-push) mode to get the complete
+functionality of User Sync.  This will pick up any changes that might have been missed,
+correct changes made not using User Sync, and/or perform actual account deletions.  
+The command line would be something like:
+
+    user-sync --process-groups --users mapped --adobe-only-user-action remove
+
 
 ### Using a file to drive User Sync push
 
@@ -572,8 +610,8 @@ Create a file “users-file.csv” with information on users to add or update. A
 the file is:
 
     firstname,lastname,email,country,groups,type,username,domain
-    Jane 1,Doe,jdoe1+1@example.com,US,Sync-CC-INCREMENTAL
-    Jane 2,Doe,jdoe2+2@example.com,US,Sync-CC-INCREMENTAL
+    Jane 1,Doe,jdoe1+1@example.com,US,acrobat_users
+    Jane 2,Doe,jdoe2+2@example.com,US,"cc_users,acrobat_users"
 
 The command line to push updates from the file is:
 
@@ -597,7 +635,21 @@ The command line to process deletions based on a file like this (say remove-list
     user-sync -t --adobe-only-user-list remove-list.csv --adobe-only-user-action remove
 
 The action "remove" could be "remove-adobe-groups" or "delete" to keep the account in the organization
-or to delete it, respectively.
+or to delete it, respectively.  Also note `-t` for test mode.
+
+The process to support this approach consists of the following steps:
+
+- Whenever you add a new user, or change a user’s groups in the directory (including 
+removing from all groups, which essentially disables all product entitlements), you also
+add an entry to the "users-file.csv" that includes the groups the user should be in.  This might
+be more or fewer groups than they are currently in.
+- Whenever a user is to be removed, add an entry to the "remove-list.csv" file.
+- Once a day (or at a frequency you choose), you run the two sync job with the parameters
+shown above (one for adds and updates and one for deletions).
+- These jobs causes all the updated users to have their mapped groups updated on the Adobe 
+side, and removed users to be removed from the Adobe side.
+- Once the job has run, clear out the files (because their changes have been pushed) to prepare for
+the next batch.
 
 ---
 
