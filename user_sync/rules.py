@@ -344,7 +344,6 @@ class RuleProcessor(object):
                 target_attributes['firstname'] = directory_user.get('firstname')
                 target_attributes['lastname'] = directory_user.get('lastname')
                 target_attributes['country'] = directory_user.get('country')
-                target_attributes['uid'] = directory_user.get('uid')
                 self.after_mapping_hook_scope['target_attributes'] = target_attributes
 
                 # invoke the customer's hook code
