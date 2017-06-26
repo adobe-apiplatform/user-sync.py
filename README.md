@@ -10,74 +10,146 @@ of the OSI-approved MIT license.  See the LICENSE file for details.
 
 Copyright (c) 2016-2017 Adobe Systems Incorporated.
 
-# Quick Links
+## Documentation
+
+The [User Sync Documentation](https://adobe-apiplatform.github.io/user-sync.py/) covers all aspects of the tool, from both a general and a technical point of view.  The following links are good places to start:
 
 - [User Sync Overview](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/UserSyncTool.html)
+- [Non-Technical Primer](https://spark.adobe.com/page/E3hSsLq3G1iVz/)
 - [User Manual](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/)
 - [Step-by-Step Setup](https://adobe-apiplatform.github.io/user-sync.py/en/success-guide/)
-- [Non-Technical Overview](https://spark.adobe.com/page/E3hSsLq3G1iVz/)
 
 
-# Requirements
+## System Requirements
 
-* Python 2.7+
-* User Management API Credentials (see [the official documentation](https://www.adobe.io/products/usermanagement/docs/gettingstarted))
-* Accessible LDAP server (optional)
-* If running on Windows, a 64 bit version of Windows is required.
+To run User Sync, you must have an up-to-date 64-bit Python installed on your system, either Python 2.7 or Python 3.4+.  In addition you must have User Management API Credentials for your organization (see [the official documentation](https://www.adobe.io/products/usermanagement/docs/gettingstarted))
 
-# Installation
+## Installation and Use
 
-The connector is packaged as a [self-contained .pex file](https://github.com/pantsbuild/pex).  See the releases page to get the latest build for your platform.
+The connector is packaged as a self-contained Python Executable (_aka_ [PEX](https://github.com/pantsbuild/pex)) file.  See the [releases page](https://github.com/adobe-apiplatform/user-sync.py/releases) to get the latest build for your platform.  Download the release tarball onto your system, extract it, and you will have a file named `user-sync` (or `user-sync.pex`) that can be executed from the command line:
+
+* On Mac OS X and Linux systems, use the command `user-sync`.
+* On Windows systems, use the command `python user-sync.pex`.
+
+Until you have personalized your User Sync configuration (see next section), you won't be able to do much.  But you can test that your installation is working with:
+
+* `user-sync --version` (or `python user-sync.pex --version`) and
+* `user-sync --help` (or `python user-sync.pex --help`)
+
+There are a wide variety of command-line arguments; see [the docs](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/command_parameters.html) for details.
+
+## Configuration
+
+You will need a personalized User Sync configuration to use the tool effectively.  The documentation includes a [Setup and Success Guide](https://adobe-apiplatform.github.io/user-sync.py/success-guide/) that will take you step-by-step through the configuration process.  In addition, the `examples` directory (also available as a tarball on the [releases page](https://github.com/adobe-apiplatform/user-sync.py/releases)) contains sample configuration files which include all of the possible options with their descriptions and default values.
 
 ## Build Instructions
 
-Requirements:
+To build User Sync from source, you will need to have a complete Python/Pip/Virtualenv stack present on your system, as well as `make` and the ability to install Python modules that use native extensions.
 
-* Python 2.7+
-* [virtualenv](https://virtualenv.pypa.io/en/stable/)
-* If building on Debian - `python-dev libssl-dev libffi-dev libsasl2-dev libldap2-dev`
-* GNU Make
+The platform-independent overview is:
 
-To build, run `make pex` from the command line in the main repo directory.
+1. Get the sources into a `user-sync.py` directory (either via `git` or by downloading the source tarball from a release).
+1. Make a clean virtual environment for the 64-bit Python version you want to use (2.7 or 3.4+) and activate it.
+1. Switch into the `user-sync.py` directory, and give the command `make pex`.
 
-## Build Instructions for local execution and debugging on Windows
+While that looks simple, the `make pex` command will try to download and install all of the User Sync dependencies, and that process can be tricky.  Below is platform-specific advice to make sure it goes as well as possible.
 
-Builds and execution are setup for 64 bit windows versions.
+### Ubuntu and other Debian variants
 
-First, there are several projects that do not have good 64 bit builds for Windows platforms.  These are enum34, python_ldap, and pyYaml.  Acceptable builds are in the misc/build/Win64 folder and these can be used directly.  You can also check http://www.lfd.uci.edu/~gohlke/pythonlibs/
+We pre-package releases on Ubuntu, so the advice here is definitely accurate for that platform, but something similar should work for most other Debian variants.
 
-Load dependencies into interpreter directory:
-    
-	pip install -r misc\build\Win64\python-ldap-requirements.txt
-  pip install -r misc\build\requirements.txt
+* Make sure you have Python 2.7.5 or above; earlier versions will give you InsecurePlatformWarning messages due to older SSL components.
+* Take all security updates before you start.
+* You don't need a GUI on the platform, as the entire build can be done from the command line.  Server variants are fine.
+* You will need a standard C development environment to build a variety of the modules that use native extensions.  Use this command to get one:
+    ```bash
+    sudo apt-get install build-essential
+    ```
+* Make sure you use the system package manager to install the following packages (and their dependencies):
+    * python-dev
+    * python-pip (server variants often don't have it pre-installed)
+	* python-virtualenv (ditto)
+	* pkg-config
+    * python-devel
+    * python-pip (see above)
+	* python-virtualenv
+	* pkgconfig
+	* python-dbus
+	* libssl-dev
+	* libldap2-dev
+	* libsasl2-dev
+	* libdbus-glib-1-dev
+	* libffi-dev
+* For convenience, you can copy and paste this command:
+    ```bash
+    sudo apt-get install python-dev python-pip python-virtualenv pkg-config python-dbus libssl-dev libldap2-dev libsasl2-dev libdbus-glib-1-dev libffi-dev
+    ```
 
-The requirements will usually be loaded into C:\Python27\lib\site-packages if C:\Python27 is your install directory and you aren't specifying any options that send things elsewhere.
+### CentOS and other RedHat variants
 
-To set up PyCharm for debugging, 
-1. Make sure you are using 64 bit python interpreter.  File Settings Project Interpreter
-2. Make sure interprter isn't overridden in run configuration
-3. Set up a run configuration based on Python that references the user_sync\app.py file as the script, and has the command line parameters you want to test with (e.g. --users file test.csv).  Working directory works best as the folder with your config files.
+We pre-package releases on CentOS, so the advice here is definitely accurate for that platform, but something similar should work for most other RedHat variants.
 
-# Basic Usage
+* Make sure you have Python 2.7.5 or above; earlier versions will give you InsecurePlatformWarning messages due to older SSL components.
+* Take all security updates before you start.
+* You don't need a GUI on the platform, as the entire build can be done from the command line.  Server variants are fine.
+* You will need a standard C development environment to build a variety of the modules that use native extensions.  Use this command to get one:
+    ```bash
+    sudo yum group install "Development Tools"
+    ```
+* Your OS may not know about `pip` by default, although it will know about `virtualenv`.  Rather than installing `pip` manually, we recommend telling your OS about the Red Hat "Extra Package for Enterprise Linux (EPEL)" package library, which on CentOS you can do with:
+    ```bash
+    sudo yum install epel-release
+    ```
+* Make sure you use the system package manager to install the following packages (and their dependencies):
+    * python-devel
+    * python-pip (see above)
+	* python-virtualenv
+	* pkgconfig
+	* python-dbus
+	* openssl-devel
+	* openldap-devel (includes sasl)
+	* dbus-glib-devel
+	* libffi-devel
+* For convenience, you can copy and paste this command:
+    ```bash
+    sudo yum install python-devel python-pip python-virtualenv pkgconfig python-dbus openssl-devel openldap-devel dbus-glib-devel libffi-devel
+    ```
 
-## User Sync command line
+### Mac OS X
 
+On Mac OS X there are a wide variety of ways to get current Python installations that don't interfere with the system-required Python, and a wide way of creating virtual environments for that Python. We strongly recommend using `pyenv` for installation and maintenance and `pyenv-virtualenv` for virtual environment support.  And we recommend getting those via `homebrew`.  The sequence for this is:
 
-| Parameters&nbsp;and&nbsp;argument&nbsp;specifications | Description |
-|------------------------------|------------------|
-| `-h`<br />`--help` | Show this help message and exit.  |
-| `-v`<br />`--version` | Show program's version number and exit.  |
-| `-t`<br />`--test-mode` | Run API action calls in test mode (does not execute changes). Logs what would have been executed.  |
-| `-c` _filename_<br />`--config-filename` _filename_ | The complete path to the main configuration file, absolute or relative to the working folder. Default filename is "user-sync-config.yml" |
-| `--users` `all`<br />`--users` `file` _input_path_<br />`--users` `group` _grp1,grp2_<br />`--users` `mapped` | Specify the users to be selected for sync. The default is `all` meaning all users found in the directory. Specifying `file` means to take input user specifications from the CSV file named by the argument. Specifying `group` interprets the argument as a comma-separated list of groups in the enterprise directory, and only users in those groups are selected. Specifying `mapped` is the same as specifying `group` with all groups listed in the group mapping in the configuration file. This is a very common case where just the users in mapped groups are to be synced.|
-| `--user-filter` _regex\_pattern_ | Limit the set of users that are examined for syncing to those matching a pattern specified with a regular expression. See the [Python regular expression documentation](https://docs.python.org/2/library/re.html) for information on constructing regular expressions in Python. The user name must completely match the regular expression.|
-| `--update-user-info` | When supplied, synchronizes user information. If the information differs between the enterprise directory side and the Adobe side, the Adobe side is updated to match. This includes the firstname and lastname fields. |
-| `--process-groups` | When supplied, synchronizes group membership information. If the membership in mapped groups differs between the enterprise directory side and the Adobe side, the group membership is updated on the Adobe side to match. This includes removal of group membership for Adobe users not listed in the directory side (unless the `--adobe-only-user-action exclude` option is also selected).|
-| `--adobe-only-user-action preserve`<br />`--adobe-only-user-action remove-adobe-groups`<br />`--adobe-only-user-action  remove`<br />`--adobe-only-user-action delete`<br /><br/>`--adobe-only-user-action  write-file`&nbsp;filename<br/><br/>`--adobe-only-user-action  exclude` | When supplied, if user accounts are found on the Adobe side that are not in the directory, take the indicated action.  <br/><br/>`preserve`: no action concerning account deletion is taken. This is the default.  There may still be group membership changes if the `--process-groups` option was specified.<br/><br/>`remove-adobe-groups`: The account is removed from user groups and product configurations, freeing any licenses it held, but is left as an active account in the organization.<br><br/>`remove`: In addition to remove-adobe-groups, the account is also removed from the organization, but is left as an existing account.<br/><br/>`delete`: In addition to the action for remove, the account is deleted if owned by the organization.<br/><br/>`write-file`: the list of user account present on the Adobe side but not in the directory is written to the file indicated.  No other account action is taken.  You can then pass this file to the `--adobe-only-user-list` argument in a subsequent run.<br/><br/>`exclude`: No update of any kind is applied to users found only on the Adobe side.  This is used when doing updates of specific users via a file (--users file f) where only users needing explicit updates are listed in the file and all other users should be left alone.<br/><br>Only permitted actions will be applied.  Accounts of type adobeID are owned by the user so the delete action will do the equivalent of remove.  The same is true of Adobe accounts owned by other organizations. |
-| `adobe-only-user-list` _filename_ | Specifies a file from which a list of users will be read.  This list is used as the definitive list of "Adobe only" user accounts to be acted upon.  One of the `--adobe-only-user-action` directives must also be specified and its action will be applied to user accounts in the list.  The `--users` option is disallowed if this option is present: only account removal actions can be processed.  |
-| `--config-file-encoding` _encoding_name_ | Optional.  Specifies the character encoding for the contents of the configuration files themselves.  This includes the main configuration file, "user-sync-config.yml" as well as other configuration files it may reference.  Default is `ascii`.  Character encoding in the user source data (whether csv or ldap) is declared by the connector configurations, and that encoding can be different than the encoding used for the configuration files (e.g., you could have a latin-1 configuration file but a CSV source file that uses utf-8 encoding).  The available encodings are dependent on the Python version used; see the documentation [here](https://docs.python.org/2.7/library/codecs.html#standard-encodings) for more information.  |
+1. Install the latest version of the Apple Developer Command Line Tools via `xcode-select --install`.
+1. Install Homebrew per the directions [here](http://docs.brew.sh).
+1. Install `openssl` via Homebrew: `brew install openssl`
+1. Install `pyenv` via Homebrew: `brew install pyenv`
+1. Install `pyenv-virtualenv` via Homebrew: `brew install pyenv-virtualenv`
+1. Find your desired Python version with: `pyenv install --list`
+1. Install that python with `pyenv install ##`, where `##` is the desired version number.
+1. Create a virtual environment for your builds, with `pyenv virtualenv ## myname`.
+1. In your `user-sync.py` source directory, activate that virtual environment with `pyenv local myname`.
 
+This sequence not only ensures that you are set up to do Python extension compiles, but also that they will know how to find the openssl libraries, and that you can easily install any other needed development libraries with Homebrew.
 
-# Configuration
+In general, regardless of how you get your Python, you will need:
 
-See the `examples` directory for sample configuration files of all types.  These sample files include all of the possible options with descriptions of them.
+* The latest security updates.
+* The latest `openssl` (see above).
+* The latest version of XCode and/or the Developer Command Line Tools (see above).
+* Installs of modern openssl, ffi, and pkg-config libraries.  With Homebrew, you can do:
+    ```bash
+    homebrew install pkg-config openssl libffi
+    ```
+* To know how to include the XCode `include` directory in a compile spawned from `pip` install.  If you didn't do a command line developer tools install (which puts the headers into /usr/include), you can do:
+    * `CFLAGS="-I$(xcrun --show-sdk-path) pip install ...`.
+* To know how to include a modern `openssl` header path in a `pip` install.  If you installed your Python via Homebrew or `pyenv`, this is taken care of for you, see above.  Otherwise, if you installed ssl with Homebrew, you can do:`CFLAGS="-I$(brew --prefix openssl)/include"  LDFLAGS="-L$(brew --prefix openssl)/lib" pip install ...`.
+
+### Windows
+
+Windows is the trickiest platform because you need a command line development environment and package manager, and many of the dependencies don't have Windows builds available on PyPI.  So rather than building from Windows on scratch, we recommend the following procedure:
+  
+* Install [Cygwin](https://www.cygwin.com/) to get a bash command-line, together with basic tools such as `git` and `make`.
+* Use the [python.org](https://python.org) installers for the desired version of Python.
+* For the User Sync dependencies that don't have Windows 64-bit wheels on [PyPI](https://pypi.python.org/), get builds from [Christoph Guelke's excellent site](http://www.lfd.uci.edu/~gohlke/pythonlibs/).  We have stashed the ones needed for the current release in the `external` directory, and that's where the `Makefile` looks for them, so if you go fetch your own be sure to put them in that same directory.
+
+Having performed the above steps, you can follow the "generic" instructions and the build should "just work".
