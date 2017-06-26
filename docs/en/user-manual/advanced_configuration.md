@@ -486,25 +486,173 @@ that are not named in the group map in the config file.
 
 ## Working With Nested Directory Groups in Active Directory
 
-Note: The approach originally defined in this section did not quite work.  It will have to wait 
-for future bug fix release.
+Note: Prior to release 2.2, nested groups were not supported by User Sync.
 
-If your directory groups are structured in a nested manner so that users are 
-not in one simple named directory group, you will need to run more complex
-LDAP queries to enumerate the list of users.  For example you might have a group
-nesting structure like this:
+Starting in release 2.2, User Sync can be configured to recognize all users 
+in nested directory groups, and the example configuration files show how to 
+do this.  Specifically, in the `connector-ldap.yml` configuration file, set 
+the `group_member_filter` as follows:
 
+    group_member_filter_format: "(memberOf:1.2.840.113556.1.4.1941:={group_dn})"
+
+This finds group members who are either directly in a named group, or indirectly in the group.
+
+You might have a group nesting structure like this:
 
     All_Divisions
-		Blue_Division
-		       User1@example.com
-		       User2@example.com
-		Green_Division
-		       User3@example.com
-		       User4@example.com
+      Blue_Division
+             User1@example.com
+             User2@example.com
+      Green_Division
+             User3@example.com
+             User4@example.com
 
-A future release of user sync will support this transparently.
+You can map All_Divisions to an Adobe user group or product configuration in
+the `groups:` section of the main configuration file, and set group_member_filter 
+as shown above.  The effect of this is to treat all users contained directly in All_Divisions or in any group contained directly or indirectly in All_Divisions as a member of the All_Divisions directory group.
 
+## Using Push Techniques to Drive User Sync
+
+Starting with User Sync version 2.2 it is possible to drive push notifications directly to
+Adobe's user management system without having to read all information from Adobe and
+your enterprise directory.  Using push notifications has the advantage of minimizing 
+processing time and communication traffic, but the disadvantage of not being self-correcting
+for changes made in other ways, or in case of some errors.  More
+careful management of changes to be made is also required.
+
+You should consider using a push strategy if:
+
+- You have a very, very large population of Adobe users.
+- You are making few adds/changes/deletions relative to the total user population.
+- You have a process or tools that can identify users who have been changed (added, 
+removed, attribute changes, or group changes) in an automated way.
+- You have a process that first removes product entitlements from departing users, and 
+then (after a waiting period) fully deletes their accounts.
+
+The push strategy avoids all the overhead of reading large numbers of users from either side, and
+you can only do that if you can isolate the specific users that need to be updated (e.g., by
+putting them in a special group).
+
+To use push notification, you will need to be able to gather updates to be made 
+unconditionally into a separate file or directory group.  User deletions also must 
+be segregated from user additions and updates.  Updates and deletions are then run
+in separate invocations of the User Sync tool.
+
+Many approaches are possible using push techniques with User Sync.  The next sections
+describe one recommended approach.  To make it concrete, let us assume there are two
+Adobe products that have been purchased and are to be managed using User Sync: Creative Cloud,
+and Acrobat Pro.  To grant access, assume you have created two product configurations named
+Creative_Cloud and Acrobat_Pro, and two directory groups named cc_users and acrobat_users.
+The map in the User Sync configuration file would look like this:
+
+    groups:
+      - directory_group: acrobat_users
+        adobe_groups:
+          - "Acrobat_Pro"
+      - directory_group: cc_users
+        adobe_groups:
+          - "Creative_Cloud"
+
+
+
+### Using a special directory group to drive User Sync push
+
+An additional directory group is created to collect users to be updated.  For example, 
+use a directory group `updated_adobe_users` for new or updated users (those whose group membership
+has changed).  Removing users from both of the mapped groups revokes any product access
+and frees licenses held by users. 
+
+The command-line to use to process the additions and updates is:
+
+    user-sync –t --strategy push --process-groups --users group updated_adobe_users
+
+Notice the `--strategy push` on the command line: that’s what causes User Sync NOT
+to try to read the Adobe-side directory first, and to instead just push the updates
+to Adobe.
+
+Also notice the `-t` on the command line to run in "test mode".  If the actions appear
+to be as you expect, remove the -t to have User Sync actually make the changes.
+
+When `--strategy push` is specified, users are pushed over to Adobe with all of their 
+mapped groups *added* and any mapped groups they are not supposed to be in *removed*.  
+That way moving a user from one directory group to another, where they have different 
+mappings, will cause that user to be switched on the Adobe side at the next push.
+
+This approach will not delete or remove accounts, but will revoke
+access to any products and free licenses.  To delete accounts, a different approach is 
+needed which is described in the next section.
+
+The process to support this approach consists of the following steps:
+
+- Whenever you add a new user, or change a user’s groups in the directory (including 
+removing from all groups, which essentially disables all product entitlements), you also
+add that user to the “updated_adobe_users” group.
+- Once a day (or at a frequency you choose), you run a sync job with the parameters
+shown above.
+- This job causes all the updated users to be created if necessary and to have their 
+mapped groups updated on the Adobe side.
+- Once the job has run, you remove the users from the updated_adobe_users group (because 
+their changes have been pushed).
+
+At any time, you can also run a User Sync job in regular (non-push) mode to get the complete
+functionality of User Sync.  This will pick up any changes that might have been missed,
+correct changes made not using User Sync, and/or perform actual account deletions.  
+The command line would be something like:
+
+    user-sync --process-groups --users mapped --adobe-only-user-action remove
+
+
+### Using a file to drive User Sync push
+
+You can use a file as the input to User Sync.  In this case, the directory itself
+is not accessed by User Sync.  You can create the files (one for adds and updates
+and one for deletions) manually or using a script that obtains information from
+some other source.
+
+Create a file “users-file.csv” with information on users to add or update. An example of
+the file is:
+
+    firstname,lastname,email,country,groups,type,username,domain
+    Jane 1,Doe,jdoe1+1@example.com,US,acrobat_users
+    Jane 2,Doe,jdoe2+2@example.com,US,"cc_users,acrobat_users"
+
+The command line to push updates from the file is:
+
+    user-sync –t --strategy push --process-groups --users file users-file.csv
+
+Run without the `-t` when you are ready for the actions to take effect.
+
+To remove users, a separate file is created with a different format.  Example contents could be:
+
+    type,username,domain
+    adobeID,jimbo@gmail.com,
+    enterpriseID,jsmith1@ent-domain-example.com,
+    federatedID,jsmith2,user-login-fed-domain.com
+    federatedID,jsmith3@email-login-fed-domain.com,
+
+Each entry must include the identity type, user email or user name, and, for a federated identity type
+that is set for username login, the domain.
+
+The command line to process deletions based on a file like this (say remove-list.csv) is:
+
+    user-sync -t --adobe-only-user-list remove-list.csv --adobe-only-user-action remove
+
+The action "remove" could be "remove-adobe-groups" or "delete" to keep the account in the organization
+or to delete it, respectively.  Also note `-t` for test mode.
+
+The process to support this approach consists of the following steps:
+
+- Whenever you add a new user, or change a user’s groups in the directory (including 
+removing from all groups, which essentially disables all product entitlements), you also
+add an entry to the "users-file.csv" that includes the groups the user should be in.  This might
+be more or fewer groups than they are currently in.
+- Whenever a user is to be removed, add an entry to the "remove-list.csv" file.
+- Once a day (or at a frequency you choose), you run the two sync job with the parameters
+shown above (one for adds and updates and one for deletions).
+- These jobs causes all the updated users to have their mapped groups updated on the Adobe 
+side, and removed users to be removed from the Adobe side.
+- Once the job has run, clear out the files (because their changes have been pushed) to prepare for
+the next batch.
 
 ---
 

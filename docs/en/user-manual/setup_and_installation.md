@@ -38,8 +38,9 @@ system.
 
 The steps required for creating an integration are described in
 detail in the
-[Setting up Access](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/setup.html)
-section of the Adobe I/O User Management API website.  The
+[Adobe I/O Authentication Overview](https://www.adobe.io/apis/cloudplatform/console/authentication/gettingstarted.html)
+section of the Adobe I/O website.  Look for the 
+sections on Service Account Authentication.  The
 process requires that you create an integration-specific
 certificate, which may self-signed.  When the process is
 complete, you will be assigned an **API key**, a **Technical
@@ -49,6 +50,9 @@ communicate securely with the Admin Console. When you install the
 User Sync tool, you must provide these as configuration
 values that the tool requires to access your organization's user
 information store in Adobe.
+
+Additional information is available in the UMAPI documentation available
+[here](https://adobe-apiplatform.github.io/umapi-documentation) or [here](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/gettingstarted.html).
 
 ## Set up product-access synchronization
 
@@ -147,15 +151,16 @@ install the tool:
 User Sync tool and place the configuration files.
 
 1. Click the **Releases** link to locate the latest release,
-which contains the release notes, this documentation, sample
+which contains the release notes, sample
 configuration files, and all the built versions (as well as
 source archives).
 
 2. Select and download the compressed package for your platform
-(the `.tar.gz` file). Builds for Windows, OSX, and Ubuntu are
+(the `.tar.gz` file). Builds for Windows, OSX, Centos, and Ubuntu are
 available. (If you are building from source, you can download the
 Source Code package that corresponds to the release, or use the
-latest source off the master branch.)
+latest source off the master branch.)  Python 3 builds may also
+be available for later releases of User Sync.
 
 3. Locate the Python executable file (`user-sync` or
 `user-sync.pex` for Windows) and place it in your User Sync
@@ -196,7 +201,7 @@ the cache location, which prevents the path from exceeding the
 Because the User Sync application accesses sensitive information
 on both the enterprise and Adobe sides, its use involves a number
 of different files that contain sensitive information. Great care
-should be take to keep these files safe from unauthorized access.
+should be taken to keep these files safe from unauthorized access.
 
 User Sync release 2.1 or later allow you to store credentials in
 the operating system's secure credential store as an alternative
