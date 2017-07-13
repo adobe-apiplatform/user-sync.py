@@ -1,6 +1,6 @@
 # Release Notes for User Sync Tool Version 2.2
 
-These notes apply to v2.2 of 2017-07-12.
+These notes apply to v2.2 of 2017-07-13.
 
 ## New Features
 
