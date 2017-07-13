@@ -1,6 +1,6 @@
 # Release Notes for User Sync Tool Version 2.2
 
-These notes apply to v2.2rc2 of 2017-06-26.
+These notes apply to v2.2 of 2017-07-13.
 
 ## New Features
 
@@ -28,12 +28,14 @@ These notes apply to v2.2rc2 of 2017-06-26.
 
 [#247](https://github.com/adobe-apiplatform/user-sync.py/issues/247): There is no more use of the `uid` attribute in LDAP directories.
 
+[#254](https://github.com/adobe-apiplatform/user-sync.py/issues/254): Update windows libraries, reduce use of custom builds.
+
 ## Compatibility with Prior Versions
 
 This version is fully backwards-compatible with version 2.1.1.  As mentioned above, there are new configuration settings for filtering group members and controlling network behavior, and there is a new command-line option for controlling the update strategy.  See [the docs](https://adobe-apiplatform.github.io/user-sync.py) for full details about configuration.
 
 ## Known Issues
 
-Because the releases on Windows are built with pre-compiled dependencies, we have to lock down the versions of pycryptodome and PyYAML used in each release.  Thus they may not always be the latest version (as, for example, with this release, which uses pycryptodome 2.4.35.1 rather than 2.4.36).
+Because the release on Windows is built with a pre-compiled version of pyldap, we have to specify a specific version to be used in each release.  This not always be the latest version.
 
 On the Win64 platform, there are very long pathnames embedded in the released build artifact `user-sync.pex`, which will cause problems unless you are on Windows 10 and are either running Python 3.6 or have enabled long pathnames system-wide (as described in this [Microsoft Dev Center article](https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx)).  To work around this issue on older platforms, set the `PEX_ROOT` environment variable (as described [in the docs here](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/setup_and_installation.html)) to be a very short path (e.g., `set PEX_ROOT=C:\pex`).

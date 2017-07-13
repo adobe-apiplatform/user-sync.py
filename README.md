@@ -150,6 +150,7 @@ Windows is the trickiest platform because you need a command line development en
   
 * Install [Cygwin](https://www.cygwin.com/) to get a bash command-line, together with basic tools such as `git` and `make`.
 * Use the [python.org](https://python.org) installers for the desired version of Python.
+* Install the [latest Visual C++ Redistributable Libraries](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads) from Microsoft (because python3 will need these to run in a virtual environment).
 * For the User Sync dependencies that don't have Windows 64-bit wheels on [PyPI](https://pypi.python.org/), get builds from [Christoph Guelke's excellent site](http://www.lfd.uci.edu/~gohlke/pythonlibs/).  We have stashed the ones needed for the current release in the `external` directory, and that's where the `Makefile` looks for them, so if you go fetch your own be sure to put them in that same directory.
 
 Having performed the above steps, you can follow the "generic" instructions and the build should "just work".
