@@ -303,20 +303,121 @@ Si vous souhaitez empêcher User Sync de retirer ces comptes des groupes, placez
 
 ## Utilisation de groupes d’annuaire imbriqués dans Active Directory
 
-///Note: The approach originally defined in this section did not quite work./// ///It will have to wait for future bug fix release.///
+Remarque : avant la version 2.2, les groupes imbriqués n’étaient pas pris en charge par User Sync.
 
-Si vos groupes d’annuaire sont structurés d’une manière imbriquée, de sorte que les utilisateurs ne figurent pas dans un simple groupe d’annuaire nommé, vous devrez exécuter des requêtes LDAP plus complexes pour énumérer la liste des utilisateurs. Par exemple, votre structure de groupes imbriqués peut se présenter comme ceci :
+À partir de la version 2.2, User Sync peut être configuré pour reconnaître tous les utilisateurs dans des groupes d’annuaires imbriqués, et l’exemple de fichiers de configuration décrit comment procéder. Plus précisément, dans le fichier de configuration `connector-ldap.yml`, définissez le filtre `group_member_filter` de la manière suivante :
 
+    group_member_filter_format: "(memberOf:1.2.840.113556.1.4.1941:={group_dn})"
+
+Cela trouve les membres de groupe qui sont soit directement dans un groupe nommé, soit indirectement dans le groupe.
+
+Votre structure de groupes imbriqués peut se présenter comme ceci :
 
     All_Divisions
-		Blue_Division
-		       User1@example.com
-		       User2@example.com
-		Green_Division
-		       User3@example.com
-		       User4@example.com
+      Blue_Division
+             User1@example.com
+             User2@example.com
+      Green_Division
+             User3@example.com
+             User4@example.com
 
-Une prochaine version de User Sync prendra en charge cette fonctionnalité de manière transparente.
+Vous pouvez mapper All_Divisions sur une configuration de produit ou un groupe d’utilisateurs Adobe dans la section `groups:` du fichier de configuration principal, et définir group_member_filter comme illustré ci-dessus. L’effet de ceci est de traiter tous les utilisateurs contenus directement dans All_Divisions ou dans tout groupe contenu directement ou indirectement dans All_Divisions en tant que membre du groupe d’annuaires All_Divisions.
+
+## Utilisation de techniques push pour piloter User Sync
+
+À partir de User Sync version 2.2, il est possible de piloter des notifications push directement vers le système de gestion des utilisateurs d’Adobe sans avoir à lire toutes les informations depuis Adobe et votre annuaire d’entreprise. L’utilisation de notifications push a l’avantage de minimiser le temps de traitement et le trafic de communication, mais l’inconvénient de ne pas se corriger automatiquement pour les modifications effectuées d’une autre manière ou en cas d’erreurs. Une gestion plus minutieuse des modifications à apporter est également nécessaire.
+
+Vous devriez envisager d’utiliser une stratégie push si :
+
+- Vous avez un très grand nombre d’utilisateurs Adobe.
+- Vous effectuez quelques ajouts/modifications/suppressions par rapport au nombre total d’utilisateurs.
+- Vous avez un processus ou des outils qui peuvent identifier les utilisateurs qui ont été modifiés (ajoutés, supprimés, modifications d’attribut ou changements de groupe) de manière automatisée.
+- Vous avez un processus qui supprime tout d’abord les droits de produits des utilisateurs sortants, puis (après une période d’attente) supprime complètement leurs comptes.
+
+La stratégie push évite tous les frais généraux de lecture d’un grand nombre d’utilisateurs de chaque côté, et vous ne pouvez le faire que si vous pouvez isoler les utilisateurs spécifiques qui doivent être mis à jour (par exemple, en les plaçant dans un groupe spécial).
+
+Pour utiliser la notification push, vous devez pouvoir rassembler des mises à jour à effectuer inconditionnellement dans un groupe d’annuaires ou de fichiers distinct. Les suppressions d’utilisateurs doivent également être séparées des ajouts et des mises à jour d’utilisateurs. Les mises à jour et suppressions sont ensuite exécutées dans des appels distincts de l’outil User Sync.
+
+De nombreuses approches sont possibles en utilisant des techniques push avec l’outil User Sync. Les sections suivantes décrivent une approche recommandée. Supposons que vous avez acheté deux produits Adobe à gérer à l’aide de l’outil User Sync : Creative Cloud et Acrobat Pro. Pour accorder l’accès, vous avez créé deux configurations de produit nommées Creative_Cloud et Acrobat_Pro, et deux groupes d’annuaires nommés cc_users et acrobat_users.
+La carte dans le fichier de configuration de l’outil User Sync aurait l’aspect suivant :
+
+    groups:
+      - directory_group: acrobat_users
+        adobe_groups:
+          - "Acrobat_Pro"
+      - directory_group: cc_users
+        adobe_groups:
+          - "Creative_Cloud"
+
+
+
+### Utilisation d’un groupe spécial d’annuaires pour piloter l’instruction push de l’outil User Sync
+
+Un groupe d’annuaires supplémentaire est créé pour collecter les utilisateurs à mettre à jour. Par exemple, utilisez un groupe d’annuaires `updated_adobe_users` pour les utilisateurs nouveaux ou mis à jour (ceux dont l’abonnement au groupe a été modifié). La suppression d’utilisateurs des deux groupes mappés révoque tout accès au produit et libère les licences détenues par les utilisateurs.
+
+La ligne de commande à utiliser pour traiter les ajouts et mises à jour est :
+
+    user-sync –t --strategy push --process-groups --users group updated_adobe_users
+
+Notez l’instruction `--strategy push` sur la ligne de commande : elle provoque le fait que l’outil User Sync NE TENTE PAS de lire en premier l’annuaire côté Adobe et, au lieu de cela, d’envoyer simplement les mises à jour à Adobe.
+
+Notez également le `-t` sur la ligne de commande pour l’exécution en « mode test ». Si les actions semblent être celles prévues, supprimez le -t pour que l’outil User Sync apporte réellement les modifications.
+
+Lorsque `--strategy push` est spécifié, les utilisateurs sont envoyés vers Adobe avec tous leurs groupes mappés *ajoutés* et tous les groupes mappés qui ne sont pas censés l’être dans *supprimés*. De cette façon, le déplacement d’un utilisateur d’un groupe d’annuaires vers un autre, lorsqu’ils disposent de mappages différents, entraînera le basculement de cet utilisateur sur le côté Adobe à la prochaine action push.
+
+Cette approche ne supprime pas ou ne retire pas de comptes, mais révoque l’accès à l’ensemble des produits et licences gratuites. Pour supprimer des comptes, une approche différente est nécessaire, telle que décrite dans la section suivante.
+
+Le processus de prise en charge de cette approche consiste en les étapes suivantes :
+
+- Chaque fois que vous ajoutez un nouvel utilisateur ou que vous modifiez des groupes d’utilisateurs dans l’annuaire (y compris le retrait de tous les groupes, ce qui désactive essentiellement tous les droits sur le produit), vous ajoutez également cet utilisateur au groupe updated_adobe_users.
+- Une fois par jour (ou à une fréquence que vous choisissez), vous exécutez un travail de synchronisation avec les paramètres indiqués ci-dessus.
+- Ce travail entraîne la création de tous les utilisateurs mis à jour, si nécessaire, et la mise à jour de leurs groupes mappés du côté Adobe.
+- Une fois le travail exécuté, vous supprimez les utilisateurs du groupe updated_adobe_users (parce que leurs changements ont été envoyés).
+
+À tout moment, vous pouvez également exécuter un travail User Sync en mode normal (sans envoi) pour obtenir la fonctionnalité complète de l’outil User Sync. Cela détectera toute modification qui pourrait avoir été omise, corrigera les modifications apportées sans l’utilisation de l’outil User Sync et/ou réalisera des suppressions de compte réelles. La ligne de commande aurait l’aspect suivant :
+
+    user-sync --process-groups --users mapped --adobe-only-user-action remove
+
+
+### Utilisation d’un fichier pour piloter l’instruction push de l’outil User Sync
+
+Vous pouvez utiliser un fichier comme entrée de l’outil User Sync. Dans ce cas, l’annuaire lui-même n’est pas accessible par User Sync. Vous pouvez créer les fichiers (l’un pour les ajouts et mises à jour et l’autre pour les suppressions) manuellement ou à l’aide d’un script qui obtient des informations d’une autre source.
+
+Créez un fichier users-file.csv à partir des informations sur les utilisateurs à ajouter ou mettre à jour. Un exemple du fichier est :
+
+    firstname,lastname,email,country,groups,type,username,domain
+    Jane 1,Doe,jdoe1+1@example.com,US,acrobat_users
+    Jane 2,Doe,jdoe2+2@example.com,US,"cc_users,acrobat_users"
+
+La ligne de commande pour envoyer les mises à jour à partir du fichier est :
+
+    user-sync –t --strategy push --process-groups --users file users-file.csv
+
+Lorsque vous êtes prêt à valider les actions, exécutez la commande sans l’argument `-t`.
+
+Pour supprimer des utilisateurs, un fichier distinct est créé avec un format différent. Un exemple de contenu peut être :
+
+    type,username,domain
+    adobeID,jimbo@gmail.com,
+    enterpriseID,jsmith1@ent-domain-example.com,
+    federatedID,jsmith2,user-login-fed-domain.com
+    federatedID,jsmith3@email-login-fed-domain.com,
+
+Chaque entrée doit inclure le type d’identité, le nom d’utilisateur ou son e-mail et, pour un type Federated ID qui est défini pour une connexion via nom d’utilisateur, le domaine.
+
+La ligne de commande pour traiter les suppressions basées sur un fichier comme celui-ci (par exemple, remove-list.csv) est :
+
+    user-sync -t --adobe-only-user-list remove-list.csv --adobe-only-user-action remove
+
+L’action remove peut être remove-adobe-groups ou delete pour conserver le compte dans l’organisation ou pour le supprimer, respectivement. Notez également l’argument `-t` pour le mode test.
+
+Le processus de prise en charge de cette approche consiste en les étapes suivantes :
+
+- Chaque fois que vous ajoutez un nouvel utilisateur ou que vous modifiez les groupes d’un utilisateur dans l’annuaire (y compris la suppression de tous les groupes, ce qui désactive essentiellement tous les droits sur le produit), vous ajoutez également une entrée au fichier users-file.csv qui comprend les groupes dans lesquels devrait être l’utilisateur. Il peut s’agir d’un nombre supérieur ou inférieur de groupes dans lesquels il se trouve actuellement.
+- Chaque fois qu’un utilisateur doit être supprimé, ajoutez une entrée au fichier remove-list.csv.
+- Une fois par jour (ou à une fréquence que vous choisissez), vous exécutez les deux travaux de synchronisation avec les paramètres indiqués ci-dessus (l’un pour les ajouts et mises à jour et l’autre pour les suppressions).
+- Ces travaux permettent à tous les utilisateurs mis à jour d’avoir leurs groupes mappés mis à jour du côté Adobe, et les utilisateurs supprimés d’être supprimés du côté Adobe.
+- Une fois le travail exécuté, effacez les fichiers (car les changements ont été envoyés) afin de préparer le système en vue du prochain lot.
 
 
 ---

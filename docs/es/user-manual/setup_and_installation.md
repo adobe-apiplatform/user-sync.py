@@ -26,7 +26,9 @@ El uso de la herramienta User Sync varía en función de si la empresa ha establ
 
 La herramienta User Sync es un cliente de la API de gestión de usuarios. Antes de instalar la herramienta, debe registrarla como cliente de la API añadiendo una *integración* en el [Portal del programador](https://www.adobe.io/console/) de Adobe I/O. Deberá añadir una integración de clave de empresa con el fin de obtener las credenciales que la herramienta necesita para tener acceso al sistema de gestión de usuarios de Adobe.
 
-Los pasos necesarios para la creación de una integración se describen con detalle en la sección de [Configuración del acceso](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/setup.html) del sitio web de la API de gestión de usuarios de Adobe I/O. El proceso requiere crear un certificado específico de la integración, que puede ser autofirmado. Cuando el proceso termine, se le asignará un **API key**, un  **Technical account ID**, un  **Organization ID** y un  **client secret** que la herramienta utilizará junto con la información del certificado para comunicarse de forma segura con Admin Console. Al instalar la herramienta User Sync, debe proporcionar estos datos como valores de configuración que la herramienta necesita para acceder al almacén de información de usuarios de la organización en Adobe.
+Los pasos necesarios para crear una integración se describen en la sección [Descripción general de autenticación de Adobe I/O] (https://www.adobe.io/apis/cloudplatform/console/authentication/gettingstarted.html) del sitio web de Adobe I/O. Busque las secciones de autenticación de cuentas de servicio. Cuando el proceso termine, se le asignará un **API key**, un  **Technical account ID**, un  **Organization ID** y un  **client secret** que la herramienta utilizará junto con la información del certificado para comunicarse de forma segura con Admin Console. Al instalar la herramienta User Sync, debe proporcionar estos datos como valores de configuración que la herramienta necesita para acceder al almacén de información de usuarios de la organización en Adobe.
+
+Existe información adicional disponible en la documentación UMAPI, disponible [aquí](https://adobe-apiplatform.github.io/umapi-documentation) o [aquí](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/gettingstarted.html).
 
 ## Configuración de la sincronización de acceso a los productos
 
@@ -72,10 +74,10 @@ La herramienta User Sync está disponible en el [repositorio de User Sync en Git
 1. Cree una carpeta en el servidor en la que va a instalar la herramienta User Sync y ponga en ella los archivos de configuración.
 
 
-1. Haga clic en el vínculo **Releases** para localizar la versión más reciente, que contiene las notas de la versión, esta documentación, archivos de configuración de muestra y todas las versiones (así como los archivos de origen).
+1. Haga clic en el vínculo **Releases** para localizar la versión más reciente, que contiene las notas de la versión, archivos de configuración de muestra y todas las versiones (así como los archivos de origen).
 
 
-2. Seleccione y descargue el paquete comprimido para su plataforma (el archivo `.tar.gz`). Están disponibles versiones para Windows, OSX y Ubuntu. (Si va a crear desde código fuente, puede descargar el paquete de código fuente correspondiente a la versión o utilizar la fuente más reciente de la rama maestra.)
+2. Seleccione y descargue el paquete comprimido para su plataforma (el archivo `.tar.gz`). Están disponibles compilaciones para Windows, OSX, Centos y Ubuntu. (Si va a crear desde código fuente, puede descargar el paquete de código fuente correspondiente a la versión o utilizar la fuente más reciente de la rama maestra.) También puede que estén disponibles compilaciones para Python 3 en versiones posteriores de User Sync.
 
 
 3. Localice el archivo ejecutable de Python (`user-sync` o `user-sync.pex` para Windows) y póngalo en la carpeta de User Sync.
@@ -90,7 +92,7 @@ La herramienta User Sync está disponible en el [repositorio de User Sync en Git
 
     El sistema operativo Windows fuerza un límite de longitud de ruta de archivo de 260 caracteres. Al ejecutar un archivo PEX de Python, crea una ubicación temporal para extraer el contenido del paquete. Si la ruta a esa ubicación supera los 260 caracteres, el script no se ejecuta correctamente.
 
-    De forma predeterminada, la caché temporal se encuentra en su carpeta de inicio, que puede hacer que las rutas de acceso excedan el límite. Para solucionar este problema, cree una variable de entorno en Windows llamada PEX\_ROOT, y establezca la ruta como C:\\user-sync\\.pex. El sistema operativo utiliza esta variable para la ubicación de la caché, lo que impide que la ruta supere el límite de 260 caracteres.
+    De forma predeterminada, la caché temporal se encuentra en su carpeta de inicio, que puede hacer que las rutas de acceso excedan el límite. Para solucionar este problema, cree una variable de entorno en Windows llamada PEX\_ROOT, y establezca la ruta como C:\\pex. El sistema operativo utiliza esta variable para la ubicación de la caché, lo que impide que la ruta supere el límite de 260 caracteres.
 
 
 6. Para ejecutar la herramienta User Sync, ejecute el archivo ejecutable de Python, `user-sync` (o ejecute `python user-sync.pex` en Windows).
@@ -111,7 +113,7 @@ Si configura User Sync para el acceso a su directorio de empresa, debe configura
 
 #### Archivos de certificado
 
-Los archivos que contienen las claves pública y privada, pero especialmente la clave privada, contienen información confidencial. Debe conservar la clave privada segura. No se puede recuperar o sustituir. Si la pierde o está en riesgo, debe eliminar el certificado correspondiente de su cuenta. Si es necesario, debe crear y cargar un nuevo certificado. Debe proteger estos archivos como mínimo igual que protege un nombre de cuenta y contraseña. La mejor práctica es almacenar los archivos de clave en un sistema de gestión de credenciales o utilizar la protección de archivos del sistema para que solo puedan tener acceso a ellos los usuarios autorizados.
+Los archivos que contienen las claves pública y privada, pero especialmente la clave privada, contienen información confidencial. Debe conservar la clave privada segura. No se puede recuperar o sustituir. Si la pierde o está en riesgo, debe eliminar el certificado correspondiente de su cuenta. Si es necesario, debe crear y cargar un nuevo certificado. Debe proteger estos archivos como mínimo igual que protege un nombre de cuenta y contraseña. El mejor modo de proceder es almacenar el archivo de claves privadas en un sistema de gestión de credenciales, en el almacenamiento seguro del sistema operativo, o utilizar la protección de archivos del sistema, de manera que solo puedan acceder a ellos los usuarios autorizados.
 
 #### Archivos de registro
 

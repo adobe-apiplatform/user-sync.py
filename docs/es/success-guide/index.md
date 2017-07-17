@@ -3,12 +3,12 @@ layout: page
 title: Guía de configuración y éxito
 advertise: Guía de configuración y éxito
 lang: es
-nav_link: Contenidos de la guía de configuración
+nav_link: Guía de configuración y éxito
 nav_level: 1
 nav_order: 100
 ---
 
-Versión 1.1 publicada el 06/03/2017
+Versión 2.1.1 publicada el 09/06/2017
 
 Este documento le guiará a través de los pasos necesarios para entender y configurar la herramienta User Sync.
 

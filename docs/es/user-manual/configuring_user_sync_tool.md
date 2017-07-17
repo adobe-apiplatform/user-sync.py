@@ -27,7 +27,7 @@ El funcionamiento de la herramienta User Sync lo controlan un conjunto de archiv
 | user-sync-config.yml | Necesario. Contiene opciones de configuración que definen la asignación de grupos de directorio a grupos de usuarios y configuraciones de producto de Adobe, y que controlan el comportamiento de actualización. También contiene referencias a los otros archivos de configuración.|
 | connector&#x2011;umapi.yml&nbsp;&nbsp; | Necesario. Contiene credenciales e información de acceso para llamar la API de la gestión de usuarios de Adobe. |
 | connector-ldap.yml | Necesario. Contiene credenciales e información de acceso para acceder al directorio de empresa. |
-
+{: .bordertablestyle }
 
 Si necesita configurar el acceso a grupos de Adobe en otras organizaciones que le han concedido el acceso, puede incluir archivos de configuración adicionales. Para obtener más información, consulte las [instrucciones de configuración avanzada](advanced_configuration.md#acceso-a-grupos-de-otras-organizaciones) a continuación.
 
@@ -109,7 +109,14 @@ En User Sync 2.1 o posterior existe una alternativa al almacenamiento de la clav
 	    Fz2i8y6qhmfhj48dhf84hf3fnGrFP2mX2Bil48BoIVc9tXlXFPstJe1bz8xpo=
 	    -----END RSA PRIVATE KEY-----
 
+En User Sync 2.2 o posterior, hay algunos parámetros adicionales para controlar la temporización y el reintento de conexión. No debería ser necesario utilizarlos nunca; sin embargo, en el caso de se produzca alguna situación inusual, puede definirlos en la sección `server`:
 
+  server:
+    timeout: 120
+    retries: 3
+
+`timeout` establece el tiempo de espera máximo, en segundos, para completar una llamada.
+`retries` establece el número de veces a reintentar una operación, si falla debido a un problema no específico, como un error del servidor o una temporización.
 
 ### Configuración de la conexión al directorio de empresa
 
@@ -121,6 +128,8 @@ password: "aquí-va-la-contraseña"
 host: "FQDN.de.host"
 base_dn: "nd_base.de.directorio"
 ```
+
+Consulte la sección [Consideraciones de seguridad](deployment_best_practices.md#security-considerations) para obtener más información sobre cómo almacenar la contraseña de forma más segura la versión 2.1 de User Sync o posterior.
 
 ## Opciones de configuración
 
@@ -323,6 +332,8 @@ enterprise:
 
 Utilice estos casos de prueba para asegurarse de que la configuración está funcionando correctamente, y que las configuraciones de producto están correctamente asignadas a los grupos de seguridad del directorio de empresa. Ejecute primero la herramienta en modo de prueba (suministrando el parámetro -t) para poder ver el resultado antes de la ejecución real.
 
+Los siguientes ejemplos utilizan `--users all` para seleccionar usuarios, pero puede preferir utilizar `--users mapped` para seleccionar solo los usuarios de los grupos de directorios enumerados en su archivo de configuración, o `--users file f.csv` para seleccionar un conjunto más pequeño de usuarios de prueba enumerados en un archivo.
+
 ###  Creación de usuarios
 
 
@@ -346,7 +357,7 @@ Utilice estos casos de prueba para asegurarse de que la configuración está fun
 1. Modifique la pertenencia a grupos de uno o varios usuarios de prueba en el directorio.
 
 
-1. Ejecute User Sync. (`./user-sync -t --users all --process-groups --adobe-only-user-action exclude`)
+1. Ejecute User Sync. (`./user-sync --users all --process-groups --adobe-only-user-action exclude`)
 
 
 2. Compruebe que los usuarios de prueba de Adobe Admin Console se hayan actualizado para reflejar la nueva pertenencia a configuración de producto.
@@ -357,7 +368,7 @@ Utilice estos casos de prueba para asegurarse de que la configuración está fun
 1. Quite o desactive uno o varios usuarios de prueba existentes del directorio de empresa.
 
 
-2. Ejecute User Sync. (`./user-sync -t --users all --process-groups --adobe-only-user-action exclude`)
+2. Ejecute User Sync. (`./user-sync --users all --process-groups --adobe-only-user-action remove-adobe-groups`) Tal vez prefiera ejecutarlo primero en modo de prueba (-t).
 
 
 3. Compruebe que se hayan eliminado los usuarios de las configuraciones de producto configuradas en Adobe Admin Console.

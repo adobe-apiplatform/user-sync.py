@@ -35,7 +35,7 @@ L’application effectue des requêtes GET et POST de l’API User Management au
 
 Pour protéger la disponibilité des systèmes d’identité des utilisateurs Adobe, l’API User Management impose des limites sur l’accès des clients aux données. Ces limites concernent le nombre d’appels qu’un client peut faire dans un intervalle de temps. Des limites globales s’appliquent également à l’accès par tous les clients au cours d’une période donnée. User Sync implémente une logique de type « back off and retry » (reculer et réessayer) pour empêcher le script de recontacter l’API User Management chaque fois que la limite est atteinte. Il est normal de voir dans la console des messages qui indiquent que le script est en pause pendant quelques instants avant de tenter une nouvelle exécution.
 
-À compter de la version 2.1 de User Sync, deux techniques supplémentaires sont disponibles pour protéger les identifiants de connexion. La première utilise le référentiel d’identifiants de connexion pour stocker les valeurs correspondantes individuelles. La deuxième utilise un mécanisme que vous devez fournir pour stocker l’intégralité du fichier de configuration pour umapi et/ou ldap, qui inclut tous les identifiants de connexion requis. Ces méthodes sont décrites dans les deux sections suivantes.
+À compter de la version 2.1 de User Sync, deux techniques supplémentaires sont disponibles pour protéger les identifiants de connexion. La première utilise le référentiel d’identifiants de connexion pour stocker les valeurs correspondantes individuelles. La deuxième utilise un mécanisme que vous devez fournir pour stocker en toute sécurité l’intégralité du fichier de configuration pour umapi et/ou ldap, qui inclut tous les identifiants de connexion requis. Ces méthodes sont décrites dans les deux sections suivantes.
 
 ### Stockage des identifiants de connexion dans l’espace de stockage du système d’exploitation
 
@@ -54,10 +54,33 @@ connector-umapi.yml
 
 Notez le remplacement de `api_key`, `client_secret` et `priv_key_path` par `secure_api_key_key`, `secure_client_secret_key` et `secure_priv_key_data_key`, respectivement. Ces nouvelles valeurs de configuration donnent les noms des clés à rechercher dans le service keychain utilisateur (ou le service équivalent sur d’autres plates-formes) pour récupérer les valeurs des identifiants de connexion. Dans cet exemple, les noms des clés des identifiants de connexion sont `umapi_api_key`, `umapi_client_secret` et `umapi_private_key_data`.
 
-Le contenu du fichier de clé privée est utilisé en tant que valeur de `umapi_private_key_data` dans le référentiel d’identifiants de connexion.
+Le contenu du fichier de clé privée est utilisé en tant que valeur de `umapi_private_key_data` dans le référentiel d’identifiants de connexion. Cela peut uniquement être effectué sur des plates-formes autres que Windows. Voir ci-dessous pour savoir comment sécuriser le fichier de clé privée sous Windows.
 
-Les valeurs des identifiants de connexion seront recherchées à partir des noms de clés spécifiés, et l’utilisateur correspond à la valeur org_id.
+Les valeurs d’identification seront recherchées dans le référentiel sécurisé en utilisant org_id comme valeur d’utilisateur et les noms de clé dans le fichier de configuration comme nom de clé.
 
+Une légère variante de cette approche est disponible (dans User Sync version 2.1.1 ou ultérieure) pour chiffrer le fichier de clé privée à l’aide de la représentation cryptée RSA standard pour les clés privées (connu sous le nom PKCS#8). Cette approche doit être utilisée sous Windows, car le référentiel sécurisé Windows n’est pas en mesure de stocker des chaînes de plus de 512 octets qui empêchent son utilisation avec des clés privées. Cette approche peut également être utilisée sur les autres plates-formes, si vous le souhaitez.
+
+Pour stocker la clé privée dans un format chiffré, procédez comme suit. Commencez par créer une version chiffrée du fichier de clé privée. Choisissez une phrase de sécurité et chiffrez le fichier de clé privé :
+
+    openssl pkcs8 -in private.key -topk8 -v2 des3 -out private-encrypted.key
+
+Sous Windows, vous devez exécuter openssl depuis Cygwin ou un autre fournisseur ; il n’est pas inclus dans la distribution Windows standard.
+
+Utilisez ensuite les éléments de configuration suivants dans connector-umapi.yml. Les deux derniers éléments ci-dessous entraînent l’obtention de la phrase de sécurité de décryptage depuis le référentiel sécurisé, et référencent le fichier de clé privée chiffrée, respectivement :
+
+	server:
+	
+	enterprise:
+	  org_id: your org id
+	  secure_api_key_key: umapi_api_key
+	  secure_client_secret_key: umapi_client_secret
+	  tech_acct: your tech account@techacct.adobe.com
+	  secure_priv_pass_key: umapi_private_key_passphrase
+	  priv_key_path: private-encrypted.key
+
+Enfin, ajoutez la phrase de sécurité au référentiel sécurisé en tant qu’entrée avec le nom d’utilisateur ou l’url en tant qu’Id d’organisation, le nom de clé en tant que `umapi_private_key_passphrase` pour correspondre à l’entrée du fichier de configuration `secure_priv_pass_key` et la valeur en tant que phrase de sécurité. (Vous pouvez également intégrer la clé privée chiffrée en plaçant les données dans le fichier connector-umapi.yml sous la clé `priv_key_data` au lieu d’utiliser `priv_key_path`.)
+
+Ceci termine la description de la variante où le chiffrement de clé privée RSA est utilisé.
 
 connector-ldap.yml
 
@@ -73,7 +96,7 @@ Les identifiants de connexion sont stockés dans le référentiel sécurisé sou
 
 | OS | Référentiel d’identifiants de connexion |
 |------------|--------------|
-|Windows | Service d’archivage sécurisé des identifiants de connexion Windows |
+| Windows | Service d’archivage sécurisé des identifiants de connexion Windows |
 | Mac OS X | Keychain |
 | Linux | Service Secret Freedesktop ou KWallet |
 {: .bordertablestyle }

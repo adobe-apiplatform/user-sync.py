@@ -15,22 +15,14 @@ User Sync est un outil de ligne de commande qui transfère les informations rela
 
 Chaque fois que vous exécutez User Sync, il recherche les différences entre les données des utilisateurs et des groupes dans les deux systèmes, puis met à jour l’annuaire Adobe afin que ses informations correspondent à celles de votre annuaire.
 
-# [Guide d’installation](success-guide/index.md)
+# Guide d’installation
 
 Pour prendre en main rapidement l’outil User Sync, l’idéal est de lire le [Guide d’installation](success-guide/index.md), qui explique en détail comment paramétrer les fichiers de configuration requis et exécuter l’outil.
 
-# [Manuel d’utilisation](user-manual/index.md)
+# Manuel d’utilisation
 
 Pour tout savoir sur le fonctionnement de User Sync, y compris sur la configuration de l’outil pour différents scénarios d’utilisation courants, consultez le [Manuel d’utilisation](user-manual/index.md). Ce guide vous aidera également à personnaliser le comportement de l’outil User Sync, grâce aux instructions fournies pour réaliser des mappages personnalisés entre les informations de l’annuaire client et les données des systèmes Adobe.
 
-# [Forum aux questions](FAQ/index.md)
+# Forum aux questions
 
 Nous avons compilé un [Forum aux questions](FAQ/index.md) qui répond à de nombreuses questions qui nous ont été posées ou que nous jugeons utiles de clarifier.
-
-# Traductions disponibles
-
-* [Englisch](../en)
-* [Deutsch](../de)
-* [Français](../fr)
-* [日本語](../jp)
-* [Español](../es)

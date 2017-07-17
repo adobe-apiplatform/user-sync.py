@@ -3,12 +3,12 @@ layout: page
 title: Guide d’installation
 advertise: Guide d’installation
 lang: fr
-nav_link: Sommaire du guide d’installation
+nav_link: Guide d’installation
 nav_level: 1
 nav_order: 100
 ---
 
-Version 1.1, publiée le 06/03/2017
+Version 2.1.1, publiée le 09/06/2017
 
 Ce document détaille les étapes nécessaires pour comprendre et installer l’outil User Sync.
 

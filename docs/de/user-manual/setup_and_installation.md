@@ -26,7 +26,9 @@ Damit Sie das Benutzer-Synchronisationstool verwenden können, müssen in Ihrem 
 
 Das Benutzer-Synchronisationstool ist ein Client der User Management API. Bevor Sie das Tool installieren, müssen Sie es als Client der API registrieren, indem Sie eine *Integration* im Adobe I/O-[Entwicklerportal](https://www.adobe.io/console/) hinzufügen. Sie müssen eine Unternehmensschlüssel-Integration hinzufügen, um die für den Zugriff auf das Adobe-Benutzerverwaltungssystem benötigten Anmeldeinformationen abzurufen.
 
-Die zum Erstellen einer Integration erforderlichen Schritte werden ausführlich im Abschnitt zum [Einrichten des Zugriffs](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/setup.html) auf der Adobe I/O-Website für die User Management API erläutert. Hierfür müssen Sie ein integrationsspezifisches Zertifikat erstellen, das selbstsigniert sein kann. Wenn der Vorgang abgeschlossen ist, werden Ihnen ein **API Key**, eine  **Technical Account ID**, eine  **Organization ID** und ein  **Client Secret** zugewiesen, die das Tool verwendet. Außerdem erhalten Sie Zertifikatinformationen, um sicher mit der Admin Console kommunizieren zu können. Wenn Sie das Benutzer-Synchronisationstool installieren, müssen Sie diese Informationen als Konfigurationswerte angeben, die das Tool zum Zugriff auf die in Adobe gespeicherten Benutzerinformationen Ihrer Organisation benötigt.
+Die zum Erstellen einer Integration erforderlichen Schritte werden ausführlich im Abschnitt [Übersicht über die Adobe I/O-Authentifizierung](https://www.adobe.io/apis/cloudplatform/console/authentication/gettingstarted.html) erläutert. Suchen Sie nach den Abschnitten zur Authentifizierung von Service-Konten. Hierfür müssen Sie ein integrationsspezifisches Zertifikat erstellen, das selbstsigniert sein kann. Wenn der Vorgang abgeschlossen ist, werden Ihnen ein **API Key**, eine  **Technical Account ID**, eine  **Organization ID** und ein  **Client Secret** zugewiesen, die das Tool verwendet. Außerdem erhalten Sie Zertifikatinformationen, um sicher mit der Admin Console kommunizieren zu können. Wenn Sie das Benutzer-Synchronisationstool installieren, müssen Sie diese Informationen als Konfigurationswerte angeben, die das Tool zum Zugriff auf die in Adobe gespeicherten Benutzerinformationen Ihrer Organisation benötigt.
+
+Weitere Informationen finden Sie in der UMAPI-Dokumentation [hier](https://adobe-apiplatform.github.io/umapi-documentation) oder [hier ](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/gettingstarted.html).
 
 ## Einrichten der Synchronisation für den Produktzugriff
 
@@ -72,10 +74,10 @@ Sie können das Benutzer-Synchronisationstool im [User Sync-Repository auf GitHu
 1. Erstellen Sie einen Ordner auf Ihrem Server, in dem das Benutzer-Synchronisationstool installiert wird und in dem die Konfigurationsdateien gespeichert werden.
 
 
-1. Klicken Sie auf den Link **Releases**, um das aktuelle Release zu suchen. Dieses umfasst Versionshinweise, diese Dokumentation, Beispielkonfigurationsdateien und alle Build-Versionen (sowie Quellarchive).
+1. Klicken Sie auf den Link **Releases**, um das aktuelle Release zu suchen. Dieses umfasst Versionshinweise, Beispielkonfigurationsdateien und alle Build-Versionen (sowie Quellarchive).
 
 
-2. Wählen Sie das komprimierte Paket für Ihre Plattform aus und laden Sie es herunter (Datei mit der Erweiterung `.tar.gz`). Es sind Builds für Windows, OS X und Ubuntu verfügbar. (Wenn Sie selbst einen Build aus dem Quellcode erstellen möchten, können Sie das Quellcodepaket für das Release herunterladen oder die aktuelle Quelle in der Master-Verzweigung verwenden.)
+2. Wählen Sie das komprimierte Paket für Ihre Plattform aus und laden Sie es herunter (Datei mit der Erweiterung `.tar.gz`). Es sind Builds für Windows, OS X, Centos und Ubuntu verfügbar. (Wenn Sie selbst einen Build aus dem Quellcode erstellen möchten, können Sie das Quellcodepaket für den Release herunterladen oder die aktuelle Quelle in der Master-Verzweigung verwenden.) In späteren Versionen des Benutzer-Synchronisationstools sind möglicherweise auch Python 3-Builds verfügbar.
 
 
 3. Suchen Sie die ausführbare Python-Datei (`user-sync` oder `user-sync.pex` für Windows) und speichern Sie sie in Ihrem Ordner für das Benutzer-Synchronisationstool.
@@ -90,7 +92,7 @@ Sie können das Benutzer-Synchronisationstool im [User Sync-Repository auf GitHu
 
     Das Windows-Betriebssystem erzwingt eine Längenbeschränkung für Dateipfade von 260 Zeichen. Beim Ausführen einer Python-PEX-Datei wird ein temporärer Speicherort zum Extrahieren des Paketinhalts erstellt. Wenn der Pfad zu diesem Speicherort länger als 260 Zeichen ist, wird das Skript nicht richtig ausgeführt.
 
-    Standardmäßig befindet sich der temporäre Cache in Ihrem Basisordner, wodurch die Dateipfade die Längenbeschränkung überschreiten können. Erstellen Sie zum Umgehen dieses Problems unter Windows die Umgebungsvariable PEX\_ROOT und legen Sie den Pfad auf „C:\user-sync\.pex“ fest. Das Betriebssystem verwendet diese Variable für den Cache-Speicherort, wodurch der Pfad die Längenbeschränkung von 260 Zeichen nicht überschreitet.
+    Standardmäßig befindet sich der temporäre Cache in Ihrem Basisordner, wodurch die Dateipfade die Längenbeschränkung überschreiten können. Erstellen Sie zum Umgehen dieses Problems unter Windows die Umgebungsvariable PEX\_ROOT und legen Sie den Pfad auf „C:\\pex“ fest. Das Betriebssystem verwendet diese Variable für den Cache-Speicherort, wodurch der Pfad die Längenbeschränkung von 260 Zeichen nicht überschreitet.
 
 
 6. Führen Sie zum Ausführen des Benutzer-Synchronisationstools die ausführbare Python-Datei `user-sync` aus (oder führen Sie unter Windows `python user-sync.pex` aus).
@@ -111,7 +113,7 @@ Wenn das Benutzer-Synchronisationstool auf das Unternehmensverzeichnis zugreift,
 
 #### Zertifikatsdateien
 
-Die Dateien, die den öffentlichen und den privaten Schlüssel enthalten, jedoch insbesondere den privaten Schlüssel, der vertrauliche Informationen enthält. Sie müssen den privaten Schlüssel sicher verwahren. Er kann weder wiederhergestellt noch ersetzt werden. Wenn Sie den Schlüssel verlieren oder er beschädigt wird, müssen Sie das entsprechende Zertifikat aus Ihrem Konto löschen. Gegebenenfalls müssen Sie ein neues Zertifikat erstellen und hochladen. Sie müssen diese Dateien mindestens ebenso sicher wie Kontonamen und Kennwörter schützen. Es wird empfohlen, die Schlüsseldateien in einem Verwaltungssystem für Anmeldeinformationen zu speichern oder Dateisystemschutz anzuwenden, sodass nur befugte Benutzer darauf zugreifen können.
+Die Dateien, die den öffentlichen und den privaten Schlüssel enthalten, jedoch insbesondere den privaten Schlüssel, der vertrauliche Informationen enthält. Sie müssen den privaten Schlüssel sicher verwahren. Er kann weder wiederhergestellt noch ersetzt werden. Wenn Sie den Schlüssel verlieren oder er beschädigt wird, müssen Sie das entsprechende Zertifikat aus Ihrem Konto löschen. Gegebenenfalls müssen Sie ein neues Zertifikat erstellen und hochladen. Sie müssen diese Dateien mindestens ebenso sicher wie Kontonamen und Kennwörter schützen. Es wird empfohlen, die private Schlüsseldatei in einem Verwaltungssystem für Anmeldeinformationen zu speichern, im sicheren Speicher des Betriebssystems oder Dateisystemschutz anzuwenden, sodass nur befugte Benutzer darauf zugreifen können.
 
 #### Protokolldateien
 

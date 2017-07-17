@@ -15,22 +15,14 @@ Das Benutzer-Synchronisationstool ist ein Befehlszeilenwerkzeug, das Benutzer- u
 
 Bei jeder Ausführung des Benutzer-Synchronisationstools wird nach Unterschieden zwischen den Benutzer- und Gruppeninformationen in beiden Systemen gesucht und das Adobe-Verzeichnis wird so aktualisiert, dass es die Informationen in Ihrem Verzeichnis widerspiegelt.
 
-# [Einrichtungs- und Nutzungshandbuch](success-guide/index.md)
+# Einrichtungs- und Nutzungshandbuch
 
 Für den schnellen Einstieg in die Arbeit mit dem Benutzer-Synchronisationstool empfiehlt es sich, das [Einrichtungs- und Nutzungshandbuch](success-guide/index.md) durchzulesen. Hier finden Sie schrittweise Anweisungen zum Einrichten der erforderlichen Konfigurationsdateien und zum Ausführen des Tools.
 
-# [Benutzerhandbuch](user-manual/index.md)
+# Benutzerhandbuch
 
 Sämtliche Einzelheiten zur Verwendung des Benutzer-Synchronisationstools, u. a. zur Einrichtung für eine Reihe unterschiedlicher typischer Verwendungsszenarien, finden Sie im [Benutzerhandbuch](user-manual/index.md). Dieses ist zugleich Ihr Ausgangspunkt für das Anpassen des Verhaltens des Benutzer-Synchronisationstools. Es enthält Anweisungen zum Erstellen benutzerdefinierter Zuordnungen zwischen Verzeichnisinformationen des Kunden und Daten auf Adobe-Seite.
 
-# [Häufige Fragen](FAQ/index.md)
+# Häufige Fragen
 
 Wir haben ein [Dokument mit häufigen Fragen](FAQ/index.md) zusammengestellt, in dem Sie Antworten auf viele Fragen finden.
-
-# Verfügbare Übersetzungen
-
-* [Englisch](../en)
-* [Deutsch](../de)
-* [Français](../fr)
-* [日本語](../jp)
-* [Español](../es)

@@ -3,12 +3,12 @@ layout: page
 title: Einrichtungs- und Nutzungshandbuch
 advertise: Einrichtungs- und Nutzungshandbuch
 lang: de
-nav_link: Setup-Handbuch – Inhaltsverzeichnis
+nav_link: Einrichtungs- und Nutzungshandbuch
 nav_level: 1
 nav_order: 100
 ---
 
-Version 1.1, veröffentlicht am 06.03.2017
+Version 2.1.1, veröffentlicht am 09.06.2017
 
 In diesem Dokument finden Sie Anleitungen zum Kennenlernen und Einrichten des Benutzer-Synchronisationstools.
 

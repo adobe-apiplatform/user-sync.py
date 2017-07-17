@@ -60,11 +60,11 @@ La plupart des exemples montrent un seul groupe d’utilisateurs ou une seule co
 
 Non, User Sync gère la limitation et les nouvelles tentatives, de sorte que la limitation peut ralentir le processus global de synchronisation mais pas l’empêcher totalement et que User Sync peut mener à bien toutes les opérations.
 
-Les systèmes Adobe se protègent des surcharges en surveillant le volume des demandes entrantes. Lorsque le volume commence à dépasser les limites, les demandes renvoient un en-tête « retry-after » indiquant le moment où la capacité sera à nouveau disponible. User Sync respecte ces en-têtes et attend le temps indiqué avant d’effectuer une nouvelle tentative. Vous trouverez plus d’informations, y compris des exemples de code, dans la [documentation de l’API User Management](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/throttling.html).
+Les systèmes Adobe se protègent des surcharges en surveillant le volume des demandes entrantes. Lorsque le volume commence à dépasser les limites, les demandes renvoient un en-tête « retry-after » indiquant le moment où la capacité sera à nouveau disponible. User Sync respecte ces en-têtes et attend le temps indiqué avant d’effectuer une nouvelle tentative. Vous trouverez plus d’informations, y compris des exemples de code, dans la [documentation de l’API User Management](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/gettingstarted.html).
  
 ## Existe-t-il une liste locale des utilisateurs créés/mis à jour (du côté de User Sync) afin de réduire les appels au serveur Adobe ?
 
-Non, lorsqu’il s’exécute, User Sync interroge toujours les systèmes Adobe de gestion des utilisateurs pour obtenir les informations actualisées.
+Lors de son exécution, l’outil User Sync interroge toujours les systèmes Adobe de gestion des utilisateurs pour obtenir des informations actualisées, à l’exception de ce qui suit. Il existe une option disponible dans User Sync version 2.2 ou ultérieure pour empêcher cette requête et l’envoi de mises à jour à Adobe sans tenir compte de l’état actuel des utilisateurs dans le système de gestion des utilisateurs d’Adobe. Si vous pouvez déterminer quels utilisateurs ont changé dans l’annuaire local et êtes certain que les autres utilisateurs n’ont pas été modifiés du côté Adobe, cette approche peut raccourcir le temps d’exécution (et l’utilisation du réseau) de vos travaux de synchronisation.
  
 ### L’outil User Sync est-il limité aux Federated ID ou est-il possible de créer n’importe quel type d’ID ?
 
@@ -104,9 +104,4 @@ Oui, tous les clients Enterprise ont accès à l’API User Management et à l�
  
 ### User Sync est-il adapté aux langues autres que l’anglais (prend-il au moins en charge la saisie de caractères codés sur deux octets) ?
  
-Python 2.7 (le langage de l’outil) distingue « str » (chaînes de caractères 8 bits) et « unicode » (chaînes de caractères 8 bits codées en UTF-8), et le code User Sync utilise toujours « str », pas « unicode ». Toutefois, toutes les sorties des outils sont codées en UTF-8, et tant que les entrées sont également codées en UTF-8, tout devrait fonctionner correctement. Cela a fait l’objet de tests succincts et aucun problème n’a été détecté. Des tests plus approfondis sont prévus.
-
-Nous avons prévu de porter l’outil pour une exécution sur Python 3 et Python 2. 
-À ce stade, nous pouvons garantir qu’Unicode fonctionnera correctement, les types étant fusionnés sur Python 3. Les clients pour qui cela constitue un problème critique devraient générer l’outil à l’aide de Python 3.
- 
- 
+Les versions antérieures de l’outil User Sync étaient erratiques dans leur prise en charge des données de caractères internationaux, même si elles fonctionnaient de manière assez fiable avec des sources de données codées par utf8. Depuis la version 2.2, User Sync est entièrement compatible avec Unicode et peut accepter des fichiers de configuration et des sources de données de tableur ou d’annuaire qui utilisent n’importe quel codage de caractères (avec, par défaut, une attente du codage utf8).

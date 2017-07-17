@@ -35,7 +35,7 @@ User Sync ツールは、正しく構成された後、人の操作を全く必�
 
 アドビのバックエンドユーザー ID システムの可用性を保護するために、ユーザー管理 API はデータへのクライアントアクセスを制限します。制限はある期間内に個別のクライアントがおこなえる呼び出しの数に適用され、グローバル制限はある期間内にすべてのクライアントがおこなうアクセスに対して適用されます。User Sync ツールはバックオフと再試行ロジックを導入して、レートの上限に達したときにスクリプトがユーザー管理 API を継続的にヒットしないようにします。スクリプトが再度実行しようとする前に一時停止したことを示すメッセージがコンソールに表示されるのは正常です。
 
-User Sync 2.1 から、資格情報の保護に使用できる 2 つの方法が追加されました。1 つ目は、オペレーティングシステムの資格情報ストアを使って個別の構成資格情報の値を格納します。2 つ目は、必要なすべての資格情報を含め、umapi または ldap、あるいはその両方の構成ファイル全体を格納するために提供する必要があるメカニズムを使用します。これらは、次の 2 つのセクションで取り上げています。
+User Sync 2.1 から、資格情報の保護に使用できる 2 つの方法が追加されました。1 つ目は、オペレーティングシステムの資格情報ストアを使って個別の構成資格情報の値を格納します。2 つ目は、必要なすべての資格情報を含め、umapi または ldap、あるいはその両方の構成ファイル全体を安全に格納するために提供する必要があるメカニズムを使用します。これらは、次の 2 つの節で取り上げています。
 
 ### OS レベルストレージにおける資格情報の格納
 
@@ -54,10 +54,33 @@ connector-umapi.yml
 
 `api_key`、`client_secret`、および `priv_key_path` がそれぞれ `secure_api_key_key`、`secure_client_secret_key`、および `secure_priv_key_data_key` に変更されることに注目してください。これらの代替の構成値は、実際の資格情報の値を取得するためにユーザーキーチェーン（または他のプラットフォームでそれに相当するサービス）で検索するキーの名前を提供します。この例では、資格情報キー名は `umapi_api_key`、`umapi_client_secret`、および `umapi_private_key_data` です。
 
-秘密キーファイルの内容は、資格情報ストアで `umapi_private_key_data` の値として使用されます。
+秘密キーファイルの内容は、資格情報ストアで `umapi_private_key_data` の値として使用されます。これは、Windows 以外のプラットフォームでのみ実行できます。Windows で秘密キーファイルをセキュリティ保護する方法については、以下を参照してください。
 
-資格情報の値は、指定したキー名を使用して検索され、ユーザーは org_id 値となります。
+資格情報の値が、ユーザー名の値として org_id を使用して、またキー名として構成ファイル内のキー名を使用して、安全なストアで参照されます。
 
+この方法のバリエーションとして、（User Sync バージョン 2.1.1 以降で）秘密キー用の標準的な RSA 暗号化表現を使用して、秘密キーファイルを暗号化できます（通称：PKCS#8 形式）。この方法は、Windows で使用する必要があります。これは、Windows の安全なストアでは、秘密キーでの使用を避けるために、512 バイトを超える文字列を格納することができないためです。この方法は、必要に応じて、他のプラットフォームでも使用することができます。
+
+秘密キー暗号化された形式で格納するには、次の操作を実行します。まず、秘密キーファイルの暗号化されたバージョンを作成します。パスフレーズを選択し、秘密キーファイルを暗号化します。
+
+    openssl pkcs8 -in private.key -topk8 -v2 des3 -out private-encrypted.key
+
+Windows で Cygwin または他のプロバイダーの openssl を実行する必要があります。これは、標準の Windows 配布には含まれていません。
+
+次に、connector-umapi.yml で次の構成アイテムを使用します。以下の最後の 2 つのアイテムではそれぞれ、暗号化解除パスフレーズが安全な資格情報ストアから取得され、暗号化された秘密キーファイルが参照されます。
+
+	server:
+	
+	enterprise:
+	  org_id: your org id
+	  secure_api_key_key: umapi_api_key
+	  secure_client_secret_key: umapi_client_secret
+	  tech_acct: your tech account@techacct.adobe.com
+	  secure_priv_pass_key: umapi_private_key_passphrase
+	  priv_key_path: private-encrypted.key
+
+最後に、エントリとして組織 ID にユーザー名または url を、`secure_priv_pass_key` 構成ファイルエントリと一致させるように `umapi_private_key_passphrase` としてキー名を使用して安全なストアにパスフレーズ、およびパスフレーズとしての値を追加します。（`priv_key_path` を使用する代わりに、キー `priv_key_data` 下の connector-umapi.yml ファイルにデータを配置することで、暗号化された秘密キーをインライン表示することもできます。
+
+RSA 秘密キーの暗号化を使用したバリエーションの説明は以上です。
 
 connector-ldap.yml
 
@@ -73,7 +96,7 @@ LDAP アクセスパスワードは指定したキー名
 
 | OS | 資格情報ストア |
 |------------|--------------|
-|Windows | Windows Credential Vault |
+| Windows | Windows Credential Vault |
 | Mac OS X | Keychain |
 | Linux | Freedesktop Secret Service or KWallet |
 {: .bordertablestyle }
