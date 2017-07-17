@@ -46,7 +46,7 @@ setup(name='user-sync',
       packages=['user_sync', 'user_sync.connector'],
       install_requires=[
           'pycryptodome',
-          'pyldap',
+          'pyldap==2.4.37',
           'PyYAML',
           'umapi-client>=2.5',
           'psutil',
@@ -59,7 +59,7 @@ setup(name='user-sync',
               'dbus-python'
           ],
           ':sys_platform=="win32"':[
-              'pywin32-ctypes==0.0.1'
+              'pywin32-ctypes'
           ]
       },
       setup_requires=['nose>=1.0'],
