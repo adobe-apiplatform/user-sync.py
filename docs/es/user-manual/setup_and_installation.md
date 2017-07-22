@@ -83,7 +83,7 @@ La herramienta User Sync está disponible en el [repositorio de User Sync en Git
 3. Localice el archivo ejecutable de Python (`user-sync` o `user-sync.pex` para Windows) y póngalo en la carpeta de User Sync.
 
 
-4. Descargue el archivo `example-configurations.tar.gz` de archivos de configuración de muestra. Dentro del archivo hay una carpeta llamada "config files – basic". Los primeros 3 archivos de esta carpeta son necesarios. Los otros archivos del paquete son versiones opcionales o alternativas para fines específicos. Puede copiarlos a la carpeta raíz y luego cambiarles el nombre y editarlos para que sean sus propios archivos de configuración. (Consulte la siguiente sección, [Configuración de la herramienta User Sync](configuring_user_sync_tool./md#configuración-de-la-herramienta-User-Sync).)
+4. Descargue el archivo `example-configurations.tar.gz` de archivos de configuración de muestra. Dentro del archivo hay una carpeta llamada "config files – basic". Los primeros 3 archivos de esta carpeta son necesarios. Los otros archivos del paquete son versiones opcionales o alternativas para fines específicos. Puede copiarlos a la carpeta raíz y luego cambiarles el nombre y editarlos para que sean sus propios archivos de configuración. (Consulte la siguiente sección, [Configuración de la herramienta User Sync](configuring_user_sync_tool.md#configuración-de-la-herramienta-User-Sync).)
 
 
 5. **Solo en Windows:**

@@ -164,7 +164,7 @@ directory_users:
 
 ### Configuration d’un mappage de groupe
 
-Pour synchroniser les groupes d’utilisateurs et les droits d’accès, vous devez d’abord créer les configurations de produits et les groupes d’utilisateurs dans Adobe Admin Console, ainsi que les groupes correspondants dans votre annuaire d’entreprise, comme expliqué ci-dessus à la section [Configuration de la synchronisation d’accès aux produits](setup_and_installation.md#configuration-de-la-synchronisation-d’accès-aux-produits).
+Pour synchroniser les groupes d’utilisateurs et les droits d’accès, vous devez d’abord créer les configurations de produits et les groupes d’utilisateurs dans Adobe Admin Console, ainsi que les groupes correspondants dans votre annuaire d’entreprise, comme expliqué ci-dessus à la section [Configuration de la synchronisation d’accès aux produits](setup_and_installation.md#configuration-de-la-synchronisation-daccès-aux-produits).
 
 **REMARQUE :** Tous les groupes doivent exister et porter les mêmes noms des deux côtés. User Sync ne crée aucun groupe d’un côté ni de l’autre. S’il ne trouve pas un groupe nommé, il consigne une erreur.
 
