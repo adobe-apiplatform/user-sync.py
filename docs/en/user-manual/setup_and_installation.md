@@ -173,7 +173,7 @@ files in the package are optional and/or alternate versions for
 specific purposes. You can copy these to your root folder, then
 rename and edit them to make your own configuration files. (See
 the following section,
-[Configuring the User Sync Tool](configuring_user_sync_tool./md#configuring-the-user-sync-tool).)
+[Configuring the User Sync Tool](configuring_user_sync_tool.md#configuring-the-user-sync-tool).)
 
 5. **In Windows only:**
 

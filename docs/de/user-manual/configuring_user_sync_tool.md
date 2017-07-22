@@ -129,7 +129,7 @@ host: "FQDN.des.Hosts"
 base_dn: "Basis-DN.des.Verzeichnisses"
 ```
 
-Wie Sie ab Version 2.1 des Benutzer-Synchronisationstools das Kennwort sicherer speichern, erfahren Sie unter [Hinweise zur Sicherheit](deployment_best_practices.md#security-considerations).
+Wie Sie ab Version 2.1 des Benutzer-Synchronisationstools das Kennwort sicherer speichern, erfahren Sie unter [Hinweise zur Sicherheit](deployment_best_practices.md#sicherheitsempfehlungen).
 
 ## Konfigurationsoptionen
 

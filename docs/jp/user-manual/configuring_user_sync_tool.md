@@ -63,7 +63,7 @@ adobe_groups:
 
 ## 接続構成ファイルの作成と保護
 
-2 つの接続構成ファイルは、Adobe Admin Console およびユーザーの企業の LDAP ディレクトリへのアクセスを User Sync に提供する資格情報を格納します。2 つのシステムへの接続に必要な機密情報を隔離するために、実際の資格情報の詳細はこれら 2 つのファイルに限定されます。本ドキュメントの「[セキュリティの考慮事項](deployment_best_practices.md#セキュリティの考慮事項)」で説明されているように、**それらのファイルは適切に保護する**必要があります。
+2 つの接続構成ファイルは、Adobe Admin Console およびユーザーの企業の LDAP ディレクトリへのアクセスを User Sync に提供する資格情報を格納します。2 つのシステムへの接続に必要な機密情報を隔離するために、実際の資格情報の詳細はこれら 2 つのファイルに限定されます。本ドキュメントの「[セキュリティの考慮事項](deployment_best_practices.md#セキュリティの推奨事項)」で説明されているように、**それらのファイルは適切に保護する**必要があります。
 
 資格情報を保護するために、User Sync では次の 3 つの方法がサポートされています。
 
@@ -129,7 +129,7 @@ host: "ホストの FQDN"
 base_dn: "ディレクトリの base_dn"
 ```
 
-User Sync バージョン 2.1 以降でパスワードを安全に格納する方法については、[セキュリティの考慮事項](deployment_best_practices.md#security-considerations)を参照してください。
+User Sync バージョン 2.1 以降でパスワードを安全に格納する方法については、[セキュリティの考慮事項](deployment_best_practices.md#セキュリティの推奨事項)を参照してください。
 
 ## 構成オプション
 
@@ -137,7 +137,7 @@ User Sync バージョン 2.1 以降でパスワードを安全に格納する�
 **limits**、および  **logging** の主要なセクションに分かれています。
 
 - **adobe_users** セクションは、User Sync ツールがユーザー管理 API を使用して Adobe Admin Console に接続する方法を指定します。アクセスの資格情報を格納する個別の安全な構成ファイルを指す必要があります。これはコネクタフィールドの umapi フィールドで設定されています。
-    - adobe_users セクションには、exclude_identity_types、exclude_adobe_groups、および exclude_users を含めることもでき、User Sync の影響を受けるユーザーの範囲を制限します。詳しくは、後述の「[特定のアカウントを User Sync の削除から保護する](advanced_configuration.md#特定のアカウントを-User-Sync-の削除から保護する)」セクションを参照してください。
+    - adobe_users セクションには、exclude_identity_types、exclude_adobe_groups、および exclude_users を含めることもでき、User Sync の影響を受けるユーザーの範囲を制限します。詳しくは、後述の「[特定のアカウントを User Sync の削除から保護する](advanced_configuration.md#特定のアカウントを User Sync の削除から保護する)」セクションを参照してください。
 - **directory_users** サブセクションには、connectors および groups の 2 つのサブセクションが含まれます。
     - **connectors** サブセクションは、エンタープライズディレクトリへのアクセスの資格情報を格納する個別の安全な構成ファイルをポイントします。
     - **groups** セクションは、ディレクトリグループとアドビ製品構成およびユーザーグループとの間のディレクトリのマッピングを定義します。

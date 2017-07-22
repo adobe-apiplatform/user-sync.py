@@ -63,7 +63,7 @@ adobe_groups:
 
 ## Creación y protección de archivos de configuración de la conexión
 
-En los archivos de configuración de la conexión se almacenan las credenciales que dan acceso a User Sync a Adobe Admin Console y al directorio LDAP de la empresa. Para aislar la información confidencial necesaria para conectar a los dos sistemas, todos los datos de credenciales reales se encierran en estos dos archivos. **Asegúrese de protegerlos adecuadamente**, como se describe en la sección [Consideraciones de seguridad](deployment_best_practices.md#consideraciones-de-seguridad) de este documento.
+En los archivos de configuración de la conexión se almacenan las credenciales que dan acceso a User Sync a Adobe Admin Console y al directorio LDAP de la empresa. Para aislar la información confidencial necesaria para conectar a los dos sistemas, todos los datos de credenciales reales se encierran en estos dos archivos. **Asegúrese de protegerlos adecuadamente**, como se describe en la sección [Consideraciones de seguridad](deployment_best_practices.md#recomendaciones-de-seguridad) de este documento.
 
 User Sync admite tres técnicas para proteger las credenciales.
 
@@ -129,7 +129,7 @@ host: "FQDN.de.host"
 base_dn: "nd_base.de.directorio"
 ```
 
-Consulte la sección [Consideraciones de seguridad](deployment_best_practices.md#security-considerations) para obtener más información sobre cómo almacenar la contraseña de forma más segura la versión 2.1 de User Sync o posterior.
+Consulte la sección [Consideraciones de seguridad](deployment_best_practices.md#recomendaciones-de-seguridad) para obtener más información sobre cómo almacenar la contraseña de forma más segura la versión 2.1 de User Sync o posterior.
 
 ## Opciones de configuración
 

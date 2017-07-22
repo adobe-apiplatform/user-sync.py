@@ -33,7 +33,7 @@ Esta sección proporciona instrucciones detalladas de cada uno de estos escenari
 
 Este es el tipo más típico y común de invocación. User Sync busca todos los cambios en la información de usuario y la información de miembros de grupo en la parte de la empresa. Sincroniza la parte de Adobe añadiendo, actualizando o eliminando usuarios y pertenencias a grupos de usuarios y configuraciones de producto.
 
-De forma predeterminada, User Sync solo creará, eliminará o gestionará los miembros del grupo de los usuarios cuyo tipo de identidad sea Enterprise ID o Federated ID, ya que normalmente los usuarios de Adobe ID no se gestionan en el directorio. Consulte la [descripción que aparece a continuación](advanced_configuration.md#administración-de-usuarios-con-id-de-adobe) en [Configuración avanzada](advanced_configuration.md#configuración-avanzada) si así es como funciona su organización.
+De forma predeterminada, User Sync solo creará, eliminará o gestionará los miembros del grupo de los usuarios cuyo tipo de identidad sea Enterprise ID o Federated ID, ya que normalmente los usuarios de Adobe ID no se gestionan en el directorio. Consulte la [descripción que aparece a continuación](advanced_configuration.md#gestión-de-usuarios-con-adobe-id) en [Configuración avanzada](advanced_configuration.md#configuración-avanzada) si así es como funciona su organización.
 
 En este ejemplo se presupone que el archivo de configuración, user-sync-config.yml, contiene una asignación de un grupo de directorio a una configuración de producto de Adobe que se denomina **Default Acrobat Pro DC configuration**.
 

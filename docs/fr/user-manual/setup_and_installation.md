@@ -50,7 +50,7 @@ Les noms des configurations de produits identifient généralement les types d�
 
 Une fois que vous avez défini les configurations de produits et les groupes d’utilisateurs dans Adobe Admin Console, vous devez créer et nommer des groupes correspondants dans votre propre annuaire d’entreprise. Par exemple, un groupe de l’annuaire correspondant à la configuration de produit « Toutes les applications » pourrait s’appeler « toutes_les_applications ».
 
-Prenez note des noms que vous donnez à ces groupes et identifiez les groupes Adobe auxquels ils correspondent. Vous allez utiliser ces informations pour configurer un mappage dans le fichier de configuration principal de User Sync. Reportez-vous aux instructions détaillées dans la section [Configuration d’un mappage de groupe](configuring_user_sync_tool.md#configuration-d-un-mappage-de-groupe) ci-dessous.
+Prenez note des noms que vous donnez à ces groupes et identifiez les groupes Adobe auxquels ils correspondent. Vous allez utiliser ces informations pour configurer un mappage dans le fichier de configuration principal de User Sync. Reportez-vous aux instructions détaillées dans la section [Configuration d’un mappage de groupe](configuring_user_sync_tool.md#configuration-d’un-mappage-de-groupe) ci-dessous.
 
 Dans le champ de description de la configuration de produit ou du groupe d’utilisateurs, il est recommandé de noter que le groupe est géré par User Sync et qu’il ne doit pas être modifié dans Admin Console.
 

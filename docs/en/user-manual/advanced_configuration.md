@@ -72,7 +72,7 @@ automatically substitute the remove action for the delete action.
 
 You can also protect specific Adobe Id users from removal by User Sync 
 by using the other exclude configuration items.  See
-[Protecting Specific Accounts from User Sync Deletion](#Protecting-Specific-Accounts-from-User-Sync-Deletion)
+[Protecting Specific Accounts from User Sync Deletion](#protecting-specific-accounts-from-user-sync-deletion)
 for more information.
 
 ## Accessing Users in Other Organizations

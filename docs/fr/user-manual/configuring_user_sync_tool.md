@@ -63,7 +63,7 @@ adobe_groups:
 
 ## Création et sécurisation des fichiers de configuration de connexion
 
-Les deux fichiers de configuration de connexion stockent les identifiants de connexion qui donnent à User Sync accès au portail Adobe Admin Console ainsi qu’à votre annuaire d’entreprise LDAP. Afin d’isoler les informations sensibles nécessaires pour se connecter aux deux systèmes, tous les identifiants sont regroupés dans ces deux fichiers. **N’oubliez pas de les sécuriser correctement**, comme expliqué à la section [Remarques de sécurité](deployment_best_practices.md#remarques-de-sécurité) de ce document.
+Les deux fichiers de configuration de connexion stockent les identifiants de connexion qui donnent à User Sync accès au portail Adobe Admin Console ainsi qu’à votre annuaire d’entreprise LDAP. Afin d’isoler les informations sensibles nécessaires pour se connecter aux deux systèmes, tous les identifiants sont regroupés dans ces deux fichiers. **N’oubliez pas de les sécuriser correctement**, comme expliqué à la section [Recommandations de sécurité](deployment_best_practices.md#recommandations-de-sécurité) de ce document.
 
 User Sync prend en charge trois techniques pour sécuriser les identifiants de connexion.
 
@@ -129,7 +129,7 @@ host: FQDN.de.l’hôte
 base_dn: base_dn.de.l’annuaire
 ```
 
-Voir la section [Remarques de sécurité](deployment_best_practices.md#security-considerations) pour plus de détails sur la façon de stocker le mot de passe avec plus de sécurité dans User Sync version 2.1 ou ultérieure.
+Voir la section [Recommandations de sécurité](deployment_best_practices.md#recommandations-de-sécurité) pour plus de détails sur la façon de stocker le mot de passe avec plus de sécurité dans User Sync version 2.1 ou ultérieure.
 
 ## Options de configuration
 
@@ -164,7 +164,7 @@ directory_users:
 
 ### Configuration d’un mappage de groupe
 
-Pour synchroniser les groupes d’utilisateurs et les droits d’accès, vous devez d’abord créer les configurations de produits et les groupes d’utilisateurs dans Adobe Admin Console, ainsi que les groupes correspondants dans votre annuaire d’entreprise, comme expliqué ci-dessus à la section [Configuration de la synchronisation d’accès aux produits](setup_and_installation.md#configuration-de-la-synchronisation-d-accès-aux-produits).
+Pour synchroniser les groupes d’utilisateurs et les droits d’accès, vous devez d’abord créer les configurations de produits et les groupes d’utilisateurs dans Adobe Admin Console, ainsi que les groupes correspondants dans votre annuaire d’entreprise, comme expliqué ci-dessus à la section [Configuration de la synchronisation d’accès aux produits](setup_and_installation.md#configuration-de-la-synchronisation-d’accès-aux-produits).
 
 **REMARQUE :** Tous les groupes doivent exister et porter les mêmes noms des deux côtés. User Sync ne crée aucun groupe d’un côté ni de l’autre. S’il ne trouve pas un groupe nommé, il consigne une erreur.
 
