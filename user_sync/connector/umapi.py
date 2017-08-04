@@ -299,11 +299,10 @@ class ActionManager(object):
             identity_type = user_sync.identity_type.FEDERATED_IDENTITY_TYPE
         try:
             umapi_identity_type = umapi_client.IdentityTypes[identity_type]
-        except KeyError:
-            umapi_identity_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
-
-        action = umapi_client.UserAction(umapi_identity_type, email, username, domain,
-                                         requestID=self.get_next_request_id())
+            action = umapi_client.UserAction(umapi_identity_type, email, username, domain,
+                                             requestID=self.get_next_request_id())
+        except ValueError as e:
+            raise AssertionException("Error creating umapi Action for user '%s': %s" % (self.username, e))
         for command in commands.do_list:
             command_name, command_param = command
             command_function = getattr(action, command_name)
