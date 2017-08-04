@@ -121,11 +121,11 @@ private key file, respectively:
 	  secure_api_key_key: umapi_api_key
 	  secure_client_secret_key: umapi_client_secret
 	  tech_acct: your tech account@techacct.adobe.com
-	  secure_priv_pass_key: umapi_private_key_passphrase
+	  secure_priv_key_pass_key: umapi_private_key_passphrase
 	  priv_key_path: private-encrypted.key
 
 Finally, add the passphrase to the secure store as an entry with the username or url as the org Id, the key
-name as `umapi_private_key_passphrase` to match the `secure_priv_pass_key` config file entry, and the value
+name as `umapi_private_key_passphrase` to match the `secure_priv_key_pass_key` config file entry, and the value
 as the passphrase.  (You can also inline the encrypted private key by placing the data in the
 connector-umapi.yml file under the key `priv_key_data` instead of using `priv_key_path`.)
 
