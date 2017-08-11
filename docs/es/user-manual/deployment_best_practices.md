@@ -75,10 +75,10 @@ A continuación, utilice los siguientes elementos de la configuración en connec
 	  secure_api_key_key: umapi_api_key
 	  secure_client_secret_key: umapi_client_secret
 	  tech_acct: your tech account@techacct.adobe.com
-	  secure_priv_pass_key: umapi_private_key_passphrase
+	  secure_priv_key_pass_key: umapi_private_key_passphrase
 	  priv_key_path: private-encrypted.key
 
-Por último, añada la frase de contraseña al almacenamiento seguro como una entrada con el nombre de usuario o la dirección url como el Id. de la organización, el nombre de la clave como `umapi_private_key_passphrase` para que coincida con la entrada del archivo de configuración `secure_priv_pass_key` y el valor como frase de contraseña. (También puede incluir la clave cifrada privada colocando los datos en el archivo connector-umapi.yml con la clave `priv_key_data` en lugar de utilizar `priv_key_path`).
+Por último, añada la frase de contraseña al almacenamiento seguro como una entrada con el nombre de usuario o la dirección url como el Id. de la organización, el nombre de la clave como `umapi_private_key_passphrase` para que coincida con la entrada del archivo de configuración `secure_priv_key_pass_key` y el valor como frase de contraseña. (También puede incluir la clave cifrada privada colocando los datos en el archivo connector-umapi.yml con la clave `priv_key_data` en lugar de utilizar `priv_key_path`).
 
 Esto termina la descripción de la variante en la que se utiliza el cifrado de clave privada RSA.
 
