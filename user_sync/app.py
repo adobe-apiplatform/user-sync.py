@@ -367,7 +367,7 @@ def main():
 
     except AssertionException as e:
         if not e.is_reported():
-            logger.critical(e.message)
+            logger.critical("%s", e)
             e.set_reported()
     except KeyboardInterrupt:
         try:

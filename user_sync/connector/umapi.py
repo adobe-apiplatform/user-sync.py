@@ -103,7 +103,7 @@ class UmapiConnector(object):
         passphrase = enterprise_config.get_credential('priv_key_pass', org_id, True)
         if passphrase:
             try:
-                key_data = RSA.importKey(key_data, passphrase=passphrase).exportKey()
+                key_data = str(RSA.importKey(key_data, passphrase=passphrase).exportKey().decode('ascii'))
             except (ValueError, IndexError, TypeError) as e:
                 raise AssertionException('%s: Error decrypting private key, either the password is wrong or: %s' %
                                          (enterprise_config.get_full_scope(), e))

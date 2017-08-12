@@ -35,7 +35,7 @@ Die Applikation sendet GET- und POST-Anforderungen von der User Management API a
 
 Um die Verfügbarkeit der Back-End-Benutzeridentitätssysteme von Adobe zu schützen, legt die User Management API Einschränkungen für den Clientzugriff auf die Daten fest. Es gelten Grenzwerte für die Anzahl der Aufrufe, die ein einzelner Client innerhalb eines bestimmten Zeitintervalls senden kann, und es gelten globale Grenzwerte für den Zugriff aller Clients innerhalb des angegebenen Zeitraums. Das Benutzer-Synchronisationstool implementiert Logik für Back-off und Wiederholung, damit das Skript nicht kontinuierlich die User Management API aufruft, wenn die Grenzwerte erreicht wurden. Es ist normal, dass Meldungen in der Konsole anzeigt werden, dass das Skript für eine kurze Zeit unterbrochen wird, bevor die Ausführung wiederholt wird.
 
-Bei Version 2.1 des Benutzer-Synchronisationstools sind zwei zusätzliche Verfahren zum Schutz von Anmeldeinformationen verfügbar. Beim ersten Verfahren wird der Anmeldeinformationsspeicher des Betriebssystems verwendet, um die Konfigurationswerte für die Anmeldeinformationen zu speichern. Beim zweiten Verfahren wird mit einem Mechanismus, den Sie bereitstellen müssen, die gesamte Konfigurationsdatei für UMAPI und/oder LDAP gespeichert, die alle erforderlichen Anmeldeinformationen enthält. Diese Verfahren werden in den nächsten beiden Abschnitten beschrieben.
+Bei Version 2.1 des Benutzer-Synchronisationstools sind zwei zusätzliche Verfahren zum Schutz von Anmeldeinformationen verfügbar. Beim ersten Verfahren wird der Anmeldeinformationsspeicher des Betriebssystems verwendet, um die Konfigurationswerte für die Anmeldeinformationen zu speichern. Beim zweiten Verfahren wird mit einem Mechanismus, den Sie bereitstellen müssen, die gesamte Konfigurationsdatei, die alle erforderlichen Anmeldeinformationen enthält, für umapi und/oder ldap sicher gespeichert. Diese Verfahren werden in den nächsten beiden Abschnitten beschrieben.
 
 ### Speichern von Anmeldeinformationen im Speicher auf Betriebssystemebene
 
@@ -54,10 +54,33 @@ connector-umapi.yml
 
 Beachten Sie die Änderung von `api_key`, `client_secret` und `priv_key_path` in `secure_api_key_key`, `secure_client_secret_key` bzw. `secure_priv_key_data_key`. Diese alternativen Konfigurationswerte geben die Schlüsselnamen an, nach denen in der Schlüsselkette (oder dem entsprechenden Dienst auf anderen Plattformen) gesucht werden soll, um die tatsächlichen Werte der Anmeldeinformationen abzurufen. In diesem Beispiel sind die Schlüsselnamen der Anmeldeinformationen `umapi_api_key`, `umapi_client_secret` und `umapi_private_key_data`.
 
-Der Inhalt der privaten Schlüsseldatei wird im Anmeldeinformationsspeicher als Wert von `umapi_private_key_data` verwendet.
+Der Inhalt der privaten Schlüsseldatei wird im Anmeldeinformationsspeicher als Wert von `umapi_private_key_data` verwendet. Dies ist nicht auf Windows, sondern nur auf anderen Plattformen möglich. Unten sehen Sie, wie Sie auf Windows die Datei mit dem privaten Schlüssel sichern.
 
-Die Werte der Anmeldeinformationen werden anhand der angegebenen Schlüsselnamen gesucht, wobei der Benutzer dem Wert von „org_id“ entspricht.
+Die Anmeldeinformationen werden mit „org_id“ als Wert für den Benutzernamen und den Schlüsselnamen in der Konfigurationsdatei als Schlüsselnamen im sicheren Speicher nachgeschlagen.
 
+Ab Version 2.1.1 des Benutzer-Synchronisationstools gibt es eine kleine Variante zu diesem Ansatz: dabei wird die private Schlüsseldatei mit RSA verschlüsselt, dem Standardverschlüsselungsverfahren für private Schlüssel (wird auch als PKCS#8-Format bezeichnet). Dieser Ansatz muss auf Windows verwendet werden, da der sichere Speicher von Windows keine Zeichenfolgen speichern kann, die länger als 512 Bytes sind, wodurch die Verwendung mit privaten Schlüsseln verhindert wird. Wenn Sie möchten, können Sie diesen Ansatz auch auf den anderen Plattformen verwenden.
+
+Um den privaten Schlüssel in einem verschlüsselten Format zu speichern, gehen Sie folgendermaßen vor: Erstellen Sie zunächst eine verschlüsselte Version der privaten Schlüsseldatei. Wählen Sie eine Passphrase aus und verschlüsseln Sie die private Schlüsseldatei:
+
+    openssl pkcs8 -in private.key -topk8 -v2 des3 -out private-encrypted.key
+
+Auf Windows müssen Sie von Cygwin oder einem anderen Anbieter aus „openssl“ ausführen, denn in der Standard-Windows-Distribution ist es nicht enthalten.
+
+Verwenden Sie als Nächstes die folgenden Konfigurationselemente in „connector-umapi.yml“. Durch die letzten beiden Elemente unten wird die Verschlüsselungs-Passphrase von dem sicheren Speicher mit den Anmeldeinformationen bezogen und auf die verschlüsselte Datei mit dem privaten Schlüssel verwiesen, nämlich:
+
+	server:
+	
+	enterprise:
+	  org_id: your org id
+	  secure_api_key_key: umapi_api_key
+	  secure_client_secret_key: umapi_client_secret
+	  tech_acct: your tech account@techacct.adobe.com
+	  secure_priv_key_pass_key: umapi_private_key_passphrase
+	  priv_key_path: private-encrypted.key
+
+Schließlich fügen Sie die Passphrase als Eintrag in den sicheren Speicher ein, mit dem Benutzernamen oder URL als Unternehmens-ID, dem Schlüsselnamen als `umapi_private_key_passphrase`, die dem Eintrag für `secure_priv_key_pass_key` in der Konfigurationsdatei entspricht, und dem Wert als Passphrase. (Sie können den verschlüsselten privaten Schlüssel auch innerhalb einfügen, indem Sie die Daten in der Datei connector-umapi.yml unter dem Schlüssel `priv_key_data` anstelle von `priv_key_path` platzieren.)
+
+Hier endet die Beschreibung für die Variante, bei der die private RSA-Verschlüsselung verwendet wird.
 
 connector-ldap.yml
 
@@ -73,7 +96,7 @@ Anmeldeinformationen werden im sicheren Speicher des zugrunde liegenden Betriebs
 
 | OS | Anmeldeinformationsspeicher |
 |------------|--------------|
-|Windows | Windows-Tresor für Anmeldeinformationen |
+| Windows | Windows-Tresor für Anmeldeinformationen |
 | Mac OS X | Schlüsselbund |
 | Linux | Freedesktop Secret Service oder KWallet |
 {: .bordertablestyle }

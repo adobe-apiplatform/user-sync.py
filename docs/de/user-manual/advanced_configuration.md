@@ -303,20 +303,121 @@ Wenn Sie verhindern möchten, dass das Benutzer-Synchronisationstool diese Konte
 
 ## Arbeiten mit verschachtelten Verzeichnisgruppen in Active Directory
 
-Hinweis: Die ursprünglich in diesem Abschnitt beschriebene Vorgehensweise funktionierte nicht ordnungsgemäß. Das Problem wird in einer späteren Version gelöst.
+Hinweis: Vor Version 2.2 wurden vom Benutzer-Synchronisationstool keine verschachtelten Gruppen unterstützt.
 
-Wenn Ihre Verzeichnisgruppen verschachtelt strukturiert sind, sodass sich die Benutzer nicht in einer einfachen benannten Verzeichnisgruppe befinden, müssen Sie komplexere LDAP-Abfragen ausführen, um die Benutzer aufzulisten. Die verschachtelte Gruppenstruktur könnte z. B. wie folgt aussehen:
+Seit Version 2.2 kann das Benutzer-Synchronisationstool so konfiguriert werden, dass es alle Benutzer in verschachtelten Verzeichnisgruppen erkennt. Wie Sie das machen, wird in den Beispielkonfigurationsdateien gezeigt. Konkret legen Sie in der Konfigurationsdatei `connector-ldap.yml` den `group_member_filter` folgendermaßen fest:
 
+    group_member_filter_format: "(memberOf:1.2.840.113556.1.4.1941:={group_dn})"
+
+Damit werden Gruppenmitglieder gefunden, die sich entweder direkt in einer benannten Gruppe oder indirekt in der aktuellen Gruppe befinden.
+
+Die verschachtelte Gruppenstruktur könnte etwa wie folgt aussehen:
 
     All_Divisions
-		Blue_Division
-		       User1@example.com
-		       User2@example.com
-		Green_Division
-		       User3@example.com
-		       User4@example.com
+      Blue_Division
+             User1@example.com
+             User2@example.com
+      Green_Division
+             User3@example.com
+             User4@example.com
 
-Dies wird in einer späteren Version des Benutzer-Synchronisationstools als transparenter Vorgang unterstützt.
+All_Divisions können Sie einer Adobe-Benutzergruppe oder Produktkonfiguration im Abschnitt `groups:` der Hauptkonfigurationsdatei zuordnen und group_member_filter können Sie wie oben gezeigt festlegen. Dadurch werden alle Benutzer, die direkt in All_Divisions enthalten sind oder in einer Gruppe, die sich direkt oder indirekt in All_Divisions befindet, als Mitglied der Verzeichnisgruppe All_Divisions behandelt.
+
+## Push-Verfahren zum Steuern der Benutzersynchronisation
+
+Seit Version 2.2 des Benutzer-Synchronisationstools ist es möglich, Push-Benachrichtigungen direkt an das Benutzerverwaltungssystem von Adobe zu leiten ohne alle Informationen von Adobe und Ihrem Unternehmensverzeichnis lesen zu müssen. Die Verwendung von Push-Benachrichtigungen verringert zwar die Verarbeitungszeit und den Datenverkehr, hat aber den Nachteil, dass Fehler oder Änderungen, die auf andere Weise vorgenommen wurden, nicht automatisch korrigiert werden. Auch muss bei erforderlichen Änderungen besser aufgepasst werden.
+
+In den folgenden Fällen sollten Sie eine Push-Strategie in Erwägung ziehen:
+
+- Sie haben eine ausgesprochen hohe Anzahl an Adobe-Benutzern.
+- Sie nehmen im Verhältnis zur Gesamtbenutzerpopulation nur wenige Ergänzungen/Änderungen/Löschungen vor.
+- Sie verfügen über einen Prozess oder Tools zur Identifikation von Benutzern, die automatisiert geändert worden sind (durch Hinzufügen, Löschen oder Ändern von Attributen oder Gruppen).
+- Sie verfügen über einen Prozess, der von ausscheidenden Benutzern zuerst die Produktberechtigungen entfernt und dann (nach einer gebührenden Wartezeit) deren Konten löscht.
+
+Durch die Push-Strategie sparen Sie sich den Aufwand, auf beiden Seiten eine hohe Benutzeranzahl einlesen zu müssen. Das funktioniert aber nur, wenn Sie die spezifischen Benutzer, die aktualisiert werden müssen, isolieren können (etwa indem Sie sie in eine eigene Gruppe stellen).
+
+Um Push-Benachrichtigung einsetzen zu können, müssen Sie in der Lage sein, erforderliche Aktualisierungen uneingeschränkt in einer separaten Datei oder Verzeichnisgruppe zusammenzutragen. Außerdem müssen gelöschte Benutzer von Ergänzungen und Aktualisierungen abgesondert werden. Aktualisierungen und Löschungen werden dann in separaten Aufrufen des Benutzer-Synchronisationstools durchgeführt.
+
+Beim Einsatz von Push-Verfahren mit dem Benutzer-Synchronisationstool sind verschiedene Ansätze möglich. In den nächsten Abschnitten wird der von uns empfohlene Ansatz erläutert. Für ein konkretes Beispiel nehmen wir einmal an, es wurden zwei Adobe-Produkte erworben, die mit dem Benutzer-Synchronisationstool von Creative Cloud und mit Acrobat Pro verwaltet werden müssen. Um den Zugriff zu regeln, haben Sie zwei Produktkonfigurationen mit den Namen Creative_Cloud und Acrobat_Pro erstellt sowie zwei Verzeichnisgruppen mit den Namen cc_users und acrobat_users.
+Die Zuordnung in der Konfigurationsdatei des Benutzer-Synchronisationstools würde wie folgt aussehen:
+
+    groups:
+      - directory_group: acrobat_users
+        adobe_groups:
+          - "Acrobat_Pro"
+      - directory_group: cc_users
+        adobe_groups:
+          - "Creative_Cloud"
+
+
+
+### Verwenden einer speziellen Verzeichnisgruppe zur Steuerung des Push-Vorgangs des Benutzer-Synchronisationstools
+
+Eine zusätzliche Verzeichnisgruppe wird erstellt, um die zu aktualisierenden Benutzer zu erfassen. Verwenden Sie beispielsweise eine Verzeichnisgruppe mit dem Namen `updated_adobe_users` für neue oder aktualisierte Benutzer (diejenigen, deren Gruppenmitgliedschaft sich geändert hat). Durch Entfernen von Benutzern aus beiden zugeordneten Gruppen, werden erteilte Produktzugriffe widerrufen und die Lizenzen dieser Benutzer werden wieder frei.
+
+Um die Ergänzungen und Aktualisierungen zu verarbeiten, geben Sie folgende Befehlszeile an:
+
+    user-sync –t --strategy push --process-groups --users group updated_adobe_users
+
+`--strategy push` sorgt dafür, dass das Benutzer-Synchronisationstool nicht zuerst das Verzeichnis auf Adobe-Seite liest, sondern stattdessen nur die Aktualisierungen zu Adobe überträgt.
+
+Das `-t` sorgt dafür, dass die Synchronisation im Testmodus ausgeführt wird. Wenn Sie den Eindruck haben, dass die Aktionen so ausgeführt werden wie erwartet, entfernen Sie das „-t“, damit das Benutzer-Synchronisationstool die Änderungen tatsächlich vornimmt.
+
+Wird `--strategy push` angegeben, werden die Benutzerdaten an Adobe übertragen, wobei alle ihnen zugeordnete Gruppen *hinzugefügt* werden. Keine der zugeordneten Gruppen sollten *entfernte* Benutzer enthalten. Auf diese Weise werden Benutzer, die aus einer Verzeichnisgruppe in eine andere verschoben wurden, wo sie andere Zuordnungen haben, beim nächsten Push-Vorgang auch auf Adobe-Seite verlagert.
+
+Bei diesem Ansatz werden keine Konten gelöscht oder entfernt, aber der Zugriff auf die entsprechenden Produkte wird widerrufen und die zugehörigen Lizenzen werden freigesetzt. Zum Löschen von Konten ist ein anderen Ansatz erforderlich, der im nächsten Abschnitt beschrieben wird.
+
+Dieser Ansatz umfasst die folgenden Schritte:
+
+- Immer, wenn Sie einen neuen Benutzer hinzufügen oder die Gruppen eines Benutzers im Verzeichnis ändern (dazu gehört auch das Entfernen aus allen Gruppen, wobei im Wesentlichen alle Produktberechtigungen deaktiviert werden) fügen Sie diesen Benutzer auch zur Gruppe „updated_adobe_users“ hinzu.
+- Einmal täglich (oder zu einem anderen von Ihnen gewählten Zeitintervall) führen Sie einen Synchronisationsauftrag mit dem oben angegebenen Parametern aus.
+- Dieser Auftrag bewirkt, dass notwendigenfalls alle aktualisierten Benutzer erstellt werden und ihnen zugeordnete Gruppen auf Adobe-Seite aktualisiert werden.
+- Sobald der Auftrag ausgeführt wurde, entfernen Sie die Benutzer aus der Gruppe „updated_adobe_users“ (da ihre Änderungen ja soeben übertragen worden sind).
+
+Sie können aber auch jederzeit einen Benutzersynchronisationsauftrag im regulären Modus (ohne Push-Vorgang) ausführen und die volle Funktionalität des Benutzer-Synchronisationstools nutzen. Dabei werden etwaige Änderungen, die möglicherweise ausgelassen wurden, übernommen, Änderungen, die zuvor nicht vorgenommen wurden, korrigiert und/oder Kontolöschungen durchgeführt. Die Befehlszeile würde in etwa so aussehen:
+
+    user-sync --process-groups --users mapped --adobe-only-user-action remove
+
+
+### Verwenden einer Datei zur Steuerung des Push-Vorgangs des Benutzer-Synchronisationstools
+
+Sie können auch eine Datei als Eingabe für das Benutzer-Synchronisationstool verwenden. In diesem Fall greift das Benutzer-Synchronisationstool nicht auf das Verzeichnis selbst zu. Sie können die Dateien manuell erstellen (eine für Ergänzungen und Aktualisierungen und eine zweite für Löschungen) oder über ein Skript, das die Informationen aus einer anderen Quelle bezieht.
+
+Erstellen Sie eine Datei mit dem Namen „users-file.csv“, die Informationen über die Benutzer enthält, die hinzuzufügen bzw. zu aktualisieren sind. Hier ein Beispiel für eine solche Datei:
+
+    firstname,lastname,email,country,groups,type,username,domain
+    Jane 1,Doe,jdoe1+1@example.com,US,acrobat_users
+    Jane 2,Doe,jdoe2+2@example.com,US,"cc_users,acrobat_users"
+
+Die Befehlszeile zum Übertragen von Aktualisierungen aus der Datei lautet wie folgt:
+
+    user-sync –t --strategy push --process-groups --users file users-file.csv
+
+Führen Sie diese Befehlszeile ohne das `-t` aus, wenn Sie soweit sind, dass die Aktionen tatsächlich ausgeführt werden dürfen.
+
+Zum Entfernen von Benutzern wird eine separate Datei mit einem anderen Format erstellt. Hier ein Beispiel für den Inhalt:
+
+    type,username,domain
+    adobeID,jimbo@gmail.com,
+    enterpriseID,jsmith1@ent-domain-example.com,
+    federatedID,jsmith2,user-login-fed-domain.com
+    federatedID,jsmith3@email-login-fed-domain.com,
+
+Jeder Eintrag muss den Identitätstyp, die E-Mail-Adresse des Benutzers oder den Benutzernamen enthalten sowie, für den Identitätstyp „Federated“, der für die Anmeldung per Benutzername festgelegt wird, die Domäne.
+
+Hier die Befehlszeile für die Verarbeitung von Löschungen mithilfe einer solchen Datei (die z. B. den Namen „remove-list.csv“ hat):
+
+    user-sync -t --adobe-only-user-list remove-list.csv --adobe-only-user-action remove
+
+Die Aktion „remove“ könnte etwa „remove-adobe-groups“ sein (um das Konto in der Organisation zu erhalten) oder „delete“ (um das Konto zu löschen). Beachten Sie zudem, dass `-t`für den Testmodus steht.
+
+Dieser Ansatz umfasst die folgenden Schritte:
+
+- Immer, wenn Sie einen neuen Benutzer hinzufügen oder die Gruppen eines Benutzers im Verzeichnis ändern (dazu gehört auch das Entfernen aus allen Gruppen, wobei im Wesentlichen alle Produktberechtigungen deaktiviert werden), fügen Sie auch einen Eintrag in die Datei „users-file.csv“ ein, die die Gruppen enthält, in denen der Benutzer sein sollte. Dies könnten mehr oder weniger Gruppen als bisher sein.
+- Immer, wenn ein Benutzer entfernt werden muss, fügen Sie einen Eintrag in die Datei „remove-list.csv“ ein.
+- Einmal täglich (oder zu einem anderen von Ihnen gewählten Zeitintervall) führen Sie die beiden Synchronisationsaufträge mit dem oben angegebenen Parametern aus. (eine für Ergänzungen und Aktualisierungen und eine zweite für Löschungen).
+- Durch diese Aufträge werden auf Adobe-Seite die zugeordneten Gruppen aller aktualisierten Benutzer aktualisiert und entfernte Benutzer werden entfernt.
+- Nachdem der Auftrag ausgeführt wurde, löschen Sie den Dateiinhalt (da die Änderungen ja übertragen worden sind), damit die Datei für den nächsten Satz an Benutzerdaten vorbereitet ist.
 
 
 ---

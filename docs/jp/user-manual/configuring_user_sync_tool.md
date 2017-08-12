@@ -27,7 +27,7 @@ User Sync ツールの操作は、これらのファイル名を持つ構成フ�
 | user-sync-config.yml | 必須。アドビ製品構成およびユーザーグループへのディレクトリグループのマッピングを定義し、アップデート動作を制御するための構成オプションが含まれます。また、他の構成ファイルへの参照も含まれます。|
 | connector&#x2011;umapi.yml&nbsp;&nbsp; | 必須。アドビのユーザー管理 API を呼び出すための資格情報とアクセス情報が含まれます。 |
 | connector-ldap.yml | 必須。エンタープライズディレクトリにアクセスするための資格情報とアクセス情報が含まれます。 |
-
+{: .bordertablestyle }
 
 アクセスを付与された他の組織にアドビグループへのアクセスをセットアップする場合、追加の構成ファイルを含めることができます。詳しくは、「[詳細な構成の手順](advanced_configuration.md#他の組織のグループへのアクセス)」を参照してください。
 
@@ -63,7 +63,7 @@ adobe_groups:
 
 ## 接続構成ファイルの作成と保護
 
-2 つの接続構成ファイルは、Adobe Admin Console およびユーザーの企業の LDAP ディレクトリへのアクセスを User Sync に提供する資格情報を格納します。2 つのシステムへの接続に必要な機密情報を隔離するために、実際の資格情報の詳細はこれら 2 つのファイルに限定されます。本ドキュメントの「[セキュリティの考慮事項](deployment_best_practices.md#セキュリティの考慮事項)」で説明されているように、**それらのファイルは適切に保護する**必要があります。
+2 つの接続構成ファイルは、Adobe Admin Console およびユーザーの企業の LDAP ディレクトリへのアクセスを User Sync に提供する資格情報を格納します。2 つのシステムへの接続に必要な機密情報を隔離するために、実際の資格情報の詳細はこれら 2 つのファイルに限定されます。本ドキュメントの「[セキュリティの考慮事項](deployment_best_practices.md#セキュリティの推奨事項)」で説明されているように、**それらのファイルは適切に保護する**必要があります。
 
 資格情報を保護するために、User Sync では次の 3 つの方法がサポートされています。
 
@@ -109,7 +109,14 @@ User Sync 2.1 以降では、秘密キーを別のファイルに格納する以
 	    Fz2i8y6qhmfhj48dhf84hf3fnGrFP2mX2Bil48BoIVc9tXlXFPstJe1bz8xpo=
 	    -----END RSA PRIVATE KEY-----
 
+User Sync 2.2 以降では、接続のタイムアウトと再試行を制御するためのいくつかの追加のパラメーターが用意されています。これらのパラメーターを必ずしも使用する必要はありませんが、不測の事態が発生した場合には、これらを `server` セクションに設定できます。
 
+  server:
+    timeout: 120
+    retries: 3
+
+`timeout` は、呼び出しが完了するの待つ最大待機時間を設定します（秒単位）。
+`retries` は、不特定の問題（サーバーエラー、タイムアウトなど）によって再試行が失敗した場合に、操作を再試行する回数を設定します。
 
 ### エンタープライズディレクトリへの接続の構成
 
@@ -122,13 +129,15 @@ host: "ホストの FQDN"
 base_dn: "ディレクトリの base_dn"
 ```
 
+User Sync バージョン 2.1 以降でパスワードを安全に格納する方法については、[セキュリティの考慮事項](deployment_best_practices.md#セキュリティの推奨事項)を参照してください。
+
 ## 構成オプション
 
 メインの構成ファイルである user-sync-config.yml は、 **adobe_users**、 **directory_users**、
 **limits**、および  **logging** の主要なセクションに分かれています。
 
-- **adobe_users** セクションは、User Sync ツールがユーザー管理 API を使用して Adobe Admin Console に接続する方法を指定します。アクセスの資格情報を格納する個別の安全な構成ファイルを指す必要があります。これはコネクタフィールドの umapi フィールドで設定されています。
-    - adobe_users セクションには、exclude_identity_types、exclude_adobe_groups、および exclude_users を含めることもでき、User Sync の影響を受けるユーザーの範囲を制限します。詳しくは、後述の「[特定のアカウントを User Sync の削除から保護する](advanced_configuration.md#特定のアカウントを-User-Sync-の削除から保護する)」セクションを参照してください。
+- **adobe_users** セクションは、User Sync ツールが User Management API を使用して Adobe Admin Console に接続する方法を指定します。アクセスの資格情報を格納する個別の安全な構成ファイルを指す必要があります。これはコネクタフィールドの umapi フィールドで設定されています。
+    - adobe_users セクションには、exclude_identity_types、exclude_adobe_groups、および exclude_users を含めることもでき、User Sync の影響を受けるユーザーの範囲を制限します。詳しくは、後述の「[特定のアカウントを User Sync の削除から保護する](advanced_configuration.md#特定のアカウントを-user-sync-の削除から保護する)」セクションを参照してください。
 - **directory_users** サブセクションには、connectors および groups の 2 つのサブセクションが含まれます。
     - **connectors** サブセクションは、エンタープライズディレクトリへのアクセスの資格情報を格納する個別の安全な構成ファイルをポイントします。
     - **groups** セクションは、ディレクトリグループとアドビ製品構成およびユーザーグループとの間のディレクトリのマッピングを定義します。
@@ -323,6 +332,8 @@ enterprise:
 
 これらのテストケースを使用して、構成が正常に機能していること、また製品構成がエンタープライズディレクトリのセキュリティグループに正しくマッピングされていることを確認します。まずテストモード（-t パラメーターを使用）でツールを実行して、結果を確認してから実稼働します。
 
+次の例では `--users all` を使用してユーザーを選択していますが、`--users mapped` を使用して、構成ファイルに指定されたディレクトリグループのユーザーのみを選択したり、`--users file f.csv` を使用して、特定のファイルに指定されたテストユーザーのより小規模なセットを選択したりすることもできます。
+
 ###  ユーザーの作成
 
 
@@ -346,7 +357,7 @@ enterprise:
 1. ディレクトリ内の 1 人以上のテストユーザーのグループメンバーシップを変更します。
 
 
-1. User Sync を実行します。(`./user-sync -t --users all --process-groups --adobe-only-user-action exclude`)
+1. User Sync を実行します。(`./user-sync --users all --process-groups --adobe-only-user-action exclude`)
 
 
 2. Adobe Admin Console のテストユーザーが、新しい製品構成メンバーシップを反映するようアップデートされていることを確認します。
@@ -357,7 +368,7 @@ enterprise:
 1. エンタープライズディレクトリで、1 人以上の既存のテストユーザーを取り除くか無効化します。
 
 
-2. User Sync を実行します。(`./user-sync -t --users all --process-groups --adobe-only-user-action exclude`)
+2. User Sync を実行します。（`./user-sync --users all --process-groups --adobe-only-user-action remove-adobe-groups`）必要に応じて、最初にテストモード（-t）で実行することもできます。
 
 
 3. Adobe Admin Console で構成済みの製品構成からユーザーが取り除かれていることを確認します。

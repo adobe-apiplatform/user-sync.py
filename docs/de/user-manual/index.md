@@ -8,7 +8,7 @@ nav_level: 1
 nav_order: 10
 ---
 
-Version 2.1rc3, veröffentlicht am 22. Mai 2017
+Version 2.1.1, veröffentlicht am 09.06.2017
 
 Dieses Dokument enthält alle Informationen, die Sie zum Arbeiten mit dem Benutzer-Synchronisationstool benötigen. Dabei wird davon ausgegangen, dass Sie mit der Verwendung von Befehlszeilentools in Ihrem lokalen Betriebssystem vertraut sind und die Funktion von Verzeichnissystemen in Unternehmen kennen.
 

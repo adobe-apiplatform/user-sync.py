@@ -303,20 +303,121 @@ Si desea evitar que User Sync elimine estas cuentas de los grupos, póngalas sol
 
 ## Trabajo con grupos de directorio anidados de Active Directory
 
-Nota: El enfoque originalmente definido en esta sección no funciona demasiado. Tendrá que esperar a una versión futura con los errores corregidos.
+Nota: antes de la versión 2.2, User Sync no admitía grupos anidados.
 
-Si los grupos de directorio están estructurados de forma anidada para que los usuarios no se encuentren en un grupo de directorio con nombre simple, tendrá que ejecutar consultas LDAP más complejas para enumerar la lista de usuarios. Por ejemplo, puede tener una estructura de anidación de grupos parecida a esta:
+A partir de la versión 2.2, User Sync puede configurarse para reconocer todos los usuarios que se encuentren en grupos de directorios anidados y los archivos de ejemplo de configuración muestran cómo hacerlo. En concreto, en el archivo de configuración `connector-ldap.yml`, establezca el `group_member_filter`como se indica a continuación:
 
+    group_member_filter_format: "(memberOf:1.2.840.113556.1.4.1941:={group_dn})"
+
+Esto encuentra a los miembros de grupos que se encuentren directamente en un grupo designado o indirectamente en el grupo.
+
+Es posible que tenga una estructura de anidación de grupos parecida a esta:
 
     All_Divisions
-		Blue_Division
-		       User1@example.com
-		       User2@example.com
-		Green_Division
-		       User3@example.com
-		       User4@example.com
+      Blue_Division
+             User1@example.com
+             User2@example.com
+      Green_Division
+             User3@example.com
+             User4@example.com
 
-Una versión futura de User Sync será compatible con esto de manera transparente.
+Puede asignar All_Divisions a un grupos de usuarios o una configuración de productos de Adobe, en la sección `groups:` del archivo principal de configuración, y establecer group_member_filter conforme se indica anteriormente. El efecto de esto es tratar a todos los usuarios que se encuentren directamente en All_Divisions o en cualquier grupo contenido directa o indirectamente en All_Divisions como miembros del grupo de directorios All_Divisions.
+
+## Uso de técnicas de inclusión automática para hacer funcionar User Sync
+
+A partir de la versión 2.2 de User Sync es posible hacer que se envíen notificaciones automáticas directamente al sistema de administración de usuarios de Adobe, sin tener que leer toda la información de Adobe ni el directorio de su empresa. El uso de las notificaciones automáticas tiene la ventaja de minimizar el tiempo de procesamiento y el tráfico de comunicaciones, pero también el inconveniente de no corregirse automáticamente respecto a cambios realizados de otras formas o cuando se producen algunos errores. También es necesaria una gestión más cuidadosa de los cambios a realizar.
+
+Debe plantearse utilizar una estrategia de inclusión automática si:
+
+- Tiene una población extraordinariamente grande de usuarios de Adobe.
+- Está realizando unos pocos cambios/adiciones/eliminaciones en relación con la población total de usuarios.
+- Tiene un proceso o herramientas que pueden identificar los usuarios que se hayan cambiado (añadido, eliminado, cambios en el atributo o cambios de grupo) de forma automatizada.
+- Tiene un proceso que primero elimina los derechos de productos de los usuarios salientes y luego (tras un periodo de espera) elimina completamente sus cuentas.
+
+La estrategia de inclusión automática evita toda la sobrecarga de leer grandes cantidades de usuarios de ambos lados y solo se puede hacer si se pueden aislar los usuarios específicos que deban actualizarse (por ejemplo, colocándolos en un grupo especial).
+
+Para utilizar la notificación automática, deberá poder reunir las actualizaciones a realizar incondicionalmente en un grupo de archivos o directorios separado. Las eliminaciones de usuarios también deben segregarse de las adiciones y actualizaciones de usuarios. A continuación, las actualizaciones y las eliminaciones se ejecutan en diferentes llamadas a la herramienta User Sync.
+
+Muchos métodos son posibles mediante técnicas de inclusión automática con User Sync. Las siguientes secciones describen una forma de trabajar recomendada. Por concretar, supóngase que existen dos productos de Adobe que se han adquirido y que deberán administrarse utilizando User Sync: Creative Cloud y Acrobat Pro. Para conceder acceso, suponga que ha creado dos configuraciones de productos denominadas Creative_Cloud y Acrobat_Pro, así como dos grupos de directorios denominados cc_users y acrobat_users.
+El mapa del archivo de configuración de User Sync tendría un aspecto similar a este:
+
+    groups:
+      - directory_group: acrobat_users
+        adobe_groups:
+          - "Acrobat_Pro"
+      - directory_group: cc_users
+        adobe_groups:
+          - "Creative_Cloud"
+
+
+
+### Uso de un grupo especial de directorios para hacer funcionar la inclusión automática de User Sync
+
+Se crea un grupo de directorios adicional para reunir los usuarios a actualizar. Por ejemplo, utilice un grupo de directorios `updated_adobe_users` para los usuarios nuevos o actualizados (aquellos cuya pertenencia a grupo ha cambiado). La eliminación de usuarios de ambos grupos del mapa revoca todos los accesos a productos de los usuarios y libera las licencias detentadas por los mismos.
+
+La línea de comandos a utilizar para procesar las adiciones y las actualizaciones es la siguiente:
+
+    user-sync –t --strategy push --process-groups --users group updated_adobe_users
+
+Preste atención a `--strategy push` en la línea de comandos: es lo que provoca que User Sync no intente leer primero el directorio del lado de Adobe, haciendo que, en lugar de esto, simplemente incluya automáticamente las actualizaciones en Adobe.
+
+Observe también el parámetro `-t` en la línea de comandos, que sirve para ejecutar en “modo de prueba”. Si las acciones parecen ser las esperadas, quite el parámetro -t para que User Sync pase a realizar los cambios.
+
+Cuando `--strategy push` se especifica, los usuarios se incluyen automáticamente en Adobe con todos sus grupos del mapa *añadidos* y con todos los grupos del mapa que no se espera que estén en *eliminados*. Esta manera de mover a un usuario de un grupo de directorios a otro, donde hay diferentes mapas, provocará que ese usuario se cambie en el lado de Adobe en la siguiente inclusión automática.
+
+Esta forma de trabajar no eliminará ni quitará cuentas, pero revocará el acceso a todos los productos y liberará las licencias. Para eliminar cuentas, es necesaria una forma de trabajo diferente, que se describe en la próxima sección.
+
+El proceso para poder realizar esta forma de trabajo consta de los siguientes pasos:
+
+- Cada vez que añade un nuevo usuario o cambia los grupos de un usuario en el directorio (incluyendo la eliminación de todos los grupos, que fundamentalmente deshabilita todos los derechos de producto), también está añadiendo a ese usuario al grupo “updated_adobe_users”.
+- Una vez al día (o con la frecuencia que elija), deberá ejecutar una tarea de sincronización con los parámetros mostrados anteriormente.
+- Esta tarea provoca que se creen todos los usuarios actualizados, si resulta necesario, y que tengan sus grupos de mapas actualizados en el lado de Adobe.
+- Una vez ejecutada la tarea, procederá a quitar los usuarios del grupo updated_adobe_users (porque sus cambios se han incluido).
+
+En cualquier momento, también puede ejecutar una tarea de User Sync en modo regular (no de inclusión automática) para utilizar toda la funcionalidad completa de User Sync. Esto recogerá todos los cambios que pudieran haberse pasado por alto, los cambios correctos realizados sin utilizar User Sync y/o realizará las eliminaciones de cuentas reales. La línea de comandos sería parecida a esta:
+
+    user-sync --process-groups --users mapped --adobe-only-user-action remove
+
+
+### Uso de un archivo para hacer funcionar la inclusión automática de User Sync
+
+Puede utilizar un archivo como entrada a User Sync. En este caso, User Sync no accede al propio directorio. Puede crear los archivos (uno para adiciones y actualizaciones y otro para eliminaciones) manualmente o usando un script que obtenga información de alguna otra fuente.
+
+Crear un archivo “users-file.csv” con información sobre los usuarios a añadir o actualizar. Un ejemplo de este archivo es el siguiente:
+
+    firstname,lastname,email,country,groups,type,username,domain
+    Jane 1,Doe,jdoe1+1@example.com,US,acrobat_users
+    Jane 2,Doe,jdoe2+2@example.com,US,"cc_users,acrobat_users"
+
+La línea de comandos para incluir automáticamente las actualizaciones desde el archivo es:
+
+    user-sync –t --strategy push --process-groups --users file users-file.csv
+
+Ejecútela sin el parámetro `-t` cuando esté preparado para que las acciones surtan efecto.
+
+Para eliminar usuarios, se creará un archivo distinto con diferente formato. Como ejemplos de contenido podrían citarse los siguientes:
+
+    type,username,domain
+    adobeID,jimbo@gmail.com,
+    enterpriseID,jsmith1@ent-domain-example.com,
+    federatedID,jsmith2,user-login-fed-domain.com
+    federatedID,jsmith3@email-login-fed-domain.com,
+
+Cada entrada debe incluir el tipo de identidad, el correo electrónico del usuario o el nombre del usuario y, para identidades del tipo Federated Identity, el dominio.
+
+La línea de comandos para procesar eliminaciones basándose en un archivo como este (por ejemplo, remove-list.csv) sería:
+
+    user-sync -t --adobe-only-user-list remove-list.csv --adobe-only-user-action remove
+
+La acción “remove” podría ser “remove-adobe-groups” o “delete”, para mantener la cuenta en la organización o para eliminarla, respectivamente. Indique también el parámetro `-t` para el modo de prueba.
+
+El proceso para poder realizar esta forma de trabajo consta de los siguientes pasos:
+
+- Cada vez que añade un nuevo usuario o cambia los grupos de un usuario en el directorio (incluyendo la eliminación de todos los grupos, que fundamentalmente deshabilita todos los derechos de producto), también está añadiendo una entrada al “users-file.csv” que incluye los grupos en los que el usuario debería estar. Puede que sean más o menos grupos de aquellos en los que esté el usuario.
+- Cada vez que deba eliminarse un usuario, añada una entrada al archivo “remove-list.csv”.
+- Una vez al día (o con la frecuencia que elija), deberá ejecutar las dos tareas de sincronización con los parámetros mostrados anteriormente (uno para adiciones y actualizaciones y otro para eliminaciones).
+- Estas tareas hacen que todos lo usuarios actualizados tengan sus grupos de mapas actualizados en el lado de Adobe y que los usuarios eliminados se eliminen en el lado de Adobe.
+- Una vez ejecutada la tarea, borre los archivos (ya que sus cambios se han incluido automáticamente) para prepararse para el próximo lote.
 
 
 ---

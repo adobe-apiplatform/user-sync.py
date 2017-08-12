@@ -60,11 +60,11 @@ In den meisten Beispielen wird lediglich eine einzige Adobe-Benutzergruppe oder 
 
 Nein, die Benutzersynchronisation behandelt Drosselung und Wiederholungsversuche. So kann die Drosselung möglicherweise den Benutzer-Synchronisations-Gesamtprozess verlangsamen. Es wird jedoch kein Problem durch die Drosselung verursacht und die Benutzersynchronisation schließt alle Vorgänge ordnungsgemäß ab.
 
-Adobe-Systeme schützen sich selbst vor Überlastung, indem das Aufkommen eingehender Anforderungen verfolgt wird. Sollte dieses die Grenzwerte überschreiten, geben Anforderungen einen Header vom Typ „retry-after“ zurück, der angibt, wann die entsprechende Kapazität wieder verfügbar sein wird. Die Benutzersynchronisation berücksichtigt diese Header und wartet den angegebenen Zeitraum, bevor ein Neuversuch unternommen wird. Weitere Informationen, einschließlich von Codebeispielen, finden Sie in der [User Management API-Dokumentation](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/throttling.html).
+Adobe-Systeme schützen sich selbst vor Überlastung, indem das Aufkommen eingehender Anforderungen verfolgt wird. Sollte dieses die Grenzwerte überschreiten, geben Anforderungen einen Header vom Typ „retry-after“ zurück, der angibt, wann die entsprechende Kapazität wieder verfügbar sein wird. Die Benutzersynchronisation berücksichtigt diese Header und wartet den angegebenen Zeitraum, bevor ein Neuversuch unternommen wird. Weitere Informationen, einschließlich von Codebeispielen, finden Sie in der [User Management API-Dokumentation](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/gettingstarted.html).
  
 ## Besteht eine lokale Liste der erstellten/aktualisierten Benutzer (auf Benutzer-Synchronisations-Seite), um die Aufrufe von Adobe-Servern zu reduzieren?
 
-Nein, die Benutzersynchronisation fragt stets die Adobe-Benutzerverwaltungssysteme ab, um bei Ausführung aktuelle Informationen abzurufen.
+Mit Ausnahme des folgenden Falls, fragt die Benutzersynchronisation stets die Adobe-Benutzerverwaltungssysteme ab, um bei Ausführung aktuelle Informationen abzurufen. Im Benutzer-Synchronisationstool ab der Version 2.2, gibt es eine Option, mit der – unabhängig vom aktuellen Benutzerstatus im Adobe-Benutzerverwaltungssystem – diese Abfrage verhindert werden kann und Updates per Push zu Adobe übertragen werden können. Wenn Sie feststellen können, welche Benutzer im lokalen Verzeichnis geändert wurden und sicher sind, dass auf Adobe-Seite keine anderen Benutzer geändert wurden, kann diese Vorgehensweise die Laufzeit (und somit Netzwerknutzung) Ihrer Synchronisationsprozesse verkürzen.
  
 ### Ist das Benutzer-Synchronisationstool auf Federated IDs beschränkt oder können beliebige Typen von IDs erstellt werden?
 
@@ -104,9 +104,5 @@ Ja, alle Unternehmenskunden haben Zugriff auf die UMAPI und die Benutzersynchron
  
 ### Wie steht es mit der Internationalisierung des Benutzer-Synchronisationstools? Ist es für die internationale Verwendung geeignet (d. h. wird zumindest die Eingabe von Doppelbyte-Zeichen unterstützt)?
  
-Python 2.7 (die Sprache, in der das Tool geschrieben ist) unterscheidet zwischen „str“ (8-Bit-Zeichenfolgen) und „unicode“ (8-Bit-Zeichenfolgen mit erzwungener UTF-8-Codierung) und im Code des Benutzer-Synchronisationstools wird durchgehend „str“ und nicht „unicode“ verwendet. Sämtliche Ausgaben des Tools sind jedoch UTF-8-codiert, und wenn die Eingaben UTF-8-codiert sind, sollten keine Probleme auftreten. Dies wurde oberflächlich getestet, wobei keine Probleme festgestellt wurden – weitere Tests sind geplant.
+Bei früheren Versionen des Benutzer-Synchronisationstools war die Unterstützung internationaler Zeichen fehlerhaft, wenngleich die Verarbeitung UTF-8-kodierter Datenquellen recht zuverlässig war. Seit Version 2.2 unterstützt das Benutzer-Synchronisationstool alle Unicode-Zeichensätze und kann Konfigurationsdateien und Ordner sowie Datenquellen aus Tabellenkalkulationsprogrammen mit beliebiger Zeichenkodierung verarbeiten (wobei als Standard von UTF-8 ausgegangen wird).
 
-Wir planen eine Erweiterung, um die Ausführung des Tools sowohl in Python 3 als auch in Python 2 zu ermöglichen. 
-Derzeit können wir sicher sein, dass mit Unicode keinerlei Probleme auftreten werden, da die Typen in Python 3 zusammengeführt werden. Kunden, für die dies relevant ist, sollten einen Build für Python 3 erstellen.
- 
- 

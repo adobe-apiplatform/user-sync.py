@@ -1,6 +1,6 @@
-# Release Notes for User Sync Tool Version 2.2
+# Release Notes for User Sync Tool Version 2.2.1
 
-These notes apply to v2.2 of 2017-07-13.
+These notes apply to v2.2 of 2017-08-03.
 
 ## New Features
 
@@ -29,6 +29,8 @@ These notes apply to v2.2 of 2017-07-13.
 [#247](https://github.com/adobe-apiplatform/user-sync.py/issues/247): There is no more use of the `uid` attribute in LDAP directories.
 
 [#254](https://github.com/adobe-apiplatform/user-sync.py/issues/254): Update windows libraries, reduce use of custom builds.
+
+[#258](https://github.com/adobe-apiplatform/user-sync.py/issues/258): Correctly decrypt private keys in py3 (byte vs. str type compatibility).
 
 ## Compatibility with Prior Versions
 

@@ -8,7 +8,7 @@ nav_level: 1
 nav_order: 10
 ---
 
-Versión 2.1rc3, publicada el 22/05/2017
+Versión 2.1.1, publicada el 09/06/2017
 
 Este documento contiene toda la información que necesita para comenzar a utilizar User Sync. Se da por supuesto que el usuario está familiarizado con el uso de herramientas de línea de comandos en el sistema operativo local y que posee una comprensión general del funcionamiento de los sistemas de directorio de empresas.
 
