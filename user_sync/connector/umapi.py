@@ -96,7 +96,7 @@ class UmapiConnector(object):
                     key_data = f.read()
             except IOError as e:
                 raise AssertionException('%s: cannot read file "%s": %s' %
-                                         (enterprise_config.get_full_scope(), key_path, e))
+                                         (enterprise_config.get_full_scope(), key_path, e.message))
         else:
             key_data = enterprise_config.get_credential('priv_key_data', org_id)
         # decrypt the private key, if needed
@@ -106,7 +106,7 @@ class UmapiConnector(object):
                 key_data = str(RSA.importKey(key_data, passphrase=passphrase).exportKey().decode('ascii'))
             except (ValueError, IndexError, TypeError) as e:
                 raise AssertionException('%s: Error decrypting private key, either the password is wrong or: %s' %
-                                         (enterprise_config.get_full_scope(), e))
+                                         (enterprise_config.get_full_scope(), e.message))
         auth_dict['private_key_data'] = key_data
         # this check must come after we fetch all the settings
         enterprise_config.report_unused_values(logger)
@@ -127,7 +127,7 @@ class UmapiConnector(object):
                 retry_max_attempts=server_options['retries'] + 1,
             )
         except Exception as e:
-            raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))
+            raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e.message))
         logger.debug('%s: connection established', self.name)
         # wrap the connection in an action manager
         self.action_manager = ActionManager(connection, org_id, logger)
@@ -144,7 +144,7 @@ class UmapiConnector(object):
                     users[email] = u
                     yield u
         except umapi_client.UnavailableError as e:
-            raise AssertionException("Error contacting UMAPI server: %s" % e)
+            raise AssertionException("Error contacting UMAPI server: %s" % e.message)
 
     def get_action_manager(self):
         return self.action_manager
@@ -299,11 +299,10 @@ class ActionManager(object):
             identity_type = user_sync.identity_type.FEDERATED_IDENTITY_TYPE
         try:
             umapi_identity_type = umapi_client.IdentityTypes[identity_type]
-        except KeyError:
-            umapi_identity_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
-
-        action = umapi_client.UserAction(umapi_identity_type, email, username, domain,
-                                         requestID=self.get_next_request_id())
+            action = umapi_client.UserAction(umapi_identity_type, email, username, domain,
+                                             requestID=self.get_next_request_id())
+        except ValueError as e:
+            raise AssertionException("Error creating umapi Action for user '%s': %s" % (username, e.message))
         for command in commands.do_list:
             command_name, command_param = command
             command_function = getattr(action, command_name)
@@ -334,9 +333,9 @@ class ActionManager(object):
         try:
             _, sent, _ = self.connection.execute_single(action)
         except umapi_client.BatchError as e:
-            self.process_sent_items(e.statistics[1], e)
+            self.process_sent_items(e.statistics[1], e.message)
         except umapi_client.UnavailableError as e:
-            raise AssertionException("Error contacting UMAPI server: %s" % e)
+            raise AssertionException("Error contacting UMAPI server: %s" % e.message)
         else:
             self.process_sent_items(sent)
 
@@ -344,9 +343,9 @@ class ActionManager(object):
         try:
             _, sent, _ = self.connection.execute_queued()
         except umapi_client.BatchError as e:
-            self.process_sent_items(e.statistics[1], e)
+            self.process_sent_items(e.statistics[1], e.message)
         except umapi_client.UnavailableError as e:
-            raise AssertionException("Error contacting UMAPI server: %s" % e)
+            raise AssertionException("Error contacting UMAPI server: %s" % e.message)
         else:
             self.process_sent_items(sent)
 
@@ -354,7 +353,7 @@ class ActionManager(object):
         """
         Note items as sent, log any processing errors, and invoke any callbacks
         :param total_sent: number of sent items from queue, must be >= 0
-        :param batch_error: a batch-level error that affected all items, if there was one
+        :param batch_error: message for a batch-level error that affected all items, if there was one
         :return: 
         """
         # update queue

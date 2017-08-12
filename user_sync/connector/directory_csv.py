@@ -175,7 +175,7 @@ class CSVDirectoryConnector(object):
                 try:
                     user['identity_type'] = user_sync.identity_type.parse_identity_type(identity_type)
                 except user_sync.error.AssertionException as e:
-                    self.logger.warning('Skipping user %s: %s', username, e)
+                    self.logger.warning('Skipping user %s: %s', username, e.message)
                     del users[email]
                     continue
             else:

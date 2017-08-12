@@ -293,7 +293,7 @@ class ConfigLoader(object):
                 exclude_users.append(re.compile(r'\A' + regexp + r'\Z', re.UNICODE))
             except re.error as e:
                 validation_message = ('Illegal regular expression (%s) in %s: %s' %
-                                      (regexp, 'exclude_identity_types', e))
+                                      (regexp, 'exclude_identity_types', e.message))
                 raise AssertionException(validation_message)
         for name in exclude_group_names:
             group = user_sync.rules.AdobeGroup.create(name)
@@ -602,7 +602,7 @@ class DictConfig(ObjectConfig):
             try:
                 value = keyring.get_password(service_name=secure_value_key, username=user_name)
             except Exception as e:
-                raise AssertionException('%s: Error accessing secure storage: %s' % (scope, e))
+                raise AssertionException('%s: Error accessing secure storage: %s' % (scope, e.message))
         else:
             value = cleartext_value
         if not value and not none_allowed:
@@ -695,11 +695,11 @@ class ConfigFileLoader:
                 byte_string = subprocess.check_output(cmd_name, cwd=dir_name, shell=True)
                 yml = yaml.load(byte_string.decode(cls.config_encoding, 'strict'))
             except subprocess.CalledProcessError as e:
-                raise AssertionException("Error executing process '%s' in dir '%s': %s" % (cmd_name, dir_name, e))
+                raise AssertionException("Error executing process '%s' in dir '%s': %s" % (cmd_name, dir_name, e.message))
             except UnicodeDecodeError as e:
-                raise AssertionException('Encoding error in process output: %s' % e)
+                raise AssertionException('Encoding error in process output: %s' % e.message)
             except yaml.error.MarkedYAMLError as e:
-                raise AssertionException('Error parsing process YAML data: %s' % e)
+                raise AssertionException('Error parsing process YAML data: %s' % e.message)
         else:
             # it's a pathname to a configuration file to read
             cls.filepath = os.path.abspath(filename)
@@ -715,13 +715,13 @@ class ConfigFileLoader:
                 # if a file operation error occurred while loading the
                 # configuration file, swallow up the exception and re-raise it
                 # as an configuration loader exception.
-                raise AssertionException("Error reading configuration file '%s': %s" % (cls.filepath, e))
+                raise AssertionException("Error reading configuration file '%s': %s" % (cls.filepath, e.message))
             except UnicodeDecodeError as e:
                 # as above, but in case of encoding errors
-                raise AssertionException("Encoding error in configuration file '%s: %s" % (cls.filepath, e))
+                raise AssertionException("Encoding error in configuration file '%s: %s" % (cls.filepath, e.message))
             except yaml.error.MarkedYAMLError as e:
                 # as above, but in case of parse errors
-                raise AssertionException("Error parsing configuration file '%s': %s" % (cls.filepath, e))
+                raise AssertionException("Error parsing configuration file '%s': %s" % (cls.filepath, e.message))
 
         # process the content of the dict
         if yml is None:
