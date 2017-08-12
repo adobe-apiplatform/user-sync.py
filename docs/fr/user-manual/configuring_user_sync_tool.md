@@ -27,7 +27,7 @@ Le fonctionnement de l’outil User Sync est contrôlé par un ensemble de fichi
 | user-sync-config.yml | Obligatoire. Contient les options de configuration qui définissent le mappage des groupes d’annuaire aux configurations de produits et aux groupes d’utilisateurs Adobe, et qui contrôlent le comportement de mise à jour. Contient également des références aux autres fichiers de configuration.|
 | connector&#x2011;umapi.yml&nbsp;&nbsp; | Obligatoire. Contient des identifiants de connexion et des informations d’accès pour appeler l’API Adobe User Management. |
 | connector-ldap.yml | Obligatoire. Contient des identifiants de connexion et des informations d’accès pour accéder à l’annuaire d’entreprise. |
-
+{: .bordertablestyle }
 
 Si vous devez configurer l’accès aux groupes Adobe dans d’autres organisations qui vous y ont habilité, vous pouvez inclure des fichiers de configuration supplémentaires. Pour en savoir plus, reportez-vous à la section [Instructions de configuration avancée](advanced_configuration.md#instructions-de-configuration-avancée) ci-dessous.
 
@@ -63,7 +63,7 @@ adobe_groups:
 
 ## Création et sécurisation des fichiers de configuration de connexion
 
-Les deux fichiers de configuration de connexion stockent les identifiants de connexion qui donnent à User Sync accès au portail Adobe Admin Console ainsi qu’à votre annuaire d’entreprise LDAP. Afin d’isoler les informations sensibles nécessaires pour se connecter aux deux systèmes, tous les identifiants sont regroupés dans ces deux fichiers. **N’oubliez pas de les sécuriser correctement**, comme expliqué à la section [Remarques de sécurité](deployment_best_practices.md#remarques-de-sécurité) de ce document.
+Les deux fichiers de configuration de connexion stockent les identifiants de connexion qui donnent à User Sync accès au portail Adobe Admin Console ainsi qu’à votre annuaire d’entreprise LDAP. Afin d’isoler les informations sensibles nécessaires pour se connecter aux deux systèmes, tous les identifiants sont regroupés dans ces deux fichiers. **N’oubliez pas de les sécuriser correctement**, comme expliqué à la section [Recommandations de sécurité](deployment_best_practices.md#recommandations-de-sécurité) de ce document.
 
 User Sync prend en charge trois techniques pour sécuriser les identifiants de connexion.
 
@@ -109,7 +109,14 @@ User Sync version 2.1 ou ultérieure propose une alternative au stockage de la 
 	    Fz2i8y6qhmfhj48dhf84hf3fnGrFP2mX2Bil48BoIVc9tXlXFPstJe1bz8xpo=
 	    -----END RSA PRIVATE KEY-----
 
+Dans User Sync version 2.2 ou ultérieure, des paramètres supplémentaires permettent de contrôler le délai d’attente de connexion et de nouvelle tentative. Ceux-ci ne devraient jamais être utilisés, sauf dans le cas d’une situation inhabituelle où vous pouvez les définir dans la section `server` :
 
+  server:
+    timeout: 120
+    retries: 3
+
+`timeout` définit le temps d’attente maximum, en secondes, pour qu’un appel soit terminé.
+`retries` définit le nombre de tentatives d’une opération si elle échoue en raison d’un problème non spécifique tel que l’expiration d’un délai d’attente ou une erreur du serveur.
 
 ### Configuration de la connexion à votre annuaire d’entreprise
 
@@ -121,6 +128,8 @@ password: indiquez-le-mot-de-passe-ici
 host: FQDN.de.l’hôte
 base_dn: base_dn.de.l’annuaire
 ```
+
+Voir la section [Recommandations de sécurité](deployment_best_practices.md#recommandations-de-sécurité) pour plus de détails sur la façon de stocker le mot de passe avec plus de sécurité dans User Sync version 2.1 ou ultérieure.
 
 ## Options de configuration
 
@@ -155,7 +164,7 @@ directory_users:
 
 ### Configuration d’un mappage de groupe
 
-Pour synchroniser les groupes d’utilisateurs et les droits d’accès, vous devez d’abord créer les configurations de produits et les groupes d’utilisateurs dans Adobe Admin Console, ainsi que les groupes correspondants dans votre annuaire d’entreprise, comme expliqué ci-dessus à la section [Configuration de la synchronisation d’accès aux produits](setup_and_installation.md#configuration-de-la-synchronisation-d-accès-aux-produits).
+Pour synchroniser les groupes d’utilisateurs et les droits d’accès, vous devez d’abord créer les configurations de produits et les groupes d’utilisateurs dans Adobe Admin Console, ainsi que les groupes correspondants dans votre annuaire d’entreprise, comme expliqué ci-dessus à la section [Configuration de la synchronisation d’accès aux produits](setup_and_installation.md#configuration-de-la-synchronisation-daccès-aux-produits).
 
 **REMARQUE :** Tous les groupes doivent exister et porter les mêmes noms des deux côtés. User Sync ne crée aucun groupe d’un côté ni de l’autre. S’il ne trouve pas un groupe nommé, il consigne une erreur.
 
@@ -323,6 +332,8 @@ enterprise:
 
 Utilisez ces scénarios de test pour vous assurer que votre configuration fonctionne correctement et que les configurations de produits sont correctement mappées à vos groupes sécurisés de l’annuaire d’entreprise. Exécutez l’outil en mode test pour commencer (en indiquant le paramètre -t), afin de voir le résultat avant de l’exécuter pour du bon.
 
+Les exemples suivants utilisent `--users all` pour sélectionner des utilisateurs, mais vous pouvez souhaiter utiliser `--users mapped` pour sélectionner uniquement des utilisateurs dans des groupes d’annuaires répertoriés dans votre fichier de configuration, ou `--users file f.csv` pour sélectionner un plus petit ensemble d’utilisateurs de test répertoriés dans un fichier.
+
 ###  Création d’utilisateurs
 
 
@@ -346,7 +357,7 @@ Utilisez ces scénarios de test pour vous assurer que votre configuration foncti
 1. Modifiez l’appartenance d’un ou de plusieurs utilisateurs test aux groupes de l’annuaire.
 
 
-1. Exécutez User Sync. (`./user-sync -t --users all --process-groups --adobe-only-user-action exclude`)
+1. Exécutez User Sync. (`./user-sync --users all --process-groups --adobe-only-user-action exclude`)
 
 
 2. Vérifiez que les utilisateurs test dans Adobe Admin Console ont été mis à jour et qu’ils indiquent la nouvelle appartenance à la configuration de produit.
@@ -357,7 +368,7 @@ Utilisez ces scénarios de test pour vous assurer que votre configuration foncti
 1. Retirez ou désactivez un ou plusieurs utilisateurs test existants dans votre annuaire d’entreprise.
 
 
-2. Exécutez User Sync. (`./user-sync -t --users all --process-groups --adobe-only-user-action exclude`)
+2. Exécutez User Sync. (`./user-sync --users all --process-groups --adobe-only-user-action remove-adobe-groups`) Vous souhaiterez peut-être exécuter cette commande en mode test (-t) d’abord.
 
 
 3. Vérifiez que les utilisateurs ont été retirés des configurations de produits définies dans Adobe Admin Console.

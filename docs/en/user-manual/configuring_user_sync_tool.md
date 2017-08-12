@@ -90,7 +90,7 @@ enterprise LDAP directory. In order to isolate the sensitive
 information needed to connect to the two systems, all actual
 credential details are confined to these two files. **Be sure to
 secure them properly**, as described in the
-[Security Considerations](deployment_best_practices.md#security-considerations) section of
+[Security Recommendations](deployment_best_practices.md#security-recommendations) section of
 this document.
 
 There are three techniques supported by User Sync for securing credentials.
@@ -169,7 +169,7 @@ host: "FQDN.of.host"
 base_dn: "base_dn.of.directory"
 ```
 
-See the section [Security Considerations](deployment_best_practices.md#security-considerations) for
+See the section [Security Recommendations](deployment_best_practices.md#security-recommendations) for
 details of how to store the password more securely in User Sync version 2.1 or later.
 
 ## Configuration options

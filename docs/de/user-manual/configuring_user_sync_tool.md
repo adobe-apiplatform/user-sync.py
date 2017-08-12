@@ -27,7 +27,7 @@ Die Ausführung des Benutzer-Synchronisationstools wird durch eine Reihe von Kon
 | user-sync-config.yml | Erforderlich. Enthält Konfigurationsoptionen, welche die Zuordnung von Verzeichnisgruppen zu Konfigurationen und Benutzergruppen von Adobe-Produkten definieren und das Updateverhalten steuern. Zudem sind Verweise auf die anderen Konfigurationsdateien enthalten.|
 | connector&#x2011;umapi.yml&nbsp;&nbsp; | Erforderlich. Enthält Anmeldeinformationen und Zugriffsinformationen für den Zugriff auf die Adobe User Management API. |
 | connector-ldap.yml | Erforderlich. Enthält Anmeldeinformationen und Zugriffsinformationen für den Zugriff auf das Unternehmensverzeichnis. |
-
+{: .bordertablestyle }
 
 Wenn Sie den Zugriff auf Adobe-Gruppen in anderen Organisationen einrichten müssen, die Ihnen Zugriff gewährt haben, können Sie weitere Konfigurationsdateien einschließen. Weitere Informationen finden Sie weiter unten in den [Anweisungen für die erweiterte Konfiguration](advanced_configuration.md#zugreifen-auf-gruppen-in-anderen-organisationen).
 
@@ -109,7 +109,14 @@ In Version 2.1 oder höher des Benutzer-Synchronisationstools besteht die Mögli
 	    Fz2i8y6qhmfhj48dhf84hf3fnGrFP2mX2Bil48BoIVc9tXlXFPstJe1bz8xpo=
 	    -----END RSA PRIVATE KEY-----
 
+Version 2.2 des Benutzer-Synchronisationstools verfügt auch über einige zusätzliche Parameter zur Steuerung von Verbindungstimeouts und Wiederholungen. Eigentlich sollte man diese niemals brauchen, aber in außergewöhnlichen Situation können Sie sie im Abschnitt `server` festlegen.
 
+  server:
+    timeout: 120
+    retries: 3
+
+`timeout` bestimmt die maximale Wartezeit in Sekunden, bis ein Aufruf abgeschlossen ist.
+`retries` legt fest, wie oft ein Vorgang wiederholt wird, wenn er aus unspezifischen Gründen wie Serverfehler oder Timeout nicht erfolgreich war.
 
 ### Konfigurieren der Verbindung mit Ihrem Unternehmensverzeichnis
 
@@ -121,6 +128,8 @@ password: "Kennwort-hier-einfügen"
 host: "FQDN.des.Hosts"
 base_dn: "Basis-DN.des.Verzeichnisses"
 ```
+
+Wie Sie ab Version 2.1 des Benutzer-Synchronisationstools das Kennwort sicherer speichern, erfahren Sie unter [Hinweise zur Sicherheit](deployment_best_practices.md#sicherheitsempfehlungen).
 
 ## Konfigurationsoptionen
 
@@ -323,6 +332,8 @@ enterprise:
 
 Stellen Sie mithilfe von Testfällen sicher, dass Ihre Konfiguration ordnungsgemäß funktioniert und dass die Produktkonfigurationen den Sicherheitsgruppen in Ihrem Unternehmensverzeichnis korrekt zugeordnet sind. Führen Sie das Tool zunächst im Testmodus aus (geben Sie dazu den -t-Parameter an), sodass Sie das Ergebnis überprüfen können, bevor Sie die Live-Ausführung starten.
 
+Die folgenden Beispiele verwenden `--users all`, um Benutzer auszuwählen, aber mithilfe von `--users mapped` können Sie nur Benutzer auswählen, die in Verzeichnisgruppen in Ihrer Konfigurationsdatei aufgeführt sind und mithilfe von `--users file f.csv` können Sie eine kleinere Gruppe von Testbenutzern auswählen, die in einer Datei aufgeführt sind.
+
 ###  Erstellen von Benutzern
 
 
@@ -346,7 +357,7 @@ Stellen Sie mithilfe von Testfällen sicher, dass Ihre Konfiguration ordnungsgem
 1. Ändern Sie die Gruppenmitgliedschaft eines oder mehrerer Testbenutzer im Verzeichnis.
 
 
-1. Führen Sie das Benutzer-Synchronisationstool aus. (`./user-sync -t --users all --process-groups --adobe-only-user-action exclude`)
+1. Führen Sie das Benutzer-Synchronisationstool aus. (`./user-sync --users all --process-groups --adobe-only-user-action exclude`)
 
 
 2. Vergewissern Sie sich, dass Testbenutzer in der Adobe Admin Console aktualisiert wurden, sodass die Produktkonfiguration-Mitgliedschaft widergespiegelt wird.
@@ -357,7 +368,7 @@ Stellen Sie mithilfe von Testfällen sicher, dass Ihre Konfiguration ordnungsgem
 1. Entfernen oder deaktivieren Sie einen oder mehrere vorhandene Testbenutzer in Ihrem Unternehmensverzeichnis.
 
 
-2. Führen Sie das Benutzer-Synchronisationstool aus. (`./user-sync -t --users all --process-groups --adobe-only-user-action exclude`)
+2. Führen Sie das Benutzer-Synchronisationstool aus. (`./user-sync --users all --process-groups --adobe-only-user-action remove-adobe-groups`) Oft empfiehlt es sich, das Tool erst im Testmodus („-t“) auszuführen.
 
 
 3. Vergewissern Sie sich, dass Benutzer aus konfigurierten Produktkonfigurationen in der Adobe Admin Console entfernt wurden.

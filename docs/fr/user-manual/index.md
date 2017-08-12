@@ -8,7 +8,7 @@ nav_level: 1
 nav_order: 10
 ---
 
-Version 2.1rc3, publiée le 22/05/2017
+Version 2.1.1, publiée le 09/06/2017
 
 Ce document comporte toutes les informations dont vous avez besoin pour être opérationnel et autonome sur User Sync. Il suppose une certaine connaissance de l’utilisation des outils de ligne de commande sur votre système d’exploitation, ainsi qu’une compréhension générale du fonctionnement des systèmes d’annuaire d’entreprise.
 

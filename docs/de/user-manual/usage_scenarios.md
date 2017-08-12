@@ -33,7 +33,9 @@ Dieser Abschnitt enthält ausführliche Anweisungen für jedes dieser Szenarien.
 
 Dies ist typischste und häufigste Form des Aufrufs. Das Benutzer-Synchronisationstool sucht nach allen Änderungen an Benutzerinformationen und Informationen zu Gruppenmitgliedschaften auf der Unternehmensseite. Die Adobe-Seite wird synchronisiert, indem Benutzer und Benutzergruppen sowie Mitgliedschaften in Produktkonfigurationen hinzugefügt, aktualisiert und entfernt werden.
 
-In der Standardeinstellung werden vom Benutzer-Synchronisationstool ausschließlich Benutzer mit dem Identitätstyp Enterprise ID oder Federated ID erstellt, entfernt und mit ihrer Gruppenmitgliedschaft verwaltet, da Adobe ID-Benutzer generell nicht im Verzeichnis verwaltet werden. Wenn dieser Ansatz in Ihrer Organisation verfolgt wird, finden Sie weitere Informationen in der [Beschreibung weiter unten](advanced_configuration.md#verwalten-von-benutzern-mit-adobe-ids) unter [Erweiterte Konfiguration](advanced_configuration.md#erweiterte-konfiguration).
+In der Standardeinstellung werden vom Benutzer-Synchronisationstool ausschließlich Benutzer mit dem Identitätstyp Enterprise ID oder Federated ID erstellt, entfernt und mit ihrer Gruppenmitgliedschaft verwaltet, da Adobe ID-Benutzer generell nicht im Verzeichnis verwaltet werden. Wenn dieser Ansatz in Ihrer Organisation verfolgt wird, finden Sie weitere Informationen in der [Beschreibung weiter unten](advanced_configuration.md#verwalten-von-benutzern-mit-adobe-ids) 
+unter [Erweiterte Konfiguration](advanced_configuration.md#erweiterte-konfiguration).
+
 
 In diesem Beispiel wird davon ausgegangen, dass die Konfigurationsdatei „user-sync-config.yml“ eine Zuordnung einer Verzeichnisgruppe zu einer Adobe-Produktkonfiguration mit dem Namen **Default Acrobat Pro DC configuration** enthält.
 

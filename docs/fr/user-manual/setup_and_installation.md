@@ -26,7 +26,9 @@ Pour utiliser User Sync, votre entreprise doit avoir défini des configurations 
 
 L’outil User Sync est un client de l’API User Management. Avant d’installer l’outil, vous devez l’enregistrer en tant que client de l’API en ajoutant une *intégration* dans le [portail de développement](https://www.adobe.io/console/) d’Adobe I/O. Vous devrez ajouter une intégration de clé d’entreprise afin d’obtenir les identifiants de connexion dont l’outil a besoin pour accéder au système Adobe de gestion des utilisateurs.
 
-Les étapes de création d’une intégration sont décrites en détail dans la section [Setting up Access](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/setup.html) (Configuration des accès) du site web relatif à l’API User Management d’Adobe I/O. Le processus requiert la création d’un certificat spécifique à l’intégration, qui peut être autosigné. À la fin du processus, les éléments suivants vous seront attribués : **API key** (clé d’API),  **Technical account ID** (ID de compte technique),  **Organization ID** (ID d’organisation) et  **client secret** (secret client). L’outil se servira de ces éléments, ainsi que de vos informations de certificat, pour communiquer en toute sécurité avec Admin Console. Lorsque vous installez User Sync, vous devez fournir ces valeurs de configuration pour que l’outil puisse accéder au référentiel d’informations utilisateur de votre organisation dans Adobe.
+La procédure de création d’une intégration est détaillée à la section [Adobe I/O Authentication Overview](https://www.adobe.io/apis/cloudplatform/console/authentication/gettingstarted.html) (en anglais) du site web Adobe I/O. Recherchez les sections portant sur l’authentification du compte de service. Le processus requiert la création d’un certificat spécifique à l’intégration, qui peut être autosigné. À la fin du processus, les éléments suivants vous seront attribués : **API key** (clé d’API),  **Technical account ID** (ID de compte technique),  **Organization ID** (ID d’organisation) et  **client secret** (secret client). L’outil se servira de ces éléments, ainsi que de vos informations de certificat, pour communiquer en toute sécurité avec Admin Console. Lorsque vous installez User Sync, vous devez fournir ces valeurs de configuration pour que l’outil puisse accéder au référentiel d’informations utilisateur de votre organisation dans Adobe.
+
+Des informations supplémentaires sont disponibles dans la documentation UMAPI disponible [ici](https://adobe-apiplatform.github.io/umapi-documentation) ou [ici](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/gettingstarted.html).
 
 ## Configuration de la synchronisation d’accès aux produits
 
@@ -48,7 +50,7 @@ Les noms des configurations de produits identifient généralement les types d�
 
 Une fois que vous avez défini les configurations de produits et les groupes d’utilisateurs dans Adobe Admin Console, vous devez créer et nommer des groupes correspondants dans votre propre annuaire d’entreprise. Par exemple, un groupe de l’annuaire correspondant à la configuration de produit « Toutes les applications » pourrait s’appeler « toutes_les_applications ».
 
-Prenez note des noms que vous donnez à ces groupes et identifiez les groupes Adobe auxquels ils correspondent. Vous allez utiliser ces informations pour configurer un mappage dans le fichier de configuration principal de User Sync. Reportez-vous aux instructions détaillées dans la section [Configuration d’un mappage de groupe](configuring_user_sync_tool.md#configuration-d-un-mappage-de-groupe) ci-dessous.
+Prenez note des noms que vous donnez à ces groupes et identifiez les groupes Adobe auxquels ils correspondent. Vous allez utiliser ces informations pour configurer un mappage dans le fichier de configuration principal de User Sync. Reportez-vous aux instructions détaillées dans la section [Configuration d’un mappage de groupe](configuring_user_sync_tool.md#configuration-dun-mappage-de-groupe) ci-dessous.
 
 Dans le champ de description de la configuration de produit ou du groupe d’utilisateurs, il est recommandé de noter que le groupe est géré par User Sync et qu’il ne doit pas être modifié dans Admin Console.
 
@@ -72,16 +74,16 @@ L’outil User Sync est disponible à partir du [référentiel User Sync sur Git
 1. Créez un dossier sur votre serveur, dans lequel vous installerez User Sync et placerez les fichiers de configuration.
 
 
-1. Cliquez sur le lien **Releases** pour localiser la dernière version, qui contient les notes de mise à jour, la présente documentation, des exemples de fichiers de configuration ainsi que toutes les versions générées (de même que les archives sources).
+1. Cliquez sur le lien **Releases** pour localiser la dernière version, qui contient les notes de mise à jour, des exemples de fichiers de configuration ainsi que toutes les versions générées (de même que les archives sources).
 
 
-2. Sélectionnez et téléchargez le package compressé correspondant à votre plate-forme (fichier `.tar.gz`). Des versions pour Windows, OS X et Ubuntu sont disponibles. (Si vous compilez à partir de la source, vous pouvez télécharger le package de code source correspondant à la version ou utiliser la source la plus récente au niveau de la branche principale.)
+2. Sélectionnez et téléchargez le package compressé correspondant à votre plate-forme (fichier `.tar.gz`). Des versions pour Windows, OS X, Centos et Ubuntu sont disponibles. (Si vous compilez à partir de la source, vous pouvez télécharger le package de code source correspondant à la version ou utiliser la source la plus récente au niveau de la branche principale.) Des versions Python 3 peuvent également être disponibles pour les versions ultérieures de l’outil User Sync.
 
 
 3. Recherchez le fichier exécutable Python (`user-sync` ou `user-sync.pex` pour Windows) et placez-le dans votre dossier User Sync.
 
 
-4. Téléchargez l’archive `example-configurations.tar.gz` d’exemples de fichiers de configuration. L’archive contient le dossier « config files – basic ». Les trois premiers fichiers de ce dossier sont nécessaires. Les autres fichiers du package sont facultatifs et/ou des versions secondaires destinées à des fins spécifiques. Vous pouvez les copier dans votre dossier racine, puis les renommer et les modifier afin d’établir vos propres fichiers de configuration. (Voir la section suivante, [Configuration de l’outil User Sync](configuring_user_sync_tool./md#configuration-de-l-outil-user-sync).)
+4. Téléchargez l’archive `example-configurations.tar.gz` d’exemples de fichiers de configuration. L’archive contient le dossier « config files – basic ». Les trois premiers fichiers de ce dossier sont nécessaires. Les autres fichiers du package sont facultatifs et/ou des versions secondaires destinées à des fins spécifiques. Vous pouvez les copier dans votre dossier racine, puis les renommer et les modifier afin d’établir vos propres fichiers de configuration. (Voir la section suivante, [Configuration de l’outil User Sync](configuring_user_sync_tool.md#configuration-de-l-outil-user-sync).)
 
 
 5. **Sous Windows uniquement :**
@@ -90,7 +92,7 @@ L’outil User Sync est disponible à partir du [référentiel User Sync sur Git
 
     Le système d’exploitation Windows limite la longueur du chemin d’accès au fichier à 260 caractères. Lors de l’exécution d’un fichier PEX Python, il crée un emplacement temporaire pour extraire le contenu du package. Si le chemin d’accès à cet emplacement dépasse 260 caractères, le script ne s’exécute pas correctement.
 
-    Par défaut, le cache temporaire est placé dans votre dossier Utilisateur, ce qui peut entraîner un dépassement de la limite. Pour contourner ce problème, créez une variable d’environnement sous Windows appelée PEX\_ROOT, et définissez son chemin d’accès sur C:\\user-sync\\.pex. Le système d’exploitation utilise cette variable pour l’emplacement du cache, ce qui évite que le chemin d’accès ne dépasse la limite de 260 caractères.
+    Par défaut, le cache temporaire est placé dans votre dossier Utilisateur, ce qui peut entraîner un dépassement de la limite. Pour contourner ce problème, créez une variable d’environnement sous Windows appelée PEX\_ROOT, et définissez son chemin d’accès sur C:\\pex. Le système d’exploitation utilise cette variable pour l’emplacement du cache, ce qui évite que le chemin d’accès ne dépasse la limite de 260 caractères.
 
 
 6. Pour exécuter l’outil User Sync, double-cliquez sur le fichier exécutable Python, `user-sync` (ou exécutez `python user-sync.pex` sous Windows).
@@ -111,7 +113,7 @@ Si vous laissez User Sync accéder à votre annuaire d’entreprise, il doit êt
 
 #### Fichiers de certificats
 
-Les fichiers qui contiennent les clés publiques et privées, en particulier les clés privées, contiennent des informations sensibles. Vous devez garder chaque clé privée en sécurité. Elle ne peut pas être récupérée, ni remplacée. Si vous la perdez ou si elle est compromise, vous devez supprimer le certificat correspondant de votre compte. Si nécessaire, vous devez créer et charger un nouveau certificat. Vous devez protéger ces fichiers au moins avec le même niveau de protection que pour un nom de compte et un mot de passe. Les bonnes pratiques consistent à stocker les fichiers de clés dans un système de gestion des identifiants ou à utiliser la protection du système de fichiers, de sorte que seuls les utilisateurs autorisés puissent y avoir accès.
+Les fichiers qui contiennent les clés publiques et privées, en particulier les clés privées, contiennent des informations sensibles. Vous devez garder chaque clé privée en sécurité. Elle ne peut pas être récupérée, ni remplacée. Si vous la perdez ou si elle est compromise, vous devez supprimer le certificat correspondant de votre compte. Si nécessaire, vous devez créer et charger un nouveau certificat. Vous devez protéger ces fichiers au moins avec le même niveau de protection que pour un nom de compte et un mot de passe. Les bonnes pratiques consistent à stocker le fichier de clé privée dans un système de gestion des identifiants, dans le stockage sécurisé du système d’exploitation ou d’utiliser la protection du système de fichiers, de sorte que seuls les utilisateurs autorisés puissent y avoir accès.
 
 #### Fichiers journaux
 

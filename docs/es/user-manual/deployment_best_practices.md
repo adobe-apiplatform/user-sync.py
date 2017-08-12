@@ -35,7 +35,7 @@ La aplicación hace peticiones GET y POST de la API de gestión de usuarios a un
 
 Para proteger la disponibilidad de los sistemas de identidad de usuario internos de Adobe, la API de gestión de usuarios impone límites en el acceso a los datos del cliente. Los límites se aplican al número de llamadas que puede hacer un cliente individual dentro de un intervalo de tiempo y los límites globales se aplican al acceso de todos los clientes dentro del período de tiempo. La herramienta User Sync implementa nuevamente y reintenta la lógica para evitar que el script afecte continuamente a la API de gestión de usuarios cuando se alcanza el límite de la tasa. Es normal ver mensajes en la consola indicando que el script ha estado en pausa por un breve período de tiempo antes de intentar ejecutarlo de nuevo.
 
-A partir de User Sync 2.1, existen dos técnicas adicionales disponibles para proteger las credenciales. La primera utiliza el almacén de credenciales del sistema operativo para almacenar los valores de credenciales de configuración individuales. La segunda utiliza un mecanismo que debe proporcionarse para guardar el archivo de configuración completo para umapi y/o ldap que incluye todas las credenciales. Estas se describen con detalle en las secciones siguientes.
+A partir de User Sync 2.1, existen dos técnicas adicionales disponibles para proteger las credenciales. La primera utiliza el almacén de credenciales del sistema operativo para almacenar los valores de credenciales de configuración individuales. La segunda utiliza un mecanismo que debe proporcionarse para guardar de manera segura el archivo de configuración completo para umapi y/o ldap, que incluye todas las credenciales necesarias. Estas se describen con detalle en las secciones siguientes.
 
 ### Almacenar las credenciales en el almacenamiento de nivel de sistema operativo
 
@@ -54,10 +54,33 @@ connector-umapi.yml
 
 Observe el cambio de `api_key`, `client_secret` y `priv_key_path` por `secure_api_key_key`, `secure_client_secret_key` y `secure_priv_key_data_key`, respectivamente. Estos valores de configuración alternativos dan los nombres clave que deben consultarse en la cadena de llave de usuario (o el servicio equivalente en otras plataformas) para recuperar los valores de credenciales reales. En este ejemplo, los nombres de clave de credenciales son `umapi_api_key`, `umapi_client_secret` y `umapi_private_key_data`.
 
-El contenido del archivo de clave privada se utiliza como valor de `umapi_private_key_data` en el almacén de credenciales.
+El contenido del archivo de clave privada se utiliza como valor de `umapi_private_key_data` en el almacén de credenciales. Esto puede hacerse solo en plataformas distintas de Windows. A continuación se explica cómo asegurar el archivo de claves privadas en Windows.
 
-Los valores de credenciales se consultarán utilizando los nombres de clave especificados, siendo el usuario el valor org_id.
+Los valores de credenciales de inicio podrán consultarse en el almacenamiento seguro utilizando org_id como valor de nombre de usuario y los nombres de las claves del archivo de configuración como nombre de la clave.
 
+Se dispone de una ligera variante de esta forma de trabajar (en la versión 2.1.1 de User Sync o posteriores) para cifrar el archivo de claves privadas utilizando la representación cifrada RSA estándar de las claves privadas (conocida como formato PKCS #8). Esta forma de trabajo debe utilizarse en Windows, debido a que el almacenamiento seguro de Windows no es capaz de almacenar cadenas que superen los 512 bytes, lo que impide su uso con claves privadas. Esta forma de trabajo puede usarse también en el resto de plataformas, si así lo desea.
+
+Para guardar la clave privada en formato cifrado, proceda como se indica a continuación. En primer lugar, cree una versión cifrada del archivo de clave privada. Seleccione una frase de contraseña y cifre el archivo de clave privado:
+
+    openssl pkcs8 -in private.key -topk8 -v2 des3 -out private-encrypted.key
+
+En Windows, deberá ejecutar openssl desde Cygwin o algún otro proveedor; no viene incluido en la distribución estándar de Windows.
+
+A continuación, utilice los siguientes elementos de la configuración en connector-umapi.yml. Los dos últimos elementos que aparecen a continuación provocan que la frase de contraseña se obtenga desde el almacén de credenciales seguras y hacen referencia el archivo de claves privadas cifradas, respectivamente:
+
+	server:
+	
+	enterprise:
+	  org_id: your org id
+	  secure_api_key_key: umapi_api_key
+	  secure_client_secret_key: umapi_client_secret
+	  tech_acct: your tech account@techacct.adobe.com
+	  secure_priv_key_pass_key: umapi_private_key_passphrase
+	  priv_key_path: private-encrypted.key
+
+Por último, añada la frase de contraseña al almacenamiento seguro como una entrada con el nombre de usuario o la dirección url como el Id. de la organización, el nombre de la clave como `umapi_private_key_passphrase` para que coincida con la entrada del archivo de configuración `secure_priv_key_pass_key` y el valor como frase de contraseña. (También puede incluir la clave cifrada privada colocando los datos en el archivo connector-umapi.yml con la clave `priv_key_data` en lugar de utilizar `priv_key_path`).
+
+Esto termina la descripción de la variante en la que se utiliza el cifrado de clave privada RSA.
 
 connector-ldap.yml
 
@@ -73,7 +96,7 @@ Las credenciales se almacenan en el almacén seguro del sistema operativo subyac
 
 | OS | Almacén de credenciales |
 |------------|--------------|
-|Windows | Depósito de credenciales de Windows |
+| Windows | Depósito de credenciales de Windows |
 | Mac OS X | Cadena de llave |
 | Linux | Servicio secreto de Freedesktop o KWallet |
 {: .bordertablestyle }

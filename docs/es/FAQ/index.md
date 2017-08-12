@@ -60,11 +60,11 @@ La mayoría de los ejemplos muestran a un solo grupo de usuarios o configuració
 
 No, User Sync se encarga de la limitación y lo vuelve a intentar para que la limitación pueda ralentizar el proceso de sincronización de usuarios, pero no hay ningún problema debido a la limitación y User Sync finalizará correctamente todas las operaciones.
 
-Los sistemas de Adobe se protegen a sí mismos de la sobrecarga mediante el seguimiento del volumen de solicitudes entrantes. Si se empiezan a superar los límites, a continuación, las solicitudes devuelven un encabezado de "reintentar después" que indica cuándo estará disponible la capacidad. User Sync respeta estos encabezados y espera el tiempo solicitado antes de volver a intentarlo. Se pude obtener más información, como ejemplos de códigos, en la [Documentación de la API de administración de usuarios](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/throttling.html).
+Los sistemas de Adobe se protegen a sí mismos de la sobrecarga mediante el seguimiento del volumen de solicitudes entrantes. Si se empiezan a superar los límites, a continuación, las solicitudes devuelven un encabezado de "reintentar después" que indica cuándo estará disponible la capacidad. User Sync respeta estos encabezados y espera el tiempo solicitado antes de volver a intentarlo. Se pude obtener más información, como ejemplos de códigos, en la [Documentación de la API de administración de usuarios](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/gettingstarted.html).
  
 ## ¿Existe alguna lista local de los usuarios creados/actualizados (en User Sync) para reducir las llamadas de servidor de Adobe?
 
-No, User Sync siempre consulta los sistemas de gestión de usuario de Adobe para obtener información actualizada cuando se ejecuta.
+Siempre que se ejecuta, la sincronización de usuarios pide información actualizada a los sistemas de administración de usuarios de Adobe, excepto en los casos que se indican a continuación. Existe una opción disponible en la versión 2.2 y posteriores de User Sync para evitar esta petición e incluir las actualizaciones en Adobe sin tener en cuenta el estado actual de los usuarios en el sistema de administración de usuarios de Adobe. Si puede determinar qué usuarios han cambiado en el directorio local y está seguro de que no se hayan modificado otros usuarios en el lado de Adobe, este enfoque puede reducir el tiempo de ejecución (y de uso de la red) de sus tareas de sincronización.
  
 ### ¿La herramienta User Sync está limitada a Federated ID o se puede crear cualquier tipo de ID?
 
@@ -104,9 +104,4 @@ Sí, todos los clientes de empresas tienen acceso a la UMAPI y a User Sync, inde
  
 ### ¿Cuál es la historia de internacionalización para la herramienta User Sync habilitada internacionalmente (compatibilidad con entrada de caracteres de doble byte)?
  
-Python 2.7 (el idioma de la herramienta) distingue “str” (cadenas de caracteres de 8 bits) y “unicode” (cadenas de caracteres de 8 bits con codificación UTF-8 forzadas), y el código de User Sync utiliza “str” en lugar de “unicode” en todas partes. Sin embargo, todos los resultados de las herramientas tienen codificación UTF-8 y, siempre y cuando se utilice la codificación UTF-8 en la entrada, las cosas deberían funcionar correctamente. Esto se ha probado ligeramente y no se han encontrado problemas. Está prevista la realización de pruebas adicionales.
-
-Disponemos de una mejora prevista para que la herramienta se ejecute en Python 3, así como en Python 2 
-En ese momento podemos garantizar que Unicode funcionará correctamente, puesto que los tipos se fusionan en Python 3. Los clientes para los que resulta complicado deberán utilizar Python 3.
- 
- 
+Las versiones anteriores de User Sync se comportaban de manera errática en el manejo de datos de carácter internacional, aunque funcionaban de manera bien fiable con las fuentes de datos codificados en utf8. A partir de la versión 2.2, User Sync es totalmente compatible con Unicode y puede aceptar archivos y directorios de configuración o fuentes de datos de hojas de cálculo que utilicen cualquier codificación de caracteres (esperando que, de manera predeterminada, vengan en utf8).
