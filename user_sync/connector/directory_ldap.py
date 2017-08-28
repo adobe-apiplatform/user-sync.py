@@ -200,6 +200,7 @@ class LDAPDirectoryConnector(object):
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
 
+        extended_attributes = [six.text_type(attr) for attr in extended_attributes]
         extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
         user_attribute_names.extend(extended_attributes)
 
@@ -336,7 +337,7 @@ class LDAPValueFormatter(object):
         else:
             string_format = six.text_type(string_format)    # force unicode so attribute values are unicode
             formatter = string.Formatter()
-            attribute_names = [item[1] for item in formatter.parse(string_format) if item[1]]
+            attribute_names = [six.text_type(item[1]) for item in formatter.parse(string_format) if item[1]]
         self.string_format = string_format
         self.attribute_names = attribute_names
 
