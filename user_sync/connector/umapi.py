@@ -302,7 +302,7 @@ class ActionManager(object):
             action = umapi_client.UserAction(umapi_identity_type, email, username, domain,
                                              requestID=self.get_next_request_id())
         except ValueError as e:
-            raise AssertionException("Error creating umapi Action for user '%s': %s" % (username, e))
+            raise AssertionException("Error creating umapi Action: %s" % e)
         for command in commands.do_list:
             command_name, command_param = command
             command_function = getattr(action, command_name)
