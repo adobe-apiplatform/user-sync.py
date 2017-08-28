@@ -17,7 +17,7 @@ endif
 
 pex:
 	pip install --upgrade pip
-	pip install --upgrade wheel pex
+	pip install --upgrade wheel requests pex
 	-$(RM) $(output_dir)
 	pex -v -o $(output_dir)/$(output_filename)$(output_file_extension) -m user_sync.app \
 		-f $(prebuilt_dir) \

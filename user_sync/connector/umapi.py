@@ -299,11 +299,10 @@ class ActionManager(object):
             identity_type = user_sync.identity_type.FEDERATED_IDENTITY_TYPE
         try:
             umapi_identity_type = umapi_client.IdentityTypes[identity_type]
-        except KeyError:
-            umapi_identity_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
-
-        action = umapi_client.UserAction(umapi_identity_type, email, username, domain,
-                                         requestID=self.get_next_request_id())
+            action = umapi_client.UserAction(umapi_identity_type, email, username, domain,
+                                             requestID=self.get_next_request_id())
+        except ValueError as e:
+            raise AssertionException("Error creating umapi Action: %s" % e)
         for command in commands.do_list:
             command_name, command_param = command
             command_function = getattr(action, command_name)
@@ -354,7 +353,7 @@ class ActionManager(object):
         """
         Note items as sent, log any processing errors, and invoke any callbacks
         :param total_sent: number of sent items from queue, must be >= 0
-        :param batch_error: a batch-level error that affected all items, if there was one
+        :param batch_error: exception for a batch-level error that affected all items, if there was one
         :return: 
         """
         # update queue
@@ -383,5 +382,5 @@ class ActionManager(object):
                 callback({
                     "action": action,
                     "is_success": not batch_error and not errors,
-                    "errors": batch_error or errors
+                    "errors": [batch_error] if batch_error else errors
                 })

@@ -48,7 +48,7 @@ setup(name='user-sync',
           'pycryptodome',
           'pyldap==2.4.37',
           'PyYAML',
-          'umapi-client>=2.5',
+          'umapi-client>=2.7',
           'psutil',
           'keyring',
           'six'
