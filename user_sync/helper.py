@@ -69,7 +69,7 @@ class CSVAdapter:
             else:
                 raise ValueError("File mode (%s) must be 'r' or 'w'" % mode)
         except IOError as e:
-            raise AssertionException("Can't open file '%s': %s" % (name, e.message))
+            raise AssertionException("Can't open file '%s': %s" % (name, e))
 
     @staticmethod
     def guess_delimiter_from_filename(filename):
@@ -119,7 +119,7 @@ class CSVAdapter:
                         row = newrow
                     yield row
             except UnicodeError as e:
-                raise AssertionException("Encoding error in file '%s': %s" % (file_path, e.message))
+                raise AssertionException("Encoding error in file '%s': %s" % (file_path, e))
 
     @classmethod
     def write_csv_rows(cls, file_path, field_names, rows, encoding='utf8', delimiter=None):

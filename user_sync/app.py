@@ -276,7 +276,7 @@ def create_config_loader_options(args):
             compiled_expression = re.compile(r'\A' + username_filter_pattern + r'\Z', re.IGNORECASE)
         except Exception as e:
             raise AssertionException("Bad regular expression for --user-filter: %s reason: %s" %
-                                     (username_filter_pattern, e.message))
+                                     (username_filter_pattern, e))
         config_options['username_filter_regex'] = compiled_expression
 
     # --adobe-only-user-action
@@ -367,7 +367,7 @@ def main():
 
     except AssertionException as e:
         if not e.is_reported():
-            logger.critical("%s", e.message)
+            logger.critical("%s", e)
             e.set_reported()
     except KeyboardInterrupt:
         try:

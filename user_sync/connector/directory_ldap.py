@@ -111,7 +111,7 @@ class LDAPDirectoryConnector(object):
             connection.set_option(ldap.OPT_REFERRALS, 0)
             connection.simple_bind_s(six.text_type(username), six.text_type(password))
         except Exception as e:
-            raise AssertionException('LDAP connection failure: %s' % e.message)
+            raise AssertionException('LDAP connection failure: %s' % e)
         self.connection = connection
         logger.debug('Connected')
         self.user_by_dn = {}
@@ -147,7 +147,7 @@ class LDAPDirectoryConnector(object):
                     group_users += 1
                 self.logger.debug('Count of users in group "%s": %d', group, group_users)
             except Exception as e:
-                raise AssertionException('Unexpected LDAP failure reading group members: %s' % e.message)
+                raise AssertionException('Unexpected LDAP failure reading group members: %s' % e)
 
         # if all users are requested, do an additional search for all of them
         if all_users:
@@ -163,7 +163,7 @@ class LDAPDirectoryConnector(object):
                     self.logger.debug('Count of users in any groups: %d', grouped_users)
                     self.logger.debug('Count of users not in any groups: %d', ungrouped_users)
             except Exception as e:
-                raise AssertionException('Unexpected LDAP failure reading all users: %s' % e.message)
+                raise AssertionException('Unexpected LDAP failure reading all users: %s' % e)
 
         self.logger.debug('Total users loaded: %d', len(self.user_by_dn))
         return six.itervalues(self.user_by_dn)
@@ -181,7 +181,7 @@ class LDAPDirectoryConnector(object):
             res = connection.search_s(base_dn, ldap.SCOPE_SUBTREE,
                                       filterstr=group_filter_format.format(group=group), attrsonly=1)
         except Exception as e:
-            raise AssertionException('Unexpected LDAP failure reading group info: %s' % e.message)
+            raise AssertionException('Unexpected LDAP failure reading group info: %s' % e)
         group_dn = None
         for current_tuple in res:
             if current_tuple[0]:
@@ -235,7 +235,7 @@ class LDAPDirectoryConnector(object):
                 try:
                     user['identity_type'] = user_sync.identity_type.parse_identity_type(identity_type)
                 except AssertionException as e:
-                    self.logger.warning('Skipping user with dn %s: %s', dn, e.message)
+                    self.logger.warning('Skipping user with dn %s: %s', dn, e)
                     continue
 
             username, last_attribute_name = self.user_username_formatter.generate_value(record)
@@ -378,5 +378,5 @@ class LDAPValueFormatter(object):
                 try:
                     return attribute_value[0].decode(cls.encoding)
                 except UnicodeError as e:
-                    raise AssertionException("Encoding error in value of attribute '%s': %s" % (attribute_name, e.message))
+                    raise AssertionException("Encoding error in value of attribute '%s': %s" % (attribute_name, e))
         return None
