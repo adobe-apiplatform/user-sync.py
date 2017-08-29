@@ -155,21 +155,21 @@ class RulesTest(unittest.TestCase):
         user = everybody[0]
         commands = tests.helper.create_umapi_commands(user)
         commands.add_user(self.create_user_attributes_for_commands(user, rule_options['update_user_info']))
-        commands.add_groups(set([primary_group_11]))
         commands.remove_groups(set([primary_group_21]))
+        commands.add_groups(set([primary_group_11]))
         expected_primary_commands_list.append(commands)
 
         user = everybody[1]
         commands = tests.helper.create_umapi_commands(user)
         commands.add_user(self.create_user_attributes_for_commands(user, rule_options['update_user_info']))
-        commands.add_groups(set([primary_group_21]))
         commands.remove_groups(set([primary_group_11]))
+        commands.add_groups(set([primary_group_21]))
         expected_primary_commands_list.append(commands)
 
         user = everybody[2]
         commands = tests.helper.create_umapi_commands(user)
-        commands.add_user(self.create_user_attributes_for_commands(user, rule_options['update_user_info']))
         commands.remove_groups(set([primary_group_11, primary_group_21]))
+        commands.add_user(self.create_user_attributes_for_commands(user, rule_options['update_user_info']))
         expected_primary_commands_list.append(commands)
 
         expected_secondary_commands_list = []

@@ -647,10 +647,10 @@ class RuleProcessor(object):
         self.action_summary['adobe_users_created'] += 1
         primary_commands.add_user(attributes)
         if manage_groups:
-            primary_commands.add_groups(groups_to_add)
             if doing_push:
                 groups_to_remove = self.get_umapi_info(PRIMARY_UMAPI_NAME).get_mapped_groups() - groups_to_add
                 primary_commands.remove_groups(groups_to_remove)
+            primary_commands.add_groups(groups_to_add)
         umapi_connectors.get_primary_connector().send_commands(primary_commands)
         # add the user to secondaries, maybe with groups
         attributes['option'] = 'ignoreIfAlreadyExists'  # can only update in the owning org
@@ -662,10 +662,11 @@ class RuleProcessor(object):
                 self.logger.info('Adding directory user to %s with user key: %s', umapi_name, user_key)
                 secondary_commands = self.create_commands_from_directory_user(directory_user, identity_type)
                 secondary_commands.add_user(attributes)
-                if manage_groups and doing_push:
+                if manage_groups:
+                    if doing_push:
+                        groups_to_remove = secondary_umapi_info.get_mapped_groups() - groups_to_add
+                        secondary_commands.remove_groups(groups_to_remove)
                     secondary_commands.add_groups(groups_to_add)
-                    groups_to_remove = secondary_umapi_info.get_mapped_groups() - groups_to_add
-                    secondary_commands.remove_groups(groups_to_remove)
                 umapi_connector.send_commands(secondary_commands)
 
     def update_umapi_user(self, umapi_info, user_key, umapi_connector,
