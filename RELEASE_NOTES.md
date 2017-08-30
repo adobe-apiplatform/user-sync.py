@@ -1,6 +1,6 @@
 # Release Notes for User Sync Tool Version 2.2.1
 
-These notes apply to v2.2.1rc1 of 2017-08-28.
+These notes apply to v2.2.1 of 2017-08-30.
 
 ## New Features
 
@@ -9,15 +9,19 @@ These notes apply to v2.2.1rc1 of 2017-08-28.
 * a `str` (or `unicode` in py2) if the attribute has one value;
 * a `list` of `str` (or `unicode` in py2) if the attribute has multiple values.
 
+[#268](https://github.com/adobe-apiplatform/user-sync.py/issues/268): To make sure users get all the right overlapping entitlements associated with mapped user groups, `--strategy push` now does group removals before group adds.
+
 ## Bug Fixes
 
 [#257](https://github.com/adobe-apiplatform/user-sync.py/issues/257): Catch exceptions thrown by umapi-client when creating actions.
 
-[#258](https://github.com/adobe-apiplatform/user-sync.py/issues/258): Correctly decrypte private keys in py3.
+[#258](https://github.com/adobe-apiplatform/user-sync.py/issues/258): Correctly decrypt private keys in py3.
 
 [#260](https://github.com/adobe-apiplatform/user-sync.py/issues/260): Make sure the requests library is loaded when using pex on Windows.
 
 [#265](https://github.com/adobe-apiplatform/user-sync.py/issues/265): Extended attributes in extensions couldn't be fetched unless they had non-ascii names.
+
+[#269](https://github.com/adobe-apiplatform/user-sync.py/issues/269): When using `--strategy sync`, new users created in secondary organizations were not being added to any groups.
 
 ## Compatibility with Prior Versions
 
