@@ -200,6 +200,7 @@ class LDAPDirectoryConnector(object):
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
 
+        extended_attributes = [six.text_type(attr) for attr in extended_attributes]
         extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
         user_attribute_names.extend(extended_attributes)
 
@@ -336,7 +337,7 @@ class LDAPValueFormatter(object):
         else:
             string_format = six.text_type(string_format)    # force unicode so attribute values are unicode
             formatter = string.Formatter()
-            attribute_names = [item[1] for item in formatter.parse(string_format) if item[1]]
+            attribute_names = [six.text_type(item[1]) for item in formatter.parse(string_format) if item[1]]
         self.string_format = string_format
         self.attribute_names = attribute_names
 
@@ -356,7 +357,7 @@ class LDAPValueFormatter(object):
         if self.string_format is not None:
             values = {}
             for attribute_name in self.attribute_names:
-                value = self.get_attribute_value(record, attribute_name)
+                value = self.get_attribute_value(record, attribute_name, first_only=True)
                 if value is None:
                     values = None
                     break
@@ -366,17 +367,20 @@ class LDAPValueFormatter(object):
         return result, attribute_name
 
     @classmethod
-    def get_attribute_value(cls, attributes, attribute_name):
+    def get_attribute_value(cls, attributes, attribute_name, first_only=False):
         """
         The attribute value type must be decodable (str in py2, bytes in py3)
         :type attributes: dict
         :type attribute_name: unicode
+        :type first_only: bool
         """
-        if attribute_name in attributes:
-            attribute_value = attributes[attribute_name]
-            if len(attribute_value) > 0:
-                try:
-                    return attribute_value[0].decode(cls.encoding)
-                except UnicodeError as e:
-                    raise AssertionException("Encoding error in value of attribute '%s': %s" % (attribute_name, e))
+        attribute_values = attributes.get(attribute_name)
+        if attribute_values:
+            try:
+                if first_only or len(attribute_values) == 1:
+                    return attribute_values[0].decode(cls.encoding)
+                else:
+                    return [val.decode(cls.encoding) for val in attribute_values]
+            except UnicodeError as e:
+                raise AssertionException("Encoding error in value of attribute '%s': %s" % (attribute_name, e))
         return None
