@@ -55,10 +55,10 @@ require_tls_cert: False
 # The default value specified below is appropriate for Active Directory, which has a
 # special field that is used to enable and disable users.  The value for OpenLDAP
 # directories might be much simpler: "(&(objectClass=person)(objectClass=top))"
-# In order to obtain a more fine tunned list of users, adapt the query below to your needs.
-# This filter can work by itself if "--users all" is used (all obtained users will make the
-# object of synchronisation, minus the excluded one) OR it creates the base users for further 
-# filtering via group filters
+# In order to obtain a more fine-tunned list of users, adapt the query below to your needs.
+# The result of this filter predicate is the base user list considered by the User Sync tool;
+# that is, all LDAP queries issued by User Sync include this predicate to filter out LDAP resources
+# that are not users to be synchronized.
 all_users_filter: "(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
 
 # (optional) group_filter_format (default value given below)
@@ -70,7 +70,6 @@ all_users_filter: "(&(objectClass=user)(objectCategory=person)(!(userAccountCont
 # You will likely want to replace it with a simpler query customized for your directory,
 # such as this one for Active Directory: "(&(objectCategory=group)(cn={group}))"
 # or this one for OpenLDAP: "(&(|(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
-# If enabled, will be used whenever "--users group" or "--users mapped" arguments are used
 group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
 
 # (optional) group_member_filter_format (default value given below)
@@ -81,9 +80,6 @@ group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objec
 # that is contained in the group.  If you want indirect containment, then
 # use this value instead of the default:
 # group_member_filter_format: "(memberOf:1.2.840.113556.1.4.1941:={group_dn})"
-# If enabled, will be used whenever "--users group" or "--users mapped" arguments 
-# are used and will filter more the result of all_users_filter - if set,
-# otherwise all users from directory's base_dn would make it's base.
 group_member_filter_format: "(memberOf={group_dn})"
 
 # (optional) string_encoding (default value given below)
