@@ -52,10 +52,13 @@ search_page_size: 200
 require_tls_cert: False
 
 # (optional) all_users_filter (default value given below)
-# all_users_filter specifies the query used to find all users in the directory.
-# The default value specified here is appropriate for Active Directory, which has a
+# The default value specified below is appropriate for Active Directory, which has a
 # special field that is used to enable and disable users.  The value for OpenLDAP
 # directories might be much simpler: "(&(objectClass=person)(objectClass=top))"
+# In order to obtain a more fine-tunned list of users, adapt the query below to your needs.
+# The result of this filter predicate is the base user list considered by the User Sync tool;
+# that is, all LDAP queries issued by User Sync include this predicate to filter out LDAP resources
+# that are not users to be synchronized.
 all_users_filter: "(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
 
 # (optional) group_filter_format (default value given below)
