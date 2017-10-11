@@ -217,6 +217,13 @@ logging:
   # If a relative path is specified, it is interpreted relative to this configuration
   # file, not relative to the User Sync process working directory.
   file_log_directory: logs
+  
+  # (optional) file_log_name (default value "default")
+  # The default value will log to a file with the following format "YYYY-MM-DD.log", and
+  # all logging for runs started that day (local time) are placed in that file.
+  # However, this option can be used to always log to a single file i.e. adobesync.log
+  # This method would be preferred for users wanting to use logrotate to manage the log files
+  file_log_name: default
 
   # (optional) file_log_level (default value "info")
   # This determines the detail level of the information logged to files.
