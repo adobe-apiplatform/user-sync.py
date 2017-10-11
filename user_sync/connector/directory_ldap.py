@@ -289,6 +289,10 @@ class LDAPDirectoryConnector(object):
             elif last_attribute_name:
                 self.logger.warning('No country code attribute (%s) for user with dn: %s', last_attribute_name, dn)
 
+            uid_value = LDAPValueFormatter.get_attribute_value(record, six.text_type('uid'))
+            source_attributes['uid'] = uid_value
+            user['member_groups'] = find_member_groups(dn, uid_value if uid_value else six.text_type(''))
+
             if extended_attributes is not None:
                 for extended_attribute in extended_attributes:
                     extended_attribute_value = LDAPValueFormatter.get_attribute_value(record, extended_attribute)

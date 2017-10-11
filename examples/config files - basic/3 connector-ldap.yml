@@ -72,7 +72,7 @@ all_users_filter: "(&(objectClass=user)(objectCategory=person)(!(userAccountCont
 group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
 
 # (optional) group_member_filter_format (default value given below)
-# group_users_filter specifies the query used to find all members of a group,
+# group_member_filter_format specifies the query used to find all members of a group,
 # where the string {group_dn} is replaced with the group distinguished name.
 # The default value just finds users who are immediate members of the group,
 # not those who are "indirectly" members by virtue of membership in a group
@@ -80,6 +80,21 @@ group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objec
 # use this value instead of the default:
 # group_member_filter_format: "(memberOf:1.2.840.113556.1.4.1941:={group_dn})"
 group_member_filter_format: "(memberOf={group_dn})"
+# Note that this filter is &-combined with the all_users_filter so that
+# only users that would be selected by that filter will be returned as
+# members of the given group.
+
+# (optional) member_group_filter_format (default value given below)
+# member_group_filter_format specifies the query used to find all groups that
+# directly contain a given member.  The string {member_dn} is replaced
+# with the DN of the group member.  The string {member_uid) is replaced with
+# the uid attribute of the group member, if any.  The default value expects
+# groups to refer to members by their DN.  For groups that refer to their
+# members by their UID (e.g., posix groups in many OpenLDAP systems), you
+# probably want to use this value instead: "(memberUid={member_uid})"
+member_group_filter_format: "(member={member_dn})"
+# Note that this filter is &-combined with the group_filter_format query
+# specifying a wildcard for the group name.  So it will only find groups.
 
 # (optional) string_encoding (default value given below)
 # string_encoding specifies the Unicode string encoding used by the directory.
@@ -172,14 +187,9 @@ user_email_format: "{mail}"
 # are already pre-defined attribute names that are used for these fields:
 # - the Adobe first name is set from the LDAP "givenName" attribute
 # - the Adobe last name is set from the LDAP "sn" (surname) attribute
-# - the Adobe country is set from the LDAP "country" attribute
+# - the Adobe country is set from the LDAP "c" (country) attribute
 # If you need to override these values on the Adobe side, you can use the
 # custom extension mechanism (see the docs) to compute and set field values
-# by combining these and any other custom attributes needed.  Seed the
+# by combining these and any other custom attributes needed.  See the
 # User Sync documentation for full details.
-#
-# Finally, some LDAP systems use uids to identify groups, and place users in
-# groups via uid rather than name.  The User Sync implementation always reads
-# the uid attribute on all objects if the directory provides one, so it is
-# able to handle directories which function in this way even though the
-# configuration files always specify groups by name.
+

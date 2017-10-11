@@ -167,13 +167,10 @@ directory_users:
     # is specified as a list of entries, each of which has a directory_group
     # setting (whose value is a single directory group) and an adobe_groups
     # setting (whose value is a list of 0 or more product configuration and
-    # user groups).  All of the values in the adobe_groups settings must
-    # match the name of product configurations and user groups which have
-    # already been created on the Adobe side.  (In this example, we pretend
-    # that "Acrobat DC Pro" is a product configuration and "Copy Editors"
-    # is a user group that the you have already created.  Possibly
-    # the "Copy Editors" user group has been assigned access to appropriate
-    # Adobe products, such as InDesign and InCopy.)
+    # user groups).  In this example, imagine that "Acrobat DC Pro" is a
+    # product configuration and "Copy Editors" is a user group, and that
+    # the "Copy Editors" user group will be assigned access to appropriate
+    # Adobe products, such as InDesign and InCopy.
     # [You will need to edit or remove these examples.]
     - directory_group: "Finance"
       adobe_groups:
@@ -185,6 +182,33 @@ directory_users:
       adobe_groups:
         - "Copy Editors"
         - "Acrobat DC Pro"
+
+  # (optional) additional_groups (no default value)
+  # People who use their directory groups for ACLs on the Adobe side
+  # often have a very large number of groups that they want mapped
+  # over to (user) groups on the Adobe side.  To avoid having to
+  # specify those groups statically in their config file, and to
+  # update their config file when they change, they can instead
+  # use a naming convention for the groups and specify that here.
+  # The value of this attribute is a mapping from Python regular expressions
+  # that specify directory groups of interest to Pythonn replacement expressions
+  # that specify how to construct the name of the target Adobe group
+  # that the directory group should be mapped to.  If a value is
+  # provided, then all users who are (directly) in groups whose
+  # CN matches one of the source regular expressions will be put in a user group
+  # on the Adobe side whose name is given by the target replacement expression.
+  # The simple example here (which should be removed) maps all the
+  # groups that start with "ACL-" or end with "-ACL" to an Adobe
+  # group that starts with "ACL-Grp-".
+  # (All of these regular expressions must match the entire group name.
+  # For details on Python regular expression matching and replacement,
+  # see https://docs.python.org/howto/regex.html )
+  additional_groups:
+    - source: "ACL-(.+)"
+      target: "ACL-Grp-(\1)"
+    - source: "(.+)-ACL"
+      target: "ACL-Grp-(\1)"
+
 
 # The limits section provides processing limits which can help ensure that
 # User Sync jobs do not exceed expected guardrails in their operation
