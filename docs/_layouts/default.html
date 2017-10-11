@@ -28,8 +28,11 @@
                        <ul>
                        {% assign current_level = my_page.nav_level %}
                    {% elsif my_page.nav_level < current_level %}
-                                                           </ul>
-                         {% assign current_level = my_page.nav_level %}
+                       {% assign ub = current_level | minus: 1 %}
+                       {% for i in (my_page.nav_level .. ub) %}
+                           </ul>
+                       {% endfor %}
+                       {% assign current_level = my_page.nav_level %}
                    {% endif %}
                    {% if my_page.url == page.url %}
                      <li><a class="page-link selected-page-link" href="{{ my_page.url | relative_url }}">{{ my_page.nav_link | escape }}</a></li>
