@@ -121,6 +121,7 @@ def init_log(logging_config):
     builder.set_bool_value('log_to_file', False)
     builder.set_string_value('file_log_directory', 'logs')
     builder.set_string_value('file_log_level', 'info')
+    builder.set_string_value('file_log_name', 'default')
     builder.set_string_value('console_log_level', 'info')
     options = builder.get_options()
 
@@ -346,6 +347,7 @@ def main():
     try:
         try:
             args = process_args()
+
         except SystemExit:
             return
 
