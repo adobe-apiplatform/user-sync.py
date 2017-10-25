@@ -337,12 +337,10 @@ class LDAPDirectoryConnector(object):
         escaped_args = {}
         # kwargs is a dict that would normally be passed to string.format
         for k, v in six.iteritems(kwargs):
-            # python 2 and 3 both support string translation, which would make this process easier
-            # unfortunately, they are not compatible, and six does not provide a wrapper.
-            # additionally, the py2 version does not work with multi-char replacement values
-            # here, we're walking through the format replacement string char by char and replacing
-            # with the escape chars if needed.  since strings are immutable, we build a list of chars
-            # for the escaped string, and join it together after translating the string
+            # LDAP special characters are escaped in the general format '\' + hex(char)
+            # we need to run through the string char by char and if the char exists in
+            # the escape_char list, get the ord of it (decimal ascii value), convert it to hex, and
+            # replace the '0x' with '\'
             escaped_list = []
             for c in v:
                 if c in escape_chars:
