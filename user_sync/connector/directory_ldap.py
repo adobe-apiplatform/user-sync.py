@@ -133,7 +133,7 @@ class LDAPDirectoryConnector(object):
             if not group_dn:
                 self.logger.warning("No group found for: %s", group)
                 continue
-            group_member_subfilter = group_member_filter_format.format(group_dn=group_dn)
+            group_member_subfilter = self.format_ldap_query_string(group_member_filter_format, group_dn=group_dn)
             if not group_member_subfilter.startswith('('):
                 group_member_subfilter = six.text_type('(') + group_member_subfilter + six.text_type(')')
             user_subfilter = all_users_filter
@@ -179,7 +179,7 @@ class LDAPDirectoryConnector(object):
         group_filter_format = six.text_type(options['group_filter_format'])
         try:
             res = connection.search_s(base_dn, ldap.SCOPE_SUBTREE,
-                                      filterstr=group_filter_format.format(group=group), attrsonly=1)
+                                      filterstr=self.format_ldap_query_string(group_filter_format, group=group), attrsonly=1)
         except Exception as e:
             raise AssertionException('Unexpected LDAP failure reading group info: %s' % e)
         group_dn = None
@@ -323,6 +323,45 @@ class LDAPDirectoryConnector(object):
             if msgid is not None:
                 connection.abandon(msgid)
             raise
+
+    @staticmethod
+    def format_ldap_query_string(query, **kwargs):
+        """
+        To be used with any string that will be injected into a LDAP query - this escapes a few special characters that
+        may appear in DNs, group names, etc.
+        :param query:
+        :param kwargs:
+        :return:
+        """
+        escape_chars = {
+            six.text_type('*'):  six.text_type('\\2A'),
+            six.text_type('('):  six.text_type('\\28'),
+            six.text_type(')'):  six.text_type('\\29'),
+            six.text_type('\\'): six.text_type('\\5C'),
+        }
+        escaped_args = {}
+        # kwargs is a dict that would normally be passed to string.format
+        for k, v in six.iteritems(kwargs):
+            # python 2 and 3 both support string translation, which would make this process easier
+            # unfortunately, they are not compatible, and six does not provide a wrapper.
+            # additionally, the py2 version does not work with multi-char replacement values
+            # here, we're walking through the format replacement string char by char and replacing
+            # with the escape chars if needed.  since strings are immutable, we build a list of chars
+            # for the escaped string, and join it together after translating the string
+            escaped_list = []
+            replace = six.text_type('')
+            for c in v:
+                for s, r in six.iteritems(escape_chars):
+                    if c == s:
+                        replace = r
+                        break
+                if replace:
+                    escaped_list.append(replace)
+                    replace = six.text_type('')
+                else:
+                    escaped_list.append(c)
+            escaped_args[k] = six.text_type('').join(escaped_list)
+        return query.format(**escaped_args)
 
 
 class LDAPValueFormatter(object):
