@@ -333,12 +333,7 @@ class LDAPDirectoryConnector(object):
         :param kwargs:
         :return:
         """
-        escape_chars = {
-            six.text_type('*'):  six.text_type('\\2A'),
-            six.text_type('('):  six.text_type('\\28'),
-            six.text_type(')'):  six.text_type('\\29'),
-            six.text_type('\\'): six.text_type('\\5C'),
-        }
+        escape_chars = six.text_type('*()\\&|<>~!:')
         escaped_args = {}
         # kwargs is a dict that would normally be passed to string.format
         for k, v in six.iteritems(kwargs):
@@ -349,15 +344,10 @@ class LDAPDirectoryConnector(object):
             # with the escape chars if needed.  since strings are immutable, we build a list of chars
             # for the escaped string, and join it together after translating the string
             escaped_list = []
-            replace = six.text_type('')
             for c in v:
-                for s, r in six.iteritems(escape_chars):
-                    if c == s:
-                        replace = r
-                        break
-                if replace:
+                if c in escape_chars:
+                    replace = six.text_type(hex(ord(c))).replace('0x', '\\')
                     escaped_list.append(replace)
-                    replace = six.text_type('')
                 else:
                     escaped_list.append(c)
             escaped_args[k] = six.text_type('').join(escaped_list)
