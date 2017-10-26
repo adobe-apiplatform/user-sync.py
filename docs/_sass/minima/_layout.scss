@@ -209,6 +209,11 @@
     margin-left: 30px;
     /* border: black 1px solid; */
     padding: 5px;
+    /* settings for scrollable nav area */
+    position: fixed;
+    height: calc(100% - 110px);
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 .dummy-nav-area {
   width: 8000px;  /* just needs to exceed max-width in nav-area */
