@@ -178,8 +178,9 @@ class LDAPDirectoryConnector(object):
         base_dn = six.text_type(options['base_dn'])
         group_filter_format = six.text_type(options['group_filter_format'])
         try:
+            filter_string = self.format_ldap_query_string(group_filter_format, group=group)
             res = connection.search_s(base_dn, ldap.SCOPE_SUBTREE,
-                                      filterstr=self.format_ldap_query_string(group_filter_format, group=group), attrsonly=1)
+                                      filterstr=filter_string, attrsonly=1)
         except Exception as e:
             raise AssertionException('Unexpected LDAP failure reading group info: %s' % e)
         group_dn = None
@@ -327,12 +328,13 @@ class LDAPDirectoryConnector(object):
     @staticmethod
     def format_ldap_query_string(query, **kwargs):
         """
-        To be used with any string that will be injected into a LDAP query - this escapes a few special characters that
-        may appear in DNs, group names, etc.
+        Escape LDAP special characters that may appear in injected query strings
+        Should be used with any string that will be injected into an LDAP query.
         :param query:
         :param kwargs:
         :return:
         """
+        # See http://www.rfc-editor.org/rfc/rfc4515.txt
         escape_chars = six.text_type('*()\\&|<>~!:')
         escaped_args = {}
         # kwargs is a dict that would normally be passed to string.format
