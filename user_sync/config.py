@@ -25,7 +25,6 @@ import re
 import subprocess
 import types
 
-import keyring
 import yaml
 import six
 
@@ -600,6 +599,7 @@ class DictConfig(ObjectConfig):
             raise AssertionException('%s: cannot contain setting for both "%s" and "%s"' % (scope, name, keyring_name))
         if secure_value_key:
             try:
+                import keyring
                 value = keyring.get_password(service_name=secure_value_key, username=user_name)
             except Exception as e:
                 raise AssertionException('%s: Error accessing secure storage: %s' % (scope, e))
