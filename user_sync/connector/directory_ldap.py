@@ -133,7 +133,7 @@ class LDAPDirectoryConnector(object):
             if not group_dn:
                 self.logger.warning("No group found for: %s", group)
                 continue
-            group_member_subfilter = group_member_filter_format.format(group_dn=group_dn)
+            group_member_subfilter = self.format_ldap_query_string(group_member_filter_format, group_dn=group_dn)
             if not group_member_subfilter.startswith('('):
                 group_member_subfilter = six.text_type('(') + group_member_subfilter + six.text_type(')')
             user_subfilter = all_users_filter
@@ -178,8 +178,9 @@ class LDAPDirectoryConnector(object):
         base_dn = six.text_type(options['base_dn'])
         group_filter_format = six.text_type(options['group_filter_format'])
         try:
+            filter_string = self.format_ldap_query_string(group_filter_format, group=group)
             res = connection.search_s(base_dn, ldap.SCOPE_SUBTREE,
-                                      filterstr=group_filter_format.format(group=group), attrsonly=1)
+                                      filterstr=filter_string, attrsonly=1)
         except Exception as e:
             raise AssertionException('Unexpected LDAP failure reading group info: %s' % e)
         group_dn = None
@@ -323,6 +324,34 @@ class LDAPDirectoryConnector(object):
             if msgid is not None:
                 connection.abandon(msgid)
             raise
+
+    @staticmethod
+    def format_ldap_query_string(query, **kwargs):
+        """
+        Escape LDAP special characters that may appear in injected query strings
+        Should be used with any string that will be injected into an LDAP query.
+        :param query:
+        :param kwargs:
+        :return:
+        """
+        # See http://www.rfc-editor.org/rfc/rfc4515.txt
+        escape_chars = six.text_type('*()\\&|<>~!:')
+        escaped_args = {}
+        # kwargs is a dict that would normally be passed to string.format
+        for k, v in six.iteritems(kwargs):
+            # LDAP special characters are escaped in the general format '\' + hex(char)
+            # we need to run through the string char by char and if the char exists in
+            # the escape_char list, get the ord of it (decimal ascii value), convert it to hex, and
+            # replace the '0x' with '\'
+            escaped_list = []
+            for c in v:
+                if c in escape_chars:
+                    replace = six.text_type(hex(ord(c))).replace('0x', '\\')
+                    escaped_list.append(replace)
+                else:
+                    escaped_list.append(c)
+            escaped_args[k] = six.text_type('').join(escaped_list)
+        return query.format(**escaped_args)
 
 
 class LDAPValueFormatter(object):
