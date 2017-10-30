@@ -1,10 +1,10 @@
 # Release Notes for User Sync Tool Version 2.2.2
 
-These notes apply to v2.2.2rc1 of 2017-10-25.
+These notes apply to v2.2.2rc2 of 2017-10-29.
 
 ## New Features
 
-None.
+[#294](https://github.com/adobe-apiplatform/user-sync.py/issues/294): Show statistics about users added to secondaries.
 
 ## Bug Fixes
 
@@ -14,11 +14,15 @@ None.
 
 [#288](https://github.com/adobe-apiplatform/user-sync.py/issues/288): Escape special characters in user input to LDAP queries.
 
+[#293](https://github.com/adobe-apiplatform/user-sync.py/issues/293): Don't crash when existing users are added to secondaries.
+
 ## Compatibility with Prior Versions
 
 There are no interface changes from prior versions.
 
 ## Known Issues
+
+The nosetests are broken in this release candidate.
 
 Because the release on Windows is built with a pre-compiled version of pyldap, we have to specify a specific version to be used in each release.  This may not always be the latest version.
 
