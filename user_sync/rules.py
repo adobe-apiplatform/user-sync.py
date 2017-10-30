@@ -68,14 +68,15 @@ class RuleProcessor(object):
         # counters for action summary log
         self.action_summary = {
             # these are in alphabetical order!  Always add new ones that way!
-            'adobe_strays_processed': 0,
-            'adobe_users_created': 0,
-            'adobe_users_excluded': 0,
-            'adobe_users_read': 0,
-            'adobe_users_unchanged': 0,
-            'adobe_users_updated': 0,
             'directory_users_read': 0,
             'directory_users_selected': 0,
+            'excluded_user_count': 0,
+            'primary_strays_processed': 0,
+            'primary_users_created': 0,
+            'primary_users_read': 0,
+            'secondary_users_created': 0,
+            'unchanged_user_count': 0,
+            'updated_user_count': 0,
         }
         self.logger = logger = logging.getLogger('processor')
 
@@ -92,12 +93,16 @@ class RuleProcessor(object):
         # of primary-umapi users, who are presumed to be in primary-umapi domains.
         # So instead of keeping track of excluded users in the primary umapi,
         # we keep track of included users, so we can match them against users
-        # in the secondary umapis (and exclude all that don't match).  Finally,
-        # we keep track of user keys (in any umapi) that we have updated, so
+        # in the secondary umapis (and exclude all that don't match).  We track
+        # primary users created and secondary users created so that we can figure
+        # out which existing users were created in the secondaries only.  Finally,
+        # we keep track of user keys that we have updated in any umapi, so that
         # we can correctly report their count.
-        self.adobe_user_count = 0
+        self.primary_user_count = 0
         self.included_user_keys = set()
         self.excluded_user_count = 0
+        self.primary_users_created = set()
+        self.secondary_users_created = set()
         self.updated_user_keys = set()
 
         # stray key input path comes in, stray_list_output_path goes out
@@ -186,25 +191,23 @@ class RuleProcessor(object):
         self.action_summary['directory_users_read'] = len(self.directory_user_by_user_key)
         self.action_summary['directory_users_selected'] = len(self.filtered_directory_user_by_user_key)
         # find the total number of adobe users and excluded users
-        self.action_summary['adobe_users_read'] = self.adobe_user_count
-        self.action_summary['adobe_users_excluded'] = self.excluded_user_count
-        self.action_summary['adobe_users_updated'] = len(self.updated_user_keys)
+        self.action_summary['primary_users_read'] = self.primary_user_count
+        self.action_summary['excluded_user_count'] = self.excluded_user_count
+        self.action_summary['updated_user_count'] = len(self.updated_user_keys)
         # find out the number of users that have no changes; this depends on whether
-        # we actually read the directory or read an input file.  So there are two cases:
-        if self.action_summary['adobe_users_read'] == 0:
-            self.action_summary['adobe_users_unchanged'] = 0
+        # we actually read the directory or read a key file.  So there are two cases:
+        if self.action_summary['primary_users_read'] == 0:
+            self.action_summary['unchanged_user_count'] = 0
         else:
-            self.action_summary['adobe_users_unchanged'] = (
-                self.action_summary['adobe_users_read'] -
-                self.action_summary['adobe_users_excluded'] -
-                self.action_summary['adobe_users_updated'] -
-                self.action_summary['adobe_strays_processed']
+            self.action_summary['unchanged_user_count'] = (
+                self.action_summary['primary_users_read'] -
+                self.action_summary['excluded_user_count'] -
+                self.action_summary['updated_user_count'] -
+                self.action_summary['primary_strays_processed']
             )
-        if self.options['test_mode']:
-            header = '- Action Summary (TEST MODE) -'
-        else:
-            header = '------- Action Summary -------'
-        logger.info('---------------------------' + header + '---------------------------')
+        # find out the number of users created in the primary and secondary umapis
+        self.action_summary['primary_users_created'] = len(self.primary_users_created)
+        self.action_summary['secondary_users_created'] = len(self.secondary_users_created)
 
         # English text description for action summary log.
         # The action summary will be shown the same order as they are defined in this list
@@ -212,18 +215,26 @@ class RuleProcessor(object):
             action_summary_description = [
                 ['directory_users_read', 'Number of directory users read'],
                 ['directory_users_selected', 'Number of directory users selected for input'],
-                ['adobe_users_created', 'Number of directory users pushed to Adobe'],
+                ['primary_users_created', 'Number of directory users pushed to Adobe'],
             ]
+            if umapi_connectors.get_secondary_connectors():
+                action_summary_description += [
+                    ['secondary_users_created', 'Number of Adobe users pushed to secondaries'],
+                ]
         else:
             action_summary_description = [
                 ['directory_users_read', 'Number of directory users read'],
                 ['directory_users_selected', 'Number of directory users selected for input'],
-                ['adobe_users_read', 'Number of Adobe users read'],
-                ['adobe_users_excluded', 'Number of Adobe users excluded from updates'],
-                ['adobe_users_unchanged', 'Number of non-excluded Adobe users with no changes'],
-                ['adobe_users_created', 'Number of new Adobe users added'],
-                ['adobe_users_updated', 'Number of matching Adobe users updated'],
+                ['primary_users_read', 'Number of Adobe users read'],
+                ['excluded_user_count', 'Number of Adobe users excluded from updates'],
+                ['unchanged_user_count', 'Number of non-excluded Adobe users with no changes'],
+                ['primary_users_created', 'Number of new Adobe users added'],
+                ['updated_user_count', 'Number of matching Adobe users updated'],
             ]
+            if umapi_connectors.get_secondary_connectors():
+                action_summary_description += [
+                    ['secondary_users_created', 'Number of Adobe users added to secondaries'],
+                ]
         if self.will_process_strays:
             if self.options['delete_strays']:
                 action = 'deleted'
@@ -233,7 +244,7 @@ class RuleProcessor(object):
                 action = 'removed from all groups'
             else:
                 action = 'with groups processed'
-            action_summary_description.append(['adobe_strays_processed', 'Number of Adobe-only users ' + action])
+            action_summary_description.append(['primary_strays_processed', 'Number of Adobe-only users ' + action])
 
         # prepare the network summary
         umapi_summary_format = 'Number of%s%s UMAPI actions sent (total, success, error)'
@@ -255,7 +266,13 @@ class RuleProcessor(object):
             umapi_summary_description = umapi_summary_format % (spacer, name)
             if len(umapi_summary_description) > pad:
                 pad = len(umapi_summary_description)
-        # and then we use it
+
+        # do the report
+        if self.options['test_mode']:
+            header = '- Action Summary (TEST MODE) -'
+        else:
+            header = '------- Action Summary -------'
+        logger.info('---------------------------' + header + '---------------------------')
         for action_description in action_summary_description:
             description = action_description[1].rjust(pad, ' ')
             action_count = self.action_summary[action_description[0]]
@@ -397,7 +414,7 @@ class RuleProcessor(object):
             verb = "Push"
         else:
             verb = "Sync"
-        # first sync the primary connector
+        # first sync the primary connector, so the users get created in the primary
         if umapi_connectors.get_secondary_connectors():
             self.logger.debug('%sing users to primary umapi...', verb)
         else:
@@ -410,7 +427,7 @@ class RuleProcessor(object):
         for user_key, groups_to_add in six.iteritems(primary_adds_by_user_key):
             # We always create every user in the primary umapi, because it's believed to own the directories.
             self.logger.info('Creating user with user key: %s', user_key)
-            self.action_summary['adobe_users_created'] += 1
+            self.primary_users_created.add(user_key)
             self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector)
 
         # then sync the secondary connectors
@@ -427,6 +444,10 @@ class RuleProcessor(object):
                 # We only create users who have group mappings in the secondary umapi
                 if groups_to_add:
                     self.logger.info('Adding user to umapi %s with user key: %s', umapi_name, user_key)
+                    self.secondary_users_created.add(user_key)
+                    if user_key not in self.primary_users_created:
+                        # We pushed an existing user to a secondary in order to update his groups
+                        self.updated_user_keys.add(user_key)
                     self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector)
 
     def is_selected_user_key(self, user_key):
@@ -482,9 +503,8 @@ class RuleProcessor(object):
             if stray_count > max_missing:
                 self.logger.critical('Unable to process Adobe-only users, as their count (%s) is larger '
                                      'than the max_adobe_only_users setting (%d)', stray_count, max_missing)
-                self.action_summary['adobe_strays_processed'] = 0
+                self.action_summary['primary_strays_processed'] = 0
                 return
-            self.action_summary['adobe_strays_processed'] = stray_count
             self.logger.debug("Processing Adobe-only users...")
             self.manage_strays(umapi_connectors)
 
@@ -494,6 +514,9 @@ class RuleProcessor(object):
         Management of groups, removal of entitlements and removal from umapi are
         processed against every secondary umapi, whereas account deletion is only done
         against the primary umapi.
+        Because all directory users are assumed to be in the primary (as the owning org of the directory),
+        we don't pay any attention to stray users in the secondary who aren't in the primary.  Instead,
+        we assume that they are users whose directory is owned by the secondary.
         :type umapi_connectors: UmapiConnectors
         """
         # figure out what management to do
@@ -504,6 +527,7 @@ class RuleProcessor(object):
 
         # all our processing is controlled by the strays in the primary organization
         primary_strays = self.get_stray_keys()
+        self.action_summary['primary_strays_processed'] = len(primary_strays)
 
         # convenience function to get umapi Commands given a user key
         def get_commands(key):
@@ -773,7 +797,7 @@ class RuleProcessor(object):
 
     def is_umapi_user_excluded(self, in_primary_org, user_key, current_groups):
         if in_primary_org:
-            self.adobe_user_count += 1
+            self.primary_user_count += 1
             # in the primary umapi, we actually check the exclusion conditions
             identity_type, username, domain = self.parse_user_key(user_key)
             if identity_type in self.exclude_identity_types:
