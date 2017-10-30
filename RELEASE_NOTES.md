@@ -1,6 +1,6 @@
 # Release Notes for User Sync Tool Version 2.2.2
 
-These notes apply to v2.2.2rc1 of 2017-10-25.
+These notes apply to v2.2.2rc2 of 2017-10-29.
 
 ## New Features
 
@@ -13,6 +13,8 @@ None.
 [#286](https://github.com/adobe-apiplatform/user-sync.py/issues/286): Allow specifying attributes for Adobe IDs.
 
 [#288](https://github.com/adobe-apiplatform/user-sync.py/issues/288): Escape special characters in user input to LDAP queries.
+
+[#293](https://github.com/adobe-apiplatform/user-sync.py/issues/293): Don't crash when existing users are added to secondaries.
 
 ## Compatibility with Prior Versions
 
