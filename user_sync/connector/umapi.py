@@ -178,9 +178,6 @@ class Commands(object):
         """
         :type attributes: dict
         """
-        if self.identity_type == user_sync.identity_type.ADOBEID_IDENTITY_TYPE:
-            # shouldn't happen, but ignore it if it does
-            return
         if attributes is not None and len(attributes) > 0:
             params = self.convert_user_attributes_to_params(attributes)
             self.do_list.append(('update', params))
@@ -212,14 +209,7 @@ class Commands(object):
         """
         :type attributes: dict
         """
-        if self.identity_type == user_sync.identity_type.ADOBEID_IDENTITY_TYPE:
-            email = self.email if self.email else self.username
-            if not email:
-                error_message = "ERROR: you must specify an email with an Adobe ID"
-                raise AssertionException(error_message)
-            params = self.convert_user_attributes_to_params({'email': email})
-        else:
-            params = self.convert_user_attributes_to_params(attributes)
+        params = self.convert_user_attributes_to_params(attributes)
 
         on_conflict_value = None
         option = params.pop('option', None)
