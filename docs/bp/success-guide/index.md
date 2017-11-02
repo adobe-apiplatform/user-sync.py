@@ -2,7 +2,7 @@
 layout: page
 title: Guia de instalação e sucesso
 advertise: Setup and Success Guide
-lang: en
+lang: bp
 nav_link: Setup and Success Guide
 nav_level: 1
 nav_order: 100

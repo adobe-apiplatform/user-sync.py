@@ -1,6 +1,6 @@
 ---
 layout: default
-lang: en
+lang: bp
 nav_link: Account Deletion
 nav_level: 2
 nav_order: 140

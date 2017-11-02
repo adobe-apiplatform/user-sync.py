@@ -2,7 +2,7 @@
 layout: page
 title: Manual do usuário
 advertise: User Manual
-lang: en
+lang: bp
 nav_link: User Manual
 nav_level: 1
 nav_order: 10

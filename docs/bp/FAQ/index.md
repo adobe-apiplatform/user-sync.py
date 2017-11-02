@@ -2,7 +2,7 @@
 layout: page
 title: Perguntas frequentes sobre o User Sync
 advertise: FAQ
-lang: en
+lang: bp
 nav_link: FAQ
 nav_level: 1
 nav_order: 500
