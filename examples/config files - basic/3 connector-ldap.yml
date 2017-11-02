@@ -92,7 +92,7 @@ group_member_filter_format: "(memberOf={group_dn})"
 # groups to refer to members by their DN.  For groups that refer to their
 # members by their UID (e.g., posix groups in many OpenLDAP systems), you
 # probably want to use this value instead: "(memberUid={member_uid})"
-member_group_filter_format: "(member={member_dn})"
+# member_group_filter_format: "(member={member_dn})"
 # Note that this filter is &-combined with the group_filter_format query
 # specifying a wildcard for the group name.  So it will only find groups.
 

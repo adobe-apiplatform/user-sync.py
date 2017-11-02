@@ -203,11 +203,11 @@ directory_users:
   # (All of these regular expressions must match the entire group name.
   # For details on Python regular expression matching and replacement,
   # see https://docs.python.org/howto/regex.html )
-  additional_groups:
-    - source: "ACL-(.+)"
-      target: "ACL-Grp-(\1)"
-    - source: "(.+)-ACL"
-      target: "ACL-Grp-(\1)"
+  # additional_groups:
+  #   - source: "ACL-(.+)"
+  #     target: "ACL-Grp-(\1)"
+  #   - source: "(.+)-ACL"
+  #     target: "ACL-Grp-(\1)"
 
 
 # The limits section provides processing limits which can help ensure that
