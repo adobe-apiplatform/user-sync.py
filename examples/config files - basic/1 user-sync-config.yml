@@ -191,7 +191,7 @@ directory_users:
   # update their config file when they change, they can instead
   # use a naming convention for the groups and specify that here.
   # The value of this attribute is a mapping from Python regular expressions
-  # that specify directory groups of interest to Pythonn replacement expressions
+  # that specify directory groups of interest to Python replacement expressions
   # that specify how to construct the name of the target Adobe group
   # that the directory group should be mapped to.  If a value is
   # provided, then all users who are (directly) in groups whose
