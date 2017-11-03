@@ -294,6 +294,7 @@ class LDAPDirectoryConnector(object):
             uid_value = LDAPValueFormatter.get_attribute_value(record, six.text_type('uid'))
             source_attributes['uid'] = uid_value
 
+            user['member_groups'] = []
             if self.additional_group_filters:
                 member_groups = []
                 for f in self.additional_group_filters:
