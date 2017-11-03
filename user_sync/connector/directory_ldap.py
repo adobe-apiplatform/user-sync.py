@@ -70,6 +70,7 @@ class LDAPDirectoryConnector(object):
             '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))'))
         builder.set_string_value('group_member_filter_format', six.text_type(
             '(memberOf={group_dn})'))
+        builder.set_string_value('member_group_filter_format', None)
         builder.set_bool_value('require_tls_cert', False)
         builder.set_string_value('string_encoding', 'utf8')
         builder.set_string_value('user_identity_type_format', None)
@@ -121,6 +122,7 @@ class LDAPDirectoryConnector(object):
         self.connection = connection
         logger.debug('Connected')
         self.user_by_dn = {}
+        self.additional_group_filters = None
 
     def load_users_and_groups(self, groups, extended_attributes, all_users):
         """
@@ -291,7 +293,14 @@ class LDAPDirectoryConnector(object):
 
             uid_value = LDAPValueFormatter.get_attribute_value(record, six.text_type('uid'))
             source_attributes['uid'] = uid_value
-            user['member_groups'] = find_member_groups(dn, uid_value if uid_value else six.text_type(''))
+
+            if self.additional_group_filters:
+                member_groups = []
+                for f in self.additional_group_filters:
+                    for g in self.find_member_groups(dn, uid_value if uid_value else six.text_type('')):
+                        if f.match(g) and g not in member_groups:
+                            member_groups.append(g)
+                user['member_groups'] = member_groups
 
             if extended_attributes is not None:
                 for extended_attribute in extended_attributes:
@@ -304,6 +313,20 @@ class LDAPDirectoryConnector(object):
             self.user_by_dn[dn] = user
 
             yield (dn, user)
+
+    def find_member_groups(self, dn, uid):
+        member_filter = self.format_ldap_query_string(self.options['member_group_filter_format'],
+                                                      member_dn=dn,
+                                                      member_uid=uid)
+        base_dn = six.text_type(self.options['base_dn'])
+        res = self.connection.search_s(base_dn, ldap.SCOPE_SUBTREE,
+                                  filterstr=member_filter, attrlist=['cn'])
+        member_groups = []
+        for _, group_rec in res:
+            if isinstance(group_rec, dict):
+                group_cn = LDAPValueFormatter.get_attribute_value(group_rec, 'cn', first_only=True)
+                member_groups.append(group_cn)
+        return member_groups
 
     def iter_search_result(self, base_dn, scope, filter_string, attributes):
         """
