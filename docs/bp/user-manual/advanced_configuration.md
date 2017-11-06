@@ -1,7 +1,7 @@
 ---
 layout: default
 lang: bp
-nav_link: Advanced Configuration
+nav_link: Configuração avançada
 nav_level: 2
 nav_order: 60
 ---
@@ -17,7 +17,7 @@ nav_order: 60
 
 ---
 
-[Previous Section](usage_scenarios.md)  \| [Next Section](deployment_best_practices.md)
+[Seção anterior](usage_scenarios.md)  \| [Próxima seção](deployment_best_practices.md)
 
 ---
 

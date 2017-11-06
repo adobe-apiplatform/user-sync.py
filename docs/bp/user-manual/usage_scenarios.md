@@ -1,7 +1,7 @@
 ---
 layout: default
 lang: bp
-nav_link: Usage Scenarios
+nav_link: Cenários de uso
 nav_level: 2
 nav_order: 50
 ---
@@ -16,7 +16,7 @@ nav_order: 50
 
 ---
 
-[Previous Section](command_parameters.md)  \| [Next Section](advanced_configuration.md)
+[Seção anterior](command_parameters.md)  \| [Próxima seção](advanced_configuration.md)
 
 ---
 

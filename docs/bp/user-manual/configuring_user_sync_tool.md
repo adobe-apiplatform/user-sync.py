@@ -1,7 +1,7 @@
 ---
 layout: default
 lang: bp
-nav_link: Configuring User Sync
+nav_link: Configuração de User Sync
 nav_level: 2
 nav_order: 30
 ---
@@ -16,7 +16,7 @@ nav_order: 30
 
 ---
 
-[Previous Section](setup_and_installation.md)  \| [Next Section](command_parameters.md)
+[Seção anterior](setup_and_installation.md)  \| [Próxima seção](command_parameters.md)
 
 ---
 

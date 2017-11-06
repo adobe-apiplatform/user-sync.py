@@ -1,7 +1,7 @@
 ---
 layout: page
 title: Sobre o User Sync
-nav_link: About User Sync
+nav_link: Sobre o User Sync
 nav_level: 1
 nav_order: 1
 lang: bp

@@ -1,7 +1,7 @@
 ---
 layout: default
 lang: bp
-nav_link: Configuration Files
+nav_link: Arquivos de Configuração
 nav_level: 2
 nav_order: 280
 ---
@@ -57,7 +57,7 @@ Edite o arquivo user-sync-config.yml.
 
 #### Código padrão de país
 
-	diretório:
+	directory:
 	  # (opcional) Código padrão de país a ser usado se o diretório não fornecer um para o usuário [Must be two-letter ISO-3166 code - see https://en.wikipedia.org/wiki/ISO_3166-1]
 	  #
 	  # exemplo:
@@ -74,7 +74,7 @@ Um código de país é **OBRIGATÓRIO** para Federated IDs e recomendado para En
 
 ### Conectores
 
-	  conectores:
+	  connectors:
 	    # especifica as configurações para os conectores de diretório de divergência
 	    # O formato é nome : valor, onde valor pode ser:
 	    # um dicionário para a configuração real, ou 
@@ -123,7 +123,7 @@ Os limites de exclusão impedem a exclusão acidental de contas em caso de uma c
 
 &#9744; Se você espera uma redução de mais de 200 usuários de diretório entre as execuções do User Sync, precisará aumentar o valor de `max_adobe_only_users`.  Essa entrada do arquivo de configuração impede a exclusão descontrolada no caso de configuração incorreta ou outros problemas.
 
-	limites:
+	limits:
 	    max_adobe_only_users: 200      # cancelar atualizações se esses vários usuários de diretório desaparecerem
 
 

@@ -1,7 +1,7 @@
 ---
 layout: default
 lang: bp
-nav_link: Account Deletion
+nav_link: Exclusão de Conta
 nav_level: 2
 nav_order: 140
 ---

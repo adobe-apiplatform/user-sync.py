@@ -1,7 +1,7 @@
 ---
 layout: default
 lang: bp
-nav_link: Test Run
+nav_link: Execução de Teste
 nav_level: 2
 nav_order: 290
 ---

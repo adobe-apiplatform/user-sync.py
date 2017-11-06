@@ -1,9 +1,9 @@
 ---
 layout: page
 title: Manual do usuário
-advertise: User Manual
+advertise: Manual do usuário
 lang: bp
-nav_link: User Manual
+nav_link: Manual do usuário
 nav_level: 1
 nav_order: 10
 ---
@@ -27,7 +27,7 @@ corporativos.
 
 ---
 
-[Next Section](setup_and_installation.md)
+[Próxima seção](setup_and_installation.md)
 
 ---
 

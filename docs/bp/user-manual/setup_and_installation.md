@@ -1,7 +1,7 @@
 ---
 layout: default
 lang: bp
-nav_link: Setup and Installation
+nav_link: Instalação e configuração
 nav_level: 2
 nav_order: 20
 ---
@@ -16,7 +16,7 @@ nav_order: 20
 
 ---
 
-[Previous Section](index.md)  \| [Next Section](configuring_user_sync_tool.md)
+[Seção anterior](index.md)  \| [Próxima seção](configuring_user_sync_tool.md)
 
 ---
 

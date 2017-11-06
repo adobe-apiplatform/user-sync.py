@@ -1,7 +1,7 @@
 ---
 layout: default
 lang: bp
-nav_link: Layout Products
+nav_link: Layout dos Produtos
 nav_level: 2
 nav_order: 130
 ---

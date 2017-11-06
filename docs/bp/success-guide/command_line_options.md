@@ -1,7 +1,7 @@
 ---
 layout: default
 lang: bp
-nav_link: Command Line
+nav_link: Linha de Comando
 nav_level: 2
 nav_order: 310
 ---

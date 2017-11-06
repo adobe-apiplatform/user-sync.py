@@ -1,7 +1,7 @@
 ---
 layout: default
 lang: bp
-nav_link: Deployment Best Practices
+nav_link: Práticas recomendadas de implantação
 nav_level: 2
 nav_order: 70
 ---
@@ -17,7 +17,7 @@ nav_order: 70
 
 ---
 
-[Previous Section](advanced_configuration.md)
+[Seção anterior](advanced_configuration.md)
 
 ---
 

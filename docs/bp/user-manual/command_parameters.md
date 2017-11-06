@@ -1,7 +1,7 @@
 ---
 layout: default
 lang: bp
-nav_link: Command Parameters
+nav_link: Parâmetros de comando
 nav_level: 2
 nav_order: 40
 ---
@@ -11,7 +11,7 @@ nav_order: 40
 
 ---
 
-[Previous Section](configuring_user_sync_tool.md)  \| [Next Section](usage_scenarios.md)
+[Seção anterior](configuring_user_sync_tool.md)  \| [Próxima seção](usage_scenarios.md)
 
 ---
 Assim que os arquivos de configuração estiverem preparados, você poderá executar a ferramenta User
