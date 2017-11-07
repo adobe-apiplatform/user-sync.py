@@ -6,6 +6,7 @@ nav_level: 2
 nav_order: 30
 ---
 
+<a name="configuring-the-user-sync-tool"></a>
 # Configuração da ferramenta User Sync
 
 ## Nesta seção
@@ -227,6 +228,7 @@ directory_users:
     ldap: connector-ldap.yml
 ```
 
+<a name="configure-group-mapping"></a>
 ### Configurar mapeamento de grupos
 
 Antes de sincronizar grupos de usuários e direitos, você deve

@@ -6,6 +6,7 @@ nav_level: 2
 nav_order: 50
 ---
 
+<a name="usage-scenarios"></a>
 # Cenários de uso
 
 ## Nesta seção
@@ -238,6 +239,7 @@ na lista gerada em um execução anterior do User Sync.
 ./user-sync --adobe-only-user-list users-to-delete.csv --adobe-only-user-action delete
 ```
 
+<a name="handling-push-notifications"></a>
 ## Gestão de notificações automáticas
 
 Se o sistema do diretório gerar notificações das atualizações é possível usar o User Sync para

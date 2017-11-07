@@ -54,6 +54,7 @@ de sua organização que estão armazenadas na Adobe.
 Obtenha mais informações na documentação UMAPI, disponível
 [aqui](https://adobe-apiplatform.github.io/umapi-documentation) ou [aqui](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/gettingstarted.html).
 
+<a name="set-up-product-access-synchronization"></a>
 ## Configuração da sincronização-de acesso aos produtos
 
 Caso pretenda usar a ferramenta User Sync para atualizar o acesso dos usuários aos

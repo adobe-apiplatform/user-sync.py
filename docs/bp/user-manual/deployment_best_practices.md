@@ -38,6 +38,7 @@ diretório corporativo é alterado, e da rapidez com que você deseja que as alt
 sejam exibidas no lado da Adobe.
 - Não é recomendado executar o User Sync em intervalos inferiores a 2 horas.
 
+<a name="security-recommendations"></a>
 ## Recomendações de segurança
 
 Dada a natureza dos dados nos arquivos de registro e configuração,

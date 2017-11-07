@@ -21,6 +21,7 @@ nav_order: 60
 
 ---
 
+<a name="advanced-configuration"></a>
 O User Sync precisa de uma configuração adicional para sincronizar dados de usuários
 em ambientes com uma estrutura de dados mais complexa.
 
@@ -36,6 +37,7 @@ essas personalizações.
 - Ao usar logon com base no nome de usuário (em vez do email).
 - Ao gerenciar algumas contas de usuário manualmente pelo Adobe Admin Console, além do User Sync.
 
+<a name="managing-users-with-adobe-ids"></a>
 ## Gerenciamento de usuários com Adobe IDs
 
 Existe uma opção de configuração `exclude_identity_types` (na 
@@ -108,7 +110,7 @@ acesse essas organizações. A ferramenta deve encontrar as
 credenciais da organização que define os grupos, além de
 identificar grupos como pertencentes a uma organização externa.
 
-
+<a name="accessing-groups-in-other-organizations"></a>
 ## Acesso a grupos de outras organizações
 
 Para configurar o acesso a grupos em outras organizações
@@ -370,6 +372,7 @@ para armazenar os objetos de códigos criados ao compilar esses arquivos.
 * `logger`: um objeto do tipo `logging.logger` que produz registros para o
 console e/ou log do arquivo (conforme as configurações de registro em log).
 
+<a name="advanced-group-and-product-management"></a>
 ## Gerenciamento avançado de grupos e produtos
 
 A **seção de grupos** do arquivo de configuração principal define um
@@ -450,6 +453,7 @@ Para domínios que usam logon com base em nome de usuário,-o item de configura�
 
 Se você usar um logon com base em nome de usuário,-ainda precisará informar um endereço de email exclusivo para cada usuário, algo que esteja dentro de um domínio solicitado e detido pela organização. O User Sync não adicionará usuários à organização da Adobe sem um endereço de email.
 
+<a name="protecting-specific-accounts-from-user-sync-deletion"></a>
 ## Proteção de contas específicas contra exclusão do User Sync
 
 Se você cria e remove contas pelo User Sync e quer criar manualmente algumas contas, use este recurso para que ele não exclua essas contas criadas manualmente.
