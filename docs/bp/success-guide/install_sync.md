@@ -27,7 +27,7 @@ Etapas iniciais:
 As próximas seções mostram o processo de instalação.
 
 Para encontrar a versão mais recente:  Comece aqui: 
-[https://github.com/adobe-apiplatform/user-sync.py](https://github.com/adobe-apiplatform/user-sync.py "https://github.com/adobe-apiplatform/user-sync.py")
+[https://github.com/adobe-apiplatform/user-sync.py](https://github.com/adobe-apiplatform/user-sync.py)
 
 ![instalação](images/install_finding_releases.png)
 
