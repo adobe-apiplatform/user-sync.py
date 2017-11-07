@@ -20,7 +20,6 @@ nav_order: 50
 [Seção anterior](command_parameters.md)  \| [Próxima seção](advanced_configuration.md)
 
 ---
-TEST
 
 Existem várias maneiras para integrar a ferramenta User Sync nos
 processos da empresa, como:
