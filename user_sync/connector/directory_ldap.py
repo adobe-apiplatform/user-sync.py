@@ -316,12 +316,13 @@ class LDAPDirectoryConnector(object):
             yield (dn, user)
 
     def find_member_groups(self, dn, uid):
-        member_filter = self.format_ldap_query_string(self.options['member_group_filter_format'],
+        member_group_filter_format = six.text_type(self.options['member_group_filter_format'])
+        member_filter = self.format_ldap_query_string(member_group_filter_format,
                                                       member_dn=dn,
                                                       member_uid=uid)
         base_dn = six.text_type(self.options['base_dn'])
         res = self.connection.search_s(base_dn, ldap.SCOPE_SUBTREE,
-                                  filterstr=member_filter, attrlist=['cn'])
+                                  filterstr=member_filter)
         member_groups = []
         for _, group_rec in res:
             if isinstance(group_rec, dict):
