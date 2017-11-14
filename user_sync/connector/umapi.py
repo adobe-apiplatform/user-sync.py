@@ -160,6 +160,7 @@ class UmapiConnector(object):
         if name:
             ug = umapi_client.UserGroups(self.connection)
             ug.create(name, 'Automatically created by User Sync Tool')
+
     def get_action_manager(self):
         return self.action_manager
 
