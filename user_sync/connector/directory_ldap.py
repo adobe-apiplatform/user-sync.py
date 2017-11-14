@@ -322,7 +322,7 @@ class LDAPDirectoryConnector(object):
                                                       member_uid=uid)
         base_dn = six.text_type(self.options['base_dn'])
         res = self.connection.search_s(base_dn, ldap.SCOPE_SUBTREE,
-                                  filterstr=member_filter, attrlist=['cn'])
+                                  filterstr=member_filter)
         member_groups = []
         for _, group_rec in res:
             if isinstance(group_rec, dict):
