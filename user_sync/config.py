@@ -461,6 +461,9 @@ class ConfigLoader(object):
             additional_groups = directory_config.get_list('additional_groups', True) or []
             additional_groups = [{'source': re.compile(r['source']), 'target': r['target']} for r in additional_groups]
             options['additional_groups'] = additional_groups
+            sync_options = directory_config.get_dict_config('groups_sync_options', True)
+            if sync_options:
+                options['auto_create'] = sync_options.get_bool('auto_create', True)
         if not new_account_type:
             new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
             self.logger.debug("Using default for new_account_type: %s", new_account_type)

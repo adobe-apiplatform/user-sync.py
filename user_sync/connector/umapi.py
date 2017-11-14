@@ -146,6 +146,20 @@ class UmapiConnector(object):
         except umapi_client.UnavailableError as e:
             raise AssertionException("Error contacting UMAPI server: %s" % e)
 
+    def get_groups(self):
+        return list(self.iter_groups())
+
+    def iter_groups(self):
+        try:
+            for g in umapi_client.UserGroupsQuery(self.connection):
+                yield g
+        except umapi_client.UnavailableError as e:
+            raise AssertionException("Error contacting UMAPI server: %s" % e)
+
+    def create_group(self,name):
+        if name:
+            ug = umapi_client.UserGroups(self.connection)
+            ug.create(name, 'Automatically created by User Sync Tool')
     def get_action_manager(self):
         return self.action_manager
 
