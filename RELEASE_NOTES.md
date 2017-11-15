@@ -1,6 +1,6 @@
 # Release Notes for User Sync Tool Version 2.2.2
 
-These notes apply to v2.2.2rc2 of 2017-10-29.
+These notes apply to v2.2.2rc3 of 2017-11-14.
 
 ## New Features
 
@@ -15,6 +15,8 @@ These notes apply to v2.2.2rc2 of 2017-10-29.
 [#288](https://github.com/adobe-apiplatform/user-sync.py/issues/288): Escape special characters in user input to LDAP queries.
 
 [#293](https://github.com/adobe-apiplatform/user-sync.py/issues/293): Don't crash when existing users are added to secondaries.
+
+[#301](https://github.com/adobe-apiplatform/user-sync.py/issues/301): User Sync fails when adding more than 10 groups to a user.
 
 ## Compatibility with Prior Versions
 

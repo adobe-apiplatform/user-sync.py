@@ -23,7 +23,6 @@ pex:
 		-f $(prebuilt_dir) \
 		--disable-cache \
 		--not-zip-safe .
-	-$(RM) wheelhouse
 
 test:
 	nosetests --no-byte-compile tests

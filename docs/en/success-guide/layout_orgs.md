@@ -72,7 +72,7 @@ You'll need:
  Note that you may need different credentials to access each directory instance.
 
 
-## Multi-Directory and Single Orgaanization
+## Multi-Directory and Single Organization
 
 You’ll need to run two sync configurations; one for each directory.
 
