@@ -78,8 +78,8 @@ class RulesTest(unittest.TestCase):
         # when syncing, the existing Adobe user is processsed first
         user = everybody[1]
         commands = tests.helper.create_umapi_commands(user)
-        commands.add_groups(set([primary_group_21]))
         commands.remove_groups(set([primary_group_11]))
+        commands.add_groups(set([primary_group_21]))
         expected_primary_commands_list.append(commands)
         user = everybody[0]
         commands = tests.helper.create_umapi_commands(user)
@@ -190,22 +190,24 @@ class RulesTest(unittest.TestCase):
         if (expected_country_code):
             expected_result['country'] = expected_country_code
 
-        options = {'default_country_code': default_country_code, 'new_account_type': identity_type}         
+        options = {'default_country_code': default_country_code, 'new_account_type': identity_type}
+        mock_info = user_sync.rules.UmapiTargetInfo('mock_primary')
         mock_rules = user_sync.rules.RuleProcessor(options)
+        mock_dir_user = {'username': 'cceuser1@ensemble.ca',
+                         'domain': None, 'groups': ['CCE Group 1'],
+                         'firstname': '!Openldap CCE',
+                         'country': user_country_code,
+                         'lastname': 'User1',
+                         'identity_type': identity_type,
+                         'email': 'cceuser1@ensemble.ca',
+                         'uid': '001'}
         mock_rules.directory_user_by_user_key = {
-            user_key: {'username': 'cceuser1@ensemble.ca',
-                       'domain': None, 'groups': ['CCE Group 1'],
-                       'firstname': '!Openldap CCE',
-                       'country': user_country_code,
-                       'lastname': 'User1',
-                       'identity_type': identity_type,
-                       'email': 'cceuser1@ensemble.ca',
-                       'uid': '001'}
+            user_key: mock_dir_user
         }
-        mock_rules.add_umapi_user(user_key, set(), mock_connectors)
+        mock_rules.create_umapi_user(user_key, set(), mock_info, mock_connectors)
 
         if (identity_type == 'federatedID' and default_country_code == None and user_country_code == None):
-            mock_rules.logger.error.assert_called_with('Federated user cannot be added without a specified country code: %s', user_key)
+            mock_rules.logger.error.assert_called_with('User cannot be added without a specified country code: %s', mock_dir_user)
         else:
             mock_umapi_commands.return_value.add_user.assert_called_with(expected_result)
 
