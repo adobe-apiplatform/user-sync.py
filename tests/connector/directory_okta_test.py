@@ -36,9 +36,10 @@ class TestOKTAValueFormatter(unittest.TestCase):
     def test_get_extended_attribute_dict(self):
         """Used to compare input and expected output data after OKTA formatting def Call"""
         attributes = ['firstName', 'lastName', 'login', 'email', 'countryCode']
-        expectedresult = str("{'countryCode': <type 'str'>, 'lastName': <type 'str'>, 'login': <type 'str'>, 'email': <type 'str'>, 'firstName': <type 'str'>}")
+        strtype = type('string')
+        expectedresult = {'countryCode': strtype, 'lastName': strtype, 'login': strtype, 'email': strtype, 'firstName': strtype}
 
-        self.assertEqual(expectedresult, str(OKTAValueFormatter.get_extended_attribute_dict(attributes)), 'Getting expected Output')
+        self.assertEqual(expectedresult, OKTAValueFormatter.get_extended_attribute_dict(attributes), 'Getting expected Output')
 
 
 class TestOktaErrors(unittest.TestCase):

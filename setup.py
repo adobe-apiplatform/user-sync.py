@@ -46,7 +46,7 @@ setup(name='user-sync',
       packages=['user_sync', 'user_sync.connector'],
       install_requires=[
           'keyring',
-          'okta==0.0.3',
+          'okta==0.0.3.1',
           'psutil',
           'pycryptodome',
           'pyldap==2.4.37',
