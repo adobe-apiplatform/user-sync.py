@@ -8,7 +8,7 @@ ifeq ($(OS),Windows_NT)
     ifeq ($(rm_path),None)
         RM := rmdir /S /Q
     else
-	RM := $(rm_path) -rf
+	    RM := $(rm_path) -rf
     endif
 else
     output_file_extension = ""
