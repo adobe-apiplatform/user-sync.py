@@ -472,10 +472,10 @@ class RuleProcessor(object):
         umapi_info, umapi_connector = self.get_umapi_info(PRIMARY_UMAPI_NAME), umapi_connectors.get_primary_connector()
         mapped_groups = umapi_info.get_non_normalize_mapped_groups()
         #pull all user groups from console
-        on_adobe_user_groups = [normalize_string(group['name']) for group in umapi_connector.get_groups()]
+        on_adobe_groups = [normalize_string(group['groupName']) for group in umapi_connector.get_groups()]
         #verify if group exist
         for mapped_group in mapped_groups:
-            if not normalize_string(mapped_group) in on_adobe_user_groups:
+            if not normalize_string(mapped_group) in on_adobe_groups:
                 self.logger.info("Auto create user-group enabled: Creating %s" % mapped_group)
                 try:
                     # create group
