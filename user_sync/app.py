@@ -126,6 +126,7 @@ def init_log(logging_config):
     builder.set_bool_value('log_to_file', False)
     builder.set_string_value('file_log_directory', 'logs')
     builder.set_string_value('file_log_level', 'info')
+    builder.set_string_value('file_log_name', 'default')
     builder.set_string_value('console_log_level', 'info')
     options = builder.get_options()
 
@@ -153,7 +154,13 @@ def init_log(logging_config):
         if not os.path.exists(file_log_directory):
             os.makedirs(file_log_directory)
 
-        file_path = os.path.join(file_log_directory, datetime.date.today().isoformat() + ".log")
+	file_log_name = "{datestamp}.log".format(datestamp=datetime.date.today().isoformat())
+
+	if options['file_log_name']:
+	    if options['file_log_name'] != 'default':
+	        file_log_name = options['file_log_name']
+
+        file_path = os.path.join(file_log_directory, file_log_name)
         file_handler = logging.FileHandler(file_path)
         file_handler.setLevel(file_log_level)
         file_handler.setFormatter(logging.Formatter(LOG_STRING_FORMAT, LOG_DATE_FORMAT))
@@ -361,6 +368,7 @@ def main():
     try:
         try:
             args = process_args()
+
         except SystemExit:
             return
 
