@@ -65,12 +65,13 @@ def process_args():
                         action='store_true', dest='test_mode')
     parser.add_argument('-c', '--config-filename',
                         help='main config filename. (default: "%(default)s")',
-                        default=user_sync.config.DEFAULT_MAIN_CONFIG_FILENAME, metavar='filename', dest='config_filename')
+                        default=user_sync.config.DEFAULT_MAIN_CONFIG_FILENAME,
+                        metavar='filename', dest='config_filename')
     parser.add_argument('--users',
                         help="specify the users to be considered for sync. Legal values are 'all' (the default), "
                              "'group names' (one or more specified groups), 'mapped' (all groups listed in "
                              "the configuration file), 'file f' (a specified input file).",
-                        nargs="*", metavar=('all|file|mapped|group', 'arg1'), dest='users')
+                        nargs="+", metavar=('all|file|mapped|group', 'arg1'), dest='users', default=['all'])
     parser.add_argument('--user-filter',
                         help='limit the selected set of users that may be examined for syncing, with the pattern '
                              'being a regular expression.',
@@ -110,6 +111,10 @@ def process_args():
                         help="whether to fetch and sync the Adobe directory against the customer directory "
                              "or just to push each customer user to the Adobe side.  Default is to fetch and sync.",
                         dest='strategy', metavar='sync|push', default='sync')
+    parser.add_argument('--connector',
+                        help='specify a connector to use; default is LDAP (or CSV if --users file is specified)',
+                        nargs='+', metavar=['ldap|okta|csv','path-to-file.csv'],
+                        dest='connector_spec', default=['ldap'])
     return parser.parse_args()
 
 
@@ -209,7 +214,7 @@ def begin_work(config_loader):
 
     rule_processor = user_sync.rules.RuleProcessor(rule_config)
     if len(directory_groups) == 0 and rule_processor.will_manage_groups():
-        logger.warn('no groups mapped in config file')
+        logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
     rule_processor.run(directory_groups, directory_connector, umapi_connectors)
 
 
@@ -233,8 +238,8 @@ def create_config_loader_options(args):
     """
     config_options = {
         'delete_strays': False,
-        'directory_connector_module_name': None,
         'directory_connector_overridden_options': None,
+        'directory_connector_type': None,
         'directory_group_filter': None,
         'directory_group_mapped': False,
         'disentitle_strays': False,
@@ -249,23 +254,39 @@ def create_config_loader_options(args):
         'username_filter_regex': None,
     }
 
+    # --connector
+    connector_type = user_sync.helper.normalize_string(args.connector_spec.pop(0))
+    if connector_type in ["ldap", "okta"]:
+        if args.connector_spec:
+            raise AssertionException("Must not specify file (%s) with --connector %s" %
+                                     (args.connector_spec[0], connector_type))
+        config_options['directory_connector_type'] = connector_type
+    elif connector_type == "csv":
+        if len(args.connector_spec) != 1:
+            raise AssertionException("Must specify a single file with CSV connector")
+        config_options['directory_connector_type'] = 'csv'
+        config_options['directory_connector_overridden_options'] = {'file_path': args.connector_spec.pop(0)}
+    else:
+        raise AssertionException("Unknown connector type: %s" % connector_type)
+
     # --users
     users_args = args.users
     users_action = None if not users_args else user_sync.helper.normalize_string(users_args.pop(0))
     if users_action is None or users_action == 'all':
-        config_options['directory_connector_module_name'] = 'user_sync.connector.directory_ldap'
+        if config_options['directory_connector_type'] == 'okta':
+            raise AssertionException('Okta connector module does not support "--users all"')
     elif users_action == 'file':
+        if config_options['directory_connector_type'] == 'csv':
+            raise AssertionException('You cannot specify "--users file" and "--connector csv file"')
         if len(users_args) == 0:
             raise AssertionException('Missing file path for --users %s [file_path]' % users_action)
-        config_options['directory_connector_module_name'] = 'user_sync.connector.directory_csv'
+        config_options['directory_connector_type'] = 'csv'
         config_options['directory_connector_overridden_options'] = {'file_path': users_args.pop(0)}
     elif users_action == 'mapped':
-        config_options['directory_connector_module_name'] = 'user_sync.connector.directory_ldap'
         config_options['directory_group_mapped'] = True
     elif users_action == 'group':
         if len(users_args) == 0:
             raise AssertionException('Missing groups for --users %s [groups]' % users_action)
-        config_options['directory_connector_module_name'] = 'user_sync.connector.directory_ldap'
         config_options['directory_group_filter'] = users_args.pop(0).split(',')
     else:
         raise AssertionException('Unknown argument --users %s' % users_action)
@@ -308,7 +329,7 @@ def create_config_loader_options(args):
         if config_options.get('stray_list_output_path'):
             raise AssertionException('You cannot specify both --adobe-only-user-list and --output-adobe-users')
         # don't read the directory when processing from the stray list
-        config_options['directory_connector_module_name'] = None
+        config_options['directory_connector_type'] = None
         logger.info('--adobe-only-user-list specified, so not reading or comparing directory and Adobe users')
         config_options['stray_list_input_path'] = stray_list_input_path
 

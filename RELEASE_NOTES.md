@@ -1,26 +1,22 @@
-# Release Notes for User Sync Tool Version 2.2.2
+# Release Notes for User Sync Tool Version 2.3
 
-These notes apply to v2.2.2 of 2017-11-19.
+These notes apply to v2.3rc1 of 2017-11-20.
 
 ## New Features
 
-[#294](https://github.com/adobe-apiplatform/user-sync.py/issues/294): Show statistics about users added to secondaries.
+User Sync can now connect to Okta enterprise directories.  Create an Okta configuration and use the new `--connector okta` command-line argument to select that connector.  See [the docs](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/advanced_configuration.html#the-okta-connector) for details.
+
+There is a new command-line argument `--connector` for specifying whether to get directory information via LDAP file, by reading a CSV file, or via the Okta connector.  The default connector is `ldap`.  For CSV users, who formerly had to specify their input source with the `--users` argument, this optional argument offers the chance to specify `--users mapped` or `--users group ...` (since the CSV input can be specified with `--connector`).  See [the docs](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/command_parameters.html) for details.
 
 ## Bug Fixes
 
-[#283](https://github.com/adobe-apiplatform/user-sync.py/issues/283): Don't import keyring unless needed.
+[#305](https://github.com/adobe-apiplatform/user-sync.py/issues/305) General issues with Okta connector.
 
-[#286](https://github.com/adobe-apiplatform/user-sync.py/issues/286): Allow specifying attributes for Adobe IDs.
-
-[#288](https://github.com/adobe-apiplatform/user-sync.py/issues/288): Escape special characters in user input to LDAP queries.
-
-[#293](https://github.com/adobe-apiplatform/user-sync.py/issues/293): Don't crash when existing users are added to secondaries.
-
-[#301](https://github.com/adobe-apiplatform/user-sync.py/issues/301): User Sync fails when adding more than 10 groups to a user.
+[#306](https://github.com/adobe-apiplatform/user-sync.py/issues/306) v2.2.2 crashes if country code not specified.
 
 ## Compatibility with Prior Versions
 
-There are no interface changes from prior versions.
+All configuration and command-line arguments accepted in prior releases work in this release.  The `--users file` argument is still accepted, and is equivalent to (although more limited than) specifying `--connector csv`.
 
 ## Known Issues
 

@@ -46,8 +46,8 @@ class ConfigLoader(object):
             # these are in alphabetical order!  Always add new ones that way!
             'delete_strays': False,
             'config_file_encoding': 'utf8',
-            'directory_connector_module_name': None,
             'directory_connector_overridden_options': None,
+            'directory_connector_type': None,
             'directory_group_filter': None,
             'directory_group_mapped': False,
             'disentitle_strays': False,
@@ -127,18 +127,22 @@ class ConfigLoader(object):
         """
         :rtype str
         """
-        options = self.options
-        return options['directory_connector_module_name']
+        connector_type = self.options.get('directory_connector_type')
+        if connector_type:
+            return 'user_sync.connector.directory_' + connector_type
+        else:
+            return None
 
     def get_directory_connector_configs(self):
         connectors_config = None
         directory_config = self.main_config.get_dict_config('directory_users', True)
         if directory_config is not None:
             connectors_config = directory_config.get_dict_config('connectors', True)
-        # make sure neither ldap nor csv connectors get reported as unused
+        # make sure none of the standard connectors get reported as unused
         if connectors_config:
             connectors_config.get_list('ldap', True)
             connectors_config.get_list('csv', True)
+            connectors_config.get_list('okta', True)
         return connectors_config
 
     def get_directory_connector_options(self, connector_name):
