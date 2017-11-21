@@ -20,10 +20,10 @@
 
 import okta
 import six
+from okta.framework.OktaError import OktaError
 
 import user_sync.config
 import user_sync.connector.helper
-import user_sync.error
 import user_sync.helper
 import user_sync.identity_type
 from user_sync.error import AssertionException
@@ -44,15 +44,16 @@ def connector_initialize(options):
     return state
 
 
-def connector_load_users_and_groups(state, groups, extended_attributes):
+def connector_load_users_and_groups(state, groups, extended_attributes, all_users):
     """
     :type state: OktaDirectoryConnector
     :type groups: list(str)
     :type extended_attributes: list(str)
+    :type all_users: bool
     :rtype (bool, iterable(dict))
     """
 
-    return state.load_users_and_groups(groups, extended_attributes)
+    return state.load_users_and_groups(groups, extended_attributes, all_users)
 
 
 class OktaDirectoryConnector(object):
@@ -93,17 +94,20 @@ class OktaDirectoryConnector(object):
         try:
             self.users_client = okta.UsersClient(host, api_token)
             self.groups_client = okta.UserGroupsClient(host, api_token)
-        except Exception as e:
-            raise user_sync.error.AssertionException(repr(e))
+        except OktaError as e:
+            raise AssertionException("Error connecting to Okta: %s" % e)
 
         logger.info('Connected')
 
-    def load_users_and_groups(self, groups, extended_attributes):
+    def load_users_and_groups(self, groups, extended_attributes, all_users):
         """
         :type groups: list(str)
         :type extended_attributes: list(str)
+        :type all_users: bool
         :rtype (bool, iterable(dict))
         """
+        if all_users:
+            raise AssertionException("Okta connector has no notion of all users, please specify a --users group")
 
         options = self.options
         all_users_filter = options['all_users_filter']
@@ -140,9 +144,9 @@ class OktaDirectoryConnector(object):
         group_filter_format = options['group_filter_format']
         try:
             results = self.groups_client.get_groups(query=group_filter_format.format(group=group))
-        except Exception as e:
+        except OktaError as e:
             self.logger.warning("Unable to query group")
-            raise user_sync.error.AssertionException(repr(e))
+            raise AssertionException("Okta error querying for group: %s" % e)
 
         if results is None:
             self.logger.warning("No group found for: %s", group)
@@ -156,6 +160,7 @@ class OktaDirectoryConnector(object):
     def iter_group_members(self, group, filter_string, extended_attributes):
         """
         :type group: str
+        :type filter_string: str
         :type extended_attributes: list
         :rtype iterator(str, str)
         """
@@ -169,9 +174,9 @@ class OktaDirectoryConnector(object):
             try:
                 attr_dict = OKTAValueFormatter.get_extended_attribute_dict(user_attribute_names)
                 members = self.groups_client.get_group_all_users(res_group.id, attr_dict)
-            except Exception as e:
+            except OktaError as e:
                 self.logger.warning("Unable to get_group_users")
-                raise user_sync.error.AssertionException(repr(e))
+                raise AssertionException("Okta error querying for group users: %s" % e)
             # Filtering users based all_users_filter query in config
             for member in self.filter_users(members, filter_string):
                 profile = member.profile
@@ -201,7 +206,7 @@ class OktaDirectoryConnector(object):
         else:
             try:
                 user['identity_type'] = user_sync.identity_type.parse_identity_type(user_identity_type)
-            except user_sync.error.AssertionException as e:
+            except AssertionException as e:
                 self.logger.warning('Skipping user %s: %s', profile.login, e)
                 return None
 
@@ -250,17 +255,18 @@ class OktaDirectoryConnector(object):
                 users = self.users_client.get_all_users(query=filter_string, extended_attribute=attr_dict)
             else:
                 users = self.users_client.get_all_users(query=filter_string)
-        except Exception as e:
+        except OktaError as e:
             self.logger.warning("Unable to query users")
-            raise user_sync.error.AssertionException(repr(e))
+            raise AssertionException("Okta error querying for users: %s" % e)
         return users
 
     def filter_users(self, users, filter_string):
         try:
-            result = filter(lambda user: eval(filter_string), users)
+            return list(filter(lambda user: eval(filter_string), users))
+        except SyntaxError as e:
+            raise AssertionException("Invalid syntax in predicate (%s): cannot evaluate" % filter_string)
         except Exception as e:
-            raise AssertionException("Error filtering users: %s" % e)
-        return result
+            raise AssertionException("Error filtering with predicate (%s): %s" % (filter_string, e))
 
 
 class OKTAValueFormatter(object):

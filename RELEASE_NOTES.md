@@ -10,7 +10,7 @@ There is a new command-line argument `--connector` for specifying whether to get
 
 ## Bug Fixes
 
-None is this release candidate.
+[#305](https://github.com/adobe-apiplatform/user-sync.py/issues/305) General issues with Okta connector.
 
 ## Compatibility with Prior Versions
 

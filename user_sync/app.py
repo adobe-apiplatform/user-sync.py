@@ -238,8 +238,8 @@ def create_config_loader_options(args):
     """
     config_options = {
         'delete_strays': False,
-        'directory_connector_type': None,
         'directory_connector_overridden_options': None,
+        'directory_connector_type': None,
         'directory_group_filter': None,
         'directory_group_mapped': False,
         'disentitle_strays': False,
@@ -260,14 +260,14 @@ def create_config_loader_options(args):
         if args.connector_spec:
             raise AssertionException("Must not specify file (%s) with --connector %s" %
                                      (args.connector_spec[0], connector_type))
-            config_options['directory_connector_type'] = connector_type
+        config_options['directory_connector_type'] = connector_type
     elif connector_type == "csv":
         if len(args.connector_spec) != 1:
             raise AssertionException("Must specify a single file with CSV connector")
         config_options['directory_connector_type'] = 'csv'
         config_options['directory_connector_overridden_options'] = {'file_path': args.connector_spec.pop(0)}
     else:
-        raise AssertionException("Unknown --connector type: %s" % connector_type)
+        raise AssertionException("Unknown connector type: %s" % connector_type)
 
     # --users
     users_args = args.users
