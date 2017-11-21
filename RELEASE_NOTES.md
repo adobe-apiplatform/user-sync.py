@@ -12,6 +12,8 @@ There is a new command-line argument `--connector` for specifying whether to get
 
 [#305](https://github.com/adobe-apiplatform/user-sync.py/issues/305) General issues with Okta connector.
 
+[#306](https://github.com/adobe-apiplatform/user-sync.py/issues/306) v2.2.2 crashes if country code not specified.
+
 ## Compatibility with Prior Versions
 
 All configuration and command-line arguments accepted in prior releases work in this release.  The `--users file` argument is still accepted, and is equivalent to (although more limited than) specifying `--connector csv`.
