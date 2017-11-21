@@ -151,6 +151,11 @@ directory_users:
     # [Uncomment the next line if you have a custom csv configuration file.]
     #csv: "connector-csv.yml"
 
+    # (optional) okta (no default value)
+    # okta is a 3rd party federation provider compatible with Adobe Enterprise Federated ID.
+    # See https://developer.okta.com/ for Okta developer information.
+    # okta: "connector-okta.ytml"
+
   # (optional) groups (no default value)
   # The groups setting specifies how groups in the enterprise directory map
   # to product configurations and user groups on the Adobe side (collectively

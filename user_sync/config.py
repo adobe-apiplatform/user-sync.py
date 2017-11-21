@@ -127,8 +127,11 @@ class ConfigLoader(object):
         """
         :rtype str
         """
-        options = self.options
-        return options['directory_connector_module_name']
+        connector_type = self.options.get('directory_connector_type')
+        if connector_type:
+            return 'user_sync.connector.directory_' + connector_type
+        else:
+            return None
 
     def get_directory_connector_configs(self):
         connectors_config = None

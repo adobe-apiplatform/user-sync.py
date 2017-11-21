@@ -654,6 +654,33 @@ side, and removed users to be removed from the Adobe side.
 - Once the job has run, clear out the files (because their changes have been pushed) to prepare for
 the next batch.
 
+## The Okta Connector
+
+In addition to LDAP and CSV, the User Sync tool supports [Okta](https://www.okta.com) as a source for user identity and product entitlement sync.  Since Okta always uses email addresses as the unique ID for users, the Okta connector does not support username-based federation.
+
+Okta customers must obtain an API token for use with the Okta Users API.  See the [Okta's Developer Documentation](http://developer.okta.com/docs/api/getting_started/api_test_client.html)
+for more information.
+
+### Configuration
+
+To specify your Okta configuration file, use the key "okta" in `user-sync-config.yml`.
+
+```yaml
+directory_users:
+  connectors:
+    okta: connector-okta.yml
+```
+
+There is a sample Okta connector file in the User Sync source tree.
+
+### Runtime
+
+In order to use the Okta connector, you will need to specify the `--connector okta` command-line parameter.  (LDAP is the default connector.)  In addition because the Okta connector does not support fetching all users, you must additionally specify a `--users` command line option of `group` or `mapped`.  All other User Sync command-line parameters have their usual meaning.
+
+### Extensions
+
+Okta sync can use extended groups, attributes and after-mapping hooks.  The names of extended attributes must be valid Okta profile fields.
+
 ---
 
 [Previous Section](usage_scenarios.md)  \| [Next Section](deployment_best_practices.md)
