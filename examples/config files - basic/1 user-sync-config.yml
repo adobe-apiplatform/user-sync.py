@@ -223,6 +223,16 @@ logging:
   # file, not relative to the User Sync process working directory.
   file_log_directory: logs
 
+  # (optional) file_log_name_format (default value "{:%Y-%m-%d}.log")
+  # A Python format string that can refer to single positional argument
+  # which is a `datetime.datetime` object produced by calling `datetime.now()`
+  # at the start of the run.  The default value gives a log file named
+  # for the current date in 2017-11-21 format, which means the first run
+  # in each new day starts a new log file.  You can alter this default
+  # format to a fixed string if you use a log rotation utility that expects
+  # logs to have a particular name.
+  file_log_name_format: '{:%Y-%m-%d}.log'
+
   # (optional) file_log_level (default value "info")
   # This determines the detail level of the information logged to files.
   # Value must be one of "debug", "info", "warning", "error", or "critical",
