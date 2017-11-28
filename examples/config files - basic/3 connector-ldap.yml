@@ -32,7 +32,6 @@ base_dn: "defines the base DN. e.g. DC=example,DC=com"
 # or network address) as the value below.
 #secure_password_key: ldap_password
 
-
 # (optional) user_identity_type (default is inherited from main configuration)
 # user_identity_type specifies a default identity type for when directory users
 # are created on the Adobe side (one of adobeID, enterpriseID, federatedID).

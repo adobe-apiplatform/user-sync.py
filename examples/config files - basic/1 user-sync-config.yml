@@ -151,6 +151,11 @@ directory_users:
     # [Uncomment the next line if you have a custom csv configuration file.]
     #csv: "connector-csv.yml"
 
+    # (optional) okta (no default value)
+    # okta is a 3rd party federation provider compatible with Adobe Enterprise Federated ID.
+    # See https://developer.okta.com/ for Okta developer information.
+    # okta: "connector-okta.ytml"
+
   # (optional) groups (no default value)
   # The groups setting specifies how groups in the enterprise directory map
   # to product configurations and user groups on the Adobe side (collectively
@@ -217,6 +222,16 @@ logging:
   # If a relative path is specified, it is interpreted relative to this configuration
   # file, not relative to the User Sync process working directory.
   file_log_directory: logs
+
+  # (optional) file_log_name_format (default value "{:%Y-%m-%d}.log")
+  # A Python format string that can refer to single positional argument
+  # which is a `datetime.datetime` object produced by calling `datetime.now()`
+  # at the start of the run.  The default value gives a log file named
+  # for the current date in 2017-11-21 format, which means the first run
+  # in each new day starts a new log file.  You can alter this default
+  # format to a fixed string if you use a log rotation utility that expects
+  # logs to have a particular name.
+  file_log_name_format: '{:%Y-%m-%d}.log'
 
   # (optional) file_log_level (default value "info")
   # This determines the detail level of the information logged to files.

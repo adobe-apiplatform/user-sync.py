@@ -45,13 +45,14 @@ setup(name='user-sync',
       license='MIT',
       packages=['user_sync', 'user_sync.connector'],
       install_requires=[
+          'keyring',
+          'okta==0.0.3.1',
+          'psutil',
           'pycryptodome',
           'pyldap==2.4.37',
           'PyYAML',
-          'umapi-client>=2.8',
-          'psutil',
-          'keyring',
-          'six'
+          'six',
+          'umapi-client>=2.9',
       ],
       extras_require={
           ':sys_platform=="linux" or sys_platform=="linux2"':[

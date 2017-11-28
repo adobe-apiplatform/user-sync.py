@@ -616,6 +616,7 @@ class RuleProcessor(object):
         Update the attributes of an existing user if do_update is True.
         :type directory_user: dict
         :type do_update: bool
+        :return user_sync.connector.umapi.Commands (or None if there's an error)
         """
         identity_type = self.get_identity_type_from_directory_user(directory_user)
         commands = user_sync.connector.umapi.Commands(identity_type, directory_user['email'],
@@ -631,7 +632,7 @@ class RuleProcessor(object):
                 country = 'UD'
             else:
                 self.logger.error("User cannot be added without a specified country code: %s", directory_user)
-                return
+                return None
         attributes['country'] = country
         if attributes.get('firstname') is None:
             attributes.pop('firstname', None)
@@ -654,13 +655,14 @@ class RuleProcessor(object):
         If we are pushing, we also remove the user from any mapped groups not in groups_to_add.
         (This way, when we push blindly, we manage the entire set of mapped groups.)
         :type user_key: str
-        :type update_attributes: bool
         :type groups_to_add: set
         :type umapi_info: UmapiTargetInfo
         :type umapi_connector: user_sync.connector.umapi.UmapiConnector
         """
         directory_user = self.directory_user_by_user_key[user_key]
         commands = self.create_umapi_commands_for_directory_user(directory_user, self.will_update_user_info(umapi_info))
+        if not commands:
+            return
         if self.will_manage_groups():
             if self.push_umapi:
                 groups_to_remove = umapi_info.get_mapped_groups() - groups_to_add
