@@ -159,8 +159,8 @@ source archives).
 (the `.tar.gz` file). Builds for Windows, OSX, Centos, and Ubuntu are
 available. (If you are building from source, you can download the
 Source Code package that corresponds to the release, or use the
-latest source off the master branch.)  Python 3 builds may also
-be available for later releases of User Sync.
+latest source off the master branch.)  Python 3 builds are also
+available for later releases of User Sync.
 
 3. Locate the Python executable file (`user-sync` or
 `user-sync.pex` for Windows) and place it in your User Sync
@@ -195,9 +195,9 @@ the cache location, which prevents the path from exceeding the
 
     This step may not be necessary if:
 
-- You are running Windows 10
-- You are running Python 3.6 or later, 64 bit version (also called X86-64, for AMD64), and
-- You have enabled the long pathname support in Windows 10 as described in the Maximum Path Length Limitation section of this [Microsoft Dev Note](https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx?#maxpath). You can also enable long pathname support by pressing the button in the Python Windows executable installer (in the final dialog box, when installation finishes) that performs this action.
+    - You are running Windows 10
+    - You are running Python 3.6 or later, 64 bit version (also called X86-64, for AMD64), and
+    - You have enabled the long pathname support in Windows 10 as described in the Maximum Path Length Limitation section of this [Microsoft Dev Note](https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx?#maxpath). You can also enable long pathname support by pressing the button in the Python Windows executable installer (in the final dialog box, when installation finishes) that performs this action.
 
     If these conditions are met, you can run without setting PEX\_ROOT.
 

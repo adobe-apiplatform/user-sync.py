@@ -12,7 +12,7 @@ nav_order: 270
 
 Once you have access to the server where User Sync will run, pick a directory where you will install and operate User Sync.
 
-On Windows, you will need to install Python.  As of this writing, version 2.7.13 is recommended.  Windows and Python need to be 64 bit versions.
+On Windows, you will need to install Python.  As of this writing, version 3.6.x is recommended.  Windows and Python need to be 64 bit versions.
 
 On Windows, you also are very likely to need to set an environment variable PEX\_ROOT to C:\\pex.  This is needed to work around Windows pathname length limits.
 
@@ -29,9 +29,9 @@ Initial steps:
 
 &#9744; Setup a user and file directory for installing and running sync.  For example, we'll create a folder /home/user_sync/user_sync_tool and a user user_sync.  On Windows an example would be C:\Users\user_sync\user_sync_tool.
 
-&#9744; Windows only: set the environment variable **PEX\_ROOT** to **C:\user_sync\.pex**.
+&#9744; Windows only: set the environment variable **PEX\_ROOT** to **C:\pex**. (But see note above.)
 
-&#9744; Windows only: Install python 2.7.13 (or later in the 2.7 series), 64 bit. 
+&#9744; Windows only: Install python 3.6.2 (or later in the 3.6 series), 64 bit. 
 
 The next few sections show the installation process.
 

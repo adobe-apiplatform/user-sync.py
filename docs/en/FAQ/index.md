@@ -123,7 +123,7 @@ User Sync is an open source python project.  Users can build for any OS platform
 
 ### Has this been tested on python 3.5?
 
-User Sync has been run successfully on Python 3.x, but most of our use and testing is on Python 2.7 so you may discover problems, and we only provide builds on Python 2.7.  Feel free to report problems (and contribute fixes) to the open source site at https://github.com/adobe-apiplatform/user-sync.py.
+User Sync has been run successfully on Python 3.x.  We started dvelopment with 2.7 but most work is now on the Python 3.6.x series and Python 3 builds are available for recent releases.  Feel free to report problems (and contribute fixes) to the open source site at https://github.com/adobe-apiplatform/user-sync.py.
 
 ### If something changes in the API (new field in creating users, for example ) how will the update  be applied to the user sync tool?
 
