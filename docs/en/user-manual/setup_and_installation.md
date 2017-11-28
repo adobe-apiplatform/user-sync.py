@@ -183,7 +183,7 @@ need to work around a Windows-only Python execution issue:
     The Windows operating system enforces a file path length limit of
 260 characters. When executing a Python PEX file, it creates a
 temporary location to extract the contents of the package. If the
-path to that location exceeds 260 characters, the script does not
+path to that location exceeds 260 characters, the script will not
 execute properly.
 
     By default, the temporary cache is in your home folder, which may
@@ -192,6 +192,14 @@ create an environment variable in Windows called PEX\_ROOT, a set
 the path to C:\\pex. The OS uses this variable for
 the cache location, which prevents the path from exceeding the
 260 character limit.
+
+    This step may not be necessary if:
+
+- You are running Windows 10
+- You are running Python 3.6 or later, 64 bit version (also called X86-64, for AMD64), and
+- You have enabled the long pathname support in Windows 10 as described in the Maximum Path Length Limitation section of this [Microsoft Dev Note](https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx?#maxpath). You can also enable long pathname support by pressing the button in the Python Windows executable installer (in the final dialog box, when installation finishes) that performs this action.
+
+    If these conditions are met, you can run without setting PEX\_ROOT.
 
 6. To run the User Sync tool, run the Python executable file,
 `user-sync` (or execute `python user-sync.pex` on Windows).

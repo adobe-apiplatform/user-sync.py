@@ -14,7 +14,16 @@ Once you have access to the server where User Sync will run, pick a directory wh
 
 On Windows, you will need to install Python.  As of this writing, version 2.7.13 is recommended.  Windows and Python need to be 64 bit versions.
 
-On Windows, you also are very likely to need to set an environment variable PEX_ROOT to C:\user_sync\.pex.  This is needed to work around Windows pathname length limits.
+On Windows, you also are very likely to need to set an environment variable PEX\_ROOT to C:\\pex.  This is needed to work around Windows pathname length limits.
+
+Note: Setting PEX\_ROOT may not be necessary if:
+
+- You are running Windows 10
+- You are running Python 3.6 or later, 64 bit version (also called X86-64, for AMD64), and
+- You have enabled the long pathname support in Windows 10 as described in the Maximum Path Length Limitation section of this [Microsoft Dev Note](https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx?#maxpath). You can also enable long pathname support by pressing the button in the Python Windows executable installer (in the final dialog box, when installation finishes) that performs this action.
+
+If these conditions are met, you can run without setting PEX\_ROOT.
+
 
 Initial steps:
 
