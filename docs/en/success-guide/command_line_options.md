@@ -22,6 +22,7 @@ The command line for user sync selects the set of users to be processed, specifi
 |   `--users mapped`  |    The same as `--users group g1,g2,g3,...`, where `g1,g2,g3,...` are all the directory groups specified in the configuration file group mapping.|
 |   `--users file f`  |    The file f is read to form the selected set of users.  The LDAP directory is not used in this case. |
 |   `--user-filter pattern`    |  Can be combined with the above options to further filter and reduce the user selection. <br>`pattern` is a string in Python regular expression format.  <br>The user name must match the pattern in order to be included.  <br>Writing patterns can be somewhat of an art.  See examples below or refer to the Python documentation [here for Python 2.x](https://docs.python.org/2/library/re.html) and [here for Python 3.x](https://docs.python.org/3/library/re.html). |
+{: .bordertablestyle }
 
 
 If all users listed in the directory are to be synced to Adobe, use `--users all`.  If only some users, you can limit the set by altering the LDAP query in the `connector-ldap.yml` configuration file (and use `--users all`), or you can limit the users to those in specific groups (by using --users group).  You can combine either of these with a `--user-filter pattern` to further limit the selected set of users to be synced.
@@ -51,7 +52,7 @@ Note that only the users returned by the directory query and filter are consider
 |   `--adobe-only-user-action remove`  |    Adobe account to remain but licenses, group memberships, and listing in the Adobe Admin console are removed   |
 |   `--adobe-only-user-action delete`  |    Adobe account to be deleted: remove from<br>Adobe product configurations and user groups; account deleted and all storage and settings freed. |
 |   `--adobe-only-user-action write-file f.csv`    |  No action to be taken on the account.  User name written to file for later action. |
-
+{: .bordertablestyle }
 
 
 
