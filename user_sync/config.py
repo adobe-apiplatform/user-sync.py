@@ -23,63 +23,222 @@ import logging
 import os
 import re
 import subprocess
-import types
 
-import yaml
 import six
+import yaml
 
+import user_sync.helper
 import user_sync.identity_type
-import user_sync.rules
 import user_sync.port
-
+import user_sync.rules
 from user_sync.error import AssertionException
-
-DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
 
 
 class ConfigLoader(object):
-    def __init__(self, caller_options):
+    # default values for reading configuration files
+    # these are in alphabetical order!  Always add new ones that way!
+    config_defaults = {
+        'config_encoding': 'utf8',
+        'config_filename': 'user-sync-config.yml',
+    }
+
+    # default values for options that can be specified on the command line
+    # these are in alphabetical order!  Always add new ones that way!
+    invocation_defaults = {
+        'adobe_only_user_action': ['preserve'],
+        'adobe_only_user_list': None,
+        'connector': ['ldap'],
+        'process_groups': False,
+        'strategy': 'sync',
+        'test_mode': False,
+        'update_user_info': False,
+        'user_filter': None,
+        'users': ['all'],
+    }
+
+    def __init__(self, arg_obj):
         """
-        :type caller_options: dict
+        Load the config files and invocation options.
+
+        :type arg_obj: argparse.Namespace
         """
-        self.options = options = {
-            # these are in alphabetical order!  Always add new ones that way!
-            'delete_strays': False,
-            'config_file_encoding': 'utf8',
-            'directory_connector_overridden_options': None,
-            'directory_connector_type': None,
-            'directory_group_filter': None,
-            'directory_group_mapped': False,
-            'disentitle_strays': False,
-            'exclude_strays': False,
-            'main_config_filename': DEFAULT_MAIN_CONFIG_FILENAME,
-            'manage_groups': False,
-            'remove_strays': False,
-            'strategy': 'sync',
-            'stray_list_input_path': None,
-            'stray_list_output_path': None,
-            'test_mode': False,
-            'update_user_info': True,
-            'username_filter_regex': None,
-        }
-        options.update(caller_options)
-        main_config_filename = options.get('main_config_filename')
-        config_encoding = options['config_file_encoding']
+        self.logger = logging.getLogger('config')
+        self.args = vars(arg_obj)
+        self.main_config = self.load_main_config()
+        self.invocation_options = self.load_invocation_options()
+        self.directory_groups = self.load_directory_groups()
+
+    def load_main_config(self):
+        """Load the main configuration file and return its content as a config object.
+        :rtype: DictConfig
+        """
+        config_filename = self.args['config_filename'] or self.config_defaults['config_filename']
+        config_encoding = self.args['encoding_name'] or self.config_defaults['config_encoding']
         try:
             codecs.lookup(config_encoding)
         except LookupError:
-            raise AssertionException("Unknown encoding '%s' specified with --config-file-encoding" % config_encoding)
+            raise AssertionException("Unknown encoding '%s' specified for configuration files" % config_encoding)
         ConfigFileLoader.config_encoding = config_encoding
-        main_config_content = ConfigFileLoader.load_root_config(main_config_filename)
-        self.logger = logger = logging.getLogger('config')
-        logger.info("Using main config file: %s", main_config_filename)
-        self.main_config = DictConfig("<%s>" % main_config_filename, main_config_content)
+        self.logger.info("Using main config file: %s (encoding %s)", config_filename, config_encoding)
+        main_config_content = ConfigFileLoader.load_root_config(config_filename)
+        return DictConfig("<%s>" % config_filename, main_config_content)
 
-    def set_options(self, caller_options):
+    def get_invocation_options(self):
+        return self.invocation_options
+
+    def load_invocation_options(self):
+        """Merge the invocation option defaults with overrides from the main config and the command line.
+        :rtype: dict
         """
-        :type caller_options: dict
-        """
-        self.options.update(caller_options)
+        options = self.invocation_defaults
+
+        # get overrides from the main config
+        invocation_config = self.main_config.get_dict_config('invocation_defaults')
+        if invocation_config:
+            for k, v in six.iteritems(self.invocation_defaults):
+                if isinstance(v, bool):
+                    val = invocation_config.get_bool(k, True)
+                    if val is not None:
+                        options[k] = val
+                elif isinstance(v, list):
+                    val = invocation_config.get_list(k, True)
+                    if val:
+                        options[k] = val
+                else:
+                    val = invocation_config.get_string(k, True)
+                    if val:
+                        options[k] = val
+
+        # now process command line options.  the order of these is important,
+        # because options processed later depend on the values of those processed earlier
+
+        # --connector
+        connector_spec = self.args['connector'] or options['connector']
+        connector_type = user_sync.helper.normalize_string(connector_spec[0])
+        if connector_type in ["ldap", "okta"]:
+            if len(connector_spec) > 1:
+                raise AssertionException('Must not specify a file (%s) with connector type %s' %
+                                         (connector_spec[0], connector_type))
+            options['directory_connector_type'] = connector_type
+        elif connector_type == "csv":
+            if len(connector_spec) != 2:
+                raise AssertionException("You must specify a single file with connector type csv")
+            options['directory_connector_type'] = 'csv'
+            options['directory_connector_overridden_options'] = {'file_path': connector_spec[1]}
+        else:
+            raise AssertionException('Unknown connector type: %s' % connector_type)
+
+        # --strategy
+        if user_sync.helper.normalize_string(self.args['strategy'] or options['strategy']) == 'push':
+            options['strategy'] = 'push'
+
+        # --test-mode
+        if self.args['test_mode'] is not None:
+            options['test_mode'] = self.args['test_mode']
+
+        # --adobe-only-user-action
+        if options['strategy'] == 'push':
+            if self.args['adobe_only_user_action']:
+                raise AssertionException('You cannot specify --adobe-only-user-action when using "push" strategy')
+            self.logger.info("Strategy push: ignoring default adobe-only-user-action")
+        else:
+            adobe_action_spec = self.args['adobe_only_user_action'] or options['adobe_only_user_action']
+            adobe_action = user_sync.helper.normalize_string(adobe_action_spec[0])
+            if adobe_action == 'preserve':
+                pass  # no option settings needed
+            elif adobe_action == 'exclude':
+                options['exclude_strays'] = True
+            elif adobe_action == 'write-file':
+                if len(adobe_action_spec) != 2:
+                    raise AssertionException('You must specify a single file for adobe-only-user-action "write-file"')
+                options['stray_list_output_path'] = adobe_action_spec[1]
+            elif adobe_action == 'delete':
+                options['delete_strays'] = True
+            elif adobe_action == 'remove':
+                options['remove_strays'] = True
+            elif adobe_action == 'remove-adobe-groups':
+                options['disentitle_strays'] = True
+            else:
+                raise AssertionException('Unknown option "%s" for adobe-only-user-action' % adobe_action)
+
+        # --users and --adobe-only-user-list conflict with each other, so we need to disambiguate.
+        # Argument specifications override configuration options, so you must have one or the other
+        # either as an argument or as a configured default.
+        if self.args['users'] and self.args['adobe_only_user_list']:
+            # specifying both --users and --adobe-only-user-list is an error
+            raise AssertionException('You cannot specify both a --users arg and an --adobe-only-user-list arg')
+        elif self.args['users']:
+            # specifying --users overrides the configuration file default for this option
+            users_spec = self.args['users']
+            stray_list_input_path = None
+        elif self.args['adobe_only_user_list']:
+            # specifying --adobe-only-user-list overrides the configuration file default for --users
+            if options['strategy'] == 'push':
+                raise AssertionException('You cannot specify --adobe-only-user-list when using "push" strategy')
+            users_spec = None
+            stray_list_input_path = self.args['adobe_only_user_list']
+        elif options['users'] and options['adobe_only_user_list']:
+            raise AssertionException('You cannot configure both a default "users" option (%s) '
+                                     'and a default "adobe-only-user-list" option (%s)' %
+                                     (' '.join(options['users']), options['adobe_only_user_list']))
+        elif options['users']:
+            users_spec = options['users']
+            stray_list_input_path = None
+        elif options['adobe_only_user_list']:
+            users_spec = None
+            stray_list_input_path = options['adobe_only_user_list']
+        else:
+            raise AssertionException('You must specify either a "users" option or an "adobe-only-user-list" option.')
+
+        # --users
+        if users_spec:
+            users_action = user_sync.helper.normalize_string(users_spec[0])
+            if users_action == 'all':
+                if options['directory_connector_type'] == 'okta':
+                    raise AssertionException('Okta connector module does not support "--users all"')
+            elif users_action == 'file':
+                if options['directory_connector_type'] == 'csv':
+                    raise AssertionException('You cannot specify file input with both "users" and "connector" options')
+                if len(users_spec) != 2:
+                    raise AssertionException('You must specify the file to read when using the users "file" option')
+                options['directory_connector_type'] = 'csv'
+                options['directory_connector_overridden_options'] = {'file_path': users_spec[1]}
+            elif users_action == 'mapped':
+                options['directory_group_mapped'] = True
+            elif users_action == 'group':
+                if len(users_spec) != 2:
+                    raise AssertionException('You must specify the groups to read when using the users "group" option')
+                options['directory_group_filter'] = users_spec[1].split(',')
+            else:
+                raise AssertionException('Unknown option "%s" for users' % users_action)
+
+        # --adobe-only-user-list
+        if options['strategy'] == 'push':
+            self.logger.info("Strategy push: ignoring default adobe-only-user-list")
+        elif stray_list_input_path:
+            if options.get('stray_list_output_path'):
+                raise AssertionException('You cannot specify both an adobe-only-user-list (%s) and '
+                                         'an adobe-only-user-action of "write-file"')
+            # don't read the directory when processing from the stray list
+            self.logger.info('adobe-only-user-list specified, so not reading or comparing directory and Adobe users')
+            options['stray_list_input_path'] = stray_list_input_path
+
+        # --user-filter
+        if stray_list_input_path:
+            if self.args['user_filter']:
+                raise AssertionException('You cannot specify --user-filter when using an adobe-only-user-list')
+            self.logger.info("adobe-only-user-list specified, so ignoring default user filter specification")
+        else:
+            username_filter_pattern = self.args['user_filter'] or options['user_filter']
+            if username_filter_pattern:
+                try:
+                    compiled_expression = re.compile(r'\A' + username_filter_pattern + r'\Z', re.IGNORECASE)
+                except Exception as e:
+                    raise AssertionException("Bad regular expression in user filter: %s reason: %s" %
+                                             (username_filter_pattern, e))
+                options['username_filter_regex'] = compiled_expression
+
+        return options
 
     def get_logging_config(self):
         return self.main_config.get_dict_config('logging', True)
@@ -127,7 +286,7 @@ class ConfigLoader(object):
         """
         :rtype str
         """
-        connector_type = self.options.get('directory_connector_type')
+        connector_type = self.invocation_options.get('directory_connector_type')
         if connector_type:
             return 'user_sync.connector.directory_' + connector_type
         else:
@@ -154,10 +313,14 @@ class ConfigLoader(object):
         if connectors_config is not None:
             connector_item = connectors_config.get_list(connector_name, True)
             options = self.get_dict_from_sources(connector_item)
-        options = self.combine_dicts([options, self.options['directory_connector_overridden_options']])
+        options = self.combine_dicts(
+            [options, self.invocation_options.get('directory_connector_overridden_options', {})])
         return options
 
     def get_directory_groups(self):
+        return self.directory_groups
+
+    def load_directory_groups(self):
         """
         :rtype dict(str, list(user_sync.rules.AdobeGroup))
         """
@@ -264,63 +427,73 @@ class ConfigLoader(object):
         """
         Return a dict representing options for RuleProcessor.
         """
+        options = user_sync.rules.RuleProcessor.default_options
+        options.update(self.invocation_options)
+
         # process directory configuration options
-        new_account_type = None
-        default_country_code = None
         directory_config = self.main_config.get_dict_config('directory_users', True)
         if directory_config:
+            # account type
             new_account_type = directory_config.get_string('user_identity_type', True)
             new_account_type = user_sync.identity_type.parse_identity_type(new_account_type)
+            if new_account_type:
+                options['new_account_type'] = new_account_type
+            else:
+                self.logger.debug("Using default for new_account_type: %s", options['new_account_type'])
+            # country code
             default_country_code = directory_config.get_string('default_country_code', True)
-        if not new_account_type:
-            new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
-            self.logger.debug("Using default for new_account_type: %s", new_account_type)
+            if default_country_code:
+                options['default_country_code'] = default_country_code
 
         # process exclusion configuration options
-        exclude_identity_types = exclude_identity_type_names = []
-        exclude_users = exclude_users_regexps = []
-        exclude_groups = exclude_group_names = []
         adobe_config = self.main_config.get_dict_config('adobe_users', True)
         if adobe_config:
-            exclude_identity_type_names = adobe_config.get_list('exclude_identity_types', True) or []
-            exclude_users_regexps = adobe_config.get_list('exclude_users', True) or []
+            exclude_identity_type_names = adobe_config.get_list('exclude_identity_types', True)
+            if exclude_identity_type_names:
+                exclude_identity_types = []
+                for name in exclude_identity_type_names:
+                    message_format = 'Illegal value in exclude_identity_types: %s'
+                    identity_type = user_sync.identity_type.parse_identity_type(name, message_format)
+                    exclude_identity_types.append(identity_type)
+                options['exclude_identity_types'] = exclude_identity_types
+            exclude_users_regexps = adobe_config.get_list('exclude_users', True)
+            if exclude_users_regexps:
+                exclude_users = []
+                for regexp in exclude_users_regexps:
+                    try:
+                        # add "match begin" and "match end" markers to ensure complete match
+                        # and compile the patterns because we will use them over and over
+                        exclude_users.append(re.compile(r'\A' + regexp + r'\Z', re.UNICODE))
+                    except re.error as e:
+                        validation_message = ('Illegal regular expression (%s) in %s: %s' %
+                                              (regexp, 'exclude_identity_types', e))
+                        raise AssertionException(validation_message)
+                options['exclude_users'] = exclude_users
             exclude_group_names = adobe_config.get_list('exclude_adobe_groups', True) or []
-        for name in exclude_identity_type_names:
-            message_format = 'Illegal value in exclude_identity_types: %s'
-            identity_type = user_sync.identity_type.parse_identity_type(name, message_format)
-            exclude_identity_types.append(identity_type)
-        for regexp in exclude_users_regexps:
-            try:
-                # add "match begin" and "match end" markers to ensure complete match
-                # and compile the patterns because we will use them over and over
-                exclude_users.append(re.compile(r'\A' + regexp + r'\Z', re.UNICODE))
-            except re.error as e:
-                validation_message = ('Illegal regular expression (%s) in %s: %s' %
-                                      (regexp, 'exclude_identity_types', e))
-                raise AssertionException(validation_message)
-        for name in exclude_group_names:
-            group = user_sync.rules.AdobeGroup.create(name)
-            if not group or group.get_umapi_name() != user_sync.rules.PRIMARY_UMAPI_NAME:
-                validation_message = 'Illegal value for %s in config file: %s' % ('exclude_groups', name)
-                if not group:
-                    validation_message += ' (Not a legal group name)'
-                else:
-                    validation_message += ' (Can only exclude groups in primary organization)'
-                raise AssertionException(validation_message)
-            exclude_groups.append(group.get_group_name())
+            if exclude_group_names:
+                exclude_groups = []
+                for name in exclude_group_names:
+                    group = user_sync.rules.AdobeGroup.create(name)
+                    if not group or group.get_umapi_name() != user_sync.rules.PRIMARY_UMAPI_NAME:
+                        validation_message = 'Illegal value for %s in config file: %s' % ('exclude_groups', name)
+                        if not group:
+                            validation_message += ' (Not a legal group name)'
+                        else:
+                            validation_message += ' (Can only exclude groups in primary organization)'
+                        raise AssertionException(validation_message)
+                    exclude_groups.append(group.get_group_name())
+                options['exclude_groups'] = exclude_groups
 
         # get the limits
         limits_config = self.main_config.get_dict_config('limits')
-        max_adobe_only_users = limits_config.get_int('max_adobe_only_users')
+        options['max_adobe_only_users'] = limits_config.get_int('max_adobe_only_users')
 
         # now get the directory extension, if any
-        after_mapping_hook = None
-        extended_attributes = None
         extension_config = self.get_directory_extension_options()
         if extension_config:
             after_mapping_hook_text = extension_config.get_string('after_mapping_hook')
-            after_mapping_hook = compile(after_mapping_hook_text, '<per-user after-mapping-hook>', 'exec')
-            extended_attributes = extension_config.get_list('extended_attributes')
+            options['after_mapping_hook'] = compile(after_mapping_hook_text, '<per-user after-mapping-hook>', 'exec')
+            options['extended_attributes'] = extension_config.get_list('extended_attributes')
             # declaration of extended adobe groups: this is needed for two reasons:
             # 1. it allows validation of group names, and matching them to adobe groups
             # 2. it allows removal of adobe groups not assigned by the hook
@@ -330,36 +503,16 @@ class ConfigLoader(object):
                     message = 'Extension contains illegal extended_adobe_group spec: ' + str(extended_adobe_group)
                     raise AssertionException(message)
 
-        options = self.options
-        result = {
-            # these are in alphabetical order!  Always add new ones that way!
-            'after_mapping_hook': after_mapping_hook,
-            'default_country_code': default_country_code,
-            'delete_strays': options['delete_strays'],
-            'directory_group_filter': options['directory_group_filter'],
-            'directory_group_mapped': options['directory_group_mapped'],
-            'disentitle_strays': options['disentitle_strays'],
-            'exclude_groups': exclude_groups,
-            'exclude_identity_types': exclude_identity_types,
-            'exclude_strays': options['exclude_strays'],
-            'exclude_users': exclude_users,
-            'extended_attributes': extended_attributes,
-            'manage_groups': options['manage_groups'],
-            'max_adobe_only_users': max_adobe_only_users,
-            'new_account_type': new_account_type,
-            'strategy': options['strategy'],
-            'remove_strays': options['remove_strays'],
-            'stray_list_input_path': options['stray_list_input_path'],
-            'stray_list_output_path': options['stray_list_output_path'],
-            'test_mode': options['test_mode'],
-            'update_user_info': options['update_user_info'],
-            'username_filter_regex': options['username_filter_regex'],
-        }
-        return result
+        # set the directory group filter from the mapping, if requested.
+        # This must come late, after any prior adds to the mapping from other parameters.
+        if options.get('directory_group_mapped'):
+            options['directory_group_filter'] = set(six.iterkeys(self.directory_groups))
+
+        return options
 
     def create_umapi_options(self, connector_config_sources):
         options = self.get_dict_from_sources(connector_config_sources)
-        options['test_mode'] = self.options['test_mode']
+        options['test_mode'] = self.invocation_options['test_mode']
         return options
 
     def check_unused_config_keys(self):
@@ -508,19 +661,34 @@ class DictConfig(ObjectConfig):
         return result
 
     def get_dict(self, key, none_allowed=False):
+        """
+        :rtype: dict
+        """
         value = self.get_value(key, dict, none_allowed)
         return value
 
     def get_string(self, key, none_allowed=False):
+        """
+        :rtype: basestring
+        """
         return self.get_value(key, six.string_types, none_allowed)
 
     def get_int(self, key, none_allowed=False):
+        """
+        :rtype: int
+        """
         return self.get_value(key, user_sync.port.integer_type, none_allowed)
 
     def get_bool(self, key, none_allowed=False):
+        """
+        :rtype: bool
+        """
         return self.get_value(key, user_sync.port.boolean_type, none_allowed)
 
     def get_list(self, key, none_allowed=False):
+        """
+        :rtype: list
+        """
         value = self.get_value(key, None, none_allowed)
         if value is not None and not isinstance(value, list):
             value = [value]

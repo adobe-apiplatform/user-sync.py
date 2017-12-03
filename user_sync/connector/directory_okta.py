@@ -44,7 +44,7 @@ def connector_initialize(options):
     return state
 
 
-def connector_load_users_and_groups(state, groups, extended_attributes, all_users):
+def connector_load_users_and_groups(state, groups=None, extended_attributes=None, all_users=True):
     """
     :type state: OktaDirectoryConnector
     :type groups: list(str)
@@ -53,7 +53,7 @@ def connector_load_users_and_groups(state, groups, extended_attributes, all_user
     :rtype (bool, iterable(dict))
     """
 
-    return state.load_users_and_groups(groups, extended_attributes, all_users)
+    return state.load_users_and_groups(groups or [], extended_attributes or [], all_users)
 
 
 class OktaDirectoryConnector(object):
@@ -144,6 +144,8 @@ class OktaDirectoryConnector(object):
         group_filter_format = options['group_filter_format']
         try:
             results = self.groups_client.get_groups(query=group_filter_format.format(group=group))
+        except KeyError as e:
+            raise AssertionException("Bad format key in group query (%s): %s" % (group_filter_format, e))
         except OktaError as e:
             self.logger.warning("Unable to query group")
             raise AssertionException("Okta error querying for group: %s" % e)

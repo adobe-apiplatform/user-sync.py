@@ -69,7 +69,7 @@ class RulesTest(unittest.TestCase):
             secondary_1_umapi_name: mock_secondary_umapi_connector
         })
 
-        rule_processor = user_sync.rules.RuleProcessor({'manage_groups': True})
+        rule_processor = user_sync.rules.RuleProcessor({'process_groups': True})
         rule_processor.run(directory_groups, mock_directory_connector, umapi_connectors)
 
         rule_options = rule_processor.options
@@ -142,7 +142,7 @@ class RulesTest(unittest.TestCase):
             secondary_1_umapi_name: mock_secondary_umapi_connector
         })
 
-        rule_processor = user_sync.rules.RuleProcessor({'manage_groups': True,
+        rule_processor = user_sync.rules.RuleProcessor({'process_groups': True,
                                                         'strategy': 'push',
                                                         'update_user_info': True,
                                                         })
