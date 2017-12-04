@@ -161,7 +161,7 @@ class TestOktaUsersGroups(unittest.TestCase):
         test_user = tests.helper.create_test_user_uid()
         mock_members.return_value = [test_user]
         directory = self.directory
-        results = directory.load_users_and_groups(groups, [])
+        results = directory.load_users_and_groups(groups, [], False)
         self.assertEqual(len(list(results)), 1)
 
     @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.iter_group_members')
@@ -173,7 +173,7 @@ class TestOktaUsersGroups(unittest.TestCase):
             test_users.append([tests.helper.create_test_user_uid()])
         mock_members.side_effect = test_users
         directory = self.directory
-        results = directory.load_users_and_groups(groups, [])
+        results = directory.load_users_and_groups(groups, [], False)
         self.assertEqual(len(list(results)), 2)
 
     @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.iter_group_members')
@@ -187,7 +187,7 @@ class TestOktaUsersGroups(unittest.TestCase):
             user_count = user_count + 1
         mock_members.return_value = test_users
         directory = self.directory
-        results = directory.load_users_and_groups(groups, [])
+        results = directory.load_users_and_groups(groups, [], False)
         self.assertEqual(len(list(results)), 5)
 
     @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.iter_group_members')
@@ -204,7 +204,7 @@ class TestOktaUsersGroups(unittest.TestCase):
             total_test_users.append(test_users)
         mock_members.side_effect = total_test_users
         directory = self.directory
-        results = directory.load_users_and_groups(groups, [])
+        results = directory.load_users_and_groups(groups, [], False)
         self.assertEqual(len(list(results)), 10)
 
     @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.iter_group_members')
@@ -214,7 +214,7 @@ class TestOktaUsersGroups(unittest.TestCase):
         test_users = []
         mock_members.return_value = test_users
         directory = self.directory
-        results = directory.load_users_and_groups(groups, [])
+        results = directory.load_users_and_groups(groups, [], False)
         self.assertEqual(len(list(results)), 0)
 
     @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.iter_group_members')
@@ -224,7 +224,7 @@ class TestOktaUsersGroups(unittest.TestCase):
         total_test_users = [[], []]
         mock_members.side_effect = total_test_users
         directory = self.directory
-        results = directory.load_users_and_groups(groups, [])
+        results = directory.load_users_and_groups(groups, [], False)
         self.assertEqual(len(list(results)), 0)
 
 
@@ -236,7 +236,7 @@ class TestOktaUsersGroups(unittest.TestCase):
         test_user = tests.helper.create_test_user_uid()
         mock_members.side_effect = [[test_user], [copy.deepcopy(test_user)]]
         directory = self.directory
-        result = directory.load_users_and_groups(groups, [])
+        result = directory.load_users_and_groups(groups, [], False)
         result_list = list(result)
         self.assertEqual(result_list[0]['groups'], ['group1','group2'])
 

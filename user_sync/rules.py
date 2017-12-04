@@ -32,34 +32,36 @@ PRIMARY_UMAPI_NAME = None
 
 
 class RuleProcessor(object):
+    # rule processing option defaults
+    # these are in alphabetical order!  Always add new ones that way!
+    default_options = {
+        'after_mapping_hook': None,
+        'default_country_code': None,
+        'delete_strays': False,
+        'directory_group_filter': None,
+        'disentitle_strays': False,
+        'exclude_groups': [],
+        'exclude_identity_types': [],
+        'exclude_strays': False,
+        'exclude_users': [],
+        'extended_attributes': None,
+        'process_groups': False,
+        'max_adobe_only_users': 200,
+        'new_account_type': user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
+        'remove_strays': False,
+        'strategy': 'sync',
+        'stray_list_input_path': None,
+        'stray_list_output_path': None,
+        'test_mode': False,
+        'update_user_info': False,
+        'username_filter_regex': None,
+    }
+
     def __init__(self, caller_options):
         """
         :type caller_options:dict
         """
-        options = {
-            # these are in alphabetical order!  Always add new ones that way!
-            'after_mapping_hook': None,
-            'default_country_code': None,
-            'delete_strays': False,
-            'directory_group_filter': None,
-            'directory_group_mapped': False,
-            'disentitle_strays': False,
-            'exclude_groups': [],
-            'exclude_identity_types': [],
-            'exclude_strays': False,
-            'exclude_users': [],
-            'extended_attributes': None,
-            'manage_groups': False,
-            'max_adobe_only_users': 200,
-            'new_account_type': user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
-            'remove_strays': False,
-            'strategy': 'sync',
-            'stray_list_input_path': None,
-            'stray_list_output_path': None,
-            'test_mode': False,
-            'update_user_info': True,
-            'username_filter_regex': None,
-        }
+        options = dict(self.default_options)
         options.update(caller_options)
         self.options = options
         self.directory_user_by_user_key = {}
@@ -112,7 +114,7 @@ class RuleProcessor(object):
         self.stray_list_output_path = options['stray_list_output_path']
 
         # determine what processing is needed on strays
-        self.will_manage_strays = (options['manage_groups'] or options['disentitle_strays'] or
+        self.will_manage_strays = (options['process_groups'] or options['disentitle_strays'] or
                                    options['remove_strays'] or options['delete_strays'])
         self.exclude_strays = options['exclude_strays']
         self.will_process_strays = ((not self.exclude_strays) and
@@ -289,8 +291,8 @@ class RuleProcessor(object):
     def will_update_user_info(self, umapi_info):
         return self.options['update_user_info'] and self.is_primary_org(umapi_info)
 
-    def will_manage_groups(self):
-        return self.options['manage_groups']
+    def will_process_groups(self):
+        return self.options['process_groups']
 
     def get_umapi_info(self, umapi_name):
         umapi_info = self.umapi_info_by_name.get(umapi_name)
@@ -322,7 +324,7 @@ class RuleProcessor(object):
         directory_user_by_user_key = self.directory_user_by_user_key
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
 
-        directory_groups = set(six.iterkeys(mappings)) if self.will_manage_groups() else set()
+        directory_groups = set(six.iterkeys(mappings)) if self.will_process_groups() else set()
         if directory_group_filter is not None:
             directory_groups.update(directory_group_filter)
         directory_users = directory_connector.load_users_and_groups(groups=directory_groups,
@@ -520,7 +522,7 @@ class RuleProcessor(object):
         :type umapi_connectors: UmapiConnectors
         """
         # figure out what management to do
-        manage_stray_groups = self.will_manage_groups()
+        manage_stray_groups = self.will_process_groups()
         disentitle_strays = self.options['disentitle_strays']
         remove_strays = self.options['remove_strays']
         delete_strays = self.options['delete_strays']
@@ -663,7 +665,7 @@ class RuleProcessor(object):
         commands = self.create_umapi_commands_for_directory_user(directory_user, self.will_update_user_info(umapi_info))
         if not commands:
             return
-        if self.will_manage_groups():
+        if self.will_process_groups():
             if self.push_umapi:
                 groups_to_remove = umapi_info.get_mapped_groups() - groups_to_add
                 commands.remove_groups(groups_to_remove)
@@ -735,7 +737,7 @@ class RuleProcessor(object):
         # compute all static options before looping over users
         in_primary_org = self.is_primary_org(umapi_info)
         update_user_info = self.will_update_user_info(umapi_info)
-        manage_groups = self.will_manage_groups()
+        process_groups = self.will_process_groups()
 
         # prepare the strays map if we are going to be processing them
         if self.will_process_strays:
@@ -776,16 +778,16 @@ class RuleProcessor(object):
                 elif self.will_process_strays:
                     self.logger.debug("Found Adobe-only user: %s", user_key)
                     self.add_stray(umapi_info.get_name(), user_key,
-                                   None if not manage_groups else current_groups & umapi_info.get_mapped_groups())
+                                   None if not process_groups else current_groups & umapi_info.get_mapped_groups())
             else:
                 # There is a selected directory user who matches this adobe user,
                 # so mark any changed umapi attributes,
                 # and mark him for addition and removal of the appropriate mapped groups
-                if update_user_info or manage_groups:
+                if update_user_info or process_groups:
                     self.logger.debug("Adobe user matched on customer side: %s", user_key)
                 if update_user_info:
                     attribute_differences = self.get_user_attribute_difference(directory_user, umapi_user)
-                if manage_groups:
+                if process_groups:
                     groups_to_add = desired_groups - current_groups
                     groups_to_remove = (current_groups - desired_groups) & umapi_info.get_mapped_groups()
 

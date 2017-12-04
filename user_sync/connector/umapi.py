@@ -32,7 +32,7 @@ import user_sync.config
 import user_sync.helper
 import user_sync.identity_type
 from user_sync.error import AssertionException
-from user_sync.version import __version__ as APP_VERSION
+from user_sync.version import __version__ as app_version
 
 try:
     from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
@@ -121,7 +121,7 @@ class UmapiConnector(object):
                 ims_endpoint_jwt=server_options['ims_endpoint_jwt'],
                 user_management_endpoint=um_endpoint,
                 test_mode=options['test_mode'],
-                user_agent="user-sync/" + APP_VERSION,
+                user_agent="user-sync/" + app_version,
                 logger=self.logger,
                 timeout_seconds=float(server_options['timeout']),
                 retry_max_attempts=server_options['retries'] + 1,
