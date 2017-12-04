@@ -21,6 +21,7 @@
 
 import logging
 import six
+import re
 
 import user_sync.connector.umapi
 import user_sync.error
@@ -70,6 +71,8 @@ class RuleProcessor(object):
         # counters for action summary log
         self.action_summary = {
             # these are in alphabetical order!  Always add new ones that way!
+            'adobe_user_groups_created': 0,
+            'adobe_user_groups_deleted': 0,
             'directory_users_read': 0,
             'directory_users_selected': 0,
             'excluded_user_count': 0,
@@ -174,11 +177,11 @@ class RuleProcessor(object):
         umapi_stats = JobStats('Push to UMAPI' if self.push_umapi else 'Sync with UMAPI', divider="-")
         umapi_stats.log_start(logger)
         if directory_connector is not None:
-            if self.options['auto_create']:
-                self.sync_umapi_groups(umapi_connectors)
+            self.create_umapi_groups(umapi_connectors)
             self.sync_umapi_users(umapi_connectors)
         if self.will_process_strays:
             self.process_strays(umapi_connectors)
+        self.delete_umapi_groups(umapi_connectors)
         umapi_connectors.execute_actions()
         umapi_stats.log_end(logger)
         self.log_action_summary(umapi_connectors)
@@ -234,6 +237,8 @@ class RuleProcessor(object):
                 ['unchanged_user_count', 'Number of non-excluded Adobe users with no changes'],
                 ['primary_users_created', 'Number of new Adobe users added'],
                 ['updated_user_count', 'Number of matching Adobe users updated'],
+                ['adobe_user_groups_created', 'Number of Adobe user-groups created'],
+                ['adobe_user_groups_deleted', 'Number of Adobe user-groups deleted'],
             ]
             if umapi_connectors.get_secondary_connectors():
                 action_summary_description += [
@@ -463,26 +468,56 @@ class RuleProcessor(object):
                         self.updated_user_keys.add(user_key)
                     self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector)
 
-    def sync_umapi_groups(self, umapi_connectors):
+    def create_umapi_groups(self, umapi_connectors):
         """
-        This is where we do sync for user-groups. If auto_create or auto_delete enabled,
+        This is where we create user-groups. If auto_create is enabled,
         this will pull user-groups from console and compare with mapped_groups. If mapped group does exist
-        in the console, then it will create
+        in the console, then it will create. Note: Push Mode is not supported
         :type umapi_connectors: UmapiConnectors
         """
-        umapi_info, umapi_connector = self.get_umapi_info(PRIMARY_UMAPI_NAME), umapi_connectors.get_primary_connector()
-        mapped_groups = umapi_info.get_non_normalize_mapped_groups()
-        #pull all user groups from console
-        on_adobe_groups = [normalize_string(group['groupName']) for group in umapi_connector.get_groups()]
-        #verify if group exist
-        for mapped_group in mapped_groups:
-            if not normalize_string(mapped_group) in on_adobe_groups:
-                self.logger.info("Auto create user-group enabled: Creating %s" % mapped_group)
+        if not self.push_umapi:
+            umapi_info, umapi_connector = self.get_umapi_info(
+                PRIMARY_UMAPI_NAME), umapi_connectors.get_primary_connector()
+            mapped_groups = umapi_info.get_non_normalize_mapped_groups()
+            # pull all user groups from console
+            on_adobe_groups = umapi_connector.get_groups()
+            # verify if group exist and create
+            if self.options['auto_create']:
+                for mapped_group in mapped_groups:
+                    if not filter(lambda grp: normalize_string(grp['groupName']) == normalize_string(mapped_group),
+                                  on_adobe_groups):
+                        self.logger.info("Auto create user-group enabled: Creating %s" % mapped_group)
+                        try:
+                            # create group
+                            umapi_connector.create_group(mapped_group)
+                            self.action_summary['adobe_user_groups_created'] += 1
+                        except Exception as e:
+                            self.logger.critical("Unable to create %s user group: %s" % (mapped_group, e))
+
+    def delete_umapi_groups(self, umapi_connectors):
+        """
+       This is where we delete user-groups. If auto_create is enabled,
+       this will pull user-groups from console, If on adobe user-groups match the
+       auto_delete_filters and group member is 0 then it will delete. Note: Push Mode is not supported
+       :type umapi_connectors: UmapiConnectors
+       """
+        if not self.push_umapi:
+            umapi_info, umapi_connector = self.get_umapi_info(
+                PRIMARY_UMAPI_NAME), umapi_connectors.get_primary_connector()
+            if self.options['auto_delete']:
+                # retreive auto_delete_filters options
+                delete_rules = self.options['auto_delete_filters'] or []
+                on_adobe_user_groups = umapi_connector.get_user_groups()
+                for rule in delete_rules:
+                    filtered_groups = [g for g in on_adobe_user_groups if
+                                       (('userCount' not in g) and (rule.match(g['name'])))]
+            for group in filtered_groups:
+                self.logger.info("Auto Delete user-group enabled: Deleting %s" % group['name'])
                 try:
-                    # create group
-                    umapi_connector.create_group(mapped_group)
+                    umapi_connector.delete_group(group['groupId'])
+                    self.action_summary['adobe_user_groups_deleted'] += 1
                 except Exception as e:
-                    self.logger.critical("Unable to create %s user group: %s" % (mapped_group, e))
+                    self.logger.critical("Unable to delete %s user group: %s" % (group['name'], e))
 
     def is_selected_user_key(self, user_key):
         """
