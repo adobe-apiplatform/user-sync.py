@@ -1,0 +1,34 @@
+2017-06-12 16:17:54 76798 INFO config - Using main config file: [[../../../config-common/user-sync-config.yml]]
+2017-06-12 16:17:54 76798 INFO main - ========== Start Run (User Sync version: 2.1) ==============
+2017-06-12 16:17:54 76798 INFO main - ------- Invocation parameters -------
+2017-06-12 16:17:54 76798 INFO main - [[/Users/imak/github-adobe/user-sync.py/dist/user-sync --test-framework live -c ../../../config-common/user-sync-config.yml --users group CCE AD Disabled Users --update-user-info]]
+2017-06-12 16:17:54 76798 INFO main - -------------------------------------
+2017-06-12 16:17:54 76798 INFO processor - ---------- Start Load from Directory -----------------------
+2017-06-12 16:17:54 76798 WARNING ldap - Skipping user with dn CN=ADFS User,CN=Users,DC=ensemble,DC=com: empty email attribute (mail)
+2017-06-12 16:17:54 76798 WARNING ldap - Skipping user with dn CN=DPSMain1,CN=Users,DC=ensemble,DC=com: empty email attribute (mail)
+2017-06-12 16:17:55 76798 WARNING ldap - Skipping user with dn CN=sicpaadmin,OU=SICPA,OU=Project,DC=ensemble,DC=com: empty email attribute (mail)
+2017-06-12 16:17:55 76798 WARNING ldap - Skipping user with dn CN=bulkadmin,OU=Bulk,DC=ensemble,DC=com: empty email attribute (mail)
+2017-06-12 16:17:55 76798 WARNING ldap - Skipping user with dn CN=CCE 12,OU=CCE,DC=ensemble,DC=com: empty email attribute (mail)
+2017-06-12 16:17:55 76798 WARNING ldap - Skipping user with dn CN=mod1,OU=TER04,DC=ensemble,DC=com: empty email attribute (mail)
+2017-06-12 16:17:55 76798 WARNING ldap - No group found for: Photoshop
+2017-06-12 16:17:55 76798 WARNING ldap - No group found for: CCE Posix Group
+2017-06-12 16:17:55 76798 WARNING ldap - No group found for: CCE Group 1
+2017-06-12 16:17:55 76798 WARNING ldap - No group found for: CCE AD Disabled Users
+2017-06-12 16:17:55 76798 WARNING ldap - No group found for: CSV User Groups
+2017-06-12 16:17:55 76798 WARNING ldap - No group found for: CSV Multi Group 2
+2017-06-12 16:17:55 76798 WARNING ldap - No group found for: CSV Multi Group 1
+2017-06-12 16:17:55 76798 WARNING ldap - No group found for: Acrobat
+2017-06-12 16:17:55 76798 INFO processor - ---------- End Load from Directory (Total time: 0:00:00) ---
+2017-06-12 16:17:55 76798 INFO processor - ---------- Start Sync Umapi --------------------------------
+2017-06-12 16:17:56 76798 INFO processor - ---------- End Sync Umapi (Total time: 0:00:01) ------------
+2017-06-12 16:17:56 76798 INFO processor - ---------------------------------- Action Summary ----------------------------------
+2017-06-12 16:17:56 76798 INFO processor -                         Number of directory users read: 5007
+2017-06-12 16:17:56 76798 INFO processor -           Number of directory users selected for input: 0
+2017-06-12 16:17:56 76798 INFO processor -                             Number of Adobe users read: 78
+2017-06-12 16:17:56 76798 INFO processor -            Number of Adobe users excluded from updates: 43
+2017-06-12 16:17:56 76798 INFO processor -     Number of non-excluded Adobe users with no changes: 35
+2017-06-12 16:17:56 76798 INFO processor -                        Number of new Adobe users added: 0
+2017-06-12 16:17:56 76798 INFO processor -                 Number of matching Adobe users updated: 0
+2017-06-12 16:17:56 76798 INFO processor -   Number of UMAPI actions sent (total, success, error): (0, 0, 0)
+2017-06-12 16:17:56 76798 INFO processor - ------------------------------------------------------------------------------------
+2017-06-12 16:17:56 76798 INFO main - ========== End Run (User Sync version: 2.1) (Total time: 0:00:02) 

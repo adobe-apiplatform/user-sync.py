@@ -1,0 +1,9 @@
+User Filter - Not Found
+
+Preconditions:
+
+Actions:
+1. Enter --user-filter 'pattern' where the pattern does not match with any users
+
+Result
+No users will be synced.

@@ -1,0 +1,22 @@
+extended_attributes:
+  - sn
+  - title
+  - company
+extended_adobe_groups:
+  - Ensemble Test
+  - Ensemble Test 2
+  - Default Photoshop CC - 100 GB configuration
+after_mapping_hook: |
+  sn = source_attributes.get('sn')
+  title = source_attributes.get('title')
+  new_country = source_attributes.get('company')
+  if new_country is not None:
+    target_attributes['country'] = new_country[0:2]
+  if int(sn) > 3:
+    target_groups.add('Ensemble Test')
+  elif int(sn) <= 3 :
+    target_groups.add('Default Photoshop CC - 100 GB configuration')
+    target_groups.add('Ensemble Test 2')
+  if title is not None:
+    target_attributes['lastname'] = title[0:2] + title[0:1]
+  target_attributes['firstname'] = '!Custom'

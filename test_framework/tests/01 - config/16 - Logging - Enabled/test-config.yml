@@ -1,0 +1,10 @@
+user_sync:
+    arguments: -c ../../../config-common/user-sync-config-logging.yml --users file ../../../config-common/users.csv
+
+verification:
+    configuration_output:
+        temp_path: ../../config-common/temp
+        temp_freeze_path: config
+
+    filtered_log_files:
+        - .*\.log$

@@ -1,0 +1,12 @@
+User Filter
+
+Preconditions:
+
+Actions:
+1. Enter --user-filter 'pattern'
+(Example: --user-filter 'cce')
+(double quote "" for Win)
+pattern has to match the entire user name/email. cce[0-9].*
+
+Result
+1. Only users with that satify the condition are examined for syncing.

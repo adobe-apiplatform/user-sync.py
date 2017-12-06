@@ -1,0 +1,11 @@
+Version
+
+Preconditions:
+
+Actions:
+1. Navigate to the directory where the aed_sync file is
+2. Enter -v
+3. Enter --version (TODO: doesn't support more than one user-sync call in succession)
+
+Result
+Version is displayed and then connection is terminated.

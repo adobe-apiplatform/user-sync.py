@@ -1,0 +1,11 @@
+# Point server to test proxy server.
+server:
+  protocol: http://
+  host: localhost:8888
+
+enterprise:
+  org_id: "[Your Org ID]"
+  api_key: "[Your API Key]"
+  client_secret: "[Your client secret]"
+  tech_acct: "[Your tech account]"
+  priv_key_path: private1.key

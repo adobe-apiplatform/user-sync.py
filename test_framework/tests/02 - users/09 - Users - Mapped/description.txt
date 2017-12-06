@@ -1,0 +1,9 @@
+Users - Mapped
+
+Preconditions:
+
+Actions:
+1. Run user-sync with --users mapped
+
+Result
+All of the users in the directory groups are synced.
