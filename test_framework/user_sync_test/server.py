@@ -18,17 +18,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
-
-import os
-import threading
-import vcr
-import requests
-import time
 import gzip
-import StringIO
 import logging
+import threading
+import time
 
+import StringIO
+import requests
+from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 
 class TestService:

@@ -1,4 +1,4 @@
-# user-sync.py: User Sync Tool Test Framework from Adobe
+``````````# user-sync.py: User Sync Tool Test Framework from Adobe
 
 The User Sync Tool Test Framework is a command-line tool that automates the testing of the user-sync tool. It does this
 by recording the network activity and output of the User Sync Tool during a live run of the tool, and can be
@@ -44,7 +44,7 @@ In live mode, when the user-sync tool is run, the tool communicates through the 
 
 In test mode, user-sync tool requests are fulfilled using the data recorded during the live run, and the resulting output is compared against the output generated in the live run. The test is considered a success if the output matches the output from the live run.
 
-When comparing recorded run output against live mode output, the content must be identical except where there are timestamps and the --bypass-authentication-mode argument on the user-sync arguments line.
+When comparing recorded run output against live mode output, the content must be identical except where there are timestamps.
 
 TODO: the user-sync path in the arguments line may be different except for the executable name, need to add support for matching lines with paths that may be different when run on another environment where the framework might be placed in a different path.
 
@@ -96,9 +96,9 @@ The basic configuration structure of the test framework consists of a test set c
 See the `tests` directory for sample configuration files, and descriptions of the possible configuration options.
 
 user-sync configuration files used in all tests:
-tests\config-common
+tests/config-common
 
 Explaination of user-sync-test configuration file options:
-tests\test-suite-config.yml
-tests\01 - config\test-group-config.yml
-tests\01 - config\01 - Default config file\test-config.yml
+tests/test-suite-config.yml
+tests/01 - config/test-group-config.yml
+tests/01 - config/01 - Default config file/test-config.yml

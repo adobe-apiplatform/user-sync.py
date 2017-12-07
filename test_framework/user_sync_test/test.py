@@ -17,18 +17,19 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import logging
 import os
-import subprocess
-import server
-import error
+import re
 import shlex
 import shutil
-import config
-import re
-import logging
+import subprocess
+
 import vcr
 
+import config
+import error
 import helper
+import server
 
 IS_NT_PLATFORM = os.name == 'nt'
 
@@ -77,6 +78,10 @@ LINE_TRANSFORM_MAP = [
     helper.StringTransformer(
         r"^%s (.*)requestID: action_\d+(.*)'requestID': 'action_\d+'(.*)$" % (TIMESTAMP_RE),
         r"%srequestID: action_%s'requestID': 'action_'%s"
+    ),
+    helper.StringTransformer(
+        r"^%s (.*WARNING umapi - UMAPI_MOCK override) specified as .*$" % (TIMESTAMP_RE),
+        r"%s"
     ),
     helper.StringTransformer(
         r"^%s (.*\(Total time: )\d:\d\d:\d\d(\).*)$" % (TIMESTAMP_RE),
@@ -275,6 +280,7 @@ class Test:
             return r1.uri == r2.uri
 
         record_mode = 'all' if self.server_config['live_mode'] else 'none'
+        mock_spec = 'proxy' if self.server_config['live_mode'] else 'playback'
         recorder = vcr.VCR(
             record_mode=record_mode,
             match_on=['um_request'],
@@ -289,7 +295,13 @@ class Test:
             service.run()
 
             with open(output_filename, 'w') as output_file:
-                subprocess.call(args, cwd=working_dir, stdin=None, stdout=output_file, stderr=output_file, shell=IS_NT_PLATFORM)
+                subprocess.call(args,
+                                cwd=working_dir,
+                                env=dict(os.environ, UMAPI_MOCK=mock_spec),
+                                shell=IS_NT_PLATFORM,
+                                stdin=None,
+                                stdout=output_file,
+                                stderr=output_file)
                 # p = subprocess.Popen(args, cwd=working_dir, stdout=output_file, stderr=output_file)
                 # output_bytes = subprocess.check_output(cmd, cwd=working_dir, shell=True)
                 # output_file.write(output_bytes.decode())
@@ -328,7 +340,6 @@ class Test:
             if self.test_suite_config['user_sync_common_args']:
                 args.extend(shlex.split(self.test_suite_config['user_sync_common_args'], posix=not IS_NT_PLATFORM))
                 # args.extend(shlex.split(self.test_suite_config['user_sync_common_args']))
-            args.extend(['--test-framework','live'])
             # args.extend(shlex.split(self.user_sync_args, posix=not IS_NT_PLATFORM))
             args.extend(shlex.split(self.user_sync_args, posix=not IS_NT_PLATFORM))
 
@@ -362,7 +373,6 @@ class Test:
             args = [self.test_suite_config['user_sync_path']]
             if self.test_suite_config['user_sync_common_args']:
                 args.extend(shlex.split(self.test_suite_config['user_sync_common_args'], posix=not IS_NT_PLATFORM))
-            args.extend(['--test-framework','test'])
             args.extend(shlex.split(self.user_sync_args, posix=not IS_NT_PLATFORM))
 
             test_request_json_builder = helper.JSONBuilder()

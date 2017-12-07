@@ -37,10 +37,18 @@ def process_args():
                         dest="test_name",
                         default=None)
     parser.add_argument("-l", "--live",
-                        help="sets the user-sync-test tool in live mode, which directs user-sync to communicate with the live servers, and overwrites the recorded session with the communication and output from this new live session.",
+                        help="sets the user-sync-test tool in Live mode, which directs user-sync to communicate "
+                             "with the ummapi server, and overwrites any recorded session with the communication "
+                             "and output from this new live session. (Playback mode is the default mode.)",
                         action="store_true",
-                        dest="live_mode",
-                        default=False)
+                        dest="live_mode")
+    parser.add_argument("-p", "--playback",
+                        help="sets the user-sync-test tool in Playback mode, which suppresses any communication "
+                             "with the umapi server, and instead plays back the responses recorded from the server "
+                             "during the last live session. (This is the default mode.)",
+                        action="store_false",
+                        dest="live_mode")
+    parser.set_defaults(live_mode=False)
     return parser.parse_args()
 
 def init_console_log():

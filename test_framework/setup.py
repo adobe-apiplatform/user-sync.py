@@ -44,14 +44,14 @@ setup(name='user-sync-test',
           'vcrpy',
           'mock',
           'six',
-          'requests'
+          'requests',
       ],
       setup_requires=[],
       tests_require=[
       ],
       entry_points={
           'console_scripts': [
-              'user_sync_test = user_sync_test.app:main'
-          ]
+              'user_sync_test = user_sync_test.app:main',
+          ],
       },
       zip_safe=False)
