@@ -93,7 +93,7 @@ class ConfigLoader(object):
         options = self.invocation_defaults
 
         # get overrides from the main config
-        invocation_config = self.main_config.get_dict_config('invocation_defaults')
+        invocation_config = self.main_config.get_dict_config('invocation_defaults', True)
         if invocation_config:
             for k, v in six.iteritems(self.invocation_defaults):
                 if isinstance(v, bool):
