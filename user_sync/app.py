@@ -152,7 +152,6 @@ def process_args(args=None):
                              "the list is read from a file (see --adobe-only-user-action write-file). "
                              "When using this option, you must also specify what you want done with Adobe-only "
                              "users by also including --adobe-only-user-action and one of its arguments",
-                        nargs=1,
                         metavar='input_path',
                         dest='adobe_only_user_list')
     parser.add_argument('--connector',
@@ -175,7 +174,6 @@ def process_args(args=None):
     parser.add_argument('--strategy',
                         help="whether to fetch and sync the Adobe directory against the customer directory "
                              "or just to push each customer user to the Adobe side.  Default is to fetch and sync.",
-                        nargs=1,
                         metavar='sync|push',
                         dest='strategy')
     parser.add_argument('-t', '--test-mode',
@@ -189,7 +187,6 @@ def process_args(args=None):
     parser.add_argument('--user-filter',
                         help='limit the selected set of users that may be examined for syncing, with the pattern '
                              'being a regular expression.',
-                        nargs=1,
                         metavar='pattern',
                         dest='user_filter')
     parser.add_argument('--users',
