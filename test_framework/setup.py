@@ -18,59 +18,40 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import sys
-
 from setuptools import setup
 
 version_namespace = {}
-with open('user_sync/version.py') as f:
+with open('user_sync_test/version.py') as f:
     exec(f.read(), version_namespace)
 
-setup(name='user-sync',
+setup(name='user-sync-test',
       version=version_namespace['__version__'],
       description='Application for synchronizing customer directories with the Adobe Enterprise Admin Console',
       classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Programming Language :: Python :: 2.7',
-          'Programming Language :: Python :: 3.4',
-          'Programming Language :: Python :: 3.5',
-          'Programming Language :: Python :: 3.6',
           'License :: OSI Approved :: MIT License',
           'Intended Audience :: Developers',
           'Intended Audience :: System Administrators',
       ],
-      url='https://github.com/adobe-apiplatform/user-sync.py',
+      url='https://github.com/adobe-apiplatform/test_framework/user-sync-test.py',
       maintainer='Daniel Brotsky',
       maintainer_email='dbrotsky@adobe.com',
       license='MIT',
-      packages=['user_sync', 'user_sync.connector'],
+      packages=['user_sync_test'],
       install_requires=[
-          'keyring',
-          'okta==0.0.3.1',
-          'psutil',
-          'pycryptodome',
-          'pyldap==2.4.45',
           'PyYAML',
-          'six',
-          'umapi-client>=2.10',
-      ],
-      extras_require={
-          ':sys_platform=="linux" or sys_platform=="linux2"':[
-              'secretstorage',
-              'dbus-python'
-          ],
-          ':sys_platform=="win32"':[
-              'pywin32-ctypes'
-          ]
-      },
-      setup_requires=['nose>=1.0'],
-      tests_require=[
+          'vcrpy',
           'mock',
-          'nose>=1.0',
+          'six',
+          'requests',
+      ],
+      setup_requires=[],
+      tests_require=[
       ],
       entry_points={
           'console_scripts': [
-              'user_sync = user_sync.app:main'
-          ]
+              'user_sync_test = user_sync_test.app:main',
+          ],
       },
       zip_safe=False)

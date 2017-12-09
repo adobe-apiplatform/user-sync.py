@@ -1,0 +1,13 @@
+username: [Your LDAP ID]
+password: [Your LDAP Password]
+host: [Your LDAP Host]
+base_dn: [You Base DN]
+#user_identity_type: enterpriseID
+search_page_size: 200
+require_tls_cert: False
+all_users_filter: "(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
+group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
+#user_identity_type_format: "{idType}ID"
+user_email_format: "{mail}"
+#user_domain_format: "{domain}"
+#user_username_format: "{department}_{user_id}"

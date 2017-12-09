@@ -1,0 +1,70 @@
+user_sync:
+    # (required) arguments (no default value)
+    # Defines the arguments used when invoking the user-sync tool. The relative path in this argument is relative to
+    # working directory defined below.
+    arguments: -c ../../../config-common/user-sync-config.yml --update-user-info --users file ../../../config-common/users.csv
+
+    # Defines settings for test framework running in live mode.
+    live:
+        # (optional) working_dir (default value "live")
+        # Working directory that the user-sync tool is set to when it is invoked at the start of the test.
+        # working_dir: live
+
+        # (optional) output_dir (default value "live/out")
+        # Directory that will be considered the output folder. Typically when specifying user-sync output arguments for
+        # the test cases you would place it in an output folder, such as user-sync "--adobe-only-user-action
+        # write-file out/test.csv". By default, the user-sync output will be written to live/out/out.txt, unless
+        # this output folder or working folder is changed.
+        # TODO: instead of specifying the output folder, this parameter will be renamed output_filename, which would
+        # default to out/out.txt, and 
+        # output_dir: live/out
+
+    test:
+        # (optional) working_dir (default value "test")
+        # Same as /user_sync/live/working_dir, but represents the working directory for when running in the framework
+        # test mode instead of live mode.
+        # working_dir: test
+
+        # (optional) output_dir (default value "test/out")
+        # Same as /user_sync/live/output_dir, but represents the output directory for when running the framework in
+        # test mode.
+        # output_dir: test/out
+
+server:
+    # (optional) cassette_filename (default value "live/cassette.yml")
+    # Cassette file that will be used by the proxy server when recording requests/responses when running the framework
+    # in live mode, or for matching requests and returning responses to the user-sync tool when the framework is in
+    # recorded mode.
+    # cassette_filename: live/cassette.yml
+
+verification:
+    # (optional) text_files (default value is empty list)
+    # A list of files to look for as output from running the command, which will be tested for equality against the
+    # same file from the live output. Only applicable when running in test mode.
+    # text_files:
+    #     - user_list1.csv
+
+    # (optional) unordered_text_files (default value is empty list)
+    # same as text_files above, but doesn't expect the lines of text in the file to be in teh same order. The lines
+    # are sorted before the content is tested for equality.
+    # unordered_text_files:
+    #     - user_list2.csv
+
+    configuration_output:
+        # (optional) temp_path (default value is None)
+        # specifies folder where the user-sync configuration files outputs the log files, and treats the destination
+        # like a temporary path. The folder is cleared before running user-sync. This path references is relative to
+        # the parent directory of the main user-sync configuration file.
+        # temp_path = '../../config-common/temp'
+
+        # (optional) temp_freeze_path (default value is None)
+        # specifies the folder in which to duplicate the temp file output to, relative to the live or test output
+        # folder, for later verification.
+        # temp_freeze_path: 'config'
+
+        # (optional) filtered_log_files (default value is empty list)
+        # specifies a list of regular expressions used to identify log files to compare, in both the live and test
+        # output files. The file must be in the test's output folder, and each filter must result in one match on both
+        # the live and test output files, in order to identify which files to compare.
+        # filtered_log_files:
+        #     - .*\.log$
