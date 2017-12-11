@@ -1,6 +1,6 @@
 # Release Notes for User Sync Tool Version 2.3
 
-These notes apply to v2.3rc2 of 2017-12-03.
+These notes apply to v2.3rc3 of 2017-12-10.
 
 ## New Features
 
@@ -18,14 +18,22 @@ There is a new command-line argument `--connector` for specifying whether to get
 
 [#306](https://github.com/adobe-apiplatform/user-sync.py/issues/306) v2.2.2 crashes if country code not specified.
 
+[#314](https://github.com/adobe-apiplatform/user-sync.py/issues/314) invocation_defaults section should be optional.
+
+[#315](https://github.com/adobe-apiplatform/user-sync.py/issues/315) Can't specify --user-filter or other string-valued args.
+
 ## Compatibility with Prior Versions
 
 All configuration and command-line arguments accepted in prior releases work in this release.  The `--users file` argument is still accepted, and is equivalent to (although more limited than) specifying `--connector csv`.
 
 ## Known Issues
 
-Because the release on Windows is built with a pre-compiled version of pyldap, we have to specify a specific version to be used in each release (see the setup.py file for the specific version).  This may not always be the latest version.
-
 On the Win64 platform, there are very long pathnames embedded in the released build artifact `user-sync.pex`, which will cause problems unless you are on Windows 10 and are either running Python 3.6 or have enabled long pathnames system-wide (as described in this [Microsoft Dev Center article](https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx)).  To work around this issue on older platforms, set the `PEX_ROOT` environment variable (as described [in the docs here](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/setup_and_installation.html)) to be a very short path (e.g., `set PEX_ROOT=C:\pex`).
 
 Each release on each platform is built with a specific version of Python.  Typically this is the latest available for that platform (from the OS vendor, if they provide one, from [python.org](http://python.org) otherwise).  In general, and especially on Windows, you should use the same Python to run User Sync as it was built with.
+
+## Additional Build Information
+
+User Sync is now built with PyLDAP 2.4.45.
+
+User Sync is now built with umapi_client 2.10.  This allows mocking the UMAPI connection for use with a test framework.  See the test_framework directory in the source tree for more details.
