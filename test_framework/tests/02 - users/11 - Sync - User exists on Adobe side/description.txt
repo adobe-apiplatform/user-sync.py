@@ -1,0 +1,10 @@
+Sync - User exists on Adobe side
+
+Preconditions:
+1. An user from customer group already exists on Adobe side.
+
+Actions:
+1. Run the sync (python aed_sync.pex or ./aed_sync) with or without the filters
+
+Result
+1. Sync runs, but no changes are made to the user.

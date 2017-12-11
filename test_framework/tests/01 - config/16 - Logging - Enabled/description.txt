@@ -1,0 +1,10 @@
+Default country code
+
+Preconditions:
+
+Actions:
+1. Enter a valid country code.
+2. Run the user-sync.
+
+Result
+User is able to run the user-sync.

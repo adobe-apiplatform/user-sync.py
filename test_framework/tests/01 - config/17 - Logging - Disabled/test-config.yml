@@ -1,0 +1,5 @@
+user_sync:
+    arguments: -c ../../../config-common/user-sync-config-disabled-logging.yml --users file ../../../config-common/users.csv
+
+verification:
+    configuration_output:

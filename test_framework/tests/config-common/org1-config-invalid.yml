@@ -1,0 +1,10 @@
+server:
+  protocol: http://
+  host: localhost:8888
+
+enterpriseINVALID:
+  org_id: "[Your org ID]"
+  api_key: "[Your API Key]"
+  client_secret: "[Your client secret]"
+  tech_acct: "[Your tech account]"
+  priv_key_path: private2.key

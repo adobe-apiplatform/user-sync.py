@@ -1,0 +1,10 @@
+Owning org config - Not set up properly
+
+Preconditions:
+
+Actions:
+1. connector-umapi.yml file is not set up correctly.
+2. Run the user-sync.
+
+Result
+Error message appears.

@@ -1,0 +1,10 @@
+Logging - Disabled
+
+Preconditions:
+
+Actions:
+1. Set log_to_file: False
+2. Run the user-sync.
+
+Result
+No log is recorded.

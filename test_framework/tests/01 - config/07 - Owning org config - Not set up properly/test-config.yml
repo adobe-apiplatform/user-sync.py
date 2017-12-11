@@ -1,0 +1,2 @@
+user_sync:
+    arguments: -c ../../../config-common/user-sync-config-invalid-umapi.yml --users file ../../../config-common/users.csv

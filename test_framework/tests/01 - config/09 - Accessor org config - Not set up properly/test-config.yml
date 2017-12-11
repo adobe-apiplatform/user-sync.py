@@ -1,0 +1,3 @@
+disabled: True
+user_sync:
+    arguments: -c ../../../config-common/user-sync-config-invalid-accessor.yml --users file ../../../config-common/users-accessors.csv

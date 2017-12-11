@@ -1,0 +1,9 @@
+Sync AdobeID user
+
+Preconditions:
+
+Actions:
+1. Run user-sync for AdobeID users.
+
+Result
+AdobeID users can be synced to the Adobe dashboard.

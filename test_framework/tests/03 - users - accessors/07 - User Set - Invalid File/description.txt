@@ -1,0 +1,10 @@
+User Set - Invalid File
+
+Preconditions:
+
+Actions:
+1. Enter --users file user_list.csv
+(where user_list.csv leads to an invalid file path)
+
+Result
+Error message appears.

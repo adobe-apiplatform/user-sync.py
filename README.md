@@ -19,7 +19,6 @@ The [User Sync Documentation](https://adobe-apiplatform.github.io/user-sync.py/)
 - [User Manual](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/)
 - [Step-by-Step Setup](https://adobe-apiplatform.github.io/user-sync.py/en/success-guide/)
 
-
 ## System Requirements
 
 To run User Sync, you must have an up-to-date 64-bit Python installed on your system, either Python 2.7 or Python 3.4+.  In addition you must have User Management API Credentials for your organization (see [the official documentation](https://www.adobe.io/products/usermanagement/docs/gettingstarted))
@@ -66,15 +65,10 @@ We pre-package releases on Ubuntu, so the advice here is definitely accurate for
     sudo apt-get install build-essential
     ```
 * Make sure you use the system package manager to install the following packages (and their dependencies):
-    * python-dev
-    * python-pip (server variants often don't have it pre-installed)
-	* python-virtualenv (ditto)
+    * python-dev (or python3-dev if you are doing python3 builds)
+    * python-pip (not needed for python3)
+	* python-virtualenv (not needed for python3)
 	* pkg-config
-    * python-devel
-    * python-pip (see above)
-	* python-virtualenv
-	* pkgconfig
-	* python-dbus
 	* libssl-dev
 	* libldap2-dev
 	* libsasl2-dev
@@ -82,8 +76,9 @@ We pre-package releases on Ubuntu, so the advice here is definitely accurate for
 	* libffi-dev
 * For convenience, you can copy and paste this command:
     ```bash
-    sudo apt-get install python-dev python-pip python-virtualenv pkg-config python-dbus libssl-dev libldap2-dev libsasl2-dev libdbus-glib-1-dev libffi-dev
+    sudo apt-get install python-dev python-pip python-virtualenv pkg-config libssl-dev libldap2-dev libsasl2-dev libdbus-glib-1-dev libffi-dev
     ```
+* You don't need the python-dbus package to _build_ user-sync, but you will need it to run user-sync if you use the dbus secure store for your credentials.
 
 ### CentOS and other RedHat variants
 
@@ -101,19 +96,19 @@ We pre-package releases on CentOS, so the advice here is definitely accurate for
     sudo yum install epel-release
     ```
 * Make sure you use the system package manager to install the following packages (and their dependencies):
-    * python-devel
-    * python-pip (see above)
-	* python-virtualenv
+    * python-devel (or python3-devel, if you are doing python3 builds)
+    * python-pip (not needed for python3)
+	* python-virtualenv (not needed for python3)
 	* pkgconfig
-	* python-dbus
 	* openssl-devel
 	* openldap-devel (includes sasl)
 	* dbus-glib-devel
 	* libffi-devel
 * For convenience, you can copy and paste this command:
     ```bash
-    sudo yum install python-devel python-pip python-virtualenv pkgconfig python-dbus openssl-devel openldap-devel dbus-glib-devel libffi-devel
+    sudo yum install python-devel python-pip python-virtualenv pkgconfig openssl-devel openldap-devel dbus-glib-devel libffi-devel
     ```
+* You don't need the python-dbus package to _build_ user-sync, but you will need it to run user-sync if you use the dbus secure store for your credentials.
 
 ### Mac OS X
 
@@ -148,8 +143,8 @@ In general, regardless of how you get your Python, you will need:
 
 Windows is the trickiest platform because you need a command line development environment and package manager, and many of the dependencies don't have Windows builds available on PyPI.  So rather than building from Windows on scratch, we recommend the following procedure:
   
-* Install [Cygwin](https://www.cygwin.com/) to get a bash command-line, together with basic tools such as `git` and `make`.
-* Use the [python.org](https://python.org) installers for the desired version of Python.
+* Install [Cygwin](https://www.cygwin.com/) to get a bash command-line, together with basic tools such as `git` and `make`.  You will need to specify in the Cygwin installer that you want `git` and `make` installed, because they are not defaults.  Alternatively, you can install the entire Cygwin suite of development tools, but that's probably more than you need.
+* Use the [python.org](https://python.org) *64-bit* installers for the desired version of Python.
 * Install the [latest Visual C++ Redistributable Libraries](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads) from Microsoft (because python3 will need these to run in a virtual environment).
 * For the User Sync dependencies that don't have Windows 64-bit wheels on [PyPI](https://pypi.python.org/), get builds from [Christoph Guelke's excellent site](http://www.lfd.uci.edu/~gohlke/pythonlibs/).  We have stashed the ones needed for the current release in the `external` directory, and that's where the `Makefile` looks for them, so if you go fetch your own be sure to put them in that same directory.
 

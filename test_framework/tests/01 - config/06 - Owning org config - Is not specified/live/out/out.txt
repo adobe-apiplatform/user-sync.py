@@ -1,0 +1,7 @@
+2017-06-12 15:43:06 76448 INFO config - Using main config file: [[../../../config-common/user-sync-config-no-umapi.yml]]
+2017-06-12 15:43:06 76448 INFO main - ========== Start Run (User Sync version: 2.1) ==============
+2017-06-12 15:43:06 76448 INFO main - ------- Invocation parameters -------
+2017-06-12 15:43:06 76448 INFO main - [[/Users/imak/github-adobe/user-sync.py/dist/user-sync --test-framework live -c ../../../config-common/user-sync-config-no-umapi.yml --users file ../../../config-common/users.csv]]
+2017-06-12 15:43:06 76448 INFO main - -------------------------------------
+2017-06-12 15:43:06 76448 CRITICAL main - Value not found for key: enterprise in: umapi configuration
+2017-06-12 15:43:06 76448 INFO main - ========== End Run (User Sync version: 2.1) (Total time: 0:00:00) 

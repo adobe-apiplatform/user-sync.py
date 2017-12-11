@@ -1,0 +1,8 @@
+2017-06-12 15:59:25 76663 INFO config - Using main config file: [[../../../config-common/user-sync-config.yml]]
+2017-06-12 15:59:25 76663 INFO main - ========== Start Run (User Sync version: 2.1) ==============
+2017-06-12 15:59:25 76663 INFO main - ------- Invocation parameters -------
+2017-06-12 15:59:25 76663 INFO main - [[/Users/imak/github-adobe/user-sync.py/dist/user-sync --test-framework live -c ../../../config-common/user-sync-config.yml --users file ../../../config-common/users-missing.csv --update-user-info]]
+2017-06-12 15:59:25 76663 INFO main - -------------------------------------
+2017-06-12 15:59:25 76663 INFO processor - ---------- Start Load from Directory -----------------------
+2017-06-12 15:59:25 76663 CRITICAL main - [Errno 2] No such file or directory: '../../../config-common/users-missing.csv'
+2017-06-12 15:59:25 76663 INFO main - ========== End Run (User Sync version: 2.1) (Total time: 0:00:00) 
