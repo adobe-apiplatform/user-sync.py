@@ -269,7 +269,7 @@ class LDAPDirectoryConnector(object):
             if sn_value is not None:
                 user['lastname'] = sn_value
             c_value = LDAPValueFormatter.get_attribute_value(record, six.text_type('c'))
-            source_attributes['c'] = c_value if c_value else None
+            source_attributes['c'] = c_value.upper() if c_value else None
             if c_value is not None:
                 user['country'] = c_value.upper()
 
