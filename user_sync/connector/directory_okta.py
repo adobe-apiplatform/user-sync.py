@@ -230,7 +230,7 @@ class OktaDirectoryConnector(object):
             source_attributes['countryCode'] = profile.countryCode
             user['country'] = profile.countryCode.upper()
         else:
-            source_attributes['countryCode'] = user['country'] = None
+            source_attributes['countryCode'] = None
 
         if extended_attributes:
             for extended_attribute in extended_attributes:
