@@ -1,0 +1,3 @@
+disabled: True
+user_sync:
+    arguments: -c ../../../config-common/user-sync-config.yml --users files ../../../config-common/users-bulk.csv --update-user-info

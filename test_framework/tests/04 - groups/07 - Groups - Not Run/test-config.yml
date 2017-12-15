@@ -1,0 +1,2 @@
+user_sync:
+    arguments: -c ../../../config-common/user-sync-config.yml --users file ../../../config-common/users-enterprise.csv

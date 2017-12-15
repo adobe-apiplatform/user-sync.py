@@ -1,0 +1,10 @@
+Groups - Add User
+
+Preconditions:
+User is in directory group, but is not in Adobe group.
+
+Actions:
+1. Run user-sync with --users pattern --process-groups
+
+Result
+User is added to the Adobe mapped group. No changes are made to groups not mentioned in the config.

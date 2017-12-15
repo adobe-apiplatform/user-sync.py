@@ -1,0 +1,10 @@
+Do not update info
+
+Preconditions:
+1. An existing user with information that differs between Customer side and Adobe side.
+
+Actions:
+1. Run any argument without --update-user-info
+
+Result
+1. User information is not updated.

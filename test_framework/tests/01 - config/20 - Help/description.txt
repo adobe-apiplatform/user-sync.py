@@ -1,0 +1,10 @@
+Help
+
+Preconditions:
+
+Actions:
+1. Enter -h
+2. Enter --help
+
+Result
+Documentation message listing options are displayed and then connection is terminated.

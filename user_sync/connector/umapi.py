@@ -32,7 +32,7 @@ import user_sync.config
 import user_sync.helper
 import user_sync.identity_type
 from user_sync.error import AssertionException
-from user_sync.version import __version__ as APP_VERSION
+from user_sync.version import __version__ as app_version
 
 try:
     from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
@@ -121,7 +121,7 @@ class UmapiConnector(object):
                 ims_endpoint_jwt=server_options['ims_endpoint_jwt'],
                 user_management_endpoint=um_endpoint,
                 test_mode=options['test_mode'],
-                user_agent="user-sync/" + APP_VERSION,
+                user_agent="user-sync/" + app_version,
                 logger=self.logger,
                 timeout_seconds=float(server_options['timeout']),
                 retry_max_attempts=server_options['retries'] + 1,
@@ -178,9 +178,6 @@ class Commands(object):
         """
         :type attributes: dict
         """
-        if self.identity_type == user_sync.identity_type.ADOBEID_IDENTITY_TYPE:
-            # shouldn't happen, but ignore it if it does
-            return
         if attributes is not None and len(attributes) > 0:
             params = self.convert_user_attributes_to_params(attributes)
             self.do_list.append(('update', params))
@@ -212,14 +209,7 @@ class Commands(object):
         """
         :type attributes: dict
         """
-        if self.identity_type == user_sync.identity_type.ADOBEID_IDENTITY_TYPE:
-            email = self.email if self.email else self.username
-            if not email:
-                error_message = "ERROR: you must specify an email with an Adobe ID"
-                raise AssertionException(error_message)
-            params = self.convert_user_attributes_to_params({'email': email})
-        else:
-            params = self.convert_user_attributes_to_params(attributes)
+        params = self.convert_user_attributes_to_params(attributes)
 
         on_conflict_value = None
         option = params.pop('option', None)

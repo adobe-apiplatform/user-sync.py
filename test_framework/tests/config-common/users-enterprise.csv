@@ -1,0 +1,20 @@
+firstname,lastname,email,country,groups,bc,subco,type,username,domain
+Test,02,typetest-e1@test1.on-the-side.net,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID
+Test,04,typetest-e4@test1.on-the-side.net,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID
+Test,07,cce6@ensemble.ca,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID
+Test,08,jsmith1@test1.on-the-side.net,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID
+Test,09,jsmith3@test1.on-the-side.net,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID
+Test,13,typetest-e3@test1.on-the-side.net,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID
+Test,14,cce1010101@ensemble.ca,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID
+Test,16,cce5@ensemble.ca,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID
+Test,18,cce0@ensemble.ca,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID
+Test,20,cce7@ensemble.ca,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID
+Test,21,cce3@ensemble.ca,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID
+Test,22,hook1@test1.on-the-side.net,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID
+Test,23,newuser007@test1.on-the-side.net,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID
+Test,24,jsmith2@test1.on-the-side.net,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID
+Test,26,hook3@test1.on-the-side.net,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID
+Test,27,cce4@ensemble.ca,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID
+Test,29,cce2@ensemble.ca,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID
+Test,30,typetest-e2@test1.on-the-side.net,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID
+Test,31,jsmith4@test1.on-the-side.net,CA,CCE AD Group 1,CA11111,"Ensemble Systems Inc.",enterpriseID

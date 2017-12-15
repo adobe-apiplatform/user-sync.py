@@ -151,6 +151,11 @@ directory_users:
     # [Uncomment the next line if you have a custom csv configuration file.]
     #csv: "connector-csv.yml"
 
+    # (optional) okta (no default value)
+    # okta is a 3rd party federation provider compatible with Adobe Enterprise Federated ID.
+    # See https://developer.okta.com/ for Okta developer information.
+    # okta: "connector-okta.ytml"
+
   # (optional) groups (no default value)
   # The groups setting specifies how groups in the enterprise directory map
   # to product configurations and user groups on the Adobe side (collectively
@@ -218,6 +223,16 @@ logging:
   # file, not relative to the User Sync process working directory.
   file_log_directory: logs
 
+  # (optional) file_log_name_format (default value "{:%Y-%m-%d}.log")
+  # A Python format string that can refer to single positional argument
+  # which is a `datetime.datetime` object produced by calling `datetime.now()`
+  # at the start of the run.  The default value gives a log file named
+  # for the current date in 2017-11-21 format, which means the first run
+  # in each new day starts a new log file.  You can alter this default
+  # format to a fixed string if you use a log rotation utility that expects
+  # logs to have a particular name.
+  file_log_name_format: '{:%Y-%m-%d}.log'
+
   # (optional) file_log_level (default value "info")
   # This determines the detail level of the information logged to files.
   # Value must be one of "debug", "info", "warning", "error", or "critical",
@@ -230,3 +245,62 @@ logging:
   # This determines the detail level of the information logged to standard output.
   # See the description of file_log_level for details of the allowed values.
   console_log_level: info
+
+# The invocation_defaults section controls the default values used
+# for command-line arguments.  (Of course, these cannot be used to
+# change defaults for how the configuration files are read.)  This
+# entire section is optional, as are each of its entries.  But once
+# you standardize on specific argument values for all your runs,
+# putting them here can be an easy way to reliably use them, even
+# when running interactively rather than from a script.
+#
+# For arguments that take multiple arguments, such as --connector
+# and --users, the two-argument case should be specified as a list,
+# either using yaml compact notation:
+#   connector: [csv, users-file.csv]
+# or using yaml multi-line notation:
+#   connector:
+#     - csv
+#     - users-file.csv
+# The one-argument case can either use a string:
+#   connector: ldap
+# or a compact list of one value:
+#   connector: [ldap]
+# or a multi-line list of one value:
+#   connector:
+#     - ldap
+#
+# For arguments that are booleans, yaml syntax allows specifying their
+# default values using either True/False or Yes/No (case insensitive).
+#
+# If you specify filenames as part of your default values, they
+# are treated as if they were specified on the command line; that is,
+# they are interpreted relative to the User Sync current directory
+# (rather than the directory containing the configuration file).
+invocation_defaults:
+  # For argument --adobe-only-user-action, the default is 'preserve'.
+  adobe_only_user_action: preserve
+  # For argument --adobe-only-user-list, the default is empty (no value).
+  adobe_only_user_list:
+  # For argument --connector, the default is 'ldap'.
+  connector: ldap
+  # For argument --process-groups, the default is False (don't process).
+  # If you set this default to True, you can supply the argument
+  # --no-process-groups to override the default.
+  process_groups: No
+  # For argument --strategy, the default is 'sync'.
+  strategy: sync
+  # For argument --test-mode (or -t), the default is False (live run).
+  # if you set this default to True, you can supply the argument
+  # --no-test-mode (or -T) to override the default.
+  test_mode: No
+  # For argument --update-user-info, the default is False (don't update).
+  # If you set this default to True, you can supply the argument
+  # --no-update-user-info to override the default.
+  update_user_info: No
+  # For argument --user-filter, the default is empty (no value).
+  # Because regular expression notation uses special characters,
+  # any default you set should almost certainly be single-quoted.
+  user_filter:
+  # For argument --users, the default is 'all'.
+  users: all

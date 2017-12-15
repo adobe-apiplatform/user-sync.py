@@ -269,6 +269,22 @@ There is also a GUI for managing windows scheduled tasks. You can
 find the Task Scheduler in the Windows administrative control
 panel.
 
+### Log File Rotation
+
+The default name of the log file produced by each run of User Sync changes on a daily basis,
+which provides a sort of "poor man's log file rotation" where all prior days are saved
+uncompressed in the same directory.  Should you wish to use a log file rotation utility,
+you will probably want to fix the name of the log produced, so that your utility can
+monitor the size of the log and do rotation on its own schedule.  In order to do this,
+just define the `log_file_name_format` so that it has the desired string value, without
+any formatting directives.  For example, if you wanted to have the log named "user-sync.log"
+in all cases, you would put this setting in your configuration file.
+
+```yaml
+logging:
+  log_file_name_format: "user-sync.log"
+```
+
 ---
 
 [Previous Section](advanced_configuration.md)

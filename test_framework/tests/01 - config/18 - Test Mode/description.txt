@@ -1,0 +1,11 @@
+Test Mode
+
+Preconditions:
+
+Actions:
+1. Navigate to the directory where the aed_sync file is
+2. Enter -t
+3. Enter --test-mode (TODO: doesn't support more than one user-sync call in succession)
+
+Result
+Run API action calls in test mode (does not execute changes). Logs what would have been executed.

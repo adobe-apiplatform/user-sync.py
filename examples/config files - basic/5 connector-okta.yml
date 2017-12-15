@@ -1,0 +1,36 @@
+# This is a sample configuration file for the okta connector type.
+#
+# Okta is an identity hosting company that supports being the Identity Provider
+# for Adobe Enterprise Federated ID.
+#
+# This sample file contains all of the settable options for this protocol.
+# It is recommended that you make a copy of this file and edit it for your needs.
+# While you are at it, you will likely want to remove a lot of this  commentary,
+# in order to enhance the readability of your file.
+
+# connection settings (required)
+# You must specify both of these settings.  The token should be protected.
+# For more information on getting an Okta API Token, see:
+# http://developer.okta.com/docs/api/getting_started/getting_a_token.html
+host: "sample-817042.oktapreview.com"
+api_token: "00R_KJEaIcgAswrlO_sample_ZdgxC5scYZn8IZ-zi"
+
+# (required) group_filter_format (default given below)
+# specifies the string format used to construct a group query.
+# {group} is replaced with the name of the group to find.
+group_filter_format: "{group}"
+
+# (required) all_users_filter (default given below)
+# specifies the string filter used to find all users in the directory.
+# Filter Examples:
+#   Filter user based on countryCode attribute in user profile
+#      all_users_filter: 'user.profile.countryCode == "MX"'
+#   Filter user based on status of ACTIVE
+#      all_users_filter: 'user.status == "ACTIVE"'
+all_users_filter: 'user.status == "ACTIVE"'
+
+# (optional) default_identity_type (no default)
+# specifies the identity type of the dashboard user to create.
+# the valid values are: enterpriseID, federatedID
+# If not specified, the default identity type from the main config file is used.
+# user_identity_type: federatedID

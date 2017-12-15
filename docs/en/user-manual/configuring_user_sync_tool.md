@@ -320,6 +320,7 @@ written to the log and console output.
 logging:
   log_to_file: True | False
   file_log_directory: "path to log folder"
+  file_log_name_format: "Python format string for datetime"
   file_log_level: debug | info | warning | error | critical
   console_log_level: debug | info | warning | error | critical
 ```
@@ -335,6 +336,14 @@ written.
 containing this configuration file.
 - Ensure that the file and folder have appropriate read/write
 permissions.
+
+When file-logging is enabled, the file_log_name_format value is
+an optional Python format string which takes as its only argument
+the Python `datetime` value at the start of the run;
+the format operation produces the name of the log file.  The default
+value of this parameter, `{:%Y-%m-%d}.log`, produces a file
+named for the date of the run in year-month-day format,
+with the extension ".log", as `2017-11-21.log`.
 
 Log-level values determine how much information is written to the
 log file or console.
