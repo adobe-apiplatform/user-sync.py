@@ -76,7 +76,7 @@ class LDAPDirectoryConnector(object):
         builder.set_string_value('user_email_format', six.text_type('{mail}'))
         builder.set_string_value('user_username_format', None)
         builder.set_string_value('user_domain_format', None)
-        builder.set_string_value('user_given_name_format', six.text_type('{giveName}'))
+        builder.set_string_value('user_given_name_format', six.text_type('{givenName}'))
         builder.set_string_value('user_surname_format', six.text_type('{sn}'))
         builder.set_string_value('user_country_code_format', six.text_type('{c}'))
         builder.set_string_value('user_identity_type', None)
