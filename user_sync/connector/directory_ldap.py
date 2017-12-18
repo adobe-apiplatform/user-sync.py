@@ -76,6 +76,9 @@ class LDAPDirectoryConnector(object):
         builder.set_string_value('user_email_format', six.text_type('{mail}'))
         builder.set_string_value('user_username_format', None)
         builder.set_string_value('user_domain_format', None)
+        builder.set_string_value('user_given_name_format', six.text_type('{giveName}'))
+        builder.set_string_value('user_surname_format', six.text_type('{sn}'))
+        builder.set_string_value('user_country_code_format', six.text_type('{c}'))
         builder.set_string_value('user_identity_type', None)
         builder.set_int_value('search_page_size', 200)
         builder.set_string_value('logger_name', LDAPDirectoryConnector.name)
@@ -93,6 +96,9 @@ class LDAPDirectoryConnector(object):
         self.user_email_formatter = LDAPValueFormatter(options['user_email_format'])
         self.user_username_formatter = LDAPValueFormatter(options['user_username_format'])
         self.user_domain_formatter = LDAPValueFormatter(options['user_domain_format'])
+        self.user_given_name_formatter = LDAPValueFormatter(options['user_given_name_format'])
+        self.user_surname_formatter = LDAPValueFormatter(options['user_surname_format'])
+        self.user_country_code_formatter = LDAPValueFormatter(options['user_country_code_format'])
 
         password = caller_config.get_credential('password', options['username'])
         # this check must come after we get the password value
@@ -195,7 +201,10 @@ class LDAPDirectoryConnector(object):
         options = self.options
         base_dn = six.text_type(options['base_dn'])
 
-        user_attribute_names = [six.text_type('givenName'), six.text_type('sn'), six.text_type('c')]
+        user_attribute_names = []
+        user_attribute_names.extend(self.user_given_name_formatter.get_attribute_names())
+        user_attribute_names.extend(self.user_surname_formatter.get_attribute_names())
+        user_attribute_names.extend(self.user_country_code_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_identity_type_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
@@ -261,18 +270,24 @@ class LDAPDirectoryConnector(object):
             elif last_attribute_name:
                 self.logger.warning('No domain attribute (%s) for user with dn: %s', last_attribute_name, dn)
 
-            given_name_value = LDAPValueFormatter.get_attribute_value(record, six.text_type('givenName'))
+            given_name_value, last_attribute_name = self.user_given_name_formatter.generate_value(record)
             source_attributes['givenName'] = given_name_value
             if given_name_value is not None:
                 user['firstname'] = given_name_value
-            sn_value = LDAPValueFormatter.get_attribute_value(record, six.text_type('sn'))
+            elif last_attribute_name:
+                self.logger.warning('No given name attribute (%s) for user with dn: %s', last_attribute_name, dn)
+            sn_value, last_attribute_name = self.user_surname_formatter.generate_value(record)
             source_attributes['sn'] = sn_value
             if sn_value is not None:
                 user['lastname'] = sn_value
-            c_value = LDAPValueFormatter.get_attribute_value(record, six.text_type('c'))
+            elif last_attribute_name:
+                self.logger.warning('No surname attribute (%s) for user with dn: %s', last_attribute_name, dn)
+            c_value, last_attribute_name = self.user_country_code_formatter.generate_value(record)
             source_attributes['c'] = c_value
             if c_value is not None:
                 user['country'] = c_value.upper()
+            elif last_attribute_name:
+                self.logger.warning('No country code attribute (%s) for user with dn: %s', last_attribute_name, dn)
 
             if extended_attributes is not None:
                 for extended_attribute in extended_attributes:
