@@ -51,19 +51,17 @@ all_users_filter: 'user.status == "ACTIVE"'
 # There is no default value for this setting, because most directories don't contain
 # users with different identity types (so setting the default identity type suffices).
 # If your directory contains users of different identity types, you should define
-# this field to look at the value of an appropriate attribute in your directory.
-# For example, if your directory attribute "idType" had one of the values
+# this field to look at the value of an appropriate attribute in your okta user profile.
+# For example, if your Okta user profile attribute "idType" had one of the values
 # adobe, enterprise, or federated in it for each user, you could use:
 #user_identity_type_format: "{idType}ID"
 
 # (optional) user_email_format (default value given below)
 # user_email_format specifies how to construct a user's email address by
-# combining constant strings with the values of specific directory attributes.
+# combining constant strings with the values of specific Okta profile attributes.
 # Any names in curly braces are taken as attribute names, and everything including
 # the braces will be replaced on a per-user basis with the values of the attributes.
-# The default value used here is simple, and suitable for OpenLDAP systems.  If you
-# are using a non-email-aware AD system, which holds the username separately
-# from the domain name, you may want: "{sAMAccountName}@mydomain.com"
+# The default value is from "email" field in Okta user profile.
 # NOTE: for this and every format setting, the constant strings must be in
 # the encoding specified by the string_encoding setting, above.
 user_email_format: "{email}"
@@ -89,30 +87,30 @@ user_email_format: "{email}"
 
 # (optional) user_given_name_format (default value given below)
 # user_given_name_format specifies how to construct a user's given name by
-# combining constant strings with the values of specific directory attributes.
+# combining constant strings with the values of specific Okta profile attributes.
 # Any names in curly braces are taken as attribute names, and everything including
 # the braces will be replaced on a per-user basis with the values of the attributes.
-# The default value used here is simple, and suitable for OpenLDAP systems.
+# The default value is from "firstName" field in Okta user profile..
 # NOTE: for this and every format setting, the constant strings must be in
 # the encoding specified by the string_encoding setting, above.
 #user_given_name_format: "{firstName}"
 
 # (optional) user_surname_format (default value given below)
 # user_surname_format specifies how to construct a user's surname by
-# combining constant strings with the values of specific directory attributes.
+# combining constant strings with the values of specific Okta profile attributes.
 # Any names in curly braces are taken as attribute names, and everything including
 # the braces will be replaced on a per-user basis with the values of the attributes.
-# The default value used here is simple, and suitable for OpenLDAP systems.
+# The default value is from "lastName" field in Okta user profile.
 # NOTE: for this and every format setting, the constant strings must be in
 # the encoding specified by the string_encoding setting, above.
 #user_surname_format: "{lastName}"
 
 # (optional) user_country_code_format (default value given below)
 # user_country_code_format specifies how to construct a user's country code by
-# combining constant strings with the values of specific directory attributes.
+# combining constant strings with the values of specific Okta profile attributes.
 # Any names in curly braces are taken as attribute names, and everything including
 # the braces will be replaced on a per-user basis with the values of the attributes.
-# The default value used here is simple, and suitable for OpenLDAP systems.
+# The default value is from "countryCode" field in Okta user profile.
 # NOTE: for this and every format setting, the constant strings must be in
 # the encoding specified by the string_encoding setting, above.
 #user_country_code_format: "{countryCode}"
