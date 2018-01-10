@@ -300,6 +300,7 @@ class LDAPDirectoryConnector(object):
                 msgid = connection.search(base_dn, scope,
                                           filterstr=filter_string, attrlist=attributes)
                 result_type, response_data, _rmsgid = connection.result2(msgid)
+                msgid = None
                 if result_type in self.expected_result_types and (response_data is not None):
                     for item in response_data:
                         yield item
