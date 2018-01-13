@@ -128,6 +128,10 @@ class ConfigLoader(object):
         else:
             raise AssertionException('Unknown connector type: %s' % connector_type)
 
+        # --process-groups
+        if self.args['process_groups'] is not None:
+            options['process_groups'] = self.args['process_groups']
+
         # --strategy
         if user_sync.helper.normalize_string(self.args['strategy'] or options['strategy']) == 'push':
             options['strategy'] = 'push'
@@ -135,6 +139,10 @@ class ConfigLoader(object):
         # --test-mode
         if self.args['test_mode'] is not None:
             options['test_mode'] = self.args['test_mode']
+
+        # --update-user-info
+        if self.args['update_user_info'] is not None:
+            options['update_user_info'] = self.args['update_user_info']
 
         # --adobe-only-user-action
         if options['strategy'] == 'push':
