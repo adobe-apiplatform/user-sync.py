@@ -309,32 +309,41 @@ class LDAPDirectoryConnector(object):
         connection = self.connection
         search_page_size = self.options['search_page_size']
 
-        lc = ldap.controls.libldap.SimplePagedResultsControl(True, size=search_page_size, cookie='')
-
         msgid = None
         try:
-            has_next_page = True
-            while has_next_page:
-                response_data = None
-                result_type = None
-                if msgid is not None:
-                    result_type, response_data, _rmsgid, serverctrls = connection.result3(msgid)
-                    msgid = None
-                    pctrls = [c for c in serverctrls
-                              if c.controlType == ldap.controls.libldap.SimplePagedResultsControl.controlType]
-                    if not pctrls:
-                        self.logger.warn('Server ignored RFC 2696 control.')
-                        has_next_page = False
-                    else:
-                        lc.cookie = cookie = pctrls[0].cookie
-                        if not cookie:
-                            has_next_page = False
-                if has_next_page:
-                    msgid = connection.search_ext(base_dn, scope,
-                                                  filterstr=filter_string, attrlist=attributes, serverctrls=[lc])
+            if search_page_size == 0:
+                msgid = connection.search(base_dn, scope,
+                                          filterstr=filter_string, attrlist=attributes)
+                result_type, response_data, _rmsgid = connection.result2(msgid)
+                msgid = None
                 if result_type in self.expected_result_types and (response_data is not None):
                     for item in response_data:
                         yield item
+            else:
+                lc = ldap.controls.libldap.SimplePagedResultsControl(True, size=search_page_size, cookie='')
+
+                has_next_page = True
+                while has_next_page:
+                    response_data = None
+                    result_type = None
+                    if msgid is not None:
+                        result_type, response_data, _rmsgid, serverctrls = connection.result3(msgid)
+                        msgid = None
+                        pctrls = [c for c in serverctrls
+                                  if c.controlType == ldap.controls.libldap.SimplePagedResultsControl.controlType]
+                        if not pctrls:
+                            self.logger.warn('Server ignored RFC 2696 control.')
+                            has_next_page = False
+                        else:
+                            lc.cookie = cookie = pctrls[0].cookie
+                            if not cookie:
+                                has_next_page = False
+                    if has_next_page:
+                        msgid = connection.search_ext(base_dn, scope,
+                                                      filterstr=filter_string, attrlist=attributes, serverctrls=[lc])
+                    if result_type in self.expected_result_types and (response_data is not None):
+                        for item in response_data:
+                            yield item
         except GeneratorExit:
             if msgid is not None:
                 connection.abandon(msgid)
