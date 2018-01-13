@@ -20,6 +20,7 @@
 
 import okta
 import six
+import string
 from okta.framework.OktaError import OktaError
 
 import user_sync.config
@@ -66,12 +67,30 @@ class OktaDirectoryConnector(object):
                                  '{group}')
         builder.set_string_value('all_users_filter',
                                  'user.status == "ACTIVE"')
+        builder.set_string_value('string_encoding', 'utf8')
+        builder.set_string_value('user_identity_type_format', None)
+        builder.set_string_value('user_email_format', six.text_type('{email}'))
+        builder.set_string_value('user_username_format', None)
+        builder.set_string_value('user_domain_format', None)
+        builder.set_string_value('user_given_name_format', six.text_type('{firstName}'))
+        builder.set_string_value('user_surname_format', six.text_type('{lastName}'))
+        builder.set_string_value('user_country_code_format', six.text_type('{countryCode}'))
         builder.set_string_value('user_identity_type', None)
         builder.set_string_value('logger_name', self.name)
         host = builder.require_string_value('host')
         api_token = builder.require_string_value('api_token')
 
         options = builder.get_options()
+
+        OKTAValueFormatter.encoding = options['string_encoding']
+        self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
+        self.user_identity_type_formatter = OKTAValueFormatter(options['user_identity_type_format'])
+        self.user_email_formatter = OKTAValueFormatter(options['user_email_format'])
+        self.user_username_formatter = OKTAValueFormatter(options['user_username_format'])
+        self.user_domain_formatter = OKTAValueFormatter(options['user_domain_format'])
+        self.user_given_name_formatter = OKTAValueFormatter(options['user_given_name_format'])
+        self.user_surname_formatter = OKTAValueFormatter(options['user_surname_format'])
+        self.user_country_code_formatter = OKTAValueFormatter(options['user_country_code_format'])
 
         self.users_client = None
         self.groups_client = None
@@ -167,7 +186,14 @@ class OktaDirectoryConnector(object):
         :rtype iterator(str, str)
         """
 
-        user_attribute_names = ["firstName", "lastName", "login", "email", "countryCode"]
+        user_attribute_names = []
+        user_attribute_names.extend(self.user_given_name_formatter.get_attribute_names())
+        user_attribute_names.extend(self.user_surname_formatter.get_attribute_names())
+        user_attribute_names.extend(self.user_country_code_formatter.get_attribute_names())
+        user_attribute_names.extend(self.user_identity_type_formatter.get_attribute_names())
+        user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
+        user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
+        user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
         extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
         user_attribute_names.extend(extended_attributes)
 
@@ -181,11 +207,6 @@ class OktaDirectoryConnector(object):
                 raise AssertionException("Okta error querying for group users: %s" % e)
             # Filtering users based all_users_filter query in config
             for member in self.filter_users(members, filter_string):
-                profile = member.profile
-                if not profile.email:
-                    self.logger.warning('No email attribute for login: %s', profile.login)
-                    continue
-
                 user = self.convert_user(member, extended_attributes)
                 if not user:
                     continue
@@ -194,13 +215,19 @@ class OktaDirectoryConnector(object):
             self.logger.warning("No group found for: %s", group)
 
     def convert_user(self, record, extended_attributes):
-        profile = record.profile
 
         source_attributes = {}
+        source_attributes['login'] = login = OKTAValueFormatter.get_profile_value(record,'login')
+        email, last_attribute_name = self.user_email_formatter.generate_value(record)
+        email = email.strip() if email else None
+        if not email:
+            if last_attribute_name is not None:
+                self.logger.warning('Skipping user with login %s: empty email attribute (%s)', login, last_attribute_name)
+            return None
         user = user_sync.connector.helper.create_blank_user()
-
         source_attributes['id'] = user['uid'] = record.id
-        source_attributes['email'] = user['email'] = profile.email
+        source_attributes['email'] = email
+        user['email'] = email
 
         source_attributes['identity_type'] = user_identity_type = self.user_identity_type
         if not user_identity_type:
@@ -209,37 +236,55 @@ class OktaDirectoryConnector(object):
             try:
                 user['identity_type'] = user_sync.identity_type.parse_identity_type(user_identity_type)
             except AssertionException as e:
-                self.logger.warning('Skipping user %s: %s', profile.login, e)
+                self.logger.warning('Skipping user %s: %s', login, e)
                 return None
 
-        source_attributes['login'] = profile.login
 
-        user['username'] = ''
 
-        if profile.firstName:
-            source_attributes['firstName'] = user['firstname'] = profile.firstName
+        username, last_attribute_name = self.user_username_formatter.generate_value(record)
+        username = username.strip() if username else None
+        source_attributes['username'] = username
+        if username:
+            user['username'] = username
         else:
-            source_attributes['firstName'] = None
+            if last_attribute_name:
+                self.logger.warning('No username attribute (%s) for user with login: %s, default to email (%s)',
+                                    last_attribute_name, login, email)
+            user['username'] = email
 
-        if profile.lastName:
-            source_attributes['lastName'] = user['lastname'] = profile.lastName
-        else:
-            source_attributes['lastName'] = None
+        domain, last_attribute_name = self.user_domain_formatter.generate_value(record)
+        domain = domain.strip() if domain else None
+        source_attributes['domain'] = domain
+        if domain:
+            user['domain'] = domain
+        elif username != email:
+            user['domain'] = email[email.find('@') + 1:]
+        elif last_attribute_name:
+            self.logger.warning('No domain attribute (%s) for user with login: %s', last_attribute_name, login)
 
-        if profile.countryCode:
-            source_attributes['countryCode'] = profile.countryCode
-            user['country'] = profile.countryCode.upper()
-        else:
-            source_attributes['countryCode'] = None
+        first_name_value, last_attribute_name = self.user_given_name_formatter.generate_value(record)
+        source_attributes['firstName'] = first_name_value
+        if first_name_value is not None:
+            user['firstname'] = first_name_value
+        elif last_attribute_name:
+            self.logger.warning('No given name attribute (%s) for user with login: %s', last_attribute_name, login)
+        last_name_value, last_attribute_name = self.user_surname_formatter.generate_value(record)
+        source_attributes['lastName'] = last_name_value
+        if last_name_value is not None:
+            user['lastname'] = last_name_value
+        elif last_attribute_name:
+            self.logger.warning('No last name attribute (%s) for user with login: %s', last_attribute_name, login)
+        country_value, last_attribute_name = self.user_country_code_formatter.generate_value(record)
+        source_attributes['c'] = country_value
+        if country_value is not None:
+            user['country'] = country_value.upper()
+        elif last_attribute_name:
+            self.logger.warning('No country code attribute (%s) for user with login: %s', last_attribute_name, login)
 
-        if extended_attributes:
+        if extended_attributes is not None:
             for extended_attribute in extended_attributes:
-                if extended_attribute not in source_attributes:
-                    if hasattr(profile, extended_attribute):
-                        extended_attribute_value = getattr(profile, extended_attribute)
-                        source_attributes[extended_attribute] = extended_attribute_value
-                    else:
-                        source_attributes[extended_attribute] = None
+                extended_attribute_value = OKTAValueFormatter.get_profile_value(record, extended_attribute)
+                source_attributes[extended_attribute] = extended_attribute_value
 
         user['source_attributes'] = source_attributes.copy()
         return user
@@ -273,6 +318,27 @@ class OktaDirectoryConnector(object):
 
 
 class OKTAValueFormatter(object):
+    encoding = 'utf8'
+
+    def __init__(self, string_format):
+        """
+        The format string must be a unicode or ascii string: see notes above about being careful in Py2!
+        """
+        if string_format is None:
+            attribute_names = []
+        else:
+            string_format = six.text_type(string_format)  # force unicode so attribute values are unicode
+            formatter = string.Formatter()
+            attribute_names = [six.text_type(item[1]) for item in formatter.parse(string_format) if item[1]]
+        self.string_format = string_format
+        self.attribute_names = attribute_names
+
+    def get_attribute_names(self):
+        """
+        :rtype list(str)
+        """
+        return self.attribute_names
+
     @staticmethod
     def get_extended_attribute_dict(attributes):
 
@@ -282,3 +348,38 @@ class OKTAValueFormatter(object):
                 attr_dict.update({attribute: str})
 
         return attr_dict
+
+    def generate_value(self, record):
+        """
+        :type record: dict
+        :rtype (unicode, unicode)
+        """
+        result = None
+        attribute_name = None
+        if self.string_format is not None:
+            values = {}
+            for attribute_name in self.attribute_names:
+                value = self.get_profile_value(record, attribute_name)
+                if value is None:
+                    values = None
+                    break
+                values[attribute_name] = value
+            if values is not None:
+                result = self.string_format.format(**values)
+        return result, attribute_name
+
+    @classmethod
+    def get_profile_value(cls, record, attribute_name):
+        """
+        The attribute value type must be decodable (str in py2, bytes in py3)
+        :type record: okta.models.user.User
+        :type attribute_name: unicode
+        """
+        if hasattr(record.profile, attribute_name):
+            attribute_values = getattr(record.profile,attribute_name)
+            if attribute_values:
+                try:
+                    return attribute_values.decode(cls.encoding)
+                except UnicodeError as e:
+                    raise AssertionException("Encoding error in value of attribute '%s': %s" % (attribute_name, e))
+        return None
