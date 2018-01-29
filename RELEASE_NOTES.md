@@ -1,6 +1,6 @@
 # Release Notes for User Sync Tool Version 2.3
 
-These notes apply to v2.3rc4 of 2018-01-14.
+These notes apply to v2.3rc4 of 2018-01-29.
 
 ## New Features
 
@@ -25,6 +25,8 @@ There is a new command-line argument `--connector` for specifying whether to get
 [#314](https://github.com/adobe-apiplatform/user-sync.py/issues/314) invocation_defaults section should be optional.
 
 [#315](https://github.com/adobe-apiplatform/user-sync.py/issues/315) Can't specify --user-filter or other string-valued args.
+
+[#318](https://github.com/adobe-apiplatform/user-sync.py/issues/318) Fix the README build instructions regarding dbus.
 
 [#324](https://github.com/adobe-apiplatform/user-sync.py/issues/324) Handle LDAP servers with no support for PagedResults.
 
