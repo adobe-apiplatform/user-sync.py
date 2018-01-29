@@ -133,6 +133,36 @@ user_email_format: "{mail}"
 # produce a unique username for each user.
 #user_username_format: "{department}_{user_id}"
 
+# (optional) user_given_name_format (default value given below)
+# user_given_name_format specifies how to construct a user's given name by
+# combining constant strings with the values of specific directory attributes.
+# Any names in curly braces are taken as attribute names, and everything including
+# the braces will be replaced on a per-user basis with the values of the attributes.
+# The default value used here is simple, and suitable for OpenLDAP systems.
+# NOTE: for this and every format setting, the constant strings must be in
+# the encoding specified by the string_encoding setting, above.
+#user_given_name_format: "{givenName}"
+
+# (optional) user_surname_format (default value given below)
+# user_surname_format specifies how to construct a user's surname by
+# combining constant strings with the values of specific directory attributes.
+# Any names in curly braces are taken as attribute names, and everything including
+# the braces will be replaced on a per-user basis with the values of the attributes.
+# The default value used here is simple, and suitable for OpenLDAP systems.
+# NOTE: for this and every format setting, the constant strings must be in
+# the encoding specified by the string_encoding setting, above.
+#user_surname_format: "{sn}"
+
+# (optional) user_country_code_format (default value given below)
+# user_country_code_format specifies how to construct a user's country code by
+# combining constant strings with the values of specific directory attributes.
+# Any names in curly braces are taken as attribute names, and everything including
+# the braces will be replaced on a per-user basis with the values of the attributes.
+# The default value used here is simple, and suitable for OpenLDAP systems.
+# NOTE: for this and every format setting, the constant strings must be in
+# the encoding specified by the string_encoding setting, above.
+#user_country_code_format: "{c}"
+
 # Some additional info about LDAP connectors:
 #
 # Unlike the CSV connector, the LDAP connector does not have custom specifications

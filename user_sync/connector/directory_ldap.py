@@ -76,6 +76,9 @@ class LDAPDirectoryConnector(object):
         builder.set_string_value('user_email_format', six.text_type('{mail}'))
         builder.set_string_value('user_username_format', None)
         builder.set_string_value('user_domain_format', None)
+        builder.set_string_value('user_given_name_format', six.text_type('{givenName}'))
+        builder.set_string_value('user_surname_format', six.text_type('{sn}'))
+        builder.set_string_value('user_country_code_format', six.text_type('{c}'))
         builder.set_string_value('user_identity_type', None)
         builder.set_int_value('search_page_size', 200)
         builder.set_string_value('logger_name', LDAPDirectoryConnector.name)
@@ -93,6 +96,9 @@ class LDAPDirectoryConnector(object):
         self.user_email_formatter = LDAPValueFormatter(options['user_email_format'])
         self.user_username_formatter = LDAPValueFormatter(options['user_username_format'])
         self.user_domain_formatter = LDAPValueFormatter(options['user_domain_format'])
+        self.user_given_name_formatter = LDAPValueFormatter(options['user_given_name_format'])
+        self.user_surname_formatter = LDAPValueFormatter(options['user_surname_format'])
+        self.user_country_code_formatter = LDAPValueFormatter(options['user_country_code_format'])
 
         password = caller_config.get_credential('password', options['username'])
         # this check must come after we get the password value
@@ -195,7 +201,10 @@ class LDAPDirectoryConnector(object):
         options = self.options
         base_dn = six.text_type(options['base_dn'])
 
-        user_attribute_names = [six.text_type('givenName'), six.text_type('sn'), six.text_type('c')]
+        user_attribute_names = []
+        user_attribute_names.extend(self.user_given_name_formatter.get_attribute_names())
+        user_attribute_names.extend(self.user_surname_formatter.get_attribute_names())
+        user_attribute_names.extend(self.user_country_code_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_identity_type_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
@@ -261,18 +270,24 @@ class LDAPDirectoryConnector(object):
             elif last_attribute_name:
                 self.logger.warning('No domain attribute (%s) for user with dn: %s', last_attribute_name, dn)
 
-            given_name_value = LDAPValueFormatter.get_attribute_value(record, six.text_type('givenName'))
+            given_name_value, last_attribute_name = self.user_given_name_formatter.generate_value(record)
             source_attributes['givenName'] = given_name_value
             if given_name_value is not None:
                 user['firstname'] = given_name_value
-            sn_value = LDAPValueFormatter.get_attribute_value(record, six.text_type('sn'))
+            elif last_attribute_name:
+                self.logger.warning('No given name attribute (%s) for user with dn: %s', last_attribute_name, dn)
+            sn_value, last_attribute_name = self.user_surname_formatter.generate_value(record)
             source_attributes['sn'] = sn_value
             if sn_value is not None:
                 user['lastname'] = sn_value
-            c_value = LDAPValueFormatter.get_attribute_value(record, six.text_type('c'))
+            elif last_attribute_name:
+                self.logger.warning('No surname attribute (%s) for user with dn: %s', last_attribute_name, dn)
+            c_value, last_attribute_name = self.user_country_code_formatter.generate_value(record)
             source_attributes['c'] = c_value
             if c_value is not None:
-                user['country'] = c_value
+                user['country'] = c_value.upper()
+            elif last_attribute_name:
+                self.logger.warning('No country code attribute (%s) for user with dn: %s', last_attribute_name, dn)
 
             if extended_attributes is not None:
                 for extended_attribute in extended_attributes:
@@ -294,32 +309,41 @@ class LDAPDirectoryConnector(object):
         connection = self.connection
         search_page_size = self.options['search_page_size']
 
-        lc = ldap.controls.libldap.SimplePagedResultsControl(True, size=search_page_size, cookie='')
-
         msgid = None
         try:
-            has_next_page = True
-            while has_next_page:
-                response_data = None
-                result_type = None
-                if msgid is not None:
-                    result_type, response_data, _rmsgid, serverctrls = connection.result3(msgid)
-                    msgid = None
-                    pctrls = [c for c in serverctrls
-                              if c.controlType == ldap.controls.libldap.SimplePagedResultsControl.controlType]
-                    if not pctrls:
-                        self.logger.warn('Server ignored RFC 2696 control.')
-                        has_next_page = False
-                    else:
-                        lc.cookie = cookie = pctrls[0].cookie
-                        if not cookie:
-                            has_next_page = False
-                if has_next_page:
-                    msgid = connection.search_ext(base_dn, scope,
-                                                  filterstr=filter_string, attrlist=attributes, serverctrls=[lc])
+            if search_page_size == 0:
+                msgid = connection.search(base_dn, scope,
+                                          filterstr=filter_string, attrlist=attributes)
+                result_type, response_data, _rmsgid = connection.result2(msgid)
+                msgid = None
                 if result_type in self.expected_result_types and (response_data is not None):
                     for item in response_data:
                         yield item
+            else:
+                lc = ldap.controls.libldap.SimplePagedResultsControl(True, size=search_page_size, cookie='')
+
+                has_next_page = True
+                while has_next_page:
+                    response_data = None
+                    result_type = None
+                    if msgid is not None:
+                        result_type, response_data, _rmsgid, serverctrls = connection.result3(msgid)
+                        msgid = None
+                        pctrls = [c for c in serverctrls
+                                  if c.controlType == ldap.controls.libldap.SimplePagedResultsControl.controlType]
+                        if not pctrls:
+                            self.logger.warn('Server ignored RFC 2696 control.')
+                            has_next_page = False
+                        else:
+                            lc.cookie = cookie = pctrls[0].cookie
+                            if not cookie:
+                                has_next_page = False
+                    if has_next_page:
+                        msgid = connection.search_ext(base_dn, scope,
+                                                      filterstr=filter_string, attrlist=attributes, serverctrls=[lc])
+                    if result_type in self.expected_result_types and (response_data is not None):
+                        for item in response_data:
+                            yield item
         except GeneratorExit:
             if msgid is not None:
                 connection.abandon(msgid)

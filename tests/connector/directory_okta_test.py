@@ -250,16 +250,11 @@ class TestOktaIterGroupMember(unittest.TestCase):
                 self.links = {}
 
         self.mock_response = MockResponse
-        self.orig_directory_init = OktaDirectoryConnector.__init__
-        OktaDirectoryConnector.__init__ = mock.Mock(return_value=None)
-        directory = OktaDirectoryConnector({})
+        directory = OktaDirectoryConnector({'host': 'okta-test.com', 'api_token': 'abcdefghijklmnopqrstuvwxyz'})
         directory.logger = mock.create_autospec(logging.Logger)
         directory.groups_client = okta.UserGroupsClient('example.com', 'xyz')
         directory.user_identity_type = 'enterpriseID'
         self.directory = directory
-
-    def tearDown(self):
-        OktaDirectoryConnector.__init__ = self.orig_directory_init
 
     @mock.patch('user_sync.connector.directory_okta.OktaDirectoryConnector.find_group')
     @mock.patch('okta.framework.ApiClient.requests')
@@ -281,7 +276,6 @@ class TestOktaIterGroupMember(unittest.TestCase):
         mock_find_group.return_value = mockID
 
         directory = self.directory
-        directory.options = {'all_users_filter': 'user.status == "ACTIVE"', 'group_filter_format': '{group}'}
         extended_attributes = ['firstName', 'lastName', 'login', 'email', 'countryCode', 'additionalTest']
         iterGroupResponse = directory.iter_group_members("testGroup",directory.options['all_users_filter'], extended_attributes)
         temp_var = list(iterGroupResponse)
@@ -308,7 +302,6 @@ class TestOktaIterGroupMember(unittest.TestCase):
         mock_find_group.return_value = mockID
 
         directory = self.directory
-        directory.options = {'all_users_filter': 'user.status == "ACTIVE"', 'group_filter_format': '{group}'}
         extended_attributes = ['firstName', 'lastName', 'login', 'email', 'countryCode', 'additionalTest']
         iterGroupResponse = directory.iter_group_members("testGroup", directory.options['all_users_filter'],
                                                          extended_attributes)
@@ -336,7 +329,6 @@ class TestOktaIterGroupMember(unittest.TestCase):
         mock_find_group.return_value = mockID
 
         directory = self.directory
-        directory.options = {'all_users_filter': 'user.status == "ACTIVE"', 'group_filter_format': '{group}'}
         extended_attributes = ['firstName', 'lastName', 'login', 'email', 'countryCode', 'badattribute']
         iterGroupResponse = directory.iter_group_members("testGroup", directory.options['all_users_filter'],
                                                          extended_attributes)
@@ -364,7 +356,6 @@ class TestOktaIterGroupMember(unittest.TestCase):
         mock_find_group.return_value = mockID
 
         directory = self.directory
-        directory.options = {'all_users_filter': 'user.status == "ACTIVE"', 'group_filter_format': '{group}'}
         extended_attributes = ['firstName', 'lastName', 'login', 'email', 'countryCode', 'badattribute']
         iterGroupResponse = directory.iter_group_members("testGroup", directory.options['all_users_filter'],
                                                          extended_attributes)
@@ -391,7 +382,6 @@ class TestOktaIterGroupMember(unittest.TestCase):
         mock_find_group.return_value = mockID
 
         directory = self.directory
-        directory.options = {'all_users_filter': 'user.status == "ACTIVE"', 'group_filter_format': '{group}'}
         extended_attributes = ['firstName', 'lastName', 'login', 'email', 'countryCode', 'badattribute']
         iterGroupResponse = directory.iter_group_members("testGroup", directory.options['all_users_filter'],
                                                          extended_attributes)

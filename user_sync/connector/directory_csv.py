@@ -159,7 +159,7 @@ class CSVDirectoryConnector(object):
 
             country = self.get_column_value(row, country_column_name)
             if country is not None:
-                user['country'] = country
+                user['country'] = country.upper()
 
             groups = self.get_column_value(row, groups_column_name)
             if groups is not None:

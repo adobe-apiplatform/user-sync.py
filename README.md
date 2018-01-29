@@ -58,57 +58,78 @@ While that looks simple, the `make pex` command will try to download and install
 We pre-package releases on Ubuntu, so the advice here is definitely accurate for that platform, but something similar should work for most other Debian variants.
 
 * Make sure you have Python 2.7.5 or above; earlier versions will give you InsecurePlatformWarning messages due to older SSL components.
+* For Ubuntu 16.04, an easy way to get python 3.6 is from the Jonathan F archive, do:
+    ```bash
+	sudo add-apt-repository ppa:jonathonf/python-3.6
+	sudo apt-get update
+	sudo pat-get install -y python3.6
+	```
 * Take all security updates before you start.
 * You don't need a GUI on the platform, as the entire build can be done from the command line.  Server variants are fine.
 * You will need a standard C development environment to build a variety of the modules that use native extensions.  Use this command to get one:
     ```bash
-    sudo apt-get install build-essential
+    sudo apt-get install -y build-essential
     ```
 * Make sure you use the system package manager to install the following packages (and their dependencies):
-    * python-dev (or python3-dev if you are doing python3 builds)
-    * python-pip (not needed for python3)
-	* python-virtualenv (not needed for python3)
+    * python-dev (or python3.6-dev if you are doing python3 builds)
+    * python-pip (or python3-pip if you are doing python3 builds)
+	* python-virtualenv (or python3-virtualenv if you are doing python3 builds)
 	* pkg-config
 	* libssl-dev
 	* libldap2-dev
 	* libsasl2-dev
-	* libdbus-glib-1-dev
+	* python-dbus-devel
 	* libffi-dev
-* For convenience, you can copy and paste this command:
+* For convenience, you can copy and paste these commands (choosing from the first two based on your python version):
     ```bash
-    sudo apt-get install python-dev python-pip python-virtualenv pkg-config libssl-dev libldap2-dev libsasl2-dev libdbus-glib-1-dev libffi-dev
+    sudo apt-get install -y python-dev python-pip python-virtualenv
+    sudo apt-get install -y python3.6-dev
+    sudo apt-get install -y pkg-config libssl-dev libldap2-dev libsasl2-dev dbus-glib-devel python-dbus libffi-dev
     ```
-* You don't need the python-dbus package to _build_ user-sync, but you will need it to run user-sync if you use the dbus secure store for your credentials.
+* You need the python-dbus package to _build_ user-sync, but you don't need it to *run* user-sync unless you use the dbus secure store for your credentials.
 
 ### CentOS and other RedHat variants
 
 We pre-package releases on CentOS, so the advice here is definitely accurate for that platform, but something similar should work for most other RedHat variants.
 
 * Make sure you have Python 2.7.5 or above; earlier versions will give you InsecurePlatformWarning messages due to older SSL components.
+* You cannot build on CentOS 6, because user-sync uses python-dbus for the keyring, and python-dbus requires dbus 1.6 or greater which is not available on CentOS 6.  However, you can run a CentOS 7 build on CentOS 6 as long as you are running the same build of python 3.6 or later.
+  * For centos6, to run builds, you will need to install python 3.6, which you can do as follows:
+	  ```bash
+      sudo yum install -y https://centos6.iuscommunity.org/ius-release.rpm # installs inline-upstream-stable pkg repo
+	  sudo yum install -y python36u-devel python36u-pip python36u-virtualenv
+	  ```
+  * For centos7, to install python 3.6, do the following:
+      ```bash
+      sudo yum install -y https://centos7.iuscommunity.org/ius-release.rpm # installs inline-upstream-stable pkg repo
+	  sudo yum install -y python36u-devel python36u-pip python36u-virtualenv
+	  ```
 * Take all security updates before you start.
 * You don't need a GUI on the platform, as the entire build can be done from the command line.  Server variants are fine.
 * You will need a standard C development environment to build a variety of the modules that use native extensions.  Use this command to get one:
     ```bash
-    sudo yum group install "Development Tools"
+    sudo yum groupinstall -y "Development Tools"
     ```
 * Your OS may not know about `pip` by default, although it will know about `virtualenv`.  Rather than installing `pip` manually, we recommend telling your OS about the Red Hat "Extra Package for Enterprise Linux (EPEL)" package library, which on CentOS you can do with:
     ```bash
-    sudo yum install epel-release
+    sudo yum install -y epel-release
     ```
 * Make sure you use the system package manager to install the following packages (and their dependencies):
-    * python-devel (or python3-devel, if you are doing python3 builds)
-    * python-pip (not needed for python3)
-	* python-virtualenv (not needed for python3)
+    * python-devel (or python36u-devel, if you are doing python3 builds)
+    * python-pip (or python36u-pip, if you are doing python3 builds)
+	* python-virtualenv (or python36u-virtualenv, if you are doing python3 builds)
 	* pkgconfig
 	* openssl-devel
 	* openldap-devel (includes sasl)
 	* dbus-glib-devel
+	* dbus-python (version 1.6 or greater, not available on CentOS 6)
 	* libffi-devel
-* For convenience, you can copy and paste this command:
+* For convenience, you can copy and paste these commands (pick among the first two based on your python version):
     ```bash
-    sudo yum install python-devel python-pip python-virtualenv pkgconfig openssl-devel openldap-devel dbus-glib-devel libffi-devel
+	sudo yum install -y python-devel python-pip python-virtualenv
+	sudo yum install -y python36u-devel python36u-pip python36u-virtualenv
+    sudo yum install -y pkgconfig openssl-devel openldap-devel dbus-glib-devel dbus-python libffi-devel
     ```
-* You don't need the python-dbus package to _build_ user-sync, but you will need it to run user-sync if you use the dbus secure store for your credentials.
 
 ### Mac OS X
 
