@@ -68,9 +68,9 @@ class LDAPDirectoryConnector(object):
             '(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))'))
         builder.set_string_value('all_users_filter', six.text_type(
             '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))'))
-        builder.set_string_value('group_member_filter_format', six.text_type(
-            '(memberOf={group_dn})'))
+        builder.set_string_value('group_member_filter_format', None)
         builder.set_bool_value('require_tls_cert', False)
+        builder.set_string_value('two_steps_group_member_attribute_name', None)
         builder.set_string_value('string_encoding', 'utf8')
         builder.set_string_value('user_identity_type_format', None)
         builder.set_string_value('user_email_format', six.text_type('{mail}'))
@@ -86,6 +86,18 @@ class LDAPDirectoryConnector(object):
         username = builder.require_string_value('username')
         builder.require_string_value('base_dn')
         options = builder.get_options()
+
+        two_steps_lookup = False
+
+        if not options['two_steps_group_member_attribute_name'] and not options['group_member_filter_format']:
+            options['group_member_filter_format'] = six.text_type('(memberOf={group_dn})')
+        elif options['two_steps_group_member_attribute_name'] and options['group_member_filter_format']:
+            raise AssertionException(
+                'Cannot define both two_steps_group_member_attribute_name and group_member_filter_format in config')
+        elif options['two_steps_group_member_attribute_name']:
+            two_steps_lookup = True
+
+        self.two_steps_lookup = two_steps_lookup
         self.options = options
         self.logger = logger = user_sync.connector.helper.create_logger(options)
         logger.debug('%s initialized with options: %s', self.name, options)
@@ -132,35 +144,52 @@ class LDAPDirectoryConnector(object):
         options = self.options
         all_users_filter = six.text_type(options['all_users_filter'])
         group_member_filter_format = six.text_type(options['group_member_filter_format'])
+        two_steps_group_member_attribute_name = six.text_type(options['two_steps_group_member_attribute_name'])
+        two_steps_lookup = self.two_steps_lookup
+
+        # save all the users to memory for faster 2-steps lookup process
+        if all_users or two_steps_lookup:
+            all_users_records = dict(self.iter_users(all_users_filter, extended_attributes))
 
         # for each group that's required, do one search for the users of that group
         for group in groups:
-            group_dn = self.find_ldap_group_dn(group)
-            if not group_dn:
-                self.logger.warning("No group found for: %s", group)
-                continue
-            group_member_subfilter = self.format_ldap_query_string(group_member_filter_format, group_dn=group_dn)
-            if not group_member_subfilter.startswith('('):
-                group_member_subfilter = six.text_type('(') + group_member_subfilter + six.text_type(')')
-            user_subfilter = all_users_filter
-            if not user_subfilter.startswith('('):
-                user_subfilter = six.text_type('(') + user_subfilter + six.text_type(')')
-            group_user_filter = six.text_type('(&') + group_member_subfilter + user_subfilter + six.text_type(')')
             group_users = 0
-            try:
-                for user_dn, user in self.iter_users(group_user_filter, extended_attributes):
-                    user['groups'].append(group)
-                    group_users += 1
-                self.logger.debug('Count of users in group "%s": %d', group, group_users)
-            except Exception as e:
-                raise AssertionException('Unexpected LDAP failure reading group members: %s' % e)
+            if not two_steps_lookup:
+                group_dn = self.find_group_dn(group)
+                if not group_dn:
+                    self.logger.warning("No group found for: %s", group)
+                    continue
+                group_member_subfilter = self.format_ldap_query_string(group_member_filter_format, group_dn=group_dn)
+                if not group_member_subfilter.startswith('('):
+                    group_member_subfilter = six.text_type('(') + group_member_subfilter + six.text_type(')')
+                user_subfilter = all_users_filter
+                if not user_subfilter.startswith('('):
+                    user_subfilter = six.text_type('(') + user_subfilter + six.text_type(')')
+                group_user_filter = six.text_type('(&') + group_member_subfilter + user_subfilter + six.text_type(')')
+                try:
+                    for user_dn, user in self.iter_users(group_user_filter, extended_attributes):
+                        user['groups'].append(group)
+                        group_users += 1
+                except Exception as e:
+                    raise AssertionException('Unexpected LDAP failure reading group members: %s' % e)
+            else:
+                try:
+                    members = self.find_group_member_dn(group, two_steps_group_member_attribute_name)
+                    for member in members:
+                        user = all_users_records.get(member)
+                        if user:
+                            user['groups'].append(group)
+                            group_users += 1
+                except Exception as e:
+                    raise AssertionException('Unexpected LDAP failure reading group members: %s' % e)
+            self.logger.debug('Count of users in group "%s": %d', group, group_users)
 
         # if all users are requested, do an additional search for all of them
         if all_users:
             ungrouped_users = 0
             grouped_users = 0
             try:
-                for user_dn, user in self.iter_users(all_users_filter, extended_attributes):
+                for user_dn, user in all_users_records.iteritems():
                     if not user['groups']:
                         ungrouped_users += 1
                     else:
@@ -171,10 +200,16 @@ class LDAPDirectoryConnector(object):
             except Exception as e:
                 raise AssertionException('Unexpected LDAP failure reading all users: %s' % e)
 
+        #Do a cleanup if two_steps enabled but not all_users
+        if two_steps_lookup and not all_users:
+            for member in all_users_records:
+                if member in self.user_by_dn and len(self.user_by_dn[member]['groups']) == 0:
+                    del self.user_by_dn[member]
+
         self.logger.debug('Total users loaded: %d', len(self.user_by_dn))
         return six.itervalues(self.user_by_dn)
 
-    def find_ldap_group_dn(self, group):
+    def find_group_dn(self, group):
         """
         :type group: str
         :rtype str
@@ -196,6 +231,32 @@ class LDAPDirectoryConnector(object):
                     raise AssertionException("Multiple LDAP groups found for: %s" % group)
                 group_dn = current_tuple[0]
         return group_dn
+
+    def find_group_member_dn(self, group, member_attribute):
+        """
+        :type group: str
+        :type member_attribute: str
+        :rtype list
+        """
+        connection = self.connection
+        options = self.options
+        base_dn = six.text_type(options['base_dn'])
+        group_filter_format = six.text_type(options['group_filter_format'])
+        try:
+            filter_string = self.format_ldap_query_string(group_filter_format, group=group)
+            res = connection.search_s(base_dn, ldap.SCOPE_SUBTREE,
+                                      filterstr=filter_string, attrlist=[member_attribute])
+        except Exception as e:
+            raise AssertionException('Unexpected LDAP failure reading group info: %s' % e)
+        group_dn = None
+        for current_tuple in res:
+            if current_tuple[0]:
+                if group_dn:
+                    raise AssertionException("Multiple LDAP groups found for: %s" % group)
+                group_dn = current_tuple[0]
+                if member_attribute in current_tuple[1]:
+                    for member in current_tuple[1][member_attribute]:
+                        yield member
 
     def iter_users(self, users_filter, extended_attributes):
         options = self.options
