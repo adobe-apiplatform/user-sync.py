@@ -84,7 +84,7 @@ group_member_filter_format: "(memberOf={group_dn})"
 # (optional) group_member_attribute_name (no default)
 # If your LDAP system doesn't support queries using memberOf predicates,
 # you should undefine the group_member_filter_format and instead define
-# the group_member_attribute _name.  The defined value should be the
+# the group_member_attribute_name.  The defined value should be the
 # attribute on the group whose multi-values are the distinguished names
 # of the group members.  When group_member_attribute_name is defined,
 # User Sync will look up group members by querying your groups to find

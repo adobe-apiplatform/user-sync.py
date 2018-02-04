@@ -146,7 +146,10 @@ class LDAPDirectoryConnector(object):
         # save all the users to memory for faster 2-steps lookup or all_users process
         if all_users or self.two_steps_lookup:
             all_users_filter = six.text_type(options['all_users_filter'])
-            all_users_records = dict(self.iter_users(all_users_filter, extended_attributes))
+            try:
+                all_users_records = dict(self.iter_users(all_users_filter, extended_attributes))
+            except Exception as e:
+                raise AssertionException('Unexpected LDAP failure reading all users: %s' % e)
 
         # for each group that's required, do one search for the users of that group
         for group in groups:
@@ -172,21 +175,18 @@ class LDAPDirectoryConnector(object):
                 raise AssertionException('Unexpected LDAP failure reading group members: %s' % e)
             self.logger.debug('Count of users in group "%s": %d', group, group_users)
 
-        # if all users are requested, do an additional search for all of them
+        # if all users are requested, count number of users without group assignment
         if all_users:
             ungrouped_users = 0
-            try:
-                for user_dn, user in all_users_records.iteritems():
-                    if not user['groups']:
-                        ungrouped_users += 1
-                if groups:
-                    self.logger.debug('Count of users in any groups: %d', len(grouped_user_records))
-                    self.logger.debug('Count of users not in any groups: %d', ungrouped_users)
-            except Exception as e:
-                raise AssertionException('Unexpected LDAP failure reading all users: %s' % e)
+            for user_dn, user in all_users_records.iteritems():
+                if not user['groups']:
+                    ungrouped_users += 1
+            if groups:
+                self.logger.debug('Count of users in any groups: %d', len(grouped_user_records))
+                self.logger.debug('Count of users not in any groups: %d', ungrouped_users)
 
         if not all_users:
-            # set user_by_dn to only users that have group(s) assignment
+            # set user_by_dn to only users that have group assignments
             self.user_by_dn = grouped_user_records
 
         self.logger.debug('Total users loaded: %d', len(self.user_by_dn))
