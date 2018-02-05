@@ -178,7 +178,7 @@ class LDAPDirectoryConnector(object):
         # if all users are requested, count number of users without group assignment
         if all_users:
             ungrouped_users = 0
-            for user_dn, user in all_users_records.iteritems():
+            for user_dn, user in six.iteritems(all_users_records):
                 if not user['groups']:
                     ungrouped_users += 1
             if groups:
@@ -240,7 +240,7 @@ class LDAPDirectoryConnector(object):
                 group_dn = current_tuple[0]
                 if member_attribute in current_tuple[1]:
                     for member in current_tuple[1][member_attribute]:
-                        yield six.text_type(member)
+                        yield member.decode('utf-8')
 
     def iter_users(self, users_filter, extended_attributes):
         options = self.options
