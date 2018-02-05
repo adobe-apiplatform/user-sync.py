@@ -81,6 +81,17 @@ group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objec
 # group_member_filter_format: "(memberOf:1.2.840.113556.1.4.1941:={group_dn})"
 group_member_filter_format: "(memberOf={group_dn})"
 
+# (optional) group_member_attribute_name (no default)
+# If your LDAP system doesn't support queries using memberOf predicates,
+# you should undefine the group_member_filter_format and instead define
+# the group_member_attribute_name.  The defined value should be the
+# attribute on the group whose multi-values are the distinguished names
+# of the group members.  When group_member_attribute_name is defined,
+# User Sync will look up group members by querying your groups to find
+# the DNs of their members, and then removing any of those members
+# who do not meet the criteria of the all_users_filter.
+#group_member_attribute_name: "member"
+
 # (optional) string_encoding (default value given below)
 # string_encoding specifies the Unicode string encoding used by the directory.
 # All values retrieved from the directory are converted to Unicode before being
