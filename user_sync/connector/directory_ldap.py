@@ -20,6 +20,7 @@
 
 import six
 import string
+import re
 
 import ldap.controls.libldap
 
@@ -70,7 +71,8 @@ class LDAPDirectoryConnector(object):
             '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))'))
         builder.set_string_value('group_member_filter_format', None)
         builder.set_bool_value('require_tls_cert', False)
-        builder.set_string_value('group_member_attribute_name', None)
+        #builder.set_string_value('group_member_attribute_name', None)
+        builder.set_dict_value('two_steps_lookup', {})
         builder.set_string_value('string_encoding', 'utf8')
         builder.set_string_value('user_identity_type_format', None)
         builder.set_string_value('user_email_format', six.text_type('{mail}'))
@@ -87,12 +89,12 @@ class LDAPDirectoryConnector(object):
         builder.require_string_value('base_dn')
         options = builder.get_options()
         self.two_steps_lookup = False
-        if not options['group_member_attribute_name'] and not options['group_member_filter_format']:
+        if not options['two_steps_lookup']['group_member_attribute_name'] and not options['group_member_filter_format']:
             options['group_member_filter_format'] = six.text_type('(memberOf={group_dn})')
-        elif options['group_member_attribute_name'] and options['group_member_filter_format']:
+        elif options['two_steps_lookup']['group_member_attribute_name'] and options['group_member_filter_format']:
             raise AssertionException(
                 'Cannot define both group_member_attribute_name and group_member_filter_format in config')
-        elif options['group_member_attribute_name']:
+        elif options['two_steps_lookup']['group_member_attribute_name']:
             self.two_steps_lookup = True
 
         self.options = options
@@ -139,15 +141,17 @@ class LDAPDirectoryConnector(object):
         :rtype (bool, iterable(dict))
         """
         options = self.options
+        base_dn = six.text_type(options['base_dn'])
+        all_users_filter = six.text_type(options['all_users_filter'])
         grouped_user_records = {}
         if self.two_steps_lookup:
-            group_member_attribute_name = six.text_type(options['group_member_attribute_name'])
+            group_member_attribute_name = six.text_type(options['two_steps_lookup']['group_member_attribute_name'])
+            direct_mode = options['two_steps_lookup']['direct_mode']
 
         # save all the users to memory for faster 2-steps lookup or all_users process
-        if all_users or self.two_steps_lookup:
-            all_users_filter = six.text_type(options['all_users_filter'])
+        if all_users or (self.two_steps_lookup and not direct_mode):
             try:
-                all_users_records = dict(self.iter_users(all_users_filter, extended_attributes))
+                all_users_records = dict(self.iter_users(base_dn, all_users_filter, extended_attributes))
             except Exception as e:
                 raise AssertionException('Unexpected LDAP failure reading all users: %s' % e)
 
@@ -160,13 +164,24 @@ class LDAPDirectoryConnector(object):
                 continue
             try:
                 if not self.two_steps_lookup:
-                    for user_dn, user in self.iter_users(self.format_group_user_filter(group_dn), extended_attributes):
+                    for user_dn, user in self.iter_users(base_dn, self.format_group_user_filter(group_dn), extended_attributes):
                         user['groups'].append(group)
                         group_users += 1
                         grouped_user_records[user_dn] = user
                 else:
                     for user_dn in self.iter_group_member_dns(group, group_member_attribute_name):
-                        user = all_users_records.get(user_dn)
+                        if direct_mode:
+                            #using regex to make sure user_dn are within the base_dn scope
+                            if re.match(".*, %s$" % base_dn, user_dn, re.IGNORECASE):
+                                #replace base_dn with user_dn and filter with all_users_filter to do user lookup based on DN
+                                result =  list(self.iter_users(user_dn, all_users_filter, extended_attributes))
+                                #iter_users should only return 1 user when doing direct-mode lookup.
+                                if len(result) > 1:
+                                    raise AssertionException('Unexpected multiple LDAP object found in direct-mode for: %s' % user_dn)
+                                else:
+                                    user = result[0][1]
+                        else:
+                            user = all_users_records.get(user_dn)
                         if user:
                             user['groups'].append(group)
                             group_users += 1
@@ -242,9 +257,9 @@ class LDAPDirectoryConnector(object):
                     for member in current_tuple[1][member_attribute]:
                         yield member.decode('utf-8')
 
-    def iter_users(self, users_filter, extended_attributes):
+    def iter_users(self, base_dn, users_filter, extended_attributes):
         options = self.options
-        base_dn = six.text_type(options['base_dn'])
+        #base_dn = six.text_type(options['base_dn'])
 
         user_attribute_names = []
         user_attribute_names.extend(self.user_given_name_formatter.get_attribute_names())
