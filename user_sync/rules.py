@@ -181,7 +181,6 @@ class RuleProcessor(object):
             self.sync_umapi_users(umapi_connectors)
         if self.will_process_strays:
             self.process_strays(umapi_connectors)
-        self.delete_umapi_groups(umapi_connectors)
         umapi_connectors.execute_actions()
         umapi_stats.log_end(logger)
         self.log_action_summary(umapi_connectors)
@@ -480,44 +479,18 @@ class RuleProcessor(object):
                 PRIMARY_UMAPI_NAME), umapi_connectors.get_primary_connector()
             mapped_groups = umapi_info.get_non_normalize_mapped_groups()
             # pull all user groups from console
-            on_adobe_groups = umapi_connector.get_groups()
+            on_adobe_groups = [normalize_string(g['groupName']) for g in umapi_connector.get_groups()]
             # verify if group exist and create
             if self.options['auto_create']:
                 for mapped_group in mapped_groups:
-                    if not filter(lambda grp: normalize_string(grp['groupName']) == normalize_string(mapped_group),
-                                  on_adobe_groups):
+                    if normalize_string(mapped_group) not in on_adobe_groups:
                         self.logger.info("Auto create user-group enabled: Creating %s" % mapped_group)
                         try:
                             # create group
-                            umapi_connector.create_group(mapped_group)
+                            res = umapi_connector.create_group(mapped_group)
                             self.action_summary['adobe_user_groups_created'] += 1
                         except Exception as e:
                             self.logger.critical("Unable to create %s user group: %s" % (mapped_group, e))
-
-    def delete_umapi_groups(self, umapi_connectors):
-        """
-       This is where we delete user-groups. If auto_create is enabled,
-       this will pull user-groups from console, If on adobe user-groups match the
-       auto_delete_filters and group member is 0 then it will delete. Note: Push Mode is not supported
-       :type umapi_connectors: UmapiConnectors
-       """
-        if not self.push_umapi:
-            umapi_info, umapi_connector = self.get_umapi_info(
-                PRIMARY_UMAPI_NAME), umapi_connectors.get_primary_connector()
-            if self.options['auto_delete']:
-                # retreive auto_delete_filters options
-                delete_rules = self.options['auto_delete_filters'] or []
-                on_adobe_user_groups = umapi_connector.get_user_groups()
-                for rule in delete_rules:
-                    filtered_groups = [g for g in on_adobe_user_groups if
-                                       (('userCount' not in g) and (rule.match(g['name'])))]
-            for group in filtered_groups:
-                self.logger.info("Auto Delete user-group enabled: Deleting %s" % group['name'])
-                try:
-                    umapi_connector.delete_group(group['groupId'])
-                    self.action_summary['adobe_user_groups_deleted'] += 1
-                except Exception as e:
-                    self.logger.critical("Unable to delete %s user group: %s" % (group['name'], e))
 
     def is_selected_user_key(self, user_key):
         """
