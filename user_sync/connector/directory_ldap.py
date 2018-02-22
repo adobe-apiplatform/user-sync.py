@@ -20,7 +20,6 @@
 
 import six
 import string
-import re
 
 import ldap.controls.libldap
 
@@ -171,8 +170,8 @@ class LDAPDirectoryConnector(object):
                 else:
                     for user_dn in self.iter_group_member_dns(group, group_member_attribute_name):
                         if direct_mode:
-                            #using regex to make sure user_dn are within the base_dn scope
-                            if re.match(".*, %s$" % base_dn, user_dn, re.IGNORECASE):
+                            #check to make sure user_dn are within the base_dn scope
+                            if self.is_dn_within_base_dn_scope(base_dn, user_dn):
                                 #replace base_dn with user_dn and filter with all_users_filter to do user lookup based on DN
                                 result =  list(self.iter_users(user_dn, all_users_filter, extended_attributes))
                                 #iter_users should only return 1 user when doing direct-mode lookup.
@@ -451,6 +450,19 @@ class LDAPDirectoryConnector(object):
         group_user_filter = six.text_type('(&') + group_member_subfilter + user_subfilter + six.text_type(')')
         return group_user_filter
 
+    @staticmethod
+    def is_dn_within_base_dn_scope(base_dn, dn):
+        """
+        check to see if provided DN is within the base DN scope
+        :param base_dn:
+        :param dn:
+        :return:
+        """
+        split_base_dn = [x.strip() for x in base_dn.lower().split(',')]
+        split_dn = [x.strip() for x in dn.lower().split(',')]
+        if split_base_dn == split_dn[-len(split_base_dn):]:
+            return True
+        return False
 class LDAPValueFormatter(object):
     encoding = 'utf8'
 
