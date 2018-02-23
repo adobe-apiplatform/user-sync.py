@@ -454,9 +454,9 @@ class LDAPDirectoryConnector(object):
     def is_dn_within_base_dn_scope(base_dn, dn):
         """
         check to see if provided DN is within the base DN scope
-        :param base_dn:
-        :param dn:
-        :return:
+        :param base_dn: str
+        :param dn: str
+        :return: bool
         """
         split_base_dn = [x.strip() for x in base_dn.lower().split(',')]
         split_dn = [x.strip() for x in dn.lower().split(',')]
