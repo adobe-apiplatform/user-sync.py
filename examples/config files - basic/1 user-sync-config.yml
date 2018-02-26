@@ -214,14 +214,12 @@ directory_users:
   # auto_create:
   #   Automatically create target groups that do not exist.  Non-existent groups
   #   will *always* be created as Adobe groups.  If targeting product profiles, they
-  #   must always be created manually in the Admin Console
-  # auto_delete:
-  #   Automatically delete user groups that don't have any members at the time of sync.
-  #   The only groups considered for deletion are groups mapped in the renaming rules
-  #   specified in additional_groups.
+  #   must always be created manually in the Admin Console.
+  #   NOTE: auto_create applies to any targeted Adobe group that doesn't exist.
+  #         This includes groups targeted through group mapping, extension config,
+  #         and the additional_groups functionality.
   # group_sync_options:
   #   auto_create: False
-  #   auto_delete: False
 
 # The limits section provides processing limits which can help ensure that
 # User Sync jobs do not exceed expected guardrails in their operation
