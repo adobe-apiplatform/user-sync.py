@@ -391,8 +391,9 @@ class RuleProcessor(object):
                 else:
                     self.logger.error('Target adobe group %s is not known; ignored', target_group_qualified_name)
 
+            additional_groups = self.options.get('additional_groups', [])
             for member_group in directory_user['member_groups']:
-                for group_rule in self.options['directory_additional_groups']:
+                for group_rule in additional_groups:
                     if group_rule['source'].match(member_group):
                         rename_group = group_rule['source'].sub(group_rule['target'], member_group)
                         umapi_info.add_mapped_group(rename_group)

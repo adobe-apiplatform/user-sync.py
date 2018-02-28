@@ -308,8 +308,9 @@ def begin_work(config_loader):
         directory_connector.initialize(directory_connector_options)
 
     additional_group_filters = None
-    if rule_config['directory_additional_groups'] and isinstance(rule_config['directory_additional_groups'], list):
-        additional_group_filters = [r['source'] for r in rule_config['directory_additional_groups']]
+    additional_groups = rule_config.get('additional_groups', None)
+    if additional_groups and isinstance(additional_groups, list):
+        additional_group_filters = [r['source'] for r in additional_groups]
 
     directory_connector.state.additional_group_filters = additional_group_filters
 
