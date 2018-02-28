@@ -72,7 +72,6 @@ class RuleProcessor(object):
         self.action_summary = {
             # these are in alphabetical order!  Always add new ones that way!
             'adobe_user_groups_created': 0,
-            'adobe_user_groups_deleted': 0,
             'directory_users_read': 0,
             'directory_users_selected': 0,
             'excluded_user_count': 0,
@@ -237,7 +236,6 @@ class RuleProcessor(object):
                 ['primary_users_created', 'Number of new Adobe users added'],
                 ['updated_user_count', 'Number of matching Adobe users updated'],
                 ['adobe_user_groups_created', 'Number of Adobe user-groups created'],
-                ['adobe_user_groups_deleted', 'Number of Adobe user-groups deleted'],
             ]
             if umapi_connectors.get_secondary_connectors():
                 action_summary_description += [
