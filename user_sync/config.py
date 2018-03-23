@@ -177,6 +177,7 @@ class ConfigLoader(object):
             raise AssertionException('You cannot specify both a --users arg and an --adobe-only-user-list arg')
         elif self.args['users']:
             # specifying --users overrides the configuration file default for this option
+            options['users'] = self.args['users']
             users_spec = self.args['users']
             stray_list_input_path = None
         elif self.args['adobe_only_user_list']:
