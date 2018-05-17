@@ -62,7 +62,7 @@ We pre-package releases on Ubuntu, so the advice here is definitely accurate for
     ```bash
 	sudo add-apt-repository ppa:jonathonf/python-3.6
 	sudo apt-get update
-	sudo pat-get install -y python3.6
+	sudo apt-get install -y python3.6
 	```
 * Take all security updates before you start.
 * You don't need a GUI on the platform, as the entire build can be done from the command line.  Server variants are fine.
