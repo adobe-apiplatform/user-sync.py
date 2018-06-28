@@ -180,7 +180,6 @@ class ConfigLoader(object):
             users_spec = self.args['users']
             stray_list_input_path = None
             options['adobe_only_user_list'] = None
-
         elif self.args['adobe_only_user_list']:
             # specifying --adobe-only-user-list overrides the configuration file default for --users
             if options['strategy'] == 'push':
@@ -253,6 +252,7 @@ class ConfigLoader(object):
                     raise AssertionException("Bad regular expression in user filter: %s reason: %s" %
                                              (username_filter_pattern, e))
                 options['username_filter_regex'] = compiled_expression
+
         return options
 
     def get_logging_config(self):
