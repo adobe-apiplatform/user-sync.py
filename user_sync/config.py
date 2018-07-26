@@ -90,6 +90,8 @@ class ConfigLoader(object):
         """Merge the invocation option defaults with overrides from the main config and the command line.
         :rtype: dict
         """
+        # copy instead of direct assignment to preserve original invocation_defaults object
+        # otherwise, setting options also sets invocation_defaults (same memory ref)
         options = self.invocation_defaults.copy()
 
         # get overrides from the main config
@@ -186,6 +188,10 @@ class ConfigLoader(object):
                 raise AssertionException('You cannot specify --adobe-only-user-list when using "push" strategy')
             users_spec = None
             stray_list_input_path = self.args['adobe_only_user_list']
+
+        # Check both that options['users'] exists, AND that it is not the default value before checking against
+        # the adobe_only_user_list parameter -  otherwise, defaults cause exception to be thrown unconditionally when
+        # the user list option is specified
         elif (options['users'] and options['users'] != self.invocation_defaults['users']) and options['adobe_only_user_list']:
                 raise AssertionException('You cannot configure both a default "users" option (%s) '
                                          'and a default "adobe-only-user-list" option (%s)' %
