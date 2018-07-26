@@ -135,10 +135,14 @@ class UmapiConnector(object):
     def get_users(self):
         return list(self.iter_users())
 
-    def iter_users(self):
+    def iter_users(self, in_group=None):
         users = {}
         try:
-            for u in umapi_client.UsersQuery(self.connection):
+            if in_group:
+                u_query = umapi_client.UsersQuery(self.connection, in_group=in_group)
+            else:
+                u_query = umapi_client.UsersQuery(self.connection)
+            for u in u_query:
                 email = u['email']
                 if not (email in users):
                     users[email] = u

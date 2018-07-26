@@ -154,6 +154,13 @@ def process_args(args=None):
                              "users by also including --adobe-only-user-action and one of its arguments",
                         metavar='input_path',
                         dest='adobe_only_user_list')
+    parser.add_argument('--adobe-users',
+                        help="specify the adobe users to pull from UMAPI. Legal values are 'all' (the default), "
+                             "'group names' (one or more specified groups), 'mapped' (all groups listed in "
+                             "the configuration file)",
+                        nargs="+",
+                        metavar='all|mapped|group',
+                        dest='adobe_users')
     parser.add_argument('--connector',
                         help='specify a connector to use; default is LDAP (or CSV if --users file is specified)',
                         nargs='+',
