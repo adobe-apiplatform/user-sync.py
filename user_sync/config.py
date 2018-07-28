@@ -47,19 +47,18 @@ class ConfigLoader(object):
     invocation_defaults = {
         'adobe_only_user_action': ['preserve'],
         'adobe_only_user_list': None,
-        'connector': ['ldap'],
+        'connector': [],
         'process_groups': False,
         'strategy': 'sync',
         'test_mode': False,
         'update_user_info': False,
         'user_filter': None,
-        'users': ['all'],
+        'users': [],
     }
 
     def __init__(self, arg_obj):
         """
         Load the config files and invocation options.
-
         :type arg_obj: argparse.Namespace
         """
         self.logger = logging.getLogger('config')
@@ -180,13 +179,18 @@ class ConfigLoader(object):
             options['users'] = self.args['users']
             users_spec = self.args['users']
             stray_list_input_path = None
+            options['adobe_only_user_list'] = None
         elif self.args['adobe_only_user_list']:
             # specifying --adobe-only-user-list overrides the configuration file default for --users
             if options['strategy'] == 'push':
                 raise AssertionException('You cannot specify --adobe-only-user-list when using "push" strategy')
             users_spec = None
+            options['adobe_only_user_list'] = self.args['adobe_only_user_list']
             stray_list_input_path = self.args['adobe_only_user_list']
-        elif options['users'] and options['adobe_only_user_list']:
+            options['users'] = []
+            del options['directory_connector_type']
+
+        if options['users'] and options['adobe_only_user_list']:
             raise AssertionException('You cannot configure both a default "users" option (%s) '
                                      'and a default "adobe-only-user-list" option (%s)' %
                                      (' '.join(options['users']), options['adobe_only_user_list']))
@@ -196,6 +200,8 @@ class ConfigLoader(object):
         elif options['adobe_only_user_list']:
             users_spec = None
             stray_list_input_path = options['adobe_only_user_list']
+            del options['users']
+            del options['directory_connector_type']
         else:
             raise AssertionException('You must specify either a "users" option or an "adobe-only-user-list" option.')
 
@@ -516,7 +522,6 @@ class ConfigLoader(object):
         # This must come late, after any prior adds to the mapping from other parameters.
         if options.get('directory_group_mapped'):
             options['directory_group_filter'] = set(six.iterkeys(self.directory_groups))
-
         return options
 
     def create_umapi_options(self, connector_config_sources):
