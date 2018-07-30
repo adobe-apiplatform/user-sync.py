@@ -193,7 +193,7 @@ class ConfigLoader(object):
         # the adobe_only_user_list parameter -  otherwise, defaults cause exception to be thrown unconditionally when
         # the user list option is specified
         elif (options['users'] and options['users'] != self.invocation_defaults['users']) and options['adobe_only_user_list']:
-                raise AssertionException('You cannot configure both a default "users" option (%s) '
+            raise AssertionException('You cannot configure both a default "users" option (%s) '
                                          'and a default "adobe-only-user-list" option (%s)' %
                                          (' '.join(options['users']), options['adobe_only_user_list']))
         elif options['users']:
