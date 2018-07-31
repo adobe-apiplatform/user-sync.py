@@ -194,8 +194,8 @@ class ConfigLoader(object):
         # the user list option is specified
         elif (options['users'] and options['users'] != self.invocation_defaults['users']) and options['adobe_only_user_list']:
             raise AssertionException('You cannot configure both a default "users" option (%s) '
-                                         'and a default "adobe-only-user-list" option (%s)' %
-                                         (' '.join(options['users']), options['adobe_only_user_list']))
+                                     'and a default "adobe-only-user-list" option (%s)' %
+                                     (' '.join(options['users']), options['adobe_only_user_list']))
         elif options['users']:
             users_spec = options['users']
             stray_list_input_path = None
@@ -301,6 +301,8 @@ class ConfigLoader(object):
         """
         :rtype str
         """
+        if self.invocation_options['stray_list_input_path']:
+            return None
         connector_type = self.invocation_options.get('directory_connector_type')
         if connector_type:
             return 'user_sync.connector.directory_' + connector_type
