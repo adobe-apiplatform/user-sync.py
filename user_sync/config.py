@@ -90,7 +90,9 @@ class ConfigLoader(object):
         """Merge the invocation option defaults with overrides from the main config and the command line.
         :rtype: dict
         """
-        options = self.invocation_defaults
+        # copy instead of direct assignment to preserve original invocation_defaults object
+        # otherwise, setting options also sets invocation_defaults (same memory ref)
+        options = self.invocation_defaults.copy()
 
         # get overrides from the main config
         invocation_config = self.main_config.get_dict_config('invocation_defaults', True)
@@ -186,7 +188,11 @@ class ConfigLoader(object):
                 raise AssertionException('You cannot specify --adobe-only-user-list when using "push" strategy')
             users_spec = None
             stray_list_input_path = self.args['adobe_only_user_list']
-        elif options['users'] and options['adobe_only_user_list']:
+
+        # Check both that options['users'] exists, AND that it is not the default value before checking against
+        # the adobe_only_user_list parameter -  otherwise, defaults cause exception to be thrown unconditionally when
+        # the user list option is specified
+        elif (options['users'] and options['users'] != self.invocation_defaults['users']) and options['adobe_only_user_list']:
             raise AssertionException('You cannot configure both a default "users" option (%s) '
                                      'and a default "adobe-only-user-list" option (%s)' %
                                      (' '.join(options['users']), options['adobe_only_user_list']))
@@ -295,6 +301,8 @@ class ConfigLoader(object):
         """
         :rtype str
         """
+        if self.invocation_options['stray_list_input_path']:
+            return None
         connector_type = self.invocation_options.get('directory_connector_type')
         if connector_type:
             return 'user_sync.connector.directory_' + connector_type
