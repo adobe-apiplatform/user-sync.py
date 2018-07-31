@@ -301,7 +301,7 @@ class ConfigLoader(object):
         """
         :rtype str
         """
-        if self.invocation_options['stray_list_input_path']:
+        if self.invocation_options.get('stray_list_input_path', None):
             return None
         connector_type = self.invocation_options.get('directory_connector_type')
         if connector_type:
