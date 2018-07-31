@@ -263,6 +263,7 @@ def log_parameters(argv, config_loader):
     :type config_loader: user_sync.config.ConfigLoader
     :return: None
     """
+    logger.info('Python version: %s.%s.%s on %s' % (sys.version_info[:3] + (sys.platform,)))
     logger.info('------- Command line arguments -------')
     logger.info(' '.join(argv))
     logger.debug('-------- Resulting invocation options --------')

@@ -379,7 +379,7 @@ class OKTAValueFormatter(object):
             attribute_values = getattr(record.profile,attribute_name)
             if attribute_values:
                 try:
-                    return attribute_values.decode(cls.encoding)
+                    return attribute_values
                 except UnicodeError as e:
                     raise AssertionException("Encoding error in value of attribute '%s': %s" % (attribute_name, e))
         return None

@@ -1,6 +1,6 @@
 # Release Notes for User Sync Tool Version 2.3
 
-These notes apply to v2.3rc4 of 2018-01-29.
+These notes apply to v2.3 of 2018-07-31.
 
 ## New Features
 
@@ -31,6 +31,10 @@ There is a new command-line argument `--connector` for specifying whether to get
 [#324](https://github.com/adobe-apiplatform/user-sync.py/issues/324) Handle LDAP servers with no support for PagedResults.
 
 [#325](https://github.com/adobe-apiplatform/user-sync.py/issues/325) Adding '--process-groups' doesn't override the default.
+
+[#364](https://github.com/adobe-apiplatform/user-sync.py/issues/364) Okta decode error
+
+[#365](https://github.com/adobe-apiplatform/user-sync.py/issues/365) Using adobe-only-user-list does not work
 
 ## Compatibility with Prior Versions
 
