@@ -196,12 +196,12 @@ class ConfigLoader(object):
             raise AssertionException('You cannot configure both a default "users" option (%s) '
                                      'and a default "adobe-only-user-list" option (%s)' %
                                      (' '.join(options['users']), options['adobe_only_user_list']))
-        elif options['users']:
-            users_spec = options['users']
-            stray_list_input_path = None
         elif options['adobe_only_user_list']:
             users_spec = None
             stray_list_input_path = options['adobe_only_user_list']
+        elif options['users']:
+            users_spec = options['users']
+            stray_list_input_path = None            
         else:
             raise AssertionException('You must specify either a "users" option or an "adobe-only-user-list" option.')
 
