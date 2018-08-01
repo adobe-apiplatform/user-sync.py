@@ -174,7 +174,7 @@ class ConfigLoader(object):
         # --users and --adobe-only-user-list conflict with each other, so we need to disambiguate.
         # Argument specifications override configuration options, so you must have one or the other
         # either as an argument or as a configured default.
-        if self.args['users'] and self.args['adobe_only_user_list']:
+        if self.args['users'] and (self.args['adobe_only_user_list'] or options['adobe_only_user_list']):
             # specifying both --users and --adobe-only-user-list is an error
             raise AssertionException('You cannot specify both a --users arg and an --adobe-only-user-list arg')
         elif self.args['users']:
