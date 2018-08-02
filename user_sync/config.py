@@ -252,7 +252,7 @@ class ConfigLoader(object):
 
         # --adobe-users
         if self.args['adobe_users']:
-            adobe_users_spec = self.args['adobe_users']
+            adobe_users_spec = options['adobe_users'] = self.args['adobe_users']
         elif options['adobe_users']:
             adobe_users_spec = options['adobe_users']
         else:
