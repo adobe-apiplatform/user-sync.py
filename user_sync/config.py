@@ -501,7 +501,8 @@ class ConfigLoader(object):
         if isinstance(max_missing, str):
             percent_pattern = re.compile("(\d*(\.\d+)?%)")
             if percent_pattern.match(max_missing):
-                if float(max_missing.strip('%')) <= 100.0:
+                max_missing_percent = float(max_missing.strip('%'))
+                if max_missing_percent >= 0.0 and max_missing_percent <= 100.0:
                     options['max_adobe_only_users'] = max_missing
                 else:
                     raise AssertionException("max_adobe_only_users value must be less or equal than 100%")
