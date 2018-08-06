@@ -502,6 +502,9 @@ class RuleProcessor(object):
             self.write_stray_key_map()
         if self.will_manage_strays:
             max_missing = self.options['max_adobe_only_users']
+            if isinstance(max_missing, str) and '%' in max_missing:
+                percent = float(max_missing.strip('%'))/100
+                max_missing = int((self.primary_user_count - self.excluded_user_count) * percent)
             if stray_count > max_missing:
                 self.logger.critical('Unable to process Adobe-only users, as their count (%s) is larger '
                                      'than the max_adobe_only_users setting (%d)', stray_count, max_missing)

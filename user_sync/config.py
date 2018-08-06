@@ -497,7 +497,18 @@ class ConfigLoader(object):
 
         # get the limits
         limits_config = self.main_config.get_dict_config('limits')
-        options['max_adobe_only_users'] = limits_config.get_int('max_adobe_only_users')
+        max_missing = limits_config.get_value('max_adobe_only_users',(int, str),False)
+        if isinstance(max_missing, str):
+            percent_pattern = re.compile("(\d*(\.\d+)?%)")
+            if percent_pattern.match(max_missing):
+                if float(max_missing.strip('%')) <= 100.0:
+                    options['max_adobe_only_users'] = max_missing
+                else:
+                    raise AssertionException("max_adobe_only_users value must be less or equal than 100%")
+            else:
+                raise AssertionException("Not a valid value for max_adobe_only_users. Must be a percentage or fix integer")
+        else:
+            options['max_adobe_only_users'] = max_missing
 
         # now get the directory extension, if any
         extension_config = self.get_directory_extension_options()
