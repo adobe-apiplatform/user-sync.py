@@ -480,7 +480,8 @@ class RuleProcessor(object):
             # pull all user groups from console
             on_adobe_groups = [normalize_string(g['groupName']) for g in umapi_connector.get_groups()]
             # verify if group exist and create
-            if self.options['auto_create']:
+            auto_create = self.options.get('auto_create', None)
+            if auto_create:
                 for mapped_group in mapped_groups:
                     if normalize_string(mapped_group) not in on_adobe_groups:
                         self.logger.info("Auto create user-group enabled: Creating %s" % mapped_group)
