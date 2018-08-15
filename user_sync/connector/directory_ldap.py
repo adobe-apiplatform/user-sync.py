@@ -28,6 +28,7 @@ import user_sync.connector.helper
 import user_sync.error
 import user_sync.identity_type
 from user_sync.error import AssertionException
+from ldap import dn
 
 
 def connector_metadata():
@@ -211,6 +212,7 @@ class LDAPDirectoryConnector(object):
         user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
+        user_attribute_names.append('memberOf')
 
         extended_attributes = [six.text_type(attr) for attr in extended_attributes]
         extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
@@ -298,7 +300,7 @@ class LDAPDirectoryConnector(object):
             if self.additional_group_filters:
                 member_groups = []
                 for f in self.additional_group_filters:
-                    for g in self.find_member_groups(dn, uid_value if uid_value else six.text_type('')):
+                    for g in self.get_member_groups(record):
                         if f.match(g) and g not in member_groups:
                             member_groups.append(g)
                 user['member_groups'] = member_groups
@@ -315,20 +317,22 @@ class LDAPDirectoryConnector(object):
 
             yield (dn, user)
 
-    def find_member_groups(self, dn, uid):
-        member_group_filter_format = six.text_type(self.options['member_group_filter_format'])
-        member_filter = self.format_ldap_query_string(member_group_filter_format,
-                                                      member_dn=dn,
-                                                      member_uid=uid)
-        base_dn = six.text_type(self.options['base_dn'])
-        res = self.connection.search_s(base_dn, ldap.SCOPE_SUBTREE,
-                                  filterstr=member_filter)
-        member_groups = []
-        for _, group_rec in res:
-            if isinstance(group_rec, dict):
-                group_cn = LDAPValueFormatter.get_attribute_value(group_rec, 'cn', first_only=True)
-                member_groups.append(group_cn)
-        return member_groups
+    def get_member_groups(self, user):
+        group_names = []
+        groups = LDAPValueFormatter.get_attribute_value(user, 'memberOf')
+        for group_dn in map(dn.str2dn, groups):
+            group_cn = self.get_cn_from_dn(group_dn)
+            if group_cn:
+                group_names.append(group_cn)
+        return group_names
+
+    @staticmethod
+    def get_cn_from_dn(group_dn):
+        for rdn in group_dn:
+            for rdn_part in rdn:
+                if rdn_part[0].lower() == 'cn':
+                    return rdn_part[1]
+        return None
 
     def iter_search_result(self, base_dn, scope, filter_string, attributes):
         """
