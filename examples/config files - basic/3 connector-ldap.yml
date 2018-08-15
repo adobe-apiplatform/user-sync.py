@@ -84,18 +84,6 @@ group_member_filter_format: "(memberOf={group_dn})"
 # only users that would be selected by that filter will be returned as
 # members of the given group.
 
-# (optional) member_group_filter_format (default value given below)
-# member_group_filter_format specifies the query used to find all groups that
-# directly contain a given member.  The string {member_dn} is replaced
-# with the DN of the group member.  The string {member_uid) is replaced with
-# the uid attribute of the group member, if any.  The default value expects
-# groups to refer to members by their DN.  For groups that refer to their
-# members by their UID (e.g., posix groups in many OpenLDAP systems), you
-# probably want to use this value instead: "(memberUid={member_uid})"
-# Note that this filter is &-combined with the group_filter_format query
-# specifying a wildcard for the group name.  So it will only find groups.
-# member_group_filter_format: "(member={member_dn})"
-
 # (optional) string_encoding (default value given below)
 # string_encoding specifies the Unicode string encoding used by the directory.
 # All values retrieved from the directory are converted to Unicode before being

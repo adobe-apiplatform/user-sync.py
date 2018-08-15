@@ -690,35 +690,15 @@ purpose in the console, apart from serving as containers for users.
 However, because of how different Adobe products integrate with one
 another, they must be represented in the console.
 
-The User Sync Tool can target these groups with its
-`member_group_filter_format` and `additional_groups` config options.
-
-### Member Group Filter Format
-
-`member_group_filter_format` is defined in `connector-ldap.yml`.
-It specifies an LDAP query that identifies the groups that directly
-contain a given user.  Since a user is likely to belong to LDAP groups
-that are not relevant to user sync, groups queried with this mechanism
-are filtered with the rules specified in `additional_groups`.
-
-`member_group_filter_format` is executed once per user, and must
-contain a placeholder for some kind of user identifier.
-
-The following example query returns groups that have a member defined
-by `member_dn`.  `member_dn` is the distinguished name of an Active
-Directory user.  Other directory systems may use different
-identifiers such as `member_uid`.
-
-```yaml
-member_group_filter_format: "(member={member_dn})"
-```
+The User Sync Tool can target these groups with the `additional_groups`
+config option.
 
 ### Additional Group Rules
 
-`additional_groups` is defined in `user-sync-config.yml`.  It specifies
-a list of rules to identify and filter groups returned in
-`member_group_filter_format`, as well as rules that govern how
-corresponding Adobe groups should be named.
+`additional_groups` is defined in `user-sync-config.yml` in the `groups`
+object.  It specifies a list of rules to identify and filter groups
+present in the `memberOf` LDAP attribute, as well as rules that govern
+how corresponding Adobe groups should be named.
 
 For example - suppose an Adobe Experience Manager customer would like
 to sync all AEM users to the admin console.  They define a group
@@ -737,14 +717,18 @@ This example company's AEM users fall into two broad categories -
 authors and publishers.  These users already belong to LDAP groups that
 correspond to each role - `AEM-ACL-AUTHORS` and `AEM-ACL-PUBLISHERS`,
 respectively.  Suppose this company wishes to assign users to these
-additional groups when syncing users.  Assuming their
-`member_group_filter_format` query is configured, they can leverage the
-`additional_group` config option:
+additional groups when syncing users.  Assuming group membership
+information can be found in the `memberOf` user attribute, they can
+leverage the `additional_group` config option:
 
 ```yaml
-  additional_groups:
-    - source: "AEM-ACL-(.+)"
-      target: "AEM-(\1)"
+directory_users:
+  # ... additional directory config options
+  groups:
+    # ... group mappings, etc
+    additional_groups:
+      - source: "AEM-ACL-(.+)"
+        target: "AEM-(\1)"
 ```
 
 `additional_groups` contains a list of additional group rules. `source`
@@ -752,10 +736,9 @@ is a regular expression that identifies the group.  Only groups that
 match a `source` regex will be included.  `target` is a regex
 substitution string that allows group names to be renamed.  In this
 case, any group beginning with `AEM-ACL` will be renamed to `AEM-[role]`.
-Each rule is executed on the list of groups returned by
-`member_group_filter_format` for each user.  In this example, authors
-and publishers are added to their respective Adobe user group
-(`AEM-AUTHORS` or `AEM-PUBLISHERS`).
+Each rule is executed on the list of groups a user directly belongs to.
+In this example, authors and publishers are added to their respective
+Adobe user group (`AEM-AUTHORS` or `AEM-PUBLISHERS`).
 
 Note: The company in this example can also add mappings for authors
 and publishers to the group mapping in `user-sync-config.yml`.  The

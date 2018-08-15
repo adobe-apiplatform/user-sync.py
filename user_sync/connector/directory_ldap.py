@@ -71,7 +71,6 @@ class LDAPDirectoryConnector(object):
             '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))'))
         builder.set_string_value('group_member_filter_format', six.text_type(
             '(memberOf={group_dn})'))
-        builder.set_string_value('member_group_filter_format', None)
         builder.set_bool_value('require_tls_cert', False)
         builder.set_string_value('string_encoding', 'utf8')
         builder.set_string_value('user_identity_type_format', None)
