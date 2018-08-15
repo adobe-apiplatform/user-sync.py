@@ -318,6 +318,12 @@ class LDAPDirectoryConnector(object):
             yield (dn, user)
 
     def get_member_groups(self, user):
+        """
+        Get a list of member group common names for user
+        Assumes groups are contained in attribute memberOf
+        :param user:
+        :return:
+        """
         group_names = []
         groups = LDAPValueFormatter.get_attribute_value(user, 'memberOf')
         for group_dn in map(dn.str2dn, groups):
@@ -328,6 +334,13 @@ class LDAPDirectoryConnector(object):
 
     @staticmethod
     def get_cn_from_dn(group_dn):
+        """
+        Take a DN parsed by ldap.dn.str2dn and locate and return the common name
+        Returns None if no common name is found
+        If common name is complex (e.g. cn=Bob Jones+email=bob.jones@example.com) then first part of CN is returned
+        :param group_dn:
+        :return:
+        """
         for rdn in group_dn:
             for rdn_part in rdn:
                 if rdn_part[0].lower() == 'cn':
