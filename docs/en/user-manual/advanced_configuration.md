@@ -683,26 +683,39 @@ Okta sync can use extended groups, attributes and after-mapping hooks.  The name
 
 ## Additional Group Options
 
-Some Adobe applications, such as Adobe Experience Manager, may have a
-number of permission-based or role-based groups that need to be
-represented in the Adobe Admin Console.  These groups have no special
-purpose in the console, apart from serving as containers for users.
-However, because of how different Adobe products integrate with one
-another, they must be represented in the console.
+It is possible for the User Sync Tool to sync group relationships that
+are not explicitly mapped out in `user-sync-config.yml`.  Any LDAP group
+that a user belongs to directly can be mapped and targeted to an Adobe
+profile or user group using the `additional_groups` configuration
+option.
 
-The User Sync Tool can target these groups with the `additional_groups`
-config option.
+* Additional groups are identified with a regular expression
+* The name of the mapped Adobe group can be customized with a regular
+expression substitution string.
+
+Possible use cases:
+
+* Metadata such as department, employee type, etc
+* ACL groups for [Adobe Experience Manager](https://www.adobe.com/marketing/experience-manager.html)
+* Special-case group, role or profile assignment
+
+Note: This feature only works with the LDAP connector at this time.
 
 ### Additional Group Rules
 
 `additional_groups` is defined in `user-sync-config.yml` in the `groups`
 object.  It specifies a list of rules to identify and filter groups
 present in the `memberOf` LDAP attribute, as well as rules that govern
-how corresponding Adobe groups should be named.
+how corresponding Adobe groups should be named.  Groups that are
+discovered with this feature will be added to a user's list of
+targeted Adobe groups.
 
-For example - suppose an Adobe Experience Manager customer would like
+### Additional Group Example
+
+Suppose an Adobe Experience Manager customer would like
 to sync all AEM users to the admin console.  They define a group
-mapping in `user-sync-config.yml` like the following:
+mapping in `user-sync-config.yml` to map the LDAP group `AEM-USERS` to
+the Adobe group `Adobe Experience Manager`.
 
 ```yaml
     - directory_group: "AEM-USERS"
@@ -710,16 +723,13 @@ mapping in `user-sync-config.yml` like the following:
         - "Adobe Experience Manager"
 ```
 
-All users that belong to the directory group `AEM-USERS` will be
-assigned to the `Adobe Experience Manager` product profile.
-
 This example company's AEM users fall into two broad categories -
 authors and publishers.  These users already belong to LDAP groups that
 correspond to each role - `AEM-ACL-AUTHORS` and `AEM-ACL-PUBLISHERS`,
 respectively.  Suppose this company wishes to assign users to these
 additional groups when syncing users.  Assuming group membership
 information can be found in the `memberOf` user attribute, they can
-leverage the `additional_group` config option:
+leverage the `additional_groups` config option.
 
 ```yaml
 directory_users:
@@ -728,7 +738,7 @@ directory_users:
     # ... group mappings, etc
     additional_groups:
       - source: "AEM-ACL-(.+)"
-        target: "AEM-(\1)"
+        target: "AEM-(\\1)"
 ```
 
 `additional_groups` contains a list of additional group rules. `source`
@@ -742,7 +752,7 @@ Adobe user group (`AEM-AUTHORS` or `AEM-PUBLISHERS`).
 
 Note: The company in this example can also add mappings for authors
 and publishers to the group mapping in `user-sync-config.yml`.  The
-key advantage to using the additional groups mechanism is that it
+advantage to using the additional groups mechanism is that it
 will apply dynamically to any LDAP group that matches the regex
 `AEM-ACL-(.+)`.  If additional AEM roles are introduced, they will
 be included in sync as long as they follow that naming convention -
@@ -756,13 +766,16 @@ conjunction with the additional groups functionality detailed in the
 previous section, but it also applies to Adobe groups targeted in
 the group mapping as well as the extension config.
 
-`group_sync_options` is defined in `user-sync-config.yml`.  It contains
-an object that currently has just one key - `auto_create`.
-`auto_create` is boolean and is `False` by default.
+`group_sync_options` is defined in the `directory_users` section in
+`user-sync-config.yml`.  It contains an object that currently has just
+one key - `auto_create`. `auto_create` is boolean and is `False` by
+default.
 
 To enable dynamic group creation, set `auto_create` to `True`:
 
 ```yaml
+directory_users:
+  # ... additional directory config options
   group_sync_options:
     auto_create: True
 ```
@@ -776,8 +789,8 @@ following conditions are true:
 New groups are always created as user groups.  The UMAPI does not
 support product profile creation, so the Sync Tool can't create them.
 If the Sync Tool is configured to target a misspelled profile name, or
-a profile that doesn't exist, it will automatically create a group with
-the specified name.
+a profile that doesn't exist, it will automatically create a user group
+with the specified name.
 
 ---
 
