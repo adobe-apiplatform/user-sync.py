@@ -698,6 +698,13 @@ class RuleProcessor(object):
         :return user_sync.connector.umapi.Commands (or None if there's an error)
         """
         identity_type = self.get_identity_type_from_directory_user(directory_user)
+        update_email = None
+        if (identity_type == user_sync.identity_type.FEDERATED_IDENTITY_TYPE and directory_user['username'] and
+                '@' in directory_user['username'] and
+                normalize_string(directory_user['email']) != normalize_string(directory_user['username'])):
+            update_email = directory_user['email']
+            directory_user['email'] = directory_user['username']
+
         commands = user_sync.connector.umapi.Commands(identity_type, directory_user['email'],
                                                       directory_user['username'], directory_user['domain'])
         attributes = self.get_user_attributes(directory_user)
@@ -722,6 +729,8 @@ class RuleProcessor(object):
         else:
             attributes['option'] = 'ignoreIfAlreadyExists'
         commands.add_user(attributes)
+        if update_email:
+            commands.update_user({"email": update_email, "username": directory_user['username']})
         return commands
 
     def create_umapi_user(self, user_key, groups_to_add, umapi_info, umapi_connector):
