@@ -1,0 +1,79 @@
+# This is the Sign Sync configuration file.
+#
+# This file contains all the import information needed to sync users into the Sign Console
+# Please make sure that all your information is correct.
+
+# Thi is the server information needed to point the application to your Sign Console.
+server:
+  # The host address to your Sign Console.
+  host: api.na2.echosign.com:443
+
+  # DO NOT CHANGE THE FOLLOW TWO CONFIGURATION.
+  # This is the the endpoints to using either v5 or v6 API.
+  endpoint_v5: /api/rest/v5
+  endpoint_v6: /api/rest/v6
+
+# This is the enterprise setting to get access to your Sign Console.
+enterprise:
+  # This is your integration key for Adobe Sign. This key
+  # is needed to get access to perform synchronization between Admin
+  # Console and Adobe Sign.
+  integration: 
+
+# This is the conditions set for your Sign Sync Application
+conditions:
+  # There are two settings for this option. If you're using the application
+  # as a User Sync Tool integration, you will want to use ldap. However,
+  # if you're using this as a standalone, you have the option to user
+  # either umapi or ldap.
+  connector: umapi
+
+  # This is the version number to use. You have either option between v5 or v6.
+  version: v5
+
+# This is the settings you want to set for umapi sync.
+umapi_conditions:
+  # The product profile you're trying to target. If you're targeting
+  # more than one product profile, please separate everything with a comma.
+  product_group: 
+
+  # This option allows you to set which admin groups you want to allow
+  # the application to assign account admin privileges to the user once
+  # synced over to Adobe Sign.
+  #
+  # Example: If a user is given _org_admin_ privileges, the user will be
+  # Account Admin in Sign when synced over.
+  #
+  # Admin console has four admin groups to choose from which includes:
+  # _org_admin, _deployment_admin, _support_admin, _product_admin
+  account_admin_groups: _org_admin, _deployment_admin, _PRODUCT_ADMIN, _support_admin
+
+  # This option will ignore selected admin settings.
+  #
+  # Example: if you enter in _product_admin and the user is assign to a
+  # _product_admin group in Admin Console, the user will be synced over as
+  # a normal user in Adobe Sign.
+  #
+  # Admin console has four admin groups to choose from which includes:
+  # _org_admin, _deployment_admin, _support_admin, _product_admin
+  ignore_admin_groups: None
+
+  # This feature is for multi-group assignment. However, Adobe Sign
+  # currently doesn't support this feature, so it should be left
+  # turned off.
+  multi_group: 'no'
+
+  # This feature will ignore certain user groups in Admin Console.
+  #
+  # Example: If you have a user group named HR - Recruiting and
+  # you enter HR - Recruiting in the ignore_groups configuration,
+  # no one from that user group will be synced over into Sign.
+  #
+  ignore_groups: 
+
+# This is the setting for additional features relating to LDAP.
+ldap_conditions:
+
+  # This is the setting to grab extra attributes from LDAP before
+  # syncing over to Sign.
+  attributes: 'company, homePhone, mail, mobile, title, givenName, sn, objectGUID, memberOf'

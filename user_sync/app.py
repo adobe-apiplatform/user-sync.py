@@ -32,6 +32,9 @@ import user_sync.connector.umapi
 import user_sync.helper
 import user_sync.lockfile
 import user_sync.rules
+
+from user_sync.sign_sync.synchronize import Synchronize
+
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 
@@ -83,6 +86,8 @@ def main(args=sys.argv[1:]):
         if lock.set_lock():
             try:
                 begin_work(config_loader)
+
+                Synchronize().run()
             finally:
                 lock.unlock()
         else:
