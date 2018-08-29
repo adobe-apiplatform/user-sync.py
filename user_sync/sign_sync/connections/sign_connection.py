@@ -29,6 +29,7 @@ class SIGNConfig:
 
         # read enterprise parameters
         self.integration = yml_sign_sync_config['enterprise']['integration']
+        self.email = yml_sign_sync_config['enterprise']['email']
 
         if self.connector == 'umapi':
             self.account_admin = yml_sign_sync_config['umapi_conditions']['account_admin_groups']
@@ -170,6 +171,7 @@ class SIGNConfig:
         sign_config['url'] = self.get_sign_url()
         sign_config['header'] = self.get_sign_header()
         sign_config['group'] = self.get_sign_group(sign_config['header'], sign_config['url'], self.logs)
+        sign_config['email'] = self.email
         sign_config['connector'] = self.connector
         sign_config['condition']['multi_group'] = self.get_multi_group_setting()
         sign_config['condition']['ignore_groups'] = self.get_ignore_groups_setting()

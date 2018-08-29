@@ -6,7 +6,7 @@
 # Thi is the server information needed to point the application to your Sign Console.
 server:
   # The host address to your Sign Console.
-  host: api.na2.echosign.com:443
+  host: 
 
   # DO NOT CHANGE THE FOLLOW TWO CONFIGURATION.
   # This is the the endpoints to using either v5 or v6 API.
@@ -19,6 +19,10 @@ enterprise:
   # is needed to get access to perform synchronization between Admin
   # Console and Adobe Sign.
   integration: 
+
+  # This is the admin account email address. This needs to be provided
+  # so no changes will be made to the main admin account.
+  email: 
 
 # This is the conditions set for your Sign Sync Application
 conditions:
@@ -69,7 +73,7 @@ umapi_conditions:
   # you enter HR - Recruiting in the ignore_groups configuration,
   # no one from that user group will be synced over into Sign.
   #
-  ignore_groups: 
+  ignore_groups:
 
 # This is the setting for additional features relating to LDAP.
 ldap_conditions:

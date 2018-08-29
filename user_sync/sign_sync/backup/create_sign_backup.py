@@ -20,7 +20,7 @@ def run(logs):
 
     # Create user data JSON file
     active_user_list, user_id_list = get_active_users(sign_config)
-    user_info_list = parse_user_list(active_user_list)
+    user_info_list = parse_user_list(active_user_list, sign_config)
     write_to_file(user_info_list, user_id_list)
 
 
@@ -49,7 +49,7 @@ def get_active_users(sign_config):
 
     return active_users, user_id_list
 
-def parse_user_list(active_user_list):
+def parse_user_list(active_user_list, sign_config):
     """
     This function will parse out user info to meet minimum schema criteria for SIGN API update user call.
     :param active_user_list: list[]
@@ -59,7 +59,7 @@ def parse_user_list(active_user_list):
     user_info = list()
     for user in active_user_list:
         # Skip main account ID since we don't want to change anything relating to the main account
-        if user['email'] == 'nathannguyen345@gmail.com':
+        if user['email'] == sign_config['email']:
             pass
         else:
             email = user['email']
