@@ -303,4 +303,5 @@ invocation_defaults:
   # any default you set should almost certainly be single-quoted.
   user_filter:
   # For argument --users, the default is 'all'.
+  # for CSV input, use an array - ['file', 'users.csv']
   users: all
