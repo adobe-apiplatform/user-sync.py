@@ -62,7 +62,7 @@ class Synchronize:
 
         # Iterate through each user from the user list
         for user in user_list:
-            if user['email'] == 'nathannguyen345@gmail.com':
+            if user['email'] == sign_config['email']:
                 pass
             else:
                 name = "{} {}".format(user['firstname'], user['lastname'])
