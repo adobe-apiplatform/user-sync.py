@@ -105,7 +105,7 @@ class ConfigLoader(object):
                 elif isinstance(v, list):
                     val = invocation_config.get_list(k, True)
                     if val:
-                        options[k] = val
+                        options[k] = self.parse_args(val[0])
                 else:
                     val = invocation_config.get_string(k, True)
                     if val:
@@ -530,6 +530,9 @@ class ConfigLoader(object):
         directory_connectors_config = self.get_directory_connector_configs()
         self.main_config.report_unused_values(self.logger, [directory_connectors_config])
 
+    def parse_args(self, argString):
+        char = argString[-1:]
+        return argString.rstrip(char).split(char) if (char == "'" or char == '"') else argString.split(" ")
 
 class ObjectConfig(object):
     def __init__(self, scope):
