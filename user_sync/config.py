@@ -238,7 +238,9 @@ class ConfigLoader(object):
                 raise AssertionException('You cannot specify --user-filter when using an adobe-only-user-list')
             self.logger.info("adobe-only-user-list specified, so ignoring default user filter specification")
         else:
-            username_filter_pattern = self.args['user_filter'] or options['user_filter']
+            if self.args['user_filter'] is not None:
+                options['user_filter'] = self.args['user_filter']
+            username_filter_pattern = options['user_filter']
             if username_filter_pattern:
                 try:
                     compiled_expression = re.compile(r'\A' + username_filter_pattern + r'\Z', re.IGNORECASE)
