@@ -785,6 +785,8 @@ following conditions are true:
 
 1. Group is targeted for at least one user
 2. Group does not currently exist
+3. The `--process-groups` command argument is set (or the equivalent
+   invocation option)
 
 New groups are always created as user groups.  The UMAPI does not
 support product profile creation, so the Sync Tool can't create them.

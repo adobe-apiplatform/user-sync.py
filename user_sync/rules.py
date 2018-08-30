@@ -176,7 +176,8 @@ class RuleProcessor(object):
         umapi_stats = JobStats('Push to UMAPI' if self.push_umapi else 'Sync with UMAPI', divider="-")
         umapi_stats.log_start(logger)
         if directory_connector is not None:
-            self.create_umapi_groups(umapi_connectors)
+            if self.options.get('process_groups'):
+                self.create_umapi_groups(umapi_connectors)
             self.sync_umapi_users(umapi_connectors)
         if self.will_process_strays:
             self.process_strays(umapi_connectors)

@@ -218,6 +218,8 @@ directory_users:
   #   NOTE: auto_create applies to any targeted Adobe group that doesn't exist.
   #         This includes groups targeted through group mapping, extension config,
   #         and the additional_groups functionality.
+  #   The --process-groups command argument or equivalent invocation setting must
+  #   be enabled for groups to be auto-created
   # group_sync_options:
   #   auto_create: False
 
