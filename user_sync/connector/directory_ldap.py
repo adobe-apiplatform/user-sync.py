@@ -175,15 +175,14 @@ class LDAPDirectoryConnector(object):
                             #replace base_dn with user_dn and filter with all_users_filter to do user lookup based on DN
                             result =  list(self.iter_users(user_dn, all_users_filter, extended_attributes))
                             if result:
-                                # iter_users should only return 1 user when doing direct-mode lookup.
+                                # iter_users should only return 1 user when doing two_steps lookup.
                                 if len(result) > 1:
-                                    raise AssertionException('Unexpected multiple LDAP object found in direct-mode for: %s' % user_dn)
+                                    raise AssertionException('Unexpected multiple LDAP object found in two_steps lookup mode for: %s' % user_dn)
                                 else:
                                     user = result[0][1]
-                        if user:
-                            user['groups'].append(group)
-                            group_users += 1
-                            grouped_user_records[user_dn] = user
+                                    user['groups'].append(group)
+                                    group_users += 1
+                                    grouped_user_records[user_dn] = user
                 else:
                     for user_dn, user in self.iter_users(base_dn, self.format_group_user_filter(group_dn), extended_attributes):
                         user['groups'].append(group)
@@ -233,7 +232,7 @@ class LDAPDirectoryConnector(object):
                 group_dn = current_tuple[0]
         return group_dn
 
-    def iter_group_member_dns(self, group_dn, member_attribute):
+    def iter_group_member_dns(self, group_dn, member_attribute, searched_dns = []):
         """
         return group memberships dns from specified membership attribute in LDAP group object
         :type group: str
@@ -249,11 +248,13 @@ class LDAPDirectoryConnector(object):
                     member_dn = member_dn.decode('utf-8')
                     #if nested_group search enabled, look up DN and see if group member attribute exist in that object
                     #This will recurse through until there is no nested group.
-                    if nested_group_search:
-                        nested_members = self.iter_group_member_dns(member_dn, member_attribute)
-                        for nested_member_dn in nested_members:
-                            yield nested_member_dn
-                    yield member_dn
+                    if member_dn not in searched_dns:
+                        searched_dns.append(member_dn)
+                        if nested_group_search:
+                            nested_members = self.iter_group_member_dns(member_dn, member_attribute)
+                            for nested_member_dn in nested_members:
+                                yield nested_member_dn
+                        yield member_dn
         except Exception as e:
             self.logger.warning('Error lookup %s : %s', group_dn, e)
             pass
