@@ -444,6 +444,7 @@ class ConfigLoader(object):
         options.update(self.invocation_options)
 
         # process directory configuration options
+        new_account_type = None
         directory_config = self.main_config.get_dict_config('directory_users', True)
         if directory_config:
             # account type
@@ -457,6 +458,15 @@ class ConfigLoader(object):
             default_country_code = directory_config.get_string('default_country_code', True)
             if default_country_code:
                 options['default_country_code'] = default_country_code
+            additional_groups = directory_config.get_list('additional_groups', True) or []
+            additional_groups = [{'source': re.compile(r['source']), 'target': r['target']} for r in additional_groups]
+            options['additional_groups'] = additional_groups
+            sync_options = directory_config.get_dict_config('group_sync_options', True)
+            if sync_options:
+                options['auto_create'] = sync_options.get_bool('auto_create', True)
+        if not new_account_type:
+            new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
+            self.logger.debug("Using default for new_account_type: %s", new_account_type)
 
         # process exclusion configuration options
         adobe_config = self.main_config.get_dict_config('adobe_users', True)

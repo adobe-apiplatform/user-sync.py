@@ -21,6 +21,7 @@
 
 import logging
 import six
+import re
 
 import user_sync.connector.umapi
 import user_sync.error
@@ -70,6 +71,7 @@ class RuleProcessor(object):
         # counters for action summary log
         self.action_summary = {
             # these are in alphabetical order!  Always add new ones that way!
+            'adobe_user_groups_created': 0,
             'directory_users_read': 0,
             'directory_users_selected': 0,
             'excluded_user_count': 0,
@@ -174,6 +176,8 @@ class RuleProcessor(object):
         umapi_stats = JobStats('Push to UMAPI' if self.push_umapi else 'Sync with UMAPI', divider="-")
         umapi_stats.log_start(logger)
         if directory_connector is not None:
+            if self.options.get('process_groups'):
+                self.create_umapi_groups(umapi_connectors)
             self.sync_umapi_users(umapi_connectors)
         if self.will_process_strays:
             self.process_strays(umapi_connectors)
@@ -232,6 +236,7 @@ class RuleProcessor(object):
                 ['unchanged_user_count', 'Number of non-excluded Adobe users with no changes'],
                 ['primary_users_created', 'Number of new Adobe users added'],
                 ['updated_user_count', 'Number of matching Adobe users updated'],
+                ['adobe_user_groups_created', 'Number of Adobe user-groups created'],
             ]
             if umapi_connectors.get_secondary_connectors():
                 action_summary_description += [
@@ -385,6 +390,16 @@ class RuleProcessor(object):
                 else:
                     self.logger.error('Target adobe group %s is not known; ignored', target_group_qualified_name)
 
+            additional_groups = self.options.get('additional_groups', [])
+            member_groups = directory_user.get('member_groups', [])
+            for member_group in member_groups:
+                for group_rule in additional_groups:
+                    if group_rule['source'].match(member_group):
+                        rename_group = group_rule['source'].sub(group_rule['target'], member_group)
+                        umapi_info.add_mapped_group(rename_group)
+                        for umapi_name, umapi_info in six.iteritems(self.umapi_info_by_name):
+                            umapi_info.add_desired_group_for(user_key, rename_group)
+
         self.logger.debug('Total directory users after filtering: %d', len(filtered_directory_user_by_user_key))
         if self.logger.isEnabledFor(logging.DEBUG):
             self.logger.debug('Group work list: %s', dict([(umapi_name, umapi_info.get_desired_groups_by_user_key())
@@ -451,6 +466,32 @@ class RuleProcessor(object):
                         # We pushed an existing user to a secondary in order to update his groups
                         self.updated_user_keys.add(user_key)
                     self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector)
+
+    def create_umapi_groups(self, umapi_connectors):
+        """
+        This is where we create user-groups. If auto_create is enabled,
+        this will pull user-groups from console and compare with mapped_groups. If mapped group does exist
+        in the console, then it will create. Note: Push Mode is not supported
+        :type umapi_connectors: UmapiConnectors
+        """
+        if not self.push_umapi:
+            umapi_info, umapi_connector = self.get_umapi_info(
+                PRIMARY_UMAPI_NAME), umapi_connectors.get_primary_connector()
+            mapped_groups = umapi_info.get_non_normalize_mapped_groups()
+            # pull all user groups from console
+            on_adobe_groups = [normalize_string(g['groupName']) for g in umapi_connector.get_groups()]
+            # verify if group exist and create
+            auto_create = self.options.get('auto_create', None)
+            if auto_create:
+                for mapped_group in mapped_groups:
+                    if normalize_string(mapped_group) not in on_adobe_groups:
+                        self.logger.info("Auto create user-group enabled: Creating %s" % mapped_group)
+                        try:
+                            # create group
+                            res = umapi_connector.create_group(mapped_group)
+                            self.action_summary['adobe_user_groups_created'] += 1
+                        except Exception as e:
+                            self.logger.critical("Unable to create %s user group: %s" % (mapped_group, e))
 
     def is_selected_user_key(self, user_key):
         """
@@ -1147,6 +1188,7 @@ class UmapiTargetInfo(object):
         """
         self.name = name
         self.mapped_groups = set()
+        self.non_normalize_mapped_groups = set()
         self.desired_groups_by_user_key = {}
         self.umapi_user_by_user_key = {}
         self.umapi_users_loaded = False
@@ -1163,9 +1205,13 @@ class UmapiTargetInfo(object):
         """
         normalized_group_name = normalize_string(group)
         self.mapped_groups.add(normalized_group_name)
+        self.non_normalize_mapped_groups.add(group)
 
     def get_mapped_groups(self):
         return self.mapped_groups
+
+    def get_non_normalize_mapped_groups(self):
+        return self.non_normalize_mapped_groups
 
     def get_desired_groups_by_user_key(self):
         return self.desired_groups_by_user_key

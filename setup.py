@@ -52,7 +52,7 @@ setup(name='user-sync',
           'pyldap==2.4.45',
           'PyYAML',
           'six',
-          'umapi-client>=2.10',
+          'umapi-client>=2.11',
       ],
       extras_require={
           ':sys_platform=="linux" or sys_platform=="linux2"':[

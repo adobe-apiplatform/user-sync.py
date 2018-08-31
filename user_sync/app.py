@@ -307,6 +307,13 @@ def begin_work(config_loader):
             directory_connector_options['user_identity_type'] = rule_config['new_account_type']
         directory_connector.initialize(directory_connector_options)
 
+    additional_group_filters = None
+    additional_groups = rule_config.get('additional_groups', None)
+    if additional_groups and isinstance(additional_groups, list):
+        additional_group_filters = [r['source'] for r in additional_groups]
+
+    directory_connector.state.additional_group_filters = additional_group_filters
+
     primary_name = '.primary' if secondary_umapi_configs else ''
     umapi_primary_connector = user_sync.connector.umapi.UmapiConnector(primary_name, primary_umapi_config)
     umapi_other_connectors = {}

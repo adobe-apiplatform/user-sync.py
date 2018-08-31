@@ -28,6 +28,7 @@ import user_sync.connector.helper
 import user_sync.error
 import user_sync.identity_type
 from user_sync.error import AssertionException
+from ldap import dn
 
 
 def connector_metadata():
@@ -121,6 +122,7 @@ class LDAPDirectoryConnector(object):
         self.connection = connection
         logger.debug('Connected')
         self.user_by_dn = {}
+        self.additional_group_filters = None
 
     def load_users_and_groups(self, groups, extended_attributes, all_users):
         """
@@ -209,6 +211,7 @@ class LDAPDirectoryConnector(object):
         user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
+        user_attribute_names.append('memberOf')
 
         extended_attributes = [six.text_type(attr) for attr in extended_attributes]
         extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
@@ -289,6 +292,18 @@ class LDAPDirectoryConnector(object):
             elif last_attribute_name:
                 self.logger.warning('No country code attribute (%s) for user with dn: %s', last_attribute_name, dn)
 
+            uid_value = LDAPValueFormatter.get_attribute_value(record, six.text_type('uid'))
+            source_attributes['uid'] = uid_value
+
+            user['member_groups'] = []
+            if self.additional_group_filters:
+                member_groups = []
+                for f in self.additional_group_filters:
+                    for g in self.get_member_groups(record):
+                        if f.match(g) and g not in member_groups:
+                            member_groups.append(g)
+                user['member_groups'] = member_groups
+
             if extended_attributes is not None:
                 for extended_attribute in extended_attributes:
                     extended_attribute_value = LDAPValueFormatter.get_attribute_value(record, extended_attribute)
@@ -300,6 +315,36 @@ class LDAPDirectoryConnector(object):
             self.user_by_dn[dn] = user
 
             yield (dn, user)
+
+    def get_member_groups(self, user):
+        """
+        Get a list of member group common names for user
+        Assumes groups are contained in attribute memberOf
+        :param user:
+        :return:
+        """
+        group_names = []
+        groups = LDAPValueFormatter.get_attribute_value(user, 'memberOf')
+        for group_dn in map(dn.str2dn, groups):
+            group_cn = self.get_cn_from_dn(group_dn)
+            if group_cn:
+                group_names.append(group_cn)
+        return group_names
+
+    @staticmethod
+    def get_cn_from_dn(group_dn):
+        """
+        Take a DN parsed by ldap.dn.str2dn and locate and return the common name
+        Returns None if no common name is found
+        If common name is complex (e.g. cn=Bob Jones+email=bob.jones@example.com) then first part of CN is returned
+        :param group_dn:
+        :return:
+        """
+        for rdn in group_dn:
+            for rdn_part in rdn:
+                if rdn_part[0].lower() == 'cn':
+                    return rdn_part[1]
+        return None
 
     def iter_search_result(self, base_dn, scope, filter_string, attributes):
         """

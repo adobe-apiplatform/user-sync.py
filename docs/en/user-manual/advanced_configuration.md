@@ -681,6 +681,119 @@ In order to use the Okta connector, you will need to specify the `--connector ok
 
 Okta sync can use extended groups, attributes and after-mapping hooks.  The names of extended attributes must be valid Okta profile fields.
 
+## Additional Group Options
+
+It is possible for the User Sync Tool to sync group relationships that
+are not explicitly mapped out in `user-sync-config.yml`.  Any LDAP group
+that a user belongs to directly can be mapped and targeted to an Adobe
+profile or user group using the `additional_groups` configuration
+option.
+
+* Additional groups are identified with a regular expression
+* The name of the mapped Adobe group can be customized with a regular
+expression substitution string.
+
+Possible use cases:
+
+* Metadata such as department, employee type, etc
+* ACL groups for [Adobe Experience Manager](https://www.adobe.com/marketing/experience-manager.html)
+* Special-case group, role or profile assignment
+
+Note: This feature only works with the LDAP connector at this time.
+
+### Additional Group Rules
+
+`additional_groups` is defined in `user-sync-config.yml` in the `groups`
+object.  It specifies a list of rules to identify and filter groups
+present in the `memberOf` LDAP attribute, as well as rules that govern
+how corresponding Adobe groups should be named.  Groups that are
+discovered with this feature will be added to a user's list of
+targeted Adobe groups.
+
+### Additional Group Example
+
+Suppose an Adobe Experience Manager customer would like
+to sync all AEM users to the admin console.  They define a group
+mapping in `user-sync-config.yml` to map the LDAP group `AEM-USERS` to
+the Adobe group `Adobe Experience Manager`.
+
+```yaml
+    - directory_group: "AEM-USERS"
+      adobe_groups:
+        - "Adobe Experience Manager"
+```
+
+This example company's AEM users fall into two broad categories -
+authors and publishers.  These users already belong to LDAP groups that
+correspond to each role - `AEM-ACL-AUTHORS` and `AEM-ACL-PUBLISHERS`,
+respectively.  Suppose this company wishes to assign users to these
+additional groups when syncing users.  Assuming group membership
+information can be found in the `memberOf` user attribute, they can
+leverage the `additional_groups` config option.
+
+```yaml
+directory_users:
+  # ... additional directory config options
+  groups:
+    # ... group mappings, etc
+    additional_groups:
+      - source: "AEM-ACL-(.+)"
+        target: "AEM-(\\1)"
+```
+
+`additional_groups` contains a list of additional group rules. `source`
+is a regular expression that identifies the group.  Only groups that
+match a `source` regex will be included.  `target` is a regex
+substitution string that allows group names to be renamed.  In this
+case, any group beginning with `AEM-ACL` will be renamed to `AEM-[role]`.
+Each rule is executed on the list of groups a user directly belongs to.
+In this example, authors and publishers are added to their respective
+Adobe user group (`AEM-AUTHORS` or `AEM-PUBLISHERS`).
+
+Note: The company in this example can also add mappings for authors
+and publishers to the group mapping in `user-sync-config.yml`.  The
+advantage to using the additional groups mechanism is that it
+will apply dynamically to any LDAP group that matches the regex
+`AEM-ACL-(.+)`.  If additional AEM roles are introduced, they will
+be included in sync as long as they follow that naming convention -
+no configuration change would be needed.
+
+## Automatic Group Creation
+
+The User Sync Tool can be configured to automatically create targeted
+Adobe user groups that do not already exist.  This can be used in
+conjunction with the additional groups functionality detailed in the
+previous section, but it also applies to Adobe groups targeted in
+the group mapping as well as the extension config.
+
+`group_sync_options` is defined in the `directory_users` section in
+`user-sync-config.yml`.  It contains an object that currently has just
+one key - `auto_create`. `auto_create` is boolean and is `False` by
+default.
+
+To enable dynamic group creation, set `auto_create` to `True`:
+
+```yaml
+directory_users:
+  # ... additional directory config options
+  group_sync_options:
+    auto_create: True
+```
+
+With auto create enabled, a given Adobe group will be created if the
+following conditions are true:
+
+1. Group is targeted for at least one user
+2. Group does not currently exist
+3. The `--process-groups` command argument is set (or the equivalent
+   invocation option)
+
+New groups are always created as user groups.  The UMAPI does not
+support product profile creation, so the Sync Tool can't create them.
+If the Sync Tool is configured to target a misspelled profile name, or
+a profile that doesn't exist, it will automatically create a user group
+with the specified name.
+
 ---
 
 [Previous Section](usage_scenarios.md)  \| [Next Section](deployment_best_practices.md)
