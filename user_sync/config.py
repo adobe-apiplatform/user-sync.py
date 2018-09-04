@@ -444,7 +444,6 @@ class ConfigLoader(object):
         options.update(self.invocation_options)
 
         # process directory configuration options
-        new_account_type = None
         directory_config = self.main_config.get_dict_config('directory_users', True)
         if directory_config:
             # account type
@@ -464,9 +463,6 @@ class ConfigLoader(object):
             sync_options = directory_config.get_dict_config('group_sync_options', True)
             if sync_options:
                 options['auto_create'] = sync_options.get_bool('auto_create', True)
-        if not new_account_type:
-            new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
-            self.logger.debug("Using default for new_account_type: %s", new_account_type)
 
         # process exclusion configuration options
         adobe_config = self.main_config.get_dict_config('adobe_users', True)
