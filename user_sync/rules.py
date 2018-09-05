@@ -395,7 +395,10 @@ class RuleProcessor(object):
             for member_group in member_groups:
                 for group_rule in additional_groups:
                     if group_rule['source'].match(member_group):
-                        rename_group = group_rule['source'].sub(group_rule['target'], member_group)
+                        try:
+                            rename_group = group_rule['source'].sub(group_rule['target'], member_group)
+                        except Exception as e:
+                            raise user_sync.error.AssertionException("Additional group resolution error: {}".format(str(e)))
                         umapi_info.add_mapped_group(rename_group)
                         for umapi_name, umapi_info in six.iteritems(self.umapi_info_by_name):
                             umapi_info.add_desired_group_for(user_key, rename_group)

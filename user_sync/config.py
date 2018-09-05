@@ -460,7 +460,10 @@ class ConfigLoader(object):
         if default_country_code:
             options['default_country_code'] = default_country_code
         additional_groups = directory_config.get_list('additional_groups', True) or []
-        additional_groups = [{'source': re.compile(r['source']), 'target': r['target']} for r in additional_groups]
+        try:
+            additional_groups = [{'source': re.compile(r['source']), 'target': r['target']} for r in additional_groups]
+        except Exception as e:
+            raise AssertionException("Additional group rule error: {}".format(str(e)))
         options['additional_groups'] = additional_groups
         sync_options = directory_config.get_dict_config('group_sync_options', True)
         if sync_options:
