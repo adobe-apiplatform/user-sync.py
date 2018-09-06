@@ -47,7 +47,7 @@ def normal_group(group):
     :param group: str
     :return: bool
     """
-    return False if group.starts_with('_product_admin_') else True
+    return False if group.startswith('_product_admin_') else True
 
 
 class CSVAdapter:
