@@ -25,7 +25,7 @@ import six
 import user_sync.connector.umapi
 import user_sync.error
 import user_sync.identity_type
-from user_sync.helper import normalize_string, CSVAdapter, JobStats
+from user_sync.helper import normalize_string, normal_group, CSVAdapter, JobStats
 
 GROUP_NAME_DELIMITER = '::'
 PRIMARY_UMAPI_NAME = None
@@ -833,8 +833,7 @@ class RuleProcessor(object):
         result = set()
         if group_names is not None:
             for group_name in group_names:
-                normalized_group_name = normalize_string(group_name) if not group_name.startswith('_product_admin_')\
-                    else group_name
+                normalized_group_name = normalize_string(group_name) if normal_group(group_name) else group_name
                 result.add(normalized_group_name)
         return result
 
@@ -1162,7 +1161,7 @@ class UmapiTargetInfo(object):
         """
         :type group: str
         """
-        normalized_group_name = normalize_string(group) if not group.startswith('_product_admin_') else group
+        normalized_group_name = normalize_string(group) if normal_group(group) else group
         self.mapped_groups.add(normalized_group_name)
 
     def get_mapped_groups(self):
@@ -1187,7 +1186,7 @@ class UmapiTargetInfo(object):
         if desired_groups is None:
             self.desired_groups_by_user_key[user_key] = desired_groups = set()
         if group is not None:
-            normalized_group_name = normalize_string(group) if not group.startswith('_product_admin_') else group
+            normalized_group_name = normalize_string(group) if normal_group(group) else group
             desired_groups.add(normalized_group_name)
 
     def add_umapi_user(self, user_key, user):
