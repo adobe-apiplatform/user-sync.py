@@ -43,7 +43,7 @@ This section provides detailed instructions for each of these scenarios.
 ## Update users and group memberships
 
 This is the most typical and common type of invocation. User Sync
-finds all changes to user information and to group membership information 
+finds all changes to user information and to group membership information
 on the enterprise
 side. It syncs the Adobe side by adding, updating, and removing
 users and user group and product configuration memberships.
@@ -89,7 +89,7 @@ parameter.
 ### View result
 
 When the synchronization succeeds, the Adobe Admin Console is
-updated.  After this command is executed, your user list and 
+updated.  After this command is executed, your user list and
 product configuration user list in the
 Admin Console shows that a user with a Federated identity has
 been added to the “Default Acrobat Pro DC configuration.”
@@ -168,7 +168,7 @@ download in `examples/csv inputs - user and remove lists/`.
 ./user-sync --users file user_list.csv
 ```
 
-Syncing from a file can be used in two situations.  First, Adobe users can be managed 
+Syncing from a file can be used in two situations.  First, Adobe users can be managed
 using a spreadsheet.  The spreadsheet lists users, the groups they are in, and
 information about them.  Second, if the enterprise directory can provide push notifications
 for updates, these notifications can be placed in a csv file and used to drive
@@ -183,7 +183,7 @@ users from the Adobe side.
 If you want to handle removals separately, you can instruct
 the tool to flag users that no longer exist in the enterprise
 directory but still exist on the Adobe side. The
-`--adobe-only-user-action write-file exiting-users.csv` parameter 
+`--adobe-only-user-action write-file exiting-users.csv` parameter
 writes out the list of user who
 are flagged for removal to a CSV file.
 
@@ -238,24 +238,49 @@ on the list generated in a prior run of User Sync.
 ./user-sync --adobe-only-user-list users-to-delete.csv --adobe-only-user-action delete
 ```
 
+### Limit Adobe users scope for syncing
+By supplying `adobe-users ...` argument you have an ability to control which Adobe users to be pull into User Sync Tool to be process for sync.
+With this argument you can specify limit by group name (`--adobe-users groups "..."`) or limit by adobe groups in group mapping in the configuration file (`--adobe-users mapped`)
+
+When not specifying `adobe-users groups | mapped` User Sync Tool will automatically default to all:
+```sh
+./user-sync –c user-sync-config.yml --adobe-users all
+```
+
+### Limit Adobe users to Adobe groups.
+
+This action limited Adobe users scope to specified group. Group can be either product profile or user-group in the Adobe Admin Console.
+
+```sh
+./user-sync –c user-sync-config.yml --adobe-users groups "group1, group2, group3"
+```
+
+### Limit Adobe users to mapped Adobe groups
+
+This action is the same as specifying `--adobe-users groups "..."`, where `...` is all the Adobe groups in the group mapping in the configuration file.
+
+```sh
+./user-sync –c user-sync-config.yml --adobe-users mapped
+```
+
 ## Handling Push Notifications
 
 If your directory system can generate notifications of updates you can use User Sync to
-process those updates incrementally.  The technique shown in this section can also be 
-used to process immediate updates where an administrator has updated a user or group of 
-users and wants to push just those updates immediately into Adobe's user management 
-system.  Some scripting may be required to transform the information coming from the 
-push notification to a csv format suitable for input to User Sync, and to separate 
+process those updates incrementally.  The technique shown in this section can also be
+used to process immediate updates where an administrator has updated a user or group of
+users and wants to push just those updates immediately into Adobe's user management
+system.  Some scripting may be required to transform the information coming from the
+push notification to a csv format suitable for input to User Sync, and to separate
 deletions from other updates, which mush be handled separately in User Sync.
 
-Create a file, say, `updated_users.csv` with the user update format illustrated in 
-the `users-file.csv` example file in the folder `csv inputs - user and remove lists`.  
+Create a file, say, `updated_users.csv` with the user update format illustrated in
+the `users-file.csv` example file in the folder `csv inputs - user and remove lists`.
 This is a basic csv file with columns for firstname, lastname, and so on.
 
     firstname,lastname,email,country,groups,type,username,domain
     John,Smith,jsmith@example.com,US,"AdobeCC-All",enterpriseID
     Jane,Doe,jdoe@example.com,US,"AdobeCC-All",federatedID
- 
+
 This file is then provided to User Sync:
 
 ```sh
@@ -274,8 +299,8 @@ This will handle deletions based on the notification and no other actions will b
 
 ## Action Summary
 
-At the end of the invocation, an action summary will be printed to the log (if the level is INFO or DEBUG). 
-The summary provides statistics accumulated during the run. 
+At the end of the invocation, an action summary will be printed to the log (if the level is INFO or DEBUG).
+The summary provides statistics accumulated during the run.
 The statistics collected include:
 
 - **Total number of Adobe users:** The total number of Adobe users in your admin console
