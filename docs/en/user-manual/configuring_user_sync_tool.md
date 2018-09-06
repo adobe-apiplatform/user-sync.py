@@ -272,6 +272,57 @@ groups:
       - Accounting_Department
 ```
 
+### Mapping Admin Roles
+
+Admin roles can be assigned to users by the User Sync tool using
+special group names and prefixes.  Using these special naming
+conventions, admin roles can be assigned like any normal product
+profile or user group.
+
+| Admin Role | Name or Prefix |
+|:---|:---|
+| System Admin* | `_org_admin` |
+| Support Admin | `_support_admin` |
+| Deployment Admin | `_deployment_admin` |
+| User Group or Profile Admin | `_admin_[GROUP_NAME]` |
+| Product Admin | `_product_admin_[PRODUCT_NAME]` |
+
+{: .bordertablestyle }
+
+*System admin roles can't currently be assigned by the UMAPI, so they
+are not supported in the User Sync Tool
+
+**Notes about the Product Admin role:**
+
+* It may be necessary to manually assign a user as admin to a product
+before syncing users as product admins.
+* The product admin role group name is case-sensitive.
+* It is often necessary to assign users to at least one profile on the
+same product as the admin role.
+
+See the [UMAPI Docs](https://adobe-apiplatform.github.io/umapi-documentation/en/api/ActionsCmds.html#addRemoveAttr) for more details.
+
+#### Role Assignment Example
+
+```YAML
+groups:
+  - directory_group: Acrobat Admins
+    adobe_groups:
+      # assuming the product name is "Adobe Acrobat Pro DC"
+      - Default Acrobat Pro DC configuration
+      - _product_admin_Adobe Acrobat Pro DC
+  - directory_group: Support and Deployment Admins
+    adobe_groups:
+      - _support_admin
+      - _deployment_admin
+  - directory_group: Department A Admins
+    adobe_groups:
+      # assuming a user group called "Department A"
+      - Department A
+      - _admin_Department A
+```
+
+
 ### Configure limits
 
 User accounts are removed from the Adobe system when
