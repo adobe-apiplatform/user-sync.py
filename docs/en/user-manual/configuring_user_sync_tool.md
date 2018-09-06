@@ -286,7 +286,6 @@ profile or user group.
 | Deployment Admin | `_deployment_admin` |
 | User Group or Profile Admin | `_admin_[GROUP_NAME]` |
 | Product Admin | `_product_admin_[PRODUCT_NAME]` |
-
 {: .bordertablestyle }
 
 *System admin roles can't currently be assigned by the UMAPI, so they
