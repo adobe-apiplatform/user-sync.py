@@ -27,9 +27,9 @@ with open('user_sync/version.py') as f:
 test_deps = ['mock', 'pytest', 'pytest-cov']
 setup_deps = ['pytest-runner']
 
-setup(name='user-sync',
+setup(name='user-sync-sign-sync',
       version=version_namespace['__version__'],
-      description='Application for synchronizing customer directories with the Adobe Enterprise Admin Console',
+      description='Application for synchronizing customer directories with the Adobe Enterprise Admin Console w/ Sign Features',
       classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Programming Language :: Python :: 3.5',
@@ -38,15 +38,15 @@ setup(name='user-sync',
           'Intended Audience :: Developers',
           'Intended Audience :: System Administrators',
       ],
-      url='https://github.com/adobe-apiplatform/user-sync.py',
-      maintainer='Daniel Brotsky',
-      maintainer_email='dbrotsky@adobe.com',
+      url='https://github.com/NathanNguyen345/user-sync.py',
+      maintainer='Nathan Nguyen',
+      maintainer_email='nnguyen@adobe.com',
       license='MIT',
       packages=find_packages(),
       install_requires=[
           'keyring',
           'keyrings.cryptfile',
-          'okta==0.0.3.1',
+          'okta',
           'psutil',
           'pycryptodome==3.7.3',
           'ldap3',
