@@ -1,26 +1,34 @@
 import ldap
 import uuid
-import yaml
 
 class LDAPConfig:
 
-    def __init__(self, logs):
+    def __init__(self, config_loader, connector, logs):
 
         self.logs = logs
+        self.config_loader = config_loader
+        self.connector = connector
 
-        yml_ldap_config = yaml.load(open('connector-ldap.yml'))
-        yml_sign_sync_config = yaml.load(open('sign_sync/connector-sign-sync.yml'))
+        self.ldap_config = self.load_ldap_config()
+        self.address = self.ldap_config['host']
+        self.base_dn = self.ldap_config['base_dn']
+        self.username = self.ldap_config['username']
+        self.password = self.ldap_config['password']
 
-        self.address = yml_ldap_config['host']
-        self.base_dn = yml_ldap_config['base_dn']
-        self.username = yml_ldap_config['username']
-        self.password = yml_ldap_config['password']
-
-        self.attributes = yml_sign_sync_config['ldap_conditions']['attributes']
-        self.attributes = self.attributes.split(", ")
+        # self.attributes = yml_sign_sync_config['ldap_conditions']['attributes']
 
         # Connection
         self.conn = None
+
+    def load_ldap_config(self):
+
+        directory_connector_module_name = self.config_loader.get_directory_connector_module_name()
+        if directory_connector_module_name is not None:
+            directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
+            directory_connector = self.connector.DirectoryConnector(directory_connector_module)
+            directory_connector_options = self.config_loader.get_directory_connector_options(directory_connector.name)
+
+        return directory_connector_options
 
     def authenticate(self):
         """
@@ -38,12 +46,12 @@ class LDAPConfig:
             self.conn.simple_bind_s(self.username, self.password)
 
         except ldap.INVALID_CREDENTIALS:
-            self.logs['error'].error("Invalid LDAP Credentials...")
+            self.logs.error("Invalid LDAP Credentials...")
 
         except ldap.SERVER_DOWN:
-            self.logs['error'].error("LDAP Server Down...")
+            self.logs.error("LDAP Server Down...")
 
-        self.logs['process'].info("LDAP Authenticated...")
+        self.logs.info("LDAP Authenticated...")
 
     def disconnect(self):
         """
@@ -54,7 +62,7 @@ class LDAPConfig:
         try:
             self.conn.unbind_s()
         except Exception as e:
-            self.logs['error'].error("Failed to unbind from LDAP server...")
+            self.logs.error("Failed to unbind from LDAP server...")
 
     @staticmethod
     def decode_ldap_guid(code):

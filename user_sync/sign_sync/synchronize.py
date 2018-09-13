@@ -1,33 +1,37 @@
 import requests
 import json
+import six
 import pprint
+
+import user_sync.rules
 
 from sign_sync.connections.umapi_connection import UMAPIConfig
 from sign_sync.connections.sign_connection import SIGNConfig
 from sign_sync.connections.ldap_connection import LDAPConfig
-from sign_sync.logger import Log
 
 class Synchronize:
 
-    def __init__(self):
+    def __init__(self, logger, config_loader, connector):
 
         # Create process, api, and error loggers for Sign Sync
-        self.sign_sync_logs = Log()
-        self.logs = self.sign_sync_logs.get_logs()
+        self.logs = logger
+        self.config_loader = config_loader
+        self.connector = connector
 
         # Instantiate Sign object
         self.sign_obj = SIGNConfig(self.logs)
 
         # Instantiate LDAP object
-        self.ldap_obj = LDAPConfig(self.logs)
+        self.ldap_obj = LDAPConfig(self.config_loader, self.connector.directory, self.logs)
 
         # Instantiate UMAPI object
-        self.umapi_obj = UMAPIConfig(self.logs)
+        self.umapi_obj = UMAPIConfig(self.config_loader, self.connector.umapi, self.logs)
 
+        self.run()
 
     def run(self):
 
-        self.logs['process'].info('------------------------------- Starting Sign Sync -------------------------------')
+        self.logs.info('------------------------------- Starting Sign Sync -------------------------------')
 
         # Get Sign config & validate integration key
         sign_config = self.sign_obj.get_config_dict()
@@ -40,13 +44,15 @@ class Synchronize:
         umapi_config = self.umapi_obj.get_umapi_config_dict()
 
         # Sync Admin Console w/ Adobe Sign Console
-        user_list = self.get_umapi_user_list(self.umapi_obj, umapi_config['header'])
-        user_list = self.get_user_sign_id(user_list, sign_config)
-        group_list = self.parse_groups(sign_config, user_list)
-        self.create_sign_group(group_list, sign_config)
-        self.process_user(user_list, sign_config, self.ldap_obj)
+        umapi_connectors = self.get_umapi_connectors()
+        umapi_primary_connector = umapi_connectors.get_primary_connector()
+        umapi_user_list =  umapi_primary_connector.get_users()
+        user_list = self.get_user_sign_id(umapi_user_list, sign_config)
+        # group_list = self.parse_groups(sign_config, user_list)
+        # self.create_sign_group(group_list, sign_config)
+        # self.process_user(user_list, sign_config, self.ldap_obj)
 
-        self.logs['process'].info('------------------------------- Ending Sign Sync ---------------------------------')
+        self.logs.info('------------------------------- Ending Sign Sync ---------------------------------')
 
 
     def process_user(self, user_list, sign_config, ldap_config):
@@ -57,8 +63,6 @@ class Synchronize:
         :param ldap_config:
         :return:
         """
-
-        multi_group = sign_config['condition']['multi_group']
 
         # Iterate through each user from the user list
         for user in user_list:
@@ -85,12 +89,10 @@ class Synchronize:
                             temp_data = self.get_user_info(user, sign_config, group_id, group)
                             temp_data.update(ldap_config.get_extra_ldap_attribute(name))
                             self.add_user_to_sign_group(sign_config, user['id'], group_id, temp_data)
-
-                            if not multi_group:
-                                break
+                            break
 
 
-    def get_umapi_user_list(self, umapi_obj, umapi_header):
+    def get_umapi_connectors(self):
         """
         This function will create a list of users that's in Adobe Admin Console.
         :param umapi_obj: object
@@ -98,32 +100,22 @@ class Synchronize:
         :return: list[]
         """
 
-        umapi_user_url = umapi_obj.get_custom_url("users")
-        page_number = 0
-        user_list = list()
+        primary_umapi_config, secondary_umapi_configs = self.config_loader.get_umapi_options()
+        primary_name = '.primary' if secondary_umapi_configs else ''
+        umapi_primary_connector = self.connector.umapi.UmapiConnector(primary_name, primary_umapi_config)
+        umapi_other_connectors = {}
+        for secondary_umapi_name, secondary_config in six.iteritems(secondary_umapi_configs):
+            umapi_secondary_conector = self.connector.umapi.UmapiConnector(".secondary.%s" % secondary_umapi_name,
+                                                                                secondary_config)
+            umapi_other_connectors[secondary_umapi_name] = umapi_secondary_conector
+        umapi_connectors = user_sync.rules.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
 
-        # Request a UMAPI call to grab a list of users until it reaches the last page
-        while True:
-            res = requests.get(umapi_user_url + "/{}".format(page_number), headers=umapi_header)
-            try:
-                res.raise_for_status()
-                data = res.json()
-                user_list.append(data['users'])
-                # logs['api'].info("{} {} {}".format(res.request, res.status_code, res.url))
-
-                if data['lastPage']:
-                    break
-                else:
-                    page_number += 1
-            except requests.HTTPError:
-                self.logs.log_error_code(self.logs, res)
-
-        return user_list[0]
+        return umapi_connectors
 
 
     def get_user_sign_id(self, user_list, sign_config):
         """
-        This function will grab all User ID in Adobe Sign for list of users
+        This function will grab all User ID in Adobe Sign for the umapi list
         :param user_list: list[]
         :param sign_config: dict()
         :return: list[]
@@ -259,7 +251,7 @@ class Synchronize:
             # logs['api'].info("{} {} {}".format(res.request, res.status_code, res.url))
 
             if res.status_code == 201:
-                self.logs['process'].info('{} Group Created...'.format(group_name))
+                self.logs.info('{} Group Created...'.format(group_name))
                 res_data = res.json()
                 sign_config['group'][group_name] = res_data['groupId']
             else:
@@ -285,7 +277,7 @@ class Synchronize:
         key = self.get_dict_key(sign_config['group'], group_id)
 
         if res.status_code == 200:
-            self.logs['process'].info('{} information updated to {}...'.format(data['email'], key))
+            self.logs.info('{} information updated to {}...'.format(data['email'], key))
 
         else:
             self.logs.log_error_code(self.logs, res)
