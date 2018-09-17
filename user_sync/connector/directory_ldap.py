@@ -292,14 +292,7 @@ class LDAPDirectoryConnector(object):
             elif last_attribute_name:
                 self.logger.warning('No country code attribute (%s) for user with dn: %s', last_attribute_name, dn)
 
-            user['member_groups'] = []
-            if self.additional_group_filters:
-                member_groups = []
-                for f in self.additional_group_filters:
-                    for g in self.get_member_groups(record):
-                        if f.match(g) and g not in member_groups:
-                            member_groups.append(g)
-                user['member_groups'] = member_groups
+            user['member_groups'] = self.get_member_groups(record) if self.additional_group_filters else []
 
             if extended_attributes is not None:
                 for extended_attribute in extended_attributes:
