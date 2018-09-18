@@ -26,6 +26,7 @@ import re
 import user_sync.connector.umapi
 import user_sync.error
 import user_sync.identity_type
+from collections import defaultdict
 from user_sync.helper import normalize_string, CSVAdapter, JobStats
 
 GROUP_NAME_DELIMITER = '::'
@@ -149,6 +150,10 @@ class RuleProcessor(object):
             'hook_storage': None,
         }
 
+        # keep track of auto-mapped additional groups for conflict tracking.
+        # if feature is disabled, this dict will be empty
+        self.additional_group_map = defaultdict(list)  # type: dict[str, list[str]]
+
         if logger.isEnabledFor(logging.DEBUG):
             options_to_report = options.copy()
             username_filter_regex = options_to_report['username_filter_regex']
@@ -172,6 +177,12 @@ class RuleProcessor(object):
             load_directory_stats.log_start(logger)
             self.read_desired_user_groups(directory_groups, directory_connector)
             load_directory_stats.log_end(logger)
+
+        for mapped, src_groups in self.additional_group_map.items():
+            if len(src_groups) > 1:
+                raise user_sync.error.AssertionException("Additional group resolution conflict: {} map to '{}'".format(
+                    src_groups, mapped))
+            logger.info("Mapped additional group '{}' to '{}'".format(src_groups[0], mapped))
 
         umapi_stats = JobStats('Push to UMAPI' if self.push_umapi else 'Sync with UMAPI', divider="-")
         umapi_stats.log_start(logger)
@@ -404,6 +415,8 @@ class RuleProcessor(object):
                         umapi_info.add_mapped_group(rename_group)
                         for umapi_name, umapi_info in six.iteritems(self.umapi_info_by_name):
                             umapi_info.add_desired_group_for(user_key, rename_group)
+                        if member_group not in self.additional_group_map[rename_group]:
+                            self.additional_group_map[rename_group].append(member_group)
 
         self.logger.debug('Total directory users after filtering: %d', len(filtered_directory_user_by_user_key))
         if self.logger.isEnabledFor(logging.DEBUG):
