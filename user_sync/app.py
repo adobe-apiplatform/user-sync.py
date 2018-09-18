@@ -180,7 +180,7 @@ def sync(**kwargs):
             try:
                 begin_work(config_loader)
 
-                Synchronize().run()
+                Synchronize(logger, config_loader, user_sync.connector)
             finally:
                 lock.unlock()
         else:
