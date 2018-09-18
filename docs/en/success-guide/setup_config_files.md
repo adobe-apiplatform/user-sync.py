@@ -49,7 +49,7 @@ The following Microsoft guides can walk you through the process for getting LDAP
 - [Setup Azure Domain Services](https://docs.microsoft.com/en-us/azure/active-directory-domain-services/active-directory-ds-getting-started)<br/>
 - [Configure LDAPS on Azure AD](https://docs.microsoft.com/en-us/azure/active-directory-domain-services/active-directory-ds-admin-guide-configure-secure-ldap)
 
-Once that is done, you will be able to connect to the Azure AD using normal LDAP credentials with the UST.  Please note, there is **no** requirement for using TLS or an SSL cert on the UST side - you should be able to connect by binding to port 636 with your Azure AD service account. In other words, the following key in connector-ldap.yml can be set to False (the default)
+Once that is done, you will be able to connect to the Azure AD using normal LDAP credentials with the UST.  Please note, there is **no** requirement for using TLS or an SSL cert on the UST side - you should be able to connect by binding to port 636 with your Azure AD service account. In other words, the following key in connector-ldap.yml can be set to False (the default):
 
 - require_tls_cert: False
 
