@@ -87,7 +87,7 @@ def main(args=sys.argv[1:]):
             try:
                 begin_work(config_loader)
 
-                Synchronize().run()
+                Synchronize(logger, config_loader, user_sync.connector)
             finally:
                 lock.unlock()
         else:
@@ -111,7 +111,6 @@ def main(args=sys.argv[1:]):
     finally:
         if run_stats is not None:
             run_stats.log_end(logger)
-
 
 def process_args(args=None):
     """Define and parse the command-line (or passed) args.
