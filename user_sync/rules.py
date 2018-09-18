@@ -176,6 +176,8 @@ class RuleProcessor(object):
         umapi_stats = JobStats('Push to UMAPI' if self.push_umapi else 'Sync with UMAPI', divider="-")
         umapi_stats.log_start(logger)
         if directory_connector is not None:
+            # note: push mode is not supported because if it is, we won't have a list of groups
+            # that exist in the console.  we don't want to attempt to create groups that already exist
             if self.options.get('process_groups') and not self.push_umapi and self.options.get('auto_create'):
                 self.create_umapi_groups(umapi_connectors)
             self.sync_umapi_users(umapi_connectors)
