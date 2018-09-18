@@ -1,13 +1,14 @@
 import requests
 import json
 import six
+import ldap
 import pprint
 
 import user_sync.rules
+import user_sync.connector.directory
+import user_sync.sign_sync.connections.sign_connection
 
-from sign_sync.connections.umapi_connection import UMAPIConfig
-from sign_sync.connections.sign_connection import SIGNConfig
-from sign_sync.connections.ldap_connection import LDAPConfig
+from user_sync.error import AssertionException
 
 class Synchronize:
 
@@ -19,13 +20,15 @@ class Synchronize:
         self.connector = connector
 
         # Instantiate Sign object
-        self.sign_obj = SIGNConfig(self.logs)
+        self.sign_obj = user_sync.sign_sync.connections.sign_connection.Sign(self.logs)
 
-        # Instantiate LDAP object
-        self.ldap_obj = LDAPConfig(self.config_loader, self.connector.directory, self.logs)
+        # Get LDAP connector and connect to it
+        self.ldap_connector = self.get_ldap_connectors()
+        self.connection = self.ldap_connection(self.ldap_connector)
 
-        # Instantiate UMAPI object
-        self.umapi_obj = UMAPIConfig(self.config_loader, self.connector.umapi, self.logs)
+        # Get access to UMAPI connectors
+        self.umapi_connectors = self.get_umapi_connectors()
+        self.umapi_primary_connector = self.umapi_connectors.get_primary_connector()
 
         self.run()
 
@@ -37,67 +40,21 @@ class Synchronize:
         sign_config = self.sign_obj.get_config_dict()
         self.sign_obj.validate_integration_key(sign_config['header'], sign_config['url'])
 
-        # Authenticate LDAP
-        self.ldap_obj.authenticate()
+        # Get a list of UMAPI users
+        umapi_user_list =  self.umapi_primary_connector.get_users()
 
-        # Get UMAPI configuration dict
-        umapi_config = self.umapi_obj.get_umapi_config_dict()
-
-        # Sync Admin Console w/ Adobe Sign Console
-        umapi_connectors = self.get_umapi_connectors()
-        umapi_primary_connector = umapi_connectors.get_primary_connector()
-        umapi_user_list =  umapi_primary_connector.get_users()
-        user_list = self.get_user_sign_id(umapi_user_list, sign_config)
-        # group_list = self.parse_groups(sign_config, user_list)
-        # self.create_sign_group(group_list, sign_config)
-        # self.process_user(user_list, sign_config, self.ldap_obj)
+        # Group Creation and processing users
+        sign_user_list = self.get_user_sign_id(umapi_user_list, sign_config)
+        umapi_group_list = self.parse_groups(sign_config, sign_user_list)
+        self.sign_obj.create_sign_group(umapi_group_list, sign_config)
+        self.process_user(sign_user_list, sign_config)
 
         self.logs.info('------------------------------- Ending Sign Sync ---------------------------------')
 
-
-    def process_user(self, user_list, sign_config, ldap_config):
-        """
-        This function will process each user and assign them to their Sign groups
-        :param user_list:
-        :param sign_config:
-        :param ldap_config:
-        :return:
-        """
-
-        # Iterate through each user from the user list
-        for user in user_list:
-            if user['email'] == sign_config['email']:
-                pass
-            else:
-                name = "{} {}".format(user['firstname'], user['lastname'])
-                filter_group_list = self.filter_group(sign_config, user['groups'], False)
-
-                # If the user is not in a group we will assign them to a default group
-                if len(filter_group_list) == 0:
-                    default_group_id = sign_config['group'].get('Default Group')
-                    temp_data = self.get_user_info(user, sign_config, default_group_id)
-                    temp_data.update(ldap_config.get_extra_ldap_attribute(name))
-                    self.add_user_to_sign_group(sign_config, user['id'], default_group_id, temp_data)
-
-                # Sort the groups and assign the user to first group
-                # Sign doesn't support multi group assignment at this time
-                else:
-                    for group in sorted(user['groups']):
-                        group_id = sign_config['group'].get(group)
-
-                        if group_id is not None and group not in sign_config['condition']['ignore_groups']:
-                            temp_data = self.get_user_info(user, sign_config, group_id, group)
-                            temp_data.update(ldap_config.get_extra_ldap_attribute(name))
-                            self.add_user_to_sign_group(sign_config, user['id'], group_id, temp_data)
-                            break
-
-
     def get_umapi_connectors(self):
         """
-        This function will create a list of users that's in Adobe Admin Console.
-        :param umapi_obj: object
-        :param umapi_header: str
-        :return: list[]
+        This function will setup and retrieve the UMAPI connector.
+        :return: UmapiConnectors
         """
 
         primary_umapi_config, secondary_umapi_configs = self.config_loader.get_umapi_options()
@@ -112,6 +69,103 @@ class Synchronize:
 
         return umapi_connectors
 
+    def get_ldap_connectors(self):
+        """
+        This function will get and retrieve the ldap connector.
+        :return: DirectoryConnector
+        """
+
+        rule_config = self.config_loader.get_rule_options()
+        directory_connector = None
+        directory_connector_options = None
+        directory_connector_module_name = self.config_loader.get_directory_connector_module_name()
+        if directory_connector_module_name is not None:
+            directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
+            directory_connector = user_sync.connector.directory.DirectoryConnector(directory_connector_module)
+            directory_connector_options = self.config_loader.get_directory_connector_options(directory_connector.name)
+
+        self.config_loader.check_unused_config_keys()
+
+        if directory_connector is not None and directory_connector_options is not None:
+            # specify the default user_identity_type if it's not already specified in the options
+            if 'user_identity_type' not in directory_connector_options:
+                directory_connector_options['user_identity_type'] = rule_config['new_account_type']
+            directory_connector.initialize(directory_connector_options)
+
+        return directory_connector
+
+    def ldap_connection(self, connector):
+        """
+        This function establish a connection with the LDAP
+        :param connector: LDAP connector
+        :return: ldap.conn
+        """
+
+        directory_option = self.config_loader.get_directory_connector_options(connector.name)
+        host = directory_option['host']
+        username = directory_option['username']
+        password = directory_option['password']
+
+        try:
+            connection = ldap.initialize(host, bytes_mode=False)
+            connection.protocol_version = ldap.VERSION3
+            connection.set_option(ldap.OPT_REFERRALS, 0)
+            connection.simple_bind_s(six.text_type(username), six.text_type(password))
+        except Exception as e:
+            raise AssertionException('LDAP connection failure: %s' % e)
+
+        return connection
+
+    def get_extra_ldap_attr(self, connector, name):
+
+        directory_option = self.config_loader.get_directory_connector_options(connector.name)
+        base_dn = directory_option['base_dn']
+        base_dn_result = self.connection.search_s(base_dn, ldap.SCOPE_SUBTREE, "(CN={})".format(name))
+        user_data = base_dn_result[0][1]
+        temp_user_info = dict()
+
+        if 'company' in user_data:
+            temp_user_info['company'] = user_data['company'][0].decode("utf-8")
+        if 'title' in user_data:
+            temp_user_info['title'] = user_data['title'][0].decode("utf-8")
+
+        return temp_user_info
+
+    def process_user(self, user_list, sign_config):
+        """
+        This function will process each user and assign them to their Sign groups
+        :param user_list:
+        :param ldap_config:
+        :return:
+        """
+
+        # Iterate through each user from the user list
+        for user in user_list:
+            # Skip main account because we don't want to change anything
+            if user['email'] == sign_config['email']:
+                pass
+            else:
+                name = "{} {}".format(user['firstname'], user['lastname'])
+                filter_group_list = self.filter_group(sign_config, user['groups'], False)
+
+                # If the user is not in a group we will assign them to a default group
+                if len(filter_group_list) == 0:
+                    default_group_id = sign_config['group'].get('Default Group')
+                    temp_payload = self.get_user_info(user, sign_config, default_group_id)
+                    temp_payload.update(self.get_extra_ldap_attr(self.ldap_connector, name))
+                    self.sign_obj.add_user_to_sign_group(sign_config, user['id'], default_group_id, temp_payload)
+
+                # Sort the groups and assign the user to first group
+                # Sign doesn't support multi group assignment at this time
+                else:
+                    for group in sorted(user['groups']):
+                        group_id = sign_config['group'].get(group)
+
+                        if group_id is not None and group not in sign_config['condition']['ignore_groups']:
+                            temp_payload = self.get_user_info(user, sign_config, group_id, group)
+                            temp_payload.update(self.get_extra_ldap_attr(self.ldap_connector, name))
+                            self.sign_obj.add_user_to_sign_group(sign_config, user['id'], group_id, temp_payload)
+                            break
 
     def get_user_sign_id(self, user_list, sign_config):
         """
@@ -127,18 +181,19 @@ class Synchronize:
         for user in user_list:
             user_email = user['email']
 
+            #TODO decode special charters
             if '+' in user_email:
                 user_email = user_email.replace('+', '%2B')
 
+            # Check to see if user is assigned to a group that contains the product profile name
             if 'groups' in user and any(x in sign_config['condition']['product_group'] for x in user['groups']):
-                sign_user_id = self.check_user_existence_in_sign(sign_config, user_email)
+                sign_user_id = self.sign_obj.check_user_existence_in_sign(sign_config, user_email)
 
                 if sign_user_id is not None:
                     user['id'] = sign_user_id
                     temp_user_list.append(user)
 
         return temp_user_list
-
 
     def parse_groups(self, sign_config, user_list):
         """
@@ -159,129 +214,6 @@ class Synchronize:
         temp_group_list = [group for group in temp_group_list if group not in sign_config['group']]
 
         return temp_group_list
-
-    @staticmethod
-    def filter_group(sign_config, group_list, add_ignore_groups):
-        """
-        This function will filter down the group section in UMAPI user call. It will remove any groups with admin titles
-        in it to avoid creating multiple groups.
-        :param sign_config: dict()
-        :param group_list: list[]
-        :param add_ignore_groups: list[]
-        :return: list[]
-        """
-
-        remove_groups = ['_org_admin', '_PRODUCT_ADMIN', '_deployment_admin', '_support_admin', '_admin_']
-
-        # Append groups that was set in the configuration file
-        if add_ignore_groups:
-            remove_groups = remove_groups + sign_config['condition']['ignore_groups']
-        else:
-            remove_groups = remove_groups
-
-        for group in sign_config['condition']['product_group']:
-            remove_groups.append(group)
-
-        # Filter out groups with that contain the filter words
-        temp_group_list = [group for group in group_list if not any(word in group for word in remove_groups)]
-
-        return temp_group_list
-
-
-    def check_user_existence_in_sign(self, sign_config, email):
-        """
-        This function checks if the user exist.
-        :param sign_config: dict()
-        :param email: str
-        :return: int & str
-        """
-
-        # SIGN API call to get user by email
-        res = requests.get(sign_config['url'] + 'users?x-user-email=' + email, headers=sign_config['header'])
-        data = res.json()
-
-        # logs['api'].info("{} {} {}".format(res.request, res.status_code, res.url))
-
-        if res.status_code == 200:
-            self.reactivate_account(sign_config, data['userInfoList'][0]['userId'])
-            return data['userInfoList'][0]['userId']
-        else:
-            return None
-
-
-    def reactivate_account(self, sign_config, user_id):
-        """
-        This function will reactivate a user account that's been inactive
-        :param sign_config: dict()
-        :param user_id: str
-        :return:
-        """
-
-        # SIGN API call to get user by ID
-        res = requests.get(sign_config['url'] + 'users/' + user_id, headers=sign_config['header'])
-        data = res.json()
-
-        if data['userStatus'] == "INACTIVE":
-            temp_header = self.create_temp_header(sign_config)
-            payload = {
-                "userStatus": "ACTIVE"
-            }
-
-            # SIGN API call to reactivate user account
-            res = requests.put(sign_config['url'] + 'users/' + user_id + '/status',
-                               headers=temp_header, data=json.dumps(payload))
-
-
-    def create_sign_group(self, group_list, sign_config):
-        """
-        This function will create a group in Adobe SIGN if the group doesn't already exist.
-        :param group_list: list[]
-        :param sign_config: dict()
-        :return:
-        """
-
-        temp_header = self.create_temp_header(sign_config)
-
-        for group_name in group_list:
-            data = {
-                "groupName": group_name
-            }
-            # SIGN API to get existing groups
-            res = requests.post(sign_config['url'] + 'groups', headers=temp_header, data=json.dumps(data))
-            # logs['api'].info("{} {} {}".format(res.request, res.status_code, res.url))
-
-            if res.status_code == 201:
-                self.logs.info('{} Group Created...'.format(group_name))
-                res_data = res.json()
-                sign_config['group'][group_name] = res_data['groupId']
-            else:
-                self.logs.log_error_code(self.logs, res)
-
-
-    def add_user_to_sign_group(self, sign_config, sign_user_id, group_id, data):
-        """
-        This function will add users into the SIGN groups.
-        :param sign_config: dict()
-        :param sign_user_id: str
-        :param group_id: str
-        :param data: dict()
-        :return:
-        """
-
-        temp_header = self.create_temp_header(sign_config)
-
-        # SIGN API call to put user in the correct group
-        res = requests.put(sign_config['url'] + 'users/' + sign_user_id, headers=temp_header, data=json.dumps(data))
-        # logs['api'].info("{} {} {}".format(res.request, res.status_code, res.url))
-
-        key = self.get_dict_key(sign_config['group'], group_id)
-
-        if res.status_code == 200:
-            self.logs.info('{} information updated to {}...'.format(data['email'], key))
-
-        else:
-            self.logs.log_error_code(self.logs, res)
-
 
     def get_user_info(self, user_info, sign_config, group_id, group=None):
         """
@@ -396,26 +328,28 @@ class Synchronize:
         return data
 
     @staticmethod
-    def create_temp_header(sign_config):
+    def filter_group(sign_config, group_list, add_ignore_groups):
         """
-        This function creates a temp header to push json payloads
+        This function will filter down the group section in UMAPI user call. It will remove any groups with admin titles
+        in it to avoid creating multiple groups.
         :param sign_config: dict()
-        :return: dict()
+        :param group_list: list[]
+        :param add_ignore_groups: list[]
+        :return: list[]
         """
 
-        temp_header = sign_config['header']
-        temp_header['Content-Type'] = 'application/json'
-        temp_header['Accept'] = 'application/json'
+        remove_groups = ['_org_admin', '_PRODUCT_ADMIN', '_deployment_admin', '_support_admin', '_admin_']
 
-        return temp_header
+        # Append groups that was set in the configuration file
+        if add_ignore_groups:
+            remove_groups = remove_groups + sign_config['condition']['ignore_groups']
+        else:
+            remove_groups = remove_groups
 
-    @staticmethod
-    def get_dict_key(group, value):
-        """
-        Get keys for dict
-        :param group: dict()
-        :param value: str
-        :return: str
-        """
+        for group in sign_config['condition']['product_group']:
+            remove_groups.append(group)
 
-        return [key for key, v in group.items() if v == value]
+        # Filter out groups with that contain the filter words
+        temp_group_list = [group for group in group_list if not any(word in group for word in remove_groups)]
+
+        return temp_group_list
