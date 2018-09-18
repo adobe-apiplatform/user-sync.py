@@ -1,10 +1,11 @@
 import requests
 import user_sync.config
 import codecs
+import json
 
 from user_sync.error import AssertionException
 
-class SIGNConfig:
+class Sign:
 
     def __init__(self, logs):
 
@@ -35,8 +36,13 @@ class SIGNConfig:
             self.account_admin = None
             self.ignore_admin_group = None
 
-    def load_sign_config(self):
+        self.api_counter = 0
 
+    def load_sign_config(self):
+        """
+        This function loads the Sign YML file into ConfigFileLoader
+        :return:
+        """
 
         config_filename = 'sign_sync/connector-sign-sync.yml'
         config_encoding = 'utf-8'
@@ -47,7 +53,6 @@ class SIGNConfig:
         user_sync.config.ConfigFileLoader.config_encoding = config_encoding
         main_config_content = user_sync.config.ConfigFileLoader.load_root_config(config_filename)
         return user_sync.config.DictConfig("<%s>" % config_filename, main_config_content)
-
 
     def get_sign_url(self, ver=None):
         """
@@ -79,40 +84,35 @@ class SIGNConfig:
 
         return headers
 
-
     def get_priv_settings(self):
         """
-        This function returns a list of admin privileges from sign.config (account_admin_groups)
+        This function returns a list of admin privileges from SIGN YAML (account_admin_groups)
         :return: list[]
         """
-        self.logs.info('Setting Account Admin Settings...')
 
         return self.account_admin
 
     def get_ignore_priv_settings(self):
         """
-        This function return a list of all ignore admin groups from sign.config (ignore_admin_groups)
+        This function return a list of all ignore admin groups from SIGN YAML (ignore_admin_groups)
         :return:
         """
-
-        self.logs.info('Setting Ignore Admin Groups Settings...')
 
         return self.ignore_admin_group
 
     def get_ignore_groups_setting(self):
         """
-        This function returns a list of all ignore groups from sign.config (ignore_group)
+        This function returns a list of all ignore groups from SIGN YAML (ignore_group)
         :return:
         """
-
-        self.logs.info("Setting Ignore Groups Settings...")
 
         return self.ignore_group
 
     def get_product_groups_settings(self):
-
-        self.logs.info("Setting Product Group Settings...")
-
+        """
+        This function returns a list of product groups from SIGN YAML.
+        :return:
+        """
         return self.product_group
 
     def validate_integration_key(self, headers, url):
@@ -123,21 +123,16 @@ class SIGNConfig:
         :return:
         """
 
-        self.logs.info("Validating Integration Key...")
-
         if self.version == "v5":
             res = requests.get(url + "base_uris", headers=headers)
+            self.api_counter += 1
         else:
             res = requests.get(url + "baseUris", headers=headers)
+            self.api_counter += 1
 
         # self.logs['api'].info("{} {} {}".format(res.request, res.status_code, res.url))
 
-        if res.status_code == 200:
-
-            self.logs.info('Integration Key Validated...')
-
-        else:
-            # print response
+        if res.status_code != 200:
             self.logs.error(res.status_code)
             self.logs.error(res.headers)
             self.logs.error(res.text)
@@ -153,7 +148,7 @@ class SIGNConfig:
         sign_config['condition'] = dict()
         sign_config['url'] = self.get_sign_url()
         sign_config['header'] = self.get_sign_header()
-        sign_config['group'] = self.get_sign_group(sign_config['header'], sign_config['url'], self.logs)
+        sign_config['group'] = self.get_sign_group(sign_config['header'], sign_config['url'])
         sign_config['email'] = self.email
         sign_config['connector'] = self.connector
         sign_config['condition']['ignore_groups'] = self.get_ignore_groups_setting()
@@ -165,8 +160,102 @@ class SIGNConfig:
 
         return sign_config
 
-    @staticmethod
-    def get_sign_group(header, url, logs):
+    def reactivate_account(self, sign_config, user_id):
+        """
+        This function will reactivate a user account that's been inactive
+        :param sign_config: dict()
+        :param user_id: str
+        :return:
+        """
+
+        # SIGN API call to get user by ID
+        res = requests.get(sign_config['url'] + 'users/' + user_id, headers=sign_config['header'])
+        self.api_counter += 1
+        data = res.json()
+
+        if data['userStatus'] == "INACTIVE":
+            temp_header = self.create_temp_header(sign_config)
+            payload = {
+                "userStatus": "ACTIVE"
+            }
+
+            # SIGN API call to reactivate user account
+            res = requests.put(sign_config['url'] + 'users/' + user_id + '/status',
+                               headers=temp_header, data=json.dumps(payload))
+            self.api_counter += 1
+
+    def create_sign_group(self, group_list, sign_config):
+        """
+        This function will create a group in Adobe SIGN if the group doesn't already exist.
+        :param group_list: list[]
+        :param sign_config: dict()
+        :return:
+        """
+
+        temp_header = self.create_temp_header(sign_config)
+
+        for group_name in group_list:
+            data = {
+                "groupName": group_name
+            }
+            # SIGN API to get existing groups
+            res = requests.post(sign_config['url'] + 'groups', headers=temp_header, data=json.dumps(data))
+            self.api_counter += 1
+            # logs['api'].info("{} {} {}".format(res.request, res.status_code, res.url))
+
+            if res.status_code == 201:
+                self.logs.info('{} Group Created...'.format(group_name))
+                res_data = res.json()
+                sign_config['group'][group_name] = res_data['groupId']
+            else:
+                self.logs.log_error_code(self.logs, res)
+
+    def check_user_existence_in_sign(self, sign_config, email):
+        """
+        This function checks if the user exist.
+        :param sign_config: dict()
+        :param email: str
+        :return: int & str
+        """
+
+        # SIGN API call to get user by email
+        res = requests.get(sign_config['url'] + 'users?x-user-email=' + email, headers=sign_config['header'])
+        self.api_counter += 1
+        data = res.json()
+
+        if res.status_code == 200:
+            # self.reactivate_account(sign_config, data['userInfoList'][0]['userId'])
+            return data['userInfoList'][0]['userId']
+        else:
+            return None
+
+    def add_user_to_sign_group(self, sign_config, sign_user_id, group_id, data):
+        """
+        This function will add users into the SIGN groups.
+        :param sign_config: dict()
+        :param sign_user_id: str
+        :param group_id: str
+        :param data: dict()
+        :return:
+        """
+
+        temp_header = self.create_temp_header(sign_config)
+
+        # SIGN API call to put user in the correct group
+        res = requests.put(sign_config['url'] + 'users/' + sign_user_id, headers=temp_header, data=json.dumps(data))
+        self.api_counter += 1
+        # logs['api'].info("{} {} {}".format(res.request, res.status_code, res.url))
+
+        key = self.get_dict_key(sign_config['group'], group_id)
+
+        if res.status_code == 200:
+            self.logs.info('{} information updated to {}...'.format(data['email'], key))
+
+        else:
+            self.logs.log_error_code(self.logs, res)
+
+
+    def get_sign_group(self,header, url):
         """
         This function creates a list of groups that's in Adobe Sign Groups.
         :param header: str
@@ -176,7 +265,7 @@ class SIGNConfig:
         """
 
         res = requests.get(url + 'groups', headers=header)
-        # logs['api'].info("{} {} {}".format(res.request, res.status_code, res.url))
+        self.api_counter += 1
 
         sign_groups = res.json()
 
@@ -187,13 +276,42 @@ class SIGNConfig:
 
         return temp_list
 
-    @staticmethod
-    def get_user_data(header, url, user_id, logs):
+
+    def get_user_data(self, header, url, user_id, logs):
 
         res = requests.get(url + 'users/' + user_id, headers=header)
+        self.api_counter += 1
         data = res.json()
 
         #API LOG
         logs.info("{} {} {}".format(res.request, res.status_code, res.url))
 
         return data
+
+    @staticmethod
+    def create_temp_header(sign_config):
+        """
+        This function creates a temp header to push json payloads
+        :param sign_config: dict()
+        :return: dict()
+        """
+
+        temp_header = sign_config['header']
+        temp_header['Content-Type'] = 'application/json'
+        temp_header['Accept'] = 'application/json'
+
+        return temp_header
+
+    @staticmethod
+    def get_dict_key(group, value):
+        """
+        Get keys for dict
+        :param group: dict()
+        :param value: str
+        :return: str
+        """
+
+        return [key for key, v in group.items() if v == value]
+
+    def print_counter(self):
+        print(self.api_counter)
