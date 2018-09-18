@@ -43,7 +43,7 @@ If you are driving User Sync from a file, you can skip setting up connector-ldap
 If you need a non-default LDAP query to select the desired set of users, it is setup in this file as part of the all\_users\_filter config parameter.
 
 #### Connecting to Microsoft Azure AD
-Microsoft Azure AD is relatively straightforward to setup.  However, some prerequisite work must be done to enable LDAPS on the Azure tennant.  You will need to add Azure Domain Services, and setup password-hash synchronization before the tool will be able to bind to the domain.  
+Microsoft Azure AD is relatively straightforward to setup.  However, some prerequisite work must be done to enable LDAPS on the Azure tennant.  You will need to add Azure Domain Services, and setup password hash synchronization before the tool will be able to bind to the domain.  
 The following Microsoft guides can walk you through the process for getting LDAPS enabled:
 
 - [Setup Azure Domain Services](https://docs.microsoft.com/en-us/azure/active-directory-domain-services/active-directory-ds-getting-started)<br/>
