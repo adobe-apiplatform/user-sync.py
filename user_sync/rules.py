@@ -150,10 +150,6 @@ class RuleProcessor(object):
             'hook_storage': None,
         }
 
-        # keep track of auto-mapped additional groups for conflict tracking.
-        # if feature is disabled, this dict will be empty
-        self.additional_group_map = defaultdict(list)  # type: dict[str, list[str]]
-
         if logger.isEnabledFor(logging.DEBUG):
             options_to_report = options.copy()
             username_filter_regex = options_to_report['username_filter_regex']
@@ -178,11 +174,8 @@ class RuleProcessor(object):
             self.read_desired_user_groups(directory_groups, directory_connector)
             load_directory_stats.log_end(logger)
 
-        for mapped, src_groups in self.additional_group_map.items():
-            if len(src_groups) > 1:
-                raise user_sync.error.AssertionException("Additional group resolution conflict: {} map to '{}'".format(
-                    src_groups, mapped))
-            logger.info("Mapped additional group '{}' to '{}'".format(src_groups[0], mapped))
+        for umapi_info in self.umapi_info_by_name.values():
+            self.validate_and_log_additional_groups(umapi_info)
 
         umapi_stats = JobStats('Push to UMAPI' if self.push_umapi else 'Sync with UMAPI', divider="-")
         umapi_stats.log_start(logger)
@@ -197,6 +190,19 @@ class RuleProcessor(object):
         umapi_connectors.execute_actions()
         umapi_stats.log_end(logger)
         self.log_action_summary(umapi_connectors)
+
+    def validate_and_log_additional_groups(self, umapi_info):
+        """
+        :param umapi_info: UmapiTargetInfo
+        :return:
+        """
+        umapi_name = umapi_info.get_name()
+        for mapped, src_groups in umapi_info.get_additional_group_map().items():
+            if len(src_groups) > 1:
+                raise user_sync.error.AssertionException(
+                    "Additional group resolution conflict: {} map to '{}' on '{}'".format(
+                        src_groups, mapped, umapi_name if umapi_name else 'primary org'))
+            self.logger.info("Mapped additional group '{}' to '{}'".format(src_groups[0], mapped))
 
     def log_action_summary(self, umapi_connectors):
         """
@@ -407,16 +413,20 @@ class RuleProcessor(object):
             member_groups = directory_user.get('member_groups', [])
             for member_group in member_groups:
                 for group_rule in additional_groups:
-                    if group_rule['source'].match(member_group):
-                        try:
-                            rename_group = group_rule['source'].sub(group_rule['target'], member_group)
-                        except Exception as e:
-                            raise user_sync.error.AssertionException("Additional group resolution error: {}".format(str(e)))
-                        umapi_info.add_mapped_group(rename_group)
-                        for umapi_name, umapi_info in six.iteritems(self.umapi_info_by_name):
-                            umapi_info.add_desired_group_for(user_key, rename_group)
-                        if member_group not in self.additional_group_map[rename_group]:
-                            self.additional_group_map[rename_group].append(member_group)
+                    source = group_rule['source']
+                    target = group_rule['target']
+                    target_name = target.get_group_name()
+                    umapi_info = self.get_umapi_info(target.get_umapi_name())
+                    if not group_rule['source'].match(member_group):
+                        continue
+                    try:
+                        rename_group = source.sub(target_name, member_group)
+                    except Exception as e:
+                        raise user_sync.error.AssertionException("Additional group resolution error: {}".format(str(e)))
+                    umapi_info.add_mapped_group(rename_group)
+                    umapi_info.add_additional_group(rename_group, member_group)
+                    for umapi_name, umapi_info in six.iteritems(self.umapi_info_by_name):
+                        umapi_info.add_desired_group_for(user_key, rename_group)
 
         self.logger.debug('Total directory users after filtering: %d', len(filtered_directory_user_by_user_key))
         if self.logger.isEnabledFor(logging.DEBUG):
@@ -1211,6 +1221,10 @@ class UmapiTargetInfo(object):
         self.groups_added_by_user_key = {}
         self.groups_removed_by_user_key = {}
 
+        # keep track of auto-mapped additional groups for conflict tracking.
+        # if feature is disabled, this dict will be empty
+        self.additional_group_map = defaultdict(list)  # type: dict[str, list[str]]
+
     def get_name(self):
         return self.name
 
@@ -1221,6 +1235,13 @@ class UmapiTargetInfo(object):
         normalized_group_name = normalize_string(group)
         self.mapped_groups.add(normalized_group_name)
         self.non_normalize_mapped_groups.add(group)
+
+    def add_additional_group(self, rename_group, member_group):
+        if member_group not in self.additional_group_map[rename_group]:
+            self.additional_group_map[rename_group].append(member_group)
+
+    def get_additional_group_map(self):
+        return self.additional_group_map
 
     def get_mapped_groups(self):
         return self.mapped_groups
