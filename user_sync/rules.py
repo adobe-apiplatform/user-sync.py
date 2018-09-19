@@ -503,21 +503,28 @@ class RuleProcessor(object):
         in the console, then it will create. Note: Push Mode is not supported
         :type umapi_connectors: UmapiConnectors
         """
-        umapi_info, umapi_connector = self.get_umapi_info(
-            PRIMARY_UMAPI_NAME), umapi_connectors.get_primary_connector()
-        mapped_groups = umapi_info.get_non_normalize_mapped_groups()
-        # pull all user groups from console
-        on_adobe_groups = [normalize_string(g['groupName']) for g in umapi_connector.get_groups()]
-        # verify if group exist and create
-        for mapped_group in mapped_groups:
-            if normalize_string(mapped_group) not in on_adobe_groups:
-                self.logger.info("Auto create user-group enabled: Creating %s" % mapped_group)
+        for umapi_connector in umapi_connectors.connectors:
+            umapi_name = None if umapi_connector.name.split('.')[-1] == 'primary'\
+                else umapi_connector.name.split('.')[-1]
+            umapi_info = self.umapi_info_by_name[umapi_name]
+            mapped_groups = umapi_info.get_non_normalize_mapped_groups()
+
+            # pull all user groups from console
+            on_adobe_groups = [normalize_string(g['groupName']) for g in umapi_connector.get_groups()]
+
+            # verify if group exist and create
+            for mapped_group in mapped_groups:
+                if normalize_string(mapped_group) in on_adobe_groups:
+                    continue
+                self.logger.info("Auto create user-group enabled: Creating '{}' on '{}'".format(
+                    mapped_group, umapi_name if umapi_name else 'primary org'))
                 try:
                     # create group
                     res = umapi_connector.create_group(mapped_group)
                     self.action_summary['adobe_user_groups_created'] += 1
                 except Exception as e:
-                    self.logger.critical("Unable to create %s user group: %s" % (mapped_group, e))
+                    self.logger.critical("Unable to create %s user group: '{}' on '{}' (error: {})".format(
+                        mapped_group, umapi_name if umapi_name else 'primary org', e))
 
     def is_selected_user_key(self, user_key):
         """
