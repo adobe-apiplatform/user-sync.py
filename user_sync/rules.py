@@ -202,7 +202,8 @@ class RuleProcessor(object):
                 raise user_sync.error.AssertionException(
                     "Additional group resolution conflict: {} map to '{}' on '{}'".format(
                         src_groups, mapped, umapi_name if umapi_name else 'primary org'))
-            self.logger.info("Mapped additional group '{}' to '{}'".format(src_groups[0], mapped))
+            self.logger.info("Mapped additional group '{}' to '{}' on '{}'".format(
+                src_groups[0], mapped, umapi_name if umapi_name else 'primary org'))
 
     def log_action_summary(self, umapi_connectors):
         """
@@ -1140,14 +1141,15 @@ class UmapiConnectors(object):
 class AdobeGroup(object):
     index_map = {}
 
-    def __init__(self, group_name, umapi_name):
+    def __init__(self, group_name, umapi_name, index=True):
         """
         :type group_name: str
         :type umapi_name: str
         """
         self.group_name = group_name
         self.umapi_name = umapi_name
-        AdobeGroup.index_map[(group_name, umapi_name)] = self
+        if index:
+            AdobeGroup.index_map[(group_name, umapi_name)] = self
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
@@ -1191,13 +1193,13 @@ class AdobeGroup(object):
         return cls.index_map.get(cls._parse(qualified_name))
 
     @classmethod
-    def create(cls, qualified_name):
+    def create(cls, qualified_name, index=True):
         group_name, umapi_name = cls._parse(qualified_name)
         existing = cls.index_map.get((group_name, umapi_name))
         if existing:
             return existing
         elif len(group_name) > 0:
-            return cls(group_name, umapi_name)
+            return cls(group_name, umapi_name, index)
         else:
             return None
 
