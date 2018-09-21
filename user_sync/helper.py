@@ -41,15 +41,6 @@ def normalize_string(string_value):
     return string_value.strip().lower() if string_value is not None else None
 
 
-def normal_group(group):
-    """
-    Returns true if group name can be normalized, false otherwise
-    :param group: str
-    :return: bool
-    """
-    return False if group.startswith('_product_admin_') else True
-
-
 class CSVAdapter:
     """
     Read and write CSV files to and from lists of dictionaries
