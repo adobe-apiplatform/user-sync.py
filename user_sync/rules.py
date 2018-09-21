@@ -793,6 +793,21 @@ class RuleProcessor(object):
             directory_user = umapi_user
             identity_type = umapi_user.get('type')
 
+        # save these in case we need to handle some special cases
+        username = directory_user['username']
+        email = directory_user['email']
+
+        # if user has email-type username and it is different from email address, then we need to
+        # override the username with email address
+        if '@' in email and '@' in username and email != username:
+            if groups_to_add or groups_to_remove or attributes_to_update:
+                directory_user['username'] = email
+            if attributes_to_update and 'email' in attributes_to_update:
+                # we need to specify the old email if we're updating email address
+                directory_user['username'] = umapi_user['email']
+                directory_user['email'] = umapi_user['email']
+                attributes_to_update['username'] = username
+
         commands = user_sync.connector.umapi.Commands(identity_type, directory_user['email'],
                                                       directory_user['username'], directory_user['domain'])
         commands.update_user(attributes_to_update)
