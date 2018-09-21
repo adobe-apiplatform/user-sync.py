@@ -505,6 +505,10 @@ class RuleProcessor(object):
         for umapi_connector in umapi_connectors.connectors:
             umapi_name = None if umapi_connector.name.split('.')[-1] == 'primary'\
                 else umapi_connector.name.split('.')[-1]
+            if umapi_name == 'umapi':
+                umapi_name = None
+            if umapi_name not in self.umapi_info_by_name:
+                continue
             umapi_info = self.umapi_info_by_name[umapi_name]
             mapped_groups = umapi_info.get_non_normalize_mapped_groups()
 
@@ -1246,7 +1250,7 @@ class UmapiTargetInfo(object):
 
     def add_additional_group(self, rename_group, member_group):
         if member_group not in self.additional_group_map[rename_group]:
-            self.additional_group_map[rename_group].append(member_group)
+            self.additional_group_map[normalize_string(rename_group)].append(member_group)
 
     def get_additional_group_map(self):
         return self.additional_group_map
