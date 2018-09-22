@@ -150,6 +150,10 @@ class RuleProcessor(object):
             'hook_storage': None,
         }
 
+        # map of username to email address for users that have an email-type username that
+        # differs from the user's email address
+        self.email_override = {}  # type: dict[str, str]
+
         if logger.isEnabledFor(logging.DEBUG):
             options_to_report = options.copy()
             username_filter_regex = options_to_report['username_filter_regex']
@@ -612,6 +616,8 @@ class RuleProcessor(object):
         def get_commands(key):
             """Given a user key, returns the umapi commands targeting that user"""
             id_type, username, domain = self.parse_user_key(key)
+            if '@' in username and username in self.email_override:
+                username = self.email_override[username]
             return user_sync.connector.umapi.Commands(identity_type=id_type, username=username, domain=domain)
 
         # do the secondary umapis first, in case we are deleting user accounts from the primary umapi at the end
@@ -793,20 +799,15 @@ class RuleProcessor(object):
             directory_user = umapi_user
             identity_type = umapi_user.get('type')
 
-        # save these in case we need to handle some special cases
-        username = directory_user['username']
-        email = directory_user['email']
-
         # if user has email-type username and it is different from email address, then we need to
         # override the username with email address
-        if '@' in email and '@' in username and email != username:
+        if '@' in directory_user['username'] and directory_user['email'] != directory_user['username']:
             if groups_to_add or groups_to_remove or attributes_to_update:
-                directory_user['username'] = email
+                directory_user['username'] = self.email_override[directory_user['username']]
             if attributes_to_update and 'email' in attributes_to_update:
                 # we need to specify the old email if we're updating email address
-                directory_user['username'] = umapi_user['email']
                 directory_user['email'] = umapi_user['email']
-                attributes_to_update['username'] = username
+                attributes_to_update['username'] = directory_user['username']
 
         commands = user_sync.connector.umapi.Commands(identity_type, directory_user['email'],
                                                       directory_user['username'], directory_user['domain'])
@@ -868,6 +869,8 @@ class RuleProcessor(object):
             if self.is_umapi_user_excluded(in_primary_org, user_key, current_groups):
                 continue
 
+            self.map_email_override(umapi_user)
+
             directory_user = filtered_directory_user_by_user_key.get(user_key)
             if directory_user is None:
                 # There's no selected directory user matching this adobe user
@@ -899,6 +902,18 @@ class RuleProcessor(object):
         # mark the umapi's adobe users as processed and return the remaining ones in the map
         umapi_info.set_umapi_users_loaded()
         return user_to_group_map
+
+    def map_email_override(self, umapi_user):
+        """
+        for users with email-type usernames that don't match the email address, we need to add some
+        special cases to update and disentitle users
+        :param umapi_user: dict
+        :return:
+        """
+        email = umapi_user.get('email')
+        username = umapi_user.get('username')
+        if '@' in username and username != email:
+            self.email_override[username] = email
 
     def is_umapi_user_excluded(self, in_primary_org, user_key, current_groups):
         if in_primary_org:
