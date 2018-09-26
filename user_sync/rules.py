@@ -910,8 +910,8 @@ class RuleProcessor(object):
         :param umapi_user: dict
         :return:
         """
-        email = umapi_user.get('email')
-        username = umapi_user.get('username')
+        email = umapi_user.get('email', '')
+        username = umapi_user.get('username', '')
         if '@' in username and username != email:
             self.email_override[username] = email
 
