@@ -803,7 +803,8 @@ class RuleProcessor(object):
         # override the username with email address
         if '@' in directory_user['username'] and directory_user['email'] != directory_user['username']:
             if groups_to_add or groups_to_remove or attributes_to_update:
-                directory_user['username'] = self.email_override[directory_user['username']]
+                if directory_user['username'] in self.email_override:
+                    directory_user['username'] = self.email_override[directory_user['username']]
             if attributes_to_update and 'email' in attributes_to_update:
                 # we need to specify the old email if we're updating email address
                 directory_user['email'] = umapi_user['email']
