@@ -76,7 +76,7 @@ You'll need:
 
 You’ll need to run two sync configurations; one for each directory.
 
-User Groups (UG) and Product Configurations (PC) mapped and managed by the two User Sync jobs must not overlap.  That is, each user group and PC and be managed by only a single instance of user sync.
+User Groups (UG) and Product Profiles (PP) mapped and managed by the two User Sync jobs must not overlap.  That is, each user group and PC and be managed by only a single instance of user sync.
 
 You cannot have User Sync delete users when it is configured in this way.  This is because the two sync instances would try to delete each others' users.
 

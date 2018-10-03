@@ -8,7 +8,7 @@ nav_level: 1
 nav_order: 100
 ---
 
-Version 2.1.1, released 2017-06-09
+Version 2.3, released 2018-Aug-01
 
 This document walks you through the steps needed to understand
 and setup the User Sync Tool.
@@ -22,7 +22,7 @@ action.
 
 1. [What You Need To Know Before You Start](before_you_start.md)
 2. [Layout Your Organization, Groups, and Directories](layout_orgs.md)
-3. [Layout Your Adobe Products, Product Configurations, and User Groups](layout_products.md)
+3. [Layout Your Adobe Products, Product Profiles, and User Groups](layout_products.md)
 4. [Decide How You Will Handle Account Deletion](decide_deletion_policy.md)
 5. [Setup an Adobe.io Integration](setup_adobeio.md)
 6. [Identify and Setup the Server Where User Sync Will Run](identify_server.md)

@@ -22,9 +22,9 @@ Setup steps are documented.  For complete information about the integration setu
 - Once setup, the Adobe.io console displays all needed values.  You’ll copy these into the user sync configuration file.
 - You'll also need to add the private key file to the User Sync configuration.
 
-&#9744; Obtain or create a digital signing certificate.  See [instructions for certificate creation](https://www.adobe.io/apis/cloudplatform/console/authentication/createcert.html).
+&#9744; Obtain or create a digital signing certificate.  See ["Public Key Certificates for JWTs" section](https://www.adobe.io/apis/cloudplatform/console/authentication/createcert.html).
 
-&#9744; Use the [Adobe I/O Console](https://console.adobe.io) to add the User Management service to a new or existing adobe.io integration for each organization you need to access (usually only one).  
+&#9744; Use the [Adobe I/O Console](https://console.adobe.io) to add the User Management service to a new or existing adobe.io integration for each organization you need to access (usually only one).
 
 &#9744; Note the configuration parameters for your integration (redacted example shown below).  They will be used in a later step.
 
