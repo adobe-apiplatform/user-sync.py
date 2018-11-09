@@ -704,12 +704,12 @@ class RuleProcessor(object):
         :return user_sync.connector.umapi.Commands (or None if there's an error)
         """
         identity_type = self.get_identity_type_from_directory_user(directory_user)
-        update_email = None
+        update_username = None
         if (identity_type == user_sync.identity_type.FEDERATED_IDENTITY_TYPE and directory_user['username'] and
                 '@' in directory_user['username'] and
                 normalize_string(directory_user['email']) != normalize_string(directory_user['username'])):
-            update_email = directory_user['email']
-            directory_user['email'] = directory_user['username']
+            update_username = directory_user['username']
+            directory_user['username'] = directory_user['email']
 
         commands = user_sync.connector.umapi.Commands(identity_type, directory_user['email'],
                                                       directory_user['username'], directory_user['domain'])
@@ -735,8 +735,8 @@ class RuleProcessor(object):
         else:
             attributes['option'] = 'ignoreIfAlreadyExists'
         commands.add_user(attributes)
-        if update_email:
-            commands.update_user({"email": update_email, "username": directory_user['username']})
+        if update_username is not None:
+            commands.update_user({"email": directory_user['email'], "username": update_username})
         return commands
 
     def create_umapi_user(self, user_key, groups_to_add, umapi_info, umapi_connector):
@@ -803,12 +803,11 @@ class RuleProcessor(object):
         # override the username with email address
         if '@' in directory_user['username'] and directory_user['email'] != directory_user['username']:
             if groups_to_add or groups_to_remove or attributes_to_update:
-                if directory_user['username'] in self.email_override:
-                    directory_user['username'] = self.email_override[directory_user['username']]
+                directory_user['username'] = directory_user['email']
             if attributes_to_update and 'email' in attributes_to_update:
-                # we need to specify the old email if we're updating email address
                 directory_user['email'] = umapi_user['email']
-                attributes_to_update['username'] = directory_user['username']
+                attributes_to_update['username'] = umapi_user['username']
+                directory_user['username'] = umapi_user['email']
 
         commands = user_sync.connector.umapi.Commands(identity_type, directory_user['email'],
                                                       directory_user['username'], directory_user['domain'])
