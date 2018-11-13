@@ -183,7 +183,8 @@ class UmapiConnector(object):
         if len(commands) > 0:
             action_manager = self.get_action_manager()
             action = action_manager.create_action(commands)
-            action_manager.add_action(action, callback)
+            if action is not None:
+                action_manager.add_action(action, callback)
 
 
 class Commands(object):
@@ -318,7 +319,8 @@ class ActionManager(object):
             action = umapi_client.UserAction(umapi_identity_type, email, username, domain,
                                              requestID=self.get_next_request_id())
         except ValueError as e:
-            raise AssertionException("Error creating umapi Action: %s" % e)
+            self.logger.error("Skipping user - Error creating umapi Action: %s" % e)
+            return None
         for command in commands.do_list:
             command_name, command_param = command
             command_function = getattr(action, command_name)
