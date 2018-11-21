@@ -125,7 +125,7 @@ Wenn Sie den Parameter `--adobe-only-user-action` nicht angeben, können Sie Ben
 
 Wenn Sie Entfernungen separat behandeln möchten, können Sie das Tool anweisen, Benutzer zu kennzeichnen, die nicht mehr im Unternehmensverzeichnis, jedoch immer noch auf Adobe-Seite vorhanden sind. Der Parameter `--adobe-only-user-action write-file exiting-users.csv` schreibt die Liste der zum Entfernen gekennzeichneten Benutzer in eine CSV-Datei.
 
-Um die Entfernungen in einem separaten Aufruf auszuführen, können Sie die durch den Parameter `--adobe-only-user-action write-file` generierte Datei übergeben oder Sie können eine CSV-Datei mit Benutzern übergeben, die auf andere Weise generiert wurde. Ein Beispiel für eine solche Datei, `3 remove-list.csv`, wird in der Datei „example-configurations.tar.gz“ im Ordner `csv inputs - user and remove lists` bereitgestellt.
+Um die Entfernungen in einem separaten Aufruf auszuführen, können Sie die durch den Parameter `--adobe-only-user-action write-file` generierte Datei übergeben oder Sie können eine CSV-Datei mit Benutzern übergeben, die auf andere Weise generiert wurde. Ein Beispiel für eine solche Datei, `remove-list.csv`, wird in der Datei „example-configurations.tar.gz“ im Ordner `csv inputs - user and remove lists` bereitgestellt.
 
 #### Benutzer hinzufügen und eine Liste mit zu entfernenden Benutzern generieren
 

@@ -32,11 +32,11 @@ adobe_users:
 
   # (optional) exclude_adobe_groups (no default value)
   # exclude_adobe_groups is a list of values, each of which is a string
-  # that names a product configuration or user group on the Adobe side.
+  # that names a product profile or user group on the Adobe side.
   # Any user in one or more of the named Adobe groups is excluded from
   # updates by User Sync.
   exclude_adobe_groups:
-    #- "Sample Product Configuration"
+    #- "Sample Product Profile"
     #- "Sample User Group"
 
   # (optional) exclude_users (no default value)
@@ -91,7 +91,7 @@ directory_users:
   # If your directory does not specify the Adobe-side identity type
   # for one (or any) of your users, you can specify a default type here that
   # will be used: one of "adobeID", "enterpriseID", or "federatedID".
-  user_identity_type: enterpriseID
+  user_identity_type: federatedID
 
   # (optional) default_country_code (no default value)
   # All Adobe users have a country code, which is a two-letter (ISO-3166) country code
@@ -158,7 +158,7 @@ directory_users:
 
   # (optional) groups (no default value)
   # The groups setting specifies how groups in the enterprise directory map
-  # to product configurations and user groups on the Adobe side (collectively
+  # to product profile and user groups on the Adobe side (collectively
   # called "Adobe groups").  This section is required only if you use the
   # --process-groups command-line argument.
   groups:
@@ -166,22 +166,21 @@ directory_users:
     # directory groups and whose values are lists of Adobe groups.  This mapping
     # is specified as a list of entries, each of which has a directory_group
     # setting (whose value is a single directory group) and an adobe_groups
-    # setting (whose value is a list of 0 or more product configuration and
-    # user groups).  In this example, imagine that "Acrobat DC Pro" is a
-    # product configuration and "Copy Editors" is a user group, and that
-    # the "Copy Editors" user group will be assigned access to appropriate
-    # Adobe products, such as InDesign and InCopy.
+    # setting (whose value is a list of 0 or more product profile and
+    # user groups). In this example, users in Adobe_All_Apps_Users directory group will
+    # automatically be assigned to "Default All Apps plan - 100 GB configuration" (Product Profile)
+    # and "Creative Users" (User Group)
     # [You will need to edit or remove these examples.]
-    - directory_group: "Finance"
+    - directory_group: "Acrobat_DC_Pro_Users"
       adobe_groups:
-        # the finance group doesn't use any Adobe products
-    - directory_group: "Administration"
+        - "Acrobat DC Pro Users"
+    - directory_group: "Adobe_All_Apps_Users"
       adobe_groups:
-        - "Acrobat DC Pro"
-    - directory_group: "Newsletter"
+        - "Default All Apps plan - 100 GB configuration"
+        - "Creative Users"
+    - directory_group: "Adobe_Manual_Assign_Users"
       adobe_groups:
-        - "Copy Editors"
-        - "Acrobat DC Pro"
+        # Adobe_Manual_Assign_Users group does not have default product profile/user group assignment.
 
   # (optional) additional_groups (no default value)
   # People who use their directory groups for ACLs on the Adobe side
@@ -250,7 +249,7 @@ logging:
   # (optional) log_to_file (default value "False")
   # Whether you want logging done to a file in addition to the standard output.
   # allowed values are "True" (log to both) or "False" (log only to standard output).
-  log_to_file: False
+  log_to_file: True
 
   # (optional) file_log_directory (default value "logs")
   # An absolute or relative path to the directory where log files should be placed.
@@ -324,7 +323,7 @@ invocation_defaults:
   # For argument --process-groups, the default is False (don't process).
   # If you set this default to True, you can supply the argument
   # --no-process-groups to override the default.
-  process_groups: No
+  process_groups: Yes
   # For argument --strategy, the default is 'sync'.
   strategy: sync
   # For argument --test-mode (or -t), the default is False (live run).
@@ -341,4 +340,4 @@ invocation_defaults:
   user_filter:
   # For argument --users, the default is 'all'.
   # for CSV input, use an array - ['file', 'users.csv']
-  users: all
+  users: mapped

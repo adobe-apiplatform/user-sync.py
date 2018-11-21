@@ -32,7 +32,7 @@ Sie haben in den vorherigen Schritten ein Dateisystemverzeichnis für den Python
 
 ### Konfigurationsdatei für den Verzeichniszugriff
 
-Wenn Sie das Benutzer-Synchronisationstool über eine Datei ausführen, können Sie das Einrichten von connector-ldap.yml überspringen und stattdessen wie im Beispiel mit der Datei „csv inputs - user and remove lists/1 users-file.csv“ eine CSV-Datei mit der gesamten Benutzerliste erstellen. Diese Datei befindet sich im Download „example-configurations.tar.gz“ des Release.
+Wenn Sie das Benutzer-Synchronisationstool über eine Datei ausführen, können Sie das Einrichten von connector-ldap.yml überspringen und stattdessen wie im Beispiel mit der Datei „csv inputs - user and remove lists/users-file.csv“ eine CSV-Datei mit der gesamten Benutzerliste erstellen. Diese Datei befindet sich im Download „example-configurations.tar.gz“ des Release.
 
 &#9744; Bearbeiten Sie die Datei „connector-ldap.yml“. Diese Datei enthält Informationen für den Zugriff auf das Verzeichnissystem. Geben Sie Werte für Benutzername, Kennwort, Host und Basis-DN ein.
 

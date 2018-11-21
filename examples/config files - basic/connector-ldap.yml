@@ -19,8 +19,8 @@
 # These access credentials are sensitive and must be protected.
 username: "LDAP or Credential Manager username goes here"
 password: "LDAP password goes here"
-host: "LDAP host URL goes here.  e.g. ldap://ldap.example.com"
-base_dn: "defines the base DN. e.g. DC=example,DC=com"
+host: "ldap://ldap.example.com"
+base_dn: "DC=example,DC=com"
 
 # (optional) You can store credentials in the operating system credential store
 # (Windows Credential Manager, Mac Keychain, Linux Freedesktop Secret Service
@@ -43,7 +43,7 @@ base_dn: "defines the base DN. e.g. DC=example,DC=com"
 # (optional) search_page_size (default value given below)
 # search_page_size specifies the result page size requested when
 # fetching values from the directory.
-search_page_size: 200
+search_page_size: 1000
 
 # (optional) require_tls_cert (default value given below)
 # require_tls_cert forces the ldap connection to use TLS security with cerficate
@@ -132,9 +132,7 @@ user_email_format: "{mail}"
 # federation configuration specifies username-based login.  In all other cases,
 # make sure this is not set or returns an empty value, and the user's username
 # will be taken from the user's email.
-# This example supposes that the department and user_id are concatenated to
-# produce a unique username for each user.
-#user_username_format: "{department}_{user_id}"
+#user_username_format: "{sAMAccountName}"
 
 # (optional) user_given_name_format (default value given below)
 # user_given_name_format specifies how to construct a user's given name by

@@ -191,7 +191,7 @@ estão marcados para remoção em um arquivo CSV.
 Para realizar as remoções em uma chamada separada, é possível enviar o
 arquivo gerado pelo parâmetro `--adobe-only-user-action write-file`, ou enviar
 um arquivo CSV de usuários gerado de
-outra maneira. Um exemplo de tal arquivo, `3 remove-list.csv`,
+outra maneira. Um exemplo de tal arquivo, `remove-list.csv`,
 é fornecido no arquivo example-configurations.tar.gz na pasta `csv inputs - user and remove lists`.
 
 #### Adicionar usuários e gerar uma lista de usuários para remoção
