@@ -32,7 +32,7 @@ Dans les étapes précédentes, vous avez configuré un répertoire de système 
 
 ### Fichier de configuration d’accès à l’annuaire
 
-Si vous pilotez User Sync à partir d’un fichier, vous pouvez ignorer le paramétrage du fichier connector-ldap.yml et créer à la place un fichier CSV avec votre liste complète d’utilisateurs, comme dans l’exemple de fichier « csv inputs - user and remove lists/1 users-file.csv ». Ce fichier se trouve dans le téléchargement example-configurations.tar.gz.
+Si vous pilotez User Sync à partir d’un fichier, vous pouvez ignorer le paramétrage du fichier connector-ldap.yml et créer à la place un fichier CSV avec votre liste complète d’utilisateurs, comme dans l’exemple de fichier « csv inputs - user and remove lists/users-file.csv ». Ce fichier se trouve dans le téléchargement example-configurations.tar.gz.
 
 &#9744; Modifiez le fichier connector-ldap.yml. Celui-ci contient les informations d’accès au système d’annuaire. Indiquez les valeurs username (nom d’utilisateur), password (mot de passe), host (hôte) et base_dn (nom de domaine de base).
 

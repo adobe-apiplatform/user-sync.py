@@ -26,7 +26,7 @@ La línea de comandos de User Sync selecciona el conjunto de los usuarios que se
 
 Si todos los usuarios que aparecen en el directorio deben sincronizarse con Adobe, utilice `--users all`. Si son solo algunos usuarios, puede limitar el conjunto modificando la consulta LDAP en el archivo de configuración 'connector-ldap.yml' (y utilizar `--users all`), o puede limitar los usuarios a aquellos que se encuentran en los grupos específicos (utilizando -- grupo de usuarios). Puede combinar cualquiera de estas opciones con un `--user-filter pattern` para limitar más el conjunto seleccionado de usuarios que se sincronizarán.
 
-Si no utiliza un sistema de directorio, puede utilizar `--users file f` para seleccionar los usuarios de un archivo csv. Consulte el archivo de usuarios de ejemplo (`csv inputs - user and remove lists/1 users-file.csv`) para ver el formato. Los grupos que aparecen en los archivos csv son nombres que puede elegir. Se asignan a grupos de usuarios o configuraciones de productos de Adobe de la misma forma que con los grupos de directorio.
+Si no utiliza un sistema de directorio, puede utilizar `--users file f` para seleccionar los usuarios de un archivo csv. Consulte el archivo de usuarios de ejemplo (`csv inputs - user and remove lists/users-file.csv`) para ver el formato. Los grupos que aparecen en los archivos csv son nombres que puede elegir. Se asignan a grupos de usuarios o configuraciones de productos de Adobe de la misma forma que con los grupos de directorio.
 
 ## Grupos
 

@@ -32,7 +32,7 @@ In previous steps, you set up a file system directory for the user sync tool Pyt
 
 ### Directory Access Configuration File
 
-If you are driving User Sync from a file, you can skip setting up connector-ldap.yml and instead create a csv file with your entire user list following the "csv inputs - user and remove lists/1 users-file.csv" file example.  This file is in the example-configurations.tar.gz download from the release.
+If you are driving User Sync from a file, you can skip setting up connector-ldap.yml and instead create a csv file with your entire user list following the "csv inputs - user and remove lists/users-file.csv" file example.  This file is in the example-configurations.tar.gz download from the release.
 
 &#9744; Edit the file connector-ldap.yml.  This file has access information to the directory system.  Put in username, password, host, and base_dn values.
 

@@ -124,7 +124,7 @@ Si vous n’indiquez pas le paramètre `--adobe-only-user-action`, vous pouvez s
 
 Si vous souhaitez gérer les retraits séparément, vous pouvez indiquer à l’outil de signaler les utilisateurs qui n’existent plus dans l’annuaire de l’entreprise, mais existent toujours dans les systèmes Adobe. Le paramètre `--adobe-only-user-action write-file exiting-users.csv` écrit dans un fichier CSV la liste des utilisateurs qui sont signalés pour retrait.
 
-Pour effectuer les retraits dans un appel distinct, vous pouvez transmettre le fichier généré par le paramètre `--adobe-only-user-action write-file`, ou bien transmettre un fichier CSV d’utilisateurs que vous avez généré d’une autre façon. Un exemple de ce type de fichier, `3 remove-list.csv`, est fourni dans le fichier example-configurations.tar.gz au sein du dossier `csv inputs - user and remove lists`.
+Pour effectuer les retraits dans un appel distinct, vous pouvez transmettre le fichier généré par le paramètre `--adobe-only-user-action write-file`, ou bien transmettre un fichier CSV d’utilisateurs que vous avez généré d’une autre façon. Un exemple de ce type de fichier, `remove-list.csv`, est fourni dans le fichier example-configurations.tar.gz au sein du dossier `csv inputs - user and remove lists`.
 
 #### Ajouter des utilisateurs et générer une liste d’utilisateurs à retirer
 

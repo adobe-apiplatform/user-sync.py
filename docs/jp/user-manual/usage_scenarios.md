@@ -124,7 +124,7 @@ user-sync --users all --user-filter 'b.*@forxampl.com' --process-groups
 
 取り除く操作を個別に処理する場合、アドビ側には存在するもののエンタープライズディレクトリにはもはや存在しないユーザーをフラグするようツールに指示できます。`--adobe-only-user-action write-file exiting-users.csv` パラメーターは、取り除くようフラグされたユーザーのリストを CSV ファイルに出力します。
 
-別の呼び出しで取り除く操作を実行するには、`--adobe-only-user-action write-file` パラメーターによって生成されたファイルを渡すか、他の方法で生成したユーザー CSV ファイルを渡すことができます。`csv inputs - user and remove lists` フォルダーにある example-configurations.tar.gz ファイルには、そのようなファイルの例として `3 remove-list.csv` が提供されています。
+別の呼び出しで取り除く操作を実行するには、`--adobe-only-user-action write-file` パラメーターによって生成されたファイルを渡すか、他の方法で生成したユーザー CSV ファイルを渡すことができます。`csv inputs - user and remove lists` フォルダーにある example-configurations.tar.gz ファイルには、そのようなファイルの例として `remove-list.csv` が提供されています。
 
 #### ユーザーを追加して、取り除くユーザーのリストを生成する
 
