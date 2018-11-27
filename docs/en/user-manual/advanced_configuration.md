@@ -699,8 +699,6 @@ Possible use cases:
 * ACL groups for [Adobe Experience Manager](https://www.adobe.com/marketing/experience-manager.html)
 * Special-case group, role or profile assignment
 
-Note: This feature only works with the LDAP connector at this time.
-
 ### Additional Group Rules
 
 `additional_groups` is defined in `user-sync-config.yml` in the `groups`
@@ -709,6 +707,9 @@ present in the `memberOf` LDAP attribute, as well as rules that govern
 how corresponding Adobe groups should be named.  Groups that are
 discovered with this feature will be added to a user's list of
 targeted Adobe groups.
+
+**Note:** Additional group mapping will fail if a multiple source groups
+map to the same target group.
 
 ### Additional Group Example
 
@@ -758,6 +759,21 @@ will apply dynamically to any LDAP group that matches the regex
 be included in sync as long as they follow that naming convention -
 no configuration change would be needed.
 
+### Targeting Secondary Orgs
+
+Secondary organizations can be targeted using the additional group
+rules.  Just add the prefix `[org_name]::` to the target group
+pattern.
+
+```yaml
+  additional_groups:
+    - source: "ACL-GRP-(\\d+)"
+      target: "org2::ACL Group \\1"
+ ```
+
+Refer to [Accessing Users in Other Organizations](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/advanced_configuration.html#accessing-users-in-other-organizations)
+for more information.
+
 ## Automatic Group Creation
 
 The User Sync Tool can be configured to automatically create targeted
@@ -793,6 +809,14 @@ support product profile creation, so the Sync Tool can't create them.
 If the Sync Tool is configured to target a misspelled profile name, or
 a profile that doesn't exist, it will automatically create a user group
 with the specified name.
+
+### Targeting Secondary Orgs
+
+Groups targeted to secondary organizations will be automatically
+created on those organizations if `auto_create` is enabled.
+
+Refer to [Accessing Users in Other Organizations](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/advanced_configuration.html#accessing-users-in-other-organizations)
+for more information.
 
 ---
 

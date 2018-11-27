@@ -444,68 +444,73 @@ class ConfigLoader(object):
         options.update(self.invocation_options)
 
         # process directory configuration options
-        new_account_type = None
         directory_config = self.main_config.get_dict_config('directory_users', True)
-        if directory_config:
-            # account type
-            new_account_type = directory_config.get_string('user_identity_type', True)
-            new_account_type = user_sync.identity_type.parse_identity_type(new_account_type)
-            if new_account_type:
-                options['new_account_type'] = new_account_type
-            else:
-                self.logger.debug("Using default for new_account_type: %s", options['new_account_type'])
-            # country code
-            default_country_code = directory_config.get_string('default_country_code', True)
-            if default_country_code:
-                options['default_country_code'] = default_country_code
-            additional_groups = directory_config.get_list('additional_groups', True) or []
-            additional_groups = [{'source': re.compile(r['source']), 'target': r['target']} for r in additional_groups]
-            options['additional_groups'] = additional_groups
-            sync_options = directory_config.get_dict_config('group_sync_options', True)
-            if sync_options:
-                options['auto_create'] = sync_options.get_bool('auto_create', True)
-        if not new_account_type:
-            new_account_type = user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE
-            self.logger.debug("Using default for new_account_type: %s", new_account_type)
+        if not directory_config:
+            raise AssertionException("'directory_users' must be specified")
+
+        # account type
+        new_account_type = directory_config.get_string('user_identity_type', True)
+        new_account_type = user_sync.identity_type.parse_identity_type(new_account_type)
+        if new_account_type:
+            options['new_account_type'] = new_account_type
+        else:
+            self.logger.debug("Using default for new_account_type: %s", options['new_account_type'])
+        # country code
+        default_country_code = directory_config.get_string('default_country_code', True)
+        if default_country_code:
+            options['default_country_code'] = default_country_code
+        additional_groups = directory_config.get_list('additional_groups', True) or []
+        try:
+            additional_groups = [{'source': re.compile(r['source']),
+                                  'target': user_sync.rules.AdobeGroup.create(r['target'], index=False)}
+                                 for r in additional_groups]
+        except Exception as e:
+            raise AssertionException("Additional group rule error: {}".format(str(e)))
+        options['additional_groups'] = additional_groups
+        sync_options = directory_config.get_dict_config('group_sync_options', True)
+        if sync_options:
+            options['auto_create'] = sync_options.get_bool('auto_create', True)
 
         # process exclusion configuration options
         adobe_config = self.main_config.get_dict_config('adobe_users', True)
-        if adobe_config:
-            exclude_identity_type_names = adobe_config.get_list('exclude_identity_types', True)
-            if exclude_identity_type_names:
-                exclude_identity_types = []
-                for name in exclude_identity_type_names:
-                    message_format = 'Illegal value in exclude_identity_types: %s'
-                    identity_type = user_sync.identity_type.parse_identity_type(name, message_format)
-                    exclude_identity_types.append(identity_type)
-                options['exclude_identity_types'] = exclude_identity_types
-            exclude_users_regexps = adobe_config.get_list('exclude_users', True)
-            if exclude_users_regexps:
-                exclude_users = []
-                for regexp in exclude_users_regexps:
-                    try:
-                        # add "match begin" and "match end" markers to ensure complete match
-                        # and compile the patterns because we will use them over and over
-                        exclude_users.append(re.compile(r'\A' + regexp + r'\Z', re.UNICODE))
-                    except re.error as e:
-                        validation_message = ('Illegal regular expression (%s) in %s: %s' %
-                                              (regexp, 'exclude_identity_types', e))
-                        raise AssertionException(validation_message)
-                options['exclude_users'] = exclude_users
-            exclude_group_names = adobe_config.get_list('exclude_adobe_groups', True) or []
-            if exclude_group_names:
-                exclude_groups = []
-                for name in exclude_group_names:
-                    group = user_sync.rules.AdobeGroup.create(name)
-                    if not group or group.get_umapi_name() != user_sync.rules.PRIMARY_UMAPI_NAME:
-                        validation_message = 'Illegal value for %s in config file: %s' % ('exclude_groups', name)
-                        if not group:
-                            validation_message += ' (Not a legal group name)'
-                        else:
-                            validation_message += ' (Can only exclude groups in primary organization)'
-                        raise AssertionException(validation_message)
-                    exclude_groups.append(group.get_group_name())
-                options['exclude_groups'] = exclude_groups
+        if not adobe_config:
+            raise AssertionException("'adobe_users' must be specified")
+
+        exclude_identity_type_names = adobe_config.get_list('exclude_identity_types', True)
+        if exclude_identity_type_names:
+            exclude_identity_types = []
+            for name in exclude_identity_type_names:
+                message_format = 'Illegal value in exclude_identity_types: %s'
+                identity_type = user_sync.identity_type.parse_identity_type(name, message_format)
+                exclude_identity_types.append(identity_type)
+            options['exclude_identity_types'] = exclude_identity_types
+        exclude_users_regexps = adobe_config.get_list('exclude_users', True)
+        if exclude_users_regexps:
+            exclude_users = []
+            for regexp in exclude_users_regexps:
+                try:
+                    # add "match begin" and "match end" markers to ensure complete match
+                    # and compile the patterns because we will use them over and over
+                    exclude_users.append(re.compile(r'\A' + regexp + r'\Z', re.UNICODE))
+                except re.error as e:
+                    validation_message = ('Illegal regular expression (%s) in %s: %s' %
+                                          (regexp, 'exclude_identity_types', e))
+                    raise AssertionException(validation_message)
+            options['exclude_users'] = exclude_users
+        exclude_group_names = adobe_config.get_list('exclude_adobe_groups', True) or []
+        if exclude_group_names:
+            exclude_groups = []
+            for name in exclude_group_names:
+                group = user_sync.rules.AdobeGroup.create(name)
+                if not group or group.get_umapi_name() != user_sync.rules.PRIMARY_UMAPI_NAME:
+                    validation_message = 'Illegal value for %s in config file: %s' % ('exclude_groups', name)
+                    if not group:
+                        validation_message += ' (Not a legal group name)'
+                    else:
+                        validation_message += ' (Can only exclude groups in primary organization)'
+                    raise AssertionException(validation_message)
+                exclude_groups.append(group.get_group_name())
+            options['exclude_groups'] = exclude_groups
 
         # get the limits
         limits_config = self.main_config.get_dict_config('limits')
