@@ -450,6 +450,37 @@ For domains that use username-based login, the `user_username_format` configurat
 
 If you are using username-based login, you must still provide a unique email address for every user, and that email address must be in a domain that the organization has claimed and owns. User Sync will not add a user to the Adobe organization without an email address.
 
+## Syncing Email-based Users with Different Email Address
+
+Some organizations must authenticate users with an internal-facing
+email-type ID such as user principal name, but wish to allow users to
+user their public-facing email address to log into Adobe products and
+use collaboration features.
+
+Internally, the Adobe Admin Console maintains a distinction between a
+user's email-type username and their email address.  These fields are
+normally set to the same value, but the Admin Console allows the
+email address to differ from the username.  The User Management API
+also supports the creation, update, and deletion of users that have
+different usernames and email addresses.
+
+**Note:** Any domain used in the email address field **must** be
+claimed and added to an Adobe identity directory.
+
+To use this functionality in the Sync Tool, simply specify both the
+`user_email_format` and the `user_username_format` options in
+`connector-ldap.yml`.
+
+```yaml
+user_email_format: "{mail}"
+user_username_format: "{userPrincipalName}"
+```
+
+In this scenario, the `user_username_format` option must map to a field
+that will always contain an email-type identifier (it does not need
+to be a live, working email address).  Users with non-email values
+will fail to be validated and synced.
+
 ## Protecting Specific Accounts from User Sync Deletion
 
 If you drive account creation and removal through User Sync, and want to manually create a few accounts, you may need this feature to keep User Sync from deleting the manually created accounts.
