@@ -232,13 +232,15 @@ class LDAPDirectoryConnector(object):
                 group_dn = current_tuple[0]
         return group_dn
 
-    def iter_group_member_dns(self, group_dn, member_attribute, searched_dns = []):
+    def iter_group_member_dns(self, group_dn, member_attribute, searched_dns = None):
         """
         return group memberships dns from specified membership attribute in LDAP group object
         :type group: str
         :type member_attribute: str
         :rtype iterable(str)
         """
+        if searched_dns == None:
+            searched_dns = []
         connection = self.connection
         nested_group_search = self.options['two_steps_lookup']['nested_group']
         try:
@@ -251,7 +253,7 @@ class LDAPDirectoryConnector(object):
                     if member_dn not in searched_dns:
                         searched_dns.append(member_dn)
                         if nested_group_search:
-                            nested_members = self.iter_group_member_dns(member_dn, member_attribute)
+                            nested_members = self.iter_group_member_dns(member_dn, member_attribute, searched_dns)
                             for nested_member_dn in nested_members:
                                 yield nested_member_dn
                         yield member_dn
