@@ -239,7 +239,7 @@ class LDAPDirectoryConnector(object):
         :type member_attribute: str
         :rtype iterable(str)
         """
-        if searched_dns == None:
+        if searched_dns is None:
             searched_dns = []
         connection = self.connection
         nested_group_search = self.options['two_steps_lookup']['nested_group']
