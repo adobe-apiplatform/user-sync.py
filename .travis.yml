@@ -1,0 +1,67 @@
+language: python
+sudo: required
+dist: xenial
+
+before_install:
+  - chmod +x .travis/*.sh
+
+matrix:
+  include:
+  - env: IMG="ubuntu1604"
+    python:
+    - 3.6
+    install:
+    - ".travis/install-ubuntu.sh"
+    script:
+    - ".travis/build-py36.sh"
+    - ".travis/release.sh"
+  - env: IMG="ubuntu1604"
+    python:
+    - 2.7
+    install:
+    - ".travis/install-ubuntu.sh"
+    script:
+    - ".travis/build-py27.sh"
+    - ".travis/release.sh"
+  - env: OS="centos:7" IMG="centos7" SH="docker exec -t ${IMG} bash -c"
+    services:
+    - docker
+    # for logging purposes
+    python:
+    - 3.6
+    before_install:
+    - chmod +x .travis/*.sh
+    - docker run -d --name ${IMG} -v $(pwd):/travis -w /travis -e IMG="${IMG}" -e TRAVIS_TAG="${TRAVIS_TAG}" ${OS} tail -f /dev/null
+    - docker ps
+    install:
+    - $SH .travis/install-centos.sh
+    script:
+    - $SH .travis/build-py36-centos.sh
+  - env: OS="centos:7" IMG="centos7" SH="docker exec -t ${IMG} bash -c"
+    services:
+    - docker
+    # for logging purposes
+    python:
+    - 2.7
+    before_install:
+    - chmod +x .travis/*.sh
+    - docker run -d --name ${IMG} -v $(pwd):/travis -w /travis -e IMG="${IMG}" -e TRAVIS_TAG="${TRAVIS_TAG}" ${OS} tail -f /dev/null
+    - docker ps
+    install:
+    - $SH .travis/install-centos.sh
+    script:
+    - $SH .travis/build-py27.sh
+    - $SH .travis/release.sh
+
+deploy:
+  provider: releases
+  api_key:
+    secure: YpQX9iGgXE2P+Kmpp+2L9GnA/k7YDbE8SjDw2VwPCOkJ8kCCH/9ri+vzkuB6d7HUVwq12Ckpdo0vRe3okqucbF++JGjCBsGVMA6TR5vzBNGZDmFMb6I6VRLgeZpxH1xuq0lbqkWsi0Eo2K/tcrdRBHnL72yv4icuCs1BVpiTCRIoTIQdFnDSsbowI5qDyd5b5r5lvhrfUzGHgvjd69ZTVkXKE+rO2vajKvCXwL2eOPeMCuco1ieo7w6DUuxa2Sk90Bdm1rc8g/9uuskB3nue5uX2OkKZoMCwOhEsMcBNvRbLxEzbMfSaPxtPneLX4OY2QgxNqI4iGJ8CRh/qz25tVs2HtsmpAb+j8cGffPemXV3aAUocOZMPT6KZpv/8mriGCQHgPIkXpiYATafoRB1TxEuxf5ePLl0GPgqDB2GyhF45sMmkeOk8EoNYSyj0Mc1tqKnTdBOD0gYuDuQf8CBvAsF9aQiNUQw8GpSolq/gEecpW5J2nLW18gkVachROPZr91orTlxi0nOWSUScWeohFyHPe5NaZFSx5/B0jfv+LAml4ny2B8BpB6k6ny/v4UV2/KZDtw78jJrgVhvar8B0dSqEyuc37FayEzhRDed0gUW5EAtT8pP2jUD+WSOlNa8J6joSHFLwKzVIgABCAovISHLsWCIliD6q4jxSEqt0hY0=
+  file_glob: true
+  file: release/*.gz
+  skip_cleanup: true
+  draft: true
+  on:
+    tags: true
+    repo: adorton-adobe/ust-travis
+    all_branches: true
