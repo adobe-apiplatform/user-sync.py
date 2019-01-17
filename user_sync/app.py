@@ -90,7 +90,7 @@ def main(args=sys.argv[1:]):
 
     except AssertionException as e:
         if not e.is_reported():
-            logger.critical("Check settings on user-sync-config.yml file or on the command line, as UST could not retrieve values using default ldap settings")
+            logger.critical("Check settings on user-sync-config.yml file, as UST could not retrieve values using default ldap settings")
             logger.critical("%s", e)
             e.set_reported()
     except KeyboardInterrupt:
