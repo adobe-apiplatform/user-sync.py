@@ -1,3 +1,0 @@
-disabled: True
-user_sync:
-    arguments: -c ../../../config-common/user-sync-config.yml --users group "CCE AD Group 1","CCE AD Group 2","CCE AD Group 3" --update-user-info

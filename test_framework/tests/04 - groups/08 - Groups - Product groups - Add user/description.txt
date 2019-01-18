@@ -1,9 +1,0 @@
-Groups - Product groups - Add user
-
-Preconditions:
-
-Actions:
-1. Run user-sync with --users pattern --process-groups
-
-Result
-A Product is assigned to the user.
