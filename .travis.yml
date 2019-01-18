@@ -52,7 +52,7 @@ matrix:
     script:
     - $SH .travis/build-py27.sh
     - $SH .travis/release.sh
-    - $SH python setup.py test
+    - $SH "python setup.py test"
 
 deploy:
   provider: releases
