@@ -87,7 +87,7 @@ class LDAPDirectoryConnector(object):
         builder.require_string_value('base_dn')
         options = builder.get_options()
 
-        if options['two_steps_lookup']:
+        if options['two_steps_lookup'] is not None:
             ts_config = caller_config.get_dict_config('two_steps_lookup', True)
             ts_builder = user_sync.config.OptionsBuilder(ts_config)
             ts_builder.require_string_value('group_member_attribute_name')
@@ -96,7 +96,7 @@ class LDAPDirectoryConnector(object):
             options['two_steps_lookup'] = ts_options = ts_builder.get_options()
             if options['group_member_filter_format']:
                 raise AssertionException(
-                    'Cannot define both group_member_attribute_name and group_member_filter_format in config')
+                    "Cannot define both 'group_member_attribute_name' and 'group_member_filter_format' in config")
         else:
             self.two_steps_lookup = False
             if not options['group_member_filter_format']:
@@ -170,21 +170,23 @@ class LDAPDirectoryConnector(object):
             try:
                 if self.two_steps_lookup:
                     for user_dn in self.iter_group_member_dns(group_dn, group_member_attribute_name):
-                        #check to make sure user_dn are within the base_dn scope
+                        # check to make sure user_dn are within the base_dn scope
                         if self.is_dn_within_base_dn_scope(base_dn, user_dn):
-                            #replace base_dn with user_dn and filter with all_users_filter to do user lookup based on DN
-                            result =  list(self.iter_users(user_dn, all_users_filter, extended_attributes))
+                            # replace base_dn with user_dn and filter with all_users_filter to do user lookup based on DN
+                            result = list(self.iter_users(user_dn, all_users_filter, extended_attributes))
                             if result:
                                 # iter_users should only return 1 user when doing two_steps lookup.
                                 if len(result) > 1:
-                                    raise AssertionException('Unexpected multiple LDAP object found in two_steps lookup mode for: %s' % user_dn)
+                                    raise AssertionException(
+                                        "Unexpected multiple LDAP object found in 'two_steps_lookup' mode for: %s" % user_dn)
                                 else:
                                     user = result[0][1]
                                     user['groups'].append(group)
                                     group_users += 1
                                     grouped_user_records[user_dn] = user
                 else:
-                    for user_dn, user in self.iter_users(base_dn, self.format_group_user_filter(group_dn), extended_attributes):
+                    for user_dn, user in self.iter_users(base_dn, self.format_group_user_filter(group_dn),
+                                                         extended_attributes):
                         user['groups'].append(group)
                         group_users += 1
                         grouped_user_records[user_dn] = user
@@ -232,7 +234,7 @@ class LDAPDirectoryConnector(object):
                 group_dn = current_tuple[0]
         return group_dn
 
-    def iter_group_member_dns(self, group_dn, member_attribute, searched_dns = None):
+    def iter_group_member_dns(self, group_dn, member_attribute, searched_dns=None):
         """
         return group memberships dns from specified membership attribute in LDAP group object
         :type group: str
@@ -248,8 +250,8 @@ class LDAPDirectoryConnector(object):
             if member_attribute in result[0][1]:
                 for member_dn in result[0][1][member_attribute]:
                     member_dn = member_dn.decode('utf-8')
-                    #if nested_group search enabled, look up DN and see if group member attribute exist in that object
-                    #This will recurse through until there is no nested group.
+                    # if nested_group search enabled, look up DN and see if group member attribute exist in that object
+                    # This will recurse through until there is no nested group.
                     if member_dn not in searched_dns:
                         searched_dns.append(member_dn)
                         if nested_group_search:
@@ -438,12 +440,13 @@ class LDAPDirectoryConnector(object):
             escaped_args[k] = six.text_type('').join(escaped_list)
         return query.format(**escaped_args)
 
-    def format_group_user_filter (self, group_dn):
+    def format_group_user_filter(self, group_dn):
         """
          :type group_dn: str
          :rtype str
          """
-        group_member_subfilter = self.format_ldap_query_string(self.options['group_member_filter_format'], group_dn=group_dn)
+        group_member_subfilter = self.format_ldap_query_string(self.options['group_member_filter_format'],
+                                                               group_dn=group_dn)
         if not group_member_subfilter.startswith('('):
             group_member_subfilter = six.text_type('(') + group_member_subfilter + six.text_type(')')
         user_subfilter = self.options['all_users_filter']
@@ -460,11 +463,12 @@ class LDAPDirectoryConnector(object):
         :param dn: str
         :return: bool
         """
-        split_base_dn = [x.strip() for x in base_dn.lower().split(',')]
-        split_dn = [x.strip() for x in dn.lower().split(',')]
+        split_base_dn = ldap.explode_dn(base_dn.lower())
+        split_dn = ldap.explode_dn(dn.lower())
         if split_base_dn == split_dn[-len(split_base_dn):]:
             return True
         return False
+
 class LDAPValueFormatter(object):
     encoding = 'utf8'
 
@@ -475,7 +479,7 @@ class LDAPValueFormatter(object):
         if string_format is None:
             attribute_names = []
         else:
-            string_format = six.text_type(string_format)    # force unicode so attribute values are unicode
+            string_format = six.text_type(string_format)  # force unicode so attribute values are unicode
             formatter = string.Formatter()
             attribute_names = [six.text_type(item[1]) for item in formatter.parse(string_format) if item[1]]
         self.string_format = string_format
