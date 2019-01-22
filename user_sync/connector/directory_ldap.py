@@ -196,8 +196,7 @@ class LDAPDirectoryConnector(object):
                                     group_users += 1
                                     grouped_user_records[user_dn] = user
                 else:
-                    for user_dn, user in self.iter_users(base_dn, self.format_group_user_filter(group_dn),
-                                                         extended_attributes):
+                    for user_dn, user in self.iter_users(base_dn, group_user_filter, extended_attributes):
                         user['groups'].append(group)
                         group_users += 1
                         grouped_user_records[user_dn] = user
