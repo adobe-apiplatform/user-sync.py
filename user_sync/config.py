@@ -1062,7 +1062,7 @@ class OptionsBuilder(object):
     def set_dict_value(self, key, default_value):
         """
         :type key: str
-        :type default_value: dict
+        :type default_value: dict or None
         """
         self.set_value(key, dict, default_value)
 

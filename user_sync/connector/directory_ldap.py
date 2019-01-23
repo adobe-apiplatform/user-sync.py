@@ -71,7 +71,7 @@ class LDAPDirectoryConnector(object):
             '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))'))
         builder.set_string_value('group_member_filter_format', None)
         builder.set_bool_value('require_tls_cert', False)
-        builder.set_dict_value('two_steps_lookup', {})
+        builder.set_dict_value('two_steps_lookup', None)
         builder.set_string_value('string_encoding', 'utf8')
         builder.set_string_value('user_identity_type_format', None)
         builder.set_string_value('user_email_format', six.text_type('{mail}'))
@@ -94,7 +94,7 @@ class LDAPDirectoryConnector(object):
             ts_builder.require_string_value('group_member_attribute_name')
             ts_builder.set_bool_value('nested_group', False)
             self.two_steps_lookup = True
-            options['two_steps_lookup'] = ts_options = ts_builder.get_options()
+            options['two_steps_lookup'] = ts_builder.get_options()
             if options['group_member_filter_format']:
                 raise AssertionException(
                     "Cannot define both 'group_member_attribute_name' and 'group_member_filter_format' in config")
