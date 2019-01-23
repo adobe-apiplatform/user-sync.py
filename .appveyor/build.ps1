@@ -18,5 +18,5 @@ echo "pyver: ${pyver}"
 7z a "user-sync-${env:APPVEYOR_REPO_TAG_NAME}-win64-${pyver}.zip" user-sync.pex
 cd ..
 7z a -ttar -so -r examples.tar examples | 7z a -si release\examples.tar.gz
-7z a releases\examples.zip examples\
+7z a -r release\examples.zip examples\
 dir releases
