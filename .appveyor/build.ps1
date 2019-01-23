@@ -16,4 +16,7 @@ $pyver=$(python -V 2>&1) -replace "Python ","py" -replace "\.",""
 echo "pyver: ${pyver}"
 7z a "user-sync-${env:APPVEYOR_REPO_TAG_NAME}-win64-${pyver}.tar.gz" user-sync.pex
 7z a "user-sync-${env:APPVEYOR_REPO_TAG_NAME}-win64-${pyver}.zip" user-sync.pex
-dir
+cd ..
+7z a -ttar -so -r examples.tar examples | 7z a -si release\examples.tar.gz
+7z a releases\examples.zip examples\
+dir releases
