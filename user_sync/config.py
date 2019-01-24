@@ -498,18 +498,18 @@ class ConfigLoader(object):
         # get the limits
         limits_config = self.main_config.get_dict_config('limits')
         max_missing = limits_config.get_value('max_adobe_only_users',(int, str),False)
-        if isinstance(max_missing, str):
-            percent_pattern = re.compile("(\d*(\.\d+)?%)")
-            if percent_pattern.match(max_missing):
-                max_missing_percent = float(max_missing.strip('%'))
-                if max_missing_percent >= 0.0 and max_missing_percent <= 100.0:
-                    options['max_adobe_only_users'] = max_missing
-                else:
-                    raise AssertionException("max_adobe_only_users value must be less or equal than 100%")
+        percent_pattern = re.compile("(\d*(\.\d+)?%)")
+        if isinstance(max_missing, str) and percent_pattern.match(max_missing):
+            max_missing_percent = float(max_missing.strip('%'))
+            if 0.0 <= max_missing_percent <= 100.0:
+                options['max_adobe_only_users'] = max_missing
             else:
-                raise AssertionException("Not a valid value for max_adobe_only_users. Must be a percentage or fix integer")
+                raise AssertionException("max_adobe_only_users value must be less or equal than 100%")
         else:
-            options['max_adobe_only_users'] = max_missing
+            try:
+                options['max_adobe_only_users'] = int(max_missing)
+            except ValueError:
+                raise AssertionException("Unable to parse max_adobe_only_users value. Value must be a percentage or an integer.")
 
         # now get the directory extension, if any
         extension_config = self.get_directory_extension_options()

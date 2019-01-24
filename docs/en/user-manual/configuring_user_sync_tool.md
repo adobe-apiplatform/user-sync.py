@@ -200,7 +200,7 @@ groups.
 code and identity type.  See the example configuration files for details.
 - The **limits** section sets the `max_adobe_only_users` value that
 prevents User Sync from updating or deleting Adobe user accounts if
-there are more than the specified value of accounts in  that appear in
+there are more than the specified value of accounts that appear in
 the Adobe organization but not in the directory. This
 limit prevents removal of a large number of accounts
 in case of misconfiguration or other errors.  This is a required item.
