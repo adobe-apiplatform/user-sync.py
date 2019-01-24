@@ -1,0 +1,16 @@
+environment:
+  matrix:
+    - PYTHON: "C:\\Python27-x64"
+    - PYTHON: "C:\\Python36-x64"
+
+install:
+- ps: choco install make
+
+build_script:
+- ps: .appveyor\build.ps1
+
+artifacts:
+- path: release/*.zip
+  name: Zips
+- path: release/*.tar.gz
+  name: Tarballs

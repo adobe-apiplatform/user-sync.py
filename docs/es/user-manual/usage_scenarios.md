@@ -124,7 +124,7 @@ Si no proporciona el parámetro `--adobe-only-user-action`, puede sincronizar lo
 
 Si desea gestionar las eliminaciones por separado, puede indicar a la herramienta que marque los usuarios que ya no existen en el directorio de empresa, pero todavía existen en la parte de Adobe. El parámetro `--adobe-only-user-action write-file exiting-users.csv` escribe la lista de los usuarios marcados para la eliminación en un archivo CSV.
 
-Para realizar las eliminaciones en una ejecución separada, puede pasar el archivo generado por el parámetro `--adobe-only-user-action write-file` o pasar un archivo CSV de usuarios que ha generado por otros medios. Se ofrece un ejemplo de un archivo de este tipo, `3 remove-list.csv`, en el archivo example-configurations.tar.gz de la carpeta `csv inputs - user and remove lists`.
+Para realizar las eliminaciones en una ejecución separada, puede pasar el archivo generado por el parámetro `--adobe-only-user-action write-file` o pasar un archivo CSV de usuarios que ha generado por otros medios. Se ofrece un ejemplo de un archivo de este tipo, `remove-list.csv`, en el archivo example-configurations.tar.gz de la carpeta `csv inputs - user and remove lists`.
 
 #### Añadir usuarios y generar una lista de usuarios para eliminar
 

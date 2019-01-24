@@ -32,7 +32,7 @@ In previous steps, you set up a file system directory for the user sync tool Pyt
 
 ### Directory Access Configuration File
 
-If you are driving User Sync from a file, you can skip setting up connector-ldap.yml and instead create a csv file with your entire user list following the "csv inputs - user and remove lists/1 users-file.csv" file example.  This file is in the example-configurations.tar.gz download from the release.
+If you are driving User Sync from a file, you can skip setting up connector-ldap.yml and instead create a csv file with your entire user list following the "csv inputs - user and remove lists/users-file.csv" file example.  This file is in the example-configurations.tar.gz download from the release.
 
 &#9744; Edit the file connector-ldap.yml.  This file has access information to the directory system.  Put in username, password, host, and base_dn values.
 
@@ -41,6 +41,17 @@ If you are driving User Sync from a file, you can skip setting up connector-ldap
 ![](images/setup_config_directory.png)
 
 If you need a non-default LDAP query to select the desired set of users, it is setup in this file as part of the all\_users\_filter config parameter.
+
+#### Connecting to Microsoft Azure AD
+Microsoft Azure AD is relatively straightforward to setup.  However, some prerequisite work must be done to enable LDAPS on the Azure tennant.  You will need to add Azure Domain Services, and setup password hash synchronization before the tool will be able to bind to the domain.  
+The following Microsoft guides can walk you through the process for getting LDAPS enabled:
+
+- [Setup Azure Domain Services](https://docs.microsoft.com/en-us/azure/active-directory-domain-services/active-directory-ds-getting-started)<br/>
+- [Configure LDAPS on Azure AD](https://docs.microsoft.com/en-us/azure/active-directory-domain-services/active-directory-ds-admin-guide-configure-secure-ldap)
+
+Once that is done, you will be able to connect to the Azure AD using normal LDAP credentials with the UST.  Please note, there is **no** requirement for using TLS or an SSL cert on the UST side - you should be able to connect by binding to port 636 with your Azure AD service account. In other words, the following key in connector-ldap.yml can be set to False (the default):
+
+- require_tls_cert: False
 
 
 ### Adobe UMAPI Credentials 

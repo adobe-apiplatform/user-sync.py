@@ -32,7 +32,7 @@ nav_order: 280
 
 ### ディレクトリアクセスの構成ファイル
 
-ファイルから User Sync を起動する場合は、connector-ldap.yml のセットアップを省略できます。代わりに、「csv inputs - user and remove lists/1 users-file.csv」ファイルの例に従って、ユーザーリストすべてを含む csv ファイルを作成します。このファイルは、リリースの example-configurations.tar.gz ダウンロードに含まれます。
+ファイルから User Sync を起動する場合は、connector-ldap.yml のセットアップを省略できます。代わりに、「csv inputs - user and remove lists/users-file.csv」ファイルの例に従って、ユーザーリストすべてを含む csv ファイルを作成します。このファイルは、リリースの example-configurations.tar.gz ダウンロードに含まれます。
 
 &#9744; ファイル connector-ldap.yml を編集します。このファイルにはディレクトリシステムのアクセス情報が含まれます。username、password、host、base_dn の値を入力します。
 
