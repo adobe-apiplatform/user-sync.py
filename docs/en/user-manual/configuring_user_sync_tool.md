@@ -183,7 +183,7 @@ connects to the Adobe Admin Console through the User Management
 API. It should point to the separate, secure configuration file
 that stores the access credentials.  This is set in the umapi field of
 the connectors field.
-    - The adobe_users section also can contain exclude_identity_types, 
+    - The adobe_users section also can contain exclude_identity_types,
 exclude_adobe_groups, and exclude_users which limit the scope of users
 affected by User Sync.  See the later section
 [Protecting Specific Accounts from User Sync Deletion](advanced_configuration.md#protecting-specific-accounts-from-user-sync-deletion)
@@ -198,9 +198,9 @@ directory groups and Adobe product configurations and user
 groups.
     - **directory_users** can also contain keys that set the default country
 code and identity type.  See the example configuration files for details.
-- The **limits** section sets the `max_adobe_only_users` value that 
-prevents User Sync from updating or deleting Adobe user accounts if 
-there are more than the specified value of accounts that appear in 
+- The **limits** section sets the `max_adobe_only_users` value that
+prevents User Sync from updating or deleting Adobe user accounts if
+there are more than the specified value of accounts that appear in
 the Adobe organization but not in the directory. This
 limit prevents removal of a large number of accounts
 in case of misconfiguration or other errors.  This is a required item.
@@ -344,7 +344,7 @@ Adobe admin console.
 Raise this value if you expect the number of users to drop by
 more than the current value.
 
-For example:
+Example 1:
 
 ```YAML
 limits:
@@ -353,6 +353,17 @@ limits:
 
 This configuration causes User Sync to check if more than
 200 user accounts present in Adobe are not found in the enterprise directory (as filtered),
+and if so no existing Adobe accounts are updated and an error message is logged.
+
+Example 2:
+
+```YAML
+limits:
+  max_adobe_only_users: 15%
+```
+
+This configuration causes User Sync to check if more than
+15% user accounts present in Adobe are not found in the enterprise directory (as filtered),
 and if so no existing Adobe accounts are updated and an error message is logged.
 
 ###  Configure logging

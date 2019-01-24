@@ -237,6 +237,7 @@ limits:
   # job from doing something in these situations that is hard to repair, such as
   # removing or deleting a large number of users or entitlements, you can specify
   # the maximum number of Adobe-only users your User Sync job is expected to find.
+  # this number can be an integer eg. 200 or in percentage format eg. 75%
   # In any run where the Adobe-only user count exceeds this limit, no updates
   # to the Adobe-only users are performed, so the effect of the job is limited to
   # updating and/or creating Adobe users.
