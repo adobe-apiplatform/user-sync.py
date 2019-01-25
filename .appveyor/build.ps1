@@ -6,6 +6,9 @@ if ($env:python.endswith("36-x64")) {
     & $venvcmd venv
 }
 .\venv\Scripts\activate.ps1
+pip install -e .
+pip install -e .[test]
+pip install -e .[setup]
 make 2>&1
 dir dist
 mkdir release
