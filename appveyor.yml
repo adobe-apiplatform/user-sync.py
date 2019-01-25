@@ -10,7 +10,7 @@ build_script:
 - ps: .appveyor\build.ps1
 
 test_script:
-- .appveyor\test.ps1
+- ps: .appveyor\test.ps1
 
 artifacts:
 - path: release/*.zip
