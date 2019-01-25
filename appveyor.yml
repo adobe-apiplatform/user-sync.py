@@ -10,7 +10,7 @@ build_script:
 - ps: .appveyor\build.ps1
 
 test_script:
-- "%PYTHON%\\python.exe setup.py test"
+- .appveyor\test.ps1
 
 artifacts:
 - path: release/*.zip
