@@ -63,5 +63,5 @@ deploy:
   draft: true
   on:
     tags: true
-    repo: adorton-adobe/ust-travis
+    repo: adobe-apiplatform/user-sync.py
     all_branches: true
