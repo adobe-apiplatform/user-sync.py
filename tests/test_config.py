@@ -41,7 +41,7 @@ def tmp_config_files(root_config_file, ldap_config_file, umapi_config_file, tmpd
     tmpfiles = []
     for fname in [root_config_file, ldap_config_file, umapi_config_file]:
         basename = os.path.split(fname)[-1]
-        tmpfile = os.path.join(tmpdir, basename)
+        tmpfile = os.path.join(str(tmpdir), basename)
         shutil.copy(fname, tmpfile)
         tmpfiles.append(tmpfile)
     return tuple(tmpfiles)
