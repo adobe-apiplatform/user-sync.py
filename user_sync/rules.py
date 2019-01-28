@@ -1293,8 +1293,9 @@ class UmapiTargetInfo(object):
         self.non_normalize_mapped_groups.add(group)
 
     def add_additional_group(self, rename_group, member_group):
-        if member_group not in self.additional_group_map[rename_group]:
-            self.additional_group_map[normalize_string(rename_group)].append(member_group)
+        normalized_rename_group = normalize_string(rename_group)
+        if member_group not in self.additional_group_map[normalized_rename_group]:
+            self.additional_group_map[normalize_string(normalized_rename_group)].append(member_group)
 
     def get_additional_group_map(self):
         return self.additional_group_map
