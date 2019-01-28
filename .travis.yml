@@ -1,10 +1,8 @@
 language: python
 sudo: required
 dist: xenial
-
 before_install:
-  - chmod +x .travis/*.sh
-
+- chmod +x .travis/*.sh
 matrix:
   include:
   - env: IMG="ubuntu1604"
@@ -52,11 +50,10 @@ matrix:
     script:
     - $SH .travis/build-py27.sh
     - $SH .travis/release.sh
-
 deploy:
   provider: releases
   api_key:
-    secure: YpQX9iGgXE2P+Kmpp+2L9GnA/k7YDbE8SjDw2VwPCOkJ8kCCH/9ri+vzkuB6d7HUVwq12Ckpdo0vRe3okqucbF++JGjCBsGVMA6TR5vzBNGZDmFMb6I6VRLgeZpxH1xuq0lbqkWsi0Eo2K/tcrdRBHnL72yv4icuCs1BVpiTCRIoTIQdFnDSsbowI5qDyd5b5r5lvhrfUzGHgvjd69ZTVkXKE+rO2vajKvCXwL2eOPeMCuco1ieo7w6DUuxa2Sk90Bdm1rc8g/9uuskB3nue5uX2OkKZoMCwOhEsMcBNvRbLxEzbMfSaPxtPneLX4OY2QgxNqI4iGJ8CRh/qz25tVs2HtsmpAb+j8cGffPemXV3aAUocOZMPT6KZpv/8mriGCQHgPIkXpiYATafoRB1TxEuxf5ePLl0GPgqDB2GyhF45sMmkeOk8EoNYSyj0Mc1tqKnTdBOD0gYuDuQf8CBvAsF9aQiNUQw8GpSolq/gEecpW5J2nLW18gkVachROPZr91orTlxi0nOWSUScWeohFyHPe5NaZFSx5/B0jfv+LAml4ny2B8BpB6k6ny/v4UV2/KZDtw78jJrgVhvar8B0dSqEyuc37FayEzhRDed0gUW5EAtT8pP2jUD+WSOlNa8J6joSHFLwKzVIgABCAovISHLsWCIliD6q4jxSEqt0hY0=
+    secure: pUrnMi4YtRwxQ75K1HJaXSUaPdvd5+CMVzWnS2zUZeC5TNXMgCSpAYVLFMV2xOJZiZ4WIKW4i/oin9nYJ24wPFhCYmeMj6b71u1BJbG02PXBgEcIZrQhcNHEi1E/tv8pYx4aPx1FbNELnH2iV5QsYZbUf+SFWOLUkbe1nVPrKU4eRJiXbJJNgewlvNcePM3EXPQNxTSWg9Pwnh1zO/RRl/mXqZNptMgdfx5jvWeO+/wrKXxW8sxUzAt4zFOTUK/0a6kw5Cn033fgFwYl02x3ux182dQ5Oqb0LLGNfQFTa+hr8cuCVKwzIyU9zJrUXxQaoW6hUMtm8FH5LFDbXPLnClEEoAvaU1PYslATYSo5KGcEOqzPGsrPgYvqtdoG1KhSlO4nDv478akf6rj5gzbb2mUzbBScl6u+nYTK91HshdDlrf3vHIbbd1KU0MTSAdEZeDhOQmiX/t7zgaYQ7NxliLSf6HUD1ARUiMRnWN9Xb6/UGLK+6RtAoYWdW//bJCZi8p/w3LhpnzSTT1fv/bWQQxFuNbiYijsjgk9SHyghPimVF0PhJr2UooiwYkb0d3IOO7WO2vBJbvT69+nm2X8Tt+6L3/zzmvhs1yb4zz5w7osc/F4vJGyhoQruyBvfSTGhh3AvUyc+EayjsVhqD6rkYtUkINcN1aBATCIN4ytIsn0=
   file_glob: true
   file: release/*.gz
   skip_cleanup: true
