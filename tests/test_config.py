@@ -109,8 +109,8 @@ def test_additional_groups_config(modify_root_config, caplog):
 
     args = app.process_args(['-c', root_config_file])
     options = ConfigLoader(args).get_rule_options()
-    assert addl_groups[0]['source'] in str(options['additional_groups'][0]['source'])
-    assert addl_groups[1]['source'] in str(options['additional_groups'][1]['source'])
+    assert addl_groups[0]['source'] in options['additional_groups'][0]['source'].pattern
+    assert addl_groups[1]['source'] in options['additional_groups'][1]['source'].pattern
 
 
 def test_twostep_config(tmp_config_files, modify_ldap_config, caplog):
