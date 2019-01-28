@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2017 Adobe Systems Incorporated.  All rights reserved.
+# Copyright (c) 2016-2017 Adobe Inc.  All rights reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,10 +21,12 @@
 
 import logging
 import six
+import re
 
 import user_sync.connector.umapi
 import user_sync.error
 import user_sync.identity_type
+from collections import defaultdict
 from user_sync.helper import normalize_string, normal_group, CSVAdapter, JobStats
 
 GROUP_NAME_DELIMITER = '::'
@@ -70,6 +72,7 @@ class RuleProcessor(object):
         # counters for action summary log
         self.action_summary = {
             # these are in alphabetical order!  Always add new ones that way!
+            'adobe_user_groups_created': 0,
             'directory_users_read': 0,
             'directory_users_selected': 0,
             'excluded_user_count': 0,
@@ -147,6 +150,10 @@ class RuleProcessor(object):
             'hook_storage': None,
         }
 
+        # map of username to email address for users that have an email-type username that
+        # differs from the user's email address
+        self.email_override = {}  # type: dict[str, str]
+
         if logger.isEnabledFor(logging.DEBUG):
             options_to_report = options.copy()
             username_filter_regex = options_to_report['username_filter_regex']
@@ -171,15 +178,36 @@ class RuleProcessor(object):
             self.read_desired_user_groups(directory_groups, directory_connector)
             load_directory_stats.log_end(logger)
 
+        for umapi_info in self.umapi_info_by_name.values():
+            self.validate_and_log_additional_groups(umapi_info)
+
         umapi_stats = JobStats('Push to UMAPI' if self.push_umapi else 'Sync with UMAPI', divider="-")
         umapi_stats.log_start(logger)
         if directory_connector is not None:
+            # note: push mode is not supported because if it is, we won't have a list of groups
+            # that exist in the console.  we don't want to attempt to create groups that already exist
+            if self.options.get('process_groups') and not self.push_umapi and self.options.get('auto_create'):
+                self.create_umapi_groups(umapi_connectors)
             self.sync_umapi_users(umapi_connectors)
         if self.will_process_strays:
             self.process_strays(umapi_connectors)
         umapi_connectors.execute_actions()
         umapi_stats.log_end(logger)
         self.log_action_summary(umapi_connectors)
+
+    def validate_and_log_additional_groups(self, umapi_info):
+        """
+        :param umapi_info: UmapiTargetInfo
+        :return:
+        """
+        umapi_name = umapi_info.get_name()
+        for mapped, src_groups in umapi_info.get_additional_group_map().items():
+            if len(src_groups) > 1:
+                raise user_sync.error.AssertionException(
+                    "Additional group resolution conflict: {} map to '{}' on '{}'".format(
+                        src_groups, mapped, umapi_name if umapi_name else 'primary org'))
+            self.logger.info("Mapped additional group '{}' to '{}' on '{}'".format(
+                src_groups[0], mapped, umapi_name if umapi_name else 'primary org'))
 
     def log_action_summary(self, umapi_connectors):
         """
@@ -232,6 +260,7 @@ class RuleProcessor(object):
                 ['unchanged_user_count', 'Number of non-excluded Adobe users with no changes'],
                 ['primary_users_created', 'Number of new Adobe users added'],
                 ['updated_user_count', 'Number of matching Adobe users updated'],
+                ['adobe_user_groups_created', 'Number of Adobe user-groups created'],
             ]
             if umapi_connectors.get_secondary_connectors():
                 action_summary_description += [
@@ -385,6 +414,24 @@ class RuleProcessor(object):
                 else:
                     self.logger.error('Target adobe group %s is not known; ignored', target_group_qualified_name)
 
+            additional_groups = self.options.get('additional_groups', [])
+            member_groups = directory_user.get('member_groups', [])
+            for member_group in member_groups:
+                for group_rule in additional_groups:
+                    source = group_rule['source']
+                    target = group_rule['target']
+                    target_name = target.get_group_name()
+                    umapi_info = self.get_umapi_info(target.get_umapi_name())
+                    if not group_rule['source'].match(member_group):
+                        continue
+                    try:
+                        rename_group = source.sub(target_name, member_group)
+                    except Exception as e:
+                        raise user_sync.error.AssertionException("Additional group resolution error: {}".format(str(e)))
+                    umapi_info.add_mapped_group(rename_group)
+                    umapi_info.add_additional_group(rename_group, member_group)
+                    umapi_info.add_desired_group_for(user_key, rename_group)
+
         self.logger.debug('Total directory users after filtering: %d', len(filtered_directory_user_by_user_key))
         if self.logger.isEnabledFor(logging.DEBUG):
             self.logger.debug('Group work list: %s', dict([(umapi_name, umapi_info.get_desired_groups_by_user_key())
@@ -452,6 +499,40 @@ class RuleProcessor(object):
                         self.updated_user_keys.add(user_key)
                     self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector)
 
+    def create_umapi_groups(self, umapi_connectors):
+        """
+        This is where we create user-groups. If auto_create is enabled,
+        this will pull user-groups from console and compare with mapped_groups. If mapped group does exist
+        in the console, then it will create. Note: Push Mode is not supported
+        :type umapi_connectors: UmapiConnectors
+        """
+        for umapi_connector in umapi_connectors.connectors:
+            umapi_name = None if umapi_connector.name.split('.')[-1] == 'primary'\
+                else umapi_connector.name.split('.')[-1]
+            if umapi_name == 'umapi':
+                umapi_name = None
+            if umapi_name not in self.umapi_info_by_name:
+                continue
+            umapi_info = self.umapi_info_by_name[umapi_name]
+            mapped_groups = umapi_info.get_non_normalize_mapped_groups()
+
+            # pull all user groups from console
+            on_adobe_groups = [normalize_string(g['groupName']) for g in umapi_connector.get_groups()]
+
+            # verify if group exist and create
+            for mapped_group in mapped_groups:
+                if normalize_string(mapped_group) in on_adobe_groups:
+                    continue
+                self.logger.info("Auto create user-group enabled: Creating '{}' on '{}'".format(
+                    mapped_group, umapi_name if umapi_name else 'primary org'))
+                try:
+                    # create group
+                    res = umapi_connector.create_group(mapped_group)
+                    self.action_summary['adobe_user_groups_created'] += 1
+                except Exception as e:
+                    self.logger.critical("Unable to create %s user group: '{}' on '{}' (error: {})".format(
+                        mapped_group, umapi_name if umapi_name else 'primary org', e))
+
     def is_selected_user_key(self, user_key):
         """
         :type user_key: str
@@ -501,10 +582,15 @@ class RuleProcessor(object):
         if self.stray_list_output_path:
             self.write_stray_key_map()
         if self.will_manage_strays:
-            max_missing = self.options['max_adobe_only_users']
+            max_missing_option = self.options['max_adobe_only_users']
+            if isinstance(max_missing_option, str) and '%' in max_missing_option:
+                percent = float(max_missing_option.strip('%')) / 100
+                max_missing = int((self.primary_user_count - self.excluded_user_count) * percent)
+            else:
+                max_missing = max_missing_option
             if stray_count > max_missing:
                 self.logger.critical('Unable to process Adobe-only users, as their count (%s) is larger '
-                                     'than the max_adobe_only_users setting (%d)', stray_count, max_missing)
+                                     'than the max_adobe_only_users setting (%s)', stray_count, max_missing_option)
                 self.action_summary['primary_strays_processed'] = 0
                 return
             self.logger.debug("Processing Adobe-only users...")
@@ -535,6 +621,8 @@ class RuleProcessor(object):
         def get_commands(key):
             """Given a user key, returns the umapi commands targeting that user"""
             id_type, username, domain = self.parse_user_key(key)
+            if '@' in username and username in self.email_override:
+                username = self.email_override[username]
             return user_sync.connector.umapi.Commands(identity_type=id_type, username=username, domain=domain)
 
         # do the secondary umapis first, in case we are deleting user accounts from the primary umapi at the end
@@ -621,6 +709,13 @@ class RuleProcessor(object):
         :return user_sync.connector.umapi.Commands (or None if there's an error)
         """
         identity_type = self.get_identity_type_from_directory_user(directory_user)
+        update_username = None
+        if (identity_type == user_sync.identity_type.FEDERATED_IDENTITY_TYPE and directory_user['username'] and
+                '@' in directory_user['username'] and
+                normalize_string(directory_user['email']) != normalize_string(directory_user['username'])):
+            update_username = directory_user['username']
+            directory_user['username'] = directory_user['email']
+
         commands = user_sync.connector.umapi.Commands(identity_type, directory_user['email'],
                                                       directory_user['username'], directory_user['domain'])
         attributes = self.get_user_attributes(directory_user)
@@ -645,6 +740,8 @@ class RuleProcessor(object):
         else:
             attributes['option'] = 'ignoreIfAlreadyExists'
         commands.add_user(attributes)
+        if update_username is not None:
+            commands.update_user({"email": directory_user['email'], "username": update_username})
         return commands
 
     def create_umapi_user(self, user_key, groups_to_add, umapi_info, umapi_connector):
@@ -707,6 +804,16 @@ class RuleProcessor(object):
             directory_user = umapi_user
             identity_type = umapi_user.get('type')
 
+        # if user has email-type username and it is different from email address, then we need to
+        # override the username with email address
+        if '@' in directory_user['username'] and directory_user['email'] != directory_user['username']:
+            if groups_to_add or groups_to_remove or attributes_to_update:
+                directory_user['username'] = directory_user['email']
+            if attributes_to_update and 'email' in attributes_to_update:
+                directory_user['email'] = umapi_user['email']
+                attributes_to_update['username'] = umapi_user['username']
+                directory_user['username'] = umapi_user['email']
+
         commands = user_sync.connector.umapi.Commands(identity_type, directory_user['email'],
                                                       directory_user['username'], directory_user['domain'])
         commands.update_user(attributes_to_update)
@@ -767,6 +874,8 @@ class RuleProcessor(object):
             if self.is_umapi_user_excluded(in_primary_org, user_key, current_groups):
                 continue
 
+            self.map_email_override(umapi_user)
+
             directory_user = filtered_directory_user_by_user_key.get(user_key)
             if directory_user is None:
                 # There's no selected directory user matching this adobe user
@@ -798,6 +907,18 @@ class RuleProcessor(object):
         # mark the umapi's adobe users as processed and return the remaining ones in the map
         umapi_info.set_umapi_users_loaded()
         return user_to_group_map
+
+    def map_email_override(self, umapi_user):
+        """
+        for users with email-type usernames that don't match the email address, we need to add some
+        special cases to update and disentitle users
+        :param umapi_user: dict
+        :return:
+        """
+        email = umapi_user.get('email', '')
+        username = umapi_user.get('username', '')
+        if '@' in username and username != email:
+            self.email_override[username] = email
 
     def is_umapi_user_excluded(self, in_primary_org, user_key, current_groups):
         if in_primary_org:
@@ -1074,14 +1195,15 @@ class UmapiConnectors(object):
 class AdobeGroup(object):
     index_map = {}
 
-    def __init__(self, group_name, umapi_name):
+    def __init__(self, group_name, umapi_name, index=True):
         """
         :type group_name: str
         :type umapi_name: str
         """
         self.group_name = group_name
         self.umapi_name = umapi_name
-        AdobeGroup.index_map[(group_name, umapi_name)] = self
+        if index:
+            AdobeGroup.index_map[(group_name, umapi_name)] = self
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
@@ -1125,13 +1247,13 @@ class AdobeGroup(object):
         return cls.index_map.get(cls._parse(qualified_name))
 
     @classmethod
-    def create(cls, qualified_name):
+    def create(cls, qualified_name, index=True):
         group_name, umapi_name = cls._parse(qualified_name)
         existing = cls.index_map.get((group_name, umapi_name))
         if existing:
             return existing
         elif len(group_name) > 0:
-            return cls(group_name, umapi_name)
+            return cls(group_name, umapi_name, index)
         else:
             return None
 
@@ -1147,12 +1269,17 @@ class UmapiTargetInfo(object):
         """
         self.name = name
         self.mapped_groups = set()
+        self.non_normalize_mapped_groups = set()
         self.desired_groups_by_user_key = {}
         self.umapi_user_by_user_key = {}
         self.umapi_users_loaded = False
         self.stray_by_user_key = {}
         self.groups_added_by_user_key = {}
         self.groups_removed_by_user_key = {}
+
+        # keep track of auto-mapped additional groups for conflict tracking.
+        # if feature is disabled, this dict will be empty
+        self.additional_group_map = defaultdict(list)  # type: dict[str, list[str]]
 
     def get_name(self):
         return self.name
@@ -1163,9 +1290,21 @@ class UmapiTargetInfo(object):
         """
         normalized_group_name = normalize_string(group) if normal_group(group) else group.strip()
         self.mapped_groups.add(normalized_group_name)
+        self.non_normalize_mapped_groups.add(group)
+
+    def add_additional_group(self, rename_group, member_group):
+        normalized_rename_group = normalize_string(rename_group)
+        if member_group not in self.additional_group_map[normalized_rename_group]:
+            self.additional_group_map[normalize_string(normalized_rename_group)].append(member_group)
+
+    def get_additional_group_map(self):
+        return self.additional_group_map
 
     def get_mapped_groups(self):
         return self.mapped_groups
+
+    def get_non_normalize_mapped_groups(self):
+        return self.non_normalize_mapped_groups
 
     def get_desired_groups_by_user_key(self):
         return self.desired_groups_by_user_key

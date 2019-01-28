@@ -32,7 +32,7 @@ En los pasos anteriores, ha configurado un directorio de sistema de archivos del
 
 ### Archivo de configuración de acceso al directorio
 
-Si ejecuta User Sync desde un archivo, puede omitir la configuración de connector-ldap.yml y, en lugar de eso, crear un archivo csv con la lista de usuario completa siguiendo el ejemplo de archivo “csv inputs - user and remove lists/1 users-file.csv”. Este archivo se encuentra en la descarga de example-configurations.tar.gz de la versión.
+Si ejecuta User Sync desde un archivo, puede omitir la configuración de connector-ldap.yml y, en lugar de eso, crear un archivo csv con la lista de usuario completa siguiendo el ejemplo de archivo “csv inputs - user and remove lists/users-file.csv”. Este archivo se encuentra en la descarga de example-configurations.tar.gz de la versión.
 
 &#9744; Edite el archivo connector-ldap.yml. Este archivo tiene información de acceso al sistema de directorio. Introduzca los valores de nombre de usuario, contraseña, host y base_dn.
 

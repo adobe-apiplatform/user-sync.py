@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2017 Adobe Systems Incorporated.  All rights reserved.
+# Copyright (c) 2016-2017 Adobe Inc.  All rights reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -52,7 +52,7 @@ setup(name='user-sync',
           'pyldap==2.4.45',
           'PyYAML',
           'six',
-          'umapi-client>=2.10',
+          'umapi-client>=2.11',
       ],
       extras_require={
           ':sys_platform=="linux" or sys_platform=="linux2"':[

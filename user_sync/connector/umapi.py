@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2017 Adobe Systems Incorporated.  All rights reserved.
+# Copyright (c) 2016-2017 Adobe Inc.  All rights reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -146,6 +146,32 @@ class UmapiConnector(object):
         except umapi_client.UnavailableError as e:
             raise AssertionException("Error contacting UMAPI server: %s" % e)
 
+    def get_groups(self):
+        return list(self.iter_groups())
+
+    def iter_groups(self):
+        try:
+            for g in umapi_client.GroupsQuery(self.connection):
+                yield g
+        except umapi_client.UnavailableError as e:
+            raise AssertionException("Error contacting UMAPI server: %s" % e)
+
+    def get_user_groups(self):
+        return list(self.iter_user_groups())
+
+    def iter_user_groups(self):
+        try:
+            for g in umapi_client.UserGroupsQuery(self.connection):
+                yield g
+        except umapi_client.UnavailableError as e:
+            raise AssertionException("Error contacting UMAPI server: %s" % e)
+
+    def create_group(self, name):
+        if name:
+            group = umapi_client.UserGroupAction(group_name=name)
+            group.create(description="Automatically created by User Sync Tool")
+            return self.connection.execute_single(group)
+
     def get_action_manager(self):
         return self.action_manager
 
@@ -157,7 +183,8 @@ class UmapiConnector(object):
         if len(commands) > 0:
             action_manager = self.get_action_manager()
             action = action_manager.create_action(commands)
-            action_manager.add_action(action, callback)
+            if action is not None:
+                action_manager.add_action(action, callback)
 
 
 class Commands(object):
@@ -292,7 +319,8 @@ class ActionManager(object):
             action = umapi_client.UserAction(umapi_identity_type, email, username, domain,
                                              requestID=self.get_next_request_id())
         except ValueError as e:
-            raise AssertionException("Error creating umapi Action: %s" % e)
+            self.logger.error("Skipping user - Error creating umapi Action: %s" % e)
+            return None
         for command in commands.do_list:
             command_name, command_param = command
             command_function = getattr(action, command_name)

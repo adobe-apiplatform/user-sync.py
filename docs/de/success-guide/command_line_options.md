@@ -26,7 +26,7 @@ nav_order: 310
 
 Wenn Sie alle im Verzeichnis aufgelisteten Benutzer mit Adobe synchronisieren möchten, verwenden Sie die Option `--users all`. Wenn die Synchronisation nur einige Benutzer betreffen soll, können Sie die Auswahl eingrenzen, indem Sie die LDAP-Abfrage in der Konfigurationsdatei „connector-ldap.yml“ ändern (und die Option `--users all` verwenden). Sie können die Benutzerauswahl auch über die Gruppenmitgliedschaft (mit „--users group“) beschränken. Bei beiden Befehlen können Sie mit der Option `--user-filter pattern` die Auswahl der zu synchronisierenden Benutzer weiter eingrenzen.
 
-Wenn Sie kein Verzeichnissystem verwenden, können Sie die Benutzer mit dem Befehl `--users file f` aus einer CSV-Datei auslesen. Welches Format Sie dazu verwenden, sehen Sie in der Beispieldatei mit Benutzern („csv inputs - user and remove lists/1 users-file.csv“). Die in CSV-Dateien aufgeführten Gruppen stellen die Namen dar, aus den Sie wählen können. Die Zuordnung zu Adobe-Benutzergruppen oder Produktkonfigurationen entspricht der Zuordnung zu Verzeichnisgruppen.
+Wenn Sie kein Verzeichnissystem verwenden, können Sie die Benutzer mit dem Befehl `--users file f` aus einer CSV-Datei auslesen. Welches Format Sie dazu verwenden, sehen Sie in der Beispieldatei mit Benutzern („csv inputs - user and remove lists/users-file.csv“). Die in CSV-Dateien aufgeführten Gruppen stellen die Namen dar, aus den Sie wählen können. Die Zuordnung zu Adobe-Benutzergruppen oder Produktkonfigurationen entspricht der Zuordnung zu Verzeichnisgruppen.
 
 ## Gruppen
 
