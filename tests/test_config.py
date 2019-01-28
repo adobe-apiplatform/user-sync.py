@@ -1,11 +1,24 @@
 import os
 import pytest
 import yaml
-import collections
 import shutil
-from user_sync.config import ConfigFileLoader, ConfigLoader
+from util import update_dict
+from user_sync.config import ConfigFileLoader, ConfigLoader, DictConfig
 from user_sync import app
 from user_sync.error import AssertionException
+
+
+def load_ldap_config_options(args):
+    from user_sync.connector.directory import DirectoryConnector
+    from user_sync.connector.directory_ldap import LDAPDirectoryConnector
+
+    config_loader = ConfigLoader(args)
+    dc_mod_name = config_loader.get_directory_connector_module_name()
+    dc_mod = __import__(dc_mod_name, fromlist=[''])
+    dc = DirectoryConnector(dc_mod)
+    dc_config_options = config_loader.get_directory_connector_options(dc.name)
+    caller_config = DictConfig('%s configuration' % dc.name, dc_config_options)
+    return LDAPDirectoryConnector.get_options(caller_config)
 
 
 @pytest.fixture
@@ -39,21 +52,25 @@ def modify_root_config(tmp_config_files):
     (root_config_file, _, _) = tmp_config_files
 
     def _modify_root_config(keys, val):
-        def update(d, ks, u):
-            k, ks = ks[0], ks[1:]
-            v = d.get(k)
-            if isinstance(v, collections.Mapping):
-                d[k] = update(v, ks, u)
-            else:
-                d[k] = u
-            return d
-
         conf = yaml.safe_load(open(root_config_file))
-        conf = update(conf, keys, val)
+        conf = update_dict(conf, keys, val)
         yaml.dump(conf, open(root_config_file, 'w'))
 
         return root_config_file
     return _modify_root_config
+
+
+@pytest.fixture
+def modify_ldap_config(tmp_config_files):
+    (_, ldap_config_file, _) = tmp_config_files
+
+    def _modify_ldap_config(keys, val):
+        conf = yaml.safe_load(open(ldap_config_file))
+        conf = update_dict(conf, keys, val)
+        yaml.dump(conf, open(ldap_config_file, 'w'))
+
+        return ldap_config_file
+    return _modify_ldap_config
 
 
 def test_load_root(root_config_file):
@@ -65,7 +82,7 @@ def test_load_root(root_config_file):
             'invocation_defaults' in config)
 
 
-def test_max_adobe_percentage(modify_root_config):
+def test_max_adobe_percentage(modify_root_config, caplog):
     root_config_file = modify_root_config(['limits', 'max_adobe_only_users'], "50%")
     config = ConfigFileLoader.load_root_config(root_config_file)
     assert ('limits' in config and 'max_adobe_only_users' in config['limits'] and
@@ -80,7 +97,7 @@ def test_max_adobe_percentage(modify_root_config):
         ConfigLoader(args).get_rule_options()
 
 
-def test_additional_groups_config(modify_root_config):
+def test_additional_groups_config(modify_root_config, caplog):
     addl_groups = [
         {"source": r"ACL-(.+)", "target": r"ACL-Grp-(\1)"},
         {"source": r"(.+)-ACL", "target": r"ACL-Grp-(\1)"},
@@ -89,3 +106,33 @@ def test_additional_groups_config(modify_root_config):
     config = ConfigFileLoader.load_root_config(root_config_file)
     assert ('additional_groups' in config['directory_users'] and
             len(config['directory_users']['additional_groups']) == 2)
+
+    args = app.process_args(['-c', root_config_file])
+    options = ConfigLoader(args).get_rule_options()
+    assert addl_groups[0]['source'] in str(options['additional_groups'][0]['source'])
+    assert addl_groups[1]['source'] in str(options['additional_groups'][1]['source'])
+
+
+def test_twostep_config(tmp_config_files, modify_ldap_config, caplog):
+    (root_config_file, ldap_config_file, _) = tmp_config_files
+    modify_ldap_config(['two_steps_lookup'], {})
+
+    args = app.process_args(['-c', root_config_file])
+
+    # test invalid "two_steps_lookup" config
+    with pytest.raises(AssertionException):
+        load_ldap_config_options(args)
+
+    # test valid "two_steps_lookup" config with "group_member_filter_format" still set
+    modify_ldap_config(['two_steps_lookup', 'group_member_attribute_name'], 'member')
+    with pytest.raises(AssertionException):
+        load_ldap_config_options(args)
+
+    # test valid "two_steps_lookup" setup
+    modify_ldap_config(['two_steps_lookup', 'group_member_attribute_name'], 'member')
+    modify_ldap_config(['group_member_filter_format'], "")
+    options = load_ldap_config_options(args)
+    assert 'two_steps_enabled' in options
+    assert 'two_steps_lookup' in options
+    assert 'group_member_attribute_name' in options['two_steps_lookup']
+    assert options['two_steps_lookup']['group_member_attribute_name'] == 'member'
