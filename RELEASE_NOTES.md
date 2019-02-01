@@ -1,53 +1,64 @@
-# Release Notes for User Sync Tool Version 2.3
+# Release Notes for User Sync Tool Version 2.4
 
-These notes apply to v2.3 of 2018-07-31.
+These notes apply to v2.4 of 2018-01-28.
 
-## New Features
+# New Features
 
-User Sync can now connect to Okta enterprise directories.  Create an Okta configuration and use the new `--connector okta` command-line argument to select that connector.  See [the docs](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/advanced_configuration.html#the-okta-connector) for details.
+[#398](https://github.com/adobe-apiplatform/user-sync.py/issues/398) `max_adobe_only_users` can be set to a percentage of total users.
 
-There is a new command-line argument `--connector` for specifying whether to get directory information via LDAP file, by reading a CSV file, or via the Okta connector.  The default connector is `ldap`.  For CSV users, who formerly had to specify their input source with the `--users` argument, this optional argument offers the chance to specify `--users mapped` or `--users group ...` (since the CSV input can be specified with `--connector`).  See [the docs](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/command_parameters.html) for details.
+[#323](https://github.com/adobe-apiplatform/user-sync.py/issues/323) Two-step group lookup.  Certain LDAP systems do not support group membership queries.  This feature adds new config options to `connector-ldap.yml` to enable a two-step LDAP user lookup workflow.
 
-[#292](https://github.com/adobe-apiplatform/user-sync.py/issues/292) You can now specify the log file name as well as the log file directory in your configuration file.  The name is specified by giving a Python format string which, when applied to a Python `datetime` value at the start of the run, produces the name of the log file.  The default value of this string is backwards-compatible with prior User Sync behavior.  See [the docs](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/configuring_user_sync_tool.html#configure-logging) for details.
+[#385](https://github.com/adobe-apiplatform/user-sync.py/issues/385) Support for users that have a different email-type username and email address.  Users of this type are synced by specifying both a `user_username_format` and `user_email_format` in `connector-ldap.yml`.  The username field must contain only email-type usernames.  Users with alphanumeric usernames will not be synced.  See the "Advanced Configuration" section of the User Manual for more information.
 
-[#299](https://github.com/adobe-apiplatform/user-sync.py/issues/299) You can now use an `invocation_defaults` section to specify desired values for command-line arguments in the main configuration file.  This can make it a lot easier to repeat runs with a stable set of arguments, even when running interactively rather than from a script.  The sample main configuration file specifies the configuration parameters to use as well as the syntax for specifying values.  See [the docs](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/command_parameters.html) for full details.
+[#339](https://github.com/adobe-apiplatform/user-sync.py/issues/339) Dynamic mapping of additional groups and automatic group creation.  Introduces an optional config option to identify additional groups that a user directly belongs to.  Additional groups are matched with a list of one or more regular expressions.  These groups can be dynamically mapped to Adobe groups using regular expression substitution strings.  In addition, Adobe groups targeted by this method, as well as the standard mapping or extension config, can be automatically created by the sync tool.  New groups are created as user groups.  See the documentation for more details.
 
-[#322](https://github.com/adobe-apiplatform/user-sync.py/issues/322), [#319](https://github.com/adobe-apiplatform/user-sync.py/issues/319) As it has been with email, you can now use formatted combinations of ldap/okta attributes for the Adobe-side first name, last name, and country.  (See the sample configuration files for details.)  You can also specify the country code in lower case.
+[#405](https://github.com/adobe-apiplatform/user-sync.py/pull/405) Additional enhancements and fixes to group sync
+* Log "additional group" rule mapping
+* Don't allow multiple source rules to map to same target group
+* Catch regex substitution errors
+* Remove some superfluous and confusing checks
+* Secondary org support
 
-## Bug Fixes
+# Bug Fixes
 
-[#305](https://github.com/adobe-apiplatform/user-sync.py/issues/305) General issues with Okta connector.
+[#379](https://github.com/adobe-apiplatform/user-sync.py/issues/379) --user-filter and invocation default
 
-[#306](https://github.com/adobe-apiplatform/user-sync.py/issues/306) v2.2.2 crashes if country code not specified.
+[#381](https://github.com/adobe-apiplatform/user-sync.py/issues/381) Invocation Defaults doesn't work for "--users file"
+* Not actually a bug, but `user-sync-config.yml` was updated to clarify how to specify user input file in `invocation_defaults`
 
-[#308](https://github.com/adobe-apiplatform/user-sync.py/issues/308) docs are unclear about how to set PEX_ROOT.
+[#396](https://github.com/adobe-apiplatform/user-sync.py/issues/396) LDAP error when running user-sync-v2.4rc1-win64-py2715
 
-[#314](https://github.com/adobe-apiplatform/user-sync.py/issues/314) invocation_defaults section should be optional.
+# Documentation Updates
 
-[#315](https://github.com/adobe-apiplatform/user-sync.py/issues/315) Can't specify --user-filter or other string-valued args.
+[#403](https://github.com/adobe-apiplatform/user-sync.py/issues/403) Add documentation for Azure AD / UST
 
-[#318](https://github.com/adobe-apiplatform/user-sync.py/issues/318) Fix the README build instructions regarding dbus.
+[#426](https://github.com/adobe-apiplatform/user-sync.py/pull/426) Ergonomic tweaks to template configs
+* Removed Number from the sample template
+* Connector-umapi.yml
+  - set private key path to just private.key
+* Connector-ldap.yml
+  - set page size to 1000 (Active Directory Default)
+  - user\_username\_format example to just {sAMAccountName}
+* User-Sync-Config.yml
+  - Default to FederatedID
+  - Tweaked the example to match with current use case
+  - Enable Logging by Default
+  - Default Invocation - Set to Process-group and Users Mapped to avoid accidentally directory dump to Admin console.
 
-[#324](https://github.com/adobe-apiplatform/user-sync.py/issues/324) Handle LDAP servers with no support for PagedResults.
+# Compatibility with Prior Versions
 
-[#325](https://github.com/adobe-apiplatform/user-sync.py/issues/325) Adding '--process-groups' doesn't override the default.
+All configuration and command-line arguments accepted in prior releases work in this release.
 
-[#364](https://github.com/adobe-apiplatform/user-sync.py/issues/364) Okta decode error
+# Known Issues
 
-[#365](https://github.com/adobe-apiplatform/user-sync.py/issues/365) Using adobe-only-user-list does not work
+Python 3.7 is not supported at this time.  See #376.
 
-## Compatibility with Prior Versions
+[#384](https://github.com/adobe-apiplatform/user-sync.py/issues/384) UMAPI returns truncated group list for users assigned to a large amount of groups.  This doesn't prevent the new additional group functionality from working, but it does result in unnecessary API calls to assign users to groups they already may belong to.
 
-All configuration and command-line arguments accepted in prior releases work in this release.  The `--users file` argument is still accepted, and is equivalent to (although more limited than) specifying `--connector csv`.
+# Additional Build Information
 
-## Known Issues
-
-On the Win64 platform, there are very long pathnames embedded in the released build artifact `user-sync.pex`, which will cause problems unless you are on Windows 10 and are either running Python 3.6 or have enabled long pathnames system-wide (as described in this [Microsoft Dev Center article](https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx)).  To work around this issue on older platforms, set the `PEX_ROOT` environment variable (as described [in the docs here](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/setup_and_installation.html)) to be a very short path (e.g., `set PEX_ROOT=C:\pex`).
-
-Each release on each platform is built with a specific version of Python.  Typically this is the latest available for that platform (from the OS vendor, if they provide one, from [python.org](http://python.org) otherwise).  In general, and especially on Windows, you should use the same Python to run User Sync as it was built with.
-
-## Additional Build Information
-
-User Sync is now built with PyLDAP 2.4.45.
-
-User Sync is now built with umapi_client 2.10.  This allows mocking the UMAPI connection for use with a test framework.  See the test_framework directory in the source tree for more details.
+User Sync is now built with umapi\_client 2.12, which supports the following new features
+* Add new user groups
+* Update existing user groups
+* Delete user groups
+* Create users with different email-type usernames and email addresses
