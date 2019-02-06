@@ -324,9 +324,8 @@ class ConfigLoader(object):
         options = {}
         connectors_config = self.get_directory_connector_configs()
 
-        if ( 'okta' in connectors_config.value) and (connector_name == 'ldap'):
-            if connectors_config.accessed_keys is not None:
-                raise AssertionException("Failed to match request : for Okta Connector type receiving LDAP as input type from commnand line")
+        if connector_name != 'csv' and connector_name not in connectors_config.value:
+            raise AssertionException("Config file must be specified for connector type :: '{}'".format(connector_name))
 
         if connectors_config is not None:
             connector_item = connectors_config.get_list(connector_name, True)
