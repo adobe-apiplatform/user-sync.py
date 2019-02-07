@@ -15,7 +15,7 @@ pip install -e .[test]
 pip install -e .[setup]
 
 if ($env:python.endswith("36-x64")) {
-    pip uninstall enum34
+    pip uninstall -y enum34
 }
 
 make 2>&1
