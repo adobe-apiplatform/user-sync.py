@@ -13,6 +13,11 @@ pip install external\pyldap-2.4.45-${ldapver}-win_amd64.whl
 pip install -e .
 pip install -e .[test]
 pip install -e .[setup]
+
+if ($env:python.endswith("36-x64")) {
+    pip uninstall enum34
+}
+
 make 2>&1
 dir dist
 mkdir release
