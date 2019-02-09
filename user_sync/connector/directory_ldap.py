@@ -64,6 +64,48 @@ class LDAPDirectoryConnector(object):
 
     def __init__(self, caller_options):
         caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
+
+        options = self.get_options(caller_config)
+        self.options = options
+
+        self.logger = logger = user_sync.connector.helper.create_logger(options)
+        logger.debug('%s initialized with options: %s', self.name, options)
+
+        LDAPValueFormatter.encoding = options['string_encoding']
+        self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
+        self.user_identity_type_formatter = LDAPValueFormatter(options['user_identity_type_format'])
+        self.user_email_formatter = LDAPValueFormatter(options['user_email_format'])
+        self.user_username_formatter = LDAPValueFormatter(options['user_username_format'])
+        self.user_domain_formatter = LDAPValueFormatter(options['user_domain_format'])
+        self.user_given_name_formatter = LDAPValueFormatter(options['user_given_name_format'])
+        self.user_surname_formatter = LDAPValueFormatter(options['user_surname_format'])
+        self.user_country_code_formatter = LDAPValueFormatter(options['user_country_code_format'])
+
+        password = caller_config.get_credential('password', options['username'])
+        # this check must come after we get the password value
+        caller_config.report_unused_values(logger)
+
+        logger.debug('Connecting to: %s using username: %s', options['host'], options['username'])
+        if not options['require_tls_cert']:
+            ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+        try:
+            # Be careful in Py2!!  We are setting bytes_mode = False, so we must give all attribute names
+            # and other protocol-defined strings (such as username) as Unicode.  But the PyYAML parser
+            # will always return ascii strings as str type (rather than Unicode).  So we must be careful
+            # to upconvert all parameter strings to unicode when passing them in.
+            connection = ldap.initialize(options['host'], bytes_mode=False)
+            connection.protocol_version = ldap.VERSION3
+            connection.set_option(ldap.OPT_REFERRALS, 0)
+            connection.simple_bind_s(six.text_type(options['username']), six.text_type(password))
+        except Exception as e:
+            raise AssertionException('LDAP connection failure: %s' % e)
+        self.connection = connection
+        logger.debug('Connected')
+        self.user_by_dn = {}
+        self.additional_group_filters = None
+
+    @staticmethod
+    def get_options(caller_config):
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('group_filter_format', six.text_type(
             '(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))'))
@@ -83,62 +125,25 @@ class LDAPDirectoryConnector(object):
         builder.set_string_value('user_identity_type', None)
         builder.set_int_value('search_page_size', 200)
         builder.set_string_value('logger_name', LDAPDirectoryConnector.name)
-        host = builder.require_string_value('host')
-        username = builder.require_string_value('username')
+        builder.require_string_value('host')
+        builder.require_string_value('username')
         builder.require_string_value('base_dn')
         options = builder.get_options()
-
+        options['two_steps_enabled'] = False
         if options['two_steps_lookup'] is not None:
             ts_config = caller_config.get_dict_config('two_steps_lookup', True)
             ts_builder = user_sync.config.OptionsBuilder(ts_config)
             ts_builder.require_string_value('group_member_attribute_name')
             ts_builder.set_bool_value('nested_group', False)
-            self.two_steps_lookup = True
+            options['two_steps_enabled'] = True
             options['two_steps_lookup'] = ts_builder.get_options()
             if options['group_member_filter_format']:
                 raise AssertionException(
                     "Cannot define both 'group_member_attribute_name' and 'group_member_filter_format' in config")
         else:
-            self.two_steps_lookup = False
             if not options['group_member_filter_format']:
                 options['group_member_filter_format'] = six.text_type('(memberOf={group_dn})')
-
-        self.options = options
-        self.logger = logger = user_sync.connector.helper.create_logger(options)
-        logger.debug('%s initialized with options: %s', self.name, options)
-
-        LDAPValueFormatter.encoding = options['string_encoding']
-        self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
-        self.user_identity_type_formatter = LDAPValueFormatter(options['user_identity_type_format'])
-        self.user_email_formatter = LDAPValueFormatter(options['user_email_format'])
-        self.user_username_formatter = LDAPValueFormatter(options['user_username_format'])
-        self.user_domain_formatter = LDAPValueFormatter(options['user_domain_format'])
-        self.user_given_name_formatter = LDAPValueFormatter(options['user_given_name_format'])
-        self.user_surname_formatter = LDAPValueFormatter(options['user_surname_format'])
-        self.user_country_code_formatter = LDAPValueFormatter(options['user_country_code_format'])
-
-        password = caller_config.get_credential('password', options['username'])
-        # this check must come after we get the password value
-        caller_config.report_unused_values(logger)
-
-        logger.debug('Connecting to: %s using username: %s', host, username)
-        if not options['require_tls_cert']:
-            ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
-        try:
-            # Be careful in Py2!!  We are setting bytes_mode = False, so we must give all attribute names
-            # and other protocol-defined strings (such as username) as Unicode.  But the PyYAML parser
-            # will always return ascii strings as str type (rather than Unicode).  So we must be careful
-            # to upconvert all parameter strings to unicode when passing them in.
-            connection = ldap.initialize(host, bytes_mode=False)
-            connection.protocol_version = ldap.VERSION3
-            connection.set_option(ldap.OPT_REFERRALS, 0)
-            connection.simple_bind_s(six.text_type(username), six.text_type(password))
-        except Exception as e:
-            raise AssertionException('LDAP connection failure: %s' % e)
-        self.connection = connection
-        logger.debug('Connected')
-        self.user_by_dn = {}
-        self.additional_group_filters = None
+        return options
 
     def load_users_and_groups(self, groups, extended_attributes, all_users):
         """
@@ -153,7 +158,7 @@ class LDAPDirectoryConnector(object):
         all_users_filter = six.text_type(options['all_users_filter'])
         group_member_filter_format = six.text_type(options['group_member_filter_format'])
         grouped_user_records = {}
-        if self.two_steps_lookup:
+        if options['two_steps_enabled']:
             group_member_attribute_name = six.text_type(options['two_steps_lookup']['group_member_attribute_name'])
 
         # save all the users to memory for faster 2-steps lookup or all_users process
@@ -179,7 +184,7 @@ class LDAPDirectoryConnector(object):
             group_user_filter = six.text_type('(&') + group_member_subfilter + user_subfilter + six.text_type(')')
             group_users = 0
             try:
-                if self.two_steps_lookup:
+                if options['two_steps_enabled']:
                     for user_dn in self.iter_group_member_dns(group_dn, group_member_attribute_name):
                         # check to make sure user_dn are within the base_dn scope
                         if self.is_dn_within_base_dn_scope(base_dn, user_dn):

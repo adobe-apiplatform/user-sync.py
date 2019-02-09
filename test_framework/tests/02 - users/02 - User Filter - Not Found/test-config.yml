@@ -1,2 +1,0 @@
-user_sync:
-    arguments: -c ../../../config-common/user-sync-config.yml --users file ../../../config-common/users-multiple.csv --update-user-info --user-filter .*@non-matching-test.com

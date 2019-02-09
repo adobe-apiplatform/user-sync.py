@@ -1,7 +1,0 @@
-2017-06-12 15:43:43 76455 INFO config - Using main config file: [[../../../config-common/user-sync-config-invalid-umapi.yml]]
-2017-06-12 15:43:43 76455 INFO main - ========== Start Run (User Sync version: 2.1) ==============
-2017-06-12 15:43:43 76455 INFO main - ------- Invocation parameters -------
-2017-06-12 15:43:43 76455 INFO main - [[/Users/imak/github-adobe/user-sync.py/dist/user-sync --test-framework live -c ../../../config-common/user-sync-config-invalid-umapi.yml --users file ../../../config-common/users.csv]]
-2017-06-12 15:43:43 76455 INFO main - -------------------------------------
-2017-06-12 15:43:43 76455 CRITICAL main - In setting /enterprise/priv_key_path in config file connector-umapi-invalid.yml: No such file [[/Users/imak/github-adobe/user-sync.py/test_framework/tests/config-common/missing.key]]
-2017-06-12 15:43:43 76455 INFO main - ========== End Run (User Sync version: 2.1) (Total time: 0:00:00) 

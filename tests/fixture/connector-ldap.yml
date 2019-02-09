@@ -1,0 +1,10 @@
+username: ldapuser@example.com
+password: "password"
+host: 'ldap://host'
+base_dn: 'DC=example,DC=com'
+search_page_size: 200
+require_tls_cert: false
+all_users_filter: '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))'
+group_filter_format: '(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))'
+group_member_filter_format: '(memberOf={group_dn})'
+user_email_format: '{mail}'
