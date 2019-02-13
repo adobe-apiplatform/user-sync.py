@@ -389,8 +389,17 @@ class RuleProcessor(object):
             if options['after_mapping_hook'] is not None:
                 self.after_mapping_hook_scope['source_attributes'] = directory_user['source_attributes'].copy()
 
+                # Below change is to set attributes like identity_type and domain name in source_attribute
+                if self.after_mapping_hook_scope['source_attributes'].get('identity_type') is None:
+                    new_temp_source_attributes = directory_user['source_attributes'].copy()
+                    new_temp_source_attributes['identity_type'] = directory_user.get('identity_type')
+                    new_temp_source_attributes['domain'] = directory_user.get('domain')
+                    new_temp_source_attributes['username'] = directory_user.get('username')
+                    self.after_mapping_hook_scope['source_attributes'] = new_temp_source_attributes
+
                 target_attributes = dict()
                 target_attributes['email'] = directory_user.get('email')
+                target_attributes['identity_type'] = directory_user.get('identity_type')
                 target_attributes['username'] = directory_user.get('username')
                 target_attributes['domain'] = directory_user.get('domain')
                 target_attributes['firstname'] = directory_user.get('firstname')
