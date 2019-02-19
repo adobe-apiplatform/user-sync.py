@@ -25,6 +25,7 @@ logging:
 invocation_defaults:
   adobe_only_user_action: preserve
   adobe_only_user_list: null
+  adobe_users: all
   connector: ldap
   process_groups: No
   strategy: sync

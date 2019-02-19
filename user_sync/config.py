@@ -251,14 +251,14 @@ class ConfigLoader(object):
                 options['username_filter_regex'] = compiled_expression
 
         # --adobe-users
-        if self.args['adobe_users']:
+        if self.args['adobe_users'] is not None:
             adobe_users_spec = options['adobe_users'] = self.args['adobe_users']
-        elif options['adobe_users']:
+        elif options['adobe_users'] is not None:
             adobe_users_spec = options['adobe_users']
         else:
             adobe_users_spec = None
 
-        if adobe_users_spec:
+        if adobe_users_spec is not None:
             adobe_users_action = user_sync.helper.normalize_string(adobe_users_spec[0])
             if adobe_users_action == 'all':
                 options['adobe_group_mapped'] = False
@@ -577,7 +577,7 @@ class ConfigLoader(object):
             options['directory_group_filter'] = set(six.iterkeys(self.directory_groups))
 
         # set the adobe group filter from the mapping, if requested.
-        if options.get('adobe_group_mapped'):
+        if options.get('adobe_group_mapped') is not None:
             options['adobe_group_filter'] = set(user_sync.rules.AdobeGroup.iter_groups())
 
         return options

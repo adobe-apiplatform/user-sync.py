@@ -136,3 +136,29 @@ def test_twostep_config(tmp_config_files, modify_ldap_config, caplog):
     assert 'two_steps_lookup' in options
     assert 'group_member_attribute_name' in options['two_steps_lookup']
     assert options['two_steps_lookup']['group_member_attribute_name'] == 'member'
+
+
+def test_adobe_users_config(tmp_config_files, modify_root_config):
+    (root_config_file, _, _) = tmp_config_files
+    args = app.process_args(['-c', root_config_file])
+
+    # test default
+    config_loader = ConfigLoader(args)
+    options = config_loader.load_invocation_options()
+    assert 'adobe_users' in options
+    assert options['adobe_users'] == ['all']
+
+    # test default invocation
+    modify_root_config(['invocation_defaults', 'adobe_users'], "mapped")
+    config_loader = ConfigLoader(args)
+    options = config_loader.load_invocation_options()
+    assert 'adobe_users' in options
+    assert options['adobe_users'] == ['mapped']
+
+    # test command line param
+    modify_root_config(['invocation_defaults', 'adobe_users'], "all")
+    args = app.process_args(['-c', root_config_file, '--adobe-users', 'mapped'])
+    config_loader = ConfigLoader(args)
+    options = config_loader.load_invocation_options()
+    assert 'adobe_users' in options
+    assert options['adobe_users'] == ['mapped']

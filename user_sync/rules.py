@@ -852,7 +852,7 @@ class RuleProcessor(object):
         if self.will_process_strays:
             self.add_stray(umapi_info.get_name(), None)
 
-        if self.options['adobe_group_filter']:
+        if self.options['adobe_group_filter'] is not None:
             umapi_users = self.get_umapi_user_in_groups(umapi_info, umapi_connector, self.options['adobe_group_filter'])
         else:
             umapi_users = umapi_connector.iter_users()
@@ -864,7 +864,7 @@ class RuleProcessor(object):
             if not user_key:
                 self.logger.warning("Ignoring umapi user with empty user key: %s", umapi_user)
                 continue
-            if umapi_info.get_umapi_user(user_key):
+            if umapi_info.get_umapi_user(user_key) is not None:
                 self.logger.debug("Ignoring umapi user. This user has already been processed: %s", umapi_user)
                 continue
             umapi_info.add_umapi_user(user_key, umapi_user)
@@ -929,7 +929,8 @@ class RuleProcessor(object):
         if '@' in username and username != email:
             self.email_override[username] = email
 
-    def get_umapi_user_in_groups(self,umapi_info, umapi_connector, groups):
+    @staticmethod
+    def get_umapi_user_in_groups(umapi_info, umapi_connector, groups):
         umapi_users_iters = []
         for group in groups:
             if group.get_umapi_name() == umapi_info.get_name():
