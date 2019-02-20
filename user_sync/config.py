@@ -577,7 +577,7 @@ class ConfigLoader(object):
             options['directory_group_filter'] = set(six.iterkeys(self.directory_groups))
 
         # set the adobe group filter from the mapping, if requested.
-        if options.get('adobe_group_mapped') is not None:
+        if options.get('adobe_group_mapped') is True:
             options['adobe_group_filter'] = set(user_sync.rules.AdobeGroup.iter_groups())
 
         return options
