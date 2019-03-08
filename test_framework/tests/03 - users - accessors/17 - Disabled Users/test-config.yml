@@ -1,2 +1,0 @@
-user_sync:
-    arguments: -c ../../../config-common/user-sync-config.yml --users group "CCE AD Disabled Users" --update-user-info

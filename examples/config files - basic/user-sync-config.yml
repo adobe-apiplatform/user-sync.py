@@ -1,0 +1,344 @@
+# This is the main configuration file for User Sync from Adobe.
+#
+# This sample configuration file contains examples of every setting you can specify.
+# Every setting is documented as either (required) or (optional) and, when optional,
+# the value given is either the default or the recommended value.
+#
+# It is recommended that you construct your own configuration file by copying
+# this sample and then customizing it.  Feel free to remove extraneous commentary
+# when you do your customization; doing so can greatly increase legibility.
+
+# The adobe_users section controls connection to the Adobe UM API endpoints
+# and also which users on the Adobe side are eligible to be updated.
+adobe_users:
+  #
+  # These three settings control which Adobe users are excluded from
+  # being updated by User Sync.  All three default to no value, meaning
+  # that (by default) all users on the Adobe side can be updated and/or
+  # deleted by User Sync.
+  #
+  # (optional) exclude_identity_types (no default value)
+  # exclude_identity_types is a list of values, each of which must be
+  # one of "adobeID", "enterpriseID", or "federatedID".  Any Adobe-side
+  # user who has one of the identity types listed in this setting
+  # is excluded from updates by User Sync.  [NOTE: It is highly
+  # recommended that you exclude any identity types that a specific
+  # User Sync job is not meant to manage.  For example, a job that is
+  # meant to manage Enterprise ID users should exclude updates to both
+  # Federated ID and Adobe ID users, so that they aren't inadvertently
+  # removed because your directory doesn't contain them.]
+  exclude_identity_types:
+    - adobeID
+
+  # (optional) exclude_adobe_groups (no default value)
+  # exclude_adobe_groups is a list of values, each of which is a string
+  # that names a product profile or user group on the Adobe side.
+  # Any user in one or more of the named Adobe groups is excluded from
+  # updates by User Sync.
+  exclude_adobe_groups:
+    #- "Sample Product Profile"
+    #- "Sample User Group"
+
+  # (optional) exclude_users (no default value)
+  # exclude_users is a list of values, each of which is a Python
+  # regular expression.  Users who match any of these regular expressions
+  # are excluded from updates by User Sync.
+  # NOTE: The specified regular expression must match the complete
+  # username (not a substring), and the match is case-insensitive.
+  # Except in the case of federated IDs that do username-based login,
+  # the username of a user is the same as the email of the user.
+  exclude_users:
+    #- ".*@special.com"
+    #- "freelancer-[0-9]+.*"
+
+  # (required) connectors
+  # The connectors section specifies how to connect User Sync to Adobe.
+  connectors:
+
+    # (required) umapi
+    # umapi stands for User Management API, and is the protocol
+    # used to read and write users on the Adobe side.  The value
+    # of the umapi setting is the absolute or relative pathname
+    # of a file that contains your UMAPI endpoint and credential
+    # information. (See the documentation for details.)  If you
+    # use a relative pathname, it is interpreted relative to the
+    # location of this configuration file, not relative to the
+    # working directory of your User Sync process.
+    umapi: "connector-umapi.yml"
+    # An alternate form for referencing the umapi configuration allows for storage
+    # of the umapi credentials in a secure way:
+    #umapi: $(cat connector-umapi.yml)  # This runs the indicated command and uses
+    # the output as the configuration file.  In this example we are simply
+    # echoing the file contents so it is no more secure than the other form
+    # of file reference.  To make it more secure, you need to provide a
+    # command or script that fetches the data from a secure source.
+    # ("cat" would need to be "type" on a Windows platform.)
+
+# The directory_users section controls how enterprise-side users are accessed,
+# sets default values for attributes not specified in the enterprise directory,
+# and also determines how enterprise-side directory groups correspond to
+# Adobe-side product configurations and user groups.
+directory_users:
+
+  # (optional) user_identity_type (default value enterpriseID)
+  # All Adobe users have an identity type: one of Adobe ID, Enterprise ID,
+  # or Federated ID.  When a directory user is created on the Adobe side,
+  # you must specify what identity type the Adobe-side user should have.  This
+  # identity type then determines whether the account is controlled by the
+  # user (Adobe ID) or by the company (Enterprise ID or Federated ID), and
+  # whether the sign-in process is handled by Adobe (Adobe ID or Enterprise ID)
+  # or by your Identity Provider (Federated ID).
+  # If your directory does not specify the Adobe-side identity type
+  # for one (or any) of your users, you can specify a default type here that
+  # will be used: one of "adobeID", "enterpriseID", or "federatedID".
+  user_identity_type: federatedID
+
+  # (optional) default_country_code (no default value)
+  # All Adobe users have a country code, which is a two-letter (ISO-3166) country code
+  # which represents the home country of the user.
+  # If your directory doesn't have an appropriate value for each of your users,
+  # you can configure a default value here that applies to any user without one.
+  # [NOTE: For Enterprise ID users, specifying a country code is not absolutely required
+  # when they are created on the Adobe side.  If none is specified, Adobe will ask
+  # the user for his home country at the time of first sign-in.  But to avoid mistakes,
+  # it is highly recommended that IT assign the value via User Sync.]
+  default_country_code: US
+
+  # (optional) extension (no default value)
+  # Extensions allow you to run custom logic on a per-user basis to extend
+  # the way directory-user attributes and groups are mapped to attributes,
+  # product configurations, and user groups on the Adobe side.  You specify
+  # your extension in a separate configuration file, and provide the path
+  # to that file in this section.  As always, the path you provide can be
+  # either an absolute or relative path, and if relative it's take as relative
+  # to this configuration file, not to the User Sync working directory.
+  # [To to use an extension, uncomment and update the next line.]
+  #extension: extension-config.yml
+
+  # (required) connectors
+  # The connectors section specifies how to connect User Sync to your directory.
+  connectors:
+
+    # (optional) ldap (no default value)
+    # ldap stand for "lightweight directory access protocol", which is the
+    # network protocol used by most in-house directory systems (including
+    # Active Directory from Microsoft).  The value of the ldap setting is
+    # the absolute or relative pathname of a file that contains credentials
+    # and other configuration settings for accessing your ldap-compliant
+    # directory system.  (See the documentation for details.) If you
+    # use a relative pathname, it is interpreted relative to the
+    # location of this configuration file, not relative to the
+    # working directory of your User Sync process.
+    ldap: "connector-ldap.yml"
+    # An alternate form for referencing the ldap configuration allows for storage
+    # of the ldap credentials in a secure way:
+    #ldap: $(cat connector-ldap.yml)  # This form runs the indicated command and uses
+    # the output as the configuration file.  In this example we are simply
+    # echoing the file contents so it is no more secure than the other form
+    # of file reference.  To make it more secure, you need to provide a
+    # command or script that fetches the data from a secure source.
+    # ("cat" would need to be "type" on a Windows platform.)
+
+    # (optional) csv (no default value)
+    # csv stands for "comma-separated values", which is the most common form
+    # of plain-text spreadsheet format.  The value of the csv setting is
+    # the absolute or relative pathname of a file that contains configuration
+    # settings for how the columns in a spreadsheet correspond to attributes
+    # in a user directory.  (See the documentation for details.)  If you
+    # use a relative pathname, it is interpreted relative to the
+    # location of this configuration file, not relative to the
+    # working directory of your User Sync process.
+    # [Uncomment the next line if you have a custom csv configuration file.]
+    #csv: "connector-csv.yml"
+
+    # (optional) okta (no default value)
+    # okta is a 3rd party federation provider compatible with Adobe Enterprise Federated ID.
+    # See https://developer.okta.com/ for Okta developer information.
+    # okta: "connector-okta.ytml"
+
+  # (optional) groups (no default value)
+  # The groups setting specifies how groups in the enterprise directory map
+  # to product profile and user groups on the Adobe side (collectively
+  # called "Adobe groups").  This section is required only if you use the
+  # --process-groups command-line argument.
+  groups:
+    # the value of this setting is a mapping whose keys are single enterprise 
+    # directory groups and whose values are lists of Adobe groups.  This mapping
+    # is specified as a list of entries, each of which has a directory_group
+    # setting (whose value is a single directory group) and an adobe_groups
+    # setting (whose value is a list of 0 or more product profile and
+    # user groups). In this example, users in Adobe_All_Apps_Users directory group will
+    # automatically be assigned to "Default All Apps plan - 100 GB configuration" (Product Profile)
+    # and "Creative Users" (User Group)
+    # [You will need to edit or remove these examples.]
+    - directory_group: "Acrobat_DC_Pro_Users"
+      adobe_groups:
+        - "Acrobat DC Pro Users"
+    - directory_group: "Adobe_All_Apps_Users"
+      adobe_groups:
+        - "Default All Apps plan - 100 GB configuration"
+        - "Creative Users"
+    - directory_group: "Adobe_Manual_Assign_Users"
+      adobe_groups:
+        # Adobe_Manual_Assign_Users group does not have default product profile/user group assignment.
+
+  # (optional) additional_groups (no default value)
+  # People who use their directory groups for ACLs on the Adobe side
+  # often have a very large number of groups that they want mapped
+  # over to (user) groups on the Adobe side.  To avoid having to
+  # specify those groups statically in their config file, and to
+  # update their config file when they change, they can instead
+  # use a naming convention for the groups and specify that here.
+  # The value of this attribute is a mapping from Python regular expressions
+  # that specify directory groups of interest to Python replacement expressions
+  # that specify how to construct the name of the target Adobe group
+  # that the directory group should be mapped to.  If a value is
+  # provided, then all users who are (directly) in groups whose
+  # CN matches one of the source regular expressions will be put in a user group
+  # on the Adobe side whose name is given by the target replacement expression.
+  # The simple example here (which should be removed) maps all the
+  # groups that start with "ACL-" or end with "-ACL" to an Adobe
+  # group that starts with "ACL-Grp-".
+  # (All of these regular expressions must match the entire group name.
+  # For details on Python regular expression matching and replacement,
+  # see https://docs.python.org/howto/regex.html )
+  # additional_groups:
+  #   - source: "ACL-(.+)"
+  #     target: "ACL-Grp-(\1)"
+  #   - source: "(.+)-ACL"
+  #     target: "ACL-Grp-(\1)"
+
+  # (optional) group_sync_options (default: all options false)
+  # Options that govern the automatic creation and/or deletion of Adobe user groups
+  # auto_create:
+  #   Automatically create target groups that do not exist.  Non-existent groups
+  #   will *always* be created as Adobe groups.  If targeting product profiles, they
+  #   must always be created manually in the Admin Console.
+  #   NOTE: auto_create applies to any targeted Adobe group that doesn't exist.
+  #         This includes groups targeted through group mapping, extension config,
+  #         and the additional_groups functionality.
+  #   The --process-groups command argument or equivalent invocation setting must
+  #   be enabled for groups to be auto-created
+  # group_sync_options:
+  #   auto_create: False
+
+# The limits section provides processing limits which can help ensure that
+# User Sync jobs do not exceed expected guardrails in their operation
+limits:
+
+  # (required) max_adobe_only_users
+  # After initial population of users has been done on the Adobe side,
+  # most User Sync jobs are expected to incrementally update and/or remove
+  # just a few users at a time; that is, there aren't expected to be a lot
+  # of users on the Adobe side that aren't matched by users on the directory
+  # side.  If there are a lot of these "Adobe-only" users found, it may indicate
+  # a misconfiguration of the User Sync job, or possibly a temporary problem
+  # fetching users from the enterprise directory.  In order to prevent a User Sync
+  # job from doing something in these situations that is hard to repair, such as
+  # removing or deleting a large number of users or entitlements, you can specify
+  # the maximum number of Adobe-only users your User Sync job is expected to find.
+  # this number can be an integer eg. 200 or in percentage format eg. 75%
+  # In any run where the Adobe-only user count exceeds this limit, no updates
+  # to the Adobe-only users are performed, so the effect of the job is limited to
+  # updating and/or creating Adobe users.
+  max_adobe_only_users: 200
+
+# The logging section specifies what console or log file output
+# should be produced during each run of User Sync.
+logging:
+
+  # (optional) log_to_file (default value "False")
+  # Whether you want logging done to a file in addition to the standard output.
+  # allowed values are "True" (log to both) or "False" (log only to standard output).
+  log_to_file: True
+
+  # (optional) file_log_directory (default value "logs")
+  # An absolute or relative path to the directory where log files should be placed.
+  # A single file is created per day, named with format "YYYY-MM-DD.log", and all
+  # logging for runs started on that day (local time) are placed in that file.
+  # If a relative path is specified, it is interpreted relative to this configuration
+  # file, not relative to the User Sync process working directory.
+  file_log_directory: logs
+
+  # (optional) file_log_name_format (default value "{:%Y-%m-%d}.log")
+  # A Python format string that can refer to single positional argument
+  # which is a `datetime.datetime` object produced by calling `datetime.now()`
+  # at the start of the run.  The default value gives a log file named
+  # for the current date in 2017-11-21 format, which means the first run
+  # in each new day starts a new log file.  You can alter this default
+  # format to a fixed string if you use a log rotation utility that expects
+  # logs to have a particular name.
+  file_log_name_format: '{:%Y-%m-%d}.log'
+
+  # (optional) file_log_level (default value "info")
+  # This determines the detail level of the information logged to files.
+  # Value must be one of "debug", "info", "warning", "error", or "critical",
+  # in order of decreasing detail (that is, debug produces the most information,
+  # while critical produces the least information, suppressing even reports
+  # of non-fatal errors in operations.)
+  file_log_level: info
+
+  # (optional) console_log_level (default value "info")
+  # This determines the detail level of the information logged to standard output.
+  # See the description of file_log_level for details of the allowed values.
+  console_log_level: info
+
+# The invocation_defaults section controls the default values used
+# for command-line arguments.  (Of course, these cannot be used to
+# change defaults for how the configuration files are read.)  This
+# entire section is optional, as are each of its entries.  But once
+# you standardize on specific argument values for all your runs,
+# putting them here can be an easy way to reliably use them, even
+# when running interactively rather than from a script.
+#
+# For arguments that take multiple arguments, such as --connector
+# and --users, the two-argument case should be specified as a list,
+# either using yaml compact notation:
+#   connector: [csv, users-file.csv]
+# or using yaml multi-line notation:
+#   connector:
+#     - csv
+#     - users-file.csv
+# The one-argument case can either use a string:
+#   connector: ldap
+# or a compact list of one value:
+#   connector: [ldap]
+# or a multi-line list of one value:
+#   connector:
+#     - ldap
+#
+# For arguments that are booleans, yaml syntax allows specifying their
+# default values using either True/False or Yes/No (case insensitive).
+#
+# If you specify filenames as part of your default values, they
+# are treated as if they were specified on the command line; that is,
+# they are interpreted relative to the User Sync current directory
+# (rather than the directory containing the configuration file).
+invocation_defaults:
+  # For argument --adobe-only-user-action, the default is 'preserve'.
+  adobe_only_user_action: preserve
+  # For argument --adobe-only-user-list, the default is empty (no value).
+  adobe_only_user_list:
+  # For argument --connector, the default is 'ldap'.
+  connector: ldap
+  # For argument --process-groups, the default is False (don't process).
+  # If you set this default to True, you can supply the argument
+  # --no-process-groups to override the default.
+  process_groups: Yes
+  # For argument --strategy, the default is 'sync'.
+  strategy: sync
+  # For argument --test-mode (or -t), the default is False (live run).
+  # if you set this default to True, you can supply the argument
+  # --no-test-mode (or -T) to override the default.
+  test_mode: No
+  # For argument --update-user-info, the default is False (don't update).
+  # If you set this default to True, you can supply the argument
+  # --no-update-user-info to override the default.
+  update_user_info: No
+  # For argument --user-filter, the default is empty (no value).
+  # Because regular expression notation uses special characters,
+  # any default you set should almost certainly be single-quoted.
+  user_filter:
+  # For argument --users, the default is 'all'.
+  # for CSV input, use an array - ['file', 'users.csv']
+  users: mapped

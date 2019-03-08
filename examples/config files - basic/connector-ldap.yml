@@ -1,0 +1,202 @@
+# This is a sample configuration file for the ldap connector type.
+#
+# ldap (lightweight directory access protocol) is a network protocol used by
+# most enterprise directory systems (including Active Directory from Microsoft).
+#
+# This sample file contains all of the settable options for this protocol.
+# There is tremendous variation in the user object structure and attribute
+# value structure among LDAP directories even within a single enterprise, so
+# you will likely have to adapt the value specified here to match those in
+# use in your situation.  All of the settings here can be changed, and
+# many do not have default values and so are required.  It is recommended
+# that you make a copy of this file and edit that to match your configuration.
+# While you are at it, you will likely want to remove a lot of this  commentary,
+# in order to enhance the readability of your file.
+
+# connection settings (required)
+# You must specify all four of these settings.  Consult with your
+# enterprise directory administrators to get suitable values.
+# These access credentials are sensitive and must be protected.
+username: "LDAP or Credential Manager username goes here"
+password: "LDAP password goes here"
+host: "ldap://ldap.example.com"
+base_dn: "DC=example,DC=com"
+
+# (optional) You can store credentials in the operating system credential store
+# (Windows Credential Manager, Mac Keychain, Linux Freedesktop Secret Service
+# or KWallet - these will be built into the Linux distribution).
+# To use this feature, uncomment the following entry and remove the 
+# password entry above.
+# The actual credential value are placed in the credential store with the
+# username as the username field value, and the key name (perhaps called internet 
+# or network address) as the value below.
+#secure_password_key: ldap_password
+
+# (optional) user_identity_type (default is inherited from main configuration)
+# user_identity_type specifies a default identity type for when directory users
+# are created on the Adobe side (one of adobeID, enterpriseID, federatedID).
+# This overrides the exact same setting in the top-level user sync configuration
+# file, and if not specified here the value set or default there is used as
+# the default value for this connection.  To set an override, uncomment this setting.
+#user_identity_type: enterpriseID
+
+# (optional) search_page_size (default value given below)
+# search_page_size specifies the result page size requested when
+# fetching values from the directory.
+search_page_size: 1000
+
+# (optional) require_tls_cert (default value given below)
+# require_tls_cert forces the ldap connection to use TLS security with cerficate
+# validation.  Allowed values are True (require) or False (don't require).
+require_tls_cert: False
+
+# (optional) all_users_filter (default value given below)
+# Use this filter to control exactly which LDAP resources are considered for synchronization.
+# If a user is not accepted by this filter he will never be seen by the User Sync tool, even if
+# your command line specifies --users all or he is in a group you have specified in your
+# command line (--users group g1) or in your configuration file (for group mapping).
+# The default value specified here is appropriate for Active Directory, which has a
+# special field that is used to enable and disable users.  The value for OpenLDAP
+# directories might be much simpler: "(&(objectClass=person)(objectClass=top))"
+all_users_filter: "(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
+
+# (optional) group_filter_format (default value given below)
+# group_filter_format specifies the format string used to get the distinguished
+# name of a group given its common name (as specified in the directory to Adobe
+# group mapping, or in the --users group "name1,name2" command-line argument).
+# {group} is replaced with the name of the group to find.  The default value here is
+# complex, because it's meant to work for both AD-style and OpenLDAP-style directories.
+# You will likely want to replace it with a simpler query customized for your directory,
+# such as this one for Active Directory: "(&(objectCategory=group)(cn={group}))"
+# or this one for OpenLDAP: "(&(|(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
+group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
+
+# (optional) group_member_filter_format (default value given below)
+# group_member_filter_format specifies the query used to find all members of a group,
+# where the string {group_dn} is replaced with the group distinguished name.
+# The default value just finds users who are immediate members of the group,
+# not those who are "indirectly" members by virtue of membership in a group
+# that is contained in the group.  If you want indirect containment, then
+# use this value instead of the default:
+# group_member_filter_format: "(memberOf:1.2.840.113556.1.4.1941:={group_dn})"
+group_member_filter_format: "(memberOf={group_dn})"
+
+# (optional) two_steps_lookup (no default)
+#two_steps_lookup:
+  # (required) group_member_attribute_name (no default)
+  # If your LDAP system doesn't support queries using memberOf predicates,
+  # you should undefine the group_member_filter_format and instead define
+  # the group_member_attribute_name.  The defined value should be the
+  # attribute on the group whose multi-values are the distinguished names
+  # of the group members.  When group_member_attribute_name is defined,
+  # User Sync will look up group members by querying your groups to find
+  # the DNs of their members, and then removing any of those members
+  # who do not meet the criteria of the all_users_filter.
+  #group_member_attribute_name: "member"
+
+  # (optional) nested_group (default value given below)
+  # By enabling Nested Group, this will allow User Sync Tool to recurse through group membership
+  # by looking up each group membership for group_member_attribute_name within each search object
+  # and return all the nested user.
+  # Depending on how large your directory group is this may impact LDAP server performance.
+  #nested_group: False
+
+# Note that this filter is &-combined with the all_users_filter so that
+# only users that would be selected by that filter will be returned as
+# members of the given group.
+
+# (optional) string_encoding (default value given below)
+# string_encoding specifies the Unicode string encoding used by the directory.
+# All values retrieved from the directory are converted to Unicode before being
+# sent to or compared with values on the Adobe side, to avoid encoding issues.
+# The value must be a Python codec name or alias, such as 'latin1' or 'big5'.
+# See https://docs.python.org/2/library/codecs.html#standard-encodings for details.
+#string_encoding: utf8
+
+# (optional) user_identity_type_format (no default)
+# user_identity_type_format specifies how to construct a user's desired identity
+# type on the Adobe side by combining constant strings with attribute values.
+# Any names in curly braces are take as attribute names, and everything including
+# the braces will be replaced on a per-user basis with the values of the attributes.
+# There is no default value for this setting, because most directories don't contain
+# users with different identity types (so setting the default identity type suffices).
+# If your directory contains users of different identity types, you should define
+# this field to look at the value of an appropriate attribute in your directory.
+# For example, if your directory attribute "idType" had one of the values
+# adobe, enterprise, or federated in it for each user, you could use:
+#user_identity_type_format: "{idType}ID"
+
+# (optional) user_email_format (default value given below)
+# user_email_format specifies how to construct a user's email address by
+# combining constant strings with the values of specific directory attributes.
+# Any names in curly braces are taken as attribute names, and everything including
+# the braces will be replaced on a per-user basis with the values of the attributes.
+# The default value used here is simple, and suitable for OpenLDAP systems.  If you
+# are using a non-email-aware AD system, which holds the username separately
+# from the domain name, you may want: "{sAMAccountName}@mydomain.com"
+# NOTE: for this and every format setting, the constant strings must be in
+# the encoding specified by the string_encoding setting, above.
+user_email_format: "{mail}"
+
+# (optional) user_domain_format (no default value)
+# user_domain_format is analogous to user_email_format in syntax, but it
+# is used to discover the domain for a given user.  If not specified, the
+# domain is taken from the domain part of the user's email address.
+#user_domain_format: "{domain}"
+
+# (optional) user_username_format (no default value)
+# user_username_format specifies how to construct a user's username on the
+# Adobe side by combining constant strings with attribute values.
+# Any names in curly braces are taken as attribute names, and everything including
+# the braces will be replaced on a per-user basis with the values of the attributes.
+# This setting should only be used when you are using federatedID and your
+# federation configuration specifies username-based login.  In all other cases,
+# make sure this is not set or returns an empty value, and the user's username
+# will be taken from the user's email.
+#user_username_format: "{sAMAccountName}"
+
+# (optional) user_given_name_format (default value given below)
+# user_given_name_format specifies how to construct a user's given name by
+# combining constant strings with the values of specific directory attributes.
+# Any names in curly braces are taken as attribute names, and everything including
+# the braces will be replaced on a per-user basis with the values of the attributes.
+# The default value used here is simple, and suitable for OpenLDAP systems.
+# NOTE: for this and every format setting, the constant strings must be in
+# the encoding specified by the string_encoding setting, above.
+#user_given_name_format: "{givenName}"
+
+# (optional) user_surname_format (default value given below)
+# user_surname_format specifies how to construct a user's surname by
+# combining constant strings with the values of specific directory attributes.
+# Any names in curly braces are taken as attribute names, and everything including
+# the braces will be replaced on a per-user basis with the values of the attributes.
+# The default value used here is simple, and suitable for OpenLDAP systems.
+# NOTE: for this and every format setting, the constant strings must be in
+# the encoding specified by the string_encoding setting, above.
+#user_surname_format: "{sn}"
+
+# (optional) user_country_code_format (default value given below)
+# user_country_code_format specifies how to construct a user's country code by
+# combining constant strings with the values of specific directory attributes.
+# Any names in curly braces are taken as attribute names, and everything including
+# the braces will be replaced on a per-user basis with the values of the attributes.
+# The default value used here is simple, and suitable for OpenLDAP systems.
+# NOTE: for this and every format setting, the constant strings must be in
+# the encoding specified by the string_encoding setting, above.
+#user_country_code_format: "{c}"
+
+# Some additional info about LDAP connectors:
+#
+# Unlike the CSV connector, the LDAP connector does not have custom specifications
+# for how to construct user first names, last names, or country codes from the
+# values of different attributes.  That's because the LDAP protocol specifies
+# pre-defined aliases for a large number of typical attribute values, so there
+# are already pre-defined attribute names that are used for these fields:
+# - the Adobe first name is set from the LDAP "givenName" attribute
+# - the Adobe last name is set from the LDAP "sn" (surname) attribute
+# - the Adobe country is set from the LDAP "c" (country) attribute
+# If you need to override these values on the Adobe side, you can use the
+# custom extension mechanism (see the docs) to compute and set field values
+# by combining these and any other custom attributes needed.  See the
+# User Sync documentation for full details.
+

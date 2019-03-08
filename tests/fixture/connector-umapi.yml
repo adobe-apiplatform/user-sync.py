@@ -1,0 +1,9 @@
+server:
+  host: usermanagement.adobe.io
+  ims_host: ims-na1.adobelogin.com
+enterprise:
+  org_id: "org_id"
+  api_key: "api_key"
+  client_secret: "client_secret"
+  tech_acct: "tech_acct"
+  priv_key_path: private.key

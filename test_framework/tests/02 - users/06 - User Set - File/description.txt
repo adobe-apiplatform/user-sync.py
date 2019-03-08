@@ -1,9 +1,0 @@
-User Set - File
-
-Preconditions:
-
-Actions:
-1. Enter --users file user_list.csv
-
-Result
-1. All users from specified file are synced

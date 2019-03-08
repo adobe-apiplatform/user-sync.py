@@ -1,9 +1,0 @@
-User Set - All
-
-Preconditions:
-
-Actions:
-1. Enter --users all
-
-Result
-1. All users are considered for syncing.
