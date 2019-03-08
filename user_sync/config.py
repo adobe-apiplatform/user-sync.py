@@ -152,7 +152,11 @@ class ConfigLoader(object):
                 raise AssertionException('You cannot specify --adobe-only-user-action when using "push" strategy')
             self.logger.info("Strategy push: ignoring default adobe-only-user-action")
         else:
-            adobe_action_spec = self.args['adobe_only_user_action'] or options['adobe_only_user_action']
+            if self.args['adobe_only_user_action']:
+                adobe_action_spec = self.args['adobe_only_user_action']
+                options['adobe_only_user_action'] = self.args['adobe_only_user_action']
+            else:
+                adobe_action_spec = options['adobe_only_user_action']
             adobe_action = user_sync.helper.normalize_string(adobe_action_spec[0])
             if adobe_action == 'preserve':
                 pass  # no option settings needed
