@@ -148,6 +148,8 @@ class RuleProcessor(object):
             'logger': logger,
             # for exclusive use by hook code; persists across calls
             'hook_storage': None,
+            # allow hook to drop users from the list
+            'skip_user': False
         }
 
         # map of username to email address for users that have an email-type username that
@@ -359,7 +361,6 @@ class RuleProcessor(object):
         directory_users = directory_connector.load_users_and_groups(groups=directory_groups,
                                                                     extended_attributes=extended_attributes,
                                                                     all_users=directory_group_filter is None)
-
         for directory_user in directory_users:
             user_key = self.get_directory_user_key(directory_user)
             if not user_key:
@@ -402,6 +403,15 @@ class RuleProcessor(object):
                 self.log_after_mapping_hook_scope(before_call=True)
                 exec(options['after_mapping_hook'], self.after_mapping_hook_scope)
                 self.log_after_mapping_hook_scope(after_call=True)
+
+                # skip user if hook specifies true
+                skip_user = self.after_mapping_hook_scope['skip_user']
+                if type(skip_user) is bool and skip_user:
+                    self.get_umapi_info(PRIMARY_UMAPI_NAME).get_desired_groups_by_user_key().pop(user_key)
+                    self.directory_user_by_user_key.pop(user_key)
+                    if user_key in filtered_directory_user_by_user_key:
+                        self.filtered_directory_user_by_user_key.pop(user_key)
+                    continue
 
                 # copy modified attributes back to the user object
                 directory_user.update(self.after_mapping_hook_scope['target_attributes'])

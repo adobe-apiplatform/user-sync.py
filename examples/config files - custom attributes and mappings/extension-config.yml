@@ -49,6 +49,8 @@ extended_adobe_groups:
 #                         # out: Adobe-side dashboard groups as potentially changed by hook code
 #     hook_storage        # for exclusive use by hook code: initialized to None; persists across per-user calls
 #     logger              # an object of type logging.logger which outputs to the console and/or file log
+#     skip_user           # True or False - if true, user will not be synchronized
+#                         # This can be useful for specifying criteria (e.g., filtering by attribute)
 #
 after_mapping_hook: |
   bc = source_attributes.get('bc')
