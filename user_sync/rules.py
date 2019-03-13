@@ -405,12 +405,10 @@ class RuleProcessor(object):
                 self.log_after_mapping_hook_scope(after_call=True)
 
                 # skip user if hook specifies true
-                skip_user = self.after_mapping_hook_scope['skip_user']
-                if type(skip_user) is bool and skip_user:
-                    self.get_umapi_info(PRIMARY_UMAPI_NAME).get_desired_groups_by_user_key().pop(user_key)
+                if self.after_mapping_hook_scope['skip_user'] is True:
                     self.directory_user_by_user_key.pop(user_key)
-                    if user_key in filtered_directory_user_by_user_key:
-                        self.filtered_directory_user_by_user_key.pop(user_key)
+                    self.filtered_directory_user_by_user_key.pop(user_key)
+                    self.get_umapi_info(PRIMARY_UMAPI_NAME).get_desired_groups_by_user_key().pop(user_key)
                     continue
 
                 # copy modified attributes back to the user object
