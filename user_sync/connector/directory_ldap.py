@@ -214,7 +214,7 @@ class LDAPDirectoryConnector(object):
             ungrouped_users = 0
             grouped_users = 0
             try:
-                for user_dn, user in self.iter_users(all_users_filter, extended_attributes):
+                for user_dn, user in self.iter_users(base_dn, all_users_filter, extended_attributes):
                     if not user['groups']:
                         ungrouped_users += 1
                     else:
