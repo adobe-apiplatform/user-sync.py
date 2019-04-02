@@ -396,7 +396,7 @@ class LDAPDirectoryConnector(object):
 
         if not groups:
             return group_names
-        elif type(groups) is str:
+        elif isinstance(groups, str):
             groups = [groups]
 
         for group_dn in map(dn.str2dn, groups):
