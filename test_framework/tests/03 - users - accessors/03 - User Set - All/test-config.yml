@@ -1,3 +1,0 @@
-disable: True
-user_sync:
-    arguments: -c ../../../config-common/user-sync-config-accessors.yml --users all --update-user-info

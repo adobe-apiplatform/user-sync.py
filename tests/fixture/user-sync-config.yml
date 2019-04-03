@@ -1,0 +1,34 @@
+adobe_users:
+  exclude_identity_types:
+    - adobeID
+  exclude_adobe_groups: null
+  exclude_users: null
+  connectors:
+    umapi: connector-umapi.yml
+directory_users:
+  user_identity_type: federatedID
+  default_country_code: US
+  connectors:
+    ldap: connector-ldap.yml
+  groups:
+    - directory_group: All Apps
+      adobe_groups:
+        - CC - All Apps
+limits:
+  max_adobe_only_users: 200
+logging:
+  log_to_file: true
+  file_log_directory: logs
+  file_log_name_format: '{:%Y-%m-%d}.log'
+  file_log_level: info
+  console_log_level: info
+invocation_defaults:
+  adobe_only_user_action: preserve
+  adobe_only_user_list: null
+  connector: ldap
+  process_groups: No
+  strategy: sync
+  test_mode: No
+  update_user_info: No
+  user_filter: null
+  users: all

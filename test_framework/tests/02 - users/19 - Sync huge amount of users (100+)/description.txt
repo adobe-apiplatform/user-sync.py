@@ -1,9 +1,0 @@
-Sync huge amount of users (100+)
-
-Preconditions:
-
-Actions:
-1. Run the user-sync
-
-Result
-User can run the user-sync without any issues.

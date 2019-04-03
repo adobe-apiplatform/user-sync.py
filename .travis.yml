@@ -9,18 +9,20 @@ matrix:
     python:
     - 3.6
     install:
-    - ".travis/install-ubuntu.sh"
+    - .travis/install-ubuntu.sh
     script:
-    - ".travis/build-py36.sh"
-    - ".travis/release.sh"
+    - .travis/build-py36.sh
+    - .travis/release.sh
+    - python setup.py test
   - env: IMG="ubuntu1604"
     python:
     - 2.7
     install:
-    - ".travis/install-ubuntu.sh"
+    - .travis/install-ubuntu.sh
     script:
-    - ".travis/build-py27.sh"
-    - ".travis/release.sh"
+    - .travis/build-py27.sh
+    - .travis/release.sh
+    - python setup.py test
   - env: OS="centos:7" IMG="centos7" SH="docker exec -t ${IMG} bash -c"
     services:
     - docker
@@ -50,6 +52,8 @@ matrix:
     script:
     - $SH .travis/build-py27.sh
     - $SH .travis/release.sh
+    - $SH "python setup.py test"
+
 deploy:
   provider: releases
   api_key:
