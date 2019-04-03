@@ -204,9 +204,9 @@ directory_users:
   # see https://docs.python.org/howto/regex.html )
   # additional_groups:
   #   - source: "ACL-(.+)"
-  #     target: "ACL-Grp-(\1)"
+  #     target: "ACL-Grp-(\\1)"
   #   - source: "(.+)-ACL"
-  #     target: "ACL-Grp-(\1)"
+  #     target: "ACL-Grp-(\\1)"
 
   # (optional) group_sync_options (default: all options false)
   # Options that govern the automatic creation and/or deletion of Adobe user groups
