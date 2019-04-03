@@ -47,6 +47,7 @@ class ConfigLoader(object):
     invocation_defaults = {
         'adobe_only_user_action': ['preserve'],
         'adobe_only_user_list': None,
+        'adobe_users': ['all'],
         'connector': ['ldap'],
         'process_groups': False,
         'strategy': 'sync',
@@ -249,6 +250,29 @@ class ConfigLoader(object):
                                              (username_filter_pattern, e))
                 options['username_filter_regex'] = compiled_expression
 
+        # --adobe-users
+        if self.args['adobe_users'] is not None:
+            adobe_users_spec = options['adobe_users'] = self.args['adobe_users']
+        elif options['adobe_users'] is not None:
+            adobe_users_spec = options['adobe_users']
+        else:
+            adobe_users_spec = None
+
+        if adobe_users_spec is not None:
+            adobe_users_action = user_sync.helper.normalize_string(adobe_users_spec[0])
+            if adobe_users_action == 'all':
+                options['adobe_group_mapped'] = False
+            elif adobe_users_action == 'mapped':
+                options['adobe_group_mapped'] = True
+            elif adobe_users_action == 'group':
+                if len(adobe_users_spec) != 2:
+                    raise AssertionException(
+                        'You must specify the groups to read when using the adobe-users "group" option')
+                options['adobe_group_filter'] = []
+                for group in adobe_users_spec[1].split(','):
+                    options['adobe_group_filter'].append(user_sync.rules.AdobeGroup.create(group))
+            else:
+                raise AssertionException('Unknown option "%s" for adobe-users' % adobe_users_action)
         return options
 
     def get_logging_config(self):
@@ -551,6 +575,10 @@ class ConfigLoader(object):
         # This must come late, after any prior adds to the mapping from other parameters.
         if options.get('directory_group_mapped'):
             options['directory_group_filter'] = set(six.iterkeys(self.directory_groups))
+
+        # set the adobe group filter from the mapping, if requested.
+        if options.get('adobe_group_mapped') is True:
+            options['adobe_group_filter'] = set(user_sync.rules.AdobeGroup.iter_groups())
 
         return options
 
