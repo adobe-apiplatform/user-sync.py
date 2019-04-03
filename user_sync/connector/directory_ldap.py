@@ -393,6 +393,12 @@ class LDAPDirectoryConnector(object):
         """
         group_names = []
         groups = LDAPValueFormatter.get_attribute_value(user, 'memberOf')
+
+        if not groups:
+            return group_names
+        elif isinstance(groups, str):
+            groups = [groups]
+
         for group_dn in map(dn.str2dn, groups):
             group_cn = self.get_cn_from_dn(group_dn)
             if group_cn:

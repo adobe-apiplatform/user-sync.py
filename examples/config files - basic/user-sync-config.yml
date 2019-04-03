@@ -204,9 +204,9 @@ directory_users:
   # see https://docs.python.org/howto/regex.html )
   # additional_groups:
   #   - source: "ACL-(.+)"
-  #     target: "ACL-Grp-(\1)"
+  #     target: "ACL-Grp-(\\1)"
   #   - source: "(.+)-ACL"
-  #     target: "ACL-Grp-(\1)"
+  #     target: "ACL-Grp-(\\1)"
 
   # (optional) group_sync_options (default: all options false)
   # Options that govern the automatic creation and/or deletion of Adobe user groups
@@ -319,6 +319,10 @@ invocation_defaults:
   adobe_only_user_action: preserve
   # For argument --adobe-only-user-list, the default is empty (no value).
   adobe_only_user_list:
+  # For argument --adobe-users, the default is 'all'.
+  # if you want to specify group manually. Valid value format is
+  # ['group', 'groupA,groupB']
+  adobe_users: all
   # For argument --connector, the default is 'ldap'.
   connector: ldap
   # For argument --process-groups, the default is False (don't process).
