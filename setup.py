@@ -49,11 +49,11 @@ setup(name='user-sync',
           'keyring',
           'okta==0.0.3.1',
           'psutil',
-          'pycryptodome',
+          'pycryptodome==3.7.3',
           'pyldap==2.4.45',
           'PyYAML',
           'six',
-          'umapi-client>=2.13',
+          'umapi-client>=2.12',
       ],
       extras_require={
           ':sys_platform=="linux" or sys_platform=="linux2"': [
