@@ -519,7 +519,7 @@ class ConfigLoader(object):
                 try:
                     # add "match begin" and "match end" markers to ensure complete match
                     # and compile the patterns because we will use them over and over
-                    exclude_users.append(re.compile(r'\A' + regexp + r'\Z', re.UNICODE))
+                    exclude_users.append(re.compile(r'\A' + regexp + r'\Z', re.UNICODE | re.IGNORECASE))
                 except re.error as e:
                     validation_message = ('Illegal regular expression (%s) in %s: %s' %
                                           (regexp, 'exclude_identity_types', e))
