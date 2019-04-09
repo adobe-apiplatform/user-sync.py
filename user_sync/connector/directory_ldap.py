@@ -84,7 +84,9 @@ class LDAPDirectoryConnector(object):
             password = caller_config.get_credential('password', options['username'])
         else:
             # override authentication method to anonymous if username is not specified
-            auth_method = 'anonymous'
+            if auth_method != 'anonymous':
+                auth_method = 'anonymous'
+                logger.info("Username not specified, overriding authentication method to 'anonymous'")
         # this check must come after we get the password value
         caller_config.report_unused_values(logger)
 
@@ -143,9 +145,6 @@ class LDAPDirectoryConnector(object):
         builder.require_string_value('host')
         builder.require_string_value('base_dn')
         options = builder.get_options()
-
-        if options['username'] is None:
-            options['authentication_method'] = 'anonymous'
 
         options['two_steps_enabled'] = False
         if options['two_steps_lookup'] is not None:

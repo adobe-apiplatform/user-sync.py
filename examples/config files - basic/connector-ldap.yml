@@ -24,7 +24,9 @@ base_dn: "DC=example,DC=com"
 
 # (optional) You can specify what Authentication method to bind LDAP
 # connection with. You can choose either Anonymous, Simple or NTLM.
-# If username is not specified above, authentication method will default to anonymous
+# If username is not specified above, the LDAP connector will override
+# the authentication method and set it to 'anonymous'.
+# If you choose anonymous, you don't have to specify username and password above.
 # If you choose simple, you must provide a username and password.
 # If you choose NTLM, you have to specify the username in this format [Domain]\[Username]
 # for example EXAMPLE\JDOE. You can specify NTLM Password Hash or ClearText for a password.
