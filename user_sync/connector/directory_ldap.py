@@ -78,12 +78,16 @@ class LDAPDirectoryConnector(object):
         self.user_surname_formatter = LDAPValueFormatter(options['user_surname_format'])
         self.user_country_code_formatter = LDAPValueFormatter(options['user_country_code_format'])
 
+        auth_method = options['authentication_method'].lower()
+
         if options['username'] is not None:
             password = caller_config.get_credential('password', options['username'])
+        else:
+            # override authentication method to anonymous if username is not specified
+            auth_method = 'anonymous'
         # this check must come after we get the password value
         caller_config.report_unused_values(logger)
 
-        auth_method = options['authentication_method'].lower()
         if auth_method == 'anonymous':
             auth = {'authentication': ldap3.ANONYMOUS}
             logger.debug('Connecting to: %s - Authentication Method: ANONYMOUS', options['host'])
@@ -443,17 +447,17 @@ class LDAPDirectoryConnector(object):
         connection = self.connection
         search_page_size = self.options['search_page_size']
         if search_page_size == 0:
-            connection.search(base_dn,filter_string,scope, attributes=attributes)
+            connection.search(base_dn, filter_string, scope, attributes=attributes)
             entries = connection.entries
             for entry in entries:
                 yield [entry.entry_dn, entry.entry_attributes_as_dict]
         else:
             entry_generator = connection.extend.standard.paged_search(search_base=base_dn,
-                                                             search_filter=filter_string,
-                                                             search_scope=scope,
-                                                             attributes=attributes,
-                                                             paged_size=search_page_size,
-                                                             generator=True)
+                                                                      search_filter=filter_string,
+                                                                      search_scope=scope,
+                                                                      attributes=attributes,
+                                                                      paged_size=search_page_size,
+                                                                      generator=True)
             for entry in entry_generator:
                 if entry['type'] != 'searchResRef':
                     yield [entry['dn'], entry['attributes']]
