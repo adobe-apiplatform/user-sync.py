@@ -937,7 +937,7 @@ class ConfigFileLoader:
                 cmd_name = filename[3:-1]
             try:
                 byte_string = subprocess.check_output(cmd_name, cwd=dir_name, shell=True)
-                yml = yaml.load(byte_string.decode(cls.config_encoding, 'strict'))
+                yml = yaml.safe_load(byte_string.decode(cls.config_encoding, 'strict'))
             except subprocess.CalledProcessError as e:
                 raise AssertionException("Error executing process '%s' in dir '%s': %s" % (cmd_name, dir_name, e))
             except UnicodeDecodeError as e:
@@ -954,7 +954,7 @@ class ConfigFileLoader:
             try:
                 with open(filename, 'rb', 1) as input_file:
                     byte_string = input_file.read()
-                    yml = yaml.load(byte_string.decode(cls.config_encoding, 'strict'))
+                    yml = yaml.safe_load(byte_string.decode(cls.config_encoding, 'strict'))
             except IOError as e:
                 # if a file operation error occurred while loading the
                 # configuration file, swallow up the exception and re-raise it
