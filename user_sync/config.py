@@ -57,14 +57,14 @@ class ConfigLoader(object):
         'users': ['all'],
     }
 
-    def __init__(self, arg_obj):
+    def __init__(self, args):
         """
         Load the config files and invocation options.
 
-        :type arg_obj: argparse.Namespace
+        :type args: dict
         """
         self.logger = logging.getLogger('config')
-        self.args = vars(arg_obj)
+        self.args = args
         self.main_config = self.load_main_config()
         self.invocation_options = self.load_invocation_options()
         self.directory_groups = self.load_directory_groups()

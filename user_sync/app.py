@@ -22,6 +22,7 @@ import argparse
 import logging
 import os
 import sys
+import click
 from datetime import datetime
 
 import six
@@ -32,6 +33,7 @@ import user_sync.connector.umapi
 import user_sync.helper
 import user_sync.lockfile
 import user_sync.rules
+import user_sync.cli
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 
@@ -55,27 +57,116 @@ def init_console_log():
 console_log_handler = init_console_log()
 
 
-def main(args=sys.argv[1:]):
-    """Top level entry point.
+@click.command()
+@click.help_option('-h', '--help')
+@click.version_option(None, '-v', '--version', message='%(prog)s %(version)s')
+@click.option('--config-file-encoding', 'encoding_name',
+              help="encoding of your configuration files",
+              default=user_sync.config.ConfigLoader.config_defaults['config_encoding'],
+              show_default=True,
+              type=str,
+              nargs=1,
+              metavar='encoding-name')
+@click.option('-c', '--config-filename',
+              help="path to your main configuration file",
+              default=user_sync.config.ConfigLoader.config_defaults['config_filename'],
+              show_default=True,
+              type=str,
+              nargs=1,
+              metavar='path-to-file')
+@click.option('--adobe-only-user-action',
+              help="specify what action to take on Adobe users that don't match users from the "
+                   "directory.  Options are 'exclude' (from all changes), "
+                   "'preserve' (as is except for --process-groups, the default), "
+                   "'write-file f' (preserve and list them), "
+                   "'remove-adobe-groups' (but do not remove users)"
+                   "'remove' (users but preserve cloud storage), "
+                   "'delete' (users and their cloud storage), ",
+              cls=user_sync.cli.OptionMulti,
+              type=list,
+              show_default=True,
+              default=['preserve'],
+              metavar='exclude|preserve|delete|remove|remove-adobe-groups|write-file [path-to-file.csv]')
+@click.option('--adobe-only-user-list',
+              help="instead of computing Adobe-only users (Adobe users with no matching users "
+                   "in the directory) by comparing Adobe users with directory users, "
+                   "the list is read from a file (see --adobe-only-user-action write-file). "
+                   "When using this option, you must also specify what you want done with Adobe-only "
+                   "users by also including --adobe-only-user-action and one of its arguments",
+              type=str,
+              nargs=1,
+              metavar='input_path')
+@click.option('--adobe-users',
+              help="specify the adobe users to pull from UMAPI. Legal values are 'all' (the default), "
+                   "'group names' (one or more specified groups), 'mapped' (all groups listed in "
+                   "the configuration file)",
+              cls=user_sync.cli.OptionMulti,
+              type=list,
+              show_default=True,
+              default=['all'],
+              metavar='all|mapped|group [group list]')
+@click.option('--connector',
+              help='specify a connector to use; default is LDAP (or CSV if --users file is specified)',
+              cls=user_sync.cli.OptionMulti,
+              type=list,
+              show_default=True,
+              default=['ldap'],
+              metavar='ldap|okta|csv [path-to-file.csv]')
+@click.option('--process-groups/--no-process-groups',
+              help='if membership in mapped groups differs between the enterprise directory and Adobe sides, '
+                   'the group membership is updated on the Adobe side so that the memberships in mapped '
+                   'groups match those on the enterprise directory side.',
+              default=False)
+@click.option('--strategy',
+              help="whether to fetch and sync the Adobe directory against the customer directory "
+                   "or just to push each customer user to the Adobe side.  Default is to fetch and sync.",
+              nargs=1,
+              type=str,
+              metavar='sync|push',
+              default='sync',
+              show_default=True)
+@click.option('-t/-T', '--test-mode/--no-test-mode',
+              help='enable test mode (API calls do not execute changes on the Adobe side).',
+              default=False)
+@click.option('--user-filter',
+              help='limit the selected set of users that may be examined for syncing, with the pattern '
+                   'being a regular expression.',
+              nargs=1,
+              type=str,
+              metavar='pattern')
+@click.option('--users',
+              help="specify the users to be considered for sync. Legal values are 'all' (the default), "
+                   "'group names' (one or more specified groups), 'mapped' (all groups listed in "
+                   "the configuration file), 'file f' (a specified input file).",
+              cls=user_sync.cli.OptionMulti,
+              type=list,
+              show_default=True,
+              default=['all'],
+              metavar='all|file|mapped|group [group list or path-to-file.csv]')
+@click.option('--update-user-info/--no-update-user-info',
+              help='user attributes on the Adobe side are updated from the directory.',
+              default=False)
+def main(**kwargs):
+    """User Sync from Adobe
 
-    To invoke User Sync from your code in an embedded fashion,
-    call this function, specifying the desired arguments.
+    Full documentation:
+
+    https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/
+
+    NOTE: The defaults documented here can be overridden in `invocation_defaults` in
+    `user-sync-config.yml`.  However, any options explicitly set on the command line will
+    override any options set in `invocation_defaults`.
     """
     run_stats = None
     try:
-        try:
-            arg_obj = process_args(args)
-        except SystemExit:
-            return
-
         # load the config files and start the file logger
-        config_loader = user_sync.config.ConfigLoader(arg_obj)
+        config_loader = user_sync.config.ConfigLoader(kwargs)
         init_log(config_loader.get_logging_config())
 
         # add start divider, app version number, and invocation parameters to log
         run_stats = user_sync.helper.JobStats('Run (User Sync version: ' + app_version + ')', divider='=')
         run_stats.log_start(logger)
-        log_parameters(args, config_loader)
+        log_parameters(sys.argv[1:], config_loader)
 
         script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
         lock_path = os.path.join(script_dir, 'lockfile')
@@ -108,112 +199,13 @@ def main(args=sys.argv[1:]):
             run_stats.log_end(logger)
 
 
-def process_args(args=None):
+def process_args():
     """Define and parse the command-line (or passed) args.
 
     All of the arg defaults are actually held in the config module or config files,
     and the command line is just used to override those, so we don't define defaults here.
     """
-    # first define the standard args implemented by argparse ('-v', -h')
-    parser = argparse.ArgumentParser(description='User Sync from Adobe')
-    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + app_version)
-
-    # next define the arguments that affect reading the configuration file
-    # these are listed in alphabetical order!  always add new ones that way!
-    parser.add_argument('--config-file-encoding',
-                        help="encoding of your configuration files (default %s)".format(
-                            user_sync.config.ConfigLoader.config_defaults['config_encoding']
-                        ),
-                        metavar='encoding-name',
-                        dest='encoding_name')
-    parser.add_argument('-c', '--config-filename',
-                        help="path to your main configuration file (default %s)".format(
-                            user_sync.config.ConfigLoader.config_defaults['config_filename']
-                        ),
-                        metavar='path-to-file',
-                        dest='config_filename')
-
-    # finally define the arguments that affect processing operations;
-    # these are listed in alphabetical order!  always add new ones that way!
-    parser.add_argument('--adobe-only-user-action',
-                        help="specify what action to take on Adobe users that don't match users from the "
-                             "directory.  Options are 'exclude' (from all changes), "
-                             "'preserve' (as is except for --process-groups, the default), "
-                             "'write-file f' (preserve and list them), "
-                             "'remove-adobe-groups' (but do not remove users)"
-                             "'remove' (users but preserve cloud storage), "
-                             "'delete' (users and their cloud storage), ",
-                        nargs="+",
-                        metavar=('exclude|preserve|delete|remove|remove-adobe-groups|write-file', 'path-to-file.csv'),
-                        dest='adobe_only_user_action')
-    parser.add_argument('--adobe-only-user-list',
-                        help="instead of computing Adobe-only users (Adobe users with no matching users "
-                             "in the directory) by comparing Adobe users with directory users, "
-                             "the list is read from a file (see --adobe-only-user-action write-file). "
-                             "When using this option, you must also specify what you want done with Adobe-only "
-                             "users by also including --adobe-only-user-action and one of its arguments",
-                        metavar='input_path',
-                        dest='adobe_only_user_list')
-    parser.add_argument('--adobe-users',
-                        help="specify the adobe users to pull from UMAPI. Legal values are 'all' (the default), "
-                             "'group names' (one or more specified groups), 'mapped' (all groups listed in "
-                             "the configuration file)",
-                        nargs="+",
-                        metavar='all|mapped|group',
-                        dest='adobe_users')
-    parser.add_argument('--connector',
-                        help='specify a connector to use; default is LDAP (or CSV if --users file is specified)',
-                        nargs='+',
-                        metavar=('ldap|okta|csv', 'path-to-file.csv'),
-                        dest='connector')
-    parser.add_argument('--process-groups',
-                        help='if membership in mapped groups differs between the enterprise directory and Adobe sides, '
-                             'the group membership is updated on the Adobe side so that the memberships in mapped '
-                             'groups match those on the enterprise directory side.',
-                        action='store_true',
-                        dest='process_groups')
-    parser.add_argument('--no-process-groups',
-                        help='if membership in mapped groups differs between the enterprise directory and Adobe sides, '
-                             'the group membership is updated on the Adobe side so that the memberships in mapped '
-                             'groups match those on the enterprise directory side.',
-                        action='store_false',
-                        dest='process_groups')
-    parser.add_argument('--strategy',
-                        help="whether to fetch and sync the Adobe directory against the customer directory "
-                             "or just to push each customer user to the Adobe side.  Default is to fetch and sync.",
-                        metavar='sync|push',
-                        dest='strategy')
-    parser.add_argument('-t', '--test-mode',
-                        help='enable test mode (API calls do not execute changes on the Adobe side).',
-                        action='store_true',
-                        dest='test_mode')
-    parser.add_argument('-T', '--no-test-mode',
-                        help='disable test mode (API calls execute changes on the Adobe side).',
-                        action='store_false',
-                        dest='test_mode')
-    parser.add_argument('--user-filter',
-                        help='limit the selected set of users that may be examined for syncing, with the pattern '
-                             'being a regular expression.',
-                        metavar='pattern',
-                        dest='user_filter')
-    parser.add_argument('--users',
-                        help="specify the users to be considered for sync. Legal values are 'all' (the default), "
-                             "'group names' (one or more specified groups), 'mapped' (all groups listed in "
-                             "the configuration file), 'file f' (a specified input file).",
-                        nargs="+",
-                        metavar=('all|file|mapped|group', 'groups|path-to-file.csv'),
-                        dest='users')
-    parser.add_argument('--update-user-info',
-                        help='user attributes on the Adobe side are updated from the directory.',
-                        action='store_true',
-                        dest='update_user_info')
-    parser.add_argument('--no-update-user-info',
-                        help='user attributes on the Adobe side are not updated from the directory.',
-                        action='store_false',
-                        dest='update_user_info')
-    # make sure the boolean arguments have no default value
-    parser.set_defaults(process_groups=None, test_mode=None, update_user_info=None)
-    return parser.parse_args(args)
+    pass
 
 
 def init_log(logging_config):

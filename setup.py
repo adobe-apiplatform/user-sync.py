@@ -54,6 +54,7 @@ setup(name='user-sync',
           'PyYAML',
           'six',
           'umapi-client>=2.12',
+          'click',
       ],
       extras_require={
           ':sys_platform=="linux" or sys_platform=="linux2"': [
