@@ -33,6 +33,11 @@ import user_sync.port
 import user_sync.rules
 from user_sync.error import AssertionException
 
+import keyring
+from importlib import import_module
+from keyring.backends import fail
+from keyring.backend import KeyringBackend
+from keyring.util import suppress_exceptions
 
 class ConfigLoader(object):
     # default values for reading configuration files
@@ -818,7 +823,7 @@ class DictConfig(ObjectConfig):
             raise AssertionException('%s: cannot contain setting for both "%s" and "%s"' % (scope, name, keyring_name))
         if secure_value_key:
             try:
-                import keyring
+                self.initialize_keyring()
                 value = keyring.get_password(service_name=secure_value_key, username=user_name)
             except Exception as e:
                 raise AssertionException('%s: Error accessing secure storage: %s' % (scope, e))
@@ -829,6 +834,25 @@ class DictConfig(ObjectConfig):
                 '%s: No value in secure storage for user "%s", key "%s"' % (scope, user_name, secure_value_key))
         return value
 
+    def initialize_keyring(self):
+        logger = logging.getLogger("keyring")
+        backend_list = {
+            'KWallet': 'keyring.backends.kwallet',
+            'SecretService': 'keyring.backends.SecretService',
+            'Windows': 'keyring.backends.Windows',
+            'chainer': 'keyring.backends.chainer',
+            'macOS': 'keyring.backends.OS_X',
+        }
+
+        for k, v in six.iteritems(backend_list):
+            logger.info('Loading ' + k)
+            suppress_exceptions(import_module(v))
+
+        viable_classes = KeyringBackend.get_viable_backends()
+        rings = list(suppress_exceptions(viable_classes, exceptions=TypeError))
+        selected = max(rings, default=fail.Keyring(), key=lambda p: p.priority)
+        keyring.set_keyring(selected)
+        logger.info("Using viable keyring: " + selected.name)
 
 class ConfigFileLoader:
     """
