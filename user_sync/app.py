@@ -62,15 +62,11 @@ console_log_handler = init_console_log()
 @click.version_option(None, '-v', '--version', message='%(prog)s %(version)s')
 @click.option('--config-file-encoding', 'encoding_name',
               help="encoding of your configuration files",
-              default=user_sync.config.ConfigLoader.config_defaults['config_encoding'],
-              show_default=True,
               type=str,
               nargs=1,
               metavar='encoding-name')
 @click.option('-c', '--config-filename',
               help="path to your main configuration file",
-              default=user_sync.config.ConfigLoader.config_defaults['config_filename'],
-              show_default=True,
               type=str,
               nargs=1,
               metavar='path-to-file')
@@ -84,8 +80,6 @@ console_log_handler = init_console_log()
                    "'delete' (users and their cloud storage), ",
               cls=user_sync.cli.OptionMulti,
               type=list,
-              show_default=True,
-              default=['preserve'],
               metavar='exclude|preserve|delete|remove|remove-adobe-groups|write-file [path-to-file.csv]')
 @click.option('--adobe-only-user-list',
               help="instead of computing Adobe-only users (Adobe users with no matching users "
@@ -102,32 +96,24 @@ console_log_handler = init_console_log()
                    "the configuration file)",
               cls=user_sync.cli.OptionMulti,
               type=list,
-              show_default=True,
-              default=['all'],
               metavar='all|mapped|group [group list]')
 @click.option('--connector',
               help='specify a connector to use; default is LDAP (or CSV if --users file is specified)',
               cls=user_sync.cli.OptionMulti,
               type=list,
-              show_default=True,
-              default=['ldap'],
               metavar='ldap|okta|csv [path-to-file.csv]')
 @click.option('--process-groups/--no-process-groups',
               help='if membership in mapped groups differs between the enterprise directory and Adobe sides, '
                    'the group membership is updated on the Adobe side so that the memberships in mapped '
-                   'groups match those on the enterprise directory side.',
-              default=False)
+                   'groups match those on the enterprise directory side.')
 @click.option('--strategy',
               help="whether to fetch and sync the Adobe directory against the customer directory "
                    "or just to push each customer user to the Adobe side.  Default is to fetch and sync.",
               nargs=1,
               type=str,
-              metavar='sync|push',
-              default='sync',
-              show_default=True)
+              metavar='sync|push')
 @click.option('-t/-T', '--test-mode/--no-test-mode',
-              help='enable test mode (API calls do not execute changes on the Adobe side).',
-              default=False)
+              help='enable test mode (API calls do not execute changes on the Adobe side).')
 @click.option('--user-filter',
               help='limit the selected set of users that may be examined for syncing, with the pattern '
                    'being a regular expression.',
@@ -140,12 +126,9 @@ console_log_handler = init_console_log()
                    "the configuration file), 'file f' (a specified input file).",
               cls=user_sync.cli.OptionMulti,
               type=list,
-              show_default=True,
-              default=['all'],
               metavar='all|file|mapped|group [group list or path-to-file.csv]')
 @click.option('--update-user-info/--no-update-user-info',
-              help='user attributes on the Adobe side are updated from the directory.',
-              default=False)
+              help='user attributes on the Adobe side are updated from the directory.')
 def main(**kwargs):
     """User Sync from Adobe
 
@@ -197,15 +180,6 @@ def main(**kwargs):
     finally:
         if run_stats is not None:
             run_stats.log_end(logger)
-
-
-def process_args():
-    """Define and parse the command-line (or passed) args.
-
-    All of the arg defaults are actually held in the config module or config files,
-    and the command line is just used to override those, so we don't define defaults here.
-    """
-    pass
 
 
 def init_log(logging_config):
