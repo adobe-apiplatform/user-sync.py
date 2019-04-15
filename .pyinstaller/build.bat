@@ -14,6 +14,7 @@ pyinstaller.exe ^
     --hidden-import=win32timezone ^
     --additional-hooks-dir=. ^
     --specpath=dist ^
+    --icon=usticon.ico ^
     ..\user_sync\app.py
 
 rm dist\app.spec
