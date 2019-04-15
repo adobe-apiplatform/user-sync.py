@@ -104,3 +104,4 @@ user_sync/resources/*
 !user_sync/resources/manual_url
 .DS_Store
 !user_sync/resources/default_flags.cfg
+test_config/

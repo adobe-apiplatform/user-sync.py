@@ -31,6 +31,9 @@ import six
 
 import user_sync.config
 import user_sync.connector.directory
+import user_sync.connector.directory_ldap
+import user_sync.connector.directory_okta
+import user_sync.connector.directory_csv
 import user_sync.connector.umapi
 import user_sync.helper
 import user_sync.lockfile

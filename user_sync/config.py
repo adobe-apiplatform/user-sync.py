@@ -845,7 +845,7 @@ class DictConfig(ObjectConfig):
         }
 
         for k, v in six.iteritems(backend_list):
-            logger.info('Loading ' + k)
+            logger.info('Loading backend: ' + k)
             suppress_exceptions(import_module(v))
 
         viable_classes = KeyringBackend.get_viable_backends()
