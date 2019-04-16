@@ -45,35 +45,49 @@ def test_nonexe_root_path():
 
 def test_exe_root_path(tmpdir):
     """Test find_resource_root when executing in PyInstaller EXE"""
+    if getattr(sys, 'frozen', False):
+        delattr(sys, 'frozen')
+    if getattr(sys, '_MEIPASS', False):
+        delattr(sys, '_MEIPASS')
     setattr(sys, 'frozen', True)
     setattr(sys, '_MEIPASS', tmpdir)
     test_path = os.path.join(sys._MEIPASS, resource._DIR)
     os.mkdir(test_path)
     assert test_path == resource.find_resource_root()
-    delattr(sys, 'frozen')
-    delattr(sys, '_MEIPASS')
 
 
 def test_exe_root_path_no_dir():
     """No runtime root directory defined when running from EXE"""
+    if getattr(sys, 'frozen', False):
+        delattr(sys, 'frozen')
+    if getattr(sys, '_MEIPASS', False):
+        delattr(sys, '_MEIPASS')
     setattr(sys, 'frozen', True)
     with pytest.raises(AttributeError):
         resource.find_resource_root()
-    delattr(sys, 'frozen')
 
 
 def test_root_path_invalid_dir():
     """Assert that resource root dir is valid"""
+    if getattr(sys, 'frozen', False):
+        delattr(sys, 'frozen')
+    if getattr(sys, '_MEIPASS', False):
+        delattr(sys, '_MEIPASS')
     setattr(sys, 'frozen', True)
     setattr(sys, '_MEIPASS', "/fake/path")
     with pytest.raises(AssertionError):
         resource.find_resource_root()
-    delattr(sys, 'frozen')
-    delattr(sys, '_MEIPASS')
 
 
 def test_resource_file(resource_file, tmpdir):
     """test for valid resource file"""
+    if getattr(sys, 'frozen', False):
+        delattr(sys, 'frozen')
+    if getattr(sys, '_MEIPASS', False):
+        delattr(sys, '_MEIPASS')
+    if getattr(resource, '_resource_root') is not None:
+        setattr(resource, '_resource_root', None)
+
     setattr(sys, 'frozen', True)
     setattr(sys, '_MEIPASS', tmpdir)
     rootdir = os.path.join(sys._MEIPASS, resource._DIR)
@@ -81,13 +95,17 @@ def test_resource_file(resource_file, tmpdir):
 
     resfile = "test.txt"
     assert resource_file(rootdir, resfile) == resource.get_resource(resfile)
-    delattr(sys, 'frozen')
-    delattr(sys, '_MEIPASS')
-    setattr(resource, '_resource_root', None)
 
 
 def test_resource_invalid_file(tmpdir):
     """test for non-existent resource file"""
+    if getattr(sys, 'frozen', False):
+        delattr(sys, 'frozen')
+    if getattr(sys, '_MEIPASS', False):
+        delattr(sys, '_MEIPASS')
+    if getattr(resource, '_resource_root') is not None:
+        setattr(resource, '_resource_root', None)
+
     setattr(sys, 'frozen', True)
     setattr(sys, '_MEIPASS', tmpdir)
     rootdir = os.path.join(sys._MEIPASS, resource._DIR)
@@ -95,13 +113,17 @@ def test_resource_invalid_file(tmpdir):
 
     resfile = "test.txt"
     assert resource.get_resource(resfile) is None
-    delattr(sys, 'frozen')
-    delattr(sys, '_MEIPASS')
-    setattr(resource, '_resource_root', None)
 
 
 def test_resource_dir(resource_file, tmpdir):
     """test for valid resource files in directory"""
+    if getattr(sys, 'frozen', False):
+        delattr(sys, 'frozen')
+    if getattr(sys, '_MEIPASS', False):
+        delattr(sys, '_MEIPASS')
+    if getattr(resource, '_resource_root') is not None:
+        setattr(resource, '_resource_root', None)
+
     setattr(sys, 'frozen', True)
     setattr(sys, '_MEIPASS', tmpdir)
     rootdir = os.path.join(sys._MEIPASS, resource._DIR)
@@ -114,15 +136,18 @@ def test_resource_dir(resource_file, tmpdir):
 
     res_paths = [resource_file(test_dir, resfile.format(n+1)) for n in range(3)]
 
-    assert res_paths == resource.get_resource_dir('test')
-
-    delattr(sys, 'frozen')
-    delattr(sys, '_MEIPASS')
-    setattr(resource, '_resource_root', None)
+    assert sorted(res_paths) == sorted(resource.get_resource_dir('test'))
 
 
 def test_resource_dir_empty(tmpdir):
     """test for empty resource directory"""
+    if getattr(sys, 'frozen', False):
+        delattr(sys, 'frozen')
+    if getattr(sys, '_MEIPASS', False):
+        delattr(sys, '_MEIPASS')
+    if getattr(resource, '_resource_root') is not None:
+        setattr(resource, '_resource_root', None)
+
     setattr(sys, 'frozen', True)
     setattr(sys, '_MEIPASS', tmpdir)
     rootdir = os.path.join(sys._MEIPASS, resource._DIR)
@@ -133,13 +158,16 @@ def test_resource_dir_empty(tmpdir):
 
     assert [] == resource.get_resource_dir('test')
 
-    delattr(sys, 'frozen')
-    delattr(sys, '_MEIPASS')
-    setattr(resource, '_resource_root', None)
-
 
 def test_resource_dir_invalid(tmpdir):
     """test for nonexistent resource directory"""
+    if getattr(sys, 'frozen', False):
+        delattr(sys, 'frozen')
+    if getattr(sys, '_MEIPASS', False):
+        delattr(sys, '_MEIPASS')
+    if getattr(resource, '_resource_root') is not None:
+        setattr(resource, '_resource_root', None)
+
     setattr(sys, 'frozen', True)
     setattr(sys, '_MEIPASS', tmpdir)
     rootdir = os.path.join(sys._MEIPASS, resource._DIR)
@@ -147,7 +175,3 @@ def test_resource_dir_invalid(tmpdir):
 
     with pytest.raises(AssertionError):
         resource.get_resource_dir('test')
-
-    delattr(sys, 'frozen')
-    delattr(sys, '_MEIPASS')
-    setattr(resource, '_resource_root', None)
