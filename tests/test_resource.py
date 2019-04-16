@@ -40,11 +40,12 @@ def resource_file():
 def test_nonexe_root_path():
     """Test find_resource_root when not executing in EXE"""
     test_path = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', resource._DIR))
-    assert test_path == resource.find_resource_root()
+    assert os.path.normcase(test_path) == os.path.normcase(resource.find_resource_root())
 
 
 def test_exe_root_path(tmpdir):
     """Test find_resource_root when executing in PyInstaller EXE"""
+    tmpdir = str(tmpdir)
     if getattr(sys, 'frozen', False):
         delattr(sys, 'frozen')
     if getattr(sys, '_MEIPASS', False):
@@ -81,6 +82,7 @@ def test_root_path_invalid_dir():
 
 def test_resource_file(resource_file, tmpdir):
     """test for valid resource file"""
+    tmpdir = str(tmpdir)
     if getattr(sys, 'frozen', False):
         delattr(sys, 'frozen')
     if getattr(sys, '_MEIPASS', False):
@@ -99,6 +101,7 @@ def test_resource_file(resource_file, tmpdir):
 
 def test_resource_invalid_file(tmpdir):
     """test for non-existent resource file"""
+    tmpdir = str(tmpdir)
     if getattr(sys, 'frozen', False):
         delattr(sys, 'frozen')
     if getattr(sys, '_MEIPASS', False):
@@ -117,6 +120,7 @@ def test_resource_invalid_file(tmpdir):
 
 def test_resource_dir(resource_file, tmpdir):
     """test for valid resource files in directory"""
+    tmpdir = str(tmpdir)
     if getattr(sys, 'frozen', False):
         delattr(sys, 'frozen')
     if getattr(sys, '_MEIPASS', False):
@@ -141,6 +145,7 @@ def test_resource_dir(resource_file, tmpdir):
 
 def test_resource_dir_empty(tmpdir):
     """test for empty resource directory"""
+    tmpdir = str(tmpdir)
     if getattr(sys, 'frozen', False):
         delattr(sys, 'frozen')
     if getattr(sys, '_MEIPASS', False):
@@ -161,6 +166,7 @@ def test_resource_dir_empty(tmpdir):
 
 def test_resource_dir_invalid(tmpdir):
     """test for nonexistent resource directory"""
+    tmpdir = str(tmpdir)
     if getattr(sys, 'frozen', False):
         delattr(sys, 'frozen')
     if getattr(sys, '_MEIPASS', False):
