@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
+# sudo apt install binutils (? Ubuntu)
 
+# pip install pyinstaller
+# pip install -e .
+# pip uninstall enum34
 
 pyinstaller \
     --clean \
