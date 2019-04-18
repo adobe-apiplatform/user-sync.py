@@ -25,5 +25,10 @@ pex:
 		--disable-cache \
 		--not-zip-safe .
 
+standalone:
+	python -m pip install --upgrade pip
+	python -m pip install --upgrade pyinstaller
+	pyinstaller --clean --noconfirm user-sync.spec
+
 test:
 	nosetests --no-byte-compile tests

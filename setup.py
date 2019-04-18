@@ -62,7 +62,8 @@ setup(name='user-sync',
               'dbus-python',
           ],
           ':sys_platform=="win32"': [
-              'pywin32-ctypes'
+              'pywin32-ctypes',
+              'pywin32'
           ],
           'test': test_deps,
           'setup': setup_deps,
