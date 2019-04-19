@@ -79,8 +79,10 @@ celerybeat-schedule
 .env
 
 # virtualenv
-venv/
+*venv*
 ENV/
+build/
+dist/
 
 # Spyder project settings
 .spyderproject
@@ -100,3 +102,4 @@ user_sync/resources/*
 !user_sync/resources/__init__.py
 !user_sync/resources/README.md
 !user_sync/resources/manual_url
+test_config/
