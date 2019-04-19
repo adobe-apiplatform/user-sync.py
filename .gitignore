@@ -79,8 +79,10 @@ celerybeat-schedule
 .env
 
 # virtualenv
-venv/
+*venv*
 ENV/
+build/
+dist/
 
 # Spyder project settings
 .spyderproject
@@ -95,3 +97,5 @@ ENV/
 _site
 .sass-cache
 .jekyll-metadata
+
+test_config/
