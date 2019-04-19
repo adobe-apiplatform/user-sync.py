@@ -20,9 +20,9 @@ def test_required_functions(get_implementation):
     del base_impl.connector_initialize
     pytest.raises(AssertionException, DirectoryConnector, base_impl)
 
- 
 
-def test_initialize(get_DirectoryConnector):
+
+def test_initialize():
 
 
 
