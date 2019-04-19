@@ -1,28 +1,32 @@
 import os
 import pytest
+from user_sync.connector.directory import DirectoryConnector
+from user_sync.error import AssertionException
+
 
 @pytest.fixture
-def get_implementation(object):
-    # from user_sync.connector.directory import DirectoryConnector
-    #
-    # config_loader = ConfigLoader(args)
-    # dc_mod_name = config_loader.get_directory_connector_module_name()
-    # dc_mod = __import__(dc_mod_name, fromlist=[''])
-    # dc = DirectoryConnector(dc_mod)
+def get_implementation():
+    dc_mod_name = "user_sync.connector.directory_ldap"
+    return __import__(dc_mod_name, fromlist=[''])
 
-    # something like this...???
 
-    pass
+def test_required_functions(get_implementation):
 
-def test_required_functions():
+    base_impl = get_implementation
+    del base_impl.connector_metadata
+    pytest.raises(AssertionException, DirectoryConnector, base_impl)
 
-    # need to give this some sort of implementation (perhaps as a fixture)
-    # validate that exception is thrown if the implementation is missing the required functions
-    # look at debug and test_config.py:
+    base_impl = get_implementation
+    del base_impl.connector_initialize
+    pytest.raises(AssertionException, DirectoryConnector, base_impl)
 
-    pass
+
 
 def test_initialize():
+
+
+
+    print()
 
     # use mock implementation above to call connector_initialize
     # assert self.state set to properly initialized instance of connector
