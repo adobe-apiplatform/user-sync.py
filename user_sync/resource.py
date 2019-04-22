@@ -31,8 +31,8 @@ _run_context = None
 
 
 class RunContext(enum.Enum):
-    EXEBundle = enum.auto()
-    Package = enum.auto()
+    EXEBundle = 'exe'
+    Package = 'package'
 
 
 def get_run_context():
