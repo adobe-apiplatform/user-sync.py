@@ -20,27 +20,25 @@
 
 import os
 import sys
+import enum
+import pkg_resources
 
-_DIR = "resource"
+_BUNDLE_DIR = "resources"
 
-_resource_root = None
+_PKG = "user_sync.resources"
+
+_run_context = None
 
 
-def find_resource_root():
-    """
-    Find resource root directory for current build and execution context
-    Raises AssertionError if root directory is invalid for some reason
-    :return str: Absolute path to resource root directory
-    """
+class RunContext(enum.Enum):
+    EXEBundle = enum.auto()
+    Package = enum.auto()
+
+
+def get_run_context():
     if getattr(sys, 'frozen', False):
-        # running in a bundle
-        runtime_root = getattr(sys, '_MEIPASS')
-        resource_root = os.path.join(runtime_root, _DIR)
-    else:
-        # running live or in a pex file
-        resource_root = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', _DIR))
-    assert os.path.isdir(resource_root)
-    return resource_root
+        return RunContext.EXEBundle
+    return RunContext.Package
 
 
 def get_resource(resource):
@@ -49,13 +47,17 @@ def get_resource(resource):
     :param str resource: Relative resource file path (relative to resource root directory)
     :return str: Absolute path to resource file or None if no resource was found
     """
-    global _resource_root
-    if _resource_root is None:
-        _resource_root = find_resource_root()
-    resource_path = os.path.join(_resource_root, resource)
-    if os.path.exists(resource_path) and os.path.isfile(resource_path):
-        return resource_path
-    return None
+    global _run_context
+    if _run_context is None:
+        _run_context = get_run_context()
+
+    if _run_context == RunContext.EXEBundle:
+        assert getattr(sys, '_MEIPASS', False), "Bundle root dir is not set"
+        resource_path = os.path.join(getattr(sys, '_MEIPASS'), "resources", resource)
+        if os.path.exists(resource_path) and os.path.isfile(resource_path):
+            return resource_path
+    else:
+        return pkg_resources.resource_filename(_PKG, resource)
 
 
 def get_resource_dir(resource_dir):
@@ -66,10 +68,18 @@ def get_resource_dir(resource_dir):
     :param str resource_dir: Relative path of directory (relative to resource root directory)
     :return list(str): List of resource files in directory or None if directory was not found
     """
-    global _resource_root
-    if _resource_root is None:
-        _resource_root = find_resource_root()
-    resource_path = os.path.join(_resource_root, resource_dir)
-    assert os.path.isdir(resource_path), "Resource directory does not exist"
-    return [os.path.join(resource_path, f) for f in os.listdir(resource_path)
-            if os.path.isfile(os.path.join(resource_path, f))]
+    global _run_context
+    if _run_context is None:
+        _run_context = get_run_context()
+
+    if _run_context == RunContext.EXEBundle:
+        assert getattr(sys, '_MEIPASS', False)
+        resource_path = os.path.join(getattr(sys, '_MEIPASS'), "resources", resource_dir)
+        assert os.path.isdir(resource_path), "Resource directory does not exist"
+
+        return [os.path.join(resource_path, f) for f in os.listdir(resource_path)
+                if os.path.isfile(os.path.join(resource_path, f))]
+    else:
+        resource_path = pkg_resources.resource_filename(_PKG, resource_dir)
+        return [os.path.join(resource_path, f) for f in pkg_resources.resource_listdir(_PKG, resource_dir)
+                if os.path.isfile(os.path.join(resource_path, f))]

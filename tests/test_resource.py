@@ -21,6 +21,7 @@
 import os
 import sys
 import pytest
+import pkg_resources
 from user_sync import resource
 
 
@@ -37,147 +38,111 @@ def resource_file():
     return _resource_file
 
 
-def test_nonexe_root_path():
-    """Test find_resource_root when not executing in EXE"""
-    test_path = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', resource._DIR))
-    assert os.path.normcase(test_path) == os.path.normcase(resource.find_resource_root())
-
-
-def test_exe_root_path(tmpdir):
-    """Test find_resource_root when executing in PyInstaller EXE"""
+def test_resource_file_bundle(resource_file, tmpdir, monkeypatch):
+    """test for valid resource file in an EXE bundle"""
     tmpdir = str(tmpdir)
-    if getattr(sys, 'frozen', False):
-        delattr(sys, 'frozen')
-    if getattr(sys, '_MEIPASS', False):
-        delattr(sys, '_MEIPASS')
-    setattr(sys, 'frozen', True)
-    setattr(sys, '_MEIPASS', tmpdir)
-    test_path = os.path.join(sys._MEIPASS, resource._DIR)
-    os.mkdir(test_path)
-    assert test_path == resource.find_resource_root()
+    with monkeypatch.context() as m:
+        m.setattr(resource, '_run_context', None, False)
+        m.setattr(sys, 'frozen', True, False)
+        m.setattr(sys, '_MEIPASS', tmpdir, False)
+        rootdir = os.path.join(sys._MEIPASS, resource._BUNDLE_DIR)
+        os.mkdir(rootdir)
+
+        resfile = "test.txt"
+        assert resource_file(rootdir, resfile) == resource.get_resource(resfile)
 
 
-def test_exe_root_path_no_dir():
-    """No runtime root directory defined when running from EXE"""
-    if getattr(sys, 'frozen', False):
-        delattr(sys, 'frozen')
-    if getattr(sys, '_MEIPASS', False):
-        delattr(sys, '_MEIPASS')
-    setattr(sys, 'frozen', True)
-    with pytest.raises(AttributeError):
-        resource.find_resource_root()
-
-
-def test_root_path_invalid_dir():
-    """Assert that resource root dir is valid"""
-    if getattr(sys, 'frozen', False):
-        delattr(sys, 'frozen')
-    if getattr(sys, '_MEIPASS', False):
-        delattr(sys, '_MEIPASS')
-    setattr(sys, 'frozen', True)
-    setattr(sys, '_MEIPASS', "/fake/path")
-    with pytest.raises(AssertionError):
-        resource.find_resource_root()
-
-
-def test_resource_file(resource_file, tmpdir):
-    """test for valid resource file"""
+def test_resource_file_package(resource_file, tmpdir, monkeypatch):
+    """test for valid resource file in a Package context"""
     tmpdir = str(tmpdir)
-    if getattr(sys, 'frozen', False):
-        delattr(sys, 'frozen')
-    if getattr(sys, '_MEIPASS', False):
-        delattr(sys, '_MEIPASS')
-    if getattr(resource, '_resource_root') is not None:
-        setattr(resource, '_resource_root', None)
-
-    setattr(sys, 'frozen', True)
-    setattr(sys, '_MEIPASS', tmpdir)
-    rootdir = os.path.join(sys._MEIPASS, resource._DIR)
-    os.mkdir(rootdir)
-
-    resfile = "test.txt"
-    assert resource_file(rootdir, resfile) == resource.get_resource(resfile)
+    with monkeypatch.context() as m:
+        resfile = "test.txt"
+        m.setattr(pkg_resources, "resource_filename", lambda *args: os.path.join(tmpdir, resfile))
+        assert resource_file(tmpdir, resfile) == resource.get_resource(resfile)
 
 
-def test_resource_invalid_file(tmpdir):
+def test_resource_invalid_file(tmpdir, monkeypatch):
     """test for non-existent resource file"""
     tmpdir = str(tmpdir)
-    if getattr(sys, 'frozen', False):
-        delattr(sys, 'frozen')
-    if getattr(sys, '_MEIPASS', False):
-        delattr(sys, '_MEIPASS')
-    if getattr(resource, '_resource_root') is not None:
-        setattr(resource, '_resource_root', None)
+    with monkeypatch.context() as m:
+        m.setattr(resource, '_run_context', None, False)
+        m.setattr(sys, 'frozen', True, False)
+        m.setattr(sys, '_MEIPASS', tmpdir, False)
 
-    setattr(sys, 'frozen', True)
-    setattr(sys, '_MEIPASS', tmpdir)
-    rootdir = os.path.join(sys._MEIPASS, resource._DIR)
-    os.mkdir(rootdir)
+        rootdir = os.path.join(sys._MEIPASS, resource._BUNDLE_DIR)
+        os.mkdir(rootdir)
 
-    resfile = "test.txt"
-    assert resource.get_resource(resfile) is None
+        resfile = "test.txt"
+        assert resource.get_resource(resfile) is None
 
 
-def test_resource_dir(resource_file, tmpdir):
-    """test for valid resource files in directory"""
+def test_resource_dir_bundle(resource_file, tmpdir, monkeypatch):
+    """test for valid resource files in directory in standalone run context"""
     tmpdir = str(tmpdir)
-    if getattr(sys, 'frozen', False):
-        delattr(sys, 'frozen')
-    if getattr(sys, '_MEIPASS', False):
-        delattr(sys, '_MEIPASS')
-    if getattr(resource, '_resource_root') is not None:
-        setattr(resource, '_resource_root', None)
+    with monkeypatch.context() as m:
+        m.setattr(resource, '_run_context', None, False)
+        m.setattr(sys, 'frozen', True, False)
+        m.setattr(sys, '_MEIPASS', tmpdir, False)
 
-    setattr(sys, 'frozen', True)
-    setattr(sys, '_MEIPASS', tmpdir)
-    rootdir = os.path.join(sys._MEIPASS, resource._DIR)
-    os.mkdir(rootdir)
+        rootdir = os.path.join(sys._MEIPASS, resource._BUNDLE_DIR)
+        os.mkdir(rootdir)
 
-    test_dir = os.path.join(rootdir, "test")
-    os.mkdir(test_dir)
+        test_dir = os.path.join(rootdir, "test")
+        os.mkdir(test_dir)
 
-    resfile = "test_{}.txt"
+        resfile = "test_{}.txt"
 
-    res_paths = [resource_file(test_dir, resfile.format(n+1)) for n in range(3)]
+        res_paths = [resource_file(test_dir, resfile.format(n+1)) for n in range(3)]
 
-    assert sorted(res_paths) == sorted(resource.get_resource_dir('test'))
+        assert sorted(res_paths) == sorted(resource.get_resource_dir('test'))
 
 
-def test_resource_dir_empty(tmpdir):
+def test_resource_dir_package(resource_file, tmpdir, monkeypatch):
+    """test for valid resource files in directory in package run context"""
+    tmpdir = str(tmpdir)
+    with monkeypatch.context() as m:
+        test_dir = os.path.join(tmpdir, "test")
+        os.mkdir(test_dir)
+
+        m.setattr(pkg_resources, "resource_filename", lambda *args: os.path.join(tmpdir, test_dir))
+
+        resfile = "test_{}.txt"
+
+        res_test_files = [resfile.format(n+1) for n in range(3)]
+
+        m.setattr(pkg_resources, "resource_listdir", lambda *args: res_test_files)
+
+        res_paths = [resource_file(test_dir, resfile.format(n+1)) for n in range(3)]
+
+        assert sorted(res_paths) == sorted(resource.get_resource_dir('test'))
+
+
+def test_resource_dir_empty(tmpdir, monkeypatch):
     """test for empty resource directory"""
     tmpdir = str(tmpdir)
-    if getattr(sys, 'frozen', False):
-        delattr(sys, 'frozen')
-    if getattr(sys, '_MEIPASS', False):
-        delattr(sys, '_MEIPASS')
-    if getattr(resource, '_resource_root') is not None:
-        setattr(resource, '_resource_root', None)
+    with monkeypatch.context() as m:
+        m.setattr(resource, '_run_context', None, False)
+        m.setattr(sys, 'frozen', True, False)
+        m.setattr(sys, '_MEIPASS', tmpdir, False)
 
-    setattr(sys, 'frozen', True)
-    setattr(sys, '_MEIPASS', tmpdir)
-    rootdir = os.path.join(sys._MEIPASS, resource._DIR)
-    os.mkdir(rootdir)
+        rootdir = os.path.join(sys._MEIPASS, resource._BUNDLE_DIR)
+        os.mkdir(rootdir)
 
-    test_dir = os.path.join(rootdir, "test")
-    os.mkdir(test_dir)
+        test_dir = os.path.join(rootdir, "test")
+        os.mkdir(test_dir)
 
-    assert [] == resource.get_resource_dir('test')
+        assert [] == resource.get_resource_dir('test')
 
 
-def test_resource_dir_invalid(tmpdir):
+def test_resource_dir_invalid(tmpdir, monkeypatch):
     """test for nonexistent resource directory"""
     tmpdir = str(tmpdir)
-    if getattr(sys, 'frozen', False):
-        delattr(sys, 'frozen')
-    if getattr(sys, '_MEIPASS', False):
-        delattr(sys, '_MEIPASS')
-    if getattr(resource, '_resource_root') is not None:
-        setattr(resource, '_resource_root', None)
+    with monkeypatch.context() as m:
+        m.setattr(resource, '_run_context', None, False)
+        m.setattr(sys, 'frozen', True, False)
+        m.setattr(sys, '_MEIPASS', tmpdir, False)
+        rootdir = os.path.join(sys._MEIPASS, resource._BUNDLE_DIR)
+        os.mkdir(rootdir)
 
-    setattr(sys, 'frozen', True)
-    setattr(sys, '_MEIPASS', tmpdir)
-    rootdir = os.path.join(sys._MEIPASS, resource._DIR)
-    os.mkdir(rootdir)
-
-    with pytest.raises(AssertionError):
-        resource.get_resource_dir('test')
+        with pytest.raises(AssertionError):
+            resource.get_resource_dir('test')
