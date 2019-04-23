@@ -35,7 +35,7 @@ if ($env:BUILD_TARGET -eq "pex") {
 } else {
     cp dist\user-sync.exe release\
     cd release
-    cp user-sync.exe "user-sync-${env:APPVEYOR_REPO_TAG_NAME}-win64.exe"
+    mv user-sync.exe "user-sync-${env:APPVEYOR_REPO_TAG_NAME}-win64.exe"
     cd ..
 }
 dir release
