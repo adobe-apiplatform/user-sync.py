@@ -61,8 +61,8 @@ def test_resource_file_package(resource_file, tmpdir, monkeypatch):
         assert resource_file(tmpdir, resfile) == resource.get_resource(resfile)
 
 
-def test_resource_invalid_file(tmpdir, monkeypatch):
-    """test for non-existent resource file"""
+def test_resource_invalid_file_bundle(tmpdir, monkeypatch):
+    """test for non-existent resource file in a bundle"""
     tmpdir = str(tmpdir)
     with monkeypatch.context() as m:
         m.setattr(resource, '_run_context', None, False)
@@ -73,6 +73,15 @@ def test_resource_invalid_file(tmpdir, monkeypatch):
         os.mkdir(rootdir)
 
         resfile = "test.txt"
+        assert resource.get_resource(resfile) is None
+
+
+def test_resource_invalid_file_package(tmpdir, monkeypatch):
+    """test for non-existent resource file in a package"""
+    tmpdir = str(tmpdir)
+    with monkeypatch.context() as m:
+        m.setattr(pkg_resources, "resource_filename", lambda *args: os.path.join('invalid', 'file', 'path'))
+        resfile = os.path.join('invalid', 'file', 'path')
         assert resource.get_resource(resfile) is None
 
 

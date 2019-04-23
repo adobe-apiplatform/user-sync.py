@@ -54,10 +54,11 @@ def get_resource(resource):
     if _run_context == RunContext.EXEBundle:
         assert getattr(sys, '_MEIPASS', False), "Bundle root dir is not set"
         resource_path = os.path.join(getattr(sys, '_MEIPASS'), "resources", resource)
-        if os.path.exists(resource_path) and os.path.isfile(resource_path):
-            return resource_path
     else:
-        return pkg_resources.resource_filename(_PKG, resource)
+        resource_path = pkg_resources.resource_filename(_PKG, resource)
+    if os.path.exists(resource_path) and os.path.isfile(resource_path):
+        return resource_path
+    return None
 
 
 def get_resource_dir(resource_dir):
