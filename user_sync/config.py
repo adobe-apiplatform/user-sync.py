@@ -823,8 +823,7 @@ class DictConfig(ObjectConfig):
             raise AssertionException('%s: cannot contain setting for both "%s" and "%s"' % (scope, name, keyring_name))
         if secure_value_key:
             try:
-                self.initialize_keyring()
-                value = keyring.get_password(service_name=secure_value_key, username=user_name)
+                value = self.get_value_from_keyring(secure_value_key, user_name)
             except Exception as e:
                 raise AssertionException('%s: Error accessing secure storage: %s' % (scope, e))
         else:
@@ -834,7 +833,7 @@ class DictConfig(ObjectConfig):
                 '%s: No value in secure storage for user "%s", key "%s"' % (scope, user_name, secure_value_key))
         return value
 
-    def initialize_keyring(self):
+    def get_value_from_keyring(self, secure_value_key, user_name):
         logger = logging.getLogger("keyring")
         backend_list = {
             'KWallet': 'keyring.backends.kwallet',
@@ -845,14 +844,16 @@ class DictConfig(ObjectConfig):
         }
 
         for k, v in six.iteritems(backend_list):
-            logger.info('Loading backend: ' + k)
+            logger.debug('Loading backend: ' + k)
             suppress_exceptions(import_module(v))
 
         viable_classes = KeyringBackend.get_viable_backends()
         rings = list(suppress_exceptions(viable_classes, exceptions=TypeError))
         selected = max(rings, default=fail.Keyring(), key=lambda p: p.priority)
         keyring.set_keyring(selected)
-        logger.info("Using viable keyring: " + selected.name)
+
+        logger.info("Using keyring '" + selected.name +  "' to retrieve: " + secure_value_key)
+        return keyring.get_password(service_name=secure_value_key, username=user_name)
 
 class ConfigFileLoader:
     """
