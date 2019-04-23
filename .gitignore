@@ -95,3 +95,8 @@ ENV/
 _site
 .sass-cache
 .jekyll-metadata
+
+user_sync/resources/*
+!user_sync/resources/__init__.py
+!user_sync/resources/README.md
+!user_sync/resources/manual_url

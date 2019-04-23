@@ -23,6 +23,8 @@ import logging
 import os
 import sys
 import click
+import shutil
+from click_default_group import DefaultGroup
 from datetime import datetime
 
 import six
@@ -34,6 +36,7 @@ import user_sync.helper
 import user_sync.lockfile
 import user_sync.rules
 import user_sync.cli
+import user_sync.resource
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 
@@ -57,9 +60,25 @@ def init_console_log():
 console_log_handler = init_console_log()
 
 
-@click.command()
+@click.group(cls=DefaultGroup, default='sync', default_if_no_args=True)
 @click.help_option('-h', '--help')
 @click.version_option(None, '-v', '--version', message='%(prog)s %(version)s')
+def main():
+    """User Sync from Adobe
+
+    Full documentation:
+
+    https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/
+
+    NOTE: The defaults documented here can be overridden in `invocation_defaults` in
+    `user-sync-config.yml`.  However, any options explicitly set on the command line will
+    override any options set in `invocation_defaults`.
+    """
+    pass
+
+
+@main.command()
+@click.help_option('-h', '--help')
 @click.option('--config-file-encoding', 'encoding_name',
               help="encoding of your configuration files",
               type=str,
@@ -129,17 +148,8 @@ console_log_handler = init_console_log()
               metavar='all|file|mapped|group [group list or path-to-file.csv]')
 @click.option('--update-user-info/--no-update-user-info',
               help='user attributes on the Adobe side are updated from the directory.')
-def main(**kwargs):
-    """User Sync from Adobe
-
-    Full documentation:
-
-    https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/
-
-    NOTE: The defaults documented here can be overridden in `invocation_defaults` in
-    `user-sync-config.yml`.  However, any options explicitly set on the command line will
-    override any options set in `invocation_defaults`.
-    """
+def sync(**kwargs):
+    """Run User Sync [default command]"""
     run_stats = None
     try:
         # load the config files and start the file logger
@@ -180,6 +190,39 @@ def main(**kwargs):
     finally:
         if run_stats is not None:
             run_stats.log_end(logger)
+
+
+@main.command()
+@click.option('--root', help="Filename of root user sync config file",
+              prompt='Main Config Filename', default='user-sync-config.yml')
+@click.option('--umapi', help="Filename of UMAPI credential config file",
+              prompt='UMAPI Config Filename', default='connector-umapi.yml')
+@click.option('--ldap', help="Filename of LDAP credential config file",
+              prompt='LDAP Config Filename', default='connector-ldap.yml')
+def example_config(**kwargs):
+    """Generate example configuration files"""
+    res_files = {
+        'root': os.path.join('examples', 'user-sync-config.yml'),
+        'umapi': os.path.join('examples', 'connector-umapi.yml'),
+        'ldap': os.path.join('examples', 'connector-ldap.yml'),
+    }
+
+    for k, fname in kwargs.items():
+        assert k in res_files, "Invalid option specified"
+        res_file = user_sync.resource.get_resource(res_files[k])
+        assert res_file is not None, "Resource file '{}' not found".format(res_files[k])
+        click.echo("Generating file '{}'".format(fname))
+        shutil.copy(res_file, fname)
+
+
+@main.command()
+def docs():
+    """Open user manual in browser"""
+    res_file = user_sync.resource.get_resource('manual_url')
+    assert res_file is not None, "User Manual URL file not found"
+    with click.open_file(res_file) as f:
+        url = f.read().strip()
+        click.launch(url)
 
 
 def init_log(logging_config):
