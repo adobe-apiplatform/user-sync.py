@@ -19,7 +19,7 @@ make $env:BUILD_TARGET 2>&1
 dir dist
 mkdir release
 
-if ($env:BUILD_TARGET == "pex") {
+if ($env:BUILD_TARGET -eq "pex") {
     cp dist\user-sync.pex release\
     cd release\
     Get-Command python
