@@ -1,6 +1,11 @@
 environment:
   matrix:
+    - PYTHON: "C:\\Python27-x64"
+      BUILD_TARGET: pex
     - PYTHON: "C:\\Python36-x64"
+      BUILD_TARGET: pex
+    - PYTHON: "C:\\Python36-x64"
+      BUILD_TARGET: standalone
 
 install:
 - ps: choco install make
