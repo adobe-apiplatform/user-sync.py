@@ -21,3 +21,5 @@ artifacts:
   name: Zips
 - path: release/*.tar.gz
   name: Tarballs
+- path: release/*.exe
+  name: Executables
