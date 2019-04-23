@@ -28,6 +28,7 @@ pex:
 standalone:
 	python -m pip install --upgrade pip
 	python -m pip install --upgrade pyinstaller
+	python -m pip install --upgrade setuptools
 	pyinstaller --clean --noconfirm user-sync.spec
 
 test:
