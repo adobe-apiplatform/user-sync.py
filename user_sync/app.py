@@ -73,6 +73,10 @@ def main():
     NOTE: The defaults documented here can be overridden in `invocation_defaults` in
     `user-sync-config.yml`.  However, any options explicitly set on the command line will
     override any options set in `invocation_defaults`.
+
+    COMMAND HELP:
+
+    user-sync [COMMAND] -h/--help
     """
     pass
 
@@ -193,6 +197,7 @@ def sync(**kwargs):
 
 
 @main.command()
+@click.help_option('-h', '--help')
 @click.option('--root', help="Filename of root user sync config file",
               prompt='Main Config Filename', default='user-sync-config.yml')
 @click.option('--umapi', help="Filename of UMAPI credential config file",
@@ -216,6 +221,7 @@ def example_config(**kwargs):
 
 
 @main.command()
+@click.help_option('-h', '--help')
 def docs():
     """Open user manual in browser"""
     res_file = user_sync.resource.get_resource('manual_url')
