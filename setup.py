@@ -25,7 +25,7 @@ with open('user_sync/version.py') as f:
     exec(f.read(), version_namespace)
 
 test_deps = ['mock', 'pytest', 'pytest-cov']
-setup_deps = ['pytest-runner']
+setup_deps = ['pytest-runner', 'six']
 
 setup(name='user-sync',
       version=version_namespace['__version__'],
