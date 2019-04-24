@@ -25,19 +25,6 @@ import pkg_resources
 from user_sync import resource
 
 
-@pytest.fixture
-def resource_file():
-    """
-    Create an empty resource file
-    :return:
-    """
-    def _resource_file(dirname, filename):
-        filepath = os.path.join(dirname, filename)
-        open(filepath, 'a').close()
-        return filepath
-    return _resource_file
-
-
 def test_resource_file_bundle(resource_file, tmpdir, monkeypatch):
     """test for valid resource file in an EXE bundle"""
     tmpdir = str(tmpdir)

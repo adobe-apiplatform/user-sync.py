@@ -25,3 +25,15 @@ def cli_args():
             args_out[k] = v
         return args_out
     return _cli_args
+
+
+def resource_file():
+    """
+    Create an empty resource file
+    :return:
+    """
+    def _resource_file(dirname, filename):
+        filepath = os.path.join(dirname, filename)
+        open(filepath, 'a').close()
+        return filepath
+    return _resource_file
