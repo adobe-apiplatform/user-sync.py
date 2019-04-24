@@ -54,6 +54,7 @@ setup(name='user-sync',
           'umapi-client>=2.12',
           'click',
           'click-default-group',
+          'configparser==3.7.4'
       ],
       extras_require={
           ':sys_platform=="linux" or sys_platform=="linux2"': [

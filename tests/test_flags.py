@@ -20,7 +20,7 @@
 
 import os
 import pytest
-from six.moves import configparser
+from backports import configparser
 from user_sync import resource
 from user_sync import flags
 
