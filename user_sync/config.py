@@ -539,9 +539,9 @@ class ConfigLoader(object):
         # now get the directory extension, if any
         extension_config = self.get_directory_extension_options()
         if extension_config:
-            after_mapping_hook_text = extension_config.get_string('after_mapping_hook')
-            options['after_mapping_hook'] = compile(after_mapping_hook_text, '<per-user after-mapping-hook>', 'exec')
-            options['extended_attributes'] = extension_config.get_list('extended_attributes', True) or []
+            options['extension_enabled'] = True
+            options['after_mapping_hook'] = None
+            options['extended_attributes'] = extension_config.get_list('extended_attributes')
             # declaration of extended adobe groups: this is needed for two reasons:
             # 1. it allows validation of group names, and matching them to adobe groups
             # 2. it allows removal of adobe groups not assigned by the hook

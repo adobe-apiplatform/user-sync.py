@@ -391,25 +391,8 @@ class RuleProcessor(object):
                         self.after_mapping_hook_scope['target_groups'].add(adobe_group.get_qualified_name())
 
             # only if there actually is hook code: set up rest of hook scope, invoke hook, update user attributes
-            if options['after_mapping_hook'] is not None:
-                self.after_mapping_hook_scope['source_attributes'] = directory_user['source_attributes'].copy()
-
-                target_attributes = dict()
-                target_attributes['email'] = directory_user.get('email')
-                target_attributes['username'] = directory_user.get('username')
-                target_attributes['domain'] = directory_user.get('domain')
-                target_attributes['firstname'] = directory_user.get('firstname')
-                target_attributes['lastname'] = directory_user.get('lastname')
-                target_attributes['country'] = directory_user.get('country')
-                self.after_mapping_hook_scope['target_attributes'] = target_attributes
-
-                # invoke the customer's hook code
-                self.log_after_mapping_hook_scope(before_call=True)
-                exec(options['after_mapping_hook'], self.after_mapping_hook_scope)
-                self.log_after_mapping_hook_scope(after_call=True)
-
-                # copy modified attributes back to the user object
-                directory_user.update(self.after_mapping_hook_scope['target_attributes'])
+            if options.get('extension_enabled') is not None:
+                self.logger.warn('Extension config functionality is disabled - skipping after-map hook')
 
             for target_group_qualified_name in self.after_mapping_hook_scope['target_groups']:
                 target_group = AdobeGroup.lookup(target_group_qualified_name)
