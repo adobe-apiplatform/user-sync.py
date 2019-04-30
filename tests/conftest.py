@@ -27,6 +27,7 @@ def cli_args():
     return _cli_args
 
 
+@pytest.fixture
 def resource_file():
     """
     Create an empty resource file
