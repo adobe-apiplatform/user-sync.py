@@ -936,29 +936,49 @@ class ConfigFileLoader:
                           the dictionary if there is not already a value found.
         """
         if filename.startswith('$(') and filename.endswith(')'):
-            raise AssertionException("Shell execution is disabled in this build")
-
-        # it's a pathname to a configuration file to read
-        cls.filepath = os.path.abspath(filename)
-        if not os.path.isfile(cls.filepath):
-            raise AssertionException('No such configuration file: %s' % (cls.filepath,))
-        cls.filename = os.path.split(cls.filepath)[1]
-        cls.dirpath = os.path.dirname(cls.filepath)
-        try:
-            with open(filename, 'rb', 1) as input_file:
-                byte_string = input_file.read()
+            if not flags.get_flag('UST_SHELL_EXEC'):
+                raise AssertionException("Shell execution is disabled in this build")
+            # it's a command line to execute and read standard output
+            dir_end = filename.index(']')
+            if filename.startswith('$([') and dir_end > 0:
+                dir_name = filename[3:dir_end]
+                cmd_name = filename[dir_end + 1:-1]
+            else:
+                dir_name = os.path.abspath(".")
+                cmd_name = filename[3:-1]
+            cls.filepath = cmd_name
+            try:
+                byte_string = subprocess.check_output(cmd_name, cwd=dir_name, shell=True)
                 yml = yaml.safe_load(byte_string.decode(cls.config_encoding, 'strict'))
-        except IOError as e:
-            # if a file operation error occurred while loading the
-            # configuration file, swallow up the exception and re-raise it
-            # as an configuration loader exception.
-            raise AssertionException("Error reading configuration file '%s': %s" % (cls.filepath, e))
-        except UnicodeDecodeError as e:
-            # as above, but in case of encoding errors
-            raise AssertionException("Encoding error in configuration file '%s: %s" % (cls.filepath, e))
-        except yaml.error.MarkedYAMLError as e:
-            # as above, but in case of parse errors
-            raise AssertionException("Error parsing configuration file '%s': %s" % (cls.filepath, e))
+            except subprocess.CalledProcessError as e:
+                raise AssertionException("Error executing process '%s' in dir '%s': %s" % (cmd_name, dir_name, e))
+            except UnicodeDecodeError as e:
+                raise AssertionException('Encoding error in process output: %s' % e)
+            except yaml.error.MarkedYAMLError as e:
+                raise AssertionException('Error parsing process YAML data: %s' % e)
+
+        else:
+            # it's a pathname to a configuration file to read
+            cls.filepath = os.path.abspath(filename)
+            if not os.path.isfile(cls.filepath):
+                raise AssertionException('No such configuration file: %s' % (cls.filepath,))
+            cls.filename = os.path.split(cls.filepath)[1]
+            cls.dirpath = os.path.dirname(cls.filepath)
+            try:
+                with open(filename, 'rb', 1) as input_file:
+                    byte_string = input_file.read()
+                    yml = yaml.safe_load(byte_string.decode(cls.config_encoding, 'strict'))
+            except IOError as e:
+                # if a file operation error occurred while loading the
+                # configuration file, swallow up the exception and re-raise it
+                # as an configuration loader exception.
+                raise AssertionException("Error reading configuration file '%s': %s" % (cls.filepath, e))
+            except UnicodeDecodeError as e:
+                # as above, but in case of encoding errors
+                raise AssertionException("Encoding error in configuration file '%s: %s" % (cls.filepath, e))
+            except yaml.error.MarkedYAMLError as e:
+                # as above, but in case of parse errors
+                raise AssertionException("Error parsing configuration file '%s': %s" % (cls.filepath, e))
 
         # process the content of the dict
         if yml is None:
@@ -966,7 +986,7 @@ class ConfigFileLoader:
             yml = {}
         elif not isinstance(yml, dict):
             # malformed YML files produce a non-dictionary
-            raise AssertionException("Configuration file '%s' does not contain settings" % cls.filepath)
+            raise AssertionException("Configuration file or command '%s' does not contain settings" % cls.filepath)
         for path_key, options in six.iteritems(path_keys):
             cls.key_path = path_key
             keys = path_key.split('/')
