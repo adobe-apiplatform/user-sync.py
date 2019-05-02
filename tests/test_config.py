@@ -4,7 +4,7 @@ import yaml
 import shutil
 from util import update_dict
 from user_sync.config import ConfigFileLoader, ConfigLoader, DictConfig
-from user_sync import app
+from user_sync import flags
 from user_sync.error import AssertionException
 
 
@@ -37,6 +37,11 @@ def umapi_config_file(fixture_dir):
 
 
 @pytest.fixture
+def extension_config_file(fixture_dir):
+    return os.path.join(fixture_dir, 'extension-config.yml')
+
+
+@pytest.fixture
 def tmp_config_files(root_config_file, ldap_config_file, umapi_config_file, tmpdir):
     tmpfiles = []
     for fname in [root_config_file, ldap_config_file, umapi_config_file]:
@@ -45,6 +50,13 @@ def tmp_config_files(root_config_file, ldap_config_file, umapi_config_file, tmpd
         shutil.copy(fname, tmpfile)
         tmpfiles.append(tmpfile)
     return tuple(tmpfiles)
+
+
+@pytest.fixture
+def tmp_extension_config(extension_config_file, tmpdir):
+    tmpfile = os.path.join(str(tmpdir), os.path.split(extension_config_file)[-1])
+    shutil.copy(extension_config_file, tmpfile)
+    return tmpfile
 
 
 @pytest.fixture
@@ -162,3 +174,49 @@ def test_adobe_users_config(tmp_config_files, modify_root_config, cli_args):
     options = config_loader.load_invocation_options()
     assert 'adobe_users' in options
     assert options['adobe_users'] == ['mapped']
+
+
+def test_extension_load(tmp_config_files, modify_root_config, cli_args, tmp_extension_config):
+    """Test that extension config is loaded when config option is specified"""
+    (root_config_file, _, _) = tmp_config_files
+
+    args = cli_args({'config_filename': root_config_file})
+    options = ConfigLoader(args).get_rule_options()
+    assert 'after_mapping_hook' in options and options['after_mapping_hook'] is None
+
+    modify_root_config(['directory_users', 'extension'], tmp_extension_config)
+    options = ConfigLoader(args).get_rule_options()
+    assert 'after_mapping_hook' in options and options['after_mapping_hook'] is not None
+
+
+def test_extension_flag(tmp_config_files, modify_root_config, cli_args, tmp_extension_config, monkeypatch):
+    """Test that extension flag will prevent after-map hook from running"""
+    with monkeypatch.context() as m:
+        m.setattr(flags, 'get_flag', lambda *a: False)
+
+        (root_config_file, _, _) = tmp_config_files
+
+        args = cli_args({'config_filename': root_config_file})
+        modify_root_config(['directory_users', 'extension'], tmp_extension_config)
+        options = ConfigLoader(args).get_rule_options()
+        assert 'after_mapping_hook' in options and options['after_mapping_hook'] is None
+
+
+def test_shell_exec_flag(tmp_config_files, modify_root_config, cli_args, monkeypatch):
+    """Test that shell exec flag will raise an error if command is specified to get connector config"""
+    from user_sync.connector.directory import DirectoryConnector
+
+    with monkeypatch.context() as m:
+        m.setattr(flags, 'get_flag', lambda *a: False)
+        (root_config_file, _, _) = tmp_config_files
+
+        args = cli_args({'config_filename': root_config_file})
+        modify_root_config(['directory_users', 'connectors', 'ldap'], "$(some command)")
+        config_loader = ConfigLoader(args)
+
+        directory_connector_module_name = config_loader.get_directory_connector_module_name()
+        if directory_connector_module_name is not None:
+            directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
+            directory_connector = DirectoryConnector(directory_connector_module)
+            with pytest.raises(AssertionException):
+                config_loader.get_directory_connector_options(directory_connector.name)

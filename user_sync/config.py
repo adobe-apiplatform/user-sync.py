@@ -23,6 +23,7 @@ import logging
 import os
 import re
 import subprocess
+from copy import deepcopy
 
 import six
 import yaml
@@ -98,7 +99,7 @@ class ConfigLoader(object):
 
         # copy instead of direct assignment to preserve original invocation_defaults object
         # otherwise, setting options also sets invocation_defaults (same memory ref)
-        options = self.invocation_defaults.copy()
+        options = deepcopy(self.invocation_defaults)
 
         # get overrides from the main config
         invocation_config = self.main_config.get_dict_config('invocation_defaults', True)
@@ -444,7 +445,7 @@ class ConfigLoader(object):
         """
         Return a dict representing options for RuleProcessor.
         """
-        options = user_sync.rules.RuleProcessor.default_options
+        options = deepcopy(user_sync.rules.RuleProcessor.default_options)
         options.update(self.invocation_options)
 
         # process directory configuration options
@@ -536,7 +537,7 @@ class ConfigLoader(object):
         extension_config = self.get_directory_extension_options()
         options['extension_enabled'] = flags.get_flag('UST_EXTENSION')
         if extension_config and not options['extension_enabled']:
-            self.logger.warn('Extension config functionality is disabled - skipping after-map hook')
+            self.logger.warning('Extension config functionality is disabled - skipping after-map hook')
         elif extension_config:
             after_mapping_hook_text = extension_config.get_string('after_mapping_hook')
             options['after_mapping_hook'] = compile(after_mapping_hook_text, '<per-user after-mapping-hook>', 'exec')
