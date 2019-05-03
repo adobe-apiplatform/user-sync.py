@@ -98,4 +98,4 @@ _site
 .sass-cache
 .jekyll-metadata
 
-test_config/
+test-config/
