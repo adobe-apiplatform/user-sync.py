@@ -1,6 +1,5 @@
 import os
 import pytest
-import psutil
 import user_sync.lockfile as lock
 
 @pytest.fixture
@@ -38,8 +37,6 @@ def test_is_locked(get_lock_filepath):
     assert plock.is_locked() is True
 
     # any other cases that make sense ///
-
-    pass
 
 def test_unlock():
 
