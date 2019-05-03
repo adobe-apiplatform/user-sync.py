@@ -103,3 +103,4 @@ user_sync/resources/*
 !user_sync/resources/README.md
 !user_sync/resources/manual_url
 test_config/
+test-config/
