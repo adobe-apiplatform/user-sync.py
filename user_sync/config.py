@@ -836,13 +836,13 @@ class DictConfig(ObjectConfig):
     @staticmethod
     def get_value_from_keyring(secure_value_key, user_name):
         import keyring
+        logger = logging.getLogger("keyring")
         if flags.get_flag('UST_BUILD_EXE'):
             from importlib import import_module
             from keyring.backends import fail
             from keyring.backend import KeyringBackend
             from keyring.util import suppress_exceptions
 
-            logger = logging.getLogger("keyring")
             backend_list = {
                 'KWallet': 'keyring.backends.kwallet',
                 'SecretService': 'keyring.backends.SecretService',
@@ -860,7 +860,7 @@ class DictConfig(ObjectConfig):
             selected = max(rings, default=fail.Keyring(), key=lambda p: p.priority)
             keyring.set_keyring(selected)
 
-            logger.info("Using keyring '" + selected.name + "' to retrieve: " + secure_value_key)
+        logger.info("Using keyring '" + keyring.get_keyring().name + "' to retrieve: " + secure_value_key)
         return keyring.get_password(service_name=secure_value_key, username=user_name)
 
 

@@ -5,7 +5,10 @@ block_cipher = None
 
 a = Analysis(['user_sync/app.py'],
              binaries=[],
-             datas=[],
+             datas=[( 'user_sync/resources/*.cfg', 'resources' ),
+                    ( 'user_sync/resources/manual_url', 'resources' ),
+                    ( 'user_sync/resources/README.md', 'resources' ),
+                    ( 'user_sync/resources/examples/*', 'resources/examples' )],
              hiddenimports=['win32timezone'],
              hookspath=[],
              runtime_hooks=[],
