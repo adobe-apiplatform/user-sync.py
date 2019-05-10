@@ -125,7 +125,7 @@ def main():
               cls=user_sync.cli.OptionMulti,
               type=list,
               metavar='ldap|okta|csv [path-to-file.csv]')
-@click.option('--process-groups/--no-process-groups',
+@click.option('--process-groups/--no-process-groups', default=None,
               help='if membership in mapped groups differs between the enterprise directory and Adobe sides, '
                    'the group membership is updated on the Adobe side so that the memberships in mapped '
                    'groups match those on the enterprise directory side.')
@@ -135,7 +135,7 @@ def main():
               nargs=1,
               type=str,
               metavar='sync|push')
-@click.option('-t/-T', '--test-mode/--no-test-mode',
+@click.option('-t/-T', '--test-mode/--no-test-mode', default=None,
               help='enable test mode (API calls do not execute changes on the Adobe side).')
 @click.option('--user-filter',
               help='limit the selected set of users that may be examined for syncing, with the pattern '
@@ -150,7 +150,7 @@ def main():
               cls=user_sync.cli.OptionMulti,
               type=list,
               metavar='all|file|mapped|group [group list or path-to-file.csv]')
-@click.option('--update-user-info/--no-update-user-info',
+@click.option('--update-user-info/--no-update-user-info', default=None,
               help='user attributes on the Adobe side are updated from the directory.')
 def sync(**kwargs):
     """Run User Sync [default command]"""
