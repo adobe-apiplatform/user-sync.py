@@ -7,7 +7,7 @@ pip install -e .
 pip install -e .[test]
 pip install -e .[setup]
 pip uninstall -y enum34
-make
+make $BUILD_TARGET
 pwd
-.travis/release.sh
+.build/.travis/release.sh
 python setup.py test
