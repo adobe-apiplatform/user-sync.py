@@ -5,7 +5,7 @@ before_install:
 - chmod +x .build/.travis/*.sh
 matrix:
   include:
-  - env: IMG="ubuntu1604"
+  - env: IMG="ubuntu1604" BUILD_TARGET="pex"
     python:
     - 3.6
     install:
@@ -14,7 +14,16 @@ matrix:
     - .build/.travis/build-py36.sh
     - .build/.travis/release.sh
     - python setup.py test
-  - env: IMG="ubuntu1604"
+  - env: IMG="ubuntu1604" BUILD_TARGET="standalone"
+    python:
+    - 3.6
+    install:
+    - .build/.travis/install-ubuntu.sh
+    script:
+    - .build/.travis/build-py36.sh
+    - .build/.travis/release.sh
+    - python setup.py test
+  - env: IMG="ubuntu1604" BUILD_TARGET="pex"
     python:
     - 2.7
     install:
