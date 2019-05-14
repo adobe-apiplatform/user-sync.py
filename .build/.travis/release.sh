@@ -10,7 +10,7 @@ if [ "$BUILD_TARGET" = "pex" ]; then
   mv dist/*.tar.gz release/
   ls -al release/
 else
-  mv user-sync "user-sync-${TRAVIS_TAG}-${IMG}-${PY_VER}"
+  mv user-sync "user-sync-${TRAVIS_TAG}-${IMG}"
   cd ..
   mkdir -p release
   mv dist/* release/
