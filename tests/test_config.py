@@ -176,17 +176,21 @@ def test_adobe_users_config(tmp_config_files, modify_root_config, cli_args):
     assert options['adobe_users'] == ['mapped']
 
 
-def test_extension_load(tmp_config_files, modify_root_config, cli_args, tmp_extension_config):
+def test_extension_load(tmp_config_files, modify_root_config, cli_args, tmp_extension_config, monkeypatch):
     """Test that extension config is loaded when config option is specified"""
-    (root_config_file, _, _) = tmp_config_files
+    with monkeypatch.context() as m:
+        m.delenv('UST_BUILD_EXE', raising=False)
+        m.delenv('UST_EXTENSION', raising=False)
+        m.delenv('UST_SHELL_EXEC', raising=False)
+        (root_config_file, _, _) = tmp_config_files
 
-    args = cli_args({'config_filename': root_config_file})
-    options = ConfigLoader(args).get_rule_options()
-    assert 'after_mapping_hook' in options and options['after_mapping_hook'] is None
+        args = cli_args({'config_filename': root_config_file})
+        options = ConfigLoader(args).get_rule_options()
+        assert 'after_mapping_hook' in options and options['after_mapping_hook'] is None
 
-    modify_root_config(['directory_users', 'extension'], tmp_extension_config)
-    options = ConfigLoader(args).get_rule_options()
-    assert 'after_mapping_hook' in options and options['after_mapping_hook'] is not None
+        modify_root_config(['directory_users', 'extension'], tmp_extension_config)
+        options = ConfigLoader(args).get_rule_options()
+        assert 'after_mapping_hook' in options and options['after_mapping_hook'] is not None
 
 
 def test_extension_flag(tmp_config_files, modify_root_config, cli_args, tmp_extension_config, monkeypatch):

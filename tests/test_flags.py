@@ -103,6 +103,9 @@ def test_flags_default_cfg(flag_data_file, default_flag_data, monkeypatch):
     default_file = flag_data_file('default_flags.cfg', default_flag_data)
 
     with monkeypatch.context() as m:
+        m.delenv('UST_BUILD_EXE', raising=False)
+        m.delenv('UST_EXTENSION', raising=False)
+        m.delenv('UST_SHELL_EXEC', raising=False)
         m.setattr(resource, 'get_resource', patch_flag_resource(None, default_file))
         m.setattr(resource, '_config', {}, False)
         flags._init_config()
