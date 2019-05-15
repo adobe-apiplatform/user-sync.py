@@ -147,6 +147,7 @@ class ConfigLoader(object):
         else:
             adobe_action_spec = options['adobe_only_user_action']
             adobe_action = user_sync.helper.normalize_string(adobe_action_spec[0])
+            options['stray_list_output_path'] = None
             if adobe_action == 'preserve':
                 pass  # no option settings needed
             elif adobe_action == 'exclude':
