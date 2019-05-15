@@ -62,7 +62,7 @@ console_log_handler = init_console_log()
 
 @click.group(cls=DefaultGroup, default='sync', default_if_no_args=True)
 @click.help_option('-h', '--help')
-@click.version_option(None, '-v', '--version', message='%(prog)s %(version)s')
+@click.version_option(app_version, '-v', '--version', message='%(prog)s %(version)s')
 def main():
     """User Sync from Adobe
 
