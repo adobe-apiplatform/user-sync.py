@@ -3,7 +3,6 @@ import pytest
 import user_sync.helper
 from conftest import compare_list
 
-
 @pytest.fixture()
 def field_names():
     return ['firstname', 'lastname', 'email', 'country', 'groups', 'type', 'username', 'domain']
@@ -24,7 +23,6 @@ def user_list():
 @pytest.fixture()
 def adapter():
     return user_sync.helper.CSVAdapter()
-
 
 def test_open_csv_file(adapter):
     filename = 'blank.csv'
