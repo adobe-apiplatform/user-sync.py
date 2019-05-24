@@ -179,9 +179,7 @@ def test_adobe_users_config(tmp_config_files, modify_root_config, cli_args):
 def test_extension_load(tmp_config_files, modify_root_config, cli_args, tmp_extension_config, monkeypatch):
     """Test that extension config is loaded when config option is specified"""
     with monkeypatch.context() as m:
-        m.delenv('UST_BUILD_EXE', raising=False)
-        m.delenv('UST_EXTENSION', raising=False)
-        m.delenv('UST_SHELL_EXEC', raising=False)
+        m.setattr(flags, 'get_flag', lambda *a: True)
         (root_config_file, _, _) = tmp_config_files
 
         args = cli_args({'config_filename': root_config_file})
