@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 version_namespace = {}
 with open('user_sync/version.py') as f:
@@ -44,7 +44,7 @@ setup(name='user-sync',
       maintainer='Daniel Brotsky',
       maintainer_email='dbrotsky@adobe.com',
       license='MIT',
-      packages=['user_sync', 'user_sync.connector'],
+      packages=find_packages(),
       install_requires=[
           'keyring',
           'okta==0.0.3.1',
@@ -54,6 +54,8 @@ setup(name='user-sync',
           'PyYAML',
           'six',
           'umapi-client>=2.12',
+          'click',
+          'click-default-group',
       ],
       extras_require={
           ':sys_platform=="linux" or sys_platform=="linux2"': [
@@ -73,4 +75,5 @@ setup(name='user-sync',
               'user_sync = user_sync.app:main'
           ]
       },
+      package_data={'user_sync.resources': ['*', 'examples/*']},
       zip_safe=False)

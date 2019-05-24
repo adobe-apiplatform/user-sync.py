@@ -48,7 +48,9 @@ class ConfigLoader(object):
         'adobe_only_user_action': ['preserve'],
         'adobe_only_user_list': None,
         'adobe_users': ['all'],
+        'config_filename': 'user-sync-config.yml',
         'connector': ['ldap'],
+        'encoding_name': 'utf8',
         'process_groups': False,
         'strategy': 'sync',
         'test_mode': False,
@@ -57,14 +59,14 @@ class ConfigLoader(object):
         'users': ['all'],
     }
 
-    def __init__(self, arg_obj):
+    def __init__(self, args):
         """
         Load the config files and invocation options.
 
-        :type arg_obj: argparse.Namespace
+        :type args: dict
         """
         self.logger = logging.getLogger('config')
-        self.args = vars(arg_obj)
+        self.args = args
         self.main_config = self.load_main_config()
         self.invocation_options = self.load_invocation_options()
         self.directory_groups = self.load_directory_groups()
@@ -91,6 +93,7 @@ class ConfigLoader(object):
         """Merge the invocation option defaults with overrides from the main config and the command line.
         :rtype: dict
         """
+
         # copy instead of direct assignment to preserve original invocation_defaults object
         # otherwise, setting options also sets invocation_defaults (same memory ref)
         options = self.invocation_defaults.copy()
@@ -112,11 +115,17 @@ class ConfigLoader(object):
                     if val:
                         options[k] = val
 
+        # now handle overrides from CLI options
+        for k, arg_val in self.args.items():
+            if arg_val is None:
+                continue
+            options[k] = arg_val
+
         # now process command line options.  the order of these is important,
         # because options processed later depend on the values of those processed earlier
 
         # --connector
-        connector_spec = self.args['connector'] or options['connector']
+        connector_spec = options['connector']
         connector_type = user_sync.helper.normalize_string(connector_spec[0])
         if connector_type in ["ldap", "okta"]:
             if len(connector_spec) > 1:
@@ -131,34 +140,14 @@ class ConfigLoader(object):
         else:
             raise AssertionException('Unknown connector type: %s' % connector_type)
 
-        # --process-groups
-        if self.args['process_groups'] is not None:
-            options['process_groups'] = self.args['process_groups']
-
-        # --strategy
-        if user_sync.helper.normalize_string(self.args['strategy'] or options['strategy']) == 'push':
-            options['strategy'] = 'push'
-
-        # --test-mode
-        if self.args['test_mode'] is not None:
-            options['test_mode'] = self.args['test_mode']
-
-        # --update-user-info
-        if self.args['update_user_info'] is not None:
-            options['update_user_info'] = self.args['update_user_info']
-
         # --adobe-only-user-action
         if options['strategy'] == 'push':
-            if self.args['adobe_only_user_action']:
-                raise AssertionException('You cannot specify --adobe-only-user-action when using "push" strategy')
+            options['adobe_only_user_action'] = None
             self.logger.info("Strategy push: ignoring default adobe-only-user-action")
         else:
-            if self.args['adobe_only_user_action']:
-                adobe_action_spec = self.args['adobe_only_user_action']
-                options['adobe_only_user_action'] = self.args['adobe_only_user_action']
-            else:
-                adobe_action_spec = options['adobe_only_user_action']
+            adobe_action_spec = options['adobe_only_user_action']
             adobe_action = user_sync.helper.normalize_string(adobe_action_spec[0])
+            options['stray_list_output_path'] = None
             if adobe_action == 'preserve':
                 pass  # no option settings needed
             elif adobe_action == 'exclude':
@@ -177,32 +166,20 @@ class ConfigLoader(object):
                 raise AssertionException('Unknown option "%s" for adobe-only-user-action' % adobe_action)
 
         # --users and --adobe-only-user-list conflict with each other, so we need to disambiguate.
-        # Argument specifications override configuration options, so you must have one or the other
-        # either as an argument or as a configured default.  For a complete check, we need to compare against
-        # BOTH the args values AND the options values (in order to catch the invocation defaults).
-        if (self.args['users'] or (options['users'] and options['users'] != self.invocation_defaults['users'])) \
-                and (self.args['adobe_only_user_list'] or options['adobe_only_user_list']):
-            # specifying both --users and --adobe-only-user-list is an error
-            raise AssertionException('You cannot specify both a --users arg and an --adobe-only-user-list arg')
-        elif self.args['users']:
-            # specifying --users overrides the configuration file default for this option
-            options['users'] = self.args['users']
-            users_spec = self.args['users']
-            stray_list_input_path = None
-        elif self.args['adobe_only_user_list']:
+
+        stray_list_input_path = None
+        if options['adobe_only_user_list']:
             # specifying --adobe-only-user-list overrides the configuration file default for --users
             if options['strategy'] == 'push':
                 raise AssertionException('You cannot specify --adobe-only-user-list when using "push" strategy')
-            users_spec = None
-            stray_list_input_path = self.args['adobe_only_user_list']
-        elif options['adobe_only_user_list']:
-            users_spec = None
+            options['users'] = None
+            self.logger.info("Adobe-only user list specified, ignoring 'users' setting")
             stray_list_input_path = options['adobe_only_user_list']
-        elif options['users']:
+
+        users_spec = None
+
+        if options['users'] is not None:
             users_spec = options['users']
-            stray_list_input_path = None            
-        else:
-            raise AssertionException('You must specify either a "users" option or an "adobe-only-user-list" option.')
 
         # --users
         if users_spec:
@@ -227,10 +204,8 @@ class ConfigLoader(object):
                 raise AssertionException('Unknown option "%s" for users' % users_action)
 
         # --adobe-only-user-list
-        if options['strategy'] == 'push':
-            self.logger.info("Strategy push: ignoring default adobe-only-user-list")
-        elif stray_list_input_path:
-            if options.get('stray_list_output_path'):
+        if stray_list_input_path:
+            if options['stray_list_output_path'] is not None:
                 raise AssertionException('You cannot specify both an adobe-only-user-list (%s) and '
                                          'an adobe-only-user-action of "write-file"')
             # don't read the directory when processing from the stray list
@@ -239,28 +214,22 @@ class ConfigLoader(object):
 
         # --user-filter
         if stray_list_input_path:
-            if self.args['user_filter']:
-                raise AssertionException('You cannot specify --user-filter when using an adobe-only-user-list')
+            options['user_filter'] = None
             self.logger.info("adobe-only-user-list specified, so ignoring default user filter specification")
-        else:
-            if self.args['user_filter'] is not None:
-                options['user_filter'] = self.args['user_filter']
+
+        if options['user_filter'] is not None:
             username_filter_pattern = options['user_filter']
-            if username_filter_pattern:
-                try:
-                    compiled_expression = re.compile(r'\A' + username_filter_pattern + r'\Z', re.IGNORECASE)
-                except Exception as e:
-                    raise AssertionException("Bad regular expression in user filter: %s reason: %s" %
-                                             (username_filter_pattern, e))
-                options['username_filter_regex'] = compiled_expression
+            try:
+                compiled_expression = re.compile(r'\A' + username_filter_pattern + r'\Z', re.IGNORECASE)
+            except Exception as e:
+                raise AssertionException("Bad regular expression in user filter: %s reason: %s" %
+                                         (username_filter_pattern, e))
+            options['username_filter_regex'] = compiled_expression
 
         # --adobe-users
-        if self.args['adobe_users'] is not None:
-            adobe_users_spec = options['adobe_users'] = self.args['adobe_users']
-        elif options['adobe_users'] is not None:
+        adobe_users_spec = None
+        if options['adobe_users'] is not None:
             adobe_users_spec = options['adobe_users']
-        else:
-            adobe_users_spec = None
 
         if adobe_users_spec is not None:
             adobe_users_action = user_sync.helper.normalize_string(adobe_users_spec[0])
