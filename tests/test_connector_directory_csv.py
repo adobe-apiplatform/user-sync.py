@@ -13,7 +13,7 @@ def default_caller_options():
             'identity_type_column_name': 'type',
             'username_column_name': 'username',
             'domain_column_name': 'domain',
-            'file_path': 'fixture/csv_test.csv',
+            'file_path': 'tests/fixture/csv_test.csv',
             'user_identity_type': 'federatedID'}
 
 
