@@ -4,8 +4,8 @@ import user_sync.lockfile as lock
 
 
 @pytest.fixture
-def lock_filepath():
-    return os.path.join(os.getcwd(), 'lockfile_test')
+def lock_filepath(tmpdir):
+    return os.path.join(str(tmpdir), 'lockfile_test')
 
 
 def test_set_lock(lock_filepath):
@@ -18,7 +18,6 @@ def test_is_locked(lock_filepath):
     plock = lock.ProcessLock(lock_filepath)
     assert plock.is_locked() is False
 
-
     plock.path = lock_filepath
     with open(lock_filepath, 'w') as f:
         f.write("")
@@ -27,6 +26,7 @@ def test_is_locked(lock_filepath):
     with open(lock_filepath, 'w') as f:
         f.write("dfsdf")
     pytest.raises(ValueError, plock.is_locked)
+
 
 def test_unlock(lock_filepath):
     plock2 = lock.ProcessLock(lock_filepath)

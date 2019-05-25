@@ -9,8 +9,8 @@ def get_implementation():
     dc_mod_name = "user_sync.connector.directory_ldap"
     return __import__(dc_mod_name, fromlist=[''])
 
-def test_required_functions(get_implementation):
 
+def test_required_functions(get_implementation):
     base_impl = get_implementation
     del base_impl.connector_metadata
     pytest.raises(AssertionException, DirectoryConnector, base_impl)

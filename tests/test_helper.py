@@ -3,9 +3,11 @@ import pytest
 import user_sync.helper
 from conftest import compare_list
 
+
 @pytest.fixture()
 def field_names():
     return ['firstname', 'lastname', 'email', 'country', 'groups', 'type', 'username', 'domain']
+
 
 @pytest.fixture()
 def user_list():
@@ -20,12 +22,14 @@ def user_list():
          'username': '', 'domain': ''}
     ]
 
+
 @pytest.fixture()
 def adapter():
     return user_sync.helper.CSVAdapter()
 
-def test_open_csv_file(adapter):
-    filename = 'blank.csv'
+
+def test_open_csv_file(adapter, tmpdir):
+    filename = os.path.join(str(tmpdir), 'blank.csv')
     open(filename, 'w').close()
     assert adapter.open_csv_file(filename, 'r')
     assert adapter.open_csv_file(filename, 'w')
@@ -40,22 +44,23 @@ def test_guess_delimiter_from_filename(adapter):
     assert adapter.guess_delimiter_from_filename('test.tsv') == '\t'
     assert adapter.guess_delimiter_from_filename('test.mtv') == '\t'
 
-def test_read_csv_rows(adapter, user_list, field_names):
-    filename = 'test_read.csv'
+
+def test_read_csv_rows(adapter, user_list, field_names, tmpdir):
+    filename = os.path.join(str(tmpdir), 'test_read.csv')
     write_users_to_file(filename, field_names, user_list)
 
     csv_yield = list(adapter.read_csv_rows(filename, field_names))
     reduced_output = [dict(e) for e in csv_yield]
     assert compare_list(reduced_output, user_list)
-    os.remove(filename)
 
-def test_write_csv_rows(adapter, user_list, field_names):
-    filename = 'test.csv'
+
+def test_write_csv_rows(adapter, user_list, field_names, tmpdir):
+    filename = os.path.join(str(tmpdir), 'test.csv')
     adapter.write_csv_rows(filename, field_names, user_list)
     csv_yield = list(adapter.read_csv_rows(filename, field_names))
     reduced_output = [dict(e) for e in csv_yield]
     assert compare_list(reduced_output, user_list)
-    os.remove(filename)
+
 
 def write_users_to_file(filename, field_names, user_list):
     file = open(filename, 'w')
