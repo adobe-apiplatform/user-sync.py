@@ -27,41 +27,41 @@ def test_read_users(csv_connector):
     # because other two users have invalid email addresses
 
     expected_result = {
-        'dYennant@seaofcarag.com': {'identity_type': 'federatedID', 'username': 'dYennant@seaofcarag.com',
-                                    'domain': None, 'firstname': None, 'lastname': 'Yennant',
-                                    'email': 'dYennant@seaofcarag.com', 'groups': ['Daleks_Info'], 'country': 'US',
-                                    'source_attributes': {'email': 'dYennant@seaofcarag.com', 'firstname': None,
-                                                          'lastname': 'Yennant', 'country': 'US',
-                                                          'groups': 'Daleks_Info', 'type': 'federatedID',
-                                                          'username': None, 'domain': None, 'extraattribute': None}},
-        'debmorgan@seaofcarag.com': {'identity_type': 'federatedID', 'username': 'debmorgan@seaofcarag.com',
-                                     'domain': None, 'firstname': 'Debra', 'lastname': None,
-                                     'email': 'debmorgan@seaofcarag.com', 'groups': ['Daleks_Info'], 'country': 'US',
-                                     'source_attributes': {'email': 'debmorgan@seaofcarag.com', 'firstname': 'Debra',
-                                                           'lastname': None, 'country': 'US', 'groups': 'Daleks_Info',
-                                                           'type': 'federatedID', 'username': None, 'domain': None,
-                                                           'extraattribute': None}},
-        'ktownsnd@seaofcarag.com': {'identity_type': 'federatedID', 'username': 'ktownsnd@seaofcarag.com',
-                                    'domain': None, 'firstname': 'Kevin', 'lastname': 'TownSnd',
-                                    'email': 'ktownsnd@seaofcarag.com', 'groups': ['Daleks_Info'], 'country': 'US',
-                                    'source_attributes': {'email': 'ktownsnd@seaofcarag.com', 'firstname': 'Kevin',
-                                                          'lastname': 'TownSnd', 'country': 'US',
-                                                          'groups': 'Daleks_Info', 'type': None, 'username': None,
-                                                          'domain': None, 'extraattribute': None}},
-        'pwizard@seaofcarag.com': {'identity_type': 'federatedID', 'username': 'pwizard@seaofcarag.com',
-                                   'domain': 'seaofcarag.com', 'firstname': 'Park', 'lastname': 'Wizard',
-                                   'email': 'pwizard@seaofcarag.com', 'groups': ['Daleks_Info'], 'country': 'US',
-                                   'source_attributes': {'email': 'pwizard@seaofcarag.com', 'firstname': 'Park',
-                                                         'lastname': 'Wizard', 'country': 'US', 'groups': 'Daleks_Info',
-                                                         'type': 'federatedID', 'username': 'pwizard@seaofcarag.com',
-                                                         'domain': 'seaofcarag.com', 'extraattribute': None}},
-        'swizard@seaofcarag.com': {'identity_type': 'federatedID', 'username': 'swizard@seaofcarag.com',
-                                   'domain': 'seaofcarag.com', 'firstname': 'Shark', 'lastname': 'Wizard',
-                                   'email': 'swizard@seaofcarag.com', 'groups': ['Daleks_Info'], 'country': 'US',
-                                   'source_attributes': {'email': 'swizard@seaofcarag.com', 'firstname': 'Shark',
-                                                         'lastname': 'Wizard', 'country': 'US', 'groups': 'Daleks_Info',
-                                                         'type': 'federatedID', 'username': 'swizard@seaofcarag.com',
-                                                         'domain': 'seaofcarag.com', 'extraattribute': 'Adobe'}}}
+        'dYennant@example.com': {'identity_type': 'federatedID', 'username': 'dYennant@example.com',
+                                 'domain': None, 'firstname': None, 'lastname': 'Yennant',
+                                 'email': 'dYennant@example.com', 'groups': ['Daleks_Info'], 'country': 'US',
+                                 'source_attributes': {'email': 'dYennant@example.com', 'firstname': None,
+                                                       'lastname': 'Yennant', 'country': 'US',
+                                                       'groups': 'Daleks_Info', 'type': 'federatedID',
+                                                       'username': None, 'domain': None, 'extraattribute': None}},
+        'debmorgan@example.com': {'identity_type': 'federatedID', 'username': 'debmorgan@example.com',
+                                  'domain': None, 'firstname': 'Debra', 'lastname': None,
+                                  'email': 'debmorgan@example.com', 'groups': ['Daleks_Info'], 'country': 'US',
+                                  'source_attributes': {'email': 'debmorgan@example.com', 'firstname': 'Debra',
+                                                        'lastname': None, 'country': 'US', 'groups': 'Daleks_Info',
+                                                        'type': 'federatedID', 'username': None, 'domain': None,
+                                                        'extraattribute': None}},
+        'ktownsnd@example.com': {'identity_type': 'federatedID', 'username': 'ktownsnd@example.com',
+                                 'domain': None, 'firstname': 'Kevin', 'lastname': 'TownSnd',
+                                 'email': 'ktownsnd@example.com', 'groups': ['Daleks_Info'], 'country': 'US',
+                                 'source_attributes': {'email': 'ktownsnd@example.com', 'firstname': 'Kevin',
+                                                       'lastname': 'TownSnd', 'country': 'US',
+                                                       'groups': 'Daleks_Info', 'type': None, 'username': None,
+                                                       'domain': None, 'extraattribute': None}},
+        'pwizard@example.com': {'identity_type': 'federatedID', 'username': 'pwizard@example.com',
+                                'domain': 'example.com', 'firstname': 'Park', 'lastname': 'Wizard',
+                                'email': 'pwizard@example.com', 'groups': ['Daleks_Info'], 'country': 'US',
+                                'source_attributes': {'email': 'pwizard@example.com', 'firstname': 'Park',
+                                                      'lastname': 'Wizard', 'country': 'US', 'groups': 'Daleks_Info',
+                                                      'type': 'federatedID', 'username': 'pwizard@example.com',
+                                                      'domain': 'example.com', 'extraattribute': None}},
+        'swizard@example.com': {'identity_type': 'federatedID', 'username': 'swizard@example.com',
+                                'domain': 'example.com', 'firstname': 'Shark', 'lastname': 'Wizard',
+                                'email': 'swizard@example.com', 'groups': ['Daleks_Info'], 'country': 'US',
+                                'source_attributes': {'email': 'swizard@example.com', 'firstname': 'Shark',
+                                                      'lastname': 'Wizard', 'country': 'US', 'groups': 'Daleks_Info',
+                                                      'type': 'federatedID', 'username': 'swizard@example.com',
+                                                      'domain': 'example.com', 'extraattribute': 'Adobe'}}}
 
     returned_users_list = csv_connector.read_users(csv_connector.options['file_path'], ['extraattribute'])
 
@@ -69,9 +69,9 @@ def test_read_users(csv_connector):
 
 
 def test_get_column_value(csv_connector):
-    user = {'firstname': 'Dark', 'lastname': 'Wizard', 'email': 'dwizard@seaofcarag.com', 'country': None,
+    user = {'firstname': 'Dark', 'lastname': 'Wizard', 'email': 'dwizard@example.com', 'country': None,
             'groups': 'Daleks_Info', 'type': 'federatedID', 'username': None, 'domain': None}
 
-    assert csv_connector.get_column_value(user, 'email') == 'dwizard@seaofcarag.com'
+    assert csv_connector.get_column_value(user, 'email') == 'dwizard@example.com'
     assert csv_connector.get_column_value(user, 'country') is None
     assert csv_connector.get_column_value(user, 'country1') is None
