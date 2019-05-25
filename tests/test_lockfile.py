@@ -11,7 +11,6 @@ def lock_filepath(tmpdir):
 def test_set_lock(lock_filepath):
     plock1 = lock.ProcessLock(lock_filepath)
     assert plock1.set_lock() is True
-    os.remove(lock_filepath)
 
 
 def test_is_locked(lock_filepath):
