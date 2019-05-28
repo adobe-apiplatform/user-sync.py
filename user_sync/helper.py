@@ -111,12 +111,12 @@ class CSVAdapter:
                     if len(unrecognized_column_names) > 0 and logger is not None:
                         logger.warn("In file '%s': unrecognized column names: %s", file_path, unrecognized_column_names)
                 for row in reader:
+                    row.pop(None, None)
                     if is_py2():
-                        # in py2, we need to decode both the column names *and* the values
                         newrow = {}
                         for key, val in six.iteritems(row):
-                            newrow[key.decode(encoding, 'strict')] = val.decode(encoding, 'strict') if val else None
-                        row = newrow
+                            newrow[key.decode(encoding, 'strict')] = val.decode(encoding, 'strict') if val else val
+                        yield newrow
                     yield row
             except UnicodeError as e:
                 raise AssertionException("Encoding error in file '%s': %s" % (file_path, e))
