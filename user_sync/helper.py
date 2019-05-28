@@ -113,9 +113,10 @@ class CSVAdapter:
                 for row in reader:
                     row.pop(None, None)
                     if is_py2():
+                        newrow = {}
                         for key, val in six.iteritems(row):
-                            row[key.decode(encoding, 'strict')] = val.decode(encoding, 'strict') if val else val
-
+                            newrow[key.decode(encoding, 'strict')] = val.decode(encoding, 'strict') if val else val
+                        row = newrow
                     yield row
             except UnicodeError as e:
                 raise AssertionException("Encoding error in file '%s': %s" % (file_path, e))
