@@ -1,6 +1,8 @@
+import re
 import os
 import pytest
 import user_sync.helper
+from user_sync.helper import JobStats
 from conftest import compare_list
 
 
@@ -74,3 +76,27 @@ def write_users_to_file(filename, field_names, user_list):
                 line += ","
         file.write(line + "\n")
     file.close()
+
+
+def test_log_start(log_stream):
+    stream, logger = log_stream
+    jobstats = JobStats('Test Job Stats')
+    jobstats.log_start(logger)
+    stream.flush()
+    assert stream.getvalue() == '---------- Start Test Job Stats ----------------------------\n'
+
+
+def test_log_end(log_stream):
+    stream, logger = log_stream
+    jobstats = JobStats('Test Job Stats')
+    jobstats.log_end(logger)
+    stream.flush()
+    output = stream.getvalue()
+    pattern = '(---------- End Test Job Stats \\(Total time:.*)(\\) --------\\n)'
+    assert re.search(pattern, output)
+
+
+def test_create_divider():
+    jobstats = JobStats('Test Job Stats')
+    line = jobstats.create_divider('This is a header')
+    assert line == '----------This is a header----------------------------------'
