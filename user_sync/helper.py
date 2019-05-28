@@ -116,7 +116,7 @@ class CSVAdapter:
                         newrow = {}
                         for key, val in six.iteritems(row):
                             newrow[key.decode(encoding, 'strict')] = val.decode(encoding, 'strict') if val else val
-                        row = newrow
+                        yield newrow
                     yield row
             except UnicodeError as e:
                 raise AssertionException("Encoding error in file '%s': %s" % (file_path, e))
