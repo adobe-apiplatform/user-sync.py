@@ -1,14 +1,16 @@
 import os
 import six
 import pytest
+import logging
+from six import StringIO
 from user_sync import config
 
 
 @pytest.fixture
 def fixture_dir():
     return os.path.abspath(
-           os.path.join(
-             os.path.dirname(__file__), 'fixture'))
+        os.path.join(
+            os.path.dirname(__file__), 'fixture'))
 
 
 @pytest.fixture
@@ -28,6 +30,18 @@ def cli_args():
     return _cli_args
 
 
+@pytest.fixture
+def log_stream():
+    stream = StringIO()
+    handler = logging.StreamHandler(stream)
+    logger = logging.getLogger('test_logger')
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+    yield stream, logger
+    handler.close()
+
+
+#### These will be removed
 def compare_dictionary(actual, expected):
     if len(actual) != len(expected):
         return False
