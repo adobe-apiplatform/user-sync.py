@@ -1,9 +1,9 @@
-import re
 import os
+import re
+
 import pytest
-import user_sync.helper
-from user_sync.helper import JobStats
-from conftest import compare_list
+
+from user_sync.helper import JobStats, CSVAdapter
 
 
 @pytest.fixture()
@@ -27,18 +27,20 @@ def user_list():
 
 @pytest.fixture()
 def adapter():
-    return user_sync.helper.CSVAdapter()
+    return CSVAdapter()
 
+@pytest.fixture()
+def csv_path():
+    return os.path.join('tests','fixture','helper_csv_data.csv')
 
 def test_open_csv_file(adapter, tmpdir):
-    filename = os.path.join(str(tmpdir), 'blank.csv')
+    filename = os.path.join(str(tmpdir), 'test.csv')
     open(filename, 'w').close()
     assert adapter.open_csv_file(filename, 'r')
     assert adapter.open_csv_file(filename, 'w')
 
     with pytest.raises(ValueError):
         adapter.open_csv_file(filename, 'invalid')
-    os.remove(filename)
 
 
 def test_guess_delimiter_from_filename(adapter):
@@ -47,13 +49,10 @@ def test_guess_delimiter_from_filename(adapter):
     assert adapter.guess_delimiter_from_filename('test.mtv') == '\t'
 
 
-def test_read_csv_rows(adapter, user_list, field_names, tmpdir):
-    filename = os.path.join(str(tmpdir), 'test_read.csv')
-    write_users_to_file(filename, field_names, user_list)
-
-    csv_yield = list(adapter.read_csv_rows(filename, field_names))
+def test_read_csv_rows(adapter, user_list, field_names, csv_path):
+    csv_yield = list(adapter.read_csv_rows(csv_path, field_names))
     reduced_output = [dict(e) for e in csv_yield]
-    assert compare_list(reduced_output, user_list)
+    assert reduced_output == user_list
 
 
 def test_write_csv_rows(adapter, user_list, field_names, tmpdir):
@@ -61,7 +60,7 @@ def test_write_csv_rows(adapter, user_list, field_names, tmpdir):
     adapter.write_csv_rows(filename, field_names, user_list)
     csv_yield = list(adapter.read_csv_rows(filename, field_names))
     reduced_output = [dict(e) for e in csv_yield]
-    assert compare_list(reduced_output, user_list)
+    assert reduced_output == user_list
 
 
 def test_extra_fields(adapter, tmpdir):
@@ -75,19 +74,6 @@ def test_extra_fields(adapter, tmpdir):
 
     csv_yield = list(adapter.read_csv_rows(filename, fields))
     assert csv_yield == [{'field2': 'val2', 'field1': 'val1'}]
-
-def write_users_to_file(filename, field_names, user_list):
-    file = open(filename, 'w')
-    file.write(",".join(field_names) + "\n")
-    for u in user_list:
-        line = ""
-        for c, f in enumerate(field_names):
-            if f in u:
-                line += u[f]
-            if c < len(field_names) - 1:
-                line += ","
-        file.write(line + "\n")
-    file.close()
 
 
 def test_log_start(log_stream):
