@@ -64,6 +64,18 @@ def test_write_csv_rows(adapter, user_list, field_names, tmpdir):
     assert compare_list(reduced_output, user_list)
 
 
+def test_extra_fields(adapter, tmpdir):
+    filename = os.path.join(str(tmpdir), 'test.csv')
+    fields = ["field1", "field2"]
+
+    file = open(filename, 'w')
+    file.write(",".join(fields) + "\n")
+    file.write("val1,val2,val3,val4")
+    file.close()
+
+    csv_yield = list(adapter.read_csv_rows(filename, fields))
+    assert csv_yield == [{'field2': 'val2', 'field1': 'val1'}]
+
 def write_users_to_file(filename, field_names, user_list):
     file = open(filename, 'w')
     file.write(",".join(field_names) + "\n")
