@@ -1,15 +1,12 @@
 if ($env:python.endswith("36-x64")) {
-    $ldapver="cp36-cp36m"
     $pycmd = "${env:python}\python.exe"
     & $pycmd -m venv venv
 } else {
-    $ldapver="cp27-cp27m"
     $venvcmd = "${env:python}\Scripts\virtualenv.exe"
     & $venvcmd venv
 }
 .\venv\Scripts\activate.ps1
 pip install external\okta-0.0.3.1-py2.py3-none-any.whl
-pip install external\pyldap-2.4.45-${ldapver}-win_amd64.whl
 pip install -e .
 pip install -e .[test]
 pip install -e .[setup]

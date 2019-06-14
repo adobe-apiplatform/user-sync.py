@@ -21,14 +21,13 @@
 import six
 import string
 
-import ldap.controls.libldap
+import ldap3
 
 import user_sync.config
 import user_sync.connector.helper
 import user_sync.error
 import user_sync.identity_type
 from user_sync.error import AssertionException
-from ldap import dn
 
 
 def connector_metadata():
@@ -60,8 +59,6 @@ def connector_load_users_and_groups(state, groups=None, extended_attributes=None
 class LDAPDirectoryConnector(object):
     name = 'ldap'
 
-    expected_result_types = [ldap.RES_SEARCH_RESULT, ldap.RES_SEARCH_ENTRY]
-
     def __init__(self, caller_options):
         caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
 
@@ -81,22 +78,40 @@ class LDAPDirectoryConnector(object):
         self.user_surname_formatter = LDAPValueFormatter(options['user_surname_format'])
         self.user_country_code_formatter = LDAPValueFormatter(options['user_country_code_format'])
 
-        password = caller_config.get_credential('password', options['username'])
+        auth_method = options['authentication_method'].lower()
+
+        if options['username'] is not None:
+            password = caller_config.get_credential('password', options['username'])
+        else:
+            # override authentication method to anonymous if username is not specified
+            if auth_method != 'anonymous':
+                auth_method = 'anonymous'
+                logger.info("Username not specified, overriding authentication method to 'anonymous'")
         # this check must come after we get the password value
         caller_config.report_unused_values(logger)
 
-        logger.debug('Connecting to: %s using username: %s', options['host'], options['username'])
-        if not options['require_tls_cert']:
-            ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+        if auth_method == 'anonymous':
+            auth = {'authentication': ldap3.ANONYMOUS}
+            logger.debug('Connecting to: %s - Authentication Method: ANONYMOUS', options['host'])
+        elif auth_method == 'simple':
+            auth = {'authentication': ldap3.SIMPLE, 'user': six.text_type(options['username']),
+                    'password': six.text_type(password)}
+            logger.debug('Connecting to: %s - Authentication Method: SIMPLE using username: %s', options['host'],
+                         options['username'])
+        elif auth_method == 'ntlm':
+            auth = {'authentication': ldap3.NTLM, 'user': six.text_type(options['username']),
+                    'password': six.text_type(password)}
+            logger.debug('Connecting to: %s - Authentication Method: NTLM using username: %s', options['host'],
+                         options['username'])
+        else:
+            raise AssertionException('LDAP Authentication Method is not supported: %s' % auth_method)
+
+        # TODO TLS****
+        # if not options['require_tls_cert']:
+        #    ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
         try:
-            # Be careful in Py2!!  We are setting bytes_mode = False, so we must give all attribute names
-            # and other protocol-defined strings (such as username) as Unicode.  But the PyYAML parser
-            # will always return ascii strings as str type (rather than Unicode).  So we must be careful
-            # to upconvert all parameter strings to unicode when passing them in.
-            connection = ldap.initialize(options['host'], bytes_mode=False)
-            connection.protocol_version = ldap.VERSION3
-            connection.set_option(ldap.OPT_REFERRALS, 0)
-            connection.simple_bind_s(six.text_type(options['username']), six.text_type(password))
+            server = ldap3.Server(host=options['host'], allowed_referral_hosts=True)
+            connection = ldap3.Connection(server, auto_bind=True, read_only=True, **auth)
         except Exception as e:
             raise AssertionException('LDAP connection failure: %s' % e)
         self.connection = connection
@@ -125,10 +140,12 @@ class LDAPDirectoryConnector(object):
         builder.set_string_value('user_identity_type', None)
         builder.set_int_value('search_page_size', 200)
         builder.set_string_value('logger_name', LDAPDirectoryConnector.name)
+        builder.set_string_value('authentication_method', six.text_type('simple'))
+        builder.set_string_value('username', None)
         builder.require_string_value('host')
-        builder.require_string_value('username')
         builder.require_string_value('base_dn')
         options = builder.get_options()
+
         options['two_steps_enabled'] = False
         if options['two_steps_lookup'] is not None:
             ts_config = caller_config.get_dict_config('two_steps_lookup', True)
@@ -239,16 +256,17 @@ class LDAPDirectoryConnector(object):
         group_filter_format = six.text_type(options['group_filter_format'])
         try:
             filter_string = self.format_ldap_query_string(group_filter_format, group=group)
-            res = connection.search_s(base_dn, ldap.SCOPE_SUBTREE,
-                                      filterstr=filter_string, attrsonly=1)
+            connection.search(search_base=base_dn, search_scope=ldap3.SUBTREE, search_filter=filter_string)
+            result = connection.entries
         except Exception as e:
             raise AssertionException('Unexpected LDAP failure reading group info: %s' % e)
         group_dn = None
-        for current_tuple in res:
-            if current_tuple[0]:
-                if group_dn:
-                    raise AssertionException("Multiple LDAP groups found for: %s" % group)
-                group_dn = current_tuple[0]
+        if len(result) > 0:
+            if len(result) > 1:
+                raise AssertionException("Multiple LDAP groups found for: %s" % group)
+            else:
+                if result[0] is not None:
+                    group_dn = result[0].entry_dn
         return group_dn
 
     def iter_group_member_dns(self, group_dn, member_attribute, searched_dns=None):
@@ -263,10 +281,13 @@ class LDAPDirectoryConnector(object):
         connection = self.connection
         nested_group_search = self.options['two_steps_lookup']['nested_group']
         try:
-            result = connection.search_s(group_dn, ldap.SCOPE_SUBTREE, attrlist=[member_attribute])
-            if member_attribute in result[0][1]:
-                for member_dn in result[0][1][member_attribute]:
-                    member_dn = member_dn.decode('utf-8')
+            connection.search(search_base=group_dn, search_filter='(objectClass=*)', search_scope=ldap3.SUBTREE,
+                              attributes=member_attribute)
+            result = connection.entries
+            if result is not None:
+                record = result[0].entry_attributes_as_dict
+                member_dns = LDAPValueFormatter.get_attribute_value(record, member_attribute)
+                for member_dn in member_dns or []:
                     # if nested_group search enabled, look up DN and see if group member attribute exist in that object
                     # This will recurse through until there is no nested group.
                     if member_dn not in searched_dns:
@@ -295,7 +316,7 @@ class LDAPDirectoryConnector(object):
         extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
         user_attribute_names.extend(extended_attributes)
 
-        result_iter = self.iter_search_result(base_dn, ldap.SCOPE_SUBTREE, users_filter, user_attribute_names)
+        result_iter = self.iter_search_result(base_dn, ldap3.SUBTREE, users_filter, user_attribute_names)
         for dn, record in result_iter:
             if dn is None:
                 continue
@@ -367,8 +388,6 @@ class LDAPDirectoryConnector(object):
             source_attributes['c'] = c_value
             if c_value is not None:
                 user['country'] = c_value.upper()
-            elif last_attribute_name:
-                self.logger.warning('No country code attribute (%s) for user with dn: %s', last_attribute_name, dn)
 
             user['member_groups'] = self.get_member_groups(record) if self.additional_group_filters else []
 
@@ -399,7 +418,7 @@ class LDAPDirectoryConnector(object):
         elif isinstance(groups, str):
             groups = [groups]
 
-        for group_dn in map(dn.str2dn, groups):
+        for group_dn in groups:
             group_cn = self.get_cn_from_dn(group_dn)
             if group_cn:
                 group_names.append(group_cn)
@@ -408,16 +427,15 @@ class LDAPDirectoryConnector(object):
     @staticmethod
     def get_cn_from_dn(group_dn):
         """
-        Take a DN parsed by ldap.dn.str2dn and locate and return the common name
+        Take a DN and return the common name
         Returns None if no common name is found
         If common name is complex (e.g. cn=Bob Jones+email=bob.jones@example.com) then first part of CN is returned
         :param group_dn:
         :return:
         """
-        for rdn in group_dn:
-            for rdn_part in rdn:
-                if rdn_part[0].lower() == 'cn':
-                    return rdn_part[1]
+        rdn = ldap3.utils.dn.safe_rdn(group_dn)
+        if len(rdn) > 0:
+            return rdn[0][3:]
         return None
 
     def iter_search_result(self, base_dn, scope, filter_string, attributes):
@@ -427,46 +445,21 @@ class LDAPDirectoryConnector(object):
         """
         connection = self.connection
         search_page_size = self.options['search_page_size']
-
-        msgid = None
-        try:
-            if search_page_size == 0:
-                msgid = connection.search(base_dn, scope,
-                                          filterstr=filter_string, attrlist=attributes)
-                result_type, response_data, _rmsgid = connection.result2(msgid)
-                msgid = None
-                if result_type in self.expected_result_types and (response_data is not None):
-                    for item in response_data:
-                        yield item
-            else:
-                lc = ldap.controls.libldap.SimplePagedResultsControl(True, size=search_page_size, cookie='')
-
-                has_next_page = True
-                while has_next_page:
-                    response_data = None
-                    result_type = None
-                    if msgid is not None:
-                        result_type, response_data, _rmsgid, serverctrls = connection.result3(msgid)
-                        msgid = None
-                        pctrls = [c for c in serverctrls
-                                  if c.controlType == ldap.controls.libldap.SimplePagedResultsControl.controlType]
-                        if not pctrls:
-                            self.logger.warn('Server ignored RFC 2696 control.')
-                            has_next_page = False
-                        else:
-                            lc.cookie = cookie = pctrls[0].cookie
-                            if not cookie:
-                                has_next_page = False
-                    if has_next_page:
-                        msgid = connection.search_ext(base_dn, scope,
-                                                      filterstr=filter_string, attrlist=attributes, serverctrls=[lc])
-                    if result_type in self.expected_result_types and (response_data is not None):
-                        for item in response_data:
-                            yield item
-        except GeneratorExit:
-            if msgid is not None:
-                connection.abandon(msgid)
-            raise
+        if search_page_size == 0:
+            connection.search(base_dn, filter_string, scope, attributes=attributes)
+            entries = connection.entries
+            for entry in entries:
+                yield [entry.entry_dn, entry.entry_attributes_as_dict]
+        else:
+            entry_generator = connection.extend.standard.paged_search(search_base=base_dn,
+                                                                      search_filter=filter_string,
+                                                                      search_scope=scope,
+                                                                      attributes=attributes,
+                                                                      paged_size=search_page_size,
+                                                                      generator=True)
+            for entry in entry_generator:
+                if entry['type'] != 'searchResRef':
+                    yield [entry['dn'], entry['attributes']]
 
     @staticmethod
     def format_ldap_query_string(query, **kwargs):
@@ -519,11 +512,12 @@ class LDAPDirectoryConnector(object):
         :param dn: str
         :return: bool
         """
-        split_base_dn = ldap.explode_dn(base_dn.lower())
-        split_dn = ldap.explode_dn(dn.lower())
+        split_base_dn = ldap3.utils.dn.parse_dn(base_dn.lower())
+        split_dn = ldap3.utils.dn.parse_dn(dn.lower())
         if split_base_dn == split_dn[-len(split_base_dn):]:
             return True
         return False
+
 
 class LDAPValueFormatter(object):
     encoding = 'utf8'
@@ -535,7 +529,7 @@ class LDAPValueFormatter(object):
         if string_format is None:
             attribute_names = []
         else:
-            string_format = six.text_type(string_format)    # force unicode so attribute values are unicode
+            string_format = six.text_type(string_format)  # force unicode so attribute values are unicode
             formatter = string.Formatter()
             attribute_names = [six.text_type(item[1]) for item in formatter.parse(string_format) if item[1]]
         self.string_format = string_format
@@ -577,10 +571,12 @@ class LDAPValueFormatter(object):
         attribute_values = attributes.get(attribute_name)
         if attribute_values:
             try:
-                if first_only or len(attribute_values) == 1:
-                    return attribute_values[0].decode(cls.encoding)
+                if isinstance(attribute_values, six.string_types):
+                    return attribute_values
                 else:
-                    return [val.decode(cls.encoding) for val in attribute_values]
+                    if first_only:
+                        return attribute_values[0]
+                    return attribute_values
             except UnicodeError as e:
                 raise AssertionException("Encoding error in value of attribute '%s': %s" % (attribute_name, e))
         return None

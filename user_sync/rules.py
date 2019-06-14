@@ -1028,7 +1028,11 @@ class RuleProcessor(object):
         attributes = self.get_user_attributes(directory_user)
         for key, value in six.iteritems(attributes):
             umapi_value = umapi_user.get(key)
-            if value != umapi_value:
+            if key == 'email':
+                diff = normalize_string(value) != normalize_string(umapi_value)
+            else:
+                diff = value != umapi_value
+            if diff:
                 differences[key] = value
         return differences
 
