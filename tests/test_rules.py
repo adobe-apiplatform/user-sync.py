@@ -28,27 +28,27 @@ def caller_options():
 
 @mock.patch('user_sync.helper.CSVAdapter.read_csv_rows')
 def test_stray_key_map(csv_reader, rule_processor):
-    csv_mock_data = [{'type': 'adobeID', 'username': 'removeuser2@seaofcarag.com', 'domain': 'seaofcarag.com'},
-                     {'type': 'federatedID', 'username': 'removeuser@seaofcarag.com', 'domain': 'seaofcarag.com'},
-                     {'type': 'enterpriseID', 'username': 'removeuser3@seaofcarag.com', 'domain': 'seaofcarag.com'}]
+    csv_mock_data = [{'type': 'adobeID', 'username': 'removeuser2@example.com', 'domain': 'example.com'},
+                     {'type': 'federatedID', 'username': 'removeuser@example.com', 'domain': 'example.com'},
+                     {'type': 'enterpriseID', 'username': 'removeuser3@example.com', 'domain': 'example.com'}]
     csv_reader.return_value = csv_mock_data
     rule_processor.read_stray_key_map('')
     actual_value = rule_processor.stray_key_map
-    expected_value = {None: {'federatedID,removeuser@seaofcarag.com,': None,
-                             'enterpriseID,removeuser3@seaofcarag.com,': None,
-                             'adobeID,removeuser2@seaofcarag.com,': None}}
+    expected_value = {None: {'federatedID,removeuser@example.com,': None,
+                             'enterpriseID,removeuser3@example.com,': None,
+                             'adobeID,removeuser2@example.com,': None}}
 
     assert expected_value == actual_value
 
     # Added secondary umapi value
-    csv_mock_data = [{'type': 'adobeID', 'username': 'remo@carag.com', 'domain': 'carag.com', 'umapi': 'secondary'},
-                     {'type': 'federatedID', 'username': 'removeuser@seaofcarag.com'},
-                     {'type': 'enterpriseID', 'username': 'removeuser3@seaofcarag.com', 'domain': 'seaofcarag.com'}]
+    csv_mock_data = [{'type': 'adobeID', 'username': 'remo@sample.com', 'domain': 'sample.com', 'umapi': 'secondary'},
+                     {'type': 'federatedID', 'username': 'removeuser@example.com'},
+                     {'type': 'enterpriseID', 'username': 'removeuser3@example.com', 'domain': 'example.com'}]
     csv_reader.return_value = csv_mock_data
     rule_processor.read_stray_key_map('')
     actual_value = rule_processor.stray_key_map
-    expected_value = {'secondary': {'adobeID,remo@carag.com,': None},
-                      None: {'federatedID,removeuser@seaofcarag.com,': None,
-                             'enterpriseID,removeuser3@seaofcarag.com,': None,
-                             'adobeID,removeuser2@seaofcarag.com,': None}}
+    expected_value = {'secondary': {'adobeID,remo@sample.com,': None},
+                      None: {'federatedID,removeuser@example.com,': None,
+                             'enterpriseID,removeuser3@example.com,': None,
+                             'adobeID,removeuser2@example.com,': None}}
     assert expected_value == actual_value
