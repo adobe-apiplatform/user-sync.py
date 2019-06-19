@@ -1,8 +1,0 @@
-firstname,lastname,email,country,groups,type,username,domain,untracked,extraattribute
-Dark,Wizard,dwizardexample.com,US,Daleks_Info,federatedID
-,Yennant,dYennant@example.com,US,Daleks_Info,federatedID
-Debra,,debmorgan@example.com,US,Daleks_Info,federatedID
-Devin,TownSend,dtownsend#example.com,US,Daleks_Info,federatedID
-Kevin,TownSnd,ktownsnd@example.com,US,Daleks_Info
-Park,Wizard,pwizard@example.com,US,Daleks_Info,federatedID,pwizard@example.com,example.com,Adobe
-Shark,Wizard,swizard@example.com,US,Daleks_Info,federatedID,swizard@example.com,example.com,untracked,Adobe
