@@ -52,3 +52,30 @@ def test_stray_key_map(csv_reader, rule_processor):
                              'enterpriseID,removeuser3@example.com,': None,
                              'adobeID,removeuser2@example.com,': None}}
     assert expected_value == actual_value
+
+
+def test_get_user_attribute_difference(rule_processor):
+    umapi_users_mock_data = {'email': 'adobe.username@example.com', 'status': 'active',
+                             'username': 'adobe.username@example.com', 'domain': 'example.com',
+                             'firstname': 'Adobe', 'lastname': 'Username', 'country': 'US',
+                             'type': 'federatedID'}
+
+    # Updated user's email, firstname and lastname
+    directory_user_mock_data = {'identity_type': 'federatedID', 'username': 'adobeupdate.username2@example.com',
+                                'domain': 'example.com', 'firstname': 'Adobeupdate', 'lastname': 'Username2',
+                                'email': 'adobeupdate.username2@example.com', 'groups': ['All Sea of Carag'],
+                                'country': 'US',
+                                'member_groups': [],
+                                'source_attributes': {'email': 'adobeupdate.username2@example.com',
+                                                      'identity_type': None,
+                                                      'username': None, 'domain': None, 'givenName': 'Adobeupdate',
+                                                      'sn': 'Username2', 'c': 'US'}}
+
+    actual_difference_value = rule_processor.get_user_attribute_difference(directory_user_mock_data,
+                                                                           umapi_users_mock_data)
+    expected_difference_value = {'email': 'adobeupdate.username2@example.com', 'firstname': 'Adobeupdate',
+                                 'lastname': 'Username2'}
+    assert expected_difference_value == actual_difference_value
+    # test with no change
+    actual_difference_value = rule_processor.get_user_attribute_difference(umapi_users_mock_data, umapi_users_mock_data)
+    assert actual_difference_value == {}
