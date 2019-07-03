@@ -1,12 +1,15 @@
+import re
+
 import mock
 import pytest
-import pytest
-import logging
-import re
 import yaml
-from six import StringIO
 
 from user_sync.rules import RuleProcessor
+
+
+@pytest.fixture
+def rule_processor(caller_options):
+    return RuleProcessor(caller_options)
 
 
 @pytest.fixture
@@ -135,5 +138,3 @@ def test_log_after_mapping_hook_scope(log_stream):
 
     assert re.search('(Target groups, after).*(One)', x[6])
     compare_attr(x[5], state['target_attributes'])
-
-
