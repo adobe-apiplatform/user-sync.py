@@ -37,6 +37,9 @@ import user_sync.lockfile
 import user_sync.rules
 import user_sync.cli
 import user_sync.resource
+
+from user_sync.sign_sync.synchronize import Synchronize
+
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 
@@ -171,6 +174,8 @@ def sync(**kwargs):
         if lock.set_lock():
             try:
                 begin_work(config_loader)
+
+                Synchronize(logger, config_loader, user_sync.connector)
             finally:
                 lock.unlock()
         else:
@@ -195,6 +200,7 @@ def sync(**kwargs):
         if run_stats is not None:
             run_stats.log_end(logger)
 
+<<<<<<< HEAD
 
 @main.command()
 @click.help_option('-h', '--help')
@@ -218,6 +224,10 @@ def example_config(**kwargs):
         assert res_file is not None, "Resource file '{}' not found".format(res_files[k])
         click.echo("Generating file '{}'".format(fname))
         shutil.copy(res_file, fname)
+=======
+def process_args(args=None):
+    """Define and parse the command-line (or passed) args.
+>>>>>>> nathan/v2
 
 
 @main.command()
