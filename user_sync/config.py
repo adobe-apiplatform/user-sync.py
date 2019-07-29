@@ -516,7 +516,7 @@ class ConfigLoader(object):
         # get the limits
         limits_config = self.main_config.get_dict_config('limits')
         max_missing = limits_config.get_value('max_adobe_only_users',(int, str),False)
-        percent_pattern = re.compile("(\d*(\.\d+)?%)")
+        percent_pattern = re.compile(r"(\d*(\.\d+)?%)")
         if isinstance(max_missing, str) and percent_pattern.match(max_missing):
             max_missing_percent = float(max_missing.strip('%'))
             if 0.0 <= max_missing_percent <= 100.0:
