@@ -1,8 +1,5 @@
-import requests
-import json
 import six
-import ldap
-import pprint
+import ldap3
 
 import user_sync.rules
 import user_sync.connector.directory
@@ -105,23 +102,22 @@ class Synchronize:
         host = directory_option['host']
         username = directory_option['username']
         password = directory_option['password']
+        auth = {'authentication': ldap3.SIMPLE, 'user': six.text_type(username),
+                'password': six.text_type(password)}
 
         try:
-            connection = ldap.initialize(host, bytes_mode=False)
-            connection.protocol_version = ldap.VERSION3
-            connection.set_option(ldap.OPT_REFERRALS, 0)
-            connection.simple_bind_s(six.text_type(username), six.text_type(password))
+            server = ldap3.Server(host=host, allowed_referral_hosts=True)
+            connection = ldap3.Connection(server, auto_bind=True, read_only=True, **auth)
         except Exception as e:
             raise AssertionException('LDAP connection failure: %s' % e)
 
         return connection
 
     def get_extra_ldap_attr(self, connector, name):
-
         directory_option = self.config_loader.get_directory_connector_options(connector.name)
         base_dn = directory_option['base_dn']
-        base_dn_result = self.connection.search_s(base_dn, ldap.SCOPE_SUBTREE, "(CN={})".format(name))
-        user_data = base_dn_result[0][1]
+        self.connection.search(base_dn, "(CN={})".format(name), ldap3.SUBTREE)
+        user_data = self.connection.entries
         temp_user_info = dict()
 
         if 'company' in user_data:
@@ -135,7 +131,7 @@ class Synchronize:
         """
         This function will process each user and assign them to their Sign groups
         :param user_list:
-        :param ldap_config:
+        :param sign_config:
         :return:
         """
 
