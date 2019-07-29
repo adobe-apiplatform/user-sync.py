@@ -200,7 +200,6 @@ def sync(**kwargs):
         if run_stats is not None:
             run_stats.log_end(logger)
 
-<<<<<<< HEAD
 
 @main.command()
 @click.help_option('-h', '--help')
@@ -224,10 +223,6 @@ def example_config(**kwargs):
         assert res_file is not None, "Resource file '{}' not found".format(res_files[k])
         click.echo("Generating file '{}'".format(fname))
         shutil.copy(res_file, fname)
-=======
-def process_args(args=None):
-    """Define and parse the command-line (or passed) args.
->>>>>>> nathan/v2
 
 
 @main.command()
