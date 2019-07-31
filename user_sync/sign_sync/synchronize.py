@@ -139,29 +139,28 @@ class Synchronize:
         for user in user_list:
             # Skip main account because we don't want to change anything
             if user['email'] == sign_config['email']:
-                pass
+                continue
+            name = "{} {}".format(user['firstname'], user['lastname'])
+            filter_group_list = self.filter_group(sign_config, user['groups'], False)
+
+            # If the user is not in a group we will assign them to a default group
+            if len(filter_group_list) == 0:
+                default_group_id = sign_config['group'].get('Default Group')
+                temp_payload = self.get_user_info(user, sign_config, default_group_id)
+                temp_payload.update(self.get_extra_ldap_attr(self.ldap_connector, name))
+                self.sign_obj.add_user_to_sign_group(sign_config, user['id'], default_group_id, temp_payload)
+
+            # Sort the groups and assign the user to first group
+            # Sign doesn't support multi group assignment at this time
             else:
-                name = "{} {}".format(user['firstname'], user['lastname'])
-                filter_group_list = self.filter_group(sign_config, user['groups'], False)
+                for group in sorted(user['groups']):
+                    group_id = sign_config['group'].get(group)
 
-                # If the user is not in a group we will assign them to a default group
-                if len(filter_group_list) == 0:
-                    default_group_id = sign_config['group'].get('Default Group')
-                    temp_payload = self.get_user_info(user, sign_config, default_group_id)
-                    temp_payload.update(self.get_extra_ldap_attr(self.ldap_connector, name))
-                    self.sign_obj.add_user_to_sign_group(sign_config, user['id'], default_group_id, temp_payload)
-
-                # Sort the groups and assign the user to first group
-                # Sign doesn't support multi group assignment at this time
-                else:
-                    for group in sorted(user['groups']):
-                        group_id = sign_config['group'].get(group)
-
-                        if group_id is not None and group not in sign_config['condition']['ignore_groups']:
-                            temp_payload = self.get_user_info(user, sign_config, group_id, group)
-                            temp_payload.update(self.get_extra_ldap_attr(self.ldap_connector, name))
-                            self.sign_obj.add_user_to_sign_group(sign_config, user['id'], group_id, temp_payload)
-                            break
+                    if group_id is not None and group not in sign_config['condition']['ignore_groups']:
+                        temp_payload = self.get_user_info(user, sign_config, group_id, group)
+                        temp_payload.update(self.get_extra_ldap_attr(self.ldap_connector, name))
+                        self.sign_obj.add_user_to_sign_group(sign_config, user['id'], group_id, temp_payload)
+                        break
 
     def get_user_sign_id(self, user_list, sign_config):
         """

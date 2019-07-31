@@ -4,8 +4,7 @@ Sign Sync works as an addition add on feature to the Adobe User Sync Tool, which
 your LDAP over to Adobe Admin Console. Once users are assigned into Adobe Admin Console with Sign entitlements, 
 Sign Sync will locate users with Sign entitlements and sync them over to Adobe Sign.
 
-Full detailed <a href="https://github.com/NathanNguyen345/user-sync.py/blob/v2/user_sync/sign_sync/Sign%20Sync%20User%20Guide.docx">
-User Guide</a> can be found here.
+Full detailed [User Guide](USER_GUIDE.md) can be found here.
 
 ## Disclaimer
 Sign Sync works as a one-way sync from Adobe Admin Console to Adobe Sign. Any changes made in Adobe Sign such as group 
