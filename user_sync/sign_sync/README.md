@@ -1,4 +1,4 @@
-# Sign Sync v1.0
+# Sign Sync v0.2.0
 Sign Sync allows for an automated process of moving users over from Admin Console into your Adobe Sign. 
 Sign Sync works as an addition add on feature to the Adobe User Sync Tool, which allows you to synchronize entities within 
 your LDAP over to Adobe Admin Console. Once users are assigned into Adobe Admin Console with Sign entitlements, 
@@ -12,14 +12,10 @@ creation, user creation, privileges, or moving users to different groups will be
 Admin Console. Changes should be made either from your LDAP or Admin Console depending how you have your mapping set up.
 
 ## Prerequisites
-This is a list of all prerequisites that you should checked off to verify that you have what is needed to start the 
-deployment process. Please make sure you have all the prerequisites set up before using Sign Sync.
 
-Prerequisites | Description
-------------- | -----------
-Python 3.7 | Python version 3.7 is recommended as the User Sync Tool 2.3 is running <a href="https://www.python.org/downloads/release/python-370/">Python 3.7</a>
-Adobe Sign Integration Key | The integration key to your <a href="https://secure.echosign.com/public/login">Adobe Sign.</a>
-Text Editor | This will be required to edit any configuration files.
+* Python 3.6 ([download link](https://www.python.org/downloads/release/python-368/))
+* Adobe Sign Integration Key
+* Text Editor ([Notepad++](https://notepad-plus-plus.org/) is recommended for Windows)
 
 ## Features
 The following features are available in version 1.0 of Sign Sync.
@@ -33,6 +29,5 @@ Ignore Admin Privileges | Ability to ignore specific admin roles to be synced ov
 
 ## Deployment
 Sign Sync works alongside Adobe User Sync Tool. Please make sure that all dependencies and packages are set up correctly 
-for User Sync Tool. If so, you should be able to perform a 
-<a href="https://adobe-apiplatform.github.io/user-sync.py/en/success-guide/test_run.html">test run</a>. Once a successful 
-run of User Sync Tool is confirmed, you can start configuring the Sign Sync feature into User Sync Tool.
+for User Sync Tool. If so, you should be able to perform a [test run](https://adobe-apiplatform.github.io/user-sync.py/en/success-guide/test_run.html).
+Once a successful run of User Sync Tool is confirmed, you can start configuring the Sign Sync feature into User Sync Tool.
