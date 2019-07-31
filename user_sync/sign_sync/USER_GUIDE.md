@@ -1,5 +1,3 @@
-![](media/logo.png)
-
 # Overview
 
 Sign Sync allows for an automated process of moving users over from
