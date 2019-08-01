@@ -5,12 +5,11 @@ import json
 
 from user_sync.error import AssertionException
 
+
 class Sign:
-
-    def __init__(self, logs):
-
+    def __init__(self, logs, config_filename):
         self.logs = logs
-        self.sign_config = self.load_sign_config()
+        self.sign_config = self.load_sign_config(config_filename)
 
         self.sign_config.yml = self.sign_config.value
 
@@ -21,7 +20,6 @@ class Sign:
         # read condition parameters
         self.version = self.sign_config.yml['conditions']['version']
         self.connector = self.sign_config.yml['conditions']['connector']
-
 
         # read enterprise parameters
         self.integration = self.sign_config.yml['enterprise']['integration']
@@ -38,13 +36,13 @@ class Sign:
 
         self.api_counter = 0
 
-    def load_sign_config(self):
+    @staticmethod
+    def load_sign_config(config_filename):
         """
         This function loads the Sign YML file into ConfigFileLoader
         :return:
         """
 
-        config_filename = 'sign_sync/connector-sign-sync.yml'
         config_encoding = 'utf-8'
         try:
             codecs.lookup(config_encoding)
