@@ -7,9 +7,9 @@ import user_sync.sign_sync.connections.sign_connection
 
 from user_sync.error import AssertionException
 
-class Synchronize:
 
-    def __init__(self, logger, config_loader, connector):
+class Synchronize:
+    def __init__(self, logger, config_loader, connector, config_filename):
 
         # Create process, api, and error loggers for Sign Sync
         self.logs = logger
@@ -17,7 +17,7 @@ class Synchronize:
         self.connector = connector
 
         # Instantiate Sign object
-        self.sign_obj = user_sync.sign_sync.connections.sign_connection.Sign(self.logs)
+        self.sign_obj = user_sync.sign_sync.connections.sign_connection.Sign(self.logs, config_filename)
 
         # Get LDAP connector and connect to it
         self.ldap_connector = self.get_ldap_connectors()
@@ -38,7 +38,7 @@ class Synchronize:
         self.sign_obj.validate_integration_key(sign_config['header'], sign_config['url'])
 
         # Get a list of UMAPI users
-        umapi_user_list =  self.umapi_primary_connector.get_users()
+        umapi_user_list = self.umapi_primary_connector.get_users()
 
         # Group Creation and processing users
         sign_user_list = self.get_user_sign_id(umapi_user_list, sign_config)
@@ -60,7 +60,7 @@ class Synchronize:
         umapi_other_connectors = {}
         for secondary_umapi_name, secondary_config in six.iteritems(secondary_umapi_configs):
             umapi_secondary_conector = self.connector.umapi.UmapiConnector(".secondary.%s" % secondary_umapi_name,
-                                                                                secondary_config)
+                                                                           secondary_config)
             umapi_other_connectors[secondary_umapi_name] = umapi_secondary_conector
         umapi_connectors = user_sync.rules.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
 

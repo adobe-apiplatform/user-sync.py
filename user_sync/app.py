@@ -132,6 +132,11 @@ def main():
               help='if membership in mapped groups differs between the enterprise directory and Adobe sides, '
                    'the group membership is updated on the Adobe side so that the memberships in mapped '
                    'groups match those on the enterprise directory side.')
+@click.option('--sign-sync-config',
+              help='*Temporary* CLI param to specify location of Sign sync config file. '
+                   'Enabling this option also enables the Sign sync config.',
+              type=str,
+              metavar='path-to-file')
 @click.option('--strategy',
               help="whether to fetch and sync the Adobe directory against the customer directory "
                    "or just to push each customer user to the Adobe side.  Default is to fetch and sync.",
@@ -158,6 +163,9 @@ def main():
 def sync(**kwargs):
     """Run User Sync [default command]"""
     run_stats = None
+    sign_config_file = kwargs.get('sign-sync-config')
+    if 'sign-sync-config' in kwargs:
+        del(kwargs['sign_sync_config'])
     try:
         # load the config files and start the file logger
         config_loader = user_sync.config.ConfigLoader(kwargs)
@@ -175,7 +183,8 @@ def sync(**kwargs):
             try:
                 begin_work(config_loader)
 
-                Synchronize(logger, config_loader, user_sync.connector)
+                if sign_config_file:
+                    Synchronize(logger, config_loader, user_sync.connector, sign_config_file)
             finally:
                 lock.unlock()
         else:
