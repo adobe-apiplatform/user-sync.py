@@ -43,7 +43,7 @@ setup(name='user-sync-sign-sync',
       maintainer='Nathan Nguyen',
       maintainer_email='nnguyen@adobe.com',
       license='MIT',
-      packages=['user_sync', 'user_sync.connector'],
+      packages=['user_sync', 'user_sync.connector', 'user_sync.sign_sync', 'user_sync.sign_sync.connections'],
       install_requires=[
           'keyring',
           'okta',
