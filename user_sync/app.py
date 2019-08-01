@@ -325,8 +325,8 @@ def begin_work(config_loader):
     rule_processor.run(directory_groups, directory_connector, umapi_connectors)
 
     # Need to sleep the application before performing the sync. This is due to the fact that it takes around
-    # 15 - 20 secs for the users to populate into sign.
-    # time.sleep(30)
+    # 30-45 secs for the users to populate into sign.
+    time.sleep(60)
     Sign_Sync.run(config_loader, rule_processor.updated_user_keys)
 
 if __name__ == '__main__':
