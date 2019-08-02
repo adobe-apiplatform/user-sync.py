@@ -1,11 +1,10 @@
 import logging
 import user_sync.sign_sync.connections.sign_connection
 import user_sync.sign_sync.connections.umapi_connection
-import user_sync.sign_sync.thread_functions
 from queue import Queue
 
-
 logger = logging.getLogger('sign_sync')
+
 
 def run(config_loader, user_keys, config_filename):
     """
@@ -49,7 +48,8 @@ def sync_users(sign_obj, sign_groups, connector, user_keys):
         sign_obj.create_sign_group(group_list)
 
     # Sync users into their groups
-    do_threading(updated_user_list, sign_obj.process_user)
+    for user in user_list:
+        sign_obj.process_user(user)
 
     logger.info('------------------------------- Ending Sign Sync ---------------------------------')
 
@@ -68,22 +68,3 @@ def get_data_from_connector(sign_obj, data_connector, user_keys):
     user_list = data_connector.query_users_in_groups(sign_obj.get_product_profile(), user_keys)
 
     return group_list, user_list
-
-
-def do_threading(user_list, func):
-    """
-    This function will be start up a threading process.
-    :param user_list: list[]
-    :param func: FUNCTION
-    :return:
-    """
-
-    queue = Queue()
-    for x in range(50):
-        worker = user_sync.sign_sync.thread_functions.ThreadWorker(queue, func)
-        worker.start()
-
-    for user in user_list:
-        queue.put(user)
-
-    queue.join()
