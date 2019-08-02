@@ -11,7 +11,7 @@ class Sign:
         try:
             with open(config_filename) as stream:
                 try:
-                    self.sign_config_yml = yaml.safe_load(stream, Loader=yaml.FullLoader)
+                    self.sign_config_yml = yaml.safe_load(stream)
                 except yaml.YAMLError as exc:
                     print(exc)
         except IOError:
