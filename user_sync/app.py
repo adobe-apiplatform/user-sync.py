@@ -37,8 +37,9 @@ import user_sync.lockfile
 import user_sync.rules
 import user_sync.cli
 import user_sync.resource
+import time
 
-from user_sync.sign_sync.synchronize import Synchronize
+import user_sync.sign_sync.app as Sign_Sync
 
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
@@ -181,10 +182,7 @@ def sync(**kwargs):
         lock = user_sync.lockfile.ProcessLock(lock_path)
         if lock.set_lock():
             try:
-                begin_work(config_loader)
-
-                if sign_config_file:
-                    Synchronize(logger, config_loader, user_sync.connector, sign_config_file)
+                begin_work(config_loader, sign_config_file)
             finally:
                 lock.unlock()
         else:
@@ -308,7 +306,7 @@ def log_parameters(argv, config_loader):
     logger.info('-------------------------------------')
 
 
-def begin_work(config_loader):
+def begin_work(config_loader, sign_config_file):
     """
     :type config_loader: user_sync.config.ConfigLoader
     """
@@ -364,6 +362,11 @@ def begin_work(config_loader):
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
     rule_processor.run(directory_groups, directory_connector, umapi_connectors)
 
+    if sign_config_file:
+        # Need to sleep the application before performing the sync. This is due to the fact that it takes around
+        # 30-45 secs for the users to populate into sign.
+        time.sleep(60)
+        Sign_Sync.run(config_loader, rule_processor.updated_user_keys, sign_config_file)
 
 if __name__ == '__main__':
     main()
