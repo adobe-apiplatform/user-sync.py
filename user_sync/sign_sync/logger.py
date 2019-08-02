@@ -21,11 +21,12 @@ class Log:
         self.logs['process'] = self.setup_logger('process_log', process_log_path)
         self.logs['error'] = self.setup_logger('error_log', error_log_path)
 
-    def setup_logger(self, name, log_file, level=logging.INFO):
+    @staticmethod
+    def setup_logger(name, log_file, level=logging.INFO):
         """
         Function setup as many loggers as you want
         :param name: str
-        :param log_firm -rg pro le: str
+        :param log_file: str
         :param level: str
         :return: object
         """
