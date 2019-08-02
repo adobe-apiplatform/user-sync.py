@@ -1,11 +1,11 @@
-import user_sync.sign_sync.logger
+import logging
 import user_sync.sign_sync.connections.sign_connection
 import user_sync.sign_sync.connections.umapi_connection
 import user_sync.sign_sync.thread_functions
 from queue import Queue
 
-LOGGER = user_sync.sign_sync.logger.Log()
 
+logger = logging.getLogger('sign_sync')
 
 def run(config_loader, user_keys, config_filename):
     """
@@ -15,30 +15,27 @@ def run(config_loader, user_keys, config_filename):
     :return:
     """
 
-    log_file = LOGGER.get_log()
-
     # Instantiate Sign object & validate
-    sign_obj = user_sync.sign_sync.connections.sign_connection.Sign(log_file, config_filename)
+    sign_obj = user_sync.sign_sync.connections.sign_connection.Sign(config_filename)
     sign_obj.validate_integration_key(sign_obj.header, sign_obj.url)
     sign_groups = sign_obj.get_sign_group()
 
     primary_config, secondary_config = config_loader.get_umapi_options()
     data_connector = user_sync.sign_sync.connections.umapi_connection.Umapi(primary_config)
 
-    sync_users(log_file, sign_obj, sign_groups, data_connector, user_keys)
+    sync_users(sign_obj, sign_groups, data_connector, user_keys)
 
 
-def sync_users(logs, sign_obj, sign_groups, connector, user_keys):
+def sync_users(sign_obj, sign_groups, connector, user_keys):
     """
     This is the run function of the application.
-    :param logs: dict()
     :param sign_obj: dict()
     :param sign_groups: list[]
     :param connector: dict()
     :param user_keys: set()
     """
 
-    logs['process'].info('------------------------------- Starting Sign Sync -------------------------------')
+    logger.info('------------------------------- Starting Sign Sync -------------------------------')
 
     # Get Users and Groups information from our connector
     group_list, user_list = get_data_from_connector(sign_obj, connector, user_keys)
@@ -49,12 +46,12 @@ def sync_users(logs, sign_obj, sign_groups, connector, user_keys):
     # Create new user groups in sign if not found
     groups_not_found_in_sign = [group for group in group_list if group not in sign_groups]
     if groups_not_found_in_sign:
-        sign_obj.create_sign_group(group_list, LOGGER)
+        sign_obj.create_sign_group(group_list)
 
     # Sync users into their groups
     do_threading(updated_user_list, sign_obj.process_user)
 
-    logs['process'].info('------------------------------- Ending Sign Sync ---------------------------------')
+    logger.info('------------------------------- Ending Sign Sync ---------------------------------')
 
 
 def get_data_from_connector(sign_obj, data_connector, user_keys):
