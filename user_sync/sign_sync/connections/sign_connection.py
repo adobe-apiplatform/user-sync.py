@@ -1,17 +1,13 @@
 import requests
 import json
 import yaml
+import logging
 
-LOGGER = None
+logger = logging.getLogger('sign_sync')
 
 
 class Sign:
-    def __init__(self, logs, config_filename):
-        self.logs = logs
-        self.sign_config = self.load_sign_config(config_filename)
-        global LOGGER
-        LOGGER = self.logs
-
+    def __init__(self, config_filename):
         try:
             with open("sign_sync/config/connector-sign-sync.yml") as stream:
                 try:
@@ -19,7 +15,7 @@ class Sign:
                 except yaml.YAMLError as exc:
                     print(exc)
         except IOError:
-            self.logs['error'].error('** Failed To Open Connector-Sign-Sync.yml **')
+            logger.error('** Failed To Open Connector-Sign-Sync.yml **')
             exit(1)
 
         # Read server parameters
@@ -56,16 +52,16 @@ class Sign:
                     res = func(*args, **kwargs)
                     return res
                 except requests.exceptions.HTTPError as http_error:
-                    LOGGER['error'].error("-- HTTP ERROR: {} --".format(http_error))
+                    logger.error("-- HTTP ERROR: {} --".format(http_error))
                     exit()
                 except requests.exceptions.ConnectionError as conn_error:
-                    LOGGER['error'].error("-- ERROR CONNECTING -- {}".format(conn_error))
+                    logger.error("-- ERROR CONNECTING -- {}".format(conn_error))
                     exit()
                 except requests.exceptions.Timeout as timeout_error:
-                    LOGGER['error'].error("-- TIMEOUT ERROR: {} --".format(timeout_error))
+                    logger.error("-- TIMEOUT ERROR: {} --".format(timeout_error))
                     exit()
                 except requests.exceptions.RequestException as error:
-                    LOGGER['error'].error("-- ERROR: {} --".format(error))
+                    logger.error("-- ERROR: {} --".format(error))
                     exit()
 
             return wrapper
@@ -264,12 +260,12 @@ class Sign:
             res = self.api_post_group_request(data)
 
             if res.status_code == 201:
-                self.logs['process'].info('{} Group Created...'.format(group_name))
+                logger.info('{} Group Created...'.format(group_name))
                 res_data = res.json()
                 sign_group[group_name] = res_data['groupId']
             else:
-                self.logs['error'].error("!! {}: Creating group error !! {}".format(group_name, res.text))
-                self.logs['error'].error('!! Reason !! {}'.format(res.reason))
+                logger.error("!! {}: Creating group error !! {}".format(group_name, res.text))
+                logger.error('!! Reason !! {}'.format(res.reason))
 
     def get_temp_header(self):
         """
@@ -384,10 +380,10 @@ class Sign:
                     temp_payload = self.get_user_info(user, group_id, group)
                     res = self.api_put_user_request(user['userId'], temp_payload)
                     if res.status_code == 200:
-                        self.logs['process'].info('<< Group: {} Roles: {} >> {}'.format(
+                        logger.info('<< Group: {} Roles: {} >> {}'.format(
                             group, user['roles'], user['email']))
                         pass
                     else:
-                        self.logs['error'].error("!! Adding User To Group Error !! {} \n{}".format(
+                        logger.error("!! Adding User To Group Error !! {} \n{}".format(
                             user['email'], res.text))
-                        self.logs['error'].error('!! Reason !! {}'.format(res.reason))
+                        logger.error('!! Reason !! {}'.format(res.reason))
