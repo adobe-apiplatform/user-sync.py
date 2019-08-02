@@ -1,7 +1,6 @@
 import logging
 import user_sync.sign_sync.connections.sign_connection
 import user_sync.sign_sync.connections.umapi_connection
-from queue import Queue
 
 logger = logging.getLogger('sign_sync')
 
@@ -11,6 +10,7 @@ def run(config_loader, user_keys, config_filename):
     This function will load up all the configuration and execute the sync function
     :param config_loader: ConfigLoader
     :param user_keys: set()
+    :param config_filename: str
     :return:
     """
 
@@ -48,7 +48,7 @@ def sync_users(sign_obj, sign_groups, connector, user_keys):
         sign_obj.create_sign_group(group_list)
 
     # Sync users into their groups
-    for user in user_list:
+    for user in updated_user_list:
         sign_obj.process_user(user)
 
     logger.info('------------------------------- Ending Sign Sync ---------------------------------')
