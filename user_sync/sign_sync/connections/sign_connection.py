@@ -2,6 +2,7 @@ import requests
 import json
 import yaml
 import logging
+from user_sync.error import AssertionException
 
 logger = logging.getLogger('sign_sync')
 
@@ -15,8 +16,7 @@ class Sign:
                 except yaml.YAMLError as exc:
                     print(exc)
         except IOError:
-            logger.error('** Failed To Open Connector-Sign-Sync.yml **')
-            exit(1)
+            raise AssertionException('Failed To Open Connector-Sign-Sync.yml')
 
         # Read server parameters
         self.host = self.sign_config_yml['server']['host']
@@ -53,16 +53,16 @@ class Sign:
                     return res
                 except requests.exceptions.HTTPError as http_error:
                     logger.error("-- HTTP ERROR: {} --".format(http_error))
-                    exit()
+                    raise AssertionException('sign sync failed')
                 except requests.exceptions.ConnectionError as conn_error:
                     logger.error("-- ERROR CONNECTING -- {}".format(conn_error))
-                    exit()
+                    raise AssertionException('sign sync failed')
                 except requests.exceptions.Timeout as timeout_error:
                     logger.error("-- TIMEOUT ERROR: {} --".format(timeout_error))
-                    exit()
+                    raise AssertionException('sign sync failed')
                 except requests.exceptions.RequestException as error:
                     logger.error("-- ERROR: {} --".format(error))
-                    exit()
+                    raise AssertionException('sign sync failed')
 
             return wrapper
 
