@@ -42,7 +42,7 @@ import user_sync.cli
 import user_sync.resource
 import time
 
-import user_sync.sign_sync.app as Sign_Sync
+import user_sync.sign_sync.app as sign_sync
 
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
@@ -373,10 +373,12 @@ def begin_work(config_loader):
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
     rule_processor.run(directory_groups, directory_connector, umapi_connectors)
 
-    # Need to sleep the application before performing the sync. This is due to the fact that it takes around
-    # 30-45 secs for the users to populate into sign.
-    time.sleep(60)
-    Sign_Sync.run(config_loader, rule_processor.updated_user_keys)
+    if sign_config_file:
+        # Need to sleep the application before performing the sync. This is due to the fact that it takes around
+        # 30-45 secs for the users to populate into sign.
+        time.sleep(60)
+        sign_sync.run(config_loader, rule_processor.updated_user_keys, sign_config_file)
+
 
 if __name__ == '__main__':
     main()
