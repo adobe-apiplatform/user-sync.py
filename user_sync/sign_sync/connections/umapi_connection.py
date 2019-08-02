@@ -1,5 +1,6 @@
 import umapi_client
 
+
 class Umapi:
 
     def __init__(self, config):
@@ -11,11 +12,11 @@ class Umapi:
                                                 config['server']['host']),
                                             auth_dict=config["enterprise"])
 
-    def query_users_in_groups(self, product_profile, account_type, user_keys):
+    def query_users_in_groups(self, product_profile, user_keys):
         """
         This function makes a query for users in a given list of groups.
-        :param groups: list[]
-        :param account_type: str
+        :param product_profile: str
+        :param user_keys: set()
         :return: dict()
         """
 

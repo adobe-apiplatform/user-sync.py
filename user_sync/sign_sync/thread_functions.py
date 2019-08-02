@@ -1,5 +1,6 @@
 from threading import Thread
 
+
 class ThreadWorker(Thread):
     def __init__(self, queue, func):
         """

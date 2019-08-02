@@ -49,7 +49,6 @@ class Sign:
         self.sign_users = self.get_sign_users()
         self.default_group = self.get_sign_group()['Default Group']
 
-
     class SignDecorators:
         @classmethod
         def exception_catcher(cls, func):
@@ -378,14 +377,16 @@ class Sign:
         # Sort the groups and assign the user to first group
         # Sign doesn't support multi group assignment at this time
         for group in sorted(user['groups']):
-            if(group != self.product_profile):
+            if group != self.product_profile:
                 group_id = temp_group.get(group)
                 if group_id is not None:
                     temp_payload = self.get_user_info(user, group_id, group)
                     res = self.api_put_user_request(user['userId'], temp_payload)
                     if res.status_code == 200:
-                        self.logs['process'].info('<< Information Updated >> {}'.format(user['email']))
+                        self.logs['process'].info('<< Group: {} Roles: {} >> {}'.format(
+                            group, user['roles'], user['email']))
                         pass
                     else:
-                        self.logs['error'].error("!! Adding User To Group Error !! {} \n{}".format(user['email'], res.text))
+                        self.logs['error'].error("!! Adding User To Group Error !! {} \n{}".format(
+                            user['email'], res.text))
                         self.logs['error'].error('!! Reason !! {}'.format(res.reason))

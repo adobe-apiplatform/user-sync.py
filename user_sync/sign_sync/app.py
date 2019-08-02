@@ -7,7 +7,13 @@ from queue import Queue
 LOGGER = user_sync.sign_sync.logger.Log()
 
 
-def run(config_loader, user_keys=None):
+def run(config_loader, user_keys):
+    """
+    This function will load up all the configuration and execute the sync function
+    :param config_loader: ConfigLoader
+    :param user_keys: set()
+    :return:
+    """
 
     log_file = LOGGER.get_log()
 
@@ -21,13 +27,15 @@ def run(config_loader, user_keys=None):
 
     sync_users(log_file, sign_obj, sign_groups, data_connector, user_keys)
 
+
 def sync_users(logs, sign_obj, sign_groups, connector, user_keys):
     """
     This is the run function of the application.
     :param logs: dict()
     :param sign_obj: dict()
     :param sign_groups: list[]
-    :param data_connectors: dict()
+    :param connector: dict()
+    :param user_keys: set()
     """
 
     logs['process'].info('------------------------------- Starting Sign Sync -------------------------------')
@@ -54,14 +62,16 @@ def get_data_from_connector(sign_obj, data_connector, user_keys):
     This function gets user data the main connector
     :param sign_obj: obj
     :param data_connector: dict()
+    :param user_keys: set()
     :return: dict(), dict()
     """
 
     # Get Users and Groups information from our connector
     group_list = data_connector.query_user_groups()
-    user_list = data_connector.query_users_in_groups(sign_obj.get_product_profile(), sign_obj.account_type, user_keys)
+    user_list = data_connector.query_users_in_groups(sign_obj.get_product_profile(), user_keys)
 
-    return (group_list, user_list)
+    return group_list, user_list
+
 
 def do_threading(user_list, func):
     """
