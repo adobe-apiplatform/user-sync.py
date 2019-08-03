@@ -45,7 +45,7 @@ def sync_users(sign_obj, sign_groups, connector, user_keys):
     # Create new user groups in sign if not found
     groups_not_found_in_sign = [group for group in group_list if group not in sign_groups]
     if groups_not_found_in_sign:
-        sign_obj.create_sign_group(group_list)
+        sign_obj.create_sign_group(groups_not_found_in_sign)
 
     # Sync users into their groups
     for user in updated_user_list:
