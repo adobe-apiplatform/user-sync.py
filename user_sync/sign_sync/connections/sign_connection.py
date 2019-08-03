@@ -289,6 +289,7 @@ class Sign:
         """
 
         privileges = self.check_umapi_privileges(group, user_info)
+        user_info['roles'] = privileges
 
         data = {
             "email": user_info['username'],
@@ -315,8 +316,7 @@ class Sign:
 
         user['sign_group'] = user_data['group']
 
-    @staticmethod
-    def check_umapi_privileges(group, umapi_user_info):
+    def check_umapi_privileges(self, group, umapi_user_info):
         """
         This function will look through the configuration settings and give access privileges access to each user.
         :param group: list[]
@@ -324,20 +324,32 @@ class Sign:
         :return:
         """
 
-        roles = umapi_user_info['roles']
+        # Sort group and set flags
+        sorted_groups = sorted(umapi_user_info['groups'], reverse=True)
+        product_group = self.get_product_profile()[0]
+        group_admin = False
+        account_admin = False
 
-        if roles == 'NORMAL_USER':
-            privileges = ["NORMAL_USER"]
-        elif roles == 'GROUP_ADMIN':
-            if group != umapi_user_info['sign_group']:
-                privileges = ["NORMAL_USER"]
+        # define account and group admin names
+        admin_prefix = '_admin_'
+        target_group_admin_name = admin_prefix + group
+        target_account_admin_name = admin_prefix + product_group
 
-            else:
-                privileges = ['GROUP_ADMIN']
-        elif roles == 'ACCOUNT_ADMIN':
-            privileges = ["ACCOUNT_ADMIN"]
-        else:
+        # Check to see if user is an admin and set flags
+        if target_group_admin_name in sorted_groups:
+            group_admin = True
+        if target_account_admin_name in sorted_groups:
+            account_admin = True
+
+        # Determine which role to give the user based on flags
+        if account_admin and group_admin:
             privileges = ["ACCOUNT_ADMIN", "GROUP_ADMIN"]
+        elif account_admin:
+            privileges = ["ACCOUNT_ADMIN"]
+        elif group_admin:
+            privileges = ["GROUP_ADMIN"]
+        else:
+            privileges = ['NORMAL_USER']
 
         return privileges
 
@@ -369,12 +381,15 @@ class Sign:
         :param user: dict()
         :return:
         """
+
+        product_profile = self.get_product_profile()[0]
+        admin_prefix = '_admin_'
         temp_group = self.get_sign_group()
 
         # Sort the groups and assign the user to first group
         # Sign doesn't support multi group assignment at this time
         for group in sorted(user['groups']):
-            if group != self.product_profile:
+            if group[:7] != admin_prefix and group != product_profile:
                 group_id = temp_group.get(group)
                 if group_id is not None:
                     temp_payload = self.get_user_info(user, group_id, group)
@@ -387,3 +402,4 @@ class Sign:
                         logger.error("!! Adding User To Group Error !! {} \n{}".format(
                             user['email'], res.text))
                         logger.error('!! Reason !! {}'.format(res.reason))
+                break
