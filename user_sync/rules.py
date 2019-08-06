@@ -30,6 +30,8 @@ import user_sync.identity_type
 from collections import defaultdict
 from user_sync.helper import normalize_string, CSVAdapter, JobStats
 
+from user_sync.post_sync.sign_sync import run
+
 GROUP_NAME_DELIMITER = '::'
 PRIMARY_UMAPI_NAME = None
 
@@ -165,11 +167,12 @@ class RuleProcessor(object):
                                                                          username_filter_regex.pattern)
             logger.debug('Initialized with options: %s', options_to_report)
 
-    def run(self, directory_groups, directory_connector, umapi_connectors):
+    def run(self, directory_groups, directory_connector, umapi_connectors, post_sync=False):
         """
         :type directory_groups: dict(str, list(AdobeGroup)
         :type directory_connector: user_sync.connector.directory.DirectoryConnector
         :type umapi_connectors: UmapiConnectors
+        :type post_sync: dict()
         """
         logger = self.logger
 
@@ -197,6 +200,22 @@ class RuleProcessor(object):
         umapi_connectors.execute_actions()
         umapi_stats.log_end(logger)
         self.log_action_summary(umapi_connectors)
+
+        if post_sync:
+            self.run_post_sync_modules(post_sync)
+
+
+    def run_post_sync_modules(self, post_sync):
+        for each_module in post_sync:
+            self.run_module(post_sync[each_module])
+
+
+    def run_module(self, module):
+        if module.scope == 'sign_sync':
+            user_sync.post_sync.sign_sync.run(module.value, self.directory_user_by_user_key)
+
+
+
 
     def validate_and_log_additional_groups(self, umapi_info):
         """

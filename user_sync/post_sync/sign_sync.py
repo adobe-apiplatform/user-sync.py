@@ -1,11 +1,13 @@
 import logging
-import user_sync.sign_sync.connections.sign_connection
-import user_sync.sign_sync.connections.umapi_connection
+import user_sync.post_sync.sign_connection
+import user_sync.post_sync.umapi_connection
+# import user_sync.sign_sync.connections.sign_connection
+# import user_sync.sign_sync.connections.umapi_connection
 
 logger = logging.getLogger('sign_sync')
 
 
-def run(config_loader, user_keys, config_filename=False):
+def run(sign_sync_config, user_keys, **kwargs):
     """
     This function will load up all the configuration and execute the sync function
     :param config_loader: ConfigLoader
@@ -15,12 +17,12 @@ def run(config_loader, user_keys, config_filename=False):
     """
 
     # Instantiate Sign object & validate
-    sign_obj = user_sync.sign_sync.connections.sign_connection.Sign(config_filename)
+    sign_obj = user_sync.post_sync.sign_connection.Sign(sign_sync_config)
     sign_obj.validate_integration_key(sign_obj.header, sign_obj.url)
     sign_groups = sign_obj.get_sign_group()
 
     primary_config, secondary_config = config_loader.get_umapi_options()
-    data_connector = user_sync.sign_sync.connections.umapi_connection.Umapi(primary_config)
+    data_connector = user_sync.post_sync.umapi_connection.Umapi(primary_config)
 
     sync_users(sign_obj, sign_groups, data_connector, user_keys)
 

@@ -59,7 +59,7 @@ class ConfigLoader(object):
         'test_mode': False,
         'update_user_info': False,
         'user_filter': None,
-        'users': ['all'],
+        'users': ['all']
     }
 
     def __init__(self, args):
@@ -249,6 +249,7 @@ class ConfigLoader(object):
                     options['adobe_group_filter'].append(user_sync.rules.AdobeGroup.create(group))
             else:
                 raise AssertionException('Unknown option "%s" for adobe-users' % adobe_users_action)
+
         return options
 
     def get_logging_config(self):
@@ -384,6 +385,25 @@ class ConfigLoader(object):
                     after_mapping_hook_text = options.get_string('after_mapping_hook', True)
                     if after_mapping_hook_text is None:
                         raise AssertionError("No after_mapping_hook found in extension configuration")
+        return options
+
+    def get_post_sync_options(self):
+        """
+        Read the directory extension, if there is one, and return its dictionary of options
+        :return: dict
+        """
+        options = {}
+        files = []
+        post_sync_config = self.main_config.get_dict_config('post_sync', True)
+        if post_sync_config:
+            post_sync_modules = post_sync_config.get_list_config('modules', True).value
+            post_sync_connectors = post_sync_config.get_list_config('connectors', True).value[0]
+            for each_module in post_sync_modules:
+                module_config_file = post_sync_connectors[each_module]
+                file_path = os.path.abspath(module_config_file)
+                files.insert(0, file_path)
+                options[each_module] = DictConfig(each_module, self.get_dict_from_sources(files))
+
         return options
 
     @staticmethod
@@ -560,7 +580,24 @@ class ConfigLoader(object):
         if options.get('adobe_group_mapped') is True:
             options['adobe_group_filter'] = set(user_sync.rules.AdobeGroup.iter_groups())
 
+        # process post_sync modules and locations
+        # post_sync_config = self.main_config.get_dict_config('post_sync', True)
+        # if post_sync_config:
+        #     #options['post_sync_options'] = self.get_post_sync_options()
+        #     options['post_sync'] = True
+        #     options['post_sync_modules'] = post_sync_config.get_list_config('modules', True).value
+        #     options['post_sync_connectors'] = post_sync_config.get_list_config('connectors', True).value
+        # post_sync_modules = post_sync_config.get_list_config('modules', True)
+        # post_sync_connectors = post_sync_config.get_list_config('connectors', True)
+        #
+        # if post_sync_config:
+        #     options['post_sync'] = True
+        #     options['post_sync_modules'] = post_sync_modules.value
+        #     options['post_sync_connectors'] = post_sync_connectors.value
+
         return options
+
+   # def get_
 
     def create_umapi_options(self, connector_config_sources):
         options = self.get_dict_from_sources(connector_config_sources)

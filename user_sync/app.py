@@ -138,11 +138,11 @@ def main():
               help='if membership in mapped groups differs between the enterprise directory and Adobe sides, '
                    'the group membership is updated on the Adobe side so that the memberships in mapped '
                    'groups match those on the enterprise directory side.')
-@click.option('--sign-sync-config',
-              help='*Temporary* CLI param to specify location of Sign sync config file. '
-                   'Enabling this option also enables the Sign sync config.',
-              type=str,
-              metavar='path-to-file')
+# @click.option('--sign-sync-config',
+#               help='*Temporary* CLI param to specify location of Sign sync config file. '
+#                    'Enabling this option also enables the Sign sync config.',
+#               type=str,
+#               metavar='path-to-file')
 @click.option('--strategy',
               help="whether to fetch and sync the Adobe directory against the customer directory "
                    "or just to push each customer user to the Adobe side.  Default is to fetch and sync.",
@@ -169,9 +169,9 @@ def main():
 def sync(**kwargs):
     """Run User Sync [default command]"""
     run_stats = None
-    sign_config_file = kwargs.get('sign-sync-config')
-    if 'sign-sync-config' in kwargs:
-        del(kwargs['sign_sync_config'])
+    # sign_config_file = kwargs.get('sign_sync_config')
+    # if 'sign-sync-config' in kwargs:
+    #     del(kwargs['sign_sync_config'])
     try:
         # load the config files and start the file logger
         config_loader = user_sync.config.ConfigLoader(kwargs)
@@ -188,9 +188,6 @@ def sync(**kwargs):
         if lock.set_lock():
             try:
                 begin_work(config_loader)
-
-                if sign_config_file:
-                    Synchronize(logger, config_loader, user_sync.connector, sign_config_file)
             finally:
                 lock.unlock()
         else:
@@ -341,6 +338,8 @@ def begin_work(config_loader):
         directory_connector = user_sync.connector.directory.DirectoryConnector(directory_connector_module)
         directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
 
+    post_sync = config_loader.get_post_sync_options()
+
     config_loader.check_unused_config_keys()
 
     if directory_connector is not None and directory_connector_options is not None:
@@ -368,16 +367,18 @@ def begin_work(config_loader):
         umapi_other_connectors[secondary_umapi_name] = umapi_secondary_conector
     umapi_connectors = user_sync.rules.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
 
+    #post_sync = config_loader.get_post_sync_options()
+
     rule_processor = user_sync.rules.RuleProcessor(rule_config)
     if len(directory_groups) == 0 and rule_processor.will_process_groups():
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
-    rule_processor.run(directory_groups, directory_connector, umapi_connectors)
+    rule_processor.run(directory_groups, directory_connector, umapi_connectors, post_sync)
 
-    if sign_config_file:
-        # Need to sleep the application before performing the sync. This is due to the fact that it takes around
-        # 30-45 secs for the users to populate into sign.
-        time.sleep(60)
-        sign_sync.run(config_loader, rule_processor.updated_user_keys, sign_config_file)
+    # if sign_config_file:
+    #     # Need to sleep the application before performing the sync. This is due to the fact that it takes around
+    #     # 30-45 secs for the users to populate into sign.
+    #     time.sleep(60)
+    #     sign_sync.run(config_loader, rule_processor.updated_user_keys, sign_config_file)
 
 
 if __name__ == '__main__':
