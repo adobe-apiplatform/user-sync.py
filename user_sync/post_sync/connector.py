@@ -1,2 +1,0 @@
-class PostSyncConnector(object):
-    pass

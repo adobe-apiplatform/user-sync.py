@@ -1,1 +1,6 @@
-from .connector import PostSyncConnector
+def init():
+    pass
+
+
+class PostSyncConnector(object):
+    pass
