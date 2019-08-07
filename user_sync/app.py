@@ -138,11 +138,6 @@ def main():
               help='if membership in mapped groups differs between the enterprise directory and Adobe sides, '
                    'the group membership is updated on the Adobe side so that the memberships in mapped '
                    'groups match those on the enterprise directory side.')
-# @click.option('--sign-sync-config',
-#               help='*Temporary* CLI param to specify location of Sign sync config file. '
-#                    'Enabling this option also enables the Sign sync config.',
-#               type=str,
-#               metavar='path-to-file')
 @click.option('--strategy',
               help="whether to fetch and sync the Adobe directory against the customer directory "
                    "or just to push each customer user to the Adobe side.  Default is to fetch and sync.",
@@ -169,9 +164,6 @@ def main():
 def sync(**kwargs):
     """Run User Sync [default command]"""
     run_stats = None
-    # sign_config_file = kwargs.get('sign_sync_config')
-    # if 'sign-sync-config' in kwargs:
-    #     del(kwargs['sign_sync_config'])
     try:
         # load the config files and start the file logger
         config_loader = user_sync.config.ConfigLoader(kwargs)
@@ -310,7 +302,7 @@ def log_parameters(argv, config_loader):
         logger.debug('  %s: %s', parameter_name, parameter_value)
     logger.info('-------------------------------------')
     if 'post_sync' in config_loader.main_config.value:
-        logger.info('Post sync modules  ' + str(config_loader.get_post_sync_modules()) + ' have been triggered.'
+        logger.info('Post sync modules  ' + str(config_loader.main_config.value['post_sync']['modules']) + ' have been triggered.'
                                                                                      ' Modules will run upon completion of the sync process. '
                                                                                          ' Modules will run in the order provided')
 
@@ -375,12 +367,6 @@ def begin_work(config_loader):
     if len(directory_groups) == 0 and rule_processor.will_process_groups():
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
     rule_processor.run(directory_groups, directory_connector, umapi_connectors, post_sync)
-
-    # if sign_config_file:
-    #     # Need to sleep the application before performing the sync. This is due to the fact that it takes around
-    #     # 30-45 secs for the users to populate into sign.
-    #     time.sleep(60)
-    #     sign_sync.run(config_loader, rule_processor.updated_user_keys, sign_config_file)
 
 
 if __name__ == '__main__':

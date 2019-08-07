@@ -394,19 +394,14 @@ class ConfigLoader(object):
         """
         options = {}
         post_sync_config = self.main_config.get_dict_config('post_sync', True)
+        post_sync_connectors = post_sync_config.get_list_config('connectors', True).value[0]
+        options['post_sync_modules'] = post_sync_config.get_list_config('modules', True).value
+
         if post_sync_config:
-            post_sync_connectors = post_sync_config.get_list_config('connectors', True).value[0]
             for each_module in post_sync_connectors:
                 module_config_file = post_sync_connectors[each_module]
                 options[each_module] = DictConfig(each_module, self.get_dict_from_sources([module_config_file]))
         return options
-
-    def get_post_sync_modules(self):
-        """
-        :return: list() of post_sync modules from main_config_yml_file
-        """
-        return self.main_config.get_dict_config('post_sync', True).get_list_config('modules', True).value
-
 
     @staticmethod
     def as_list(value):
@@ -883,6 +878,7 @@ class ConfigFileLoader:
                              '/directory_users/connectors/*': (True, False, None),
                              '/directory_users/extension': (True, False, None),
                              '/logging/file_log_directory': (False, False, "logs"),
+                             #'/post_sync/connectors/*': (False, False, False)
                              '/post_sync/connectors/sign_sync': (False, False, False),
                              '/post_sync/connectors/other': (False, False, False)
                              }

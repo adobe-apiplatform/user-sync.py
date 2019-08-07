@@ -30,7 +30,7 @@ import user_sync.identity_type
 from collections import defaultdict
 from user_sync.helper import normalize_string, CSVAdapter, JobStats
 
-from user_sync.post_sync.connector import PostSyncConnector
+from user_sync.post_sync.post_sync import PostSyncConnector
 
 GROUP_NAME_DELIMITER = '::'
 PRIMARY_UMAPI_NAME = None
@@ -167,7 +167,7 @@ class RuleProcessor(object):
                                                                          username_filter_regex.pattern)
             logger.debug('Initialized with options: %s', options_to_report)
 
-    def run(self, directory_groups, directory_connector, umapi_connectors, post_sync=False):
+    def run(self, directory_groups, directory_connector, umapi_connectors, post_sync=None):
         """
         :type directory_groups: dict(str, list(AdobeGroup)
         :type directory_connector: user_sync.connector.directory.DirectoryConnector
