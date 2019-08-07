@@ -1,12 +1,11 @@
 from copy import deepcopy
 import logging
+from user_sync.helper import JobStats
 
 _SYNC_DATA_STORE = {}
 
-from user_sync.helper import JobStats
 
-class PostSyncConnector():
-
+class PostSyncConnector:
     def __init__(self, **kwargs):
         self.post_sync = kwargs['post_sync']
         self.umapi_info = kwargs['umapi_info']
@@ -14,10 +13,6 @@ class PostSyncConnector():
         self.directory_groups = kwargs['directory_groups']
         self.directory_connector = kwargs['directory_connector']
         self.logger = logging.getLogger('post_sync')
-
-        # self.post_sync_modules = ConfigLoader(self.post_sync).get_post_sync_modules()
-        # self.post_sync_connectors = ConfigLoader(self.post_sync).get_post_sync_options()
-
         self.run_post_sync_modules()
 
     def run_post_sync_modules(self):

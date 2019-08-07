@@ -202,7 +202,7 @@ class RuleProcessor(object):
         self.log_action_summary(umapi_connectors)
 
         if post_sync:
-            PostSyncConnector(logger=logger, post_sync=post_sync, umapi_info=umapi_info,
+            PostSyncConnector(post_sync=post_sync, umapi_info=umapi_info,
                               umapi_connectors=umapi_connectors, directory_connector=directory_connector,
                               directory_groups=directory_groups)
 
