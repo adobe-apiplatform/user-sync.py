@@ -124,7 +124,7 @@ def main():
               help='specify a connector to use; default is LDAP (or CSV if --users file is specified)',
               cls=user_sync.cli.OptionMulti,
               type=list,
-              metavar='ldap|okta|csv [path-to-file.csv]')
+              metavar='ldap|okta|csv|adobe_console [path-to-file.csv]')
 @click.option('--process-groups/--no-process-groups', default=None,
               help='if membership in mapped groups differs between the enterprise directory and Adobe sides, '
                    'the group membership is updated on the Adobe side so that the memberships in mapped '

@@ -127,7 +127,7 @@ class ConfigLoader(object):
         # --connector
         connector_spec = options['connector']
         connector_type = user_sync.helper.normalize_string(connector_spec[0])
-        if connector_type in ["ldap", "okta"]:
+        if connector_type in ["ldap", "okta", "adobe_console"]:
             if len(connector_spec) > 1:
                 raise AssertionException('Must not specify a file (%s) with connector type %s' %
                                          (connector_spec[0], connector_type))
@@ -312,6 +312,7 @@ class ConfigLoader(object):
             connectors_config.get_list('ldap', True)
             connectors_config.get_list('csv', True)
             connectors_config.get_list('okta', True)
+            connectors_config.get_list('adobe_console', True)
         return connectors_config
 
     def get_directory_connector_options(self, connector_name):
