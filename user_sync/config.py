@@ -389,22 +389,24 @@ class ConfigLoader(object):
 
     def get_post_sync_options(self):
         """
-        Read the directory extension, if there is one, and return its dictionary of options
+        Read the post_sync options from main_config_file, if there are any modules specified, and return its dictionary of options
         :return: dict
         """
         options = {}
-        files = []
         post_sync_config = self.main_config.get_dict_config('post_sync', True)
         if post_sync_config:
-            post_sync_modules = post_sync_config.get_list_config('modules', True).value
             post_sync_connectors = post_sync_config.get_list_config('connectors', True).value[0]
-            for each_module in post_sync_modules:
+            for each_module in post_sync_connectors:
                 module_config_file = post_sync_connectors[each_module]
-                file_path = os.path.abspath(module_config_file)
-                files.insert(0, file_path)
-                options[each_module] = DictConfig(each_module, self.get_dict_from_sources(files))
-
+                options[each_module] = DictConfig(each_module, self.get_dict_from_sources([module_config_file]))
         return options
+
+    def get_post_sync_modules(self):
+        """
+        :return: list() of post_sync modules from main_config_yml_file
+        """
+        return self.main_config.get_dict_config('post_sync', True).get_list_config('modules', True).value
+
 
     @staticmethod
     def as_list(value):
@@ -580,24 +582,7 @@ class ConfigLoader(object):
         if options.get('adobe_group_mapped') is True:
             options['adobe_group_filter'] = set(user_sync.rules.AdobeGroup.iter_groups())
 
-        # process post_sync modules and locations
-        # post_sync_config = self.main_config.get_dict_config('post_sync', True)
-        # if post_sync_config:
-        #     #options['post_sync_options'] = self.get_post_sync_options()
-        #     options['post_sync'] = True
-        #     options['post_sync_modules'] = post_sync_config.get_list_config('modules', True).value
-        #     options['post_sync_connectors'] = post_sync_config.get_list_config('connectors', True).value
-        # post_sync_modules = post_sync_config.get_list_config('modules', True)
-        # post_sync_connectors = post_sync_config.get_list_config('connectors', True)
-        #
-        # if post_sync_config:
-        #     options['post_sync'] = True
-        #     options['post_sync_modules'] = post_sync_modules.value
-        #     options['post_sync_connectors'] = post_sync_connectors.value
-
         return options
-
-   # def get_
 
     def create_umapi_options(self, connector_config_sources):
         options = self.get_dict_from_sources(connector_config_sources)
@@ -898,6 +883,8 @@ class ConfigFileLoader:
                              '/directory_users/connectors/*': (True, False, None),
                              '/directory_users/extension': (True, False, None),
                              '/logging/file_log_directory': (False, False, "logs"),
+                             '/post_sync/connectors/sign_sync': (False, False, False),
+                             '/post_sync/connectors/other': (False, False, False)
                              }
 
     # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files

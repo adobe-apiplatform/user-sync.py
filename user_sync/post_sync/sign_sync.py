@@ -1,10 +1,12 @@
 import logging
 import user_sync.post_sync.sign_connection
 import user_sync.post_sync.umapi_connection
+import user_sync.helper
+from user_sync.helper import JobStats
 # import user_sync.sign_sync.connections.sign_connection
 # import user_sync.sign_sync.connections.umapi_connection
 
-logger = logging.getLogger('sign_sync')
+#logger = logging.getLogger('sign_sync')
 
 
 def run(sign_sync_config, user_keys, **kwargs):
@@ -15,7 +17,9 @@ def run(sign_sync_config, user_keys, **kwargs):
     :param config_filename: str
     :return:
     """
-
+    logger = kwargs['logger']
+    logger.info('------------Beginning Post Sync Process-------------')
+    logger.info('module process: Sign Sync.....')
     # Instantiate Sign object & validate
     sign_obj = user_sync.post_sync.sign_connection.Sign(sign_sync_config)
     sign_obj.validate_integration_key(sign_obj.header, sign_obj.url)
