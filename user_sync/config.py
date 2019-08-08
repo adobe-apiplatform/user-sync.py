@@ -401,9 +401,15 @@ class ConfigLoader(object):
         if post_sync_config:
             for each_module in post_sync_connectors:
                 if each_module not in known_modules:
-                    raise ValueError('Skipping unknown post_sync module: ' + each_module + '. Available modules: ' + str(known_modules))
+                    raise ValueError(
+                        'Skipping unknown post_sync module: ' + each_module + '. Available modules: '
+                        + str(known_modules))
                 module_config_file = post_sync_connectors[each_module]
                 options[each_module] = DictConfig(each_module, self.get_dict_from_sources([module_config_file]))
+            self.logger.info('Post sync modules  ' + str(options['post_sync_modules']) +
+                             ' have been triggered.'                                                                                       
+                             ' Modules will run upon completion of the sync process. '
+                             ' Modules will run in the order provided')
         return options
 
     @staticmethod

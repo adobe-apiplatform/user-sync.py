@@ -301,10 +301,6 @@ def log_parameters(argv, config_loader):
     for parameter_name, parameter_value in six.iteritems(config_loader.get_invocation_options()):
         logger.debug('  %s: %s', parameter_name, parameter_value)
     logger.info('-------------------------------------')
-    if 'post_sync' in config_loader.main_config.value:
-        logger.info('Post sync modules  ' + str(config_loader.main_config.value['post_sync']['modules']) + ' have been triggered.'
-                                                                                     ' Modules will run upon completion of the sync process. '
-                                                                                         ' Modules will run in the order provided')
 
 
 def begin_work(config_loader):
