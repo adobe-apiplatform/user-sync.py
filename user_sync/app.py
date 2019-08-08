@@ -164,6 +164,9 @@ def main():
 def sync(**kwargs):
     """Run User Sync [default command]"""
     run_stats = None
+    sign_config_file = kwargs.get('sign_sync_config')
+    if 'sign_sync_config' in kwargs:
+        del(kwargs['sign_sync_config'])
     try:
         # load the config files and start the file logger
         config_loader = user_sync.config.ConfigLoader(kwargs)
@@ -364,6 +367,12 @@ def begin_work(config_loader):
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
     rule_processor.run(directory_groups, directory_connector, umapi_connectors, post_sync)
 
+    if sign_config_file:
+        # Need to sleep the application before performing the sync. This is due to the fact that it takes around
+        # 30-45 secs for the users to populate into sign.
+        logger.info('running Sign sync')
+        time.sleep(60)
+        sign_sync.run(config_loader, rule_processor.updated_user_keys, sign_config_file)
 
 if __name__ == '__main__':
     main()

@@ -16,7 +16,6 @@ def run(config_loader, user_keys, config_filename=False):
 
     # Instantiate Sign object & validate
     sign_obj = user_sync.sign_sync.connections.sign_connection.Sign(config_filename)
-    sign_obj.validate_integration_key(sign_obj.header, sign_obj.url)
     sign_groups = sign_obj.get_sign_group()
 
     primary_config, secondary_config = config_loader.get_umapi_options()

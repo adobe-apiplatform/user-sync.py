@@ -8,6 +8,8 @@ logger = logging.getLogger('sign_sync')
 
 
 class Sign:
+    _endpoint_template = 'api/rest/{}/'
+
     def __init__(self, config_filename):
         try:
             with open("sign_sync/config/connector-sign-sync.yml") as stream:
@@ -20,7 +22,6 @@ class Sign:
 
         # Read server parameters
         self.host = self.sign_config_yml['server']['host']
-        self.endpoint = self.sign_config_yml['server']['endpoint_v5']
 
         # Read condition parameters
         self.version = self.sign_config_yml['sign_sync']['version']
@@ -37,8 +38,8 @@ class Sign:
             self.product_profile = []
             self.account_admin = None
 
-        self.url = self.get_sign_url()
         self.header = self.get_sign_header()
+        self.url = self.base_uri()
         self.temp_header = self.get_temp_header()
 
         self.sign_users = self.get_sign_users()
@@ -67,23 +68,18 @@ class Sign:
             return wrapper
 
     @SignDecorators.exception_catcher
-    def validate_integration_key(self, headers, url):
+    def base_uri(self):
         """
         This function validates that the SIGN integration key is valid.
-        :param headers: dict()
-        :param url: str
         :return: dict()
         """
 
-        # read enterprise parameters
-        self.integration = self.sign_config.yml['enterprise']['integration']
-        self.email = self.sign_config.yml['enterprise']['email']
-        if self.version == "v5":
-            res = requests.get(url + "base_uris", headers=self.header)
-        else:
-            res = requests.get(url + "baseUris", headers=headers)
+        endpoint = self._endpoint_template.format(self.version)
+        url = 'https://' + self.host + '/' + endpoint
 
-        return res
+        if self.version == "v5":
+            return requests.get(url + "base_uris", headers=self.header).json()['api_access_point'] + endpoint
+        return requests.get(url + "baseUris", headers=self.header).json()['apiAccessPoint'] + endpoint
 
     @SignDecorators.exception_catcher
     def api_get_group_request(self):
@@ -170,18 +166,6 @@ class Sign:
                             headers=self.header, data=json.dumps(payload))
 
         return res
-
-    def get_sign_url(self, ver=None):
-        """
-        This function returns the SIGN url.
-        :param ver: str
-        :return: str
-        """
-
-        if ver is None:
-            return "https://" + self.host + self.endpoint + "/"
-        else:
-            return "https://" + self.host + "/" + ver + "/"
 
     def get_sign_header(self, ver=None):
         """
