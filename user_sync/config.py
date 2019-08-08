@@ -392,6 +392,7 @@ class ConfigLoader(object):
         Read the post_sync options from main_config_file, if there are any modules specified, and return its dictionary of options
         :return: dict
         """
+        known_modules = ['sign_sync', 'future_feature']
         options = {}
         post_sync_config = self.main_config.get_dict_config('post_sync', True)
         post_sync_connectors = post_sync_config.get_list_config('connectors', True).value[0]
@@ -399,6 +400,8 @@ class ConfigLoader(object):
 
         if post_sync_config:
             for each_module in post_sync_connectors:
+                if each_module not in known_modules:
+                    raise ValueError('Skipping unknown post_sync module: ' + each_module + '. Available modules: ' + str(known_modules))
                 module_config_file = post_sync_connectors[each_module]
                 options[each_module] = DictConfig(each_module, self.get_dict_from_sources([module_config_file]))
         return options
@@ -879,7 +882,7 @@ class ConfigFileLoader:
                              '/directory_users/extension': (True, False, None),
                              '/logging/file_log_directory': (False, False, "logs"),
                              '/post_sync/connectors/sign_sync': (False, False, False),
-                             '/post_sync/connectors/other': (False, False, False)
+                             '/post_sync/connectors/future_feature': (False, False, False)
                              }
 
     # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files

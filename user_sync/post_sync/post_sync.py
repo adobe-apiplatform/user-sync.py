@@ -16,7 +16,7 @@ class PostSyncConnector:
         self.run_post_sync_modules()
 
     def run_post_sync_modules(self):
-        for each_module in self.post_sync:
+        for each_module in self.post_sync['post_sync_modules']:
             job_stats = JobStats(name='Post Sync Module: ' + each_module)
             job_stats.log_start(self.logger)
             job_stats.log_end(self.logger)
