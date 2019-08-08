@@ -1,10 +1,8 @@
 import re
-
 import mock
 import pytest
 import yaml
-
-from user_sync.rules import RuleProcessor
+from user_sync.rules import RuleProcessor, AdobeGroup, UmapiTargetInfo
 
 
 @pytest.fixture
@@ -49,6 +47,10 @@ def caller_options():
             'file_path': '../tests/fixture/remove-data.csv'},
         'adobe_group_mapped': False,
         'additional_groups': []}
+
+@pytest.fixture
+def umapi_target_info():
+    return UmapiTargetInfo("")
 
 
 @mock.patch('user_sync.helper.CSVAdapter.read_csv_rows')
@@ -199,6 +201,51 @@ def test_log_after_mapping_hook_scope(log_stream):
 
     assert re.search('(Target groups, after).*(One)', x[6])
     compare_attr(x[5], state['target_attributes'])
+
+
+def test_get_username_from_user_key(rule_processor):
+    with mock.patch('user_sync.rules.RuleProcessor.parse_user_key') as parse:
+        parse.return_value = ['federatedID', 'test_user@email.com', '']
+        username = rule_processor.get_username_from_user_key("federatedID,test_user@email.com,")
+        assert username == 'test_user@email.com'
+
+
+def test_parse_user_key(rule_processor):
+    parsed_user_key = rule_processor.parse_user_key("federatedID,test_user@email.com,")
+    assert parsed_user_key == ['federatedID', 'test_user@email.com', '']
+
+    domain_parsed_key = rule_processor.parse_user_key("federatedID,test_user,email.com")
+    assert domain_parsed_key == ['federatedID', 'test_user', 'email.com']
+
+
+def test_add_mapped_group(umapi_target_info):
+    umapi_target_info.add_mapped_group("All Students")
+    assert "all students" in umapi_target_info.mapped_groups
+    assert "All Students" in umapi_target_info.non_normalize_mapped_groups
+
+
+def test_add_additional_group(umapi_target_info):
+    umapi_target_info.add_additional_group('old_name', 'new_name')
+    assert umapi_target_info.additional_group_map['old_name'][0] == 'new_name'
+
+
+def test_add_desired_group_for(umapi_target_info):
+    with mock.patch("user_sync.rules.UmapiTargetInfo.get_desired_groups") as mock_desired_groups:
+        mock_desired_groups.return_value = None
+        umapi_target_info.add_desired_group_for('user_key', 'group_name')
+        assert umapi_target_info.desired_groups_by_user_key['user_key'] == {'group_name'}
+
+
+def test_create():
+    with mock.patch("user_sync.rules.AdobeGroup._parse") as parse:
+        parse.return_value = ('group_name', None)
+        AdobeGroup.create('this')
+        assert ('group_name', None) in AdobeGroup.index_map
+
+
+def test_parse():
+    result = AdobeGroup._parse('qualified_name')
+    assert result == ('qualified_name', None)
 
 def test_add_stray(rule_processor):
     user_key_mock_data = 'federatedID,rules.user@seaofcarag.com,'
