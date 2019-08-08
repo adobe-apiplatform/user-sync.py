@@ -199,3 +199,10 @@ def test_log_after_mapping_hook_scope(log_stream):
 
     assert re.search('(Target groups, after).*(One)', x[6])
     compare_attr(x[5], state['target_attributes'])
+
+def test_add_stray(rule_processor):
+    user_key_mock_data = 'federatedID,rules.user@seaofcarag.com,'
+    removed_groups_mock_data = {'aishtest'}
+    rule_processor.stray_key_map = {None: {}}
+    rule_processor.add_stray(None, user_key_mock_data, removed_groups_mock_data)
+    assert rule_processor.stray_key_map[None][user_key_mock_data] == removed_groups_mock_data
