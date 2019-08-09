@@ -24,19 +24,19 @@ def run(config_loader, user_keys, config_filename=False):
     sync_users(sign_obj, sign_groups, data_connector, user_keys)
 
 
-def sync_users(sign_obj, sign_groups, connector, user_keys):
+def sync_users(sign_obj, sign_groups, connector, user_ids):
     """
     This is the run function of the application.
     :param sign_obj: dict()
     :param sign_groups: list[]
     :param connector: dict()
-    :param user_keys: set()
+    :param user_ids: set()
     """
 
     logger.info('------------------------------- Starting Sign Sync -------------------------------')
 
     # Get Users and Groups information from our connector
-    group_list, user_list = get_data_from_connector(sign_obj, connector, user_keys)
+    group_list, user_list = get_data_from_connector(sign_obj, connector, user_ids)
 
     # Format the users and create groups that don't exist in Adobe Sign
     updated_user_list = sign_obj.get_updated_user_list(user_list)
@@ -53,17 +53,17 @@ def sync_users(sign_obj, sign_groups, connector, user_keys):
     logger.info('------------------------------- Ending Sign Sync ---------------------------------')
 
 
-def get_data_from_connector(sign_obj, data_connector, user_keys):
+def get_data_from_connector(sign_obj, data_connector, user_ids):
     """
     This function gets user data the main connector
     :param sign_obj: obj
     :param data_connector: dict()
-    :param user_keys: set()
+    :param user_ids: set()
     :return: dict(), dict()
     """
 
     # Get Users and Groups information from our connector
     group_list = data_connector.query_user_groups()
-    user_list = data_connector.query_users_in_groups(sign_obj.get_product_profile(), user_keys)
+    user_list = data_connector.query_users_in_groups(sign_obj.get_product_profile(), user_ids)
 
     return group_list, user_list

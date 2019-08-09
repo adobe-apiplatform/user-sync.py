@@ -367,12 +367,17 @@ def begin_work(config_loader):
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
     rule_processor.run(directory_groups, directory_connector, umapi_connectors, post_sync)
 
+    new_adobe_users = set([u.split(',')[1] for u in
+                           list(rule_processor.umapi_info_by_name.values())[0].desired_groups_by_user_key.keys()])
+    existing_adobe_users = set([u.split(',')[1] for u in
+                                list(rule_processor.umapi_info_by_name.values())[0].umapi_user_by_user_key.keys()])
+
     if sign_config_file:
         # Need to sleep the application before performing the sync. This is due to the fact that it takes around
         # 30-45 secs for the users to populate into sign.
         logger.info('running Sign sync')
         time.sleep(60)
-        sign_sync.run(config_loader, rule_processor.updated_user_keys, sign_config_file)
+        sign_sync.run(config_loader, existing_adobe_users | new_adobe_users, sign_config_file)
 
 if __name__ == '__main__':
     main()

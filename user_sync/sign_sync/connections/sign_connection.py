@@ -366,24 +366,22 @@ class Sign:
         :return:
         """
 
-        product_profile = self.get_product_profile()[0]
-        admin_prefix = '_admin_'
-        temp_group = self.get_sign_group()
+        sign_groups = self.get_sign_group()
+        common_groups = set.intersection(set(sign_groups.keys()), set(user['groups']))
 
-        # Sort the groups and assign the user to first group
-        # Sign doesn't support multi group assignment at this time
-        for group in sorted(user['groups']):
-            if group[:7] != admin_prefix and group != product_profile:
-                group_id = temp_group.get(group)
-                if group_id is not None:
-                    temp_payload = self.get_user_info(user, group_id, group)
-                    res = self.api_put_user_request(user['userId'], temp_payload)
-                    if res.status_code == 200:
-                        logger.info('<< Group: {} Roles: {} >> {}'.format(
-                            group, user['roles'], user['email']))
-                        pass
-                    else:
-                        logger.error("!! Adding User To Group Error !! {} \n{}".format(
-                            user['email'], res.text))
-                        logger.error('!! Reason !! {}'.format(res.reason))
-                break
+        if not common_groups:
+            return
+
+        assignment_group = sorted(list(common_groups))[0]
+        group_id = sign_groups.get(assignment_group)
+
+        user_info = self.get_user_info(user, group_id, assignment_group)
+        res = self.api_put_user_request(user['userId'], user_info)
+
+        if res.status_code == 200:
+            logger.info('<< Group: {} Roles: {} >> {}'.format(
+                assignment_group, user['roles'], user['email']))
+        else:
+            logger.error("!! Adding User To Group Error !! {} \n{}".format(
+                user['email'], res.text))
+            logger.error('!! Reason !! {}'.format(res.reason))
