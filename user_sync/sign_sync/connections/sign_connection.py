@@ -272,18 +272,13 @@ class Sign:
         :return: dict()
         """
 
-        privileges = self.check_umapi_privileges(group, user_info)
-        user_info['roles'] = privileges
-
-        data = {
+        return {
             "email": user_info['username'],
             "firstName": user_info['firstname'],
             "groupId": group_id,
             "lastName": user_info['lastname'],
-            "roles": privileges
+            "roles": self.check_umapi_privileges(group, user_info)
         }
-
-        return data
 
     def get_user_roles(self, user):
         """
