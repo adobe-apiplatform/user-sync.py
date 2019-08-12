@@ -212,7 +212,7 @@ class OktaDirectoryConnector(object):
                     continue
                 yield (user)
         else:
-            self.logger.warning("No group found for: %s", group)
+            raise AssertionException("No group found for: %s" % group)
 
     def convert_user(self, record, extended_attributes):
 
