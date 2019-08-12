@@ -190,8 +190,8 @@ class LDAPDirectoryConnector(object):
             group_users = 0
             group_dn = self.find_ldap_group_dn(group)
             if not group_dn:
-                self.logger.warning("No group found for: %s", group)
-                continue
+                # protection for group processing in case of name mismatch
+                raise AssertionException ("No group found for: %s" % group)
             group_member_subfilter = self.format_ldap_query_string(group_member_filter_format, group_dn=group_dn)
             if not group_member_subfilter.startswith('('):
                 group_member_subfilter = six.text_type('(') + group_member_subfilter + six.text_type(')')
