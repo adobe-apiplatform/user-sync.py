@@ -1,4 +1,4 @@
 firstname,lastname,email,country,groups,type,username,domain
-John,Smith,jsmith@example.com,US,"AdobeCC-All",enterpriseID
-Jane,Doe,jdoe@example.com,US,"AdobeCC-All",federatedID
-Richard,Roe,rroe@example.com,US,"AdobeCC-All"
+John,Smith,jsmith@example.com,US,"AdobeCC-All",enterpriseID,jsmith,example.com
+Jane,Doe,jdoe@example.com,US,"AdobeCC-All",federatedID,jdoe,example.com
+Richard,Roe,rroe@example.com,US,"AdobeCC-All",rroe,example.com
