@@ -113,7 +113,7 @@ class RuleProcessor(object):
         self.updated_user_keys = set()
 
         # stray key input path comes in, stray_list_output_path goes out
-        self.stray_key_map = self.make_stray_key_map()
+        self.stray_key_map = {}
         if options['stray_list_input_path']:
             self.read_stray_key_map(options['stray_list_input_path'])
         self.stray_list_output_path = options['stray_list_output_path']
@@ -546,15 +546,6 @@ class RuleProcessor(object):
             if search_result is None:
                 return False
         return True
-
-    def make_stray_key_map(self):
-        """
-        The stray key map is a two-level map:
-        * the first level maps umapis to user_keys of users in those umapis;
-        * the second level maps those user_keys to the groups that should be removed from them.
-        :return: dict whose values are dicts
-        """
-        return {}
 
     def get_stray_keys(self, umapi_name=PRIMARY_UMAPI_NAME):
         return self.stray_key_map.get(umapi_name, {})
