@@ -246,3 +246,10 @@ def test_create():
 def test_parse():
     result = AdobeGroup._parse('qualified_name')
     assert result == ('qualified_name', None)
+
+def test_add_stray(rule_processor):
+    user_key_mock_data = 'federatedID,rules.user@seaofcarag.com,'
+    removed_groups_mock_data = {'aishtest'}
+    rule_processor.stray_key_map = {None: {}}
+    rule_processor.add_stray(None, user_key_mock_data, removed_groups_mock_data)
+    assert rule_processor.stray_key_map[None][user_key_mock_data] == removed_groups_mock_data
