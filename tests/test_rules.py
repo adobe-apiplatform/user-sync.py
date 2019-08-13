@@ -253,3 +253,11 @@ def test_add_stray(rule_processor):
     rule_processor.stray_key_map = {None: {}}
     rule_processor.add_stray(None, user_key_mock_data, removed_groups_mock_data)
     assert rule_processor.stray_key_map[None][user_key_mock_data] == removed_groups_mock_data
+
+def test_is_selected_user_key(rule_processor):
+    compiled_expression = re.compile(r'\A' + "nuver.yusser@seaofcarag.com" + r'\Z', re.IGNORECASE)
+    rule_processor.options['username_filter_regex'] = compiled_expression
+    result = rule_processor.is_selected_user_key('federatedID,nuver.yusser@seaofcarag.com,')
+    # make one but with capitals, some with different regex, be sure to test what the method does.
+    assert result
+    print()
