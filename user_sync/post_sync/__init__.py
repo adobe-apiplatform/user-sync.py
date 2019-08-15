@@ -1,1 +1,10 @@
-from .post_sync import PostSyncConnector
+class PostSyncConnector:
+    def __init__(self):
+        pass
+
+    def run(self):
+        pass
+
+
+
+

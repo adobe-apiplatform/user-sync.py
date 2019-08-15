@@ -42,7 +42,9 @@ import user_sync.cli
 import user_sync.resource
 import time
 
-import user_sync.sign_sync.app as sign_sync
+import user_sync.connector.umapi
+from user_sync.post_sync.manager import Manager
+#import user_sync.sign_sync.app as sign_sync
 
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
@@ -365,19 +367,22 @@ def begin_work(config_loader):
     rule_processor = user_sync.rules.RuleProcessor(rule_config)
     if len(directory_groups) == 0 and rule_processor.will_process_groups():
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
-    rule_processor.run(directory_groups, directory_connector, umapi_connectors, post_sync)
+    rule_processor.run(directory_groups, directory_connector, umapi_connectors)
 
-    new_adobe_users = set([u.split(',')[1] for u in
-                           list(rule_processor.umapi_info_by_name.values())[0].desired_groups_by_user_key.keys()])
-    existing_adobe_users = set([u.split(',')[1] for u in
-                                list(rule_processor.umapi_info_by_name.values())[0].umapi_user_by_user_key.keys()])
+    # Post sync section
 
-    if sign_config_file:
-        # Need to sleep the application before performing the sync. This is due to the fact that it takes around
-        # 30-45 secs for the users to populate into sign.
-        logger.info('running Sign sync')
-        time.sleep(60)
-        sign_sync.run(config_loader, existing_adobe_users | new_adobe_users, sign_config_file)
+    # new_adobe_users_keys = set([u.split(',')[1] for u in
+    #                             list(rule_processor.umapi_info_by_name.values())[0].desired_groups_by_user_key.keys()])
+    # existing_adobe_users_keys = set([u.split(',')[1] for u in
+    #                                  list(rule_processor.umapi_info_by_name.values())[0].umapi_user_by_user_key.keys()])
+
+    # new_adobe_users_full = rule_processor.filtered_directory_user_by_user_key
+    #
+    # existing_adobe_users_full = rule_processor.umapi_info_by_name[None].umapi_user_by_user_key
+
+    if post_sync:
+        Manager(post_sync)
+
 
 if __name__ == '__main__':
     main()

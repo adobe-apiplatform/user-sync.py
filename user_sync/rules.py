@@ -30,8 +30,6 @@ import user_sync.identity_type
 from collections import defaultdict
 from user_sync.helper import normalize_string, CSVAdapter, JobStats
 
-from user_sync.post_sync.post_sync import PostSyncConnector
-
 GROUP_NAME_DELIMITER = '::'
 PRIMARY_UMAPI_NAME = None
 
@@ -167,7 +165,7 @@ class RuleProcessor(object):
                                                                          username_filter_regex.pattern)
             logger.debug('Initialized with options: %s', options_to_report)
 
-    def run(self, directory_groups, directory_connector, umapi_connectors, post_sync=None):
+    def run(self, directory_groups, directory_connector, umapi_connectors):
         """
         :type directory_groups: dict(str, list(AdobeGroup)
         :type directory_connector: user_sync.connector.directory.DirectoryConnector
@@ -200,11 +198,6 @@ class RuleProcessor(object):
         umapi_connectors.execute_actions()
         umapi_stats.log_end(logger)
         self.log_action_summary(umapi_connectors)
-
-        if post_sync:
-            PostSyncConnector(post_sync=post_sync, umapi_info=umapi_info,
-                              umapi_connectors=umapi_connectors, directory_connector=directory_connector,
-                              directory_groups=directory_groups)
 
     def validate_and_log_additional_groups(self, umapi_info):
         """
@@ -845,7 +838,7 @@ class RuleProcessor(object):
         """
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
 
-        # the way we construct the return vaue is to start with a map from all directory users
+        # the way we construct the return value is to start with a map from all directory users
         # to their groups in this umapi, make a copy, and pop off any adobe users we find.
         # That way, any key/value pairs left in the map are the unmatched adobe users and their groups.
         user_to_group_map = umapi_info.get_desired_groups_by_user_key()
