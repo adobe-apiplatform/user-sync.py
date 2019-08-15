@@ -1079,6 +1079,7 @@ class RuleProcessor(object):
             return None
         if username.find('@') >= 0:
             domain = ""
+            return six.text_type(id_type) + u',' + six.text_type(email) + u',' + six.text_type(domain)
         elif not domain:
             return None
         return six.text_type(id_type) + u',' + six.text_type(username) + u',' + six.text_type(domain)
