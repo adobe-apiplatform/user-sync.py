@@ -8,6 +8,8 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+venv*
+test-config
 env/
 /build/
 develop-eggs/
@@ -23,6 +25,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
