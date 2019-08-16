@@ -405,7 +405,7 @@ class ConfigLoader(object):
         except KeyError as e:
             raise AssertionException("Error! Post-sync module " + str(e) + " specified without a configuration file...")
 
-        return post_sync_modules
+        return {'modules': post_sync_modules}
 
 
     @staticmethod

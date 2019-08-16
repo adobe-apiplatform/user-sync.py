@@ -2,16 +2,15 @@ import logging
 
 from user_sync.post_sync import PostSyncConnector
 
-connector_class = "SignConnector"
-
-logger = logging.getLogger('sign_sync')
-
-
 class SignConnector(PostSyncConnector):
+    name = 'sign_sync'
 
     def __init__(self, config):
         super().__init__()
-        self.config = config.value
+        self.config = config
+        self.logger = logging.getLogger(self.name)
+
+        # All the wonderful init things
 
     def run(self):
         """

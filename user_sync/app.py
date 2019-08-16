@@ -368,21 +368,22 @@ def begin_work(config_loader):
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
     rule_processor.run(directory_groups, directory_connector, umapi_connectors)
 
-    # Post sync section
+   #  Post sync section
 
+    # Things will happen
     # new_adobe_users_keys = set([u.split(',')[1] for u in
     #                             list(rule_processor.umapi_info_by_name.values())[0].desired_groups_by_user_key.keys()])
     # existing_adobe_users_keys = set([u.split(',')[1] for u in
     #                                  list(rule_processor.umapi_info_by_name.values())[0].umapi_user_by_user_key.keys()])
-
+    #
     # new_adobe_users_full = rule_processor.filtered_directory_user_by_user_key
     #
     # existing_adobe_users_full = rule_processor.umapi_info_by_name[None].umapi_user_by_user_key
 
     if post_sync_config:
-        ps_manager = PostSyncManager(post_sync_config)      # Or run on init
+        ps_manager = PostSyncManager(post_sync_config)
 
-        # ??? Things 
+        # ??? Things
         ps_manager.run()
 
 
