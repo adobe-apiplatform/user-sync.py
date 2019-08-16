@@ -381,10 +381,12 @@ def begin_work(config_loader):
     #
     new_adobe_users_full = rule_processor.filtered_directory_user_by_user_key
 
-    existing_adobe_users_full = rule_processor.umapi_info_by_name[None].umapi_user_by_user_key
+    umapi_users_full = rule_processor.umapi_info_by_name[None].umapi_user_by_user_key
+
+    umapi_users_full.update(new_adobe_users_full)
 
     if post_sync_config:
-        ps_manager = PostSyncManager(post_sync_config)
+        ps_manager = PostSyncManager(post_sync_config, umapi_users_full)
 
         # ??? Things
         ps_manager.run()
