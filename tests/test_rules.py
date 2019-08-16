@@ -254,6 +254,42 @@ def test_add_stray(rule_processor):
     rule_processor.add_stray(None, user_key_mock_data, removed_groups_mock_data)
     assert rule_processor.stray_key_map[None][user_key_mock_data] == removed_groups_mock_data
 
+
+def test_process_stray(rule_processor, log_stream):
+    stream, logger = log_stream
+    rule_processor.logger = logger
+    with mock.patch("user_sync.rules.RuleProcessor.manage_strays"):
+        rule_processor.stray_key_map = {None: {'federatedID,testuser2000@example.com,': set()}}
+        rule_processor.process_strays({})
+
+        stream.flush()
+        actual_logger_output = stream.getvalue()
+        assert "Processing Adobe-only users..." in actual_logger_output
+
+    rule_processor.options["max_adobe_only_users"] = 0
+    rule_processor.process_strays({})
+    stream.flush()
+    actual_logger_output = stream.getvalue()
+    assert "Unable to process Adobe-only users" in actual_logger_output
+    assert rule_processor.action_summary["primary_strays_processed"] == 0
+
+    rule_processor.primary_user_count = 10
+    rule_processor.excluded_user_count = 1
+    rule_processor.options["max_adobe_only_users"] = "5%"
+    rule_processor.process_strays({})
+    stream.flush()
+    actual_logger_output = stream.getvalue()
+    assert "Unable to process Adobe-only users" in actual_logger_output
+    assert rule_processor.action_summary["primary_strays_processed"] == 0
+
+    with mock.patch("user_sync.rules.RuleProcessor.manage_strays"):
+        rule_processor.stray_key_map = {None: {'federatedID,testuser2000@example.com,': set()}}
+        rule_processor.options["max_adobe_only_users"] = "20%"
+        rule_processor.process_strays({})
+        stream.flush()
+        actual_logger_output = stream.getvalue()
+        assert "Processing Adobe-only users..." in actual_logger_output
+
 def test_is_selected_user_key(rule_processor):
     compiled_expression = re.compile(r'\A' + "nuver.yusser@seaofcarag.com" + r'\Z', re.IGNORECASE)
     rule_processor.options['username_filter_regex'] = compiled_expression
