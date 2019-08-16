@@ -56,12 +56,14 @@ setup(name='user-sync',
           'umapi-client>=2.12',
           'click',
           'click-default-group',
-          'jeepney==0.4;python_version>="3"'
       ],
       extras_require={
+          ':python_version>="3" and (sys_platform=="linux" or sys_platform=="linux2")':[
+              'jeepney==0.4'
+          ],
           ':sys_platform=="linux" or sys_platform=="linux2"': [
               'secretstorage',
-              'dbus-python'
+              'dbus-python',
           ],
           ':sys_platform=="win32"': [
               'pywin32-ctypes'
