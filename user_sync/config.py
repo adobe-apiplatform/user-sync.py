@@ -392,25 +392,21 @@ class ConfigLoader(object):
         Read the post_sync options from main_config_file, if there are any modules specified, and return its dictionary of options
         :return: dict
         """
-        known_modules = ['sign_sync', 'future_feature']
-        options = {}
-        post_sync_config = self.main_config.get_dict_config('post_sync', True)
-        post_sync_connectors = post_sync_config.get_list_config('connectors', True).value[0]
-        options['post_sync_modules'] = post_sync_config.get_list_config('modules', True).value
 
-        if post_sync_config:
-            for each_module in post_sync_connectors:
-                if each_module not in known_modules:
-                    raise ValueError(
-                        'Skipping unknown post_sync module: ' + each_module + '. Available modules: '
-                        + str(known_modules))
-                module_config_file = post_sync_connectors[each_module]
-                options[each_module] = DictConfig(each_module, self.get_dict_from_sources([module_config_file]))
-            self.logger.info('Post sync modules  ' + str(options['post_sync_modules']) +
-                             ' have been triggered.'                                                                                       
-                             ' Modules will run upon completion of the sync process. '
-                             ' Modules will run in the order provided')
-        return options
+        ps_opts = self.main_config.get_dict_config('post_sync', True)
+        if not ps_opts:
+            return
+
+        connectors = ps_opts.get_dict('connectors')
+        module_list = ps_opts.get_list('modules')
+
+        try:
+            post_sync_modules = {m: self.get_dict_from_sources([connectors[m]]) for m in module_list}
+        except KeyError as e:
+            raise AssertionException("Error! Post-sync module " + str(e) + " specified without a configuration file...")
+
+        return post_sync_modules
+
 
     @staticmethod
     def as_list(value):
@@ -545,7 +541,7 @@ class ConfigLoader(object):
 
         # get the limits
         limits_config = self.main_config.get_dict_config('limits')
-        max_missing = limits_config.get_value('max_adobe_only_users',(int, str),False)
+        max_missing = limits_config.get_value('max_adobe_only_users', (int, str), False)
         percent_pattern = re.compile(r"(\d*(\.\d+)?%)")
         if isinstance(max_missing, str) and percent_pattern.match(max_missing):
             max_missing_percent = float(max_missing.strip('%'))
@@ -928,7 +924,7 @@ class ConfigFileLoader:
     # key_path is being searched for in what file in what directory
     filepath = None  # absolute path of file currently being loaded
     filename = None  # filename of file currently being loaded
-    dirpath = None   # directory path of file currently being loaded
+    dirpath = None  # directory path of file currently being loaded
     key_path = None  # the full pathname of the setting key being processed
 
     @classmethod
