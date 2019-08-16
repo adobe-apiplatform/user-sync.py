@@ -364,6 +364,7 @@ def begin_work(config_loader):
     umapi_connectors = user_sync.rules.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
 
     rule_processor = user_sync.rules.RuleProcessor(rule_config)
+    rule_processor.options['extended_attributes'].extend(post_sync_config['extended_attributes'])
     if len(directory_groups) == 0 and rule_processor.will_process_groups():
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
     rule_processor.run(directory_groups, directory_connector, umapi_connectors)
@@ -376,9 +377,9 @@ def begin_work(config_loader):
     # existing_adobe_users_keys = set([u.split(',')[1] for u in
     #                                  list(rule_processor.umapi_info_by_name.values())[0].umapi_user_by_user_key.keys()])
     #
-    # new_adobe_users_full = rule_processor.filtered_directory_user_by_user_key
-    #
-    # existing_adobe_users_full = rule_processor.umapi_info_by_name[None].umapi_user_by_user_key
+    new_adobe_users_full = rule_processor.filtered_directory_user_by_user_key
+
+    existing_adobe_users_full = rule_processor.umapi_info_by_name[None].umapi_user_by_user_key
 
     if post_sync_config:
         ps_manager = PostSyncManager(post_sync_config)

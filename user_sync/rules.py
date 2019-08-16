@@ -48,7 +48,7 @@ class RuleProcessor(object):
         'exclude_identity_types': [],
         'exclude_strays': False,
         'exclude_users': [],
-        'extended_attributes': None,
+        'extended_attributes': [],
         'extension_enabled': False,
         'process_groups': False,
         'max_adobe_only_users': 200,

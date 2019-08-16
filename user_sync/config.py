@@ -399,14 +399,17 @@ class ConfigLoader(object):
 
         connectors = ps_opts.get_dict('connectors')
         module_list = ps_opts.get_list('modules')
+        extended_attributes = ps_opts.get_list('additional_ldap_attributes', True) or []
 
         try:
             post_sync_modules = {m: self.get_dict_from_sources([connectors[m]]) for m in module_list}
         except KeyError as e:
             raise AssertionException("Error! Post-sync module " + str(e) + " specified without a configuration file...")
 
-        return {'modules': post_sync_modules}
-
+        return {
+            'modules': post_sync_modules,
+            'extended_attributes': extended_attributes
+        }
 
     @staticmethod
     def as_list(value):
@@ -883,8 +886,8 @@ class ConfigFileLoader:
                              '/directory_users/connectors/*': (True, False, None),
                              '/directory_users/extension': (True, False, None),
                              '/logging/file_log_directory': (False, False, "logs"),
-                             '/post_sync/connectors/sign_sync': (False, False, False),
-                             '/post_sync/connectors/future_feature': (False, False, False)
+        '/post_sync/connectors/sign_sync': (False, False, False),
+        '/post_sync/connectors/future_feature': (False, False, False)
                              }
 
     # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files
