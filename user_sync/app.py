@@ -336,6 +336,9 @@ def begin_work(config_loader):
         directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
 
     post_sync_config = config_loader.get_post_sync_options()
+    if post_sync_config:
+        rule_config['extended_attributes'].update(post_sync_config.get('extended_attributes'))
+
     config_loader.check_unused_config_keys()
 
     if directory_connector is not None and directory_connector_options is not None:
@@ -364,7 +367,6 @@ def begin_work(config_loader):
     umapi_connectors = user_sync.rules.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
 
     rule_processor = user_sync.rules.RuleProcessor(rule_config)
-    rule_processor.options['extended_attributes'].extend(post_sync_config['extended_attributes'])
     if len(directory_groups) == 0 and rule_processor.will_process_groups():
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
     rule_processor.run(directory_groups, directory_connector, umapi_connectors)
