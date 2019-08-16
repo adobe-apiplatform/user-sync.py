@@ -56,6 +56,7 @@ setup(name='user-sync',
           'umapi-client>=2.12',
           'click',
           'click-default-group',
+          'jeepney==0.4;python_version>="3"'
       ],
       extras_require={
           ':sys_platform=="linux" or sys_platform=="linux2"': [
