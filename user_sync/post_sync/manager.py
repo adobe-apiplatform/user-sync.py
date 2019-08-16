@@ -8,7 +8,7 @@ _SYNC_DATA_STORE = {}
 _modules = {"sign_sync": user_sync.post_sync.connector.sign.connector_sign.SignConnector}
 
 
-class Manager:
+class PostSyncManager:
     def __init__(self, config):
         self.config = config
         self.connectors = []

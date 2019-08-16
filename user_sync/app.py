@@ -43,7 +43,7 @@ import user_sync.resource
 import time
 
 import user_sync.connector.umapi
-from user_sync.post_sync.manager import Manager
+from user_sync.post_sync.manager import PostSyncManager
 #import user_sync.sign_sync.app as sign_sync
 
 from user_sync.error import AssertionException
@@ -335,8 +335,7 @@ def begin_work(config_loader):
         directory_connector = user_sync.connector.directory.DirectoryConnector(directory_connector_module)
         directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
 
-    post_sync = config_loader.get_post_sync_options()
-
+    post_sync_config = config_loader.get_post_sync_options()
     config_loader.check_unused_config_keys()
 
     if directory_connector is not None and directory_connector_options is not None:
@@ -380,8 +379,11 @@ def begin_work(config_loader):
     #
     # existing_adobe_users_full = rule_processor.umapi_info_by_name[None].umapi_user_by_user_key
 
-    if post_sync:
-        Manager(post_sync)
+    if post_sync_config:
+        ps_manager = PostSyncManager(post_sync_config)      # Or run on init
+
+        # ??? Things 
+        ps_manager.run()
 
 
 if __name__ == '__main__':
