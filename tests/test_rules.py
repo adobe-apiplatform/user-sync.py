@@ -258,6 +258,11 @@ def test_is_selected_user_key(rule_processor):
     compiled_expression = re.compile(r'\A' + "nuver.yusser@seaofcarag.com" + r'\Z', re.IGNORECASE)
     rule_processor.options['username_filter_regex'] = compiled_expression
     result = rule_processor.is_selected_user_key('federatedID,nuver.yusser@seaofcarag.com,')
-    # make one but with capitals, some with different regex, be sure to test what the method does.
     assert result
-    print()
+    result = rule_processor.is_selected_user_key('federatedID,test@test.com,')
+    assert not result
+    compiled_expression = re.compile(r'\A' + ".*sser@seaofcarag.com" + r'\Z', re.IGNORECASE)
+    rule_processor.options['username_filter_regex'] = compiled_expression
+    result = rule_processor.is_selected_user_key('federatedID,nuver.yusser@seaofcarag.com,')
+    assert result
+
