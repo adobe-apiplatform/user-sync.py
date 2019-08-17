@@ -338,6 +338,9 @@ def begin_work(config_loader):
     post_sync_config = config_loader.get_post_sync_options()
     if post_sync_config:
         rule_config['extended_attributes'].update(post_sync_config['extended_attributes'])
+        post_sync_manager = PostSyncManager(post_sync_config)
+    else:
+        post_sync_manager = None
 
     config_loader.check_unused_config_keys()
 
@@ -372,25 +375,20 @@ def begin_work(config_loader):
     rule_processor.run(directory_groups, directory_connector, umapi_connectors)
 
    #  Post sync section
+    if post_sync_manager:
 
-    # Things will happen
-    # new_adobe_users_keys = set([u.split(',')[1] for u in
-    #                             list(rule_processor.umapi_info_by_name.values())[0].desired_groups_by_user_key.keys()])
-    # existing_adobe_users_keys = set([u.split(',')[1] for u in
-    #                                  list(rule_processor.umapi_info_by_name.values())[0].umapi_user_by_user_key.keys()])
-    #
-    new_adobe_users_full = rule_processor.filtered_directory_user_by_user_key
+        # Things will happen
+        # new_adobe_users_keys = set([u.split(',')[1] for u in
+        #                             list(rule_processor.umapi_info_by_name.values())[0].desired_groups_by_user_key.keys()])
+        # existing_adobe_users_keys = set([u.split(',')[1] for u in
+        #                                  list(rule_processor.umapi_info_by_name.values())[0].umapi_user_by_user_key.keys()])
+        #
+        new_adobe_users_full = rule_processor.filtered_directory_user_by_user_key
+        umapi_users_full = rule_processor.umapi_info_by_name[None].umapi_user_by_user_key
+        umapi_users_full.update(new_adobe_users_full)
 
-    umapi_users_full = rule_processor.umapi_info_by_name[None].umapi_user_by_user_key
-
-    umapi_users_full.update(new_adobe_users_full)
-
-    if post_sync_config:
-        ps_manager = PostSyncManager(post_sync_config, umapi_users_full)
-
-        # ??? Things
-        ps_manager.run()
-
+        post_sync_manager.init_data_store(umapi_users_full)
+        post_sync_manager.run()
 
 if __name__ == '__main__':
     main()
