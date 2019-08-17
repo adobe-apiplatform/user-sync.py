@@ -1,5 +1,6 @@
 import pytest
 from user_sync.post_sync import manager
+PostSyncManager = manager.PostSyncManager
 
 
 @pytest.fixture
@@ -20,24 +21,24 @@ def test_add_umapi_user(example_user, monkeypatch):
     with monkeypatch.context() as m:
         m.setattr(manager, '_SYNC_DATA_STORE', {})
         email_id = 'user@example.com'
-        manager.update_sync_data(email_id, 'umapi', [], [], **example_user)
+        PostSyncManager.update_sync_data(email_id, 'umapi', [], [], **example_user)
         assert manager._SYNC_DATA_STORE[email_id.lower()]['umapi_data'] == example_user
 
 
-def test_add_directory_user(example_user, monkeypatch):
-    with monkeypatch.context() as m:
-        m.setattr(manager, '_SYNC_DATA_STORE', {})
-        email_id = 'user@example.com'
-        example_user['raw_data'] = {
-            'mail': 'user@example.com',
-            'given': 'Example',
-            'sn': 'User',
-            'c': 'US',
-            'memberOf': [],
-            'department': 'IT',
-        }
-        manager.update_sync_data(email_id, 'directory', [], [], **example_user)
-        assert manager._SYNC_DATA_STORE[email_id.lower()]['directory_data'] == example_user
+# def test_add_directory_user(example_user, monkeypatch):
+#     with monkeypatch.context() as m:
+#         m.setattr(manager, '_SYNC_DATA_STORE', {})
+#         email_id = 'user@example.com'
+#         example_user['raw_data'] = {
+#             'mail': 'user@example.com',
+#             'given': 'Example',
+#             'sn': 'User',
+#             'c': 'US',
+#             'memberOf': [],
+#             'department': 'IT',
+#         }
+#         PostSyncManager.update_sync_data(email_id, 'directory', [], [], **example_user)
+#         assert manager._SYNC_DATA_STORE[email_id.lower()]['directory_data'] == example_user
 
 
 def test_add_groups(example_user, monkeypatch):
@@ -46,7 +47,7 @@ def test_add_groups(example_user, monkeypatch):
         email_id = 'user@example.com'
         example_user['groups'] = ['group1', 'group2', 'group3']
         groups_add = ['group3', 'group4', 'group5']
-        manager.update_sync_data(email_id, 'umapi', groups_add, [], **example_user)
+        PostSyncManager.update_sync_data(email_id, 'umapi', groups_add, [], **example_user)
         assert sorted(manager._SYNC_DATA_STORE[email_id.lower()]['umapi_data']['groups']) == sorted(list(set(
             example_user['groups']) | set(groups_add)))
 
@@ -57,7 +58,7 @@ def test_remove_groups(example_user, monkeypatch):
         email_id = 'user@example.com'
         example_user['groups'] = ['group1', 'group2', 'group3']
         groups_remove = ['group1', 'group2']
-        manager.update_sync_data(email_id, 'umapi', [], groups_remove, **example_user)
+        PostSyncManager.update_sync_data(email_id, 'umapi', [], groups_remove, **example_user)
         assert sorted(manager._SYNC_DATA_STORE[email_id.lower()]['umapi_data']['groups']) == sorted(list(set(
             example_user['groups']) - set(groups_remove)))
 
@@ -69,7 +70,7 @@ def test_add_remove_groups(example_user, monkeypatch):
         example_user['groups'] = ['group1', 'group2', 'group3', 'group4', 'group5']
         groups_add = ['group6']
         groups_remove = ['group1', 'group2']
-        manager.update_sync_data(email_id, 'umapi', groups_add, groups_remove, **example_user)
+        PostSyncManager.update_sync_data(email_id, 'umapi', groups_add, groups_remove, **example_user)
         delta_groups = list(set(example_user['groups']) | set(groups_add))
         delta_groups = list(set(delta_groups) - set(groups_remove))
         assert sorted(manager._SYNC_DATA_STORE[email_id.lower()]['umapi_data']['groups']) == sorted(delta_groups)

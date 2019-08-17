@@ -337,7 +337,7 @@ def begin_work(config_loader):
 
     post_sync_config = config_loader.get_post_sync_options()
     if post_sync_config:
-        rule_config['extended_attributes'].update(post_sync_config.get('extended_attributes'))
+        rule_config['extended_attributes'].update(post_sync_config['extended_attributes'])
 
     config_loader.check_unused_config_keys()
 

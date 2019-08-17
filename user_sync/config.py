@@ -399,7 +399,7 @@ class ConfigLoader(object):
 
         connectors = ps_opts.get_dict('connectors')
         module_list = ps_opts.get_list('modules')
-        extended_attributes = ps_opts.get_list('additional_ldap_attributes', True) or []
+        extended_attributes = set(ps_opts.get_list('additional_ldap_attributes', True)) or set()
 
         try:
             post_sync_modules = {m: self.get_dict_from_sources([connectors[m]]) for m in module_list}
@@ -408,7 +408,7 @@ class ConfigLoader(object):
 
         return {
             'modules': post_sync_modules,
-            'extended_attributes': set(extended_attributes)
+            'extended_attributes': extended_attributes
         }
 
     @staticmethod
