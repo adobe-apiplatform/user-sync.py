@@ -3,7 +3,7 @@ from copy import deepcopy
 
 import six
 
-from user_sync.post_sync.connector import get_connector
+from user_sync.post_sync.connectors import get_connector
 
 _SYNC_DATA_STORE = {}
 
