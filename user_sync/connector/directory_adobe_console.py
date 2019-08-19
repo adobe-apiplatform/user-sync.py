@@ -23,11 +23,16 @@ import six
 import string
 from okta.framework.OktaError import OktaError
 
+import umapi_client
 import user_sync.config
 import user_sync.connector.helper
 import user_sync.helper
 import user_sync.identity_type
 from user_sync.error import AssertionException
+from user_sync.version import __version__ as app_version
+from user_sync.connector.umapi_util import make_auth_dict
+from user_sync.helper import normalize_string
+from user_sync.identity_type import parse_identity_type
 
 
 def connector_metadata():
@@ -61,17 +66,70 @@ class AdobeConsoleConnector(object):
     name = 'adobe_console'
 
     def __init__(self, caller_options):
-        caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
 
+        caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
-        builder.set_string_value('logger_name', self.name)
+        # Let just ignore this
+        builder.set_string_value('user_identity_type', None)
+        builder.set_string_value('identity_type_filter', 'all')
         options = builder.get_options()
+
+        if not options['identity_type_filter'] == 'all':
+            try:
+                options['identity_type_filter'] = parse_identity_type(options['identity_type_filter'])
+            except Exception as e:
+                raise AssertionException("Error parsing identity_type_filter option: %s" % e)
+        self.filter_by_identity_type = options['identity_type_filter']
+
+        server_config = caller_config.get_dict_config('server', True)
+        server_builder = user_sync.config.OptionsBuilder(server_config)
+        server_builder.set_string_value('host', 'usermanagement.adobe.io')
+        server_builder.set_string_value('endpoint', '/v2/usermanagement')
+        server_builder.set_string_value('ims_host', 'ims-na1.adobelogin.com')
+        server_builder.set_string_value('ims_endpoint_jwt', '/ims/exchange/jwt')
+        server_builder.set_int_value('timeout', 120)
+        server_builder.set_int_value('retries', 3)
+        options['server'] = server_options = server_builder.get_options()
 
         enterprise_config = caller_config.get_dict_config('integration')
         integration_builder = user_sync.config.OptionsBuilder(enterprise_config)
         integration_builder.require_string_value('org_id')
         integration_builder.require_string_value('tech_acct')
-        options['integration'] = integration_builder.get_options()
+        options['integration'] = integration_options = integration_builder.get_options()
+
+        self.logger = logger = user_sync.connector.helper.create_logger(options)
+        logger.debug('%s initialized with options: %s', self.name, options)
+
+        self.options = options
+
+        ims_host = server_options['ims_host']
+        self.org_id = org_id = integration_options['org_id']
+        auth_dict = make_auth_dict(self.name, enterprise_config, org_id, integration_options['tech_acct'], logger)
+
+        # this check must come after we fetch all the settings
+        caller_config.report_unused_values(logger)
+        # open the connection
+        um_endpoint = "https://" + server_options['host'] + server_options['endpoint']
+        logger.debug('%s: creating connection for org %s at endpoint %s', self.name, org_id, um_endpoint)
+
+        try:
+            self.connection = umapi_client.Connection(
+                org_id=org_id,
+                auth_dict=auth_dict,
+                ims_host=ims_host,
+                ims_endpoint_jwt=server_options['ims_endpoint_jwt'],
+                user_management_endpoint=um_endpoint,
+                test_mode=False,
+                user_agent="user-sync/" + app_version,
+                logger=self.logger,
+                timeout_seconds=float(server_options['timeout']),
+                retry_max_attempts=server_options['retries'] + 1,
+            )
+        except Exception as e:
+            raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))
+        logger.debug('%s: connection established', self.name)
+        self.umapi_users = []
+        self.user_by_usr_key = {}
 
     def load_users_and_groups(self, groups, extended_attributes, all_users):
         """
@@ -80,261 +138,105 @@ class AdobeConsoleConnector(object):
         :type all_users: bool
         :rtype (bool, iterable(dict))
         """
-        if all_users:
-            raise AssertionException("Okta connector has no notion of all users, please specify a --users group")
 
-        options = self.options
-        all_users_filter = options['all_users_filter']
+        if extended_attributes:
+            self.logger.warning("Extended Attributes is not supported")
 
+        # Loading all the groups because UMAPI doesn't support group query. DOH!
+        self.logger.info('Loading groups...')
+        umapi_groups = list(self.iter_umapi_groups())
         self.logger.info('Loading users...')
-        self.user_by_uid = user_by_uid = {}
 
+        # Loading all umapi users based on ID Type first before doing group filtering
+        filter_by_identity_type = self.filter_by_identity_type
+        self.load_umapi_users(identity_type=filter_by_identity_type)
+
+        grouped_user_records = {}
         for group in groups:
-            total_group_members = 0
-            total_group_users = 0
-            for user in self.iter_group_members(group, all_users_filter, extended_attributes):
-                total_group_members += 1
-
-                uid = user.get('uid')
-                if user and uid:
-                    if uid not in user_by_uid:
-                        user_by_uid[uid] = user
-                    total_group_users += 1
-                    user_groups = user_by_uid[uid]['groups']
-                    if group not in user_groups:
-                        user_groups.append(group)
-
-            self.logger.debug('Group %s members: %d users: %d', group, total_group_members, total_group_users)
-
-        return six.itervalues(user_by_uid)
-
-    def find_group(self, group):
-        """
-        :type group: str
-        :rtype UserGroup
-        """
-        group = group.strip()
-        options = self.options
-        group_filter_format = options['group_filter_format']
-        try:
-            results = self.groups_client.get_groups(query=group_filter_format.format(group=group))
-        except KeyError as e:
-            raise AssertionException("Bad format key in group query (%s): %s" % (group_filter_format, e))
-        except OktaError as e:
-            self.logger.warning("Unable to query group")
-            raise AssertionException("Okta error querying for group: %s" % e)
-
-        if results is None:
-            self.logger.warning("No group found for: %s", group)
+            group_users_count = 0
+            if group in umapi_groups:
+                grouped_users = self.iter_group_members(group)
+                for user_key in grouped_users:
+                    if user_key in self.user_by_usr_key:
+                        user = self.user_by_usr_key[user_key]
+                        user['groups'].append(group)
+                        self.user_by_usr_key[user_key] = grouped_user_records[user_key] = user
+                        group_users_count = group_users_count + 1
+                self.logger.debug('Count of users in group "%s": %d', group, group_users_count)
+            else:
+                self.logger.warning("No group found for: %s", group)
+        if all_users:
+            self.logger.debug('Count of users in any groups: %d', len(grouped_user_records))
+            self.logger.debug('Count of users not in any groups: %d',
+                              len(self.user_by_usr_key) - len(grouped_user_records))
+            return six.itervalues(self.user_by_usr_key)
         else:
-            for result in results:
-                if result.profile.name == group:
-                    return result
+            return six.itervalues(grouped_user_records)
 
-        return None
-
-    def iter_group_members(self, group, filter_string, extended_attributes):
-        """
-        :type group: str
-        :type filter_string: str
-        :type extended_attributes: list
-        :rtype iterator(str, str)
-        """
-
-        user_attribute_names = []
-        user_attribute_names.extend(self.user_given_name_formatter.get_attribute_names())
-        user_attribute_names.extend(self.user_surname_formatter.get_attribute_names())
-        user_attribute_names.extend(self.user_country_code_formatter.get_attribute_names())
-        user_attribute_names.extend(self.user_identity_type_formatter.get_attribute_names())
-        user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
-        user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
-        user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
-        extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
-        user_attribute_names.extend(extended_attributes)
-
-        res_group = self.find_group(group)
-        if res_group:
-            try:
-                attr_dict = OKTAValueFormatter.get_extended_attribute_dict(user_attribute_names)
-                members = self.groups_client.get_group_all_users(res_group.id, attr_dict)
-            except OktaError as e:
-                self.logger.warning("Unable to get_group_users")
-                raise AssertionException("Okta error querying for group users: %s" % e)
-            # Filtering users based all_users_filter query in config
-            for member in self.filter_users(members, filter_string):
-                user = self.convert_user(member, extended_attributes)
-                if not user:
-                    continue
-                yield (user)
-        else:
-            self.logger.warning("No group found for: %s", group)
-
-    def convert_user(self, record, extended_attributes):
+    def convert_user(self, record):
 
         source_attributes = {}
-        source_attributes['login'] = login = OKTAValueFormatter.get_profile_value(record,'login')
-        email, last_attribute_name = self.user_email_formatter.generate_value(record)
-        email = email.strip() if email else None
-        if not email:
-            if last_attribute_name is not None:
-                self.logger.warning('Skipping user with login %s: empty email attribute (%s)', login, last_attribute_name)
-            return None
         user = user_sync.connector.helper.create_blank_user()
-        source_attributes['id'] = user['uid'] = record.id
-        source_attributes['email'] = email
-        user['email'] = email
+        user['uid'] = record['username']
+        source_attributes['email'] = user['email'] = email = record['email']
+        user_identity_type = record['type']
+        try:
+            source_attributes['type'] = user['identity_type'] = user_sync.identity_type.parse_identity_type(
+                user_identity_type)
+        except AssertionException as e:
+            self.logger.warning('Skipping user %s: %s', email, e)
+            return None
 
-        source_attributes['identity_type'] = user_identity_type = self.user_identity_type
-        if not user_identity_type:
-            user['identity_type'] = self.user_identity_type
+        source_attributes['username'] = user['username'] = record['username']
+        source_attributes['domain'] = user['domain'] = record['domain']
+
+        if 'firstname' in record:
+            firstname = record['firstname']
         else:
-            try:
-                user['identity_type'] = user_sync.identity_type.parse_identity_type(user_identity_type)
-            except AssertionException as e:
-                self.logger.warning('Skipping user %s: %s', login, e)
-                return None
+            firstname = None
+        source_attributes['firstname'] = user['firstname'] = firstname
 
-
-
-        username, last_attribute_name = self.user_username_formatter.generate_value(record)
-        username = username.strip() if username else None
-        source_attributes['username'] = username
-        if username:
-            user['username'] = username
+        if 'lastname' in record:
+            lastname = record['lastname']
         else:
-            if last_attribute_name:
-                self.logger.warning('No username attribute (%s) for user with login: %s, default to email (%s)',
-                                    last_attribute_name, login, email)
-            user['username'] = email
+            lastname = None
+        source_attributes['lastname'] = user['lastname'] = lastname
 
-        domain, last_attribute_name = self.user_domain_formatter.generate_value(record)
-        domain = domain.strip() if domain else None
-        source_attributes['domain'] = domain
-        if domain:
-            user['domain'] = domain
-        elif username != email:
-            user['domain'] = email[email.find('@') + 1:]
-        elif last_attribute_name:
-            self.logger.warning('No domain attribute (%s) for user with login: %s', last_attribute_name, login)
-
-        first_name_value, last_attribute_name = self.user_given_name_formatter.generate_value(record)
-        source_attributes['firstName'] = first_name_value
-        if first_name_value is not None:
-            user['firstname'] = first_name_value
-        elif last_attribute_name:
-            self.logger.warning('No given name attribute (%s) for user with login: %s', last_attribute_name, login)
-        last_name_value, last_attribute_name = self.user_surname_formatter.generate_value(record)
-        source_attributes['lastName'] = last_name_value
-        if last_name_value is not None:
-            user['lastname'] = last_name_value
-        elif last_attribute_name:
-            self.logger.warning('No last name attribute (%s) for user with login: %s', last_attribute_name, login)
-        country_value, last_attribute_name = self.user_country_code_formatter.generate_value(record)
-        source_attributes['c'] = country_value
-        if country_value is not None:
-            user['country'] = country_value.upper()
-        elif last_attribute_name:
-            self.logger.warning('No country code attribute (%s) for user with login: %s', last_attribute_name, login)
-
-        if extended_attributes is not None:
-            for extended_attribute in extended_attributes:
-                extended_attribute_value = OKTAValueFormatter.get_profile_value(record, extended_attribute)
-                source_attributes[extended_attribute] = extended_attribute_value
+        source_attributes['country'] = user['country'] = record['country']
 
         user['source_attributes'] = source_attributes.copy()
         return user
 
-    def iter_search_result(self, filter_string, attributes):
-        """
-        type: filter_string: str
-        type: attributes: list(str)
-        """
-
-        attr_dict = OKTAValueFormatter.get_extended_attribute_dict(attributes)
-
+    def iter_umapi_groups(self):
         try:
-            self.logger.info("Calling okta SDK get_users with the following %s", filter_string)
-            if attr_dict:
-                users = self.users_client.get_all_users(query=filter_string, extended_attribute=attr_dict)
-            else:
-                users = self.users_client.get_all_users(query=filter_string)
-        except OktaError as e:
-            self.logger.warning("Unable to query users")
-            raise AssertionException("Okta error querying for users: %s" % e)
-        return users
+            groups = umapi_client.GroupsQuery(self.connection)
+            for group in groups:
+                yield group['groupName']
+        except umapi_client.UnavailableError as e:
+            raise AssertionException("Error to query groups from Adobe Console: %s" % e)
 
-    def filter_users(self, users, filter_string):
+    def iter_group_members(self, group):
+        umapi_users = self.umapi_users
+        members = filter(lambda u: ('groups' in u and group in u['groups']), umapi_users)
+        for member in members:
+            user_key = self.generate_user_key(member['type'], member['username'], member['domain'])
+            yield (user_key)
+
+    def load_umapi_users(self, identity_type):
         try:
-            return list(filter(lambda user: eval(filter_string), users))
-        except SyntaxError as e:
-            raise AssertionException("Invalid syntax in predicate (%s): cannot evaluate" % filter_string)
-        except Exception as e:
-            raise AssertionException("Error filtering with predicate (%s): %s" % (filter_string, e))
+            u_query = umapi_client.UsersQuery(self.connection)
+            umapi_users = u_query.all_results()
 
+            if not identity_type == 'all':
+                umapi_users = list(filter(lambda usr: usr['type'] == identity_type, umapi_users))
 
-class OKTAValueFormatter(object):
-    encoding = 'utf8'
+            self.umapi_users = umapi_users
+            for user in umapi_users:
+                # Generate unique user key because Username/Email is a bad unique identifier
+                user_key = self.generate_user_key(user['type'], user['username'], user['domain'])
+                self.user_by_usr_key[user_key] = self.convert_user(user)
+        except umapi_client.UnavailableError as e:
+            raise AssertionException("Error contacting UMAPI server: %s" % e)
 
-    def __init__(self, string_format):
-        """
-        The format string must be a unicode or ascii string: see notes above about being careful in Py2!
-        """
-        if string_format is None:
-            attribute_names = []
-        else:
-            string_format = six.text_type(string_format)  # force unicode so attribute values are unicode
-            formatter = string.Formatter()
-            attribute_names = [six.text_type(item[1]) for item in formatter.parse(string_format) if item[1]]
-        self.string_format = string_format
-        self.attribute_names = attribute_names
-
-    def get_attribute_names(self):
-        """
-        :rtype list(str)
-        """
-        return self.attribute_names
-
-    @staticmethod
-    def get_extended_attribute_dict(attributes):
-
-        attr_dict = {}
-        for attribute in attributes:
-            if attribute not in attr_dict:
-                attr_dict.update({attribute: str})
-
-        return attr_dict
-
-    def generate_value(self, record):
-        """
-        :type record: dict
-        :rtype (unicode, unicode)
-        """
-        result = None
-        attribute_name = None
-        if self.string_format is not None:
-            values = {}
-            for attribute_name in self.attribute_names:
-                value = self.get_profile_value(record, attribute_name)
-                if value is None:
-                    values = None
-                    break
-                values[attribute_name] = value
-            if values is not None:
-                result = self.string_format.format(**values)
-        return result, attribute_name
-
-    @classmethod
-    def get_profile_value(cls, record, attribute_name):
-        """
-        The attribute value type must be decodable (str in py2, bytes in py3)
-        :type record: okta.models.user.User
-        :type attribute_name: unicode
-        """
-        if hasattr(record.profile, attribute_name):
-            attribute_values = getattr(record.profile,attribute_name)
-            if attribute_values:
-                try:
-                    return attribute_values
-                except UnicodeError as e:
-                    raise AssertionException("Encoding error in value of attribute '%s': %s" % (attribute_name, e))
-        return None
+    def generate_user_key(self, identity_type, username, domain):
+        return '%s,%s,%s' % (normalize_string(identity_type), normalize_string(username), normalize_string(domain))
