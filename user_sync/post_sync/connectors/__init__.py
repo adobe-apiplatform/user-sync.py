@@ -1,7 +1,7 @@
-from .sign_sync import connector_sign
+from .sign_sync import SignConnector
 
 __CONNECTORS__ = {
-    'sign_sync': connector_sign.SignConnector
+    'sign_sync': SignConnector
 }
 
 
