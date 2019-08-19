@@ -48,6 +48,7 @@ def caller_options():
         'adobe_group_mapped': False,
         'additional_groups': []}
 
+
 @pytest.fixture
 def umapi_target_info():
     return UmapiTargetInfo("")
@@ -56,17 +57,17 @@ def umapi_target_info():
 @mock.patch('user_sync.helper.CSVAdapter.read_csv_rows')
 def test_stray_key_map(csv_reader, rule_processor):
     csv_mock_data = [{
-                         'type': 'adobeID',
-                         'username': 'removeuser2@example.com',
-                         'domain': 'example.com'},
-                     {
-                         'type': 'federatedID',
-                         'username': 'removeuser@example.com',
-                         'domain': 'example.com'},
-                     {
-                         'type': 'enterpriseID',
-                         'username': 'removeuser3@example.com',
-                         'domain': 'example.com'}]
+        'type': 'adobeID',
+        'username': 'removeuser2@example.com',
+        'domain': 'example.com'},
+        {
+            'type': 'federatedID',
+            'username': 'removeuser@example.com',
+            'domain': 'example.com'},
+        {
+            'type': 'enterpriseID',
+            'username': 'removeuser3@example.com',
+            'domain': 'example.com'}]
     csv_reader.return_value = csv_mock_data
     rule_processor.read_stray_key_map('')
     actual_value = rule_processor.stray_key_map
@@ -80,17 +81,17 @@ def test_stray_key_map(csv_reader, rule_processor):
 
     # Added secondary umapi value
     csv_mock_data = [{
-                         'type': 'adobeID',
-                         'username': 'remo@sample.com',
-                         'domain': 'sample.com',
-                         'umapi': 'secondary'},
-                     {
-                         'type': 'federatedID',
-                         'username': 'removeuser@example.com'},
-                     {
-                         'type': 'enterpriseID',
-                         'username': 'removeuser3@example.com',
-                         'domain': 'example.com'}]
+        'type': 'adobeID',
+        'username': 'remo@sample.com',
+        'domain': 'sample.com',
+        'umapi': 'secondary'},
+        {
+            'type': 'federatedID',
+            'username': 'removeuser@example.com'},
+        {
+            'type': 'enterpriseID',
+            'username': 'removeuser3@example.com',
+            'domain': 'example.com'}]
     csv_reader.return_value = csv_mock_data
     rule_processor.read_stray_key_map('')
     actual_value = rule_processor.stray_key_map
@@ -247,6 +248,7 @@ def test_parse():
     result = AdobeGroup._parse('qualified_name')
     assert result == ('qualified_name', None)
 
+
 def test_add_stray(rule_processor):
     user_key_mock_data = 'federatedID,rules.user@seaofcarag.com,'
     removed_groups_mock_data = {'aishtest'}
@@ -289,60 +291,21 @@ def test_process_stray(rule_processor, log_stream):
         stream.flush()
         actual_logger_output = stream.getvalue()
         assert "Processing Adobe-only users..." in actual_logger_output
-        
+
+
 def test_is_umapi_user_excluded(rule_processor):
-    with mock.patch('user_sync.rules.RuleProcessor.parse_user_key') as parse:
-        parse.return_value = ['adobeID', 'adobe.user@seaofcarag.com', '']
-        rule_processor.exclude_identity_types = ['adobeID']
-        user_key = 'adobeID,adobe.user@seaofcarag.com,'
-        in_primary_org = True
-        current_groups = {'default acrobat pro dc configuration', 'one', '_admin_group a'}
-        result = rule_processor.is_umapi_user_excluded(in_primary_org, user_key, current_groups)
-        assert result
-        assert rule_processor.excluded_user_count == 1
+    in_primary_org = True
+    rule_processor.exclude_identity_types = ['adobeID']
+    user_key = 'adobeID,adobe.user@seaofcarag.com,'
+    current_groups = {'default acrobat pro dc configuration', 'one', '_admin_group a'}
+    assert rule_processor.is_umapi_user_excluded(in_primary_org, user_key, current_groups)
 
-    with mock.patch('user_sync.rules.RuleProcessor.parse_user_key') as parse:
-        parse.return_value = ['federatedID', 'adobe.user@seaofcarag.com', '']
-        user_key = 'federatedID,adobe.user@seaofcarag.com,'
-        rule_processor.exclude_groups = {'one'}
-        in_primary_org = True
-        rule_processor.excluded_user_count = 0
-        current_groups = {'default acrobat pro dc configuration', 'one', '_admin_group a'}
-        result = rule_processor.is_umapi_user_excluded(in_primary_org, user_key, current_groups)
-        assert result
-        assert rule_processor.excluded_user_count == 1
+    user_key = 'federatedID,adobe.user@seaofcarag.com,'
+    rule_processor.exclude_groups = {'one'}
+    assert rule_processor.is_umapi_user_excluded(in_primary_org, user_key, current_groups)
 
-    with mock.patch('user_sync.rules.RuleProcessor.parse_user_key') as parse:
-        parse.return_value = ['federatedID', 'adobe.user@seaofcarag.com', '']
-        user_key = 'federatedID,adobe.user@seaofcarag.com,'
-        # rule_processor.exclude_groups = []
-        rule_processor.exclude_users = {'adobe.user@seofcarag.com'}
-        in_primary_org = True
-        rule_processor.excluded_user_count = 0
-        current_groups = {'default acrobat pro dc configuration', 'one', '_admin_group a'}
-        result = rule_processor.is_umapi_user_excluded(in_primary_org, user_key, current_groups)
-        assert result
-
-        assert rule_processor.excluded_user_count == 1
-
-        # rule_processor.options['exclude_groups'] = e
-        #
-        # rule_processor.options['exclude_identity_types'][0] = 'federatedID'
-        # print(rule_processor.options['exclude_groups'])
-        # result = rule_processor.is_umapi_user_excluded(True, 'xxxID,max.user@seaofcarag.org,', {'three', 'two'})
-        # assert result
-
-        # result = identity_type in rule_processor.options['exclude_identity_types']
-        # assert result
-        # user_key = 'adobeID,adobe.user@seaofcarag.com,'
-        # in_primary_org = True
-        # current_groups = {'default acrobat pro dc configuration', 'one', '_admin_group a'}
-        # result = rule_processor.is_umapi_user_excluded(in_primary_org, user_key, current_groups)
-        # assert result
-
-
-        # print()
-        # print(in_primary_org)
-        # print(user_key)
-        # print(current_groups)
-        # print()
+    user_key = 'federatedID,adobe.user@seaofcarag.com,'
+    rule_processor.exclude_groups = set()
+    compiled_expression = re.compile(r'\A' + "adobe.user@seaofcarag.com" + r'\Z', re.IGNORECASE)
+    rule_processor.exclude_users = {compiled_expression}
+    assert rule_processor.is_umapi_user_excluded(in_primary_org, user_key, current_groups)
