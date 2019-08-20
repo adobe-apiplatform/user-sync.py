@@ -335,8 +335,8 @@ def begin_work(config_loader):
 
     post_sync_config = config_loader.get_post_sync_options()
     if post_sync_config:
-        rule_config['extended_attributes'].update(post_sync_config['extended_attributes'])
         post_sync_manager = PostSyncManager(post_sync_config)
+        rule_config['extended_attributes'] |= post_sync_manager.get_directory_attributes()
     else:
         post_sync_manager = None
 

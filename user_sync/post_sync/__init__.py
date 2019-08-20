@@ -5,6 +5,5 @@ class PostSyncConnector:
     def run(self):
         pass
 
-
-
-
+    def get_directory_attributes(self):
+        return []

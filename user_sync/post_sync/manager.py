@@ -19,6 +19,12 @@ class PostSyncManager:
             get_connector(m, c) for m, c in six.iteritems(self.config['modules'])
         ]
 
+    def get_directory_attributes(self):
+        attributes = set()
+        for conn in self.connectors:
+            attributes |= set(conn.get_directory_attributes())
+        return attributes
+
     def init_data_store(self, users):
         """
         just here so we can set some data.  initialization scheme still unknown

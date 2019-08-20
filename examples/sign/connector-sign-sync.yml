@@ -1,44 +1,21 @@
-# This is the Sign Sync configuration file.
-#
-# This file contains all the import information needed to sync users into the Sign Console
-# Please make sure that all your information is correct.
+api:
+  host: "hostname e.g. api.echosign.com"
+  key: "Sign API key"
+  admin_email: "Admin user associated with key e.g. user@example.com"
 
-# This is the server information needed to point the application to your Sign Console.
-server:
-  # The host address to your Sign Console.
-  host: ""
+# User groups to sync to Adobe Sign
+user_groups:
+  - Adobe Sign Users
 
-  # DO NOT CHANGE THE FOLLOW TWO CONFIGURATION.
-  # This is the endpoints to using either v5.
-  endpoint_v5: /api/rest/v5
+# Product profiles that entitle a user to use Adobe Sign
+entitlement_grups:
+  - Sign Enterprise
 
-# This is the enterprise setting to get access to your Sign Console.
-enterprise:
-  # This is your integration key for Adobe Sign. This key
-  # is needed to get access to perform synchronization between Admin
-  # Console and Adobe Sign.
-  integration: ""
+directory_attributes:
+  - "company"
+  - "mobile"
+  - "objectGUID"
 
-  # This is the admin account email address. This needs to be provided
-  # so no changes will be made to the main admin account.
-  email: ""
-
-sign_sync:
-  # There are three settings for this option. If you're using the application
-  # as a User Sync Tool integration, you will want to use ldap. However,
-  # if you're using this as a standalone, you have the option to user
-  # either umapi or ldap.
-  connector: umapi
-
-  # This is the version number to use. You have either option between v5 or v6.
-  version: v5
-
-# This is the settings you want to set for umapi sync.
-umapi_conditions:
-  # The product profile you're trying to target. If you're targeting
-  # more than one product profile, please separate everything with a comma.
-  product_profile:
-    -
-
-  # This is the account type you want to target. Choose either adobeID, enterpriseID, federatedID, or all
-  target_account_type:
+identity_types:
+  - federatedID
+  - enterpriseID

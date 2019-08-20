@@ -223,10 +223,6 @@ directory_users:
 #
 #  connectors:
 #    sign_sync: connector-sign-sync.yml
-#
-#  additional_ldap_attributes:
-#    - distinguishedName
-#    - employeeId
 
 # The limits section provides processing limits which can help ensure that
 # User Sync jobs do not exceed expected guardrails in their operation
