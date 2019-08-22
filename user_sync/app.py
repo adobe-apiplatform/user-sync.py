@@ -374,13 +374,7 @@ def begin_work(config_loader):
 
     #  Post sync section
     if post_sync_manager:
-
-        new_adobe_users_full = rule_processor.filtered_directory_user_by_user_key
-        umapi_users_full = rule_processor.umapi_info_by_name[None].umapi_user_by_user_key
-        umapi_users_full.update(new_adobe_users_full)
-
-        post_sync_manager.init_data_store(umapi_users_full)
-        post_sync_manager.run()
+        post_sync_manager.run(rule_processor.post_sync_data)
 
 
 if __name__ == '__main__':

@@ -11,37 +11,6 @@ class Sign:
     _endpoint_template = 'api/rest/{}/'
 
     def __init__(self, config_filename):
-        try:
-            with open("sign_sync/config/connector-sign-sync.yml") as stream:
-                try:
-                    self.sign_config_yml = yaml.safe_load(stream)
-                except yaml.YAMLError as exc:
-                    print(exc)
-        except IOError:
-            raise AssertionException('Failed To Open Connector-Sign-Sync.yml')
-
-        # Read server parameters
-        self.host = self.sign_config_yml['server']['host']
-
-        # Read condition parameters
-        self.version = self.sign_config_yml['sign_sync']['version']
-        self.connector = self.sign_config_yml['sign_sync']['connector']
-        self.account_type = self.sign_config_yml['umapi_conditions']['target_account_type']
-
-        # Read enterprise parameters
-        self.integration = self.sign_config_yml['enterprise']['integration']
-        self.email = self.sign_config_yml['enterprise']['email']
-
-        if self.connector == 'umapi':
-            self.product_profile = self.sign_config_yml['umapi_conditions']['product_profile']
-        else:
-            self.product_profile = []
-            self.account_admin = None
-
-        self.header = self.get_sign_header()
-        self.url = self.base_uri()
-        self.temp_header = self.get_temp_header()
-
         self.sign_users = self.get_sign_users()
         self.default_group = self.get_sign_group()['Default Group']
 
@@ -68,20 +37,6 @@ class Sign:
             return wrapper
 
     @SignDecorators.exception_catcher
-    def base_uri(self):
-        """
-        This function validates that the SIGN integration key is valid.
-        :return: dict()
-        """
-
-        endpoint = self._endpoint_template.format(self.version)
-        url = 'https://' + self.host + '/' + endpoint
-
-        if self.version == "v5":
-            return requests.get(url + "base_uris", headers=self.header).json()['api_access_point'] + endpoint
-        return requests.get(url + "baseUris", headers=self.header).json()['apiAccessPoint'] + endpoint
-
-    @SignDecorators.exception_catcher
     def api_get_group_request(self):
         """
         API request to get group information
@@ -89,17 +44,6 @@ class Sign:
         """
 
         res = requests.get(self.url + 'groups', headers=self.header)
-
-        return res
-
-    @SignDecorators.exception_catcher
-    def api_get_users_request(self):
-        """
-        API request to get user information from SIGN.
-        :return: dict()
-        """
-
-        res = requests.get(self.url + 'users', headers=self.header)
 
         return res
 
@@ -140,53 +84,6 @@ class Sign:
 
         return res
 
-    @SignDecorators.exception_catcher
-    def api_put_user_status_request(self, user_id, payload):
-        """
-        API request to change user status.
-        :param user_id: str
-        :param payload: dict()
-        :return: dict()
-        """
-
-        res = requests.put(self.url + 'users/' + user_id + '/status',
-                           headers=self.header, data=json.dumps(payload))
-
-        return res
-
-    @SignDecorators.exception_catcher
-    def api_post_user_request(self, payload):
-        """
-        API request to post new user in SIGN.
-        :param payload: dict()
-        :return: dict()
-        """
-
-        res = requests.post(self.url + 'users',
-                            headers=self.header, data=json.dumps(payload))
-
-        return res
-
-    def get_sign_header(self, ver=None):
-        """
-        This function returns the SIGN header
-        :param ver: str
-        :return: dict()
-        """
-
-        headers = {}
-
-        if ver == 'v6':
-            headers = {
-                "Authorization": "Bearer {}".format(self.integration)
-            }
-        elif self.version == 'v5' or ver == 'v5':
-            headers = {
-                "Access-Token": self.integration
-            }
-
-        return headers
-
     def get_sign_group(self):
         """
         This function creates a list of groups that's in Adobe Sign Groups.
@@ -212,20 +109,6 @@ class Sign:
 
         return self.product_profile
 
-    def get_sign_users(self):
-        """
-        This function will create a list of all users in SIGN.
-        :return: list[dict()]
-        """
-
-        user_list = []
-        res = self.api_get_users_request()
-
-        if res.status_code == 200:
-            user_list.append(res.json()['userInfoList'])
-
-        return user_list[0]
-
     def create_sign_group(self, group_list):
         """
         This function will create a group in Adobe SIGN if the group doesn't already exist.
@@ -250,18 +133,6 @@ class Sign:
             else:
                 logger.error("!! {}: Creating group error !! {}".format(group_name, res.text))
                 logger.error('!! Reason !! {}'.format(res.reason))
-
-    def get_temp_header(self):
-        """
-        This function creates a temp header to push json payloads
-        :return: dict()
-        """
-
-        temp_header = self.header
-        temp_header['Content-Type'] = 'application/json'
-        temp_header['Accept'] = 'application/json'
-
-        return temp_header
 
     def get_user_info(self, user_info, group_id, group=None):
         """

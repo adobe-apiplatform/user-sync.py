@@ -21,13 +21,13 @@
 
 import logging
 import six
-import re
 from itertools import chain
+from collections import defaultdict
 
 import user_sync.connector.umapi
 import user_sync.error
 import user_sync.identity_type
-from collections import defaultdict
+from user_sync.post_sync.manager import PostSyncData
 from user_sync.helper import normalize_string, CSVAdapter, JobStats
 
 GROUP_NAME_DELIMITER = '::'
@@ -157,6 +157,9 @@ class RuleProcessor(object):
         # differs from the user's email address
         self.email_override = {}  # type: dict[str, str]
 
+        # Data to provide to post-sync connectors
+        self.post_sync_data = PostSyncData()
+
         if logger.isEnabledFor(logging.DEBUG):
             options_to_report = options.copy()
             username_filter_regex = options_to_report['username_filter_regex']
@@ -170,7 +173,6 @@ class RuleProcessor(object):
         :type directory_groups: dict(str, list(AdobeGroup)
         :type directory_connector: user_sync.connector.directory.DirectoryConnector
         :type umapi_connectors: UmapiConnectors
-        :type post_sync: dict()
         """
         logger = self.logger
 
@@ -358,7 +360,6 @@ class RuleProcessor(object):
         extended_attributes = options.get('extended_attributes')
 
         directory_user_by_user_key = self.directory_user_by_user_key
-        filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
 
         directory_groups = set(six.iterkeys(mappings)) if self.will_process_groups() else set()
         if directory_group_filter is not None:
@@ -379,7 +380,8 @@ class RuleProcessor(object):
             if not self.is_selected_user_key(user_key):
                 continue
 
-            filtered_directory_user_by_user_key[user_key] = directory_user
+            self.filtered_directory_user_by_user_key[user_key] = directory_user
+            self.post_sync_data.update_source_attributes(user_key, directory_user['source_attributes'])
             self.get_umapi_info(PRIMARY_UMAPI_NAME).add_desired_group_for(user_key, None)
 
             # set up groups in hook scope; the target groups will be used whether or not there's customer hook code
@@ -439,7 +441,7 @@ class RuleProcessor(object):
                     umapi_info.add_additional_group(rename_group, member_group)
                     umapi_info.add_desired_group_for(user_key, rename_group)
 
-        self.logger.debug('Total directory users after filtering: %d', len(filtered_directory_user_by_user_key))
+        self.logger.debug('Total directory users after filtering: %d', len(self.filtered_directory_user_by_user_key))
         if self.logger.isEnabledFor(logging.DEBUG):
             self.logger.debug('Group work list: %s', dict([(umapi_name, umapi_info.get_desired_groups_by_user_key())
                                                            for umapi_name, umapi_info
@@ -481,6 +483,13 @@ class RuleProcessor(object):
             primary_adds_by_user_key = umapi_info.get_desired_groups_by_user_key()
         else:
             primary_adds_by_user_key = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
+        # start saving post-sync data
+        # save existing users to post_sync_data
+        for key, existing_user in umapi_info.umapi_user_by_user_key.items():
+            self.post_sync_data.update_umapi_data(None, key, [], [], **existing_user)
+        # save groups for new users
+        for key, add_groups in primary_adds_by_user_key.items():
+            self.post_sync_data.update_umapi_data(None, key, add_groups)
         for user_key, groups_to_add in six.iteritems(primary_adds_by_user_key):
             if exclude_unmapped_users and not groups_to_add:
                 # If user is not part of any group and ignore outcast is enabled. Do not create user.

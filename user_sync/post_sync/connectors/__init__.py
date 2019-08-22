@@ -1,10 +1,11 @@
-from .sign_sync import SignConnector
+import importlib
 
 _CONNECTOR_CLASSES = {
-    'sign_sync': SignConnector
+    'sign_sync': 'SignConnector'
 }
 
 
 def get_connector(connector_name, connector_config):
-    connector = _CONNECTOR_CLASSES[connector_name]
-    return connector(connector_config)
+    classname = _CONNECTOR_CLASSES[connector_name]
+    class_ = getattr(importlib.import_module('.'+connector_name, package='user_sync.post_sync.connectors'), classname)
+    return class_(connector_config)

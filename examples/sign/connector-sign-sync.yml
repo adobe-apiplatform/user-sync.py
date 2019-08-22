@@ -1,15 +1,29 @@
-api:
-  host: "hostname e.g. api.echosign.com"
-  key: "Sign API key"
-  admin_email: "Admin user associated with key e.g. user@example.com"
+# List of Sign consoles to sync with
+# Must define API credentials for each Sign console involved with the sync
+sign_orgs:
+    # console_org specifies the name of the UMAPI org associated with the Sign org (as defined in user-sync-config.yml)
+    # leave it blank if this Sign console relates to the primary console in the UST sync
+  - console_org:
+    # base API hostname (the connector will call base_uri to get the actual host)
+    host: "hostname e.g. api.echosign.com"
+    # Legacy key, NOT oauth key
+    key: "Sign API key"
+    # Sign account associated with admin_email value will be skipped
+    admin_email: "Admin user associated with key e.g. user@example.com"
 
 # User groups to sync to Adobe Sign
+# Secondary orgs (as defined in user-sync-config.yml) can optionally be targeted
+# NOTE: if targeting a group on a secondary org here, there MUST be at least one entitlement_group
+# specified that also targets that org, and API credentials must be defined in sign_orgs
 user_groups:
   - Adobe Sign Users
+  - org2::Secondary Sign Users
 
 # Product profiles that entitle a user to use Adobe Sign
+# Secondary orgs (as defined in user-sync-config.yml) can optionally be targeted
 entitlement_grups:
   - Sign Enterprise
+  - org2::Adobe Sign
 
 directory_attributes:
   - "company"

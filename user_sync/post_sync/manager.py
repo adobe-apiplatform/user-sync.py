@@ -1,11 +1,7 @@
 import logging
-from copy import deepcopy
-
 import six
-
-from user_sync.post_sync.connectors import get_connector
-
-_SYNC_DATA_STORE = {}
+from copy import deepcopy
+from .connectors import get_connector
 
 
 class PostSyncManager:
@@ -25,85 +21,66 @@ class PostSyncManager:
             attributes |= set(conn.get_directory_attributes())
         return attributes
 
-    def init_data_store(self, users):
-        """
-        just here so we can set some data.  initialization scheme still unknown
-        data is stored in two ways -- the global data store and a class level variable
-        ultimately one of these ways will be thrown out.  They share a common user
-        creation process, so the data should be identical
-        """
-
-        for u in six.itervalues(users):
-            # normalize key
-            key = u['email'].lower()
-
-            # One alternative
-            # Store in instance scope, once-through
-            self.umapi_users[key] = self.create_user(**u)
-
-            # Other alternative
-            # Storing in module scope, once-through to populate for now,
-            # but can be populated from anywhere
-            self.update_sync_data(key, **u)
-
-    def run(self):
+    def run(self, post_sync_data):
         """
         run each entry from the module dict from __init__
         :return:
         """
         for connector in self.connectors:
             self.logger.info("Running module " + connector.name)
-            connector.run()
+            connector.run(post_sync_data)
             self.logger.info("Finished running " + connector.name)
 
-    @classmethod
-    def create_user(cls, current_user=None, email_id=None, data_key='umapi_data', **new_data):
 
-        if not current_user:
-            current_user = cls._user_template()
-            current_user['id'] = email_id or new_data['email']
+class PostSyncData:
+    def __init__(self):
+        self.umapi_data = {}
+        self.source_attributes = {}
 
-        updated_user = deepcopy(current_user)
-        for k, store_val in six.iteritems(updated_user[data_key]):
-            if k not in new_data:
-                continue
-            updated_user[data_key][k] = new_data[k]
-        updated_user['source_attributes'] = new_data.get('source_attributes')
-        return updated_user
-
-    @classmethod
-    def update_sync_data(cls, email_id, data_key='umapi_data', add_groups=[], remove_groups=[], **kwargs):
+    def update_umapi_data(self, org_id, user_key, add_groups=[], remove_groups=[], **kwargs):
         """
         Update (or insert) sync data for a given user
-        :param str email_id:
+        :param org_id:
+        :param str user_key:
         :param list add_groups:
         :param list remove_groups:
         :return:
         """
+        if org_id not in self.umapi_data:
+            self.umapi_data[org_id] = {}
 
-        global _SYNC_DATA_STORE
-        email_key = email_id.lower()
-        user_store_data = _SYNC_DATA_STORE.get(email_key)
-        updated_store_data = cls.create_user(user_store_data, email_id, data_key, **kwargs)
-        updated_store_data[data_key]['groups'] = list(set(updated_store_data[data_key]['groups']) | set(add_groups))
-        updated_store_data[data_key]['groups'] = list(set(updated_store_data[data_key]['groups']) - set(remove_groups))
+        umapi_data = self.umapi_data[org_id]
+        user_store_data = umapi_data.get(user_key)
 
-        _SYNC_DATA_STORE[email_key] = updated_store_data
+        if user_store_data is None:
+            user_store_data = self._umapi_data_template()
+
+        updated_store_data = deepcopy(user_store_data)
+        for k in updated_store_data:
+            if k not in kwargs:
+                continue
+            if k == 'groups':
+                updated_store_data[k] = set(kwargs[k])
+            else:
+                updated_store_data[k] = kwargs[k]
+
+        updated_store_data['groups'] |= set(add_groups)
+        updated_store_data['groups'] -= set(remove_groups)
+
+        self.umapi_data[org_id][user_key] = updated_store_data
+
+    def update_source_attributes(self, user_key, source_attributes):
+        self.source_attributes[user_key] = source_attributes
 
     @staticmethod
-    def _user_template():
+    def _umapi_data_template():
         return {
-            'id': '',
-            'umapi_data': {
-                'identity_type': None,
-                'username': None,
-                'domain': None,
-                'email': None,
-                'firstname': None,
-                'lastname': None,
-                'groups': [],
-                'country': None,
-            },
-            'source_attributes': [],
-            'sync_errors': []
+            'type': None,
+            'username': None,
+            'domain': None,
+            'email': None,
+            'firstname': None,
+            'lastname': None,
+            'groups': set(),
+            'country': None,
         }
