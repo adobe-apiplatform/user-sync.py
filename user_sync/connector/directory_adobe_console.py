@@ -18,11 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import okta
 import six
-import string
-from okta.framework.OktaError import OktaError
-
 import umapi_client
 import user_sync.config
 import user_sync.connector.helper
