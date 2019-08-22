@@ -846,7 +846,8 @@ class ConfigFileLoader:
                              }
 
     # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files
-    SUB_CONFIG_PATH_KEYS = {'/enterprise/priv_key_path': (True, False, None)}
+    SUB_CONFIG_PATH_KEYS = {'/enterprise/priv_key_path': (True, False, None),
+                            '/integration/priv_key_path': (True, False, None)}
 
     @classmethod
     def load_root_config(cls, filename):
