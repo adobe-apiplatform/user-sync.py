@@ -14,7 +14,6 @@ Copyright (c) 2016-2017 Adobe Inc.
 
 The [User Sync Documentation](https://adobe-apiplatform.github.io/user-sync.py/) covers all aspects of the tool, from both a general and a technical point of view.  The following links are good places to start:
 
-- [User Sync Overview](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/UserSyncTool.html)
 - [Non-Technical Primer](https://spark.adobe.com/page/E3hSsLq3G1iVz/)
 - [User Manual](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/)
 - [Step-by-Step Setup](https://adobe-apiplatform.github.io/user-sync.py/en/success-guide/)
