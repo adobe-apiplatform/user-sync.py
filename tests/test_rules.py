@@ -317,3 +317,21 @@ def test_is_selected_user_key(rule_processor):
     result = rule_processor.is_selected_user_key('federatedID,nuver.yusser@seaofcarag.com,')
     assert result
 
+
+
+def test_is_umapi_user_excluded(rule_processor):
+    in_primary_org = True
+    rule_processor.exclude_identity_types = ['adobeID']
+    user_key = 'adobeID,adobe.user@seaofcarag.com,'
+    current_groups = {'default acrobat pro dc configuration', 'one', '_admin_group a'}
+    assert rule_processor.is_umapi_user_excluded(in_primary_org, user_key, current_groups)
+
+    user_key = 'federatedID,adobe.user@seaofcarag.com,'
+    rule_processor.exclude_groups = {'one'}
+    assert rule_processor.is_umapi_user_excluded(in_primary_org, user_key, current_groups)
+
+    user_key = 'federatedID,adobe.user@seaofcarag.com,'
+    rule_processor.exclude_groups = set()
+    compiled_expression = re.compile(r'\A' + "adobe.user@seaofcarag.com" + r'\Z', re.IGNORECASE)
+    rule_processor.exclude_users = {compiled_expression}
+    assert rule_processor.is_umapi_user_excluded(in_primary_org, user_key, current_groups)
