@@ -49,6 +49,9 @@ class UmapiConnector(object):
         """
         self.name = 'umapi' + name
         caller_config = user_sync.config.DictConfig(self.name + ' configuration', caller_options)
+        self.trusted = caller_config.get_bool('trusted', True)
+        if self.trusted is None:
+            self.trusted = False
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('logger_name', self.name)
         builder.set_bool_value('test_mode', False)

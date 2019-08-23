@@ -702,7 +702,7 @@ class RuleProcessor(object):
             self.logger.error('Found adobe user with no identity type, using %s: %s', identity_type, umapi_user)
         return identity_type
 
-    def create_umapi_commands_for_directory_user(self, directory_user, do_update=False):
+    def create_umapi_commands_for_directory_user(self, directory_user, do_update=False, console_trusted=False):
         """
         Make the umapi commands to create this user, based on his directory attributes and type.
         Update the attributes of an existing user if do_update is True.
@@ -742,7 +742,7 @@ class RuleProcessor(object):
         else:
             attributes['option'] = 'ignoreIfAlreadyExists'
         commands.add_user(attributes)
-        if update_username is not None:
+        if update_username is not None and not console_trusted:
             commands.update_user({"email": directory_user['email'], "username": update_username})
         return commands
 
@@ -761,7 +761,8 @@ class RuleProcessor(object):
         :type umapi_connector: user_sync.connector.umapi.UmapiConnector
         """
         directory_user = self.directory_user_by_user_key[user_key]
-        commands = self.create_umapi_commands_for_directory_user(directory_user, self.will_update_user_info(umapi_info))
+        commands = self.create_umapi_commands_for_directory_user(directory_user, self.will_update_user_info(umapi_info),
+                                                                 umapi_connector.trusted)
         if not commands:
             return
         if self.will_process_groups():
