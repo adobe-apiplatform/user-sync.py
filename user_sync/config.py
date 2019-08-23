@@ -147,6 +147,7 @@ class ConfigLoader(object):
         else:
             adobe_action_spec = options['adobe_only_user_action']
             adobe_action = user_sync.helper.normalize_string(adobe_action_spec[0])
+            options['stray_list_output_path'] = None
             if adobe_action == 'preserve':
                 pass  # no option settings needed
             elif adobe_action == 'exclude':
@@ -533,11 +534,11 @@ class ConfigLoader(object):
         if extension_config:
             after_mapping_hook_text = extension_config.get_string('after_mapping_hook')
             options['after_mapping_hook'] = compile(after_mapping_hook_text, '<per-user after-mapping-hook>', 'exec')
-            options['extended_attributes'] = extension_config.get_list('extended_attributes')
+            options['extended_attributes'] = extension_config.get_list('extended_attributes', True) or []
             # declaration of extended adobe groups: this is needed for two reasons:
             # 1. it allows validation of group names, and matching them to adobe groups
             # 2. it allows removal of adobe groups not assigned by the hook
-            for extended_adobe_group in extension_config.get_list('extended_adobe_groups'):
+            for extended_adobe_group in extension_config.get_list('extended_adobe_groups', True) or []:
                 group = user_sync.rules.AdobeGroup.create(extended_adobe_group)
                 if group is None:
                     message = 'Extension contains illegal extended_adobe_group spec: ' + str(extended_adobe_group)
