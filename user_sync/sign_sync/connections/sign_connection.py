@@ -37,17 +37,6 @@ class Sign:
             return wrapper
 
     @SignDecorators.exception_catcher
-    def api_get_group_request(self):
-        """
-        API request to get group information
-        :return: dict()
-        """
-
-        res = requests.get(self.url + 'groups', headers=self.header)
-
-        return res
-
-    @SignDecorators.exception_catcher
     def api_post_group_request(self, data):
         """
         API request to post new group in SIGN.
@@ -83,23 +72,6 @@ class Sign:
         res = requests.get(self.url + 'users/' + user_id, headers=self.header)
 
         return res
-
-    def get_sign_group(self):
-        """
-        This function creates a list of groups that's in Adobe Sign Groups.
-        :return: list[]
-        """
-
-        temp_list = {}
-
-        res = self.api_get_group_request()
-
-        if res.status_code == 200:
-            sign_groups = res.json()
-            for group in sign_groups['groupInfoList']:
-                temp_list[group['groupName']] = group['groupId']
-
-        return temp_list
 
     def get_product_profile(self):
         """

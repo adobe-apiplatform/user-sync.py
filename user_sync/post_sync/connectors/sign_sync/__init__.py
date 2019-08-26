@@ -35,7 +35,7 @@ class SignConnector(PostSyncConnector):
         Run the Sign sync connector
         """
         for org_name, sign_client in self.clients.items():
-            sign_users = sign_client.sign_users()
+            sign_users = sign_client.get_users()
             print(sign_users)
 
     def get_directory_attributes(self):

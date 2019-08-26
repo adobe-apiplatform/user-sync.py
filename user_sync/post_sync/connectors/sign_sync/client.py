@@ -53,7 +53,7 @@ class SignClient:
             return requests.get(url + "baseUris", headers=self.header()).json()['apiAccessPoint'] + endpoint
         return requests.get(url + "base_uris", headers=self.header()).json()['api_access_point'] + endpoint
 
-    def sign_users(self):
+    def get_users(self):
         """
         Get list of all users from Sign (indexed by email address)
         :return: dict()
@@ -75,3 +75,16 @@ class SignClient:
             users[user['email']] = user
 
         return users
+
+    def get_groups(self):
+        """
+        API request to get group information
+        :return: dict()
+        """
+        groups = {}
+        res = requests.get(self.api_url + 'groups', headers=self.header())
+        if res.status_code == 200:
+            sign_groups = res.json()
+            for group in sign_groups['groupInfoList']:
+                groups[group['groupName']] = group['groupId']
+        return groups
