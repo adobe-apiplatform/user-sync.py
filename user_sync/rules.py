@@ -1028,7 +1028,11 @@ class RuleProcessor(object):
         attributes = self.get_user_attributes(directory_user)
         for key, value in six.iteritems(attributes):
             umapi_value = umapi_user.get(key)
-            if value != umapi_value:
+            if key == 'email':
+                diff = normalize_string(value) != normalize_string(umapi_value)
+            else:
+                diff = value != umapi_value
+            if diff:
                 differences[key] = value
         return differences
 
@@ -1143,9 +1147,9 @@ class RuleProcessor(object):
                 if not secondary_count:
                     fieldnames.append('umapi')
                 secondary_count += 1
-        # None sorts before strings, so sorting the keys in the map
-        # puts the primary umapi first in the output, which is handy
-        for umapi_name in sorted(self.stray_key_map.keys()):
+
+        new_list = sorted(self.stray_key_map.keys(), key=lambda x: x or '')
+        for umapi_name in new_list:
             for user_key in self.get_stray_keys(umapi_name):
                 id_type, username, domain = self.parse_user_key(user_key)
                 umapi = umapi_name if umapi_name else ""
