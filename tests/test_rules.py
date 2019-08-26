@@ -206,6 +206,18 @@ def test_log_after_mapping_hook_scope(log_stream):
     compare_attr(x[5], state['target_attributes'])
 
 
+def test_get_umapi_user_key(rule_processor):
+    mock_umapi_user_dict = {
+        'email': '7of9@exmaple.com',
+        'username': '7of9@example.com',
+        'domain': 'example.com',
+        'type': 'federatedID'
+    }
+
+    actual_result = rule_processor.get_umapi_user_key(mock_umapi_user_dict)
+    assert actual_result == 'federatedID,7of9@example.com,'
+
+
 def test_get_user_key(rule_processor):
     key = rule_processor.get_user_key("federatedID", "wriker@forever.com", "wriker@forever.com", "forever.com")
     assert key == 'federatedID,wriker@forever.com,'
@@ -305,6 +317,7 @@ def test_process_stray(rule_processor, log_stream):
         actual_logger_output = stream.getvalue()
         assert "Processing Adobe-only users..." in actual_logger_output
 
+
 def test_is_selected_user_key(rule_processor):
     compiled_expression = re.compile(r'\A' + "nuver.yusser@seaofcarag.com" + r'\Z', re.IGNORECASE)
     rule_processor.options['username_filter_regex'] = compiled_expression
@@ -316,7 +329,6 @@ def test_is_selected_user_key(rule_processor):
     rule_processor.options['username_filter_regex'] = compiled_expression
     result = rule_processor.is_selected_user_key('federatedID,nuver.yusser@seaofcarag.com,')
     assert result
-
 
 
 def test_is_umapi_user_excluded(rule_processor):
