@@ -1,4 +1,5 @@
 import requests
+import json
 
 
 class SignClient:
@@ -13,6 +14,7 @@ class SignClient:
         self.admin_email = config['admin_email']
         self.console_org = config['console_org'] if 'console_org' in config else None
         self.api_url = self.base_uri()
+        self.groups = self.get_groups()
 
     def header(self):
         """
@@ -72,6 +74,7 @@ class SignClient:
             if user['email'] == self.admin_email:
                 continue
             user['userId'] = user_id
+            user['roles'] = self.user_roles(user)
             users[user['email']] = user
 
         return users
@@ -81,10 +84,39 @@ class SignClient:
         API request to get group information
         :return: dict()
         """
-        groups = {}
         res = requests.get(self.api_url + 'groups', headers=self.header())
-        if res.status_code == 200:
-            sign_groups = res.json()
-            for group in sign_groups['groupInfoList']:
-                groups[group['groupName']] = group['groupId']
+        assert res.status_code == 200, "Error retrieving Sign group list"
+        groups = {}
+        sign_groups = res.json()
+        for group in sign_groups['groupInfoList']:
+            groups[group['groupName']] = group['groupId']
         return groups
+
+    def create_group(self, group):
+        """
+        Create a new group in Sign
+        :param group: str
+        :return:
+        """
+        res = requests.post(self.api_url + 'groups', headers=self.header_json(), data=json.dumps({'groupName': group}))
+        assert res.status_code == 201, "Failed to create Sign group '{}' (reason: {})".format(group, res.reason)
+        self.groups[group] = res.json()['groupId']
+
+    def update_user(self, user_id, data):
+        """
+        Update Sign user
+        :param user_id: str
+        :param data: dict()
+        :return: dict()
+        """
+
+        res = requests.put(self.api_url + 'users/' + user_id, headers=self.header_json(), data=json.dumps(data))
+        assert res.status_code == 200, "Failed to update user '{}' (reason: {})".format(user_id, res.reason)
+
+    @staticmethod
+    def user_roles(user):
+        """
+        Resolve user roles
+        :return: list[]
+        """
+        return ['NORMAL_USER'] if 'roles' not in user else user['roles']
