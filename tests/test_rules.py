@@ -402,4 +402,4 @@ def test_create_umapi_user(create_commands, rule_processor):
     called = [c[0] for c in mock_command.mock_calls]
     assert called == ['__bool__', 'remove_groups', 'add_groups']
 
-def update_umapi_user():
+
