@@ -3,6 +3,7 @@ import re
 import mock
 import pytest
 import yaml
+from mock import MagicMock, call
 
 from user_sync.rules import RuleProcessor, AdobeGroup, UmapiTargetInfo
 
@@ -58,7 +59,6 @@ def umapi_target_info():
 
 @mock.patch('user_sync.rules.UmapiConnectors')
 def test_log_action_summary_example(uc, rule_processor, log_stream):
-
     class mock_am:
         @staticmethod
         def get_statistics():
@@ -73,7 +73,7 @@ def test_log_action_summary_example(uc, rule_processor, log_stream):
     rule_processor.logger = logger
     rule_processor.log_action_summary(uc)
 
-    #result = [n.strip() for n in stream.getvalue().split('\n')]
+    # result = [n.strip() for n in stream.getvalue().split('\n')]
     result = stream.getvalue()
 
     expected = """---------------------------- Action Summary (TEST MODE) ----------------------------
@@ -94,7 +94,6 @@ def test_log_action_summary_example(uc, rule_processor, log_stream):
 
     assert expected == result
     print()
-
 
 
 @mock.patch('user_sync.helper.CSVAdapter.read_csv_rows')
@@ -388,3 +387,17 @@ def test_is_umapi_user_excluded(rule_processor):
     compiled_expression = re.compile(r'\A' + "adobe.user@seaofcarag.com" + r'\Z', re.IGNORECASE)
     rule_processor.exclude_users = {compiled_expression}
     assert rule_processor.is_umapi_user_excluded(in_primary_org, user_key, current_groups)
+
+
+@mock.patch("user_sync.rules.RuleProcessor.create_umapi_commands_for_directory_user")
+def test_create_umapi_user(create_commands, rule_processor):
+    rule_processor.directory_user_by_user_key['test'] = 'test'
+    mock_command = MagicMock()
+    create_commands.return_value = mock_command
+
+    rule_processor.options['process_groups'] = True
+    rule_processor.push_umapi = True
+    rule_processor.create_umapi_user('test', set(), MagicMock(), MagicMock())
+
+    called = [c[0] for c in mock_command.mock_calls]
+    assert called == ['__bool__', 'remove_groups', 'add_groups']
