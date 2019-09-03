@@ -1,3 +1,11 @@
+---
+layout: default
+lang: en
+nav_link: Post-Sync Connector
+nav_level: 2
+nav_order: 70
+---
+
 # Overview
 
 Sign Sync allows for an automated process of moving users over from
@@ -118,12 +126,12 @@ This section will show you how to create an Adobe Sign Integration Key.
 3.  Locate Adobe Sign API tab
 4.  Click API Information
 
-    ![](media/sign_api_info.png)
+    ![](media/post_sync/sign_api_info.png)
 5.  Click the integration key link.
     1.  If you do not see the integration link, please contact Support
         for assistance
 
-    ![](media/sign_integration_key.png)
+    ![](media/post_sync/sign_integration_key.png)
 6.  Enter a name associated with this integration
 7.  Select scopes associated with this integration. For more
     information, please [click
@@ -132,11 +140,11 @@ This section will show you how to create an Adobe Sign Integration Key.
 9.  Go to the personal preferences tab and select access token
 10. Find your integration and click it
 
-    ![](media/sign_integration_click.png)
+    ![](media/post_sync/sign_integration_click.png)
 11. Click the integration key link and your integration key should
     display like the image below:
 
-    ![](media/sign_key_display.png)
+    ![](media/post_sync/sign_key_display.png)
 
 # How To -- Synchronization
 
@@ -156,7 +164,7 @@ for more information.
 3.  Find your Adobe Sign -- Enterprise account and click it. This will
     take you to the product profile for the account shown below:
 
-    ![](media/console_profiles.png)
+    ![](media/post_sync/console_profiles.png)
 4.  Locate your target product profile. For the purpose of this
     demonstration, we will be using Sign Sync -- Eng & Sign Sync -- SA
     as the product profile.
@@ -166,11 +174,11 @@ for more information.
 6.  Enter the product profile name in product_profile under
     umapi_conditions as follows:
 
-    ![](media/group_config.png)
+    ![](media/post_sync/group_config.png)
 7.  Log into your server where your active directory is hosted on and
     open up Active Directory Users & Computers.
 
-    ![](media/aduc.png)
+    ![](media/post_sync/aduc.png)
 8. Create one group for each Sign profile you wish to synchronize.
 
     **Note**: it may be necessary to create an Organizational Unit to
@@ -194,7 +202,7 @@ for more information.
     1. Directory_group: Name used in LDAP
     2. Adobe_groups: Name in Adobe Admin Console
 
-    ![](media/ust_group_mapping.png)
+    ![](media/post_sync/ust_group_mapping.png)
 13. This config setting ensures that any users added to any `directory_group` specified in
     the mapping will be synced to the Admin Console.
 14. Run the User Sync Tool `--process-groups --users mapped`
@@ -217,12 +225,12 @@ overwritten when an iteration of the sync occurs.
 4.  On the right panel that pops out from the side, click on the ...
     button and click edit admin rights.
 
-    ![](media/admin_roles.png)
+    ![](media/post_sync/admin_roles.png)
 5.  There are five account settings that you can enable for the user.
     The application will use these settings to determine if a user is an
     ACCOUNT ADMIN, GROUP ADMIN, or a NORMAL USER in Sign.
 
-    ![](media/admin_role_select.png)
+    ![](media/post_sync/admin_role_select.png)
     1.  ACCOUNT ADMIN (Select one of the following and configure it into
         your connect-sign-sync.yml file)
         1.  System Administrator
