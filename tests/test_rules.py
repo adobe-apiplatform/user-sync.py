@@ -384,3 +384,31 @@ def test_is_umapi_user_excluded(rule_processor):
     compiled_expression = re.compile(r'\A' + "adobe.user@seaofcarag.com" + r'\Z', re.IGNORECASE)
     rule_processor.exclude_users = {compiled_expression}
     assert rule_processor.is_umapi_user_excluded(in_primary_org, user_key, current_groups)
+
+
+@mock.patch('user_sync.rules.UmapiConnectors')
+def test_create_umapi_groups(uc, rule_processor, log_stream):
+    stream, logger = log_stream
+    rule_processor.logger = logger
+    umapi_connector = mock.MagicMock()
+    umapi_connector.name = 'primary'
+    umapi_connector.get_groups.return_value = [
+        {'groupId': 94663221, 'groupName': 'existing_user_group', 'type': 'SYSADMIN_GROUP', 'memberCount': 41},
+        {'groupId': 94663220, 'groupName': 'a_user_group', 'type': 'SYSADMIN_GROUP', 'memberCount': 41}]
+    uc.connectors = [umapi_connector]
+    umapi_info = mock.MagicMock()
+    umapi_info.get_non_normalize_mapped_groups.return_value = {'non_existing_user_group', 'existing_user_group'}
+    rule_processor.umapi_info_by_name = {None: umapi_info}
+    rule_processor.create_umapi_groups(uc)
+    stream.flush()
+    logger_output = stream.getvalue()
+    called_methods = [c[0] for c in umapi_connector.mock_calls]
+    assert 'create_group' and 'get_groups' in called_methods
+    assert "Auto create user-group enabled: Creating 'non_existing_user_group' on 'primary org'\n" in logger_output
+
+    # testing exception handling
+    umapi_connector.create_group.side_effect = ValueError('Exception Thrown')
+    rule_processor.create_umapi_groups(uc)
+    stream.flush()
+    logger_output = stream.getvalue()
+    assert 'Exception Thrown' in logger_output
