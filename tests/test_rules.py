@@ -58,7 +58,6 @@ def umapi_target_info():
 
 @mock.patch('user_sync.rules.UmapiConnectors')
 def test_log_action_summary_example(uc, rule_processor, log_stream):
-
     class mock_am:
         @staticmethod
         def get_statistics():
@@ -73,7 +72,6 @@ def test_log_action_summary_example(uc, rule_processor, log_stream):
     rule_processor.logger = logger
     rule_processor.log_action_summary(uc)
 
-    #result = [n.strip() for n in stream.getvalue().split('\n')]
     result = stream.getvalue()
 
     expected = """---------------------------- Action Summary (TEST MODE) ----------------------------
@@ -93,8 +91,6 @@ def test_log_action_summary_example(uc, rule_processor, log_stream):
 """
 
     assert expected == result
-    print()
-
 
 
 @mock.patch('user_sync.helper.CSVAdapter.read_csv_rows')
