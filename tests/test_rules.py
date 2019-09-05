@@ -182,6 +182,7 @@ def test_get_user_attribute_difference(rule_processor):
         'firstname': 'Adobeupdate',
         'lastname': 'Username2'}
     assert expected_difference_value == actual_difference_value
+    
     # test with no change
     actual_difference_value = rule_processor.get_user_attribute_difference(umapi_users_mock_data, umapi_users_mock_data)
     assert actual_difference_value == {}
