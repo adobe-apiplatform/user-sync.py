@@ -388,3 +388,40 @@ def test_is_umapi_user_excluded(rule_processor):
     compiled_expression = re.compile(r'\A' + "adobe.user@seaofcarag.com" + r'\Z', re.IGNORECASE)
     rule_processor.exclude_users = {compiled_expression}
     assert rule_processor.is_umapi_user_excluded(in_primary_org, user_key, current_groups)
+
+
+@mock.patch('user_sync.rules.UmapiConnectors')
+def test_log_action_summary(uc, rule_processor, log_stream):
+
+    class mock_am:
+        @staticmethod
+        def get_statistics():
+            return 10, 2
+
+    connector = mock.MagicMock()
+    connector.get_action_manager.return_value = mock_am
+    uc.get_primary_connector.return_value = connector
+    uc.get_secondary_connectors.return_value = {'secondary': connector}
+
+    stream, logger = log_stream
+    rule_processor.logger = logger
+    rule_processor.log_action_summary(uc)
+
+    result = stream.getvalue()
+    expected = """---------------------------- Action Summary (TEST MODE) ----------------------------
+                                  Number of directory users read: 0
+                    Number of directory users selected for input: 0
+                                      Number of Adobe users read: 0
+                     Number of Adobe users excluded from updates: 0
+              Number of non-excluded Adobe users with no changes: 0
+                                 Number of new Adobe users added: 0
+                          Number of matching Adobe users updated: 0
+                             Number of Adobe user-groups created: 0
+                      Number of Adobe users added to secondaries: 0
+                              Number of Adobe-only users removed: 0
+    Number of primary UMAPI actions sent (total, success, error): (10, 8, 2)
+  Number of secondary UMAPI actions sent (total, success, error): (10, 8, 2)
+------------------------------------------------------------------------------------
+"""
+
+    assert expected == result
