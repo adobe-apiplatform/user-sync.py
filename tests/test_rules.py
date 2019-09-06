@@ -1,6 +1,7 @@
 import re
 from copy import deepcopy
 
+import pytest
 import mock
 import yaml
 
