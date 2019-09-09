@@ -432,10 +432,12 @@ def test_update_umapi_users_for_connector(rule_processor, mock_user_directory_da
     umapi_connector_methods_called = [c[0] for c in umapi_connector.mock_calls]
     stream.flush()
     logger_output = stream.getvalue()
+    logger_output = re.sub('[\\[\\]]+', '', logger_output)
+    logger_output = re.sub("{'user_group'}", "set('user_group')", logger_output)
     assert "Found Adobe-only user: federatedID,adobe.only1@example.com," in logger_output
     assert "Adobe user matched on customer side: federatedID,both1@example.com," in logger_output
-    assert "Managing groups for user key: federatedID,both1@example.com," in logger_output
-    assert "Managing groups for user key: federatedID,both2@example.com," in logger_output
+    assert "Managing groups for user key: federatedID,both1@example.com, added: set('user_group') removed: set()" in logger_output
+    assert "Managing groups for user key: federatedID,both2@example.com, added: set() removed: set('user_group')" in logger_output
     assert "Managing groups for user key: federatedID,both3@example.com," not in logger_output
     assert "Excluding adobe user (due to name): federatedID,exclude1@example.com," in logger_output
     assert 'set_umapi_users_loaded' in umapi_info_methods_called
