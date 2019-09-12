@@ -18,9 +18,6 @@ class SignConnector(PostSyncConnector):
             self.user_groups = []
         self.user_groups = self._groupify(self.user_groups)
         self.entitlement_groups = self._groupify(sync_config.get_list('entitlement_groups'))
-        self.directory_attributes = sync_config.get_list('directory_attributes', True)
-        if self.directory_attributes is None:
-            self.directory_attributes = []
         self.identity_types = sync_config.get_list('identity_types', True)
         if self.identity_types is None:
             self.identity_types = ['adobeID', 'enterpriseID', 'federatedID']
@@ -101,9 +98,6 @@ class SignConnector(PostSyncConnector):
         :return:
         """
         return sign_user is not None and set(umapi_user['groups']) & set(self.entitlement_groups[org_name])
-
-    def get_directory_attributes(self):
-        return self.directory_attributes
 
     @staticmethod
     def _groupify(groups):

@@ -25,11 +25,6 @@ entitlement_grups:
   - Sign Enterprise
   - org2::Adobe Sign
 
-directory_attributes:
-  - "company"
-  - "mobile"
-  - "objectGUID"
-
 identity_types:
   - federatedID
   - enterpriseID
