@@ -53,17 +53,21 @@ class SignConnector(PostSyncConnector):
             common_groups = set(self.user_groups[org_name]) & set(umapi_user['groups'])
 
             if not common_groups:
-                return
+                continue
 
             assignment_group = sorted(list(common_groups))[0]
             group_id = sign_client.groups.get(assignment_group)
+            user_roles = self.resolve_new_roles(umapi_user, self.entitlement_groups[org_name], assignment_group)
             update_data = {
                 "email": umapi_user['email'],
                 "firstName": umapi_user['firstname'],
                 "groupId": group_id,
                 "lastName": umapi_user['lastname'],
-                "roles": self.resolve_new_roles(umapi_user, self.entitlement_groups[org_name], assignment_group)
+                "roles": user_roles,
             }
+            if sign_user['group'] == assignment_group and sorted(sign_user['roles']) == sorted(user_roles):
+                self.logger.debug("skipping Sign update for '{}' -- no updates needed".format(umapi_user['email']))
+                continue
             try:
                 sign_client.update_user(sign_user['userId'], update_data)
             except AssertionError as e:
@@ -91,7 +95,7 @@ class SignConnector(PostSyncConnector):
     def should_sync(self, umapi_user, sign_user, org_name):
         """
         Initial gatekeeping to determine if user is candidate for Sign sync
-        Sign record must be defined for user, and user must belong to at least one entitlement groupkkkkkkkkkkkkkkjj
+        Sign record must be defined for user, and user must belong to at least one entitlement group
         :param umapi_user:
         :param sign_user:
         :param org_name:
