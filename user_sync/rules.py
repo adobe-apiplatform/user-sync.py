@@ -483,13 +483,7 @@ class RuleProcessor(object):
             primary_adds_by_user_key = umapi_info.get_desired_groups_by_user_key()
         else:
             primary_adds_by_user_key = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
-        # start saving post-sync data
-        # save existing users to post_sync_data
-        for key, existing_user in umapi_info.umapi_user_by_user_key.items():
-            self.post_sync_data.update_umapi_data(None, key, [], [], **existing_user)
         # save groups for new users
-        for key, add_groups in primary_adds_by_user_key.items():
-            self.post_sync_data.update_umapi_data(None, key, add_groups)
         for user_key, groups_to_add in six.iteritems(primary_adds_by_user_key):
             if exclude_unmapped_users and not groups_to_add:
                 # If user is not part of any group and ignore outcast is enabled. Do not create user.
@@ -690,12 +684,10 @@ class RuleProcessor(object):
         # make sure the actions get sent
         primary_connector.get_action_manager().flush()
 
-    def get_user_attributes(self, directory_user):
-        attributes = {}
-        attributes['email'] = directory_user['email']
-        attributes['firstname'] = directory_user['firstname']
-        attributes['lastname'] = directory_user['lastname']
-        return attributes
+    @staticmethod
+    def get_user_attributes(directory_user):
+        return {'email': directory_user['email'], 'firstname': directory_user['firstname'],
+                'lastname': directory_user['lastname']}
 
     def get_identity_type_from_directory_user(self, directory_user):
         identity_type = directory_user.get('identity_type')
@@ -779,6 +771,17 @@ class RuleProcessor(object):
                 groups_to_remove = umapi_info.get_mapped_groups() - groups_to_add
                 commands.remove_groups(groups_to_remove)
             commands.add_groups(groups_to_add)
+        post_sync_user = {
+            'type': directory_user['identity_type'],
+            'username': directory_user['username'],
+            'domain': directory_user['domain'],
+            'email': directory_user['email'],
+            'country': directory_user['country'],
+            'firstname': directory_user['firstname'],
+            'lastname': directory_user['lastname'],
+        }
+        self.post_sync_data.update_umapi_data(umapi_info.name, user_key,
+                                              groups_to_add if self.will_process_groups() else [], [], **post_sync_user)
         umapi_connector.send_commands(commands)
 
     def update_umapi_user(self, umapi_info, user_key, umapi_connector,
@@ -826,6 +829,8 @@ class RuleProcessor(object):
                 attributes_to_update['username'] = umapi_user['username']
                 directory_user['username'] = umapi_user['email']
 
+        self.post_sync_data.update_umapi_data(umapi_info.name, user_key, groups_to_add, groups_to_remove,
+                                              **attributes_to_update)
         commands = user_sync.connector.umapi.Commands(identity_type, directory_user['email'],
                                                       directory_user['username'], directory_user['domain'])
         commands.update_user(attributes_to_update)
@@ -878,6 +883,7 @@ class RuleProcessor(object):
                 self.logger.debug("Ignoring umapi user. This user has already been processed: %s", umapi_user)
                 continue
             umapi_info.add_umapi_user(user_key, umapi_user)
+            self.post_sync_data.update_umapi_data(None, user_key, [], [], **umapi_user)
             attribute_differences = {}
             current_groups = self.normalize_groups(umapi_user.get('groups'))
             groups_to_add = set()

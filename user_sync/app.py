@@ -333,12 +333,15 @@ def begin_work(config_loader):
         directory_connector = user_sync.connector.directory.DirectoryConnector(directory_connector_module)
         directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
 
+    post_sync_manager = None
+    # get post-sync config unconditionally so we don't get an 'unused key' error
     post_sync_config = config_loader.get_post_sync_options()
-    if post_sync_config:
-        post_sync_manager = PostSyncManager(post_sync_config)
-        rule_config['extended_attributes'] |= post_sync_manager.get_directory_attributes()
+    if rule_config['strategy'] == 'sync':
+        if post_sync_config:
+            post_sync_manager = PostSyncManager(post_sync_config)
+            rule_config['extended_attributes'] |= post_sync_manager.get_directory_attributes()
     else:
-        post_sync_manager = None
+        logger.warn('Post-Sync Connectors only support "sync" strategy')
 
     config_loader.check_unused_config_keys()
 

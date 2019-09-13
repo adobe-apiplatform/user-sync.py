@@ -60,7 +60,7 @@ class PostSyncData:
             if k not in kwargs:
                 continue
             if k == 'groups':
-                updated_store_data[k] = set(kwargs[k])
+                add_groups = list(set(add_groups) | set(kwargs[k]))
             else:
                 updated_store_data[k] = kwargs[k]
 
