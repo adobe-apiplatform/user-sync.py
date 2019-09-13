@@ -446,6 +446,50 @@ def test_update_umapi_users_for_connector(rule_processor, mock_user_directory_da
     assert result_user_groups_to_map == {'federatedID,directory.only1@example.com,': {'user_group'}}
 
 
+def test_read_desired_user_groups(rule_processor, log_stream, mock_user_directory_data):
+    stream, logger = log_stream
+    rule_processor.logger = logger
+    directory_connector = mock.MagicMock()
+    mock_directory_user = mock_user_directory_data['federatedID,both1@example.com,']
+    mock_directory_user['groups'] = ['security_group']
+    directory_connector.load_users_and_groups.return_value = [mock_directory_user]
+    mappings = {'security_group': [AdobeGroup.create('user_group')]}
+    rule_processor.read_desired_user_groups(mappings, directory_connector)
+    assert "security_group" in rule_processor.after_mapping_hook_scope['source_groups']
+    assert "user_group" in rule_processor.after_mapping_hook_scope['target_groups']
+    assert ('user_group' in
+            rule_processor.umapi_info_by_name[None].desired_groups_by_user_key['federatedID,both1@example.com,'])
+
+    # testing after_mapping_hooks
+    AdobeGroup.create('existing_group')
+    after_mapping_hook_text = "first = source_attributes.get(\'givenName\')\n" \
+                              "if first is not None: \n  target_groups.add(\'scope_group\')\n" \
+                              "  target_groups.add(\'existing_group\')"
+    hook_code = compile(after_mapping_hook_text, '<per-user after-mapping-hook>', 'exec')
+    rule_processor.options['after_mapping_hook'] = hook_code
+    rule_processor.read_desired_user_groups(mappings, directory_connector)
+    stream.flush()
+    logger_output = stream.getvalue()
+    assert 'Target adobe group scope_group is not known; ignored' in logger_output
+    assert rule_processor.umapi_info_by_name[None].desired_groups_by_user_key == {
+        'federatedID,both1@example.com,': {'user_group', 'existing_group'}}
+    assert "security_group" in rule_processor.after_mapping_hook_scope['source_groups']
+    assert "existing_group" in rule_processor.after_mapping_hook_scope['target_groups']
+
+    # testing additional_groups
+    rule_processor.options['after_mapping_hook'] = None
+    mock_directory_user['member_groups'] = ['other_security_group', 'security_group', 'more_security_group']
+    rule_processor.options['additional_groups'] = [
+        {'source': re.compile('other(.+)'), 'target': AdobeGroup.create('additional_user_group')},
+        {'source': re.compile('security_group'), 'target': AdobeGroup.create('additional(.+)')}]
+    rule_processor.read_desired_user_groups(mappings, directory_connector)
+    assert 'other_security_group' in rule_processor.umapi_info_by_name[None].additional_group_map[
+        'additional_user_group']
+    assert 'security_group' in rule_processor.umapi_info_by_name[None].additional_group_map[
+        'additional(.+)']
+    assert {'additional_user_group', 'additional(.+)'}.issubset(
+        rule_processor.umapi_info_by_name[None].desired_groups_by_user_key['federatedID,both1@example.com,'])
+
 @pytest.fixture
 def mock_user_directory_data():
     return {'federatedID,both1@example.com,':
