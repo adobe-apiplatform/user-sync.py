@@ -1,3 +1,4 @@
+import logging
 import requests
 import json
 
@@ -15,6 +16,10 @@ class SignClient:
         self.console_org = config['console_org'] if 'console_org' in config else None
         self.api_url = self.base_uri()
         self.groups = self.get_groups()
+        self.logger = logging.getLogger(self.logger_name())
+
+    def logger_name(self):
+        return 'sign_client.{}'.format(self.console_org if self.console_org else 'main')
 
     def header(self):
         """
@@ -62,6 +67,7 @@ class SignClient:
         """
 
         users = {}
+        self.logger.debug('getting list of all Sign users')
         users_res = requests.get(self.api_url + 'users', headers=self.header())
 
         assert users_res.status_code == 200, "Error retrieving Sign user list"
@@ -76,6 +82,7 @@ class SignClient:
             user['userId'] = user_id
             user['roles'] = self.user_roles(user)
             users[user['email']] = user
+            self.logger.debug('retrieved user details for Sign user {}'.format(user['email']))
 
         return users
 
