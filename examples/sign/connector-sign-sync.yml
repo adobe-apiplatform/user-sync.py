@@ -21,10 +21,22 @@ user_groups:
 
 # Product profiles that entitle a user to use Adobe Sign
 # Secondary orgs (as defined in user-sync-config.yml) can optionally be targeted
-entitlement_grups:
+entitlement_groups:
   - Sign Enterprise
   - org2::Adobe Sign
 
 identity_types:
   - federatedID
   - enterpriseID
+
+# Optionally designate certain Admin Console groups to grant admin privileges in Sign
+# Valid Sign roles are ACCOUNT_ADMIN and GROUP_ADMIN
+# Users that do not belong to any Adobe group mapped here will be granted NORMAL_USER privileges
+# Admin Console admin roles (e.g. _org_admin) can be used here
+admin_roles:
+#  - sign_role: ACCOUNT_ADMIN
+#    adobe_groups:
+#      - Adobe Sign Account Admins
+#  - sign_role: GROUP_ADMIN
+#    adobe_groups:
+#      - Adobe Sign Group Admins

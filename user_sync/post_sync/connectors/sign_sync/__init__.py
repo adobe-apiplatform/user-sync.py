@@ -22,6 +22,9 @@ class SignConnector(PostSyncConnector):
         if self.identity_types is None:
             self.identity_types = ['adobeID', 'enterpriseID', 'federatedID']
 
+        # dict w/ structure - umapi_name -> adobe_group -> [set of roles]
+        self.admin_roles = self._admin_role_mapping(sync_config)
+
         sign_orgs = sync_config.get_list('sign_orgs')
         self.clients = {}
         for sign_org_config in sign_orgs:
@@ -57,7 +60,8 @@ class SignConnector(PostSyncConnector):
 
             assignment_group = sorted(list(common_groups))[0]
             group_id = sign_client.groups.get(assignment_group)
-            user_roles = self.resolve_new_roles(umapi_user, self.entitlement_groups[org_name], assignment_group)
+            admin_roles = self.admin_roles.get(org_name, {})
+            user_roles = self.resolve_new_roles(umapi_user, admin_roles)
             update_data = {
                 "email": umapi_user['email'],
                 "firstName": umapi_user['firstname'],
@@ -65,7 +69,7 @@ class SignConnector(PostSyncConnector):
                 "lastName": umapi_user['lastname'],
                 "roles": user_roles,
             }
-            if sign_user['group'] == assignment_group and sorted(sign_user['roles']) == sorted(user_roles):
+            if sign_user['group'] == assignment_group and self.roles_match(user_roles, sign_user['roles']):
                 self.logger.debug("skipping Sign update for '{}' -- no updates needed".format(umapi_user['email']))
                 continue
             try:
@@ -77,31 +81,34 @@ class SignConnector(PostSyncConnector):
                 umapi_user['email'], assignment_group, update_data['roles']))
 
     @staticmethod
-    def resolve_new_roles(umapi_user, entitlement_groups, user_group):
-        admin_groups = ['_admin_'+g for g in entitlement_groups]
-        admin_user_group = '_admin_'+user_group
+    def roles_match(resolved_roles, sign_roles):
+        if isinstance(sign_roles, str):
+            sign_roles = [sign_roles]
+        return sorted(resolved_roles) == sorted(sign_roles)
 
-        group_admin = bool(set(admin_groups) & set(umapi_user['groups']))
-        account_admin = admin_user_group in umapi_user['groups']
-
-        if account_admin and group_admin:
-            return ["ACCOUNT_ADMIN", "GROUP_ADMIN"]
-        if account_admin:
-            return ["ACCOUNT_ADMIN"]
-        if group_admin:
-            return ["GROUP_ADMIN"]
-        return ['NORMAL_USER']
+    @staticmethod
+    def resolve_new_roles(umapi_user, role_mapping):
+        roles = set()
+        for group in umapi_user['groups']:
+            sign_roles = role_mapping.get(group)
+            if sign_roles is None:
+                continue
+            roles.update(sign_roles)
+        return list(roles) if roles else ['NORMAL_USER']
 
     def should_sync(self, umapi_user, sign_user, org_name):
         """
         Initial gatekeeping to determine if user is candidate for Sign sync
+        Any checks that don't depend on the Sign record go here
         Sign record must be defined for user, and user must belong to at least one entitlement group
+        and user must be accepted identity type
         :param umapi_user:
         :param sign_user:
         :param org_name:
         :return:
         """
-        return sign_user is not None and set(umapi_user['groups']) & set(self.entitlement_groups[org_name])
+        return sign_user is not None and set(umapi_user['groups']) & set(self.entitlement_groups[org_name]) and \
+            umapi_user['type'] in self.identity_types
 
     @staticmethod
     def _groupify(groups):
@@ -110,3 +117,25 @@ class SignConnector(PostSyncConnector):
             processed_group = AdobeGroup.create(g)
             processed_groups[processed_group.umapi_name].append(processed_group.group_name)
         return processed_groups
+
+    @staticmethod
+    def _admin_role_mapping(sync_config):
+        admin_roles = sync_config.get_list('admin_roles', True)
+        if admin_roles is None:
+            return {}
+
+        mapped_admin_roles = {}
+        for mapping in admin_roles:
+            sign_role = mapping.get('sign_role')
+            assert sign_role is not None, "must define a Sign role in admin role mapping"
+            adobe_groups = mapping.get('adobe_groups')
+            if adobe_groups is None or not len(adobe_groups):
+                continue
+            for g in adobe_groups:
+                group = AdobeGroup.create(g)
+                if group.umapi_name not in mapped_admin_roles:
+                    mapped_admin_roles[group.umapi_name] = {}
+                if group.group_name not in mapped_admin_roles[group.umapi_name]:
+                    mapped_admin_roles[group.umapi_name][group.group_name] = set()
+                mapped_admin_roles[group.umapi_name][group.group_name].add(sign_role)
+        return mapped_admin_roles
