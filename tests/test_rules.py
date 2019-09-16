@@ -524,6 +524,72 @@ def test_update_umapi_user(rule_processor, log_stream, mock_umapi_user):
     assert mock_umapi_user["email"] == mock_umapi_user["username"]
 
 
+def test_read_desired_user_groups(rule_processor, log_stream, mock_directory_user):
+    rp = rule_processor
+    stream, logger = log_stream
+    rp.logger = logger
+    mock_directory_user['groups'] = ['security_group']
+
+    directory_connector = mock.MagicMock()
+    directory_connector.load_users_and_groups.return_value = [mock_directory_user]
+    mappings = {
+        'security_group': [AdobeGroup.create('user_group')]
+    }
+
+    rp.read_desired_user_groups(mappings, directory_connector)
+
+    # Assert the security group and adobe group end up in the correct scope
+    assert "security_group" in rp.after_mapping_hook_scope['source_groups']
+    assert "user_group" in rp.after_mapping_hook_scope['target_groups']
+
+    # Assert the user group updated in umapi info
+    user_key = rp.get_directory_user_key(mock_directory_user)
+    assert ('user_group' in rp.umapi_info_by_name[None].desired_groups_by_user_key[user_key])
+
+    # testing after_mapping_hooks
+    AdobeGroup.create('existing_group')
+
+    after_mapping_hook_text = """
+first = source_attributes.get('givenName')
+if first is not None: 
+  target_groups.add('scope_group')
+target_groups.add('existing_group')
+"""
+
+    hook_code = compile(after_mapping_hook_text, '<per-user after-mapping-hook>', 'exec')
+    rp.options['after_mapping_hook'] = hook_code
+    rp.read_desired_user_groups(mappings, directory_connector)
+    stream.flush()
+    logger_output = stream.getvalue()
+
+    assert 'Target adobe group scope_group is not known; ignored' in logger_output
+    assert rp.umapi_info_by_name[None].desired_groups_by_user_key == {
+        user_key: {'user_group', 'existing_group'}
+    }
+
+    assert "security_group" in rp.after_mapping_hook_scope['source_groups']
+    assert "existing_group" in rp.after_mapping_hook_scope['target_groups']
+
+    # testing additional_groups
+    rp.options['after_mapping_hook'] = None
+    mock_directory_user['member_groups'] = ['other_security_group', 'security_group', 'more_security_group']
+    rp.options['additional_groups'] = [
+        {
+            'source': re.compile('other(.+)'),
+            'target': AdobeGroup.create('additional_user_group')},
+        {
+            'source': re.compile('security_group'),
+            'target': AdobeGroup.create('additional(.+)')}]
+
+    rp.read_desired_user_groups(mappings, directory_connector)
+    assert 'other_security_group' in rp.umapi_info_by_name[None].additional_group_map[
+        'additional_user_group']
+    assert 'security_group' in rp.umapi_info_by_name[None].additional_group_map[
+        'additional(.+)']
+    assert {'additional_user_group', 'additional(.+)'}.issubset(
+        rp.umapi_info_by_name[None].desired_groups_by_user_key[user_key])
+
+
 @pytest.fixture
 def mock_user_directory_data():
     return {
@@ -603,7 +669,7 @@ def mock_user_directory_data():
                     'givenName': 'dir1',
                     'sn': 'one',
                     'c': 'US'}}
-        }
+    }
 
 
 @pytest.fixture
