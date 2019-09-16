@@ -104,3 +104,17 @@ def mock_directory_user():
             'givenName': 'One',
             'sn': 'Six',
             'c': 'US'}}
+
+@pytest.fixture()
+def mock_umapi_user():
+    return  {
+        'email': 'bsisko@example.com',
+        'status': 'active',
+        'groups': ['Group A', '_admin_Group A', 'Group A_1924484-provisioning'],
+        'username': 'bsisko@example.com',
+        'domain': 'example.com',
+        'firstname': 'Benjamin',
+        'lastname': 'Sisko',
+        'country': 'CA',
+        'type': 'federatedID'
+    }
