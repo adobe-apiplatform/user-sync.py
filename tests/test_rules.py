@@ -1,13 +1,12 @@
 import re
 from copy import deepcopy
 
-import pytest
 import mock
+import pytest
 import yaml
-from mock import MagicMock, call
+from mock import MagicMock
 
 from user_sync.rules import RuleProcessor, AdobeGroup, UmapiTargetInfo
-from user_sync.connector.umapi import UmapiConnector
 
 
 @mock.patch('user_sync.rules.UmapiConnectors')
@@ -337,7 +336,6 @@ def test_is_umapi_user_excluded(rule_processor):
 
 @mock.patch('user_sync.rules.UmapiConnectors')
 def test_log_action_summary(uc, rule_processor, log_stream):
-
     class mock_am:
         @staticmethod
         def get_statistics():
@@ -346,7 +344,8 @@ def test_log_action_summary(uc, rule_processor, log_stream):
     connector = mock.MagicMock()
     connector.get_action_manager.return_value = mock_am
     uc.get_primary_connector.return_value = connector
-    uc.get_secondary_connectors.return_value = {'secondary': connector}
+    uc.get_secondary_connectors.return_value = {
+        'secondary': connector}
 
     stream, logger = log_stream
     rule_processor.logger = logger
@@ -481,8 +480,11 @@ def test_update_umapi_users_for_connector(rule_processor, mock_user_directory_da
     assert "Excluding adobe user (due to name): federatedID,exclude1@example.com," in logger_output
     assert 'set_umapi_users_loaded' in umapi_info_methods_called
     assert 'send_commands' in umapi_connector_methods_called
-    assert rule_processor.stray_key_map == {None: {'federatedID,adobe.only1@example.com,': set()}}
-    assert result_user_groups_to_map == {'federatedID,directory.only1@example.com,': {'user_group'}}
+    assert rule_processor.stray_key_map == {
+        None: {
+            'federatedID,adobe.only1@example.com,': set()}}
+    assert result_user_groups_to_map == {
+        'federatedID,directory.only1@example.com,': {'user_group'}}
 
 
 def test_update_umapi_user(rule_processor, log_stream, mock_umapi_user):
@@ -503,7 +505,8 @@ def test_update_umapi_user(rule_processor, log_stream, mock_umapi_user):
     umapi_connector = mock.MagicMock()
     with mock.patch('user_sync.connector.umapi.Commands') as commands:
         commands.return_value = mock.MagicMock()
-        rule_processor.update_umapi_user(UmapiTargetInfo(None), mock_user_key, umapi_connector, mock_attributes_to_update,
+        rule_processor.update_umapi_user(UmapiTargetInfo(None), mock_user_key, umapi_connector,
+                                         mock_attributes_to_update,
                                          mock_groups_to_add, mock_groups_to_remove, mock_umapi_user)
         commands_sent = str(umapi_connector.send_commands.call_args[0][0].method_calls)
         commands_sent = re.sub("set\\(\\[", "{", commands_sent)
@@ -523,99 +526,135 @@ def test_update_umapi_user(rule_processor, log_stream, mock_umapi_user):
 
 @pytest.fixture
 def mock_user_directory_data():
-    return {'federatedID,both1@example.com,':
-                {'identity_type': 'federatedID',
-                 'username': 'both1@example.com',
-                 'domain': 'example.com',
-                 'firstname': 'both1',
-                 'lastname': 'one',
-                 'email': 'both1@example.com',
-                 'groups': ['All Sea of Carag'],
-                 'country': 'US',
-                 'member_groups': [],
-                 'source_attributes': {
-                     'email': 'both1@example.com',
-                     'identity_type': None,
-                     'username': None,
-                     'domain': None,
-                     'givenName': 'both1',
-                     'sn': 'one',
-                     'c': 'US'}},
-            'federatedID,both2@example.com,':
-                {'identity_type': 'federatedID',
-                 'username': 'both2@example.com',
-                 'domain': 'example.com',
-                 'firstname': 'both2',
-                 'lastname': 'one',
-                 'email': 'both2@example.com',
-                 'groups': ['All Sea of Carag'],
-                 'country': 'US',
-                 'member_groups': [],
-                 'source_attributes': {
-                     'email': 'both2@example.com',
-                     'identity_type': None,
-                     'username': None,
-                     'domain': None,
-                     'givenName': 'both2',
-                     'sn': 'two',
-                     'c': 'US'}},
-            'federatedID,both3@example.com,':
-                {'identity_type': 'federatedID',
-                 'username': 'both3@example.com',
-                 'domain': 'example.com',
-                 'firstname': 'both3',
-                 'lastname': 'one',
-                 'email': 'both3@example.com',
-                 'groups': ['All Sea of Carag'],
-                 'country': 'US',
-                 'member_groups': [],
-                 'source_attributes': {
-                     'email': 'both3@example.com',
-                     'identity_type': None,
-                     'username': None,
-                     'domain': None,
-                     'givenName': 'both3',
-                     'sn': 'three',
-                     'c': 'US'}},
-            'federatedID,directory.only1@example.com,':
-                {'identity_type': 'federatedID',
-                 'username': 'directory.only1@example.com',
-                 'domain': 'example.com',
-                 'firstname': 'dir1',
-                 'lastname': 'one',
-                 'email': 'directory.only1example.com',
-                 'groups': ['All Sea of Carag'],
-                 'country': 'US',
-                 'member_groups': [],
-                 'source_attributes': {
-                     'email': 'directory.only1@example.com',
-                     'identity_type': None,
-                     'username': None,
-                     'domain': None,
-                     'givenName': 'dir1',
-                     'sn': 'one',
-                     'c': 'US'}}
-            }
+    return {
+        'federatedID,both1@example.com,':
+            {
+                'identity_type': 'federatedID',
+                'username': 'both1@example.com',
+                'domain': 'example.com',
+                'firstname': 'both1',
+                'lastname': 'one',
+                'email': 'both1@example.com',
+                'groups': ['All Sea of Carag'],
+                'country': 'US',
+                'member_groups': [],
+                'source_attributes': {
+                    'email': 'both1@example.com',
+                    'identity_type': None,
+                    'username': None,
+                    'domain': None,
+                    'givenName': 'both1',
+                    'sn': 'one',
+                    'c': 'US'}},
+        'federatedID,both2@example.com,':
+            {
+                'identity_type': 'federatedID',
+                'username': 'both2@example.com',
+                'domain': 'example.com',
+                'firstname': 'both2',
+                'lastname': 'one',
+                'email': 'both2@example.com',
+                'groups': ['All Sea of Carag'],
+                'country': 'US',
+                'member_groups': [],
+                'source_attributes': {
+                    'email': 'both2@example.com',
+                    'identity_type': None,
+                    'username': None,
+                    'domain': None,
+                    'givenName': 'both2',
+                    'sn': 'two',
+                    'c': 'US'}},
+        'federatedID,both3@example.com,':
+            {
+                'identity_type': 'federatedID',
+                'username': 'both3@example.com',
+                'domain': 'example.com',
+                'firstname': 'both3',
+                'lastname': 'one',
+                'email': 'both3@example.com',
+                'groups': ['All Sea of Carag'],
+                'country': 'US',
+                'member_groups': [],
+                'source_attributes': {
+                    'email': 'both3@example.com',
+                    'identity_type': None,
+                    'username': None,
+                    'domain': None,
+                    'givenName': 'both3',
+                    'sn': 'three',
+                    'c': 'US'}},
+        'federatedID,directory.only1@example.com,':
+            {
+                'identity_type': 'federatedID',
+                'username': 'directory.only1@example.com',
+                'domain': 'example.com',
+                'firstname': 'dir1',
+                'lastname': 'one',
+                'email': 'directory.only1example.com',
+                'groups': ['All Sea of Carag'],
+                'country': 'US',
+                'member_groups': [],
+                'source_attributes': {
+                    'email': 'directory.only1@example.com',
+                    'identity_type': None,
+                    'username': None,
+                    'domain': None,
+                    'givenName': 'dir1',
+                    'sn': 'one',
+                    'c': 'US'}}
+        }
 
 
 @pytest.fixture
 def mock_umapi_user_data():
     return [
-        {'email': 'both1@example.com', 'status': 'active', 'groups': ['_org_admin', 'group1'],
-         'username': 'both1@example.com',
-         'adminRoles': ['org'], 'domain': 'example.com', 'country': 'US', 'type': 'federatedID'},
-        {'email': 'both2@example.com', 'status': 'active', 'groups': ['_org_admin', 'user_group'],
-         'username': 'both2@example.com',
-         'adminRoles': ['org'], 'domain': 'example.com', 'country': 'US', 'type': 'federatedID'},
-        {'email': 'both3@example.com', 'status': 'active', 'groups': ['_org_admin', 'group1', 'user_group'],
-         'username': 'both3@example.com',
-         'adminRoles': ['org'], 'domain': 'example.com', 'country': 'US', 'type': 'federatedID'},
-        {'email': 'adobe.only1@example.com', 'status': 'active', 'groups': ['_org_admin'],
-         'username': 'adobe.only1@example.com',
-         'adminRoles': ['org'], 'domain': 'example.com', 'country': 'US', 'type': 'federatedID'},
-        {'email': 'exclude1@example.com', 'status': 'active', 'groups': ['_org_admin'],
-         'username': 'exclude1@example.com',
-         'adminRoles': ['org'], 'domain': 'example.com', 'country': 'US', 'type': 'federatedID'}]
+        {
+            'email': 'both1@example.com',
+            'status': 'active',
+            'groups': ['_org_admin', 'group1'],
+            'username': 'both1@example.com',
+            'adminRoles': ['org'],
+            'domain': 'example.com',
+            'country': 'US',
+            'type': 'federatedID'},
+        {
+            'email': 'both2@example.com',
+            'status': 'active',
+            'groups': ['_org_admin', 'user_group'],
+            'username': 'both2@example.com',
+            'adminRoles': ['org'],
+            'domain': 'example.com',
+            'country': 'US',
+            'type': 'federatedID'},
+        {
+            'email': 'both3@example.com',
+            'status': 'active',
+            'groups': ['_org_admin', 'group1', 'user_group'],
+            'username': 'both3@example.com',
+            'adminRoles': ['org'],
+            'domain': 'example.com',
+            'country': 'US',
+            'type': 'federatedID'},
+        {
+            'email': 'adobe.only1@example.com',
+            'status': 'active',
+            'groups': ['_org_admin'],
+            'username': 'adobe.only1@example.com',
+            'adminRoles': ['org'],
+            'domain': 'example.com',
+            'country': 'US',
+            'type': 'federatedID'},
+        {
+            'email': 'exclude1@example.com',
+            'status': 'active',
+            'groups': ['_org_admin'],
+            'username': 'exclude1@example.com',
+            'adminRoles': ['org'],
+            'domain': 'example.com',
+            'country': 'US',
+            'type': 'federatedID'}]
+
 
 @mock.patch("user_sync.rules.RuleProcessor.create_umapi_commands_for_directory_user")
 def test_create_umapi_user(create_commands, rule_processor):
@@ -629,5 +668,3 @@ def test_create_umapi_user(create_commands, rule_processor):
 
     called = [c[0] for c in mock_command.mock_calls][1:]
     assert called == ['remove_groups', 'add_groups']
-
-
