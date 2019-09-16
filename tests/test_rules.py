@@ -392,14 +392,14 @@ def test_is_umapi_user_excluded(rule_processor):
 @mock.patch("user_sync.rules.RuleProcessor.create_umapi_commands_for_directory_user")
 def test_create_umapi_user(create_commands, rule_processor):
     rule_processor.directory_user_by_user_key['test'] = 'test'
+
     mock_command = MagicMock()
     create_commands.return_value = mock_command
-
     rule_processor.options['process_groups'] = True
     rule_processor.push_umapi = True
     rule_processor.create_umapi_user('test', set(), MagicMock(), MagicMock())
 
-    called = [c[0] for c in mock_command.mock_calls]
-    assert called == ['__bool__', 'remove_groups', 'add_groups']
+    called = [c[0] for c in mock_command.mock_calls][1:]
+    assert called == ['remove_groups', 'add_groups']
 
 
