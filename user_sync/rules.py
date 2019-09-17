@@ -681,6 +681,7 @@ class RuleProcessor(object):
         # make sure the actions get sent
         primary_connector.get_action_manager().flush()
 
+
     def get_user_attributes(self, directory_user):
         attributes = {}
         attributes['email'] = directory_user['email']

@@ -403,3 +403,44 @@ def test_create_umapi_user(create_commands, rule_processor):
     assert called == ['__bool__', 'remove_groups', 'add_groups']
 
 
+@mock.patch("user_sync.connector.umapi.Commands")
+def test_manage_strays(commands, rule_processor):
+    commands.return_value = mock.MagicMock()
+    umapi_connector = mock.MagicMock()
+    umapi_connector.get_primary_connector.return_value = mock.MagicMock()
+    rule_processor.stray_key_map = {None: {'federatedID,example@email.com,': {'user_group'}}}
+
+    rule_processor.options['disentitle_strays'] = True
+    rule_processor.manage_strays(umapi_connector)
+    called = [c[0] for c in commands.mock_calls]
+    assert '().remove_all_groups' in called
+
+    rule_processor.options['disentitle_strays'] = False
+    commands.mock_calls = []
+    rule_processor.options['remove_strays'] = True
+    rule_processor.manage_strays(umapi_connector)
+    called = [c[0] for c in commands.mock_calls]
+
+    assert '().remove_from_org' in called
+
+    rule_processor.options['remove_strays'] = False
+
+    commands.mock_calls = []
+    rule_processor.options['delete_strays'] = True
+    rule_processor.manage_strays(umapi_connector)
+    called = [c[0] for c in commands.mock_calls]
+    assert '().remove_from_org' in called
+
+    rule_processor.options['disentitle_strays'] = False
+    rule_processor.options['remove_strays'] = False
+    rule_processor.options['delete_strays'] = False
+    commands.mock_calls = []
+    rule_processor.manage_stray_groups = True
+    rule_processor.manage_strays(umapi_connector)
+    called = [c[0] for c in commands.mock_calls]
+    assert '().remove_groups' in called
+
+
+
+
+    rule_processor.manage_strays(umapi_connector)
