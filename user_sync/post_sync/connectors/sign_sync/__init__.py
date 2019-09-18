@@ -63,10 +63,10 @@ class SignConnector(PostSyncConnector):
             admin_roles = self.admin_roles.get(org_name, {})
             user_roles = self.resolve_new_roles(umapi_user, admin_roles)
             update_data = {
-                "email": umapi_user['email'],
-                "firstName": umapi_user['firstname'],
+                # "email": umapi_user['email'],
+                # "firstName": umapi_user['firstname'],
                 "groupId": group_id,
-                "lastName": umapi_user['lastname'],
+                # "lastName": umapi_user['lastname'],
                 "roles": user_roles,
             }
             if sign_user['group'] == assignment_group and self.roles_match(user_roles, sign_user['roles']):
