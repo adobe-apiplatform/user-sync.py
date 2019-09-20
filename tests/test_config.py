@@ -179,5 +179,3 @@ def test_get_directory_connector_module_name(tmp_config_files, modify_root_confi
 
     options['directory_connector_type'] = None
     assert not config_loader.get_directory_connector_module_name()
-
-# something
