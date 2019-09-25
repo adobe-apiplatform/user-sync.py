@@ -330,6 +330,11 @@ invocation_defaults:
   adobe_users: all
   # For argument --connector, the default is 'ldap'.
   connector: ldap
+  # For argument --ignore-outcast-users, the default is False (include all).
+  # If you set this default to True, UST will automatically ignore user creation
+  # on user that is not part of any group.
+  # --include-outcast-users to override the default.
+  ignore_outcast_users: No
   # For argument --process-groups, the default is False (don't process).
   # If you set this default to True, you can supply the argument
   # --no-process-groups to override the default.
