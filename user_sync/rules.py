@@ -325,8 +325,8 @@ class RuleProcessor(object):
     def will_process_groups(self):
         return self.options['process_groups']
 
-    def will_exclude_outcast_users(self):
-        return self.options['ignore_outcast_users']
+    def will_exclude_unmapped_users(self):
+        return self.options['exclude_unmapped_users']
 
     def get_umapi_info(self, umapi_name):
         umapi_info = self.umapi_info_by_name.get(umapi_name)
@@ -468,7 +468,7 @@ class RuleProcessor(object):
             verb = "Push"
         else:
             verb = "Sync"
-        ignore_outcast_users = self.will_exclude_outcast_users()
+        exclude_unmapped_users = self.will_exclude_unmapped_users()
         # first sync the primary connector, so the users get created in the primary
         if umapi_connectors.get_secondary_connectors():
             self.logger.debug('%sing users to primary umapi...', verb)
@@ -480,7 +480,7 @@ class RuleProcessor(object):
         else:
             primary_adds_by_user_key = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
         for user_key, groups_to_add in six.iteritems(primary_adds_by_user_key):
-            if ignore_outcast_users == True and not groups_to_add:
+            if exclude_unmapped_users == True and not groups_to_add:
                 # If user is not part of any group and ignore outcast is enabled. Do not create user.
                 pass
             else:
