@@ -6,4 +6,4 @@ enterprise:
   api_key: "api_key"
   client_secret: "client_secret"
   tech_acct: "tech_acct"
-  priv_key_path: private.key
+  priv_key_path: test_private.key

@@ -4,7 +4,6 @@ import yaml
 import shutil
 from util import update_dict
 from user_sync.config import ConfigFileLoader, ConfigLoader, DictConfig
-from user_sync import app
 from user_sync.error import AssertionException
 
 
@@ -37,9 +36,14 @@ def umapi_config_file(fixture_dir):
 
 
 @pytest.fixture
-def tmp_config_files(root_config_file, ldap_config_file, umapi_config_file, tmpdir):
+def private_key_config_file(fixture_dir):
+    return os.path.join(fixture_dir, 'test_private.key')
+
+
+@pytest.fixture
+def tmp_config_files(root_config_file, ldap_config_file, umapi_config_file, private_key_config_file, tmpdir):
     tmpfiles = []
-    for fname in [root_config_file, ldap_config_file, umapi_config_file]:
+    for fname in [root_config_file, ldap_config_file, umapi_config_file, private_key_config_file]:
         basename = os.path.split(fname)[-1]
         tmpfile = os.path.join(str(tmpdir), basename)
         shutil.copy(fname, tmpfile)
@@ -49,7 +53,7 @@ def tmp_config_files(root_config_file, ldap_config_file, umapi_config_file, tmpd
 
 @pytest.fixture
 def modify_root_config(tmp_config_files):
-    (root_config_file, _, _) = tmp_config_files
+    (root_config_file, _, _, _) = tmp_config_files
 
     def _modify_root_config(keys, val):
         conf = yaml.safe_load(open(root_config_file))
@@ -57,12 +61,13 @@ def modify_root_config(tmp_config_files):
         yaml.dump(conf, open(root_config_file, 'w'))
 
         return root_config_file
+
     return _modify_root_config
 
 
 @pytest.fixture
 def modify_ldap_config(tmp_config_files):
-    (_, ldap_config_file, _) = tmp_config_files
+    (_, ldap_config_file, _, _) = tmp_config_files
 
     def _modify_ldap_config(keys, val):
         conf = yaml.safe_load(open(ldap_config_file))
@@ -70,7 +75,22 @@ def modify_ldap_config(tmp_config_files):
         yaml.dump(conf, open(ldap_config_file, 'w'))
 
         return ldap_config_file
+
     return _modify_ldap_config
+
+
+@pytest.fixture
+def modify_umapi_config(tmp_config_files):
+    (_, _, umapi_config_file, _) = tmp_config_files
+
+    def _modify_umapi_config(keys, val):
+        conf = yaml.safe_load(open(umapi_config_file))
+        conf = update_dict(conf, keys, val)
+        yaml.dump(conf, open(umapi_config_file, 'w'))
+
+        return umapi_config_file
+
+    return _modify_umapi_config
 
 
 def test_load_root(root_config_file):
@@ -114,7 +134,7 @@ def test_additional_groups_config(modify_root_config, cli_args):
 
 
 def test_twostep_config(tmp_config_files, modify_ldap_config, cli_args):
-    (root_config_file, ldap_config_file, _) = tmp_config_files
+    (root_config_file, ldap_config_file, _, _) = tmp_config_files
     modify_ldap_config(['two_steps_lookup'], {})
 
     args = cli_args({'config_filename': root_config_file})
@@ -139,7 +159,7 @@ def test_twostep_config(tmp_config_files, modify_ldap_config, cli_args):
 
 
 def test_adobe_users_config(tmp_config_files, modify_root_config, cli_args):
-    (root_config_file, _, _) = tmp_config_files
+    (root_config_file, _, _, _) = tmp_config_files
     args = cli_args({'config_filename': root_config_file})
 
     # test default
@@ -162,3 +182,33 @@ def test_adobe_users_config(tmp_config_files, modify_root_config, cli_args):
     options = config_loader.load_invocation_options()
     assert 'adobe_users' in options
     assert options['adobe_users'] == ['mapped']
+
+
+def test_get_umapi_options(tmp_config_files, cli_args, modify_root_config):
+    (root_config_file, ldap_config_file, umapi_config_file, private_key_config_file) = tmp_config_files
+    args = cli_args({'config_filename': root_config_file})
+    config_loader = ConfigLoader(args)
+    primary, secondary = config_loader.get_umapi_options()
+    assert {'server', 'enterprise'} <= set(primary)
+    assert secondary == {}
+
+    args = cli_args({'config_filename': modify_root_config(['adobe_users', 'connectors', 'umapi'],
+                                                           [umapi_config_file,
+                                                            {'secondary_console': umapi_config_file}])})
+    config_loader = ConfigLoader(args)
+    primary, secondary = config_loader.get_umapi_options()
+    assert {'server', 'enterprise'} <= set(primary)
+    assert 'secondary_console' in secondary
+
+    args = cli_args({'config_filename': modify_root_config(['adobe_users', 'connectors', 'umapi'],
+                                                           [{'primary': umapi_config_file}, umapi_config_file])})
+    config_loader = ConfigLoader(args)
+    with pytest.raises(AssertionException) as error:
+        config_loader.get_umapi_options()
+    assert "Secondary umapi configuration found with no prefix:" in str(error.value)
+
+    args = cli_args({'config_filename': modify_root_config(['dashboard'], {})})
+    config_loader = ConfigLoader(args)
+    with pytest.raises(AssertionException) as error:
+        config_loader.get_umapi_options()
+    assert "Your main configuration file is still in v1 format." in str(error.value)
