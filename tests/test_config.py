@@ -186,28 +186,32 @@ def test_adobe_users_config(tmp_config_files, modify_root_config, cli_args):
 
 def test_get_umapi_options(tmp_config_files, cli_args, modify_root_config):
     (root_config_file, ldap_config_file, umapi_config_file, private_key_config_file) = tmp_config_files
+
+    # tests a single primary umapi configration
     args = cli_args({'config_filename': root_config_file})
     config_loader = ConfigLoader(args)
     primary, secondary = config_loader.get_umapi_options()
     assert {'server', 'enterprise'} <= set(primary)
     assert secondary == {}
 
-    args = cli_args({'config_filename': modify_root_config(['adobe_users', 'connectors', 'umapi'],
-                                                           [umapi_config_file,
-                                                            {'secondary_console': umapi_config_file}])})
+    # tests secondary connector
+    modify_root_config(['adobe_users', 'connectors', 'umapi'],
+                       [umapi_config_file, {'secondary_console': umapi_config_file}])
     config_loader = ConfigLoader(args)
     primary, secondary = config_loader.get_umapi_options()
     assert {'server', 'enterprise'} <= set(primary)
     assert 'secondary_console' in secondary
 
-    args = cli_args({'config_filename': modify_root_config(['adobe_users', 'connectors', 'umapi'],
-                                                           [{'primary': umapi_config_file}, umapi_config_file])})
+    # tests secondary umapi configuration assertion
+    modify_root_config(['adobe_users', 'connectors', 'umapi'],
+                       [{'primary': umapi_config_file}, umapi_config_file])
     config_loader = ConfigLoader(args)
     with pytest.raises(AssertionException) as error:
         config_loader.get_umapi_options()
     assert "Secondary umapi configuration found with no prefix:" in str(error.value)
 
-    args = cli_args({'config_filename': modify_root_config(['dashboard'], {})})
+    # tests v1 assertion
+    modify_root_config(['dashboard'], {})
     config_loader = ConfigLoader(args)
     with pytest.raises(AssertionException) as error:
         config_loader.get_umapi_options()
