@@ -736,24 +736,24 @@ def test_create_umapi_user(create_commands, rule_processor):
     assert called == ['remove_groups', 'add_groups']
 
 
-@mock.patch("user_sync.rules.RuleProcessor.update_umapi_users_for_connector")
-def test_example(update_umapi, rule_processor, mock_user_directory_data):
-
-    umapi_connectors = mock.MagicMock()
-    umapi_connectors.get_secondary_connectors.return_value = {}
-    rule_processor.create_umapi_user =  mock.MagicMock()
-
-    refined_users = {k:set(v.pop('groups')) for k, v in six.iteritems(mock_user_directory_data)}
-    update_umapi.return_value = refined_users
-
-    rule_processor.sync_umapi_users(umapi_connectors)
-    assert  rule_processor.primary_users_created == refined_users.keys()
-
-    results = [c.args[0:2] for c in rule_processor.create_umapi_user.mock_calls]
-    actual = [(k, v) for k, v in six.iteritems(refined_users)]
-    assert results == actual
-
-    print()
+# @mock.patch("user_sync.rules.RuleProcessor.update_umapi_users_for_connector")
+# def test_example(update_umapi, rule_processor, mock_user_directory_data):
+#
+#     umapi_connectors = mock.MagicMock()
+#     umapi_connectors.get_secondary_connectors.return_value = {}
+#     rule_processor.create_umapi_user =  mock.MagicMock()
+#
+#     refined_users = {k:set(v.pop('groups')) for k, v in six.iteritems(mock_user_directory_data)}
+#     update_umapi.return_value = refined_users
+#
+#     rule_processor.sync_umapi_users(umapi_connectors)
+#     assert  rule_processor.primary_users_created == refined_users.keys()
+#
+#     results = [c.args[0:2] for c in rule_processor.create_umapi_user.mock_calls]
+#     actual = [(k, v) for k, v in six.iteritems(refined_users)]
+#     assert results == actual
+#
+#     print()
 
     # rule_processor.directory_user_by_user_key['test'] = 'test'
     #
