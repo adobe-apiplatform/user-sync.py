@@ -1,10 +1,11 @@
 import os
+import shutil
+
 import pytest
 import yaml
-import shutil
 from util import update_dict
+
 from user_sync.config import ConfigFileLoader, ConfigLoader, DictConfig
-from user_sync import app
 from user_sync.error import AssertionException
 
 
@@ -162,3 +163,23 @@ def test_adobe_users_config(tmp_config_files, modify_root_config, cli_args):
     options = config_loader.load_invocation_options()
     assert 'adobe_users' in options
     assert options['adobe_users'] == ['mapped']
+
+
+def test_get_directory_connector_module_name(tmp_config_files, modify_root_config, cli_args):
+    (root_config_file, _, _) = tmp_config_files
+    args = cli_args({'config_filename': root_config_file})
+    config_loader = ConfigLoader(args)
+    options = config_loader.invocation_options
+    options['stray_list_input_path'] = 'something'
+    assert not config_loader.get_directory_connector_module_name()
+
+    options['directory_connector_type'] = 'csv'
+    options['stray_list_input_path'] = None
+    expected = 'user_sync.connector.directory_csv'
+    assert config_loader.get_directory_connector_module_name() == expected
+
+    options['directory_connector_type'] = None
+    assert not config_loader.get_directory_connector_module_name()
+
+
+
