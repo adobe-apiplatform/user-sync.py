@@ -751,17 +751,4 @@ def test_create_umapi_user(create_commands, rule_processor):
 #
 #     results = [c.args[0:2] for c in rule_processor.create_umapi_user.mock_calls]
 #     actual = [(k, v) for k, v in six.iteritems(refined_users)]
-#     assert results == actual
-# 
-#     print()
-#
-#     # rule_processor.directory_user_by_user_key['test'] = 'test'
-#     #
-#     # mock_command = MagicMock()
-#     # create_commands.return_value = mock_command
-#     # rule_processor.options['process_groups'] = True
-#     # rule_processor.push_umapi = True
-#     # rule_processor.create_umapi_user('test', set(), MagicMock(), MagicMock())
-#     #
-#     # called = [c[0] for c in mock_command.mock_calls][1:]
-#     # assert called == ['remove_groups', 'add_groups']
+
