@@ -3,7 +3,7 @@ import shutil
 
 import pytest
 import yaml
-from tests.util import update_dict
+from util import update_dict
 
 from user_sync.config import ConfigFileLoader, ConfigLoader, DictConfig
 from user_sync.error import AssertionException
@@ -180,23 +180,6 @@ def test_get_directory_connector_module_name(tmp_config_files, modify_root_confi
 
     options['directory_connector_type'] = None
     assert not config_loader.get_directory_connector_module_name()
-
-# def test_get_directory_connector_configs(tmp_config_files, modify_root_config, cli_args):
-#     (root_config_file, ldap_config_file, umapi_config_file) = tmp_config_files
-#     args = cli_args({'config_filename': root_config_file})
-#     config_loader = ConfigLoader(args)
-#     print(config_loader)
-#     config_loader.main_config.get_dict_config('directory', True)
-#     print(config_loader.)
-#     # dict_config = DictConfig.get_dict_config('directory_users', True)
-#     # print(dict_config)
-#     # connector.get_list('ldap', True)
-#     # connector.get_list('csv', True)
-#     # connector.get_list('okta', True)
-#     config_loader.get_directory_connector_configs()
-#     # print(connector)
-
-
 
 
 
