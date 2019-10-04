@@ -63,10 +63,10 @@ class SignConnector(PostSyncConnector):
             admin_roles = self.admin_roles.get(org_name, {})
             user_roles = self.resolve_new_roles(umapi_user, admin_roles)
             update_data = {
-                # "email": umapi_user['email'],
-                # "firstName": umapi_user['firstname'],
+                "email": sign_user['email'],
+                "firstName": sign_user['firstName'],
                 "groupId": group_id,
-                # "lastName": umapi_user['lastname'],
+                "lastName": sign_user['lastName'],
                 "roles": user_roles,
             }
             if sign_user['group'] == assignment_group and self.roles_match(user_roles, sign_user['roles']):
@@ -76,7 +76,7 @@ class SignConnector(PostSyncConnector):
                 sign_client.update_user(sign_user['userId'], update_data)
             except AssertionError as e:
                 self.logger.error("Error updating user {}".format(e))
-                return
+                continue
             self.logger.info("Updated Sign user '{}', Group: '{}', Roles: {}".format(
                 umapi_user['email'], assignment_group, update_data['roles']))
 
@@ -90,7 +90,7 @@ class SignConnector(PostSyncConnector):
     def resolve_new_roles(umapi_user, role_mapping):
         roles = set()
         for group in umapi_user['groups']:
-            sign_roles = role_mapping.get(group)
+            sign_roles = role_mapping.get(group.lower())
             if sign_roles is None:
                 continue
             roles.update(sign_roles)
@@ -133,9 +133,10 @@ class SignConnector(PostSyncConnector):
                 continue
             for g in adobe_groups:
                 group = AdobeGroup.create(g)
+                group_name = group.group_name.lower()
                 if group.umapi_name not in mapped_admin_roles:
                     mapped_admin_roles[group.umapi_name] = {}
-                if group.group_name not in mapped_admin_roles[group.umapi_name]:
-                    mapped_admin_roles[group.umapi_name][group.group_name] = set()
-                mapped_admin_roles[group.umapi_name][group.group_name].add(sign_role)
+                if group_name not in mapped_admin_roles[group.umapi_name]:
+                    mapped_admin_roles[group.umapi_name][group_name] = set()
+                mapped_admin_roles[group.umapi_name][group_name].add(sign_role)
         return mapped_admin_roles
