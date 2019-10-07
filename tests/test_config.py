@@ -10,20 +10,41 @@ from user_sync.config import ConfigFileLoader, ConfigLoader, DictConfig
 from user_sync.error import AssertionException
 
 
-
 @pytest.fixture
-def setup(fixture_dir, tmpdir):
+def config_files(fixture_dir, tmpdir):
     config_files = {
         'ldap': 'connector-ldap.yml',
         'umapi': 'connector-umapi.yml',
-        'config': 'user-sync-config.yml',
+        'root_config': 'user-sync-config.yml',
         'extension': 'extension-config.yml',
     }
 
     for k, n in six.iteritems(config_files):
-        shutil.copy(os.path.join(fixture_dir, 'config_files', n), tmpdir)
+        shutil.copy(os.path.join(fixture_dir, n), tmpdir)
         config_files[k] = os.path.join(tmpdir, n)
     return config_files
+
+@pytest.fixture
+def modify_config_file(config_files):
+    def _modify_config_file(name, key, value):
+        path = config_files[name]
+        conf = yaml.safe_load(open(path))
+        merge_dict(conf, make_dict(key, value))
+        yaml.dump(conf, open(path, 'w'))
+        return path
+
+    return _modify_config_file
+
+# A shortcut for root
+@pytest.fixture
+def modify_root_config_file(modify_config_file):
+    def _modify_root_config_file(key, value):
+        return modify_config_file('root_config', key, value)
+    return _modify_root_config_file
+
+
+
+
 
 
 # @pytest.fixture
@@ -34,103 +55,77 @@ def setup(fixture_dir, tmpdir):
 #
 #     return _get_config_files
 
-
-@pytest.fixture
-def modify_config_file(setup):
-    def _modify_config_file(name, key, value):
-        path = setup[name]
-        conf = yaml.safe_load(open(path))
-        merge_dict(conf, make_dict(key, value))
-        yaml.dump(conf, open(path, 'w'))
-        return path
-
-    return _modify_config_file
+# @pytest.fixture
+# def root_config_file(fixture_dir):
+#     return os.path.join(fixture_dir, 'user-sync-config.yml')
 
 
-def test_setup(modify_config_file):
-
-
-    modify_config_file('config', ['limits', 'max_adobe_only_users'], "XXX")
-    print()
-    pass
-
-
-@pytest.fixture
-def modify_config(fixture_dir, tmpdir):
-    pass
-
-
-@pytest.fixture
-def root_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'user-sync-config.yml')
-
-
-@pytest.fixture
-def ldap_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'connector-ldap.yml')
-
-
-@pytest.fixture
-def umapi_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'connector-umapi.yml')
-
-
-@pytest.fixture
-def private_key_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'test_private.key')
-
-
-@pytest.fixture
-def tmp_config_files(root_config_file, ldap_config_file, umapi_config_file, private_key_config_file, tmpdir):
-    tmpfiles = []
-    for fname in [root_config_file, ldap_config_file, umapi_config_file, private_key_config_file]:
-        basename = os.path.split(fname)[-1]
-        tmpfile = os.path.join(str(tmpdir), basename)
-        shutil.copy(fname, tmpfile)
-        tmpfiles.append(tmpfile)
-    return tuple(tmpfiles)
-
-
-@pytest.fixture
-def modify_root_config(tmp_config_files):
-    (root_config_file, _, _, _) = tmp_config_files
-
-    def _modify_root_config(keys, val):
-        conf = yaml.safe_load(open(root_config_file))
-        conf = update_dict(conf, keys, val)
-        yaml.dump(conf, open(root_config_file, 'w'))
-
-        return root_config_file
-
-    return _modify_root_config
-
-
-@pytest.fixture
-def modify_ldap_config(tmp_config_files):
-    (_, ldap_config_file, _, _) = tmp_config_files
-
-    def _modify_ldap_config(keys, val):
-        conf = yaml.safe_load(open(ldap_config_file))
-        conf = update_dict(conf, keys, val)
-        yaml.dump(conf, open(ldap_config_file, 'w'))
-
-        return ldap_config_file
-
-    return _modify_ldap_config
-
-
-@pytest.fixture
-def modify_umapi_config(tmp_config_files):
-    (_, _, umapi_config_file, _) = tmp_config_files
-
-    def _modify_umapi_config(keys, val):
-        conf = yaml.safe_load(open(umapi_config_file))
-        conf = update_dict(conf, keys, val)
-        yaml.dump(conf, open(umapi_config_file, 'w'))
-
-        return umapi_config_file
-
-    return _modify_umapi_config
+# @pytest.fixture
+# def ldap_config_file(fixture_dir):
+#     return os.path.join(fixture_dir, 'connector-ldap.yml')
+#
+#
+# @pytest.fixture
+# def umapi_config_file(fixture_dir):
+#     return os.path.join(fixture_dir, 'connector-umapi.yml')
+#
+#
+# @pytest.fixture
+# def private_key_config_file(fixture_dir):
+#     return os.path.join(fixture_dir, 'test_private.key')
+#
+#
+# @pytest.fixture
+# def tmp_config_files(root_config_file, ldap_config_file, umapi_config_file, private_key_config_file, tmpdir):
+#     tmpfiles = []
+#     for fname in [root_config_file, ldap_config_file, umapi_config_file, private_key_config_file]:
+#         basename = os.path.split(fname)[-1]
+#         tmpfile = os.path.join(str(tmpdir), basename)
+#         shutil.copy(fname, tmpfile)
+#         tmpfiles.append(tmpfile)
+#     return tuple(tmpfiles)
+#
+#
+# @pytest.fixture
+# def modify_root_config(tmp_config_files):
+#     (root_config_file, _, _, _) = tmp_config_files
+#
+#     def _modify_root_config(keys, val):
+#         conf = yaml.safe_load(open(root_config_file))
+#         conf = update_dict(conf, keys, val)
+#         yaml.dump(conf, open(root_config_file, 'w'))
+#
+#         return root_config_file
+#
+#     return _modify_root_config
+#
+#
+# @pytest.fixture
+# def modify_ldap_config(tmp_config_files):
+#     (_, ldap_config_file, _, _) = tmp_config_files
+#
+#     def _modify_ldap_config(keys, val):
+#         conf = yaml.safe_load(open(ldap_config_file))
+#         conf = update_dict(conf, keys, val)
+#         yaml.dump(conf, open(ldap_config_file, 'w'))
+#
+#         return ldap_config_file
+#
+#     return _modify_ldap_config
+#
+#
+# @pytest.fixture
+# def modify_umapi_config(tmp_config_files):
+#     (_, _, umapi_config_file, _) = tmp_config_files
+#
+#     def _modify_umapi_config(keys, val):
+#         conf = yaml.safe_load(open(umapi_config_file))
+#         conf = update_dict(conf, keys, val)
+#         yaml.dump(conf, open(umapi_config_file, 'w'))
+#
+#         return umapi_config_file
+#
+#     return _modify_umapi_config
 
 
 def load_ldap_config_options(args):
@@ -146,17 +141,17 @@ def load_ldap_config_options(args):
     return LDAPDirectoryConnector.get_options(caller_config)
 
 
-def test_load_root(root_config_file):
+def test_load_root(config_files):
     """Load root config file and test for presence of root-level keys"""
-    config = ConfigFileLoader.load_root_config(root_config_file)
+    config = ConfigFileLoader.load_root_config(config_files['root_config'])
     assert isinstance(config, dict)
     assert ('adobe_users' in config and 'directory_users' in config and
             'logging' in config and 'limits' in config and
             'invocation_defaults' in config)
 
 
-def test_max_adobe_percentage(modify_root_config, cli_args):
-    root_config_file = modify_root_config(['limits', 'max_adobe_only_users'], "50%")
+def test_max_adobe_percentage(modify_root_config_file, cli_args):
+    root_config_file = modify_root_config_file(['limits', 'max_adobe_only_users'], "50%")
     config = ConfigFileLoader.load_root_config(root_config_file)
     assert ('limits' in config and 'max_adobe_only_users' in config['limits'] and
             config['limits']['max_adobe_only_users'] == "50%")
@@ -166,12 +161,12 @@ def test_max_adobe_percentage(modify_root_config, cli_args):
     options = ConfigLoader(args).get_rule_options()
     assert 'max_adobe_only_users' in options and options['max_adobe_only_users'] == '50%'
 
-    modify_root_config(['limits', 'max_adobe_only_users'], "error%")
+    modify_config_file('root_config', ['limits', 'max_adobe_only_users'], "error%")
     with pytest.raises(AssertionException):
         ConfigLoader(args).get_rule_options()
 
 
-def test_additional_groups_config(modify_root_config, cli_args):
+def test_additional_groups_config(modify_config_file, cli_args):
     addl_groups = [
         {
             "source": r"ACL-(.+)",
@@ -180,7 +175,7 @@ def test_additional_groups_config(modify_root_config, cli_args):
             "source": r"(.+)-ACL",
             "target": r"ACL-Grp-(\1)"},
     ]
-    root_config_file = modify_root_config(['directory_users', 'additional_groups'], addl_groups)
+    root_config_file = modify_config_file('root_config', ['directory_users', 'additional_groups'], addl_groups)
     config = ConfigFileLoader.load_root_config(root_config_file)
     assert ('additional_groups' in config['directory_users'] and
             len(config['directory_users']['additional_groups']) == 2)
