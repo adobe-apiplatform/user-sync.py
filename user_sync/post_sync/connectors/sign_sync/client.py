@@ -96,7 +96,7 @@ class SignClient:
         groups = {}
         sign_groups = res.json()
         for group in sign_groups['groupInfoList']:
-            groups[group['groupName']] = group['groupId']
+            groups[group['groupName'].lower()] = group['groupId']
         return groups
 
     def create_group(self, group):

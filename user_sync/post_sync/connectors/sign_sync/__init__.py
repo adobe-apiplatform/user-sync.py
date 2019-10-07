@@ -9,7 +9,7 @@ from .client import SignClient
 class SignConnector(PostSyncConnector):
     name = 'sign_sync'
 
-    def __init__(self, config_options):
+    def __init__(self, config_options, test_mode=False):
         super().__init__()
         self.logger = logging.getLogger(self.name)
         sync_config = DictConfig('<%s configuration>' % self.name, config_options)
@@ -30,6 +30,7 @@ class SignConnector(PostSyncConnector):
         for sign_org_config in sign_orgs:
             sign_client = SignClient(sign_org_config)
             self.clients[sign_client.console_org] = sign_client
+        self.test_mode = test_mode
 
     def run(self, post_sync_data):
         """
@@ -37,6 +38,9 @@ class SignConnector(PostSyncConnector):
         :param post_sync_data:
         :return:
         """
+        if self.test_mode:
+            self.logger.info("Sign Sync disabled in test mode")
+            return
         for org_name, sign_client in self.clients.items():
             # create any new Sign groups
             for new_group in set(self.user_groups[org_name]) - set(sign_client.groups):
@@ -115,7 +119,7 @@ class SignConnector(PostSyncConnector):
         processed_groups = defaultdict(list)
         for g in groups:
             processed_group = AdobeGroup.create(g)
-            processed_groups[processed_group.umapi_name].append(processed_group.group_name)
+            processed_groups[processed_group.umapi_name].append(processed_group.group_name.lower())
         return processed_groups
 
     @staticmethod

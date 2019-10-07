@@ -338,7 +338,7 @@ def begin_work(config_loader):
     post_sync_config = config_loader.get_post_sync_options()
     if rule_config['strategy'] == 'sync':
         if post_sync_config:
-            post_sync_manager = PostSyncManager(post_sync_config)
+            post_sync_manager = PostSyncManager(post_sync_config, rule_config['test_mode'])
             rule_config['extended_attributes'] |= post_sync_manager.get_directory_attributes()
     else:
         logger.warn('Post-Sync Connectors only support "sync" strategy')

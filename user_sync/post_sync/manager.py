@@ -5,14 +5,14 @@ from .connectors import get_connector
 
 
 class PostSyncManager:
-    def __init__(self, post_sync_config):
+    def __init__(self, post_sync_config, test_mode):
         self.config = post_sync_config
         self.logger = logging.getLogger("post-sync")
         self.umapi_users = {}
 
         # Assemble to connector list
         self.connectors = [
-            get_connector(m, c) for m, c in six.iteritems(self.config['modules'])
+            get_connector(m, c, test_mode) for m, c in six.iteritems(self.config['modules'])
         ]
 
     def get_directory_attributes(self):
@@ -56,16 +56,17 @@ class PostSyncData:
             user_store_data = self._umapi_data_template()
 
         updated_store_data = deepcopy(user_store_data)
+        groups_to_add = set(self._normalize_groups(add_groups))
         for k in updated_store_data:
             if k not in kwargs:
                 continue
             if k == 'groups':
-                add_groups = list(set(add_groups) | set(kwargs[k]))
+                groups_to_add |= set(self._normalize_groups(kwargs[k]))
             else:
                 updated_store_data[k] = kwargs[k]
 
-        updated_store_data['groups'] |= set(add_groups)
-        updated_store_data['groups'] -= set(remove_groups)
+        updated_store_data['groups'] |= groups_to_add
+        updated_store_data['groups'] -= set(self._normalize_groups(remove_groups))
 
         self.umapi_data[org_id][user_key] = updated_store_data
 
@@ -84,3 +85,7 @@ class PostSyncData:
             'groups': set(),
             'country': None,
         }
+
+    @staticmethod
+    def _normalize_groups(groups):
+        return [g.lower() for g in groups]
