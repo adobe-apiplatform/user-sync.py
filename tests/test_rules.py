@@ -726,6 +726,10 @@ def mock_umapi_user_data():
 def test_create_umapi_user(create_commands, rule_processor):
     rule_processor.directory_user_by_user_key['test'] = 'test'
 
+    x = UmapiTargetInfo('x')
+    x.add_mapped_group("Addd")
+    y = x.get_mapped_groups()
+    rule_processor.get_umapi_info()
     mock_command = MagicMock()
     create_commands.return_value = mock_command
     rule_processor.options['process_groups'] = True

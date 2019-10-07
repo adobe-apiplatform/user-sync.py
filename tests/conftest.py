@@ -11,7 +11,6 @@ def fixture_dir():
         os.path.join(
             os.path.dirname(__file__), 'fixture'))
 
-
 @pytest.fixture
 def cli_args():
     def _cli_args(args_in):

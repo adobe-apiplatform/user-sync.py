@@ -2,24 +2,62 @@ import os
 import shutil
 
 import pytest
+import six
 import yaml
-from util import update_dict
 
+from tests.util import update_dict, make_dict, merge_dict
 from user_sync.config import ConfigFileLoader, ConfigLoader, DictConfig
 from user_sync.error import AssertionException
 
 
-def load_ldap_config_options(args):
-    from user_sync.connector.directory import DirectoryConnector
-    from user_sync.connector.directory_ldap import LDAPDirectoryConnector
 
-    config_loader = ConfigLoader(args)
-    dc_mod_name = config_loader.get_directory_connector_module_name()
-    dc_mod = __import__(dc_mod_name, fromlist=[''])
-    dc = DirectoryConnector(dc_mod)
-    dc_config_options = config_loader.get_directory_connector_options(dc.name)
-    caller_config = DictConfig('%s configuration' % dc.name, dc_config_options)
-    return LDAPDirectoryConnector.get_options(caller_config)
+@pytest.fixture
+def setup(fixture_dir, tmpdir):
+    config_files = {
+        'ldap': 'connector-ldap.yml',
+        'umapi': 'connector-umapi.yml',
+        'config': 'user-sync-config.yml',
+        'extension': 'extension-config.yml',
+    }
+
+    for k, n in six.iteritems(config_files):
+        shutil.copy(os.path.join(fixture_dir, 'config_files', n), tmpdir)
+        config_files[k] = os.path.join(tmpdir, n)
+    return config_files
+
+
+# @pytest.fixture
+# def get_config_files(config_files):
+#     def _get_config_files(*keys):
+#         all = tuple(v for k, v in six.iteritems(config_files) if k in keys)
+#         return all[0] if len(all) == 1 else all
+#
+#     return _get_config_files
+
+
+@pytest.fixture
+def modify_config_file(setup):
+    def _modify_config_file(name, key, value):
+        path = setup[name]
+        conf = yaml.safe_load(open(path))
+        merge_dict(conf, make_dict(key, value))
+        yaml.dump(conf, open(path, 'w'))
+        return path
+
+    return _modify_config_file
+
+
+def test_setup(modify_config_file):
+
+
+    modify_config_file('config', ['limits', 'max_adobe_only_users'], "XXX")
+    print()
+    pass
+
+
+@pytest.fixture
+def modify_config(fixture_dir, tmpdir):
+    pass
 
 
 @pytest.fixture
@@ -95,6 +133,19 @@ def modify_umapi_config(tmp_config_files):
     return _modify_umapi_config
 
 
+def load_ldap_config_options(args):
+    from user_sync.connector.directory import DirectoryConnector
+    from user_sync.connector.directory_ldap import LDAPDirectoryConnector
+
+    config_loader = ConfigLoader(args)
+    dc_mod_name = config_loader.get_directory_connector_module_name()
+    dc_mod = __import__(dc_mod_name, fromlist=[''])
+    dc = DirectoryConnector(dc_mod)
+    dc_config_options = config_loader.get_directory_connector_options(dc.name)
+    caller_config = DictConfig('%s configuration' % dc.name, dc_config_options)
+    return LDAPDirectoryConnector.get_options(caller_config)
+
+
 def test_load_root(root_config_file):
     """Load root config file and test for presence of root-level keys"""
     config = ConfigFileLoader.load_root_config(root_config_file)
@@ -110,7 +161,8 @@ def test_max_adobe_percentage(modify_root_config, cli_args):
     assert ('limits' in config and 'max_adobe_only_users' in config['limits'] and
             config['limits']['max_adobe_only_users'] == "50%")
 
-    args = cli_args({'config_filename': root_config_file})
+    args = cli_args({
+        'config_filename': root_config_file})
     options = ConfigLoader(args).get_rule_options()
     assert 'max_adobe_only_users' in options and options['max_adobe_only_users'] == '50%'
 
@@ -121,15 +173,20 @@ def test_max_adobe_percentage(modify_root_config, cli_args):
 
 def test_additional_groups_config(modify_root_config, cli_args):
     addl_groups = [
-        {"source": r"ACL-(.+)", "target": r"ACL-Grp-(\1)"},
-        {"source": r"(.+)-ACL", "target": r"ACL-Grp-(\1)"},
+        {
+            "source": r"ACL-(.+)",
+            "target": r"ACL-Grp-(\1)"},
+        {
+            "source": r"(.+)-ACL",
+            "target": r"ACL-Grp-(\1)"},
     ]
     root_config_file = modify_root_config(['directory_users', 'additional_groups'], addl_groups)
     config = ConfigFileLoader.load_root_config(root_config_file)
     assert ('additional_groups' in config['directory_users'] and
             len(config['directory_users']['additional_groups']) == 2)
 
-    args = cli_args({'config_filename': root_config_file})
+    args = cli_args({
+        'config_filename': root_config_file})
     options = ConfigLoader(args).get_rule_options()
     assert addl_groups[0]['source'] in options['additional_groups'][0]['source'].pattern
     assert addl_groups[1]['source'] in options['additional_groups'][1]['source'].pattern
@@ -139,7 +196,8 @@ def test_twostep_config(tmp_config_files, modify_ldap_config, cli_args):
     (root_config_file, ldap_config_file, _, _) = tmp_config_files
     modify_ldap_config(['two_steps_lookup'], {})
 
-    args = cli_args({'config_filename': root_config_file})
+    args = cli_args({
+        'config_filename': root_config_file})
 
     # test invalid "two_steps_lookup" config
     with pytest.raises(AssertionException):
@@ -162,7 +220,8 @@ def test_twostep_config(tmp_config_files, modify_ldap_config, cli_args):
 
 def test_adobe_users_config(tmp_config_files, modify_root_config, cli_args):
     (root_config_file, _, _, _) = tmp_config_files
-    args = cli_args({'config_filename': root_config_file})
+    args = cli_args({
+        'config_filename': root_config_file})
 
     # test default
     config_loader = ConfigLoader(args)
@@ -179,18 +238,21 @@ def test_adobe_users_config(tmp_config_files, modify_root_config, cli_args):
 
     # test command line param
     modify_root_config(['invocation_defaults', 'adobe_users'], "all")
-    args = cli_args({'config_filename': root_config_file, 'adobe_users': ['mapped']})
+    args = cli_args({
+        'config_filename': root_config_file,
+        'adobe_users': ['mapped']})
     config_loader = ConfigLoader(args)
     options = config_loader.load_invocation_options()
     assert 'adobe_users' in options
     assert options['adobe_users'] == ['mapped']
-    
+
 
 def test_get_umapi_options(tmp_config_files, cli_args, modify_root_config):
     (root_config_file, ldap_config_file, umapi_config_file, private_key_config_file) = tmp_config_files
 
     # tests a single primary umapi configration
-    args = cli_args({'config_filename': root_config_file})
+    args = cli_args({
+        'config_filename': root_config_file})
     config_loader = ConfigLoader(args)
     primary, secondary = config_loader.get_umapi_options()
     assert {'server', 'enterprise'} <= set(primary)
@@ -198,7 +260,8 @@ def test_get_umapi_options(tmp_config_files, cli_args, modify_root_config):
 
     # tests secondary connector
     modify_root_config(['adobe_users', 'connectors', 'umapi'],
-                       [umapi_config_file, {'secondary_console': umapi_config_file}])
+                       [umapi_config_file, {
+                           'secondary_console': umapi_config_file}])
     config_loader = ConfigLoader(args)
     primary, secondary = config_loader.get_umapi_options()
     assert {'server', 'enterprise'} <= set(primary)
@@ -206,7 +269,8 @@ def test_get_umapi_options(tmp_config_files, cli_args, modify_root_config):
 
     # tests secondary umapi configuration assertion
     modify_root_config(['adobe_users', 'connectors', 'umapi'],
-                       [{'primary': umapi_config_file}, umapi_config_file])
+                       [{
+                           'primary': umapi_config_file}, umapi_config_file])
     config_loader = ConfigLoader(args)
     with pytest.raises(AssertionException) as error:
         config_loader.get_umapi_options()
@@ -219,9 +283,11 @@ def test_get_umapi_options(tmp_config_files, cli_args, modify_root_config):
         config_loader.get_umapi_options()
     assert "Your main configuration file is still in v1 format." in str(error.value)
 
+
 def test_get_directory_connector_configs(tmp_config_files, modify_root_config, cli_args):
     (root_config_file, ldap_config_file, _) = tmp_config_files
-    args = cli_args({'config_filename': root_config_file})
+    args = cli_args({
+        'config_filename': root_config_file})
     config_loader = ConfigLoader(args)
     config_loader.get_directory_connector_configs()
 
@@ -232,11 +298,12 @@ def test_get_directory_connector_configs(tmp_config_files, modify_root_config, c
     # Test method to verify 'okta', 'csv', 'ldap' are in the accessed_keys set
     result = config_loader.main_config.child_configs.get('directory_users').child_configs['connectors'].accessed_keys
     assert result == {'okta', 'csv', 'ldap'}
-    
+
 
 def test_get_directory_connector_module_name(tmp_config_files, modify_root_config, cli_args):
     (root_config_file, _, _) = tmp_config_files
-    args = cli_args({'config_filename': root_config_file})
+    args = cli_args({
+        'config_filename': root_config_file})
     config_loader = ConfigLoader(args)
     options = config_loader.invocation_options
     options['stray_list_input_path'] = 'something'
@@ -249,5 +316,3 @@ def test_get_directory_connector_module_name(tmp_config_files, modify_root_confi
 
     options['directory_connector_type'] = None
     assert not config_loader.get_directory_connector_module_name()
-
-
