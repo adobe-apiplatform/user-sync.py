@@ -32,7 +32,7 @@ def test_guess_delimiter_from_filename(adapter):
     assert adapter.guess_delimiter_from_filename('test.mtv') == '\t'
 
 
-def test_read_csv_rows(adapter, field_names):
+def test_read_csv_rows(adapter, field_names, fixture_dir):
     formatted_result = [{'firstname': 'Dark', 'lastname': 'Wizard', 'email': 'dwizardexample.com', 'country': 'US', 'groups': 'Daleks_Info', 'type': 'federatedID', 'username': None, 'domain': None, 'untracked': None, 'extraattribute': None},
                         {'firstname': '', 'lastname': 'Yennant', 'email': 'dYennant@example.com', 'country': 'US', 'groups': 'Daleks_Info', 'type': 'federatedID', 'username': None, 'domain': None, 'untracked': None, 'extraattribute': None},
                         {'firstname': 'Debra', 'lastname': '', 'email': 'debmorgan@example.com', 'country': 'US', 'groups': 'Daleks_Info', 'type': 'federatedID', 'username': None, 'domain': None, 'untracked': None, 'extraattribute': None},
@@ -45,7 +45,7 @@ def test_read_csv_rows(adapter, field_names):
                         {'firstname': '', 'lastname': '', 'email': '', 'country': '', 'groups': '', 'type': '', 'username': '', 'domain': '', 'untracked': '', 'extraattribute': ''},
                         {'firstname': '', 'lastname': 'Dorathy', 'email': '', 'country': '', 'groups': '', 'type': '', 'username': '', 'domain': '', 'untracked': None, 'extraattribute': None}]
 
-    path = os.path.join('tests', 'fixture', 'test_csv_data.csv')
+    path = os.path.join(fixture_dir, "test_csv_data.csv")
     csv_yield = list(adapter.read_csv_rows(path, field_names))
     reduced_output = [dict(e) for e in csv_yield]
     assert reduced_output == formatted_result
