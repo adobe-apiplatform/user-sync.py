@@ -1,5 +1,7 @@
 import os
+
 import pytest
+
 from user_sync.connector.directory_csv import *
 
 
@@ -13,12 +15,13 @@ def default_caller_options():
             'identity_type_column_name': 'type',
             'username_column_name': 'username',
             'domain_column_name': 'domain',
-            'file_path': os.path.join('tests', 'fixture', 'test_csv_data.csv'),
+            'file_path': None,
             'user_identity_type': 'federatedID'}
 
 
 @pytest.fixture()
-def csv_connector(default_caller_options):
+def csv_connector(default_caller_options, fixture_dir):
+    default_caller_options['file_path'] = os.path.join(fixture_dir, "test_csv_data.csv")
     return CSVDirectoryConnector(default_caller_options)
 
 
@@ -40,7 +43,7 @@ def user_list():
                                  'source_attributes': {'email': 'rroe@example.com', 'firstname': 'Richard', 'lastname': 'Roe', 'country': 'US', 'groups': 'AdobeCC-All', 'type': None, 'username': None, 'domain': None, 'extraattribute': None}}}
 
 
-def test_read_users(csv_connector, user_list):
+def test_read_users(csv_connector, user_list, fixture_dir):
     returned_users_list = csv_connector.read_users(csv_connector.options['file_path'], ['extraattribute'])
     assert returned_users_list == user_list
 
