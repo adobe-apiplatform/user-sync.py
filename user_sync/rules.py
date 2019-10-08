@@ -639,16 +639,19 @@ class RuleProcessor(object):
                     if disentitle_strays:
                         self.logger.info('Removing all adobe groups in %s for Adobe-only user: %s',
                                          umapi_name, user_key)
+                        self.post_sync_data.remove_umapi_user_groups(umapi_name, user_key)
                         commands.remove_all_groups()
                     elif remove_strays or delete_strays:
                         self.logger.info('Removing Adobe-only user from %s: %s',
                                          umapi_name, user_key)
+                        self.post_sync_data.remove_umapi_user(umapi_name, user_key)
                         commands.remove_from_org(False)
                     elif manage_stray_groups:
                         groups_to_remove = secondary_strays[user_key]
                         if groups_to_remove:
                             self.logger.info('Removing mapped groups in %s from Adobe-only user: %s',
                                              umapi_name, user_key)
+                            self.post_sync_data.update_umapi_data(umapi_name, user_key, [], groups_to_remove)
                             commands.remove_groups(groups_to_remove)
                         else:
                             continue
@@ -665,15 +668,18 @@ class RuleProcessor(object):
             commands = get_commands(user_key)
             if disentitle_strays:
                 self.logger.info('Removing all adobe groups for Adobe-only user: %s', user_key)
+                self.post_sync_data.remove_umapi_user_groups(None, user_key)
                 commands.remove_all_groups()
             elif remove_strays or delete_strays:
                 action = "Deleting" if delete_strays else "Removing"
                 self.logger.info('%s Adobe-only user: %s', action, user_key)
+                self.post_sync_data.remove_umapi_user(None, user_key)
                 commands.remove_from_org(True if delete_strays else False)
             elif manage_stray_groups:
                 groups_to_remove = primary_strays[user_key]
                 if groups_to_remove:
                     self.logger.info('Removing mapped groups from Adobe-only user: %s', user_key)
+                    self.post_sync_data.update_umapi_data(None, user_key, [], groups_to_remove)
                     commands.remove_groups(groups_to_remove)
                 else:
                     continue

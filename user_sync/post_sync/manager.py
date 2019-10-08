@@ -70,6 +70,19 @@ class PostSyncData:
 
         self.umapi_data[org_id][user_key] = updated_store_data
 
+    def remove_umapi_user_groups(self, org_id, user_key):
+        umapi_data = self.umapi_data.get(org_id)
+        user_store_data = umapi_data.get(user_key)
+        if user_store_data is None:
+            return
+        user_store_data['groups'] = []
+
+    def remove_umapi_user(self, org_id, user_key):
+        umapi_data = self.umapi_data.get(org_id)
+        if user_key not in umapi_data:
+            return
+        del umapi_data[user_key]
+
     def update_source_attributes(self, user_key, source_attributes):
         self.source_attributes[user_key] = source_attributes
 

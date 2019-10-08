@@ -60,9 +60,10 @@ class SignConnector(PostSyncConnector):
             common_groups = set(self.user_groups[org_name]) & set(umapi_user['groups'])
 
             if not common_groups:
-                continue
+                assignment_group = sign_client.DEFAULT_GROUP_NAME
+            else:
+                assignment_group = sorted(list(common_groups))[0]
 
-            assignment_group = sorted(list(common_groups))[0]
             group_id = sign_client.groups.get(assignment_group)
             admin_roles = self.admin_roles.get(org_name, {})
             user_roles = self.resolve_new_roles(umapi_user, admin_roles)
