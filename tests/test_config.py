@@ -2,6 +2,7 @@ import os
 import pytest
 import yaml
 import shutil
+from mock import MagicMock
 from util import update_dict
 from user_sync.config import ConfigFileLoader, ConfigLoader, DictConfig
 from user_sync import app
@@ -37,9 +38,14 @@ def umapi_config_file(fixture_dir):
 
 
 @pytest.fixture
-def tmp_config_files(root_config_file, ldap_config_file, umapi_config_file, tmpdir):
+def extension_config_file(fixture_dir):
+    return os.path.join(fixture_dir, 'extension-config.yml')
+
+
+@pytest.fixture
+def tmp_config_files(root_config_file, ldap_config_file, umapi_config_file, extension_config_file, tmpdir):
     tmpfiles = []
-    for fname in [root_config_file, ldap_config_file, umapi_config_file]:
+    for fname in [root_config_file, ldap_config_file, umapi_config_file, extension_config_file]:
         basename = os.path.split(fname)[-1]
         tmpfile = os.path.join(str(tmpdir), basename)
         shutil.copy(fname, tmpfile)
@@ -49,7 +55,7 @@ def tmp_config_files(root_config_file, ldap_config_file, umapi_config_file, tmpd
 
 @pytest.fixture
 def modify_root_config(tmp_config_files):
-    (root_config_file, _, _) = tmp_config_files
+    (root_config_file, _, _, _) = tmp_config_files
 
     def _modify_root_config(keys, val):
         conf = yaml.safe_load(open(root_config_file))
@@ -57,12 +63,27 @@ def modify_root_config(tmp_config_files):
         yaml.dump(conf, open(root_config_file, 'w'))
 
         return root_config_file
+
     return _modify_root_config
 
 
 @pytest.fixture
+def modify_root_extension_config(tmp_config_files):
+    (_, _, _, extension_config_file) = tmp_config_files
+
+    def _modify_root_extension_config(keys, val):
+        conf = yaml.safe_load(open(extension_config_file))
+        conf = update_dict(conf, keys, val)
+        yaml.dump(conf, open(extension_config_file, 'w'))
+
+        return extension_config_file
+
+    return _modify_root_extension_config
+
+
+@pytest.fixture
 def modify_ldap_config(tmp_config_files):
-    (_, ldap_config_file, _) = tmp_config_files
+    (_, ldap_config_file, _,) = tmp_config_files
 
     def _modify_ldap_config(keys, val):
         conf = yaml.safe_load(open(ldap_config_file))
@@ -70,6 +91,7 @@ def modify_ldap_config(tmp_config_files):
         yaml.dump(conf, open(ldap_config_file, 'w'))
 
         return ldap_config_file
+
     return _modify_ldap_config
 
 
@@ -162,3 +184,91 @@ def test_adobe_users_config(tmp_config_files, modify_root_config, cli_args):
     options = config_loader.load_invocation_options()
     assert 'adobe_users' in options
     assert options['adobe_users'] == ['mapped']
+
+
+def test_get_directory_connector_options(tmp_config_files, modify_root_config, cli_args):
+    (root_config_file, ldap_config_file, _) = tmp_config_files
+    args = cli_args({'config_filename': root_config_file})
+    config_loader = ConfigLoader(args)
+    with open(ldap_config_file, 'r') as rc:
+        x = yaml.safe_load(rc)
+    # test when 'ldap' is the connector_name
+
+    assert config_loader.get_directory_connector_options('ldap') == x
+
+    # test when 'csv' is the connector_name
+
+    assert config_loader.get_directory_connector_options('csv') == {}
+
+    # test when the connector_name is not 'csv' and also neither in the connector_config value
+
+    pytest.raises(AssertionException, config_loader.get_directory_connector_options, connector_name='example')
+
+
+def test_get_dict_from_sources(tmp_config_files, modify_root_config, cli_args):
+    (root_config_file, ldap_config_file, _) = tmp_config_files
+    args = cli_args({'config_filename': root_config_file})
+    config_loader = ConfigLoader(args)
+    with open(root_config_file, 'r') as rc:
+        x = yaml.safe_load(rc)
+
+    with open(ldap_config_file, 'r') as rc:
+        x.update(yaml.safe_load(rc))
+
+    # Test when  the list of sources is empty
+
+    assert config_loader.get_dict_from_sources([]) == {}
+
+    # Test when the list of sources is not empty
+
+    y = config_loader.get_dict_from_sources([root_config_file, ldap_config_file])
+    assert x == y
+
+
+def test_combine_dicts(tmp_config_files, modify_root_config, cli_args):
+    (root_config_file, ldap_config_file, _) = tmp_config_files
+    args = cli_args({'config_filename': root_config_file})
+    config_loader = ConfigLoader(args)
+    # Create a dummy dict
+
+    dict1 = {'server': {'host': 'dummy1-stage.adobe.io', 'ims_host': 'ims-na1-stg1.adobelogin.com', 'saba': 'saba'},
+             'enterprise': {'org_id': 'D28927675A9581A20A49412A@AdobeOrg',
+                            'api_key': 'b348211181c74a8f84dba226cba72cac',
+                            'client_secret': '51802159-c3f2-4549-8ac1-0d607ee558c3',
+                            'tech_acct': '57C7738C5D67F8420A494216@techacct.adobe.com',
+                            'priv_key_path': 'C:\\Program Files\\Adobe\\Adobe User Sync ToolSaba\\private.key'}}
+    dict2 = {'server': {'host': 'dummy2-stage.adobe.io', 'ims_host': 'ims-na1-stg1.adobelogin.com'},
+             'enterprise': {'mike': 'mike', 'org_id': 'D28927675A9581A20A49412A@AdobeOrg',
+                            'api_key': 'b348211181c74a8f84dba226cba72cac',
+                            'client_secret': '51802159-c3f2-4549-8ac1-0d607ee558c3',
+                            'tech_acct': '57C7738C5D67F8420A494216@techacct.adobe.com',
+                            'priv_key_path': 'C:\\Program Files\\Adobe\\Adobe User Sync ToolSaba\\private.key'}}
+
+    result = config_loader.combine_dicts([dict1, dict2])
+
+    dict2['server']['saba'] = 'saba'
+    assert dict2 == result
+
+
+def test_get_directory_extension_option(tmp_config_files, modify_root_config, cli_args, modify_root_extension_config):
+    (root_config_file, _, _, extension_config_file) = tmp_config_files
+
+    # adding the extension file  location in the user_sync_config
+    modify_root_config(['directory_users', 'extension'], 'extension-config.yml')
+    # needed if we want to modify the extension file
+    #modify_root_extension_config(['directory_users', 'extension'], 'extension-config.yml')
+    # get the config loader object
+    args = cli_args({'config_filename': root_config_file})
+    config_loader = ConfigLoader(args)
+
+    modify_root_extension_config(['after_mapping_hook'], None)
+    with pytest.raises(AssertionError):
+        config_loader.get_directory_extension_options()
+
+    modify_root_config(['directory_users', 'extension'], '')
+    # resetting the config loader
+    args = cli_args({'config_filename': root_config_file})
+    config_loader = ConfigLoader(args)
+    assert config_loader.get_directory_extension_options() == {}
+
+    print()
