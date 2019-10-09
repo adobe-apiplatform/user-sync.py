@@ -223,3 +223,52 @@ def test_get_directory_connector_module_name(cli_args, config_files):
     assert not config_loader.get_directory_connector_module_name()
 
 
+def test_get_directory_extension_option(cli_args, modify_config, modify_root_config, config_files):
+    # case 1: When there is no change in the user sync config file
+    # getting the user-sync file from the set of config files
+    root_config_file = config_files['root_config']
+    # setting the config loader
+    args = cli_args({'config_filename': root_config_file})
+    config_loader = ConfigLoader(args)
+    assert config_loader.get_directory_extension_options() == {}
+    # case 2: When there is an extension file link in the user-sync-config file
+    root_config_file = modify_root_config(['directory_users', 'extension'], 'extension-config.yml')
+    # get the config loader object
+    args = cli_args({'config_filename': root_config_file})
+    config_loader = ConfigLoader(args)
+    # raise assertionerror if after mapping hook has nothing
+    modify_config('extension', ['after_mapping_hook'], None)
+    with pytest.raises(AssertionError):
+        config_loader.get_directory_extension_options()
+    # check for the string under after mapping hook
+    modify_config('extension', ['after_mapping_hook'], 'print hello ')
+    options = {'after_mapping_hook': 'print hello ', 'extended_adobe_groups': ['Company 1 Users', 'Company 2 Users'],
+               'extended_attributes': ['bc', 'subco']}
+    assert config_loader.get_directory_extension_options().value == options
+
+def test_combine_dicts(cli_args, modify_config, modify_root_config, config_files):
+        root_config_file = config_files['root_config']
+        ldap_config_file = config_files['ldap']
+
+        args = cli_args({'config_filename': root_config_file})
+        
+        config_loader = ConfigLoader(args)
+        # Create a dummy dict
+
+        dict1 = {'server': {'host': 'dummy1-stage.adobe.io', 'ims_host': 'ims-na1-stg1.adobelogin.com', 'saba': 'saba'},
+                 'enterprise': {'org_id': 'D28927675A9581A20A49412A@AdobeOrg',
+                                'api_key': 'b348211181c74a8f84dba226cba72cac',
+                                'client_secret': '51802159-c3f2-4549-8ac1-0d607ee558c3',
+                                'tech_acct': '57C7738C5D67F8420A494216@techacct.adobe.com',
+                                'priv_key_path': 'C:\\Program Files\\Adobe\\Adobe User Sync ToolSaba\\private.key'}}
+        dict2 = {'server': {'host': 'dummy2-stage.adobe.io', 'ims_host': 'ims-na1-stg1.adobelogin.com'},
+                 'enterprise': {'mike': 'mike', 'org_id': 'D28927675A9581A20A49412A@AdobeOrg',
+                                'api_key': 'b348211181c74a8f84dba226cba72cac',
+                                'client_secret': '51802159-c3f2-4549-8ac1-0d607ee558c3',
+                                'tech_acct': '57C7738C5D67F8420A494216@techacct.adobe.com',
+                                'priv_key_path': 'C:\\Program Files\\Adobe\\Adobe User Sync ToolSaba\\private.key'}}
+
+        result = config_loader.combine_dicts([dict1, dict2])
+
+        dict2['server']['saba'] = 'saba'
+        assert dict2 == result
