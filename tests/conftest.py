@@ -3,7 +3,7 @@ import os
 import pytest
 from six import StringIO
 from user_sync import config
-
+from user_sync.rules import RuleProcessor
 
 @pytest.fixture
 def fixture_dir():

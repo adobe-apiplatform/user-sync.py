@@ -326,10 +326,12 @@ class ConfigLoader(object):
 
         if connectors_config is not None:
             connector_item = connectors_config.get_list(connector_name, True)
+
             options = self.get_dict_from_sources(connector_item)
         options = self.combine_dicts(
             [options, self.invocation_options.get('directory_connector_overridden_options', {})])
         return options
+
 
     def get_directory_groups(self):
         return self.directory_groups
@@ -382,6 +384,7 @@ class ConfigLoader(object):
                         raise AssertionError("No after_mapping_hook found in extension configuration")
         return options
 
+
     @staticmethod
     def as_list(value):
         if value is None:
@@ -405,6 +408,7 @@ class ConfigLoader(object):
             options.append(config)
         return self.combine_dicts(options)
 
+
     @staticmethod
     def parse_string(format_string, string_value):
         """
@@ -421,7 +425,7 @@ class ConfigLoader(object):
     @staticmethod
     def combine_dicts(dicts):
         """
-        Return a single dict from an iterable of dicts.  Each dict is merged into the resulting dict, 
+        Return a single dict from an iterable of dicts.  Each dict is merged into the resulting dict,
         with a latter dict possibly overwriting the keys from previous dicts.
         :type dicts: list(dict)
         :rtype dict
@@ -515,7 +519,7 @@ class ConfigLoader(object):
 
         # get the limits
         limits_config = self.main_config.get_dict_config('limits')
-        max_missing = limits_config.get_value('max_adobe_only_users',(int, str),False)
+        max_missing = limits_config.get_value('max_adobe_only_users', (int, str), False)
         percent_pattern = re.compile("(\d*(\.\d+)?%)")
         if isinstance(max_missing, str) and percent_pattern.match(max_missing):
             max_missing_percent = float(max_missing.strip('%'))
@@ -527,7 +531,8 @@ class ConfigLoader(object):
             try:
                 options['max_adobe_only_users'] = int(max_missing)
             except ValueError:
-                raise AssertionException("Unable to parse max_adobe_only_users value. Value must be a percentage or an integer.")
+                raise AssertionException(
+                    "Unable to parse max_adobe_only_users value. Value must be a percentage or an integer.")
 
         # now get the directory extension, if any
         extension_config = self.get_directory_extension_options()
@@ -880,7 +885,7 @@ class ConfigFileLoader:
     # key_path is being searched for in what file in what directory
     filepath = None  # absolute path of file currently being loaded
     filename = None  # filename of file currently being loaded
-    dirpath = None   # directory path of file currently being loaded
+    dirpath = None  # directory path of file currently being loaded
     key_path = None  # the full pathname of the setting key being processed
 
     @classmethod
