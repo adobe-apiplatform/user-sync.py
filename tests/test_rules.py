@@ -524,6 +524,86 @@ def test_update_umapi_user(rule_processor, log_stream, mock_umapi_user):
     assert mock_umapi_user["email"] == mock_umapi_user["username"]
 
 
+def test_read_desired_user_groups(rule_processor, log_stream, mock_directory_user):
+    rp = rule_processor
+    stream, logger = log_stream
+    rp.logger = logger
+    mock_directory_user['groups'] = ['security_group']
+
+    directory_connector = mock.MagicMock()
+    directory_connector.load_users_and_groups.return_value = [mock_directory_user]
+    mappings = {
+        'security_group': [AdobeGroup.create('user_group')]
+    }
+
+    rp.read_desired_user_groups(mappings, directory_connector)
+
+    # Assert the security group and adobe group end up in the correct scope
+    assert "security_group" in rp.after_mapping_hook_scope['source_groups']
+    assert "user_group" in rp.after_mapping_hook_scope['target_groups']
+
+    # Assert the user group updated in umapi info
+    user_key = rp.get_directory_user_key(mock_directory_user)
+    assert ('user_group' in rp.umapi_info_by_name[None].desired_groups_by_user_key[user_key])
+
+    # testing after_mapping_hooks
+    AdobeGroup.create('existing_group')
+
+    after_mapping_hook_text = """
+first = source_attributes.get('givenName')
+if first is not None: 
+  target_groups.add('scope_group')
+target_groups.add('existing_group')
+"""
+
+    hook_code = compile(after_mapping_hook_text, '<per-user after-mapping-hook>', 'exec')
+    rp.options['after_mapping_hook'] = hook_code
+    rp.read_desired_user_groups(mappings, directory_connector)
+    stream.flush()
+    logger_output = stream.getvalue()
+
+    assert 'Target adobe group scope_group is not known; ignored' in logger_output
+    assert rp.umapi_info_by_name[None].desired_groups_by_user_key == {
+        user_key: {'user_group', 'existing_group'}
+    }
+
+    assert "security_group" in rp.after_mapping_hook_scope['source_groups']
+    assert "existing_group" in rp.after_mapping_hook_scope['target_groups']
+
+    # testing additional_groups
+    rp.options['after_mapping_hook'] = None
+    mock_directory_user['member_groups'] = ['other_security_group', 'security_group', 'more_security_group']
+    rp.options['additional_groups'] = [
+        {
+            'source': re.compile('other(.+)'),
+            'target': AdobeGroup.create('additional_user_group')},
+        {
+            'source': re.compile('security_group'),
+            'target': AdobeGroup.create('additional(.+)')}]
+
+    rp.read_desired_user_groups(mappings, directory_connector)
+    assert 'other_security_group' in rp.umapi_info_by_name[None].additional_group_map[
+        'additional_user_group']
+    assert 'security_group' in rp.umapi_info_by_name[None].additional_group_map[
+        'additional(.+)']
+    assert {'additional_user_group', 'additional(.+)'}.issubset(
+        rp.umapi_info_by_name[None].desired_groups_by_user_key[user_key])
+
+
+@mock.patch("user_sync.rules.RuleProcessor.create_umapi_commands_for_directory_user")
+def test_create_umapi_user(create_commands, rule_processor):
+    rule_processor.directory_user_by_user_key['test'] = 'test'
+
+    mock_command = MagicMock()
+    create_commands.return_value = mock_command
+    rule_processor.options['process_groups'] = True
+    rule_processor.push_umapi = True
+    rule_processor.create_umapi_user('test', set(), MagicMock(), MagicMock())
+
+    called = [c[0] for c in mock_command.mock_calls][1:]
+    assert called == ['remove_groups', 'add_groups']
+
+
 @pytest.fixture
 def mock_user_directory_data():
     return {
@@ -603,7 +683,7 @@ def mock_user_directory_data():
                     'givenName': 'dir1',
                     'sn': 'one',
                     'c': 'US'}}
-        }
+    }
 
 
 @pytest.fixture
@@ -656,16 +736,48 @@ def mock_umapi_user_data():
             'type': 'federatedID'}]
 
 
-@mock.patch("user_sync.rules.RuleProcessor.create_umapi_commands_for_directory_user")
-def test_create_umapi_user(create_commands, rule_processor):
-    rule_processor.directory_user_by_user_key['test'] = 'test'
+@pytest.fixture
+def rule_processor(caller_options):
+    return RuleProcessor(caller_options)
 
-    mock_command = MagicMock()
-    create_commands.return_value = mock_command
-    rule_processor.options['process_groups'] = True
-    rule_processor.push_umapi = True
-    rule_processor.create_umapi_user('test', set(), MagicMock(), MagicMock())
 
+@pytest.fixture
+def caller_options():
+    return {
+        'adobe_group_filter': None,
+        'after_mapping_hook': None,
+        'default_country_code': 'US',
+        'delete_strays': False,
+        'directory_group_filter': None,
+        'disentitle_strays': False,
+        'exclude_groups': [],
+        'exclude_identity_types': ['adobeID'],
+        'exclude_strays': False,
+        'exclude_users': [],
+        'extended_attributes': None,
+        'process_groups': True,
+        'max_adobe_only_users': 200,
+        'new_account_type': 'federatedID',
+        'remove_strays': True,
+        'strategy': 'sync',
+        'stray_list_input_path': None,
+        'stray_list_output_path': None,
+        'test_mode': True,
+        'update_user_info': False,
+        'username_filter_regex': None,
+        'adobe_only_user_action': ['remove'],
+        'adobe_only_user_list': None,
+        'adobe_users': ['all'],
+        'config_filename': 'tests/fixture/user-sync-config.yml',
+        'connector': 'ldap',
+        'encoding_name': 'utf8',
+        'user_filter': None,
+        'users': None,
+        'directory_connector_type': 'csv',
+        'directory_connector_overridden_options': {
+            'file_path': '../tests/fixture/remove-data.csv'},
+        'adobe_group_mapped': False,
+        'additional_groups': []}
     called = [c[0] for c in mock_command.mock_calls][1:]
     assert called == ['remove_groups', 'add_groups']
 
