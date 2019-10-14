@@ -6,6 +6,15 @@ nav_level: 2
 nav_order: 70
 ---
 
+# New Outline
+
+* Post-sync connector
+  * overview
+    * list of connectors
+  * configuration
+    * user-sync-config.yml
+  * workflow
+  
 # Overview
 
 Sign Sync allows for an automated process of moving users over from
