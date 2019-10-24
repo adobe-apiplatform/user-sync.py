@@ -202,7 +202,7 @@ configuration file in the `directory_users` section:
 
 ```
 directory_users:
-  extension: extenstions_config.yml  # reference to file with custom mapping information
+  extension: extension-config.yml  # reference to file with custom mapping information
 ```
 
 Custom attribute handling is performed for each user, so the
