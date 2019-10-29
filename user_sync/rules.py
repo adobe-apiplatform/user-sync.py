@@ -974,10 +974,7 @@ class RuleProcessor(object):
             self.adobeid_user_by_email[normalize_string(umapi_user['email'])] = umapi_user
 
     def is_adobeID_email_exist(self, email):
-        result = self.adobeid_user_by_email.get(normalize_string(email))
-        if result:
-            return True
-        return False
+        return bool(self.adobeid_user_by_email.get(normalize_string(email)))
 
     @staticmethod
     def normalize_groups(group_names):
