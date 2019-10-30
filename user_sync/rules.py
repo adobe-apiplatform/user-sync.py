@@ -693,7 +693,7 @@ class RuleProcessor(object):
             self.logger.error('Found adobe user with no identity type, using %s: %s', identity_type, umapi_user)
         return identity_type
 
-    def create_umapi_commands_for_directory_user(self, directory_user, do_update=False):
+    def create_umapi_commands_for_directory_user(self, directory_user, do_update=False, console_trusted=False):
         """
         Make the umapi commands to create this user, based on his directory attributes and type.
         Update the attributes of an existing user if do_update is True.
@@ -733,7 +733,7 @@ class RuleProcessor(object):
         else:
             attributes['option'] = 'ignoreIfAlreadyExists'
         commands.add_user(attributes)
-        if update_username is not None:
+        if update_username is not None and not console_trusted:
             commands.update_user({"email": directory_user['email'], "username": update_username})
         return commands
 
@@ -752,7 +752,8 @@ class RuleProcessor(object):
         :type umapi_connector: user_sync.connector.umapi.UmapiConnector
         """
         directory_user = self.directory_user_by_user_key[user_key]
-        commands = self.create_umapi_commands_for_directory_user(directory_user, self.will_update_user_info(umapi_info))
+        commands = self.create_umapi_commands_for_directory_user(directory_user, self.will_update_user_info(umapi_info),
+                                                                 umapi_connector.trusted)
         if not commands:
             return
         if self.will_process_groups():
@@ -966,53 +967,6 @@ class RuleProcessor(object):
                 result.add(normalized_group_name)
         return result
 
-    def calculate_groups_to_add(self, umapi_info, user_key, desired_groups):
-        """
-        Return a set of groups that have not been registered to be added.
-        :type umapi_info: UmapiTargetInfo
-        :type user_key: str
-        :type desired_groups: set(str) 
-        """
-        groups_to_add = self.get_new_groups(umapi_info.groups_added_by_user_key, user_key, desired_groups)
-        if desired_groups is not None and self.logger.isEnabledFor(logging.DEBUG):
-            groups_already_added = desired_groups - groups_to_add
-            if groups_already_added:
-                self.logger.debug('Already added groups for user: %s groups: %s', user_key, groups_already_added)
-        return groups_to_add
-
-    def calculate_groups_to_remove(self, umapi_info, user_key, desired_groups):
-        """
-        Return a set of groups that have not been registered to be removed.
-        :type umapi_info: UmapiTargetInfo
-        :type user_key: str
-        :type desired_groups: set(str) 
-        """
-        groups_to_remove = self.get_new_groups(umapi_info.groups_removed_by_user_key, user_key, desired_groups)
-        if desired_groups is not None and self.logger.isEnabledFor(logging.DEBUG):
-            groups_already_removed = desired_groups - groups_to_remove
-            if len(groups_already_removed) > 0:
-                self.logger.debug('Skipped removed groups for user: %s groups: %s', user_key, groups_already_removed)
-        return groups_to_remove
-
-    def get_new_groups(self, current_groups_by_user_key, user_key, desired_groups):
-        """
-        Return a set of groups that have not been registered in the dictionary for the specified user.        
-        :type current_groups_by_user_key: dict(str, set(str))
-        :type user_key: str
-        :type desired_groups: set(str) 
-        """
-        new_groups = None
-        if desired_groups is not None:
-            current_groups = current_groups_by_user_key.get(user_key)
-            if current_groups is not None:
-                new_groups = desired_groups - current_groups
-            else:
-                new_groups = desired_groups
-            if len(new_groups) > 0:
-                if current_groups is None:
-                    current_groups_by_user_key[user_key] = current_groups = set()
-                current_groups |= new_groups
-        return new_groups
 
     def get_user_attribute_difference(self, directory_user, umapi_user):
         differences = {}

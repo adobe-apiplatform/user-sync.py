@@ -25,7 +25,6 @@ import logging
 import jwt
 import six
 import umapi_client
-from Crypto.PublicKey import RSA
 
 import user_sync.connector.helper
 import user_sync.config
@@ -33,6 +32,7 @@ import user_sync.helper
 import user_sync.identity_type
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
+from user_sync.connector.umapi_util import make_auth_dict
 
 try:
     from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
@@ -49,6 +49,9 @@ class UmapiConnector(object):
         """
         self.name = 'umapi' + name
         caller_config = user_sync.config.DictConfig(self.name + ' configuration', caller_options)
+        self.trusted = caller_config.get_bool('trusted', True)
+        if self.trusted is None:
+            self.trusted = False
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('logger_name', self.name)
         builder.set_bool_value('test_mode', False)
@@ -77,37 +80,7 @@ class UmapiConnector(object):
 
         ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
-        auth_dict = {
-            'org_id': org_id,
-            'tech_acct_id': enterprise_options['tech_acct'],
-            'api_key': enterprise_config.get_credential('api_key', org_id),
-            'client_secret': enterprise_config.get_credential('client_secret', org_id),
-        }
-        # get the private key
-        key_path = enterprise_config.get_string('priv_key_path', True)
-        if key_path:
-            data_setting = enterprise_config.has_credential('priv_key_data')
-            if data_setting:
-                raise AssertionException('%s: cannot specify both "priv_key_path" and "%s"' %
-                                         (enterprise_config.get_full_scope(), data_setting))
-            logger.debug('%s: reading private key data from file %s', self.name, key_path)
-            try:
-                with open(key_path, 'r') as f:
-                    key_data = f.read()
-            except IOError as e:
-                raise AssertionException('%s: cannot read file "%s": %s' %
-                                         (enterprise_config.get_full_scope(), key_path, e))
-        else:
-            key_data = enterprise_config.get_credential('priv_key_data', org_id)
-        # decrypt the private key, if needed
-        passphrase = enterprise_config.get_credential('priv_key_pass', org_id, True)
-        if passphrase:
-            try:
-                key_data = str(RSA.importKey(key_data, passphrase=passphrase).exportKey().decode('ascii'))
-            except (ValueError, IndexError, TypeError) as e:
-                raise AssertionException('%s: Error decrypting private key, either the password is wrong or: %s' %
-                                         (enterprise_config.get_full_scope(), e))
-        auth_dict['private_key_data'] = key_data
+        auth_dict = make_auth_dict(self.name, enterprise_config, org_id, enterprise_options['tech_acct'], logger)
         # this check must come after we fetch all the settings
         enterprise_config.report_unused_values(logger)
         # open the connection
