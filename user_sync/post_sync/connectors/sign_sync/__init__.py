@@ -57,12 +57,15 @@ class SignConnector(PostSyncConnector):
             if not self.should_sync(umapi_user, sign_user, org_name):
                 continue
 
-            common_groups = set(self.user_groups[org_name]) & set(umapi_user['groups'])
+            assignment_group = None
 
-            if not common_groups:
+            for group in self.user_groups[org_name]:
+                if group in umapi_user['groups']:
+                    assignment_group = group
+                    break
+
+            if assignment_group is None:
                 assignment_group = sign_client.DEFAULT_GROUP_NAME
-            else:
-                assignment_group = sorted(list(common_groups))[0]
 
             group_id = sign_client.groups.get(assignment_group)
             admin_roles = self.admin_roles.get(org_name, {})
