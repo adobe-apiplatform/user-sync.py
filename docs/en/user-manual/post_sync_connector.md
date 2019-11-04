@@ -6,7 +6,19 @@ nav_level: 2
 nav_order: 70
 ---
 
-# New Outline
+# Post-Sync Connector
+
+## In This Section
+{:."no_toc"}
+
+* TOC Placeholder
+{:toc}
+
+---
+
+[Previous Section](advanced_configuration.md)  \| [Next Section](deployment_best_practices.md)
+
+---
 
 * Post-sync connector
   * overview
@@ -14,7 +26,62 @@ nav_order: 70
   * configuration
     * user-sync-config.yml
   * workflow
-  
+* Sign connector
+  * how does Sign currently work with console?
+  * what does this connector add?
+  * config spec
+  * notes and caveats
+
+The Post-Sync Connector framework for the User Sync Tool performs optional sync
+workflows with specific Adobe products. These workflows execute after the main
+sync workflow completes.
+
+Specific functionality depends on the connector(s) used.
+
+Multiple connectors can be enabled and configured for a single sync process.
+
+## Supported Connectors
+
+NOTE: **Adobe Sign Sync** is currently the only supported connector.  Additional connectors will be released in the future.
+
+| Connector | ID | Config File | Notes |
+|---|---|---|---|
+| Adobe Sign Sync | `sign` | `connector-sign-sync.yml` | See [Sign Sync Docs](#sign-sync-connector) below |
+{: .bordertablestyle }
+
+## Configuration
+
+Each post-sync connector has its own configuration file to specify any configuration options needed by that connector.
+
+Post-sync connectors are enabled in `user-sync-config.yml` with the optional `post-sync` config option.
+
+Example:
+
+```yaml
+# user-sync-config.yml
+post_sync:
+  modules:
+    - sign_sync
+  connectors:
+    sign_sync: connector-sign-sync.yml
+```
+
+This example shows the **Adobe Sign Sync** connector enabled.  After the main sync completes, the Sign connector
+will be executed.
+
+**Config Spec**
+
+| key | parent | type | notes |
+|---|---|---|---|
+| `post_sync` | n/a | `dict(str, mixed)` | Top-level config key that specifies which modules are enabled and where their configuration files live |
+| `modules` | `post_sync` | `list(str)` | List of post-sync modules to enable. Connectors will be run in order specified |
+| `connectors` | `post_sync` | `dict(str, str)` | Connector config files. Key: connector module; value: path to config file |
+{: .bordertablestyle }
+
+# Sign Sync Connector
+
+
+
 # Overview
 
 Sign Sync allows for an automated process of moving users over from
@@ -39,12 +106,13 @@ mapping set up.
 The following is a list of automated features currently possible with
 Sign Sync.
 
-  |Features                 |Sync users from Admin Console over into Sign Console.|
-  |-------------------------|------------------------------------------------------------------------------|
-  |Group Creation           |New groups created in Admin Console will be synced over to the Sign Console.|
-  |User Privileges          |User privileges set in Admin Console will sync over to Sign Console.|
-  |Ignore Groups            |Ability to ignore specific groups defined in a configuration file.|
-  |Ignore Admin Privileges  |Ability to ignore specific admin roles to be synced over in Sign.|
+|Features                 |Sync users from Admin Console over into Sign Console.|
+|-------------------------|------------------------------------------------------------------------------|
+|Group Creation           |New groups created in Admin Console will be synced over to the Sign Console.|
+|User Privileges          |User privileges set in Admin Console will sync over to Sign Console.|
+|Ignore Groups            |Ability to ignore specific groups defined in a configuration file.|
+|Ignore Admin Privileges  |Ability to ignore specific admin roles to be synced over in Sign.|
+{: .bordertablestyle }
 
 # Prerequisites
 
