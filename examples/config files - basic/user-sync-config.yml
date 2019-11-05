@@ -154,7 +154,12 @@ directory_users:
     # (optional) okta (no default value)
     # okta is a 3rd party federation provider compatible with Adobe Enterprise Federated ID.
     # See https://developer.okta.com/ for Okta developer information.
-    # okta: "connector-okta.ytml"
+    # okta: "connector-okta.yml"
+
+    # (optional) Adobe console
+    # Query users from an Adobe organization to use as an identity source
+    # See user manual for more inforation
+    # adobe_console: connector-adobe-console.yml
 
   # (optional) groups (no default value)
   # The groups setting specifies how groups in the enterprise directory map
