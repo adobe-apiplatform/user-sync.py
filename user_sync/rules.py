@@ -942,8 +942,8 @@ class RuleProcessor(object):
                 self.logger.debug("Excluding adobe user (due to group): %s", user_key)
                 self.excluded_user_count += 1
                 return True
-            for re in self.exclude_users:
-                if re.match(username):
+            for re_ in self.exclude_users:
+                if re_.match(username):
                     self.logger.debug("Excluding adobe user (due to name): %s", user_key)
                     self.excluded_user_count += 1
                     return True
