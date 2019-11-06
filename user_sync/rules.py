@@ -1092,6 +1092,7 @@ class RuleProcessor(object):
                 if not secondary_count:
                     fieldnames.append('umapi')
                 secondary_count += 1
+        for umapi_name in self.stray_key_map:
             for user_key in self.get_stray_keys(umapi_name):
                 id_type, username, domain = self.parse_user_key(user_key)
                 umapi = umapi_name if umapi_name else ""
