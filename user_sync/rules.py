@@ -1092,9 +1092,7 @@ class RuleProcessor(object):
                 if not secondary_count:
                     fieldnames.append('umapi')
                 secondary_count += 1
-        # None sorts before strings, so sorting the keys in the map
-        # puts the primary umapi first in the output, which is handy
-        for umapi_name in sorted(self.stray_key_map.keys()):
+        for umapi_name in self.stray_key_map:
             for user_key in self.get_stray_keys(umapi_name):
                 id_type, username, domain = self.parse_user_key(user_key)
                 umapi = umapi_name if umapi_name else ""
@@ -1103,6 +1101,7 @@ class RuleProcessor(object):
                 else:
                     row_dict = {'type': id_type, 'username': username, 'domain': domain}
                 rows.append(row_dict)
+
         CSVAdapter.write_csv_rows(file_path, fieldnames, rows)
         user_count = len(self.stray_key_map.get(PRIMARY_UMAPI_NAME, []))
         user_plural = "" if user_count == 1 else "s"
