@@ -109,3 +109,4 @@ user_sync/sign-sync-config/
 .DS_Store
 !user_sync/resources/default_flags.cfg
 test_config/
+*.swp
