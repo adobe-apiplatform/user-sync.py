@@ -155,7 +155,7 @@ admin_roles:
 ### Config Spec
 
 | key | type | required? | notes |
-|---|---|---|
+|---|---|---|---|
 | `sign_orgs` | `list(dict)` | Y | List of objects defining which Sign orgs to sync. If targeting a "secondary" org, it must be defined in `user-sync-config.yml` (see [docs](advanced_configuration.html#accessing-users-in-other-organizations)) |
 | `user_groups` | `list(str)` | N | List of Adobe group names to potentially assign to a user in Sign. If a user belongs to any group in this list, they will be assigned to the first matching group in Sign (with respect to the order these groups are defined in the Sign config) |
 | `entitlement_groups` | `list(str)` | Y | List of Adobe groups and/or product profiles that provision a user to Adobe Sign. Only users assigned to these groups will be processed by the Sign Sync connector. |
