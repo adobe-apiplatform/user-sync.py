@@ -942,8 +942,8 @@ class RuleProcessor(object):
                 self.logger.debug("Excluding adobe user (due to group): %s", user_key)
                 self.excluded_user_count += 1
                 return True
-            for re in self.exclude_users:
-                if re.match(username):
+            for re_ in self.exclude_users:
+                if re_.match(username):
                     self.logger.debug("Excluding adobe user (due to name): %s", user_key)
                     self.excluded_user_count += 1
                     return True
@@ -1092,9 +1092,7 @@ class RuleProcessor(object):
                 if not secondary_count:
                     fieldnames.append('umapi')
                 secondary_count += 1
-        # None sorts before strings, so sorting the keys in the map
-        # puts the primary umapi first in the output, which is handy
-        for umapi_name in sorted(self.stray_key_map.keys()):
+        for umapi_name in self.stray_key_map:
             for user_key in self.get_stray_keys(umapi_name):
                 id_type, username, domain = self.parse_user_key(user_key)
                 umapi = umapi_name if umapi_name else ""
@@ -1103,6 +1101,7 @@ class RuleProcessor(object):
                 else:
                     row_dict = {'type': id_type, 'username': username, 'domain': domain}
                 rows.append(row_dict)
+
         CSVAdapter.write_csv_rows(file_path, fieldnames, rows)
         user_count = len(self.stray_key_map.get(PRIMARY_UMAPI_NAME, []))
         user_plural = "" if user_count == 1 else "s"
@@ -1261,7 +1260,7 @@ class UmapiTargetInfo(object):
     def add_additional_group(self, rename_group, member_group):
         normalized_rename_group = normalize_string(rename_group)
         if member_group not in self.additional_group_map[normalized_rename_group]:
-            self.additional_group_map[normalize_string(normalized_rename_group)].append(member_group)
+            self.additional_group_map[normalized_rename_group].append(member_group)
 
     def get_additional_group_map(self):
         return self.additional_group_map
