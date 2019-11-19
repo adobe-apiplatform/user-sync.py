@@ -208,6 +208,3 @@ The following types are valid:
 
 If `identity_types` is not specified, then there will be no restrictions by identity type.
 
-## Additional Information
-
-For more information on the Adobe Sign Sync connector, see the [tutorial](../success-guide/sync_adobe_sign.html).
