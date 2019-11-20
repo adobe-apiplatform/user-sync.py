@@ -29,7 +29,7 @@ setup_deps = ['pytest-runner']
 
 setup(name='user-sync-sign-sync',
       version=version_namespace['__version__'],
-      description='Application for synchronizing customer directories with the Adobe Enterprise Admin Console w/ Sign Features',
+      description='Application for synchronizing customer directories with the Adobe Enterprise Admin Console',
       classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Programming Language :: Python :: 3.5',
@@ -38,21 +38,21 @@ setup(name='user-sync-sign-sync',
           'Intended Audience :: Developers',
           'Intended Audience :: System Administrators',
       ],
-      url='https://github.com/NathanNguyen345/user-sync.py',
-      maintainer='Nathan Nguyen',
-      maintainer_email='nnguyen@adobe.com',
+      url='https://github.com/adobe-apiplatform/user-sync.py',
+      maintainer='Andrew Dorton',
+      maintainer_email='adorton@adobe.com',
       license='MIT',
       packages=find_packages(),
       install_requires=[
           'keyring',
           'keyrings.cryptfile',
-          'okta',
+          'okta==0.0.3.1',
           'psutil',
           'pycryptodome==3.7.3',
           'ldap3',
           'PyYAML',
           'six',
-          'umapi-client>=2.12',
+          'umapi-client>=2.13',
           'click',
           'click-default-group',
           'configparser==3.7.4'
@@ -76,5 +76,5 @@ setup(name='user-sync-sign-sync',
               'user_sync = user_sync.app:main'
           ]
       },
-      package_data={'user_sync.resources': ['*', 'examples/*']},
+      package_data={'user_sync.resources': ['*', 'examples/**']},
       zip_safe=False)
