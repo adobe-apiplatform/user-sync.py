@@ -234,6 +234,20 @@ def example_config(**kwargs):
 
 @main.command()
 @click.help_option('-h', '--help')
+@click.option('--filename', help="Filename of Sign Sync config",
+              prompt='Sign Sync Config Filename', default='connector-sign-sync.yml')
+def example_config_sign(filename):
+    """Generate Sign Sync Config"""
+    res_filename = os.path.join('examples', 'connector-sign-sync.yml')
+
+    res_file = user_sync.resource.get_resource(res_filename)
+    assert res_file is not None, "Resource file '{}' not found".format(res_filename)
+    click.echo("Generating file '{}'".format(filename))
+    shutil.copy(res_file, filename)
+
+
+@main.command()
+@click.help_option('-h', '--help')
 def docs():
     """Open user manual in browser"""
     res_file = user_sync.resource.get_resource('manual_url')
