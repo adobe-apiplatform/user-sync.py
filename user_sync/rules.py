@@ -480,14 +480,13 @@ class RuleProcessor(object):
         else:
             primary_adds_by_user_key = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
         for user_key, groups_to_add in six.iteritems(primary_adds_by_user_key):
-            if exclude_unmapped_users == True and not groups_to_add:
+            if exclude_unmapped_users and not groups_to_add:
                 # If user is not part of any group and ignore outcast is enabled. Do not create user.
-                pass
-            else:
-                # We always create every user in the primary umapi, because it's believed to own the directories.
-                self.logger.info('Creating user with user key: %s', user_key)
-                self.primary_users_created.add(user_key)
-                self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector)
+                continue
+            # We always create every user in the primary umapi, because it's believed to own the directories.
+            self.logger.info('Creating user with user key: %s', user_key)
+            self.primary_users_created.add(user_key)
+            self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector)
 
         # then sync the secondary connectors
         for umapi_name, umapi_connector in six.iteritems(umapi_connectors.get_secondary_connectors()):
