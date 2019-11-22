@@ -16,17 +16,16 @@ sign_orgs:
 # NOTE: if targeting a group on a secondary org here, there MUST be at least one entitlement_group
 # specified that also targets that org, and API credentials must be defined in sign_orgs
 user_groups:
-  - Adobe Sign Users
-  - org2::Secondary Sign Users
+#  - Adobe Sign Users
+#  - org2::Secondary Sign Users
 
 # Product profiles that entitle a user to use Adobe Sign
 # Secondary orgs (as defined in user-sync-config.yml) can optionally be targeted
 entitlement_groups:
-  - Sign Enterprise
-  - org2::Adobe Sign
+#  - Sign Enterprise
+#  - org2::Adobe Sign
 
 identity_types:
-  - federatedID
   - enterpriseID
 
 # Optionally designate certain Admin Console groups to grant admin privileges in Sign
