@@ -77,16 +77,15 @@ class SignConnector(PostSyncConnector):
                 "lastName": sign_user['lastName'],
                 "roles": user_roles,
             }
-            if sign_user['group'] == assignment_group and self.roles_match(user_roles, sign_user['roles']):
+            if sign_user['group'].lower() == assignment_group and self.roles_match(user_roles, sign_user['roles']):
                 self.logger.debug("skipping Sign update for '{}' -- no updates needed".format(umapi_user['email']))
                 continue
             try:
                 sign_client.update_user(sign_user['userId'], update_data)
+                self.logger.info("Updated Sign user '{}', Group: '{}', Roles: {}".format(
+                    umapi_user['email'], assignment_group, update_data['roles']))
             except AssertionError as e:
                 self.logger.error("Error updating user {}".format(e))
-                continue
-            self.logger.info("Updated Sign user '{}', Group: '{}', Roles: {}".format(
-                umapi_user['email'], assignment_group, update_data['roles']))
 
     @staticmethod
     def roles_match(resolved_roles, sign_roles):
