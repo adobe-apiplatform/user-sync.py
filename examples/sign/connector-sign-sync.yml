@@ -26,7 +26,7 @@ entitlement_groups:
 #  - org2::Adobe Sign
 
 identity_types:
-  - enterpriseID
+  - federatedID
 
 # Optionally designate certain Admin Console groups to grant admin privileges in Sign
 # Valid Sign roles are ACCOUNT_ADMIN and GROUP_ADMIN
