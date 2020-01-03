@@ -51,6 +51,7 @@ class ConfigLoader(object):
         'config_filename': 'user-sync-config.yml',
         'connector': ['ldap'],
         'encoding_name': 'utf8',
+        'exclude_unmapped_users': False,
         'process_groups': False,
         'strategy': 'sync',
         'test_mode': False,
