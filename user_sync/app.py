@@ -37,7 +37,7 @@ import user_sync.lockfile
 import user_sync.rules
 import user_sync.cli
 import user_sync.resource
-from user_sync.encrypt import Encryption
+from user_sync.encryption import Encryption
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 
@@ -223,28 +223,27 @@ def example_config(**kwargs):
         shutil.copy(res_file, fname)
 
 
-@main.command(help='Encrypts private.key using encrypted password.')
+@main.command(help='Encrypts private key using encrypted password.')
 @click.argument('key-path', default='private.key', type=click.Path(exists=True))
 @click.option('--password', prompt='Create password', hide_input=True, confirmation_prompt=True)
-def encrypt(key_path, password):
-    encryption = Encryption(key_path, password)
+@click.option('--secure-salt', default=False, is_flag=True)
+def encrypt(key_path, password, secure_salt):
     try:
-        encryption.encrypt_file()
-        print('Encryption was successful.', os.path.abspath(key_path))
+        Encryption.encrypt(key_path, password, secure_salt)
+        click.echo('Encryption was successful. ' + os.path.abspath(key_path))
     except AssertionException as e:
-        print(str(e))
+        click.echo(str(e))
 
 
-@main.command(help='Decrypts private.key using encrypted password.')
+@main.command(help='Decrypts private key using encrypted password.')
 @click.argument('key-path', default='private.key', type=click.Path(exists=True))
 @click.option('--password', prompt=True, hide_input=True)
 def decrypt(key_path, password):
-    encryption = Encryption(key_path, password)
     try:
-        encryption.decrypt_file()
-        print('Decryption was successful.', os.path.abspath(key_path))
+        Encryption.decrypt(key_path, password)
+        click.echo('Decryption was successful. ' + os.path.abspath(key_path))
     except AssertionException as e:
-        print(str(e))
+        click.echo(str(e))
 
 @main.command()
 @click.help_option('-h', '--help')
