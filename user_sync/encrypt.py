@@ -52,5 +52,4 @@ class Encryption:
             elif e.args[0] == 'Padding is incorrect.':
                 raise AssertionException('Password was incorrect.')
             else:
-                print(e)
-                raise AssertionException('Something has gone wrong.')
+                raise AssertionException(e.args[0])
