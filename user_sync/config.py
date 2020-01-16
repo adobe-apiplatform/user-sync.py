@@ -32,7 +32,7 @@ import user_sync.identity_type
 import user_sync.port
 import user_sync.rules
 from user_sync.error import AssertionException
-
+from collections import defaultdict
 
 class ConfigLoader(object):
     # default values for reading configuration files
@@ -128,7 +128,7 @@ class ConfigLoader(object):
         # --connector
         connector_spec = options['connector']
         connector_type = user_sync.helper.normalize_string(connector_spec[0])
-        if connector_type in ["ldap", "okta", "adobe_console"]:
+        if connector_type in ["ldap", "okta", "adobe_console", "multi"]:
             if len(connector_spec) > 1:
                 raise AssertionException('Must not specify a file (%s) with connector type %s' %
                                          (connector_spec[0], connector_type))
@@ -314,6 +314,17 @@ class ConfigLoader(object):
             connectors_config.get_list('csv', True)
             connectors_config.get_list('okta', True)
             connectors_config.get_list('adobe_console', True)
+            multilist = connectors_config.get_list('multi', True)
+            temp_ids=[]
+            dup_dict = defaultdict(list)
+            if multilist is not None:
+                for number, row in enumerate(multilist):
+                    pathinfo = row['path']
+                    if pathinfo not in temp_ids:
+                        temp_ids.append(pathinfo)
+                    else:
+                        raise AssertionException(
+                            "Duplicate path is found")
         return connectors_config
 
     def get_directory_connector_options(self, connector_name):
