@@ -38,6 +38,7 @@ import user_sync.rules
 import user_sync.cli
 import user_sync.resource
 from user_sync.encrypt import Encryption
+from user_sync.certgen import Certgen
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 
@@ -245,6 +246,39 @@ def decrypt(key_path, password):
         print('Decryption was successful.', os.path.abspath(key_path))
     except AssertionException as e:
         print(str(e))
+
+
+def abort_if_false(ctx, param, value):
+    if not value:
+        ctx.abort()
+
+
+@main.command(help='Create a new certificate_pub.crt file and private.key file')
+@click.option('--yes', is_flag=True, callback=abort_if_false, expose_value=False,
+              prompt='Are you sure you want to overwrite the files?')
+@click.option('--randomize')
+@click.option('--country', prompt='Country Code')
+@click.option('--state', prompt='State/Province')
+@click.option('--city', prompt='City/Locality')
+@click.option('--organization', prompt='Organization')
+@click.option('--common', prompt='Common Name')
+@click.option('--email', prompt='Email')
+@click.option('--private-key-file', default='private.key')
+@click.option('--cert-pub-file', default='certificate_pub.crt')
+# country = click.prompt('Enter country code', type=str)
+def certgen(country, state, city, organization, common, email, private_key_file, cert_pub_file):
+
+    credentials = {
+        'country': country,
+        'state': state,
+        'city': city,
+        'organization': organization,
+        'common': common,
+        'email': email
+    }
+    create_certgen = user_sync.certgen.Certgen(credentials, private_key_file, cert_pub_file)
+    create_certgen.write_key_to_file()
+
 
 @main.command()
 @click.help_option('-h', '--help')
