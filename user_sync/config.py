@@ -835,31 +835,11 @@ class DictConfig(ObjectConfig):
 
     @staticmethod
     def get_value_from_keyring(secure_value_key, user_name):
-        import keyring
         logger = logging.getLogger("keyring")
         if flags.get_flag('UST_BUILD_EXE'):
-            from importlib import import_module
-            from keyring.backends import fail
-            from keyring.backend import KeyringBackend
-            from keyring.util import suppress_exceptions
-
-            backend_list = {
-                'KWallet': 'keyring.backends.kwallet',
-                'SecretService': 'keyring.backends.SecretService',
-                'Windows': 'keyring.backends.Windows',
-                'chainer': 'keyring.backends.chainer',
-                'macOS': 'keyring.backends.OS_X',
-            }
-
-            for k, v in six.iteritems(backend_list):
-                logger.debug('Loading backend: ' + k)
-                suppress_exceptions(import_module(v))
-
-            viable_classes = KeyringBackend.get_viable_backends()
-            rings = list(suppress_exceptions(viable_classes, exceptions=TypeError))
-            selected = max(rings, default=fail.Keyring(), key=lambda p: p.priority)
-            keyring.set_keyring(selected)
-
+            logger.info("State is frozen, using default keyrings")
+            os.environ["FROZEN"] = "TRUE"
+        import keyring
         logger.info("Using keyring '" + keyring.get_keyring().name + "' to retrieve: " + secure_value_key)
         return keyring.get_password(service_name=secure_value_key, username=user_name)
 
