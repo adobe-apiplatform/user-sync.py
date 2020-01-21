@@ -1,4 +1,6 @@
 import datetime
+import random
+import string
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -9,59 +11,80 @@ from cryptography.x509.oid import NameOID
 
 
 class Certgen:
-    def __init__(self, credentials, pk_file, cert_file):
-        self.credentials = credentials
-        self.pk_file = pk_file
-        self.cert_file = cert_file
-        self.key = self.create_key()
+    def generate(self, private_key_file, cert_pub_file, credentials):
+        key = self.create_key()
+        self.write_key_to_file(private_key_file, key)
+        certificate = self.create_cert(credentials, key)
+        self.write_cert_to_file(cert_pub_file, certificate)
+
+    def random_generator(self, size=15, chars=string.ascii_letters):
+        return ''.join(random.choice(chars) for x in range(size))
+
+    def get_credentials(self, randomize):
+        if randomize:
+            country = self.random_generator(2)
+            state = self.random_generator()
+            city = self.random_generator()
+            organization = self.random_generator()
+            common = self.random_generator()
+            email = self.random_generator()
+        else:
+            country = input('Country Code: ')
+            state = input('State or Province: ')
+            city = input('City: ')
+            organization = input('Organization: ')
+            common = input('Common Name: ')
+            email = input('Email: ')
+        return {
+            'country': country,
+            'state': state,
+            'city': city,
+            'organization': organization,
+            'common': common,
+            'email': email
+        }
 
     def create_key(self):
-        key = rsa.generate_private_key(
+        return rsa.generate_private_key(
             public_exponent=65537,
             key_size=2048,
             backend=default_backend()
         )
-        return key
 
-    def write_key_to_file(self):
-        key = self.key
-        with open(self.pk_file, 'wb') as f:
+    def write_key_to_file(self, private_key_file, key):
+        with open(private_key_file, 'wb') as f:
             f.write(key.private_bytes(
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PrivateFormat.TraditionalOpenSSL,
                 encryption_algorithm=serialization.NoEncryption()
             ))
-        self.write_certificate_to_file()
 
-    def create_cert(self):
+    def create_cert(self, credentials, key):
         subject = issuer = x509.Name([
-            x509.NameAttribute(NameOID.COUNTRY_NAME, self.credentials['country']),
-            x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, self.credentials['state']),
-            x509.NameAttribute(NameOID.LOCALITY_NAME, self.credentials['city']),
-            x509.NameAttribute(NameOID.ORGANIZATION_NAME, self.credentials['organization']),
-            x509.NameAttribute(NameOID.COMMON_NAME, self.credentials['common']),
-            x509.NameAttribute(NameOID.EMAIL_ADDRESS, self.credentials['email'])
+            x509.NameAttribute(NameOID.COUNTRY_NAME, credentials['country']),
+            x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, credentials['state']),
+            x509.NameAttribute(NameOID.LOCALITY_NAME, credentials['city']),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, credentials['organization']),
+            x509.NameAttribute(NameOID.COMMON_NAME, credentials['common']),
+            x509.NameAttribute(NameOID.EMAIL_ADDRESS, credentials['email'])
         ])
 
-        cert = x509.CertificateBuilder().subject_name(
+        return x509.CertificateBuilder().subject_name(
             subject
         ).issuer_name(
             issuer
         ).public_key(
-            self.key.public_key()
+            key.public_key()
         ).serial_number(
             x509.random_serial_number()
         ).not_valid_before(
             datetime.datetime.utcnow()
         ).not_valid_after(
-            datetime.datetime.utcnow() + datetime.timedelta(days=10)
-        ).add_extension(
-            x509.SubjectAlternativeName([x509.DNSName(u"localhost")]),
-            critical=False,
-        ).sign(self.key, hashes.SHA256(), default_backend())
-        return cert
+            datetime.datetime.utcnow() + datetime.timedelta(days=3650)
+        ).sign(key, hashes.SHA256(), default_backend())
 
-    def write_certificate_to_file(self):
-        cert = self.create_cert()
-        with open(self.cert_file, "wb") as f:
-            f.write(cert.public_bytes(serialization.Encoding.PEM))
+    def write_cert_to_file(self, cert_pub_file, certificate):
+        with open(cert_pub_file, "wb") as f:
+            f.write(certificate.public_bytes(serialization.Encoding.PEM))
+
+# Handle some validation for the fields (so special characters and such)

@@ -26,6 +26,9 @@ import click
 import shutil
 from click_default_group import DefaultGroup
 from datetime import datetime
+import yaml
+import random
+import string
 
 import six
 
@@ -248,36 +251,43 @@ def decrypt(key_path, password):
         print(str(e))
 
 
-def abort_if_false(ctx, param, value):
-    if not value:
-        ctx.abort()
+# @main.command(help='Gets password from connector-umapi.yml.')
+# @click.argument('key-path', default='private.key', type=click.Path(exists=True))
+# @click.option('--password', prompt=True, hide_input=True)
+# def get_password():
+#     with open(r'connector-umapi.yml') as file:
+#         umapi_data = yaml.load(file, Loader=yaml.FullLoader)
+#         password = umapi_data['enterprise']['priv_key_pass']
+#         print(password)
+    # encryption = Encryption(key_path, password)
+    # try:
+    #     encryption.decrypt_file()
+    #     print('Decryption was successful.', os.path.abspath(key_path))
+    # except AssertionException as e:
+    #     print(str(e))
+
+
+# def abort_if_false(ctx, param, value):
+#     if not value:
+#         ctx.abort()
 
 
 @main.command(help='Create a new certificate_pub.crt file and private.key file')
-@click.option('--yes', is_flag=True, callback=abort_if_false, expose_value=False,
-              prompt='Are you sure you want to overwrite the files?')
-@click.option('--randomize')
-@click.option('--country', prompt='Country Code')
-@click.option('--state', prompt='State/Province')
-@click.option('--city', prompt='City/Locality')
-@click.option('--organization', prompt='Organization')
-@click.option('--common', prompt='Common Name')
-@click.option('--email', prompt='Email')
-@click.option('--private-key-file', default='private.key')
-@click.option('--cert-pub-file', default='certificate_pub.crt')
-# country = click.prompt('Enter country code', type=str)
-def certgen(country, state, city, organization, common, email, private_key_file, cert_pub_file):
-
-    credentials = {
-        'country': country,
-        'state': state,
-        'city': city,
-        'organization': organization,
-        'common': common,
-        'email': email
-    }
-    create_certgen = user_sync.certgen.Certgen(credentials, private_key_file, cert_pub_file)
-    create_certgen.write_key_to_file()
+@click.option('--overwrite', '-y', help='Overwrite files without being asked to confirm', is_flag=True)
+@click.option('--randomize', '-r', help='Randomize the values rather than entering credentials', is_flag=True)
+@click.option('--private-key-file', help='Set a custom path to a private.key file.', default='private.key')
+@click.option('--cert-pub-file', help='Set a custom path to a certificate_pub.crt file.', default='certificate_pub.crt')
+def certgen(randomize, private_key_file, cert_pub_file, overwrite):
+    if not overwrite and (os.path.exists(private_key_file) or os.path.exists(cert_pub_file)):
+        overwrite_prompt = input('Would you like to overwrite? y/n: ')
+        if overwrite_prompt == 'n':
+            private_key_file = 'private_new.key'
+            cert_pub_file = 'certificate_pub_new.crt'
+        elif overwrite_prompt != 'y':
+            exit()
+    create_certgen = Certgen()
+    credentials = create_certgen.get_credentials(randomize)
+    create_certgen.generate(private_key_file, cert_pub_file, credentials)
 
 
 @main.command()
