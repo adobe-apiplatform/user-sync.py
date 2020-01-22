@@ -2,15 +2,14 @@
 
 block_cipher = None
 
-
 a = Analysis(['user_sync/app.py'],
              binaries=[],
-             datas=[( 'user_sync/resources/*.cfg', 'resources' ),
-                    ( 'user_sync/resources/manual_url', 'resources' ),
-                    ( 'user_sync/resources/README.md', 'resources' ),
-                    ( 'user_sync/resources/examples/*', 'resources/examples' )],
-             hiddenimports=['win32timezone','pkg_resources.py2_warn'],
-             hookspath=[],
+             datas=[('user_sync/resources/*.cfg', 'resources'),
+                    ('user_sync/resources/manual_url', 'resources'),
+                    ('user_sync/resources/README.md', 'resources'),
+                    ('user_sync/resources/examples/*', 'resources/examples')],
+             hiddenimports=['win32timezone', 'pkg_resources.py2_warn', 'keyring'],
+             hookspath=['.build'],
              runtime_hooks=[],
              excludes=[],
              win_no_prefer_redirects=False,
@@ -18,7 +17,7 @@ a = Analysis(['user_sync/app.py'],
              cipher=block_cipher,
              noarchive=False)
 pyz = PYZ(a.pure, a.zipped_data,
-             cipher=block_cipher)
+          cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
@@ -31,4 +30,4 @@ exe = EXE(pyz,
           strip=False,
           upx=True,
           runtime_tmpdir=None,
-          console=True , icon='.build/usticon.ico')
+          console=True, icon='.build/usticon.ico')

@@ -835,12 +835,8 @@ class DictConfig(ObjectConfig):
 
     @staticmethod
     def get_value_from_keyring(secure_value_key, user_name):
-        logger = logging.getLogger("keyring")
-        if flags.get_flag('UST_BUILD_EXE'):
-            logger.info("State is frozen, using default keyrings")
-            os.environ["FROZEN"] = "TRUE"
         import keyring
-        logger.info("Using keyring '" + keyring.get_keyring().name + "' to retrieve: " + secure_value_key)
+        logging.getLogger("keyring").info("Using keyring '" + keyring.get_keyring().name + "' to retrieve: " + secure_value_key)
         return keyring.get_password(service_name=secure_value_key, username=user_name)
 
 
