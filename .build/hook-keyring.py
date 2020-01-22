@@ -7,6 +7,11 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 # -----------------------------------------------------------------------------
 
+# Temporary implementation until this PR is merged:
+# https://github.com/pyinstaller/pyinstaller/pull/3948/files
+
+# See also https://github.com/jaraco/keyring/issues/324
+
 from PyInstaller.utils.hooks import collect_submodules, copy_metadata
 
 hiddenimports = collect_submodules('keyring.backends')
