@@ -251,27 +251,6 @@ def decrypt(key_path, password):
         print(str(e))
 
 
-# @main.command(help='Gets password from connector-umapi.yml.')
-# @click.argument('key-path', default='private.key', type=click.Path(exists=True))
-# @click.option('--password', prompt=True, hide_input=True)
-# def get_password():
-#     with open(r'connector-umapi.yml') as file:
-#         umapi_data = yaml.load(file, Loader=yaml.FullLoader)
-#         password = umapi_data['enterprise']['priv_key_pass']
-#         print(password)
-    # encryption = Encryption(key_path, password)
-    # try:
-    #     encryption.decrypt_file()
-    #     print('Decryption was successful.', os.path.abspath(key_path))
-    # except AssertionException as e:
-    #     print(str(e))
-
-
-# def abort_if_false(ctx, param, value):
-#     if not value:
-#         ctx.abort()
-
-
 @main.command(help='Create a new certificate_pub.crt file and private.key file')
 @click.option('--overwrite', '-y', help='Overwrite files without being asked to confirm', is_flag=True)
 @click.option('--randomize', '-r', help='Randomize the values rather than entering credentials', is_flag=True)
@@ -279,15 +258,16 @@ def decrypt(key_path, password):
 @click.option('--cert-pub-file', help='Set a custom path to a certificate_pub.crt file.', default='certificate_pub.crt')
 def certgen(randomize, private_key_file, cert_pub_file, overwrite):
     if not overwrite and (os.path.exists(private_key_file) or os.path.exists(cert_pub_file)):
-        overwrite_prompt = input('Would you like to overwrite? y/n: ')
-        if overwrite_prompt == 'n':
+        if not click.confirm('Would you like to overwrite the original files?'):
             private_key_file = 'private_new.key'
             cert_pub_file = 'certificate_pub_new.crt'
-        elif overwrite_prompt != 'y':
-            exit()
-    create_certgen = Certgen()
-    credentials = create_certgen.get_credentials(randomize)
-    create_certgen.generate(private_key_file, cert_pub_file, credentials)
+    try:
+        credentials = Certgen.get_subject_fields(randomize)
+        Certgen.generate(private_key_file, cert_pub_file, credentials)
+        print('Files were created at', os.path.abspath(private_key_file), 'and', os.path.abspath(cert_pub_file))
+    except AssertionException as e:
+        print(str(e))
+        print('Files have not been created/overwritten.')
 
 
 @main.command()
