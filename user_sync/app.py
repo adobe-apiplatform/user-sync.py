@@ -268,6 +268,8 @@ def certgen(randomize, private_key_file, cert_pub_file, overwrite):
     except AssertionException as e:
         print(str(e))
         print('Files have not been created/overwritten.')
+        # click.echo instead of print
+        # split up line
 
 
 @main.command()

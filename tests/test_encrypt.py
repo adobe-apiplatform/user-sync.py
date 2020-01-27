@@ -7,16 +7,7 @@ import user_sync.encrypt
 from user_sync.error import AssertionException
 
 
-@pytest.fixture
-def private_key(fixture_dir, tmpdir):
-    shutil.copy(os.path.join(fixture_dir, 'test_private.key'), tmpdir.dirname)
-    return os.path.join(tmpdir.dirname, 'test_private.key')
 
-
-@pytest.fixture
-def encrypted_key(fixture_dir, tmpdir):
-    shutil.copy(os.path.join(fixture_dir, 'encrypted.key'), tmpdir.dirname)
-    return os.path.join(tmpdir.dirname, 'encrypted.key')
 
 
 def test_create_key(private_key):

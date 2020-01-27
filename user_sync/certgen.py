@@ -14,28 +14,26 @@ from user_sync.error import AssertionException
 class Certgen:
 
     @staticmethod
-    def generate(private_key_file, cert_pub_file, credentials):
+    def generate(private_key_file, cert_pub_file, subject_fields):
         key = Certgen.create_key()
-        certificate = Certgen.create_cert(credentials, key)
+        certificate = Certgen.create_cert(subject_fields, key)
         Certgen.write_key_to_file(private_key_file, key)
         Certgen.write_cert_to_file(cert_pub_file, certificate)
 
     @staticmethod
-    def create_values(randomize):
-        return lambda prompt, size=15: \
-            ''.join(random.choice(ascii_letters) for x in range(size)) \
-            if randomize else input(prompt)
+    def values(randomize=False, prompt='', size=15):
+        return ''.join(random.choice(ascii_letters) for x in range(size)) if randomize else input(prompt)
 
     @staticmethod
     def get_subject_fields(randomize):
-        values = Certgen.create_values(randomize)
+
         return {
-            'country': values('Country Code: ', 2),
-            'state': values('State: '),
-            'city': values('City: '),
-            'organization': values('Organization: '),
-            'common': values('Common: '),
-            'email': values('Email: ')
+            'country': Certgen.values(randomize, 'Country Code: ', 2),
+            'state': Certgen.values(randomize, 'State: '),
+            'city': Certgen.values(randomize, 'City: '),
+            'organization': Certgen.values(randomize, 'Organization: '),
+            'common': Certgen.values(randomize, 'Common: '),
+            'email': Certgen.values(randomize, 'Email: ')
         }
 
     @staticmethod
@@ -87,6 +85,3 @@ class Certgen:
     def write_cert_to_file(cert_pub_file, certificate):
         with open(cert_pub_file, "wb") as f:
             f.write(certificate.public_bytes(serialization.Encoding.PEM))
-
-
-# Handle some validation for the fields (so special characters and such)
