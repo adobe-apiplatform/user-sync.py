@@ -164,7 +164,7 @@ class RuleProcessor(object):
                                                                          username_filter_regex.pattern)
             logger.debug('Initialized with options: %s', options_to_report)
 
-    def run(self, directory_groups, directory_connector_manager, umapi_connectors):
+    def run(self, directory_groups, directory_connector, umapi_connectors):
         """
         :type directory_groups: dict(str, list(AdobeGroup)
         :type directory_connector: user_sync.connector.directory.DirectoryConnector
@@ -174,10 +174,10 @@ class RuleProcessor(object):
 
         self.prepare_umapi_infos()
 
-        if directory_connector_manager is not None:
+        if directory_connector is not None:
             load_directory_stats = JobStats("Load from Directory", divider="-")
             load_directory_stats.log_start(logger)
-            self.read_desired_user_groups(directory_groups, directory_connector_manager)
+            self.read_desired_user_groups(directory_groups, directory_connector)
             load_directory_stats.log_end(logger)
 
         for umapi_info in self.umapi_info_by_name.values():
@@ -185,7 +185,7 @@ class RuleProcessor(object):
 
         umapi_stats = JobStats('Push to UMAPI' if self.push_umapi else 'Sync with UMAPI', divider="-")
         umapi_stats.log_start(logger)
-        if directory_connector_manager is not None:
+        if directory_connector is not None:
             # note: push mode is not supported because if it is, we won't have a list of groups
             # that exist in the console.  we don't want to attempt to create groups that already exist
             if self.options.get('process_groups') and not self.push_umapi and self.options.get('auto_create'):
@@ -342,7 +342,7 @@ class RuleProcessor(object):
             umapi_info = self.get_umapi_info(adobe_group.get_umapi_name())
             umapi_info.add_mapped_group(adobe_group.get_group_name())
 
-    def read_desired_user_groups(self, mappings, directory_connector_manager):
+    def read_desired_user_groups(self, mappings, directory_connector):
         """
         :type mappings: dict(str, list(AdobeGroup))
         :type directory_connector: user_sync.connector.directory.DirectoryConnector
@@ -361,7 +361,7 @@ class RuleProcessor(object):
         directory_groups = set(six.iterkeys(mappings)) if self.will_process_groups() else set()
         if directory_group_filter is not None:
             directory_groups.update(directory_group_filter)
-        directory_users = directory_connector_manager.load_users_and_groups(groups=directory_groups,
+        directory_users = directory_connector.load_users_and_groups(groups=directory_groups,
                                                                     extended_attributes=extended_attributes,
                                                                     all_users=directory_group_filter is None)
 
