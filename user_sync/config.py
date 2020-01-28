@@ -32,7 +32,7 @@ import user_sync.identity_type
 import user_sync.port
 import user_sync.rules
 from user_sync.error import AssertionException
-from collections import defaultdict
+
 
 class ConfigLoader(object):
     # default values for reading configuration files
