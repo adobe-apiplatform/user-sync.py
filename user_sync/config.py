@@ -291,13 +291,13 @@ class ConfigLoader(object):
                              for key, val in six.iteritems(secondary_config_sources)}
         return primary_config, secondary_configs
 
-    def get_directory_connector_module_name(self):
+    def get_directory_connector_module_name(self, connector_type=None):
         """
         :rtype str
         """
         if self.invocation_options.get('stray_list_input_path', None):
             return None
-        connector_type = self.invocation_options.get('directory_connector_type')
+        connector_type = connector_type or self.invocation_options.get('directory_connector_type')
         if connector_type:
             return 'user_sync.connector.directory_' + connector_type
         else:
@@ -308,38 +308,28 @@ class ConfigLoader(object):
         directory_config = self.main_config.get_dict_config('directory_users', True)
         if directory_config is not None:
             connectors_config = directory_config.get_dict_config('connectors', True)
+
         # make sure none of the standard connectors get reported as unused
         if connectors_config:
             connectors_config.get_list('ldap', True)
             connectors_config.get_list('csv', True)
             connectors_config.get_list('okta', True)
+            connectors_config.get_list('multi', True)
             connectors_config.get_list('adobe_console', True)
-            multilist = connectors_config.get_list('multi', True)
-            temp_ids=[]
-            dup_dict = defaultdict(list)
-            if multilist is not None:
-                for number, row in enumerate(multilist):
-                    pathinfo = row['path']
-                    if pathinfo not in temp_ids:
-                        temp_ids.append(pathinfo)
-                    else:
-                        raise AssertionException(
-                            "Duplicate path is found")
-        return connectors_config
 
-    def get_directory_connector_options(self, connector_name):
+        connector = self.invocation_options.get('directory_connector_type')
+        conn_options = connectors_config.get_list(connector)
+
+        # If connector is not multi type, convert to equivalent dictionary
+        if connector != 'multi':
+            conn_options = [{'id': connector, 'type': connector, 'path': conn_options[0]}]
+        return conn_options
+
+    def get_directory_connector_options(self, path):
         """
-        :rtype dict
+        :rtype str
         """
-        options = {}
-        connectors_config = self.get_directory_connector_configs()
-
-        if connector_name != 'csv' and connector_name not in connectors_config.value:
-            raise AssertionException("Config file must be specified for connector type :: '{}'".format(connector_name))
-
-        if connectors_config is not None:
-            connector_item = connectors_config.get_list(connector_name, True)
-            options = self.get_dict_from_sources(connector_item)
+        options = self.get_dict_from_sources([path])
         options = self.combine_dicts(
             [options, self.invocation_options.get('directory_connector_overridden_options', {})])
         return options
