@@ -81,10 +81,10 @@ class DirectoryConnectorManager(object):
 
     def load_users_and_groups(self, groups, extended_attributes, all_users):
 
-        users = {}
+        users = []
         for c,v in six.iteritems(self.connectors):
-            z = v.load_users_and_groups(groups, extended_attributes, all_users)
-
-            for k in z:
-                users[k['email']] = k
-        return six.itervalues(users)
+            self.logger.info("Loading users from connector: " + c)
+            new_users = list(v.load_users_and_groups(groups, extended_attributes, all_users))
+            self.logger.info("Found {} users".format(len(new_users)))
+            users.extend(new_users)
+        return iter(users)
