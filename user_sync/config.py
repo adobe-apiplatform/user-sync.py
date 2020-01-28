@@ -128,7 +128,7 @@ class ConfigLoader(object):
         # --connector
         connector_spec = options['connector']
         connector_type = user_sync.helper.normalize_string(connector_spec[0])
-        if connector_type in ["ldap", "okta", "adobe_console"]:
+        if connector_type in ["ldap", "okta", "adobe_console", "multi"]:
             if len(connector_spec) > 1:
                 raise AssertionException('Must not specify a file (%s) with connector type %s' %
                                          (connector_spec[0], connector_type))
@@ -291,13 +291,13 @@ class ConfigLoader(object):
                              for key, val in six.iteritems(secondary_config_sources)}
         return primary_config, secondary_configs
 
-    def get_directory_connector_module_name(self):
+    def get_directory_connector_module_name(self, connector_type=None):
         """
         :rtype str
         """
         if self.invocation_options.get('stray_list_input_path', None):
             return None
-        connector_type = self.invocation_options.get('directory_connector_type')
+        connector_type = connector_type or self.invocation_options.get('directory_connector_type')
         if connector_type:
             return 'user_sync.connector.directory_' + connector_type
         else:
@@ -308,27 +308,28 @@ class ConfigLoader(object):
         directory_config = self.main_config.get_dict_config('directory_users', True)
         if directory_config is not None:
             connectors_config = directory_config.get_dict_config('connectors', True)
+
         # make sure none of the standard connectors get reported as unused
         if connectors_config:
             connectors_config.get_list('ldap', True)
             connectors_config.get_list('csv', True)
             connectors_config.get_list('okta', True)
+            connectors_config.get_list('multi', True)
             connectors_config.get_list('adobe_console', True)
-        return connectors_config
 
-    def get_directory_connector_options(self, connector_name):
+        connector = self.invocation_options.get('directory_connector_type')
+        conn_options = connectors_config.get_list(connector)
+
+        # If connector is not multi type, convert to equivalent dictionary
+        if connector != 'multi':
+            conn_options = [{'id': connector, 'type': connector, 'path': conn_options[0]}]
+        return conn_options
+
+    def get_directory_connector_options(self, path):
         """
-        :rtype dict
+        :rtype str
         """
-        options = {}
-        connectors_config = self.get_directory_connector_configs()
-
-        if connector_name != 'csv' and connector_name not in connectors_config.value:
-            raise AssertionException("Config file must be specified for connector type :: '{}'".format(connector_name))
-
-        if connectors_config is not None:
-            connector_item = connectors_config.get_list(connector_name, True)
-            options = self.get_dict_from_sources(connector_item)
+        options = self.get_dict_from_sources([path])
         options = self.combine_dicts(
             [options, self.invocation_options.get('directory_connector_overridden_options', {})])
         return options
@@ -840,15 +841,15 @@ class ConfigFileLoader:
 
     # key_paths in the root configuration file that should have filename values
     # mapped to their value options.  See load_from_yaml for the option meanings.
-    ROOT_CONFIG_PATH_KEYS = {'/adobe_users/connectors/umapi': (True, True, None),
-                             '/directory_users/connectors/*': (True, False, None),
-                             '/directory_users/extension': (True, False, None),
-                             '/logging/file_log_directory': (False, False, "logs"),
+    ROOT_CONFIG_PATH_KEYS = {'/adobe_users/connectors/umapi': (True, True, None, None),
+                             '/directory_users/connectors/*': (True, True, None, ['path']),
+                             '/directory_users/extension': (True, False, None, None),
+                             '/logging/file_log_directory': (False, False, "logs", None),
                              }
 
     # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files
-    SUB_CONFIG_PATH_KEYS = {'/enterprise/priv_key_path': (True, False, None),
-                            '/integration/priv_key_path': (True, False, None)}
+    SUB_CONFIG_PATH_KEYS = {'/enterprise/priv_key_path': (True, False, None, None),
+                            '/integration/priv_key_path': (True, False, None, None)}
 
     @classmethod
     def load_root_config(cls, filename):
@@ -957,7 +958,7 @@ class ConfigFileLoader:
         return yml
 
     @classmethod
-    def process_path_key(cls, dictionary, keys, level, must_exist, can_have_subdict, default_val):
+    def process_path_key(cls, dictionary, keys, level, must_exist, can_have_subdict, default_val, key_names):
         """
         this function is given the list of keys in the current key_path, and searches
         recursively into the given dictionary until it finds the designated value, and then
@@ -978,9 +979,9 @@ class ConfigFileLoader:
             # should process all keys as path values
             if key == "*":
                 for key, val in six.iteritems(dictionary):
-                    dictionary[key] = cls.process_path_value(val, must_exist, can_have_subdict)
+                    dictionary[key] = cls.process_path_value(val, must_exist, can_have_subdict, key_names)
             elif key in dictionary:
-                dictionary[key] = cls.process_path_value(dictionary[key], must_exist, can_have_subdict)
+                dictionary[key] = cls.process_path_value(dictionary[key], must_exist, can_have_subdict, key_names)
             # key was not found, but default value was set, so apply it
             elif default_val:
                 dictionary[key] = cls.relative_path(default_val, must_exist)
@@ -994,20 +995,20 @@ class ConfigFileLoader:
                 for key in dictionary.keys():
                     if isinstance(dictionary[key], dict):
                         cls.process_path_key(dictionary[key], keys, level + 1,
-                                             must_exist, can_have_subdict, default_val)
+                                             must_exist, can_have_subdict, default_val, key_names)
             elif key in dictionary:
                 # if the key refers to a dictionary, recurse into it to go
                 # further down the path key
                 if isinstance(dictionary[key], dict):
-                    cls.process_path_key(dictionary[key], keys, level + 1, must_exist, can_have_subdict, default_val)
+                    cls.process_path_key(dictionary[key], keys, level + 1, must_exist, can_have_subdict, default_val, key_names)
             # if the key was not found, but a default value is specified,
             # drill down further to set the default value
             elif default_val:
                 dictionary[key] = {}
-                cls.process_path_key(dictionary[key], keys, level + 1, must_exist, can_have_subdict, default_val)
+                cls.process_path_key(dictionary[key], keys, level + 1, must_exist, can_have_subdict, default_val, key_names)
 
     @classmethod
-    def process_path_value(cls, val, must_exist, can_have_subdict):
+    def process_path_value(cls, val, must_exist, can_have_subdict, key_names):
         """
         does the relative path processing for a value from the dictionary,
         which can be a string, a list of strings, or a list of strings
@@ -1022,8 +1023,14 @@ class ConfigFileLoader:
             vals = []
             for entry in val:
                 if can_have_subdict and isinstance(entry, dict):
-                    for subkey, subval in six.iteritems(entry):
-                        vals.append({subkey: cls.relative_path(subval, must_exist)})
+                    if key_names:
+                        for subkey, subval in six.iteritems(entry):
+                            if subkey in key_names:
+                                entry[subkey] = cls.relative_path(subval, must_exist)
+                        vals.append(entry)
+                    else:
+                        for subkey, subval in six.iteritems(entry):
+                            vals.append({subkey: cls.relative_path(subval, must_exist)})
                 else:
                     vals.append(cls.relative_path(entry, must_exist))
             return vals
