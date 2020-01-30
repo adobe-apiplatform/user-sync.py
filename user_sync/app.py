@@ -251,25 +251,31 @@ def decrypt(key_path, password):
         print(str(e))
 
 
-@main.command(help='Create a new certificate_pub.crt file and private.key file')
+@main.command(help='Create a new certificate_pub.crt file and private.key file. '
+                   'User Sync Tool can use these certificates to communicate with '
+                   'the admin console. Please visit https://console.adobe.io to '
+                   'complete the integration process.')
 @click.option('--overwrite', '-y', help='Overwrite files without being asked to confirm', is_flag=True)
 @click.option('--randomize', '-r', help='Randomize the values rather than entering credentials', is_flag=True)
-@click.option('--private-key-file', help='Set a custom path to a private.key file.', default='private.key')
-@click.option('--cert-pub-file', help='Set a custom path to a certificate_pub.crt file.', default='certificate_pub.crt')
+@click.option('--private-key-file', help='Set a custom path to a private.key file', default='private.key')
+@click.option('--cert-pub-file', help='Set a custom path to a certificate_pub.crt file', default='certificate_pub.crt')
 def certgen(randomize, private_key_file, cert_pub_file, overwrite):
+    private_key_file = os.path.abspath(private_key_file)
+    cert_pub_file = os.path.abspath(cert_pub_file)
     if not overwrite and (os.path.exists(private_key_file) or os.path.exists(cert_pub_file)):
         if not click.confirm('Would you like to overwrite the original files?'):
-            private_key_file = 'private_new.key'
-            cert_pub_file = 'certificate_pub_new.crt'
+            return
     try:
-        credentials = Certgen.get_subject_fields(randomize)
-        Certgen.generate(private_key_file, cert_pub_file, credentials)
-        print('Files were created at', os.path.abspath(private_key_file), 'and', os.path.abspath(cert_pub_file))
+        if not randomize:
+            click.echo("Enter information as required to generate the X509 certificate/key pair for your organization. "
+                       "This information is used only for authentication with UMAPI and does not need to reflect "
+                       "an SSL or other official identity.")
+        subject_fields = Certgen.get_subject_fields(randomize)
+        Certgen.generate(private_key_file, cert_pub_file, subject_fields)
+        click.echo("Files were created at:\n{0}\n{1}".format(private_key_file, cert_pub_file))
     except AssertionException as e:
-        print(str(e))
-        print('Files have not been created/overwritten.')
-        # click.echo instead of print
-        # split up line
+        click.echo(str(e))
+        click.echo('Files have not been created/overwritten.')
 
 
 @main.command()
