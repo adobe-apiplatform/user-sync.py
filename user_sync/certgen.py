@@ -32,7 +32,7 @@ class Certgen:
             'state': Certgen.values(randomize, 'State: '),
             'city': Certgen.values(randomize, 'City: '),
             'organization': Certgen.values(randomize, 'Organization: '),
-            'common': Certgen.values(randomize, 'Common: '),
+            'common': Certgen.values(randomize, 'Common Name: '),
             'email': Certgen.values(randomize, 'Email: ')
         }
 
