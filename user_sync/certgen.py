@@ -28,10 +28,6 @@ class Certgen:
         Certgen.write_cert_to_file(cert_pub_file, certificate)
 
     @staticmethod
-    def values(randomize=False, prompt='', size=15):
-        return str(binascii.b2a_hex(urandom(size)).decode()) if randomize else input(prompt)
-
-    @staticmethod
     def get_subject_fields(randomize):
         def values(prompt='', size=6):
             return str(binascii.b2a_hex(urandom(size)).decode()) if randomize else input(prompt)
