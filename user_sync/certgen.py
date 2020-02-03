@@ -2,6 +2,7 @@ import binascii
 import datetime
 from os import urandom
 
+import six
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
@@ -55,12 +56,12 @@ class Certgen:
     def create_cert(subject_fields, key):
         try:
             subject = issuer = x509.Name([
-                x509.NameAttribute(NameOID.COUNTRY_NAME, subject_fields[Certgen.country]),
-                x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, subject_fields[Certgen.state]),
-                x509.NameAttribute(NameOID.LOCALITY_NAME, subject_fields[Certgen.city]),
-                x509.NameAttribute(NameOID.ORGANIZATION_NAME, subject_fields[Certgen.organization]),
-                x509.NameAttribute(NameOID.COMMON_NAME, subject_fields[Certgen.common]),
-                x509.NameAttribute(NameOID.EMAIL_ADDRESS, subject_fields[Certgen.email])
+                x509.NameAttribute(NameOID.COUNTRY_NAME, six.text_type(subject_fields[Certgen.country])),
+                x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, six.text_type(subject_fields[Certgen.state])),
+                x509.NameAttribute(NameOID.LOCALITY_NAME, six.text_type(subject_fields[Certgen.city])),
+                x509.NameAttribute(NameOID.ORGANIZATION_NAME, six.text_type(subject_fields[Certgen.organization])),
+                x509.NameAttribute(NameOID.COMMON_NAME, six.text_type(subject_fields[Certgen.common])),
+                x509.NameAttribute(NameOID.EMAIL_ADDRESS, six.text_type(subject_fields[Certgen.email]))
             ])
 
             return x509.CertificateBuilder().subject_name(
