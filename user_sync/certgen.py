@@ -1,6 +1,6 @@
+import binascii
 import datetime
-import random
-from string import ascii_letters
+from os import urandom
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -12,6 +12,12 @@ from user_sync.error import AssertionException
 
 
 class Certgen:
+    country = 'countryName'
+    state = 'stateOrProvinceName'
+    city = 'localityName'
+    organization = 'organizationName'
+    common = 'commonName'
+    email = 'emailAddress'
 
     @staticmethod
     def generate(private_key_file, cert_pub_file, subject_fields):
@@ -22,18 +28,19 @@ class Certgen:
 
     @staticmethod
     def values(randomize=False, prompt='', size=15):
-        return ''.join(random.choice(ascii_letters) for x in range(size)) if randomize else input(prompt)
+        return str(binascii.b2a_hex(urandom(size)).decode()) if randomize else input(prompt)
 
     @staticmethod
     def get_subject_fields(randomize):
-
+        def values(prompt='', size=6):
+            return str(binascii.b2a_hex(urandom(size)).decode()) if randomize else input(prompt)
         return {
-            'country': Certgen.values(randomize, 'Country Code: ', 2),
-            'state': Certgen.values(randomize, 'State: '),
-            'city': Certgen.values(randomize, 'City: '),
-            'organization': Certgen.values(randomize, 'Organization: '),
-            'common': Certgen.values(randomize, 'Common: '),
-            'email': Certgen.values(randomize, 'Email: ')
+            Certgen.country: values('Country Code: ', 1),
+            Certgen.state: values('State: '),
+            Certgen.city: values('City: '),
+            Certgen.organization: values('Organization: '),
+            Certgen.common: values('Common Name: '),
+            Certgen.email: values('Email: ')
         }
 
     @staticmethod
@@ -48,12 +55,12 @@ class Certgen:
     def create_cert(subject_fields, key):
         try:
             subject = issuer = x509.Name([
-                x509.NameAttribute(NameOID.COUNTRY_NAME, subject_fields['country']),
-                x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, subject_fields['state']),
-                x509.NameAttribute(NameOID.LOCALITY_NAME, subject_fields['city']),
-                x509.NameAttribute(NameOID.ORGANIZATION_NAME, subject_fields['organization']),
-                x509.NameAttribute(NameOID.COMMON_NAME, subject_fields['common']),
-                x509.NameAttribute(NameOID.EMAIL_ADDRESS, subject_fields['email'])
+                x509.NameAttribute(NameOID.COUNTRY_NAME, subject_fields[Certgen.country]),
+                x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, subject_fields[Certgen.state]),
+                x509.NameAttribute(NameOID.LOCALITY_NAME, subject_fields[Certgen.city]),
+                x509.NameAttribute(NameOID.ORGANIZATION_NAME, subject_fields[Certgen.organization]),
+                x509.NameAttribute(NameOID.COMMON_NAME, subject_fields[Certgen.common]),
+                x509.NameAttribute(NameOID.EMAIL_ADDRESS, subject_fields[Certgen.email])
             ])
 
             return x509.CertificateBuilder().subject_name(

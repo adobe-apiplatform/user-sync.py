@@ -40,7 +40,7 @@ import user_sync.lockfile
 import user_sync.rules
 import user_sync.cli
 import user_sync.resource
-from user_sync.encrypt import Encryption
+from user_sync.encryption import Encryption
 from user_sync.certgen import Certgen
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
