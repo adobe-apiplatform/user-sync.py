@@ -223,21 +223,11 @@ def example_config(**kwargs):
 
 
 @main.command()
-@click.option('--store-ldap', prompt="Enter LDAP password",
-              help='Store password to your LDAP service account.')
-@click.option('--store-umapi', prompt="Enter UMAPI key",
-              help='store API key from console.adobe.io integration')
-@click.option('--store-client-secret', prompt='Enter client secret',
-              help='Store client secret from console.adobe.io integration')
-def store_credential(store_ldap, store_umapi, store_client_secret):
+def store_credential():
     """Stores credentials in the configuration files"""
     # no args/options. method just looks in config files (umapi and connector-ldap
     # , find the values, store them, then make whatever necessary changes to the config files
-    ldap_password = store_ldap
-    umapi_key = store_umapi
-    client_secret = store_client_secret
-    click.echo('Credentials successfully stored for {0}, {1}, and {2}.'.format(store_ldap, store_umapi,
-                                                                               store_client_secret))
+    click.echo('You have called the store-credential command.')
 
 
 @main.command()
@@ -250,15 +240,15 @@ def retrieve_credential(revert):
 
 
 @main.command()
-@click.option('--identifier', '-i', prompt='Enter identifier')
+@click.option('-i', '--identifier', prompt='Enter identifier')
 def get_credential(identifier):
     """Gets the specified credentials from keyring"""
     click.echo('you have called the get credential command with arguments {0}'.format(identifier))
 
 
 @main.command()
-@click.option('--identifier', '-i', prompt='Enter identifier')
-@click.option('--password', '-p', prompt="Enter password", hide_input=True)
+@click.option('-i', '--identifier', prompt='Enter identifier')
+@click.option('-p', '--password', prompt="Enter password", hide_input=True)
 def set_credential(identifier, password):
     """Sets the specified credentials in keyring"""
     click.echo('you have called the set credential command with argument {0}'.format(identifier))
