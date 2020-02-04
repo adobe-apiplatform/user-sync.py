@@ -225,8 +225,6 @@ def example_config(**kwargs):
 @main.command()
 def store_credential():
     """Stores credentials in the configuration files"""
-    # no args/options. method just looks in config files (umapi and connector-ldap
-    # , find the values, store them, then make whatever necessary changes to the config files
     click.echo('You have called the store-credential command.')
 
 
