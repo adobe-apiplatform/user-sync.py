@@ -40,7 +40,7 @@ import user_sync.lockfile
 import user_sync.rules
 import user_sync.cli
 import user_sync.resource
-from user_sync.rsa_encrypt import Encrypt
+from user_sync.encryption import Encryption
 from user_sync.certgen import Certgen
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
@@ -231,22 +231,28 @@ def example_config(**kwargs):
 @click.argument('key-path', default='private.key', type=click.Path(exists=True))
 @click.option('--password', '-p', prompt='Create password', hide_input=True, confirmation_prompt=True)
 def encrypt(password, key_path):
-    try:
-        Encrypt.encrypt_key(password, key_path)
-        click.echo('Encryption was successful.\n{0}'.format(os.path.abspath(key_path)))
-    except AssertionException as e:
-        click.echo(str(e))
+    if os.stat(key_path).st_size != 0:
+        try:
+            Encryption.encrypt(password, key_path)
+            click.echo('Encryption was successful.\n{0}'.format(os.path.abspath(key_path)))
+        except AssertionException as e:
+            click.echo(str(e))
+    else:
+        click.echo('{0} is an invalid file.'.format(os.path.abspath(key_path)))
 
 
 @main.command(help='Decrypt an RSA private key file with a passphrase')
 @click.argument('key-path', default='private.key', type=click.Path(exists=True))
 @click.option('--password', '-p', prompt='Enter password', hide_input=True)
 def decrypt(password, key_path):
-    try:
-        Encrypt.decrypt_key(password, key_path)
-        click.echo('Decryption was successful.\n{0}'.format(os.path.abspath(key_path)))
-    except AssertionException as e:
-        click.echo(str(e))
+    if os.stat(key_path).st_size != 0:
+        try:
+            Encryption.decrypt(password, key_path)
+            click.echo('Decryption was successful.\n{0}'.format(os.path.abspath(key_path)))
+        except AssertionException as e:
+            click.echo(str(e))
+    else:
+        click.echo('File is empty.......')
 
 
 @main.command(help='Create a new certificate_pub.crt file and private.key file. '
