@@ -247,7 +247,8 @@ def encrypt(password, key_path):
 def decrypt(password, key_path):
     if os.stat(key_path).st_size != 0:
         try:
-            Encryption.decrypt(password, key_path)
+            data = Encryption.decrypt(password, key_path)
+            Encryption.write_key(data, key_path)
             click.echo('Decryption was successful.\n{0}'.format(os.path.abspath(key_path)))
         except AssertionException as e:
             click.echo(str(e))
