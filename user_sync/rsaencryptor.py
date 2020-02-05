@@ -12,7 +12,6 @@ class RSAEncryptor:
 
     @staticmethod
     def write_key(data, pk_file):
-
         with open(pk_file, 'w') as f:
             f.write(data)
 
