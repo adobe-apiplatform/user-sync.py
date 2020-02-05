@@ -1,6 +1,4 @@
-import os
 import re
-import shutil
 import pytest
 import six
 
