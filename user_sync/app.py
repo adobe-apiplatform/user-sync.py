@@ -357,8 +357,9 @@ def begin_work(config_loader):
 @click.argument('key-path', default='private.key', type=click.Path(exists=True))
 @click.option('--password', '-p', prompt='Create password', hide_input=True, confirmation_prompt=True)
 def encrypt(password, key_path):
+
     try:
-        data = user_sync.encryption.encrypt(password, key_path)
+        data = user_sync.encryption.encrypt_file(password, key_path)
         user_sync.encryption.write_key(data, key_path)
         click.echo('Encryption was successful.\n{0}'.format(os.path.abspath(key_path)))
     except AssertionException as e:
@@ -369,8 +370,9 @@ def encrypt(password, key_path):
 @click.argument('key-path', default='private.key', type=click.Path(exists=True))
 @click.option('--password', '-p', prompt='Enter password', hide_input=True)
 def decrypt(password, key_path):
+
     try:
-        data = user_sync.encryption.decrypt(password, key_path)
+        data = user_sync.encryption.decrypt_file(password, key_path)
         user_sync.encryption.write_key(data, key_path)
         click.echo('Decryption was successful.\n{0}'.format(os.path.abspath(key_path)))
     except AssertionException as e:
