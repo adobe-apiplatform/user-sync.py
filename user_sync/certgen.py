@@ -21,9 +21,9 @@ class Certgen:
     email = 'emailAddress'
 
     @staticmethod
-    def generate(private_key_file, cert_pub_file, subject_fields):
+    def generate(private_key_file, cert_pub_file, subject_fields, days):
         key = Certgen.create_key()
-        certificate = Certgen.create_cert(subject_fields, key)
+        certificate = Certgen.create_cert(subject_fields, key, days)
         Certgen.write_key_to_file(private_key_file, key)
         Certgen.write_cert_to_file(cert_pub_file, certificate)
 
@@ -49,7 +49,7 @@ class Certgen:
         )
 
     @staticmethod
-    def create_cert(subject_fields, key):
+    def create_cert(subject_fields, key, days):
         try:
             subject = issuer = x509.Name([
                 x509.NameAttribute(NameOID.COUNTRY_NAME, six.text_type(subject_fields[Certgen.country])),
@@ -71,7 +71,7 @@ class Certgen:
             ).not_valid_before(
                 datetime.datetime.utcnow()
             ).not_valid_after(
-                datetime.datetime.utcnow() + datetime.timedelta(days=3650)
+                datetime.datetime.utcnow() + datetime.timedelta(days=days)
             ).sign(key, hashes.SHA256(), default_backend())
         except ValueError as e:
             raise AssertionException(e)
