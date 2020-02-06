@@ -223,36 +223,6 @@ def example_config(**kwargs):
 
 
 @main.command()
-def store_credential():
-    """Stores credentials in the configuration files"""
-    click.echo('You have called the store-credential command.')
-
-
-@main.command()
-@click.option('--revert', default=False, is_flag=True)
-def retrieve_credential(revert):
-    """Retrieves credentials from the configuration files"""
-    if revert:
-        click.echo('reverting...')
-    click.echo('you have called the retrieve credential command')
-
-
-@main.command()
-@click.option('-i', '--identifier', prompt='Enter identifier')
-def get_credential(identifier):
-    """Gets the specified credentials from keyring"""
-    click.echo('you have called the get credential command with arguments {0}'.format(identifier))
-
-
-@main.command()
-@click.option('-i', '--identifier', prompt='Enter identifier')
-@click.option('-p', '--password', prompt="Enter password", hide_input=True)
-def set_credential(identifier, password):
-    """Sets the specified credentials in keyring"""
-    click.echo('you have called the set credential command with argument {0}'.format(identifier))
-
-
-@main.command()
 @click.help_option('-h', '--help')
 def docs():
     """Open user manual in browser"""
@@ -382,6 +352,60 @@ def begin_work(config_loader):
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
     rule_processor.run(directory_groups, directory_connector, umapi_connectors)
 
+
+@click.group()
+@click.help_option('-h', '--help')
+def credentials():
+    pass
+
+@credentials.command(help="Stores all sensitive fields and updates configuration files, replacing plaintext values with keys")
+def store():
+    """
+    Stores credentials in the configuration file
+    This is an automated process
+    s"""
+    click.echo("You have called the store-credential command.")
+
+
+@credentials.command(help="Retreives currently stored credentials under the username 'user_sync'.")
+@click.option('--revert', default=False, is_flag=True, help="Reverts configuration files to plaintext state.")
+def retrieve(revert):
+    """
+    Retrieves credentials from the configuration files
+    By default, just prints out the values stored for UST
+    If --revert is used, updates config files with actual plaintext data
+    This is an automated process
+    """
+    if revert:
+        click.echo("reverting...")
+    click.echo("you have called the retrieve credential command")
+
+
+@credentials.command(help="Allows for east fetch of stored credentials on any platform.")
+@click.option('-i', '--identifier', prompt='Enter identifier',
+              help="Name of service you want to get a password for.  Username will always be 'user_sync'.")
+def get(identifier):
+    """
+    Gets the specified credentials from keyring
+    """
+    click.echo("you have called the get credential to fetch {0}".format(identifier))
+
+
+@credentials.command(help="Allows for east setting of credentials on any platform.")
+@click.option('-i', '--identifier', prompt='Enter identifier',
+              help="Name of service you want to store a password for. You will be prompted for this if not specified."
+                   "Username will always be 'user_sync'. ")
+@click.option('-p', '--password', prompt="Enter password", hide_input=True,
+              help="The password to be stored. You will be prompted for this if not specified.  "
+                   "Username will always be 'user_sync'.")
+def set(identifier, password):
+    """
+    Sets the specified credentials in keyring
+    """
+    click.echo("you have called the set credential command storing '{1}' for '{0}'".format(identifier, password))
+
+
+main.add_command(credentials)
 
 if __name__ == '__main__':
     main()
