@@ -41,7 +41,6 @@ import user_sync.rules
 import user_sync.cli
 import user_sync.resource
 from user_sync.rsaencryptor import RSAEncryptor
-from user_sync.certgen import Certgen
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 
@@ -249,7 +248,7 @@ def decrypt(password, key_path):
         click.echo('Decryption was successful.\n{0}'.format(os.path.abspath(key_path)))
     except AssertionException as e:
         click.echo(str(e))
-        
+
 
 @main.command()
 @click.help_option('-h', '--help')
