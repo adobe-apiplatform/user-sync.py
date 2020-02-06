@@ -22,12 +22,13 @@ import logging
 import os
 import shutil
 import sys
-from datetime import datetime, date, timedelta
+from datetime import datetime
 
 import click
 import six
 from click_default_group import DefaultGroup
 
+import user_sync.certgen
 import user_sync.cli
 import user_sync.config
 import user_sync.connector.directory
@@ -36,7 +37,6 @@ import user_sync.encryption
 import user_sync.helper
 import user_sync.lockfile
 import user_sync.resource
-from user_sync.certgen import Certgen
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 
@@ -383,32 +383,30 @@ def decrypt(password, key_path):
                    'complete the integration process.')
 @click.option('--overwrite', '-y', help='Overwrite files without being asked to confirm', is_flag=True)
 @click.option('--randomize', '-r', help='Randomize the values rather than entering credentials', is_flag=True)
-@click.option('--private-key-file', '-p', help='Set a custom path to a private.key file', default='private.key')
-@click.option('--cert-pub-file', '-c', help='Set a custom path to a certificate_pub.crt file',
+@click.option('--private-key-file', '-p', help='Set a custom path to a private key file', default='private.key')
+@click.option('--cert-pub-file', '-c', help='Set a custom path to a certificate file',
               default='certificate_pub.crt')
 def certgen(randomize, private_key_file, cert_pub_file, overwrite):
-
-
-    # dt = date.today()
-    # today = datetime.combine(dt, datetime.min.time())
-    # days = (expiration - today).days
     private_key_file = os.path.abspath(private_key_file)
     cert_pub_file = os.path.abspath(cert_pub_file)
-    if not overwrite and (os.path.exists(private_key_file) or os.path.exists(cert_pub_file)):
-        if not click.confirm('Would you like to overwrite the original files?'):
+
+    if not randomize:
+        click.echo(
+            "\nEnter information as required to generate the X509 certificate/key pair for your organization. "
+            "This information is used only for authentication with UMAPI and does not need to reflect "
+            "an SSL or other official identity.\n")
+
+    existing = {f for f in (private_key_file, cert_pub_file) if os.path.exists(f)}
+    if existing and not overwrite:
+        if not click.confirm('Warning: files already exist: \n{}\nOverwrite?'.format("\n".join(existing))):
             return
     try:
-        if not randomize:
-            click.echo("Enter information as required to generate the X509 certificate/key pair for your organization. "
-                       "This information is used only for authentication with UMAPI and does not need to reflect "
-                       "an SSL or other official identity.")
-        subject_fields = Certgen.get_subject_fields(randomize)
-        Certgen.generate(private_key_file, cert_pub_file, subject_fields)
-        click.echo("Files were created at:\n{0}\n{1}".format(private_key_file, cert_pub_file))
+        subject_fields = user_sync.certgen.get_subject_fields(randomize)
+        user_sync.certgen.generate(private_key_file, cert_pub_file, subject_fields)
+        click.echo("\nSuccess! Files were created at:\n{0}\n{1}".format(private_key_file, cert_pub_file))
     except AssertionException as e:
-        click.echo(str(e))
+        click.echo("Error creating keypair: " + str(e))
         click.echo('Files have not been created/overwritten.')
-
 
 
 if __name__ == '__main__':
