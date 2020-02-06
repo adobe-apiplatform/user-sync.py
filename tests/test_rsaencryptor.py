@@ -1,5 +1,5 @@
 import pytest
-from user_sync.rsaencryptor import RSAEncryptor
+from user_sync.encryption import RSAEncryptor
 from user_sync.error import AssertionException
 
 
