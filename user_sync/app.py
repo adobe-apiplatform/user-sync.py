@@ -18,26 +18,25 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import argparse
 import logging
 import os
-import sys
-import click
 import shutil
-from click_default_group import DefaultGroup
+import sys
 from datetime import datetime
 
+import click
 import six
+from click_default_group import DefaultGroup
 
+import user_sync.cli
 import user_sync.config
 import user_sync.connector.directory
 import user_sync.connector.umapi
+import user_sync.encryption
 import user_sync.helper
 import user_sync.lockfile
-import user_sync.rules
-import user_sync.cli
 import user_sync.resource
-from user_sync.encryption import Encryption
+import user_sync.rules
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 
@@ -223,27 +222,29 @@ def example_config(**kwargs):
         shutil.copy(res_file, fname)
 
 
-@main.command(help='Encrypts private key using encrypted password.')
+@main.command(help='Encrypt an existing RSA private key file with a passphrase')
 @click.argument('key-path', default='private.key', type=click.Path(exists=True))
-@click.option('--password', prompt='Create password', hide_input=True, confirmation_prompt=True)
-@click.option('--secure-salt', default=False, is_flag=True)
-def encrypt(key_path, password, secure_salt):
+@click.option('--password', '-p', prompt='Create password', hide_input=True, confirmation_prompt=True)
+def encrypt(password, key_path):
     try:
-        Encryption.encrypt(key_path, password, secure_salt)
-        click.echo('Encryption was successful. ' + os.path.abspath(key_path))
+        data = RSAEncryptor.encrypt(password, key_path)
+        RSAEncryptor.write_key(data, key_path)
+        click.echo('Encryption was successful.\n{0}'.format(os.path.abspath(key_path)))
     except AssertionException as e:
         click.echo(str(e))
 
 
-@main.command(help='Decrypts private key using encrypted password.')
+@main.command(help='Decrypt an RSA private key file with a passphrase')
 @click.argument('key-path', default='private.key', type=click.Path(exists=True))
-@click.option('--password', prompt=True, hide_input=True)
-def decrypt(key_path, password):
+@click.option('--password', '-p', prompt='Enter password', hide_input=True)
+def decrypt(password, key_path):
     try:
-        Encryption.decrypt(key_path, password)
-        click.echo('Decryption was successful. ' + os.path.abspath(key_path))
+        data = RSAEncryptor.decrypt(password, key_path)
+        RSAEncryptor.write_key(data, key_path)
+        click.echo('Decryption was successful.\n{0}'.format(os.path.abspath(key_path)))
     except AssertionException as e:
         click.echo(str(e))
+
 
 @main.command()
 @click.help_option('-h', '--help')
@@ -374,6 +375,30 @@ def begin_work(config_loader):
     if len(directory_groups) == 0 and rule_processor.will_process_groups():
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
     rule_processor.run(directory_groups, directory_connector, umapi_connectors)
+
+
+@main.command(help='Encrypt an existing RSA private key file with a passphrase')
+@click.argument('key-path', default='private.key', type=click.Path(exists=True))
+@click.option('--password', '-p', prompt='Create password', hide_input=True, confirmation_prompt=True)
+def encrypt(password, key_path):
+    try:
+        data = user_sync.encryption.encrypt_file(password, key_path)
+        user_sync.encryption.write_key(data, key_path)
+        click.echo('Encryption was successful.\n{0}'.format(os.path.abspath(key_path)))
+    except AssertionException as e:
+        click.echo(str(e))
+
+
+@main.command(help='Decrypt an RSA private key file with a passphrase')
+@click.argument('key-path', default='private.key', type=click.Path(exists=True))
+@click.option('--password', '-p', prompt='Enter password', hide_input=True)
+def decrypt(password, key_path):
+    try:
+        data = user_sync.encryption.decrypt_file(password, key_path)
+        user_sync.encryption.write_key(data, key_path)
+        click.echo('Decryption was successful.\n{0}'.format(os.path.abspath(key_path)))
+    except AssertionException as e:
+        click.echo(str(e))
 
 
 if __name__ == '__main__':

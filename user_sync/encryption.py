@@ -1,78 +1,77 @@
-import base64
-import uuid
+import os
+import shutil
 
-from Crypto.Cipher import AES
-from Crypto.Protocol.KDF import PBKDF2
-from Crypto.Util.Padding import pad
-from Crypto.Util.Padding import unpad
+import pytest
+from Crypto.PublicKey import RSA
 
 from user_sync.error import AssertionException
 
 
-class Encryption:
+@pytest.fixture
+def private_key(fixture_dir, tmpdir):
+    shutil.copy(os.path.join(fixture_dir, 'test_private.key'), tmpdir.dirname)
+    return os.path.join(tmpdir.dirname, 'test_private.key')
 
-    @staticmethod
-    def read(pk_file):
-        with open(pk_file, 'rb') as data:
-            return data.read()
 
-    @staticmethod
-    def is_encrypted(key_file):
-        # Checks file contents to determine if it was encrypted by this utility.
-        # Crypo creates a binary encryption - so we can guess if it has been encrypted by checking.
-        # This does NOT guarantee that a file is unencrypted in general - rather, it is a good guess.
-        textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7f})
-        with open(key_file, "rb") as file:
-            data = file.read()
-        return bool(data.translate(None, textchars))
+@pytest.fixture
+def encrypted_key(fixture_dir, tmpdir):
+    shutil.copy(os.path.join(fixture_dir, 'encrypted.key'), tmpdir.dirname)
+    return os.path.join(tmpdir.dirname, 'encrypted.key')
 
-    @staticmethod
-    def get_salt(secure=False):
-        # Secure salt is generated based on mac address.  This means that if the key is moved from the machine,
-        # it cannot be decrypted elsewhere.  The default behavior overrides this with a static salt, but the
-        # secure feature is available on the command line.
-        if secure:
-            return base64.b64encode(str(uuid.getnode()).encode('utf-8'))
-        return b'\xe5\x87\x8fa\xed\x0f\x01fl\x91\x05]bd\xd9C\x89\x90N\xbb\xc0\x06\xc3\x03[b8\x0eI\xbc\x12\xdb'
 
-    @staticmethod
-    def get_key(password, secure_salt=False):
-        return PBKDF2(password, Encryption.get_salt(secure_salt), dkLen=32)
+@pytest.fixture
+def public_cert(fixture_dir, tmpdir):
+    shutil.copy(os.path.join(fixture_dir, 'test_cert.crt'), tmpdir.dirname)
+    return os.path.join(tmpdir.dirname, 'test_cert.crt')
 
-    @staticmethod
-    def encrypt(pk_file, password, secure_salt=False):
-        if not Encryption.is_encrypted(pk_file):
-            cipher = AES.new(Encryption.get_key(password, secure_salt), AES.MODE_CBC)
-            ciphered_data = cipher.encrypt(pad(Encryption.read(pk_file), AES.block_size))
-            with open(pk_file, "wb") as file_out:
-                file_out.write(cipher.iv)
-                file_out.write(ciphered_data)
-            return ciphered_data
-        else:
-            raise AssertionException('File has already been encrypted.')
 
-    @staticmethod
-    def decrypt(pk_file, password):
-        try:
-            return Encryption.decrypt_file(pk_file, password)
-        except AssertionException:
-            return Encryption.decrypt_file(pk_file, password, True)
+def read_key(filename):
+    with open(filename, 'r') as f:
+        return f.read()
 
-    @staticmethod
-    def decrypt_file(pk_file, password, secure_salt=False):
-        with open(pk_file, 'rb') as file_in:
-            iv = file_in.read(16)
-            ciphered_data = file_in.read()
-        try:
-            cipher = AES.new(Encryption.get_key(password, secure_salt), AES.MODE_CBC, iv=iv)
-            original_data = unpad(cipher.decrypt(ciphered_data), AES.block_size)
-            with open(pk_file, 'wb') as file:
-                file.write(original_data)
-            return original_data
-        except ValueError as e:
-            if e.args[0] == 'Data must be padded to 16 byte boundary in CBC mode':
-                raise AssertionException('File has not been encrypted.')
-            elif e.args[0] == 'Padding is incorrect.':
-                raise AssertionException('Password was incorrect or secure salt was used on another machine.')
-            else:
-                raise AssertionException('Unknown error: ' + e.args[0])
+
+def write_key(data, filename):
+    with open(filename, 'w') as f:
+        f.write(data)
+
+
+def encrypt_file(passphrase, filename):
+    data = read_key(filename)
+    return encrypt(passphrase, data)
+
+
+def decrypt_file(passphrase, filename):
+    data = read_key(filename)
+    return decrypt(passphrase, data)
+
+
+def encrypt(passphrase, data):
+    try:
+        key = RSA.import_key(data, passphrase=None)
+        return RSA.RsaKey.export_key(key, format='PEM', passphrase=passphrase, pkcs=8).decode('ascii')
+    except (ValueError, IndexError, TypeError) as e:
+        if contains_phrase(str(e), "post boundary", "rsa key format", "out of range"):
+            raise AssertionException(
+                '{0} - Error while processing data. Data may not be in RSA format or is corrupt.'.format(str(e)))
+        elif contains_phrase(str(e), "no passphrase available"):
+            raise AssertionException(
+                '{0} - Error while processing data. Data is already encrypted.'.format(str(e)))
+        raise
+
+
+def decrypt(passphrase, data):
+    try:
+        decrypted_key = RSA.import_key(data, passphrase)
+        return decrypted_key.export_key('PEM').decode('ascii')
+    except (ValueError, IndexError) as e:
+        if contains_phrase(str(e), "padding is incorrect"):
+            raise AssertionException('Password was incorrect.')
+        elif contains_phrase(str(e), "index out of range", "format is not supported"):
+            raise AssertionException(
+                '{0} - Error while while processing encrypted data. '
+                'Data may not be in RSA format or is corrupt.'.format(str(e)))
+        raise
+
+
+def contains_phrase(result, *args):
+    return True in {x.lower() in result.lower() for x in args}
