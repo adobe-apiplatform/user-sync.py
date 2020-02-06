@@ -84,7 +84,7 @@ class LDAPDirectoryConnector(object):
             password = caller_config.get_credential('password', options['username'])
         else:
             # override authentication method to anonymous if username is not specified
-            if auth_method != 'anonymous':
+            if auth_method != 'anonymous' and auth_method != 'kerberos':
                 auth_method = 'anonymous'
                 logger.info("Username not specified, overriding authentication method to 'anonymous'")
         # this check must come after we get the password value
@@ -103,6 +103,9 @@ class LDAPDirectoryConnector(object):
                     'password': six.text_type(password)}
             logger.debug('Connecting to: %s - Authentication Method: NTLM using username: %s', options['host'],
                          options['username'])
+        elif auth_method == 'kerberos':
+            auth = {'authentication': ldap3.SASL, 'sasl_mechanism': ldap3.GSSAPI}
+            logger.debug('Connecting to: %s - Authentication Method: Kerberos', options['host'])
         else:
             raise AssertionException('LDAP Authentication Method is not supported: %s' % auth_method)
 
