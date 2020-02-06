@@ -37,7 +37,6 @@ import user_sync.helper
 import user_sync.lockfile
 import user_sync.resource
 import user_sync.rules
-from user_sync.certgen import Certgen
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 
@@ -223,33 +222,6 @@ def example_config(**kwargs):
         shutil.copy(res_file, fname)
 
 
-@main.command(help='Encrypt an existing RSA private key file with a passphrase')
-@click.argument('key-path', default='private.key', type=click.Path(exists=True))
-@click.option('--password', '-p', prompt='Create password', hide_input=True, confirmation_prompt=True)
-def encrypt(password, key_path):
-    try:
-        data = user_sync.encryption.encrypt(password, key_path)
-        user_sync.encryption.write_key(data, key_path)
-        click.echo('Encryption was successful.\n{0}'.format(os.path.abspath(key_path)))
-    except AssertionException as e:
-        click.echo(str(e))
-
-
-@main.command(help='Decrypt an RSA private key file with a passphrase')
-@click.argument('key-path', default='private.key', type=click.Path(exists=True))
-@click.option('--password', '-p', prompt='Enter password', hide_input=True)
-def decrypt(password, key_path):
-    try:
-        data = user_sync.encryption.decrypt(password, key_path)
-        user_sync.encryption.write_key(data, key_path)
-        click.echo('Decryption was successful.\n{0}'.format(os.path.abspath(key_path)))
-    except AssertionException as e:
-        click.echo(str(e))
-
-
-
-
-
 @main.command()
 @click.help_option('-h', '--help')
 def docs():
@@ -379,6 +351,30 @@ def begin_work(config_loader):
     if len(directory_groups) == 0 and rule_processor.will_process_groups():
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
     rule_processor.run(directory_groups, directory_connector, umapi_connectors)
+
+
+@main.command(help='Encrypt an existing RSA private key file with a passphrase')
+@click.argument('key-path', default='private.key', type=click.Path(exists=True))
+@click.option('--password', '-p', prompt='Create password', hide_input=True, confirmation_prompt=True)
+def encrypt(password, key_path):
+    try:
+        data = user_sync.encryption.encrypt(password, key_path)
+        user_sync.encryption.write_key(data, key_path)
+        click.echo('Encryption was successful.\n{0}'.format(os.path.abspath(key_path)))
+    except AssertionException as e:
+        click.echo(str(e))
+
+
+@main.command(help='Decrypt an RSA private key file with a passphrase')
+@click.argument('key-path', default='private.key', type=click.Path(exists=True))
+@click.option('--password', '-p', prompt='Enter password', hide_input=True)
+def decrypt(password, key_path):
+    try:
+        data = user_sync.encryption.decrypt(password, key_path)
+        user_sync.encryption.write_key(data, key_path)
+        click.echo('Decryption was successful.\n{0}'.format(os.path.abspath(key_path)))
+    except AssertionException as e:
+        click.echo(str(e))
 
 
 if __name__ == '__main__':
