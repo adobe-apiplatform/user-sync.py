@@ -58,8 +58,8 @@ setup(name='user-sync',
           'click-default-group',
       ],
       extras_require={
-          ':python_version>="3" and (sys_platform=="linux" or sys_platform=="linux2")':[
-              'jeepney==0.4'
+          ':python_version<"3" and (sys_platform=="linux" or sys_platform=="linux2")':[
+              'more-itertools==4.3.0'
           ],
           ':sys_platform=="linux" or sys_platform=="linux2"': [
               'secretstorage',
