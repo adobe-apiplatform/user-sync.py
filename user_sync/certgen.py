@@ -69,9 +69,9 @@ class Certgen:
             ).serial_number(
                 x509.random_serial_number()
             ).not_valid_before(
-                datetime.datetime.utcnow()
+                datetime.datetime.now() - datetime.timedelta(1)
             ).not_valid_after(
-                datetime.datetime.utcnow() + datetime.timedelta(days=days)
+                datetime.datetime.now() + datetime.timedelta(days=days)
             ).sign(key, hashes.SHA256(), default_backend())
         except ValueError as e:
             raise AssertionException(e)

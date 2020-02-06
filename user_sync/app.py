@@ -259,7 +259,7 @@ def decrypt(key_path, password):
 @click.option('--private-key-file', '-p', help='Set a custom path to a private.key file', default='private.key')
 @click.option('--cert-pub-file', '-c', help='Set a custom path to a certificate_pub.crt file',
               default='certificate_pub.crt')
-@click.option('--expiration', '-e', help='Set an expiration date for your public certificate',
+@click.option('--expiration', '-e', help='Set an expiration date for your public certificate. The default is ten years.',
               type=click.DateTime(), default=str(date.today() + timedelta(3650)))
 def certgen(randomize, private_key_file, cert_pub_file, overwrite, expiration):
     dt = date.today()
