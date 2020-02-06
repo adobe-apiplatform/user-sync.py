@@ -244,7 +244,7 @@ def decrypt(password, key_path):
         click.echo('Decryption was successful.\n{0}'.format(os.path.abspath(key_path)))
     except AssertionException as e:
         click.echo(str(e))
-        
+
 
 @main.command()
 @click.help_option('-h', '--help')
