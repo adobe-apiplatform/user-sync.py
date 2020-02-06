@@ -1,6 +1,28 @@
+import os
+import shutil
+
+import pytest
 from Crypto.PublicKey import RSA
 
 from user_sync.error import AssertionException
+
+
+@pytest.fixture
+def private_key(fixture_dir, tmpdir):
+    shutil.copy(os.path.join(fixture_dir, 'test_private.key'), tmpdir.dirname)
+    return os.path.join(tmpdir.dirname, 'test_private.key')
+
+
+@pytest.fixture
+def encrypted_key(fixture_dir, tmpdir):
+    shutil.copy(os.path.join(fixture_dir, 'encrypted.key'), tmpdir.dirname)
+    return os.path.join(tmpdir.dirname, 'encrypted.key')
+
+
+@pytest.fixture
+def public_cert(fixture_dir, tmpdir):
+    shutil.copy(os.path.join(fixture_dir, 'test_cert.crt'), tmpdir.dirname)
+    return os.path.join(tmpdir.dirname, 'test_cert.crt')
 
 
 def read_key(filename):
