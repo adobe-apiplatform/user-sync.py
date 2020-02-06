@@ -1,6 +1,5 @@
 from user_sync.error import AssertionException
-from Crypto.PublicKey import RSA
-from user_sync.rsaencryptor import RSAEncryptor
+from user_sync.encryption import decrypt
 
 
 def make_auth_dict(name, config, org_id, tech_acct, logger):
@@ -30,7 +29,7 @@ def make_auth_dict(name, config, org_id, tech_acct, logger):
     passphrase = config.get_credential('priv_key_pass', org_id, True)
     if passphrase:
         try:
-            key_data = RSAEncryptor.decrypt(passphrase, key_path)
+            key_data = decrypt(passphrase, key_path)
         except (ValueError, IndexError, TypeError, AssertionException) as e:
             raise AssertionException('%s: Error decrypting private key, either the password is wrong or: %s' %
                                      (config.get_full_scope(), e))
