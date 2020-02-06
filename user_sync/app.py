@@ -18,29 +18,24 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import argparse
 import logging
 import os
-import sys
-import click
 import shutil
-from click_default_group import DefaultGroup
+import sys
 from datetime import datetime, date, timedelta
-import yaml
-import random
-import string
 
+import click
 import six
+from click_default_group import DefaultGroup
 
+import user_sync.cli
 import user_sync.config
 import user_sync.connector.directory
 import user_sync.connector.umapi
+import user_sync.encryption
 import user_sync.helper
 import user_sync.lockfile
-import user_sync.rules
-import user_sync.cli
 import user_sync.resource
-from user_sync.encryption import Encryption
 from user_sync.certgen import Certgen
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
@@ -227,62 +222,6 @@ def example_config(**kwargs):
         shutil.copy(res_file, fname)
 
 
-@main.command(help='Encrypts private key using encrypted password.')
-@click.argument('key-path', default='private.key', type=click.Path(exists=True))
-@click.option('--password', prompt='Create password', hide_input=True, confirmation_prompt=True)
-@click.option('--secure-salt', default=False, is_flag=True)
-def encrypt(key_path, password, secure_salt):
-    try:
-        Encryption.encrypt(key_path, password, secure_salt)
-        click.echo('Encryption was successful. ' + os.path.abspath(key_path))
-    except AssertionException as e:
-        click.echo(str(e))
-
-
-@main.command(help='Decrypts private key using encrypted password.')
-@click.argument('key-path', default='private.key', type=click.Path(exists=True))
-@click.option('--password', prompt=True, hide_input=True)
-def decrypt(key_path, password):
-    try:
-        Encryption.decrypt(key_path, password)
-        click.echo('Decryption was successful. ' + os.path.abspath(key_path))
-    except AssertionException as e:
-        click.echo(str(e))
-
-
-@main.command(help='Create a new certificate_pub.crt file and private.key file. '
-                   'User Sync Tool can use these certificates to communicate with '
-                   'the admin console. Please visit https://console.adobe.io to '
-                   'complete the integration process.')
-@click.option('--overwrite', '-y', help='Overwrite files without being asked to confirm', is_flag=True)
-@click.option('--randomize', '-r', help='Randomize the values rather than entering credentials', is_flag=True)
-@click.option('--private-key-file', '-p', help='Set a custom path to a private.key file', default='private.key')
-@click.option('--cert-pub-file', '-c', help='Set a custom path to a certificate_pub.crt file',
-              default='certificate_pub.crt')
-@click.option('--expiration', '-e', help='Set an expiration date for your public certificate. The default is ten years.',
-              type=click.DateTime(), default=str(date.today() + timedelta(3650)))
-def certgen(randomize, private_key_file, cert_pub_file, overwrite, expiration):
-    dt = date.today()
-    today = datetime.combine(dt, datetime.min.time())
-    days = (expiration - today).days
-    private_key_file = os.path.abspath(private_key_file)
-    cert_pub_file = os.path.abspath(cert_pub_file)
-    if not overwrite and (os.path.exists(private_key_file) or os.path.exists(cert_pub_file)):
-        if not click.confirm('Would you like to overwrite the original files?'):
-            return
-    try:
-        if not randomize:
-            click.echo("Enter information as required to generate the X509 certificate/key pair for your organization. "
-                       "This information is used only for authentication with UMAPI and does not need to reflect "
-                       "an SSL or other official identity.")
-        subject_fields = Certgen.get_subject_fields(randomize)
-        Certgen.generate(private_key_file, cert_pub_file, subject_fields, days)
-        click.echo("Files were created at:\n{0}\n{1}".format(private_key_file, cert_pub_file))
-    except AssertionException as e:
-        click.echo(str(e))
-        click.echo('Files have not been created/overwritten.')
-
-
 @main.command()
 @click.help_option('-h', '--help')
 def docs():
@@ -412,6 +351,65 @@ def begin_work(config_loader):
     if len(directory_groups) == 0 and rule_processor.will_process_groups():
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
     rule_processor.run(directory_groups, directory_connector, umapi_connectors)
+
+
+@main.command(help='Encrypt an existing RSA private key file with a passphrase')
+@click.argument('key-path', default='private.key', type=click.Path(exists=True))
+@click.option('--password', '-p', prompt='Create password', hide_input=True, confirmation_prompt=True)
+def encrypt(password, key_path):
+    try:
+        data = user_sync.encryption.encrypt_file(password, key_path)
+        user_sync.encryption.write_key(data, key_path)
+        click.echo('Encryption was successful.\n{0}'.format(os.path.abspath(key_path)))
+    except AssertionException as e:
+        click.echo(str(e))
+
+
+@main.command(help='Decrypt an RSA private key file with a passphrase')
+@click.argument('key-path', default='private.key', type=click.Path(exists=True))
+@click.option('--password', '-p', prompt='Enter password', hide_input=True)
+def decrypt(password, key_path):
+    try:
+        data = user_sync.encryption.decrypt_file(password, key_path)
+        user_sync.encryption.write_key(data, key_path)
+        click.echo('Decryption was successful.\n{0}'.format(os.path.abspath(key_path)))
+    except AssertionException as e:
+        click.echo(str(e))
+
+
+@main.command(help='Create a new certificate_pub.crt file and private.key file. '
+                   'User Sync Tool can use these certificates to communicate with '
+                   'the admin console. Please visit https://console.adobe.io to '
+                   'complete the integration process.')
+@click.option('--overwrite', '-y', help='Overwrite files without being asked to confirm', is_flag=True)
+@click.option('--randomize', '-r', help='Randomize the values rather than entering credentials', is_flag=True)
+@click.option('--private-key-file', '-p', help='Set a custom path to a private.key file', default='private.key')
+@click.option('--cert-pub-file', '-c', help='Set a custom path to a certificate_pub.crt file',
+              default='certificate_pub.crt')
+@click.option('--expiration', '-e',
+              help='Set an expiration date for your public certificate. The default is ten years.',
+              type=click.DateTime(), default=str(date.today() + timedelta(3650)))
+def certgen(randomize, private_key_file, cert_pub_file, overwrite, expiration):
+    dt = date.today()
+    today = datetime.combine(dt, datetime.min.time())
+    days = (expiration - today).days
+    private_key_file = os.path.abspath(private_key_file)
+    cert_pub_file = os.path.abspath(cert_pub_file)
+    if not overwrite and (os.path.exists(private_key_file) or os.path.exists(cert_pub_file)):
+        if not click.confirm('Would you like to overwrite the original files?'):
+            return
+    try:
+        if not randomize:
+            click.echo("Enter information as required to generate the X509 certificate/key pair for your organization. "
+                       "This information is used only for authentication with UMAPI and does not need to reflect "
+                       "an SSL or other official identity.")
+        subject_fields = Certgen.get_subject_fields(randomize)
+        Certgen.generate(private_key_file, cert_pub_file, subject_fields, days)
+        click.echo("Files were created at:\n{0}\n{1}".format(private_key_file, cert_pub_file))
+    except AssertionException as e:
+        click.echo(str(e))
+        click.echo('Files have not been created/overwritten.')
+
 
 
 if __name__ == '__main__':

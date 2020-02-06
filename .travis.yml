@@ -23,7 +23,10 @@ matrix:
     - .travis/build-py27.sh
     - .travis/release.sh
     - python setup.py test
-  - env: OS="centos:7" IMG="centos7" SH="docker exec -t ${IMG} bash -c"
+  - env:
+    - OS="centos:7"
+    - IMG="centos7"
+    - SH="docker exec -t ${IMG} bash -c"
     services:
     - docker
     # for logging purposes
@@ -37,7 +40,10 @@ matrix:
     - $SH .travis/install-centos.sh
     script:
     - $SH .travis/build-py36-centos.sh
-  - env: OS="centos:7" IMG="centos7" SH="docker exec -t ${IMG} bash -c"
+  - env:
+    - OS="centos:7"
+    - IMG="centos7"
+    - SH="docker exec -t ${IMG} bash -c"
     services:
     - docker
     # for logging purposes
