@@ -386,13 +386,12 @@ def decrypt(password, key_path):
 @click.option('--private-key-file', '-p', help='Set a custom path to a private.key file', default='private.key')
 @click.option('--cert-pub-file', '-c', help='Set a custom path to a certificate_pub.crt file',
               default='certificate_pub.crt')
-@click.option('--expiration', '-e',
-              help='Set an expiration date for your public certificate. The default is ten years.',
-              type=click.DateTime(), default=str(date.today() + timedelta(3650)))
-def certgen(randomize, private_key_file, cert_pub_file, overwrite, expiration):
-    dt = date.today()
-    today = datetime.combine(dt, datetime.min.time())
-    days = (expiration - today).days
+def certgen(randomize, private_key_file, cert_pub_file, overwrite):
+
+
+    # dt = date.today()
+    # today = datetime.combine(dt, datetime.min.time())
+    # days = (expiration - today).days
     private_key_file = os.path.abspath(private_key_file)
     cert_pub_file = os.path.abspath(cert_pub_file)
     if not overwrite and (os.path.exists(private_key_file) or os.path.exists(cert_pub_file)):
@@ -404,7 +403,7 @@ def certgen(randomize, private_key_file, cert_pub_file, overwrite, expiration):
                        "This information is used only for authentication with UMAPI and does not need to reflect "
                        "an SSL or other official identity.")
         subject_fields = Certgen.get_subject_fields(randomize)
-        Certgen.generate(private_key_file, cert_pub_file, subject_fields, days)
+        Certgen.generate(private_key_file, cert_pub_file, subject_fields)
         click.echo("Files were created at:\n{0}\n{1}".format(private_key_file, cert_pub_file))
     except AssertionException as e:
         click.echo(str(e))

@@ -1,7 +1,8 @@
 import binascii
-import datetime
+from datetime import datetime, timedelta
 from os import urandom
 
+import click
 import six
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -9,35 +10,40 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
+
 from user_sync.error import AssertionException
 
 
 class Certgen:
-    country = 'countryName'
-    state = 'stateOrProvinceName'
-    city = 'localityName'
-    organization = 'organizationName'
-    common = 'commonName'
-    email = 'emailAddress'
 
     @staticmethod
-    def generate(private_key_file, cert_pub_file, subject_fields, days):
+    def generate(private_key_file, cert_pub_file, subject_fields):
         key = Certgen.create_key()
-        certificate = Certgen.create_cert(subject_fields, key, days)
+        certificate = Certgen.create_cert(subject_fields, key)
         Certgen.write_key_to_file(private_key_file, key)
         Certgen.write_cert_to_file(cert_pub_file, certificate)
 
     @staticmethod
     def get_subject_fields(randomize):
-        def values(prompt='', size=6):
-            return str(binascii.b2a_hex(urandom(size)).decode()) if randomize else input(prompt)
+
+        def values(prompt='', default='', rnd_size=6):
+            if randomize:
+                return str(binascii.b2a_hex(urandom(rnd_size)).decode())
+            return click.prompt(prompt, default=default)
+
+        exp = datetime.now() + timedelta(days=3650)
+        if not randomize:
+            exp = click.prompt("Expiration date (mm/dd/yyyy)",
+                               type=click.DateTime(formats=("%m/%d/%y", "%m/%d/%Y")), default=exp.strftime('%m/%d/%Y'))
+
         return {
-            Certgen.country: values('Country Code: ', 1),
-            Certgen.state: values('State: '),
-            Certgen.city: values('City: '),
-            Certgen.organization: values('Organization: '),
-            Certgen.common: values('Common Name: '),
-            Certgen.email: values('Email: ')
+            'countryName': values('Country Code', 'US', 1),
+            'stateOrProvinceName': values('State', 'CA'),
+            'localityName': values('City'),
+            'organizationName': values('Organization'),
+            'commonName': values('Common Name'),
+            'emailAddress': values('Email'),
+            'expiration': exp
         }
 
     @staticmethod
@@ -49,15 +55,16 @@ class Certgen:
         )
 
     @staticmethod
-    def create_cert(subject_fields, key, days):
+    def create_cert(subject_fields, key):
         try:
             subject = issuer = x509.Name([
-                x509.NameAttribute(NameOID.COUNTRY_NAME, six.text_type(subject_fields[Certgen.country])),
-                x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, six.text_type(subject_fields[Certgen.state])),
-                x509.NameAttribute(NameOID.LOCALITY_NAME, six.text_type(subject_fields[Certgen.city])),
-                x509.NameAttribute(NameOID.ORGANIZATION_NAME, six.text_type(subject_fields[Certgen.organization])),
-                x509.NameAttribute(NameOID.COMMON_NAME, six.text_type(subject_fields[Certgen.common])),
-                x509.NameAttribute(NameOID.EMAIL_ADDRESS, six.text_type(subject_fields[Certgen.email]))
+                x509.NameAttribute(NameOID.COUNTRY_NAME, six.text_type(subject_fields['countryName'])),
+                x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME,
+                                   six.text_type(subject_fields['stateOrProvinceName'])),
+                x509.NameAttribute(NameOID.LOCALITY_NAME, six.text_type(subject_fields['localityName'])),
+                x509.NameAttribute(NameOID.ORGANIZATION_NAME, six.text_type(subject_fields['organizationName'])),
+                x509.NameAttribute(NameOID.COMMON_NAME, six.text_type(subject_fields['commonName'])),
+                x509.NameAttribute(NameOID.EMAIL_ADDRESS, six.text_type(subject_fields['emailAddress']))
             ])
 
             return x509.CertificateBuilder().subject_name(
@@ -69,9 +76,9 @@ class Certgen:
             ).serial_number(
                 x509.random_serial_number()
             ).not_valid_before(
-                datetime.datetime.now() - datetime.timedelta(1)
+                datetime.now() - timedelta(days=1)
             ).not_valid_after(
-                datetime.datetime.now() + datetime.timedelta(days=days)
+                subject_fields['expiration']
             ).sign(key, hashes.SHA256(), default_backend())
         except ValueError as e:
             raise AssertionException(e)
