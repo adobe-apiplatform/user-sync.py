@@ -31,13 +31,14 @@ def test_create_key(key):
 
 
 def test_create_cert(random_subject, key):
-    cert = Certgen.create_cert(random_subject, key)
+    days = 3650
+    cert = Certgen.create_cert(random_subject, key, days)
     cert_dict = {i.oid._name: i.value for i in cert.subject}
     for k, v in six.iteritems(cert_dict):
         assert random_subject[k] == v
     random_subject['countryName'] = 'usa'
     with pytest.raises(AssertionException):
-        Certgen.create_cert(random_subject, key)
+        Certgen.create_cert(random_subject, key, days)
 
 
 def test_write_key_to_file(private_key, key):
@@ -50,7 +51,8 @@ def test_write_key_to_file(private_key, key):
 
 
 def test_write_cert_to_file(public_cert, random_subject, key):
-    cert = Certgen.create_cert(random_subject, key)
+    days = 3650
+    cert = Certgen.create_cert(random_subject, key, days)
     Certgen.write_cert_to_file(public_cert, cert)
     with open(public_cert, 'r') as f:
         data = f.read()
