@@ -304,11 +304,11 @@ class ConfigLoader(object):
             return None
 
     def get_directory_connector_configs(self):
+
         connectors_config = None
         directory_config = self.main_config.get_dict_config('directory_users', True)
         if directory_config is not None:
             connectors_config = directory_config.get_dict_config('connectors', True)
-
         # make sure none of the standard connectors get reported as unused
         if connectors_config:
             connectors_config.get_list('ldap', True)
@@ -317,7 +317,14 @@ class ConfigLoader(object):
             connectors_config.get_list('multi', True)
             connectors_config.get_list('adobe_console', True)
 
+        if self.invocation_options.get('stray_list_input_path', None):
+            return []
+
         connector = self.invocation_options.get('directory_connector_type')
+
+        if connectors_config is None:
+            raise AssertionException("It appears to be an issue with the connector configuration")
+
         conn_options = connectors_config.get_list(connector)
 
         # If connector is not multi type, convert to equivalent dictionary
