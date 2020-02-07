@@ -3,6 +3,7 @@ import os
 import pytest
 
 from user_sync import config
+import shutil
 
 
 @pytest.fixture
@@ -28,3 +29,15 @@ def cli_args():
         return args_out
 
     return _cli_args
+
+
+@pytest.fixture
+def private_key(fixture_dir, tmpdir):
+    shutil.copy(os.path.join(fixture_dir, 'test_private.key'), tmpdir.dirname)
+    return os.path.join(tmpdir.dirname, 'test_private.key')
+
+
+@pytest.fixture
+def public_cert(fixture_dir, tmpdir):
+    shutil.copy(os.path.join(fixture_dir, 'test_cert.crt'), tmpdir.dirname)
+    return os.path.join(tmpdir.dirname, 'test_cert.crt')

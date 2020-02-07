@@ -28,6 +28,7 @@ import click
 import six
 from click_default_group import DefaultGroup
 
+import user_sync.certgen
 import user_sync.cli
 import user_sync.config
 import user_sync.connector.directory
@@ -222,30 +223,6 @@ def example_config(**kwargs):
         shutil.copy(res_file, fname)
 
 
-@main.command(help='Encrypt an existing RSA private key file with a passphrase')
-@click.argument('key-path', default='private.key', type=click.Path(exists=True))
-@click.option('--password', '-p', prompt='Create password', hide_input=True, confirmation_prompt=True)
-def encrypt(password, key_path):
-    try:
-        data = RSAEncryptor.encrypt(password, key_path)
-        RSAEncryptor.write_key(data, key_path)
-        click.echo('Encryption was successful.\n{0}'.format(os.path.abspath(key_path)))
-    except AssertionException as e:
-        click.echo(str(e))
-
-
-@main.command(help='Decrypt an RSA private key file with a passphrase')
-@click.argument('key-path', default='private.key', type=click.Path(exists=True))
-@click.option('--password', '-p', prompt='Enter password', hide_input=True)
-def decrypt(password, key_path):
-    try:
-        data = RSAEncryptor.decrypt(password, key_path)
-        RSAEncryptor.write_key(data, key_path)
-        click.echo('Decryption was successful.\n{0}'.format(os.path.abspath(key_path)))
-    except AssertionException as e:
-        click.echo(str(e))
-
-
 @main.command()
 @click.help_option('-h', '--help')
 def docs():
@@ -399,6 +376,38 @@ def decrypt(password, key_path):
         click.echo('Decryption was successful.\n{0}'.format(os.path.abspath(key_path)))
     except AssertionException as e:
         click.echo(str(e))
+
+
+@main.command(help='Generates an X509 certificate/keypair with random or user-specified subject. '
+                   'User Sync Tool can use these files to communicate with the admin console. '
+                   'Please visit https://console.adobe.io to complete the integration process. '
+                   'Use the --randomize argument to create a secure keypair with no user input.')
+@click.option('--overwrite', '-o', '-y', help='Overwrite existing files without being asked to confirm', is_flag=True)
+@click.option('--randomize', '-r', help='Randomize the values rather than entering credentials', is_flag=True)
+@click.option('--key', '-k', help='Set a custom output path for private key', default='private.key')
+@click.option('--certificate', '-c', help='Set a custom output path for certificate', default='certificate_pub.crt')
+def certgen(randomize, key, certificate, overwrite):
+    key = os.path.abspath(key)
+    certificate = os.path.abspath(certificate)
+    existing = "\n".join({f for f in (key, certificate) if os.path.exists(f)})
+    if existing and not overwrite:
+        if not click.confirm('\nWarning: files already exist: \n{}\nOverwrite?'.format(existing)):
+            return
+    try:
+        if randomize:
+            click.echo("\nSkipping user input due to --randomize flag")
+        else:
+            click.echo(
+                "\nEnter information as required to generate the X509 certificate/key pair for your organization. "
+                "This information is used only for authentication with UMAPI and does not need to reflect "
+                "an SSL or other official identity.  Specify values as you deem fit.\n")
+        subject_fields = user_sync.certgen.get_subject_fields(randomize)
+        user_sync.certgen.generate(key, certificate, subject_fields)
+        click.echo("----------------------------------------------------")
+        click.echo("Success! Files were created at:\n{0}\n{1}".format(key, certificate))
+    except AssertionException as e:
+        click.echo("Error creating keypair: " + str(e))
+        click.echo('Files have not been created/overwritten.')
 
 
 if __name__ == '__main__':
