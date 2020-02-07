@@ -118,12 +118,13 @@ class LDAPDirectoryConnector(object):
             raise AssertionException('LDAP Authentication Method is not supported: %s' % auth_method)
 
         tls = None
+        auto_bind = ldap3.AUTO_BIND_NO_TLS
         if options['require_tls_cert']:
             tls = ldap3.Tls(validate=ssl.CERT_REQUIRED, version=ssl.PROTOCOL_TLSv1_2)
-
+            auto_bind = ldap3.AUTO_BIND_TLS_BEFORE_BIND
         try:
             server = ldap3.Server(host=options['host'], allowed_referral_hosts=True, tls=tls)
-            connection = Connection(server, auto_bind=True, read_only=True, **auth)
+            connection = Connection(server, auto_bind=auto_bind, read_only=True, **auth)
         except Exception as e:
             raise AssertionException('LDAP connection failure: %s' % e)
         self.connection = connection
