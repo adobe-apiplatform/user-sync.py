@@ -37,6 +37,7 @@ import user_sync.encryption
 import user_sync.helper
 import user_sync.lockfile
 import user_sync.resource
+import user_sync.rules
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 
@@ -377,33 +378,33 @@ def decrypt(password, key_path):
         click.echo(str(e))
 
 
-@main.command(help='Create a new certificate_pub.crt file and private.key file. '
-                   'User Sync Tool can use these certificates to communicate with '
-                   'the admin console. Please visit https://console.adobe.io to '
-                   'complete the integration process.')
-@click.option('--overwrite', '-y', help='Overwrite files without being asked to confirm', is_flag=True)
+@main.command(help='Generates an X509 certificate/keypair with random or user-specified subject. '
+                   'User Sync Tool can use these files to communicate with the admin console. '
+                   'Please visit https://console.adobe.io to complete the integration process. '
+                   'Use the --randomize argument to create a secure keypair with no user input.')
+@click.option('--overwrite', '-o', '-y', help='Overwrite existing files without being asked to confirm', is_flag=True)
 @click.option('--randomize', '-r', help='Randomize the values rather than entering credentials', is_flag=True)
-@click.option('--private-key-file', '-p', help='Set a custom path to a private key file', default='private.key')
-@click.option('--cert-pub-file', '-c', help='Set a custom path to a certificate file',
-              default='certificate_pub.crt')
-def certgen(randomize, private_key_file, cert_pub_file, overwrite):
-    private_key_file = os.path.abspath(private_key_file)
-    cert_pub_file = os.path.abspath(cert_pub_file)
-
-    if not randomize:
-        click.echo(
-            "\nEnter information as required to generate the X509 certificate/key pair for your organization. "
-            "This information is used only for authentication with UMAPI and does not need to reflect "
-            "an SSL or other official identity.\n")
-
-    existing = {f for f in (private_key_file, cert_pub_file) if os.path.exists(f)}
+@click.option('--key', '-k', help='Set a custom output path for private key', default='private.key')
+@click.option('--certificate', '-c', help='Set a custom output path for certificate', default='certificate_pub.crt')
+def certgen(randomize, key, certificate, overwrite):
+    key = os.path.abspath(key)
+    certificate = os.path.abspath(certificate)
+    existing = "\n".join({f for f in (key, certificate) if os.path.exists(f)})
     if existing and not overwrite:
-        if not click.confirm('Warning: files already exist: \n{}\nOverwrite?'.format("\n".join(existing))):
+        if not click.confirm('\nWarning: files already exist: \n{}\nOverwrite?'.format(existing)):
             return
     try:
+        if randomize:
+            click.echo("\nSkipping user input due to --randomize flag")
+        else:
+            click.echo(
+                "\nEnter information as required to generate the X509 certificate/key pair for your organization. "
+                "This information is used only for authentication with UMAPI and does not need to reflect "
+                "an SSL or other official identity.  Specify values as you deem fit.\n")
         subject_fields = user_sync.certgen.get_subject_fields(randomize)
-        user_sync.certgen.generate(private_key_file, cert_pub_file, subject_fields)
-        click.echo("\nSuccess! Files were created at:\n{0}\n{1}".format(private_key_file, cert_pub_file))
+        user_sync.certgen.generate(key, certificate, subject_fields)
+        click.echo("----------------------------------------------------")
+        click.echo("Success! Files were created at:\n{0}\n{1}".format(key, certificate))
     except AssertionException as e:
         click.echo("Error creating keypair: " + str(e))
         click.echo('Files have not been created/overwritten.')
