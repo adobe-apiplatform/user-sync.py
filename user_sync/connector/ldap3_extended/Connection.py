@@ -60,7 +60,10 @@ class Connection(ldap3.Connection):
             return result
 
 def get_channel_bindings(ssl_socket):
-    server_certificate = ssl_socket.getpeercert(True)
+    try:
+        server_certificate = ssl_socket.getpeercert(True)
+    except:
+        return None
     cert = x509.load_der_x509_certificate(server_certificate, default_backend())
     hash_algorithm = cert.signature_hash_algorithm
     if hash_algorithm.name in ('md5', 'sha1'):
@@ -118,11 +121,17 @@ def sasl_gssapi(connection, controls):
     in_token = b''
     try:
         while True:
-            status = kerberos.authGSSClientStep(
-                ctx,
-                base64.b64encode(in_token).decode('ascii'),
-                channel_bindings=channel_bindings
-            )
+            if channel_bindings:
+                status = kerberos.authGSSClientStep(
+                    ctx,
+                    base64.b64encode(in_token).decode('ascii'),
+                    channel_bindings=channel_bindings
+                )
+            else:
+                status = kerberos.authGSSClientStep(
+                    ctx,
+                    base64.b64encode(in_token).decode('ascii')
+                )
             out_token = kerberos.authGSSClientResponse(ctx) or ''
             result = send_sasl_negotiation(
                 connection,
