@@ -27,7 +27,7 @@ def get_subject_fields(randomize):
             return str(binascii.b2a_hex(urandom(rnd_size)).decode())
         return click.prompt(prompt, default=default)
 
-    exp = datetime.now() + timedelta(days=3650)
+    exp = datetime.now() + timedelta(days=3653)
     if not randomize:
         exp = click.prompt("Expiration date (mm/dd/yyyy) [{}]".format(exp.strftime('%m/%d/%Y')),
                            type=click.DateTime(formats=("%m/%d/%y", "%m/%d/%Y")),
