@@ -29,6 +29,8 @@ import user_sync.error
 import user_sync.identity_type
 from user_sync.error import AssertionException
 
+import platform
+import ssl
 
 def connector_metadata():
     metadata = {
@@ -89,6 +91,8 @@ class LDAPDirectoryConnector(object):
                 logger.info("Username not specified, overriding authentication method to 'anonymous'")
         # this check must come after we get the password value
         caller_config.report_unused_values(logger)
+        if auth_method != 'kerberos':
+            from ldap3 import Connection
 
         if auth_method == 'anonymous':
             auth = {'authentication': ldap3.ANONYMOUS}
@@ -104,21 +108,26 @@ class LDAPDirectoryConnector(object):
             logger.debug('Connecting to: %s - Authentication Method: NTLM using username: %s', options['host'],
                          options['username'])
         elif auth_method == 'kerberos':
-            auth = {'authentication': ldap3.SASL, 'sasl_mechanism': ldap3.GSSAPI}
-            logger.debug('Connecting to: %s - Authentication Method: Kerberos', options['host'])
+            if(platform.system() == 'Windows'):
+                from .ldap3_extended.Connection import Connection
+                auth = {'authentication': ldap3.SASL, 'sasl_mechanism': ldap3.GSSAPI}
+                logger.debug('Connecting to: %s - Authentication Method: Kerberos', options['host'])
+            else:
+                raise AssertionException('Kerberos Authentication Method is not supported on this OS. Windows Only')
         else:
             raise AssertionException('LDAP Authentication Method is not supported: %s' % auth_method)
 
-        # TODO TLS****
-        # if not options['require_tls_cert']:
-        #    ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+        tls = None
+        if options['require_tls_cert']:
+            tls = ldap3.Tls(validate=ssl.CERT_REQUIRED, version=ssl.PROTOCOL_TLSv1_2)
+
         try:
-            server = ldap3.Server(host=options['host'], allowed_referral_hosts=True)
-            connection = ldap3.Connection(server, auto_bind=True, read_only=True, **auth)
+            server = ldap3.Server(host=options['host'], allowed_referral_hosts=True, tls=tls)
+            connection = Connection(server, auto_bind=True, read_only=True, **auth)
         except Exception as e:
             raise AssertionException('LDAP connection failure: %s' % e)
         self.connection = connection
-        logger.debug('Connected')
+        logger.debug('Connected as %s', connection.extend.standard.who_am_i())
         self.user_by_dn = {}
         self.additional_group_filters = None
 
