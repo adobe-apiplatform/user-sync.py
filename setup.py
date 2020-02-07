@@ -46,6 +46,7 @@ setup(name='user-sync',
       license='MIT',
       packages=find_packages(),
       install_requires=[
+          'zipp==2.1.0',
           'keyring',
           'okta==0.0.3.1',
           'psutil',
