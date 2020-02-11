@@ -45,6 +45,7 @@ setup(name='user-sync',
       packages=find_packages(),
       install_requires=[
           'keyring',
+          'keyrings.cryptfile',
           'okta==0.0.3.1',
           'psutil',
           'pycryptodome==3.7.3',
