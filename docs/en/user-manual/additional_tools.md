@@ -68,7 +68,7 @@ You can use certificate_pub to create your UMAPI integration and private key to 
 ## Private Key Encryption
 
 `user-sync encrypt` \[ _optional parameters_ \]<br />
-`user-sync decrypt`\[ _optional parameters_ \]
+`user-sync decrypt `\[ _optional parameters_ \]
 
 Private key encryption allows a user to encrypt a private key file with a passphrase. The UST can be configured to read this passphrase from a stored value from the priv_key_pass in the connector-umapi.yml file. When the UST runs, a decrypted version of the private key file is read without being stored. The decrypt command will allow a user to decrypt the private key file when the correct passphrase is entered. The decrypted data will overwrite the data in the private key file.
 
