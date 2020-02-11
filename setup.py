@@ -59,7 +59,6 @@ setup(name='user-sync',
       ],
       extras_require={
           ':python_version<"3"':[
-      #        'more-itertools==4.3.0',
               'zipp==1.1.0',
           ],
           ':sys_platform=="linux" or sys_platform=="linux2"': [
