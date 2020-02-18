@@ -5,20 +5,20 @@ before_install:
 - chmod +x .build/.travis/*.sh
 matrix:
   include:
-#  - env:
-#    - IMG="ubuntu1604"
-#    - BUILD_TARGET="pex"
-#    - UST_BUILD_EXE=0
-#    - UST_EXTENSION=1
-#    - UST_SHELL_EXEC=1
-#    python:
-#    - 3.6
-#    install:
-#    - .build/.travis/install-ubuntu.sh
-#    script:
-#    - .build/.travis/build-py36.sh
-#    - .build/.travis/release.sh
-#    - python setup.py test
+  - env:
+    - IMG="ubuntu1604"
+    - BUILD_TARGET="pex"
+    - UST_BUILD_EXE=0
+    - UST_EXTENSION=1
+    - UST_SHELL_EXEC=1
+    python:
+    - 3.6
+    install:
+    - .build/.travis/install-ubuntu.sh
+    script:
+    - .build/.travis/build-py36.sh
+    - .build/.travis/release.sh
+    - python setup.py test
   - env:
     - IMG="ubuntu1604"
     - BUILD_TARGET="standalone"
