@@ -83,7 +83,7 @@ class DirectoryConnectorManager(object):
 
         users = []
         for c,v in six.iteritems(self.connectors):
-            self.logger.info("Loading users from connector: " + c)
+            self.logger.info("Loading users from connector: " + "id: " + c + "   type: " + v.name)
             new_users = list(v.load_users_and_groups(groups, extended_attributes, all_users))
             self.logger.info("Found {} users".format(len(new_users)))
             users.extend(new_users)

@@ -134,10 +134,7 @@ class ConfigLoader(object):
                                          (connector_spec[0], connector_type))
             options['directory_connector_type'] = connector_type
         elif connector_type == "csv":
-            if len(connector_spec) != 2:
-                raise AssertionException("You must specify a single file with connector type csv")
             options['directory_connector_type'] = 'csv'
-            options['directory_connector_overridden_options'] = {'file_path': connector_spec[1]}
         else:
             raise AssertionException('Unknown connector type: %s' % connector_type)
 
@@ -188,13 +185,6 @@ class ConfigLoader(object):
             if users_action == 'all':
                 if options['directory_connector_type'] == 'okta':
                     raise AssertionException('Okta connector module does not support "--users all"')
-            elif users_action == 'file':
-                if options['directory_connector_type'] == 'csv':
-                    raise AssertionException('You cannot specify file input with both "users" and "connector" options')
-                if len(users_spec) != 2:
-                    raise AssertionException('You must specify the file to read when using the users "file" option')
-                options['directory_connector_type'] = 'csv'
-                options['directory_connector_overridden_options'] = {'file_path': users_spec[1]}
             elif users_action == 'mapped':
                 options['directory_group_mapped'] = True
             elif users_action == 'group':
@@ -323,7 +313,7 @@ class ConfigLoader(object):
         connector = self.invocation_options.get('directory_connector_type')
 
         if connectors_config is None:
-            raise AssertionException("It appears to be an issue with the connector configuration")
+            raise AssertionException("No Connectors Found in the user-sync-config.yml")
 
         conn_options = connectors_config.get_list(connector)
 
