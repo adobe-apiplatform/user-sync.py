@@ -1,10 +1,10 @@
 environment:
   matrix:
-#    - PYTHON: "C:\\Python27-x64"
-#      BUILD_TARGET: pex
-#      UST_BUILD_EXE: "0"
-#      UST_EXTENSION: "1"
-#      UST_SHELL_EXEC: "1"
+    - PYTHON: "C:\\Python27-x64"
+      BUILD_TARGET: pex
+      UST_BUILD_EXE: "0"
+      UST_EXTENSION: "1"
+      UST_SHELL_EXEC: "1"
     - PYTHON: "C:\\Python36-x64"
       BUILD_TARGET: pex
       UST_BUILD_EXE: "0"
