@@ -9,84 +9,86 @@ matrix:
     python:
     - 3.6
     install:
-    - .build/.travis/install-ubuntu.sh
+    - ".build/.travis/install-ubuntu.sh"
     script:
-    - .build/.travis/build-py36.sh
-    - .build/.travis/release.sh
+    - ".build/.travis/build-py36.sh"
+    - ".build/.travis/release.sh"
     - python setup.py test
-  - env: IMG="ubuntu1604" BUILD_TARGET="standalone" UST_BUILD_EXE=1 UST_EXTENSION=0 UST_SHELL_EXEC=0
+  - env: IMG="ubuntu1604" BUILD_TARGET="standalone" UST_BUILD_EXE=1 UST_EXTENSION=0
+      UST_SHELL_EXEC=0
     python:
     - 3.6
     install:
-    - .build/.travis/install-ubuntu.sh
+    - ".build/.travis/install-ubuntu.sh"
     script:
-    - .build/.travis/build-py36.sh
-    - .build/.travis/release.sh
+    - ".build/.travis/build-py36.sh"
+    - ".build/.travis/release.sh"
     - python setup.py test
   - env: IMG="ubuntu1604" BUILD_TARGET="pex" UST_BUILD_EXE=0 UST_EXTENSION=1 UST_SHELL_EXEC=1
     python:
     - 2.7
     install:
-    - .build/.travis/install-ubuntu.sh
+    - ".build/.travis/install-ubuntu.sh"
     script:
-    - .build/.travis/build-py27.sh
-    - .build/.travis/release.sh
+    - ".build/.travis/build-py27.sh"
+    - ".build/.travis/release.sh"
     - python setup.py test
   - env: OS="centos:7" IMG="centos7" SH="docker exec -t ${IMG} bash -c" BUILD_TARGET="pex"
     services:
     - docker
-    # for logging purposes
     python:
     - 3.6
     before_install:
     - chmod +x .build/.travis/*.sh
-    - docker run -d --name ${IMG} -v $(pwd):/travis -w /travis -e IMG="${IMG}" -e TRAVIS_TAG="${TRAVIS_TAG}" -e BUILD_TARGET="${BUILD_TARGET}" -e UST_BUILD_EXE=0 -e UST_EXTENSION=1 -e UST_SHELL_EXEC=1 ${OS} tail -f /dev/null
+    - docker run -d --name ${IMG} -v $(pwd):/travis -w /travis -e IMG="${IMG}" -e
+      TRAVIS_TAG="${TRAVIS_TAG}" -e BUILD_TARGET="${BUILD_TARGET}" -e UST_BUILD_EXE=0
+      -e UST_EXTENSION=1 -e UST_SHELL_EXEC=1 ${OS} tail -f /dev/null
     - docker ps
     install:
-    - $SH .build/.travis/install-centos.sh
+    - "$SH .build/.travis/install-centos.sh"
     script:
-    - $SH .build/.travis/build-py36-centos.sh
+    - "$SH .build/.travis/build-py36-centos.sh"
   - env: OS="centos:7" IMG="centos7" SH="docker exec -t ${IMG} bash -c" BUILD_TARGET="standalone"
     services:
     - docker
-    # for logging purposes
     python:
     - 3.6
     before_install:
     - chmod +x .build/.travis/*.sh
-    - docker run -d --name ${IMG} -v $(pwd):/travis -w /travis -e IMG="${IMG}" -e TRAVIS_TAG="${TRAVIS_TAG}" -e BUILD_TARGET="${BUILD_TARGET}" -e UST_BUILD_EXE=1 -e UST_EXTENSION=0 -e UST_SHELL_EXEC=0 ${OS} tail -f /dev/null
+    - docker run -d --name ${IMG} -v $(pwd):/travis -w /travis -e IMG="${IMG}" -e
+      TRAVIS_TAG="${TRAVIS_TAG}" -e BUILD_TARGET="${BUILD_TARGET}" -e UST_BUILD_EXE=1
+      -e UST_EXTENSION=0 -e UST_SHELL_EXEC=0 ${OS} tail -f /dev/null
     - docker ps
     install:
-    - $SH .build/.travis/install-centos.sh
+    - "$SH .build/.travis/install-centos.sh"
     script:
-    - $SH .build/.travis/build-py36-centos.sh
+    - "$SH .build/.travis/build-py36-centos.sh"
   - env: OS="centos:7" IMG="centos7" SH="docker exec -t ${IMG} bash -c" BUILD_TARGET="pex"
     services:
     - docker
-    # for logging purposes
     python:
     - 2.7
     before_install:
     - chmod +x .build/.travis/*.sh
-    - docker run -d --name ${IMG} -v $(pwd):/travis -w /travis -e IMG="${IMG}" -e TRAVIS_TAG="${TRAVIS_TAG}" -e BUILD_TARGET="${BUILD_TARGET}" -e UST_BUILD_EXE=0 -e UST_EXTENSION=1 -e UST_SHELL_EXEC=1 ${OS} tail -f /dev/null
+    - docker run -d --name ${IMG} -v $(pwd):/travis -w /travis -e IMG="${IMG}" -e
+      TRAVIS_TAG="${TRAVIS_TAG}" -e BUILD_TARGET="${BUILD_TARGET}" -e UST_BUILD_EXE=0
+      -e UST_EXTENSION=1 -e UST_SHELL_EXEC=1 ${OS} tail -f /dev/null
     - docker ps
     install:
-    - $SH .build/.travis/install-centos.sh
+    - "$SH .build/.travis/install-centos.sh"
     script:
-    - $SH .build/.travis/build-py27.sh
-    - $SH .build/.travis/release.sh
+    - "$SH .build/.travis/build-py27.sh"
+    - "$SH .build/.travis/release.sh"
     - $SH "python setup.py test"
-
-
 deploy:
   provider: releases
   api_key:
-    secure: p6QQnxJoqILH9jf1yo9HewkV7WxHqEhMac4PRmBjapxg26oi+52TZrpmDClvpO8vYeZ/c1Iagh1g5DHb9nZzb5VihV0wmLVeYm/o/fxuXpx5FyhlzNWOgcRsXDHa3lx3lOasYlSCtj3VCQymnGhnAJDYF3LN8gu9paykEoH0soYALFrFkvgwkzEaS9AXuLtVyiV0ic1H9pF93kvBijO7OIebx7EDObCTqfAQDHOoOM5Lo6A61n9vbuxKGC/Tq6x+LXHM32s4/xodO2Ctcqq5H0ebghR/Jb8ovajpIRup6Tp+WURMLDd6jhy7SOhbF9zofsaejhlmg4HGZacJNME5YRY8xHyVVznygDte2EBcFOftI/Et9wfgVuDe1+ceGWM0ah2sttBGoFWLRgWUUVQDKbYJJoTdPmsaRriKJEuqoK+YGI7y2Z+ZIibAZ9X8vQ3BVV9dYr9zxoaahducsb+8zln/AISKOBhESzLEKtZTPA3qv16N08qLGY6v5g4BJHKA3T+jo8NNNxSet/5kOiL7z9ciSJOrNela7rGrttLeTvWCcWRWSd7UNr9fFetuncDuUZf50j1ndVaG41UwTSbZxVGO+N5yG2GKGRujFP1npEc9jKcWzSiOl+Aw9Y3nGVhLffOGkTwAcoGhr4xQbs1yYNuL2jf84eA2ouBgEyxyQJE=
+    secure: ZZPQGIE6kJD7qDnlW53x8Pytw9b0+zA2xeyl6cL29P6EmoFJwZSd84SOu3BW9XkxGQSxjMJ6ejpry3TFODgxF2tIkXT52xgmw0ZzuGkbLmqYlIpjFEgqxIFg5oGtBQV3PDPveN9kWBcRLPR/FvdkEzokWsqtSupwkTmZamz7qOM47xyc4hfPdir+jBa9jGRX7dhQhm2LBd7wqgOHkJYKukEf2tjF4R4+AS8WkZUrPQH/M7BZ3vwb2hIWLQ08SeML1giouvg0l4dkiA2FZZkvAo9iPebDdfPP015ssvwoR4jdIwl5VfALzEoT0cQCG8jxGasOHC9GUyaTFMFWDA8pPR3eGbJ1ogDG4uGTssVuSLQN2OK2io1UoOC+tKG7/zidKBO2PSLd9YbqIksWdvukKMdPeYUEtZRj58oTUs8ZmjWmCFPhm31sq6hgbiGFwlFCfHF+Hms3JUtIU51r28xy6bjkdWlcJxDPKAuYn1W+S48CU3S1+Is/FLCr6XaSpE2H1ly3oZhod4GqZVKKFKKYPHm1xa5YPCPZc6bj9/XTGXNwgznEGfJRUPmmVQio9CDx9uafTFy9NV40lvP0jssPQp1w2pkl+gAUrQLhmrq4huzPhFvK8id1O1Vod/gsbrDlrxfeJ3lVihjNJ5Buryig47mTICIrEfmXXkGd/6vnFB0=
   file_glob: true
   file: release/*.gz
   skip_cleanup: true
   draft: true
   on:
     tags: true
-    repo: adobe-apiplatform/user-sync.py
-    all_branches: true
+    repo: sdhau/user-sync.py
+    branch: build/exe
