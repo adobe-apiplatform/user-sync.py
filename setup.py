@@ -47,6 +47,7 @@ setup(name='user-sync',
       packages=find_packages(),
       install_requires=[
           'keyring',
+          'keyrings.cryptfile',
           'okta==0.0.3.1',
           'psutil',
           'pycryptodome==3.7.3',
@@ -58,8 +59,8 @@ setup(name='user-sync',
           'click-default-group',
       ],
       extras_require={
-          ':python_version<"3" and (sys_platform=="linux" or sys_platform=="linux2")':[
-              'more-itertools==4.3.0'
+          ':python_version<"3"':[
+              'zipp==1.1.0',
           ],
           ':sys_platform=="linux" or sys_platform=="linux2"': [
               'secretstorage',
