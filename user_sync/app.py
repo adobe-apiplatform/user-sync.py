@@ -37,6 +37,7 @@ import user_sync.lockfile
 import user_sync.rules
 import user_sync.cli
 import user_sync.resource
+from user_sync.credentials import CredentialManager
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 
@@ -388,7 +389,10 @@ def get(identifier):
     """
     Gets the specified credentials from keyring
     """
-    click.echo("you have called the get credential to fetch {0}".format(identifier))
+    credential = CredentialManager().get(identifier)
+    if credential is None:
+        raise AssertionException("Credential not found for identifier '{0}'".format(identifier))
+    click.echo(identifier + ': ' + credential)
 
 
 @credentials.command(help="Allows for east setting of credentials on any platform.")
@@ -402,7 +406,10 @@ def set(identifier, password):
     """
     Sets the specified credentials in keyring
     """
+    credential_manager = CredentialManager()
+    new_credential = credential_manager.set(identifier, password)
     click.echo("you have called the set credential command storing '{1}' for '{0}'".format(identifier, password))
+    return new_credential
 
 
 main.add_command(credentials)
