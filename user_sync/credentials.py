@@ -1,16 +1,23 @@
+import logging
+
 import keyring
+from keyring.errors import KeyringError
+
+from user_sync.error import AssertionException
 
 
 class CredentialManager:
     def __init__(self):
-        pass
+        self.username ='user_sync'
+        self.logger = logging.getLogger('credman')
 
     def get(self, service_name, username):
         keyring.get_password(service_name, username)
 
     def set(self, service_name, username, password):
         try:
-            keyring.set_password(service_name, username, password)
+            keyring.set_password(service_name, self.username, password)
             print("password stored successfully")
-        except keyring.errors.PasswordSetError:
-            print("failed to store password")
+        except KeyringError as e:
+            raise AssertionException("Error storing password ")
+
