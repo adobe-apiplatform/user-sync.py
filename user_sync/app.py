@@ -384,7 +384,7 @@ def retrieve(revert):
 
 @credentials.command(help="Allows for east fetch of stored credentials on any platform.")
 @click.option('-i', '--identifier', prompt='Enter identifier',
-              help="Name of service you want to get a password for.  Username will always be 'user_sync'.")
+              help="Name of service you want to get a value for.  Username will always be 'user_sync'.")
 def get(identifier):
     """
     Gets the specified credentials from keyring
@@ -395,21 +395,23 @@ def get(identifier):
     click.echo(identifier + ': ' + credential)
 
 
-@credentials.command(help="Allows for east setting of credentials on any platform.")
+@credentials.command(help="Allows for easy setting of credentials on any platform.")
 @click.option('-i', '--identifier', prompt='Enter identifier',
-              help="Name of service you want to store a password for. You will be prompted for this if not specified."
+              help="Name of service you want to store a value for. You will be prompted for this if not specified."
                    "Username will always be 'user_sync'. ")
-@click.option('-p', '--password', prompt="Enter password", hide_input=True,
-              help="The password to be stored. You will be prompted for this if not specified.  "
+@click.option('-v', '--value', prompt="Enter value", hide_input=True,
+              help="The value to be stored. You will be prompted for this if not specified.  "
                    "Username will always be 'user_sync'.")
-def set(identifier, password):
+def set(identifier, value):
     """
     Sets the specified credentials in keyring
     """
     credential_manager = CredentialManager()
-    new_credential = credential_manager.set(identifier, password)
-    click.echo("you have called the set credential command storing '{1}' for '{0}'".format(identifier, password))
-    return new_credential
+    credential_manager.set(identifier, value)
+    result = credential_manager.get(identifier)
+    if result != value:
+        raise AssertionException("Failed to set credential correctly, stored value was " + str(result))
+    click.echo("Credentials stored successfully for : " + identifier)
 
 
 main.add_command(credentials)

@@ -10,7 +10,7 @@ keyrings.cryptfile.cryptfile.CryptFileKeyring.keyring_key = "none"
 import keyring
 if (isinstance(keyring.get_keyring(), keyring.backends.fail.Keyring) or
         isinstance(keyring.get_keyring(), keyring.backends.chainer.ChainerBackend)):
-    keyring.set_keyring(keyrings.cryptfile.cryptfile.CryptFileKeyring())
+    keyring.set_keyring(keyrings.pythcryptfile.cryptfile.CryptFileKeyring())
 
 
 class CredentialManager:
@@ -25,9 +25,11 @@ class CredentialManager:
             self.logger.info("Using keyring '{0}' to retrieve '{1}'".format(self.keyring_name, identifier))
             return keyring.get_password(identifier, self.username)
         except KeyringError as e:
-            raise AssertionException("Error retrieving password for identifier '{0}': {1}".format(identifier, str(e)))
+            raise AssertionException("Error retrieving value for identifier '{0}': {1}".format(identifier, str(e)))
 
-    def set(self, identifier, password):
-        username = 'user_sync'
-        new_credential = keyring.set_password(identifier, username, password)
-        return new_credential
+    def set(self, identifier, value):
+        try:
+            self.logger.info("Using keyring '{0}' to set '{1}'".format(self.keyring_name, identifier))
+            keyring.set_password(identifier, self.username, value)
+        except KeyringError as e:
+            raise AssertionException("Error in setting credentials '{0}' : {1}".format(identifier, str(e)))
