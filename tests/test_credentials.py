@@ -27,8 +27,6 @@ def test_set_method2():
         check_password = CredentialManager().get(identifier)
         assert check_password == value
 
-    #  user_sync.credentials.keyring.set_keyring(keyrings.cryptfile.cryptfile.CryptFileKeyring())
-
 
 def test_set_method3():
     identifier = 'TestId5'
