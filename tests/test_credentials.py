@@ -1,31 +1,41 @@
+import keyrings
 import pytest
 import uuid
 from user_sync.error import AssertionException
 from user_sync.credentials import CredentialManager
+import user_sync.credentials
+import keyring
 
 
 def test_set():
     identifier = 'TestId'
     value = 'TestValue'
-    manager = CredentialManager()
-    manager.set(identifier, value)
-    check_password = manager.get(identifier)
+    CredentialManager().set(identifier, value)
+    check_password = CredentialManager().get(identifier)
     assert check_password == value
 
 
 def test_set_method2():
     identifier = 'TestId4'
-    # value = 'extraLongPassword'
-    # for x in range(20):
-    #     value = value+value
     x = ""
     for i in range(500):
         x += str(uuid.uuid4())
+    value = x
 
-    with pytest.raises(AssertionException):
-        manager = CredentialManager()
-        CredentialManager.set(manager, identifier, x)
+    if isinstance(keyring.get_keyring(), keyring.backends.fail.Keyring):
+        keyring.set_keyring(keyrings.cryptfile.cryptfile.CryptFileKeyring())
+        check_password = CredentialManager().get(identifier)
+        assert check_password == value
+
+    #  user_sync.credentials.keyring.set_keyring(keyrings.cryptfile.cryptfile.CryptFileKeyring())
 
 
-
-
+def test_set_method3():
+    identifier = 'TestId5'
+    x = ""
+    for i in range(500):
+        x += str(uuid.uuid4())
+    value = x
+    if isinstance(keyring.get_keyring(), keyring.backends.Windows.WinVaultKeyring):
+        with pytest.raises(AssertionException):
+            CredentialManager().set(identifier, value)

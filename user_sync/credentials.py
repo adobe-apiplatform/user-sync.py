@@ -1,4 +1,5 @@
 import logging
+import sys
 
 import keyrings.cryptfile.cryptfile
 from keyring.errors import KeyringError
@@ -10,7 +11,7 @@ keyrings.cryptfile.cryptfile.CryptFileKeyring.keyring_key = "none"
 import keyring
 if (isinstance(keyring.get_keyring(), keyring.backends.fail.Keyring) or
         isinstance(keyring.get_keyring(), keyring.backends.chainer.ChainerBackend)):
-    keyring.set_keyring(keyrings.pythcryptfile.cryptfile.CryptFileKeyring())
+    keyring.set_keyring(keyrings.cryptfile.cryptfile.CryptFileKeyring())
 
 
 class CredentialManager:
@@ -33,3 +34,9 @@ class CredentialManager:
             keyring.set_password(identifier, self.username, value)
         except KeyringError as e:
             raise AssertionException("Error in setting credentials '{0}' : {1}".format(identifier, str(e)))
+        except Exception as e:
+            if "stub received bad data" in str(e):
+                raise AssertionException("Value for {0} too long for backend to store: {1}".format(identifier, str(e)))
+            raise e
+
+
