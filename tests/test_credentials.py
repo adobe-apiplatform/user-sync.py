@@ -16,7 +16,7 @@ def test_set():
 
 
 def test_set_method2():
-    identifier = 'TestId4'
+    identifier = 'TestId2'
     x = ""
     for i in range(500):
         x += str(uuid.uuid4())
@@ -29,7 +29,7 @@ def test_set_method2():
 
 
 def test_set_method3():
-    identifier = 'TestId5'
+    identifier = 'TestId3'
     x = ""
     for i in range(500):
         x += str(uuid.uuid4())
