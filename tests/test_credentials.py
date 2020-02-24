@@ -13,10 +13,18 @@ def test_set():
 
 
 def test_set_method2():
+    identifier = 'TestId4'
+    # value = 'extraLongPassword'
+    # for x in range(20):
+    #     value = value+value
+    x = ""
+    for i in range(500):
+        x += str(uuid.uuid4())
+
     with pytest.raises(AssertionException):
-        identifier = 'TestId2'
-        value = 'extraLongPassword'
-        for x in range(20):
-            value += value
         manager = CredentialManager()
         CredentialManager.set(manager, identifier, value)
+
+
+
+
