@@ -1,4 +1,5 @@
 import pytest
+import uuid
 from user_sync.error import AssertionException
 from user_sync.credentials import CredentialManager
 
@@ -7,8 +8,8 @@ def test_set():
     identifier = 'TestId'
     value = 'TestValue'
     manager = CredentialManager()
-    CredentialManager.set(manager, identifier, value)
-    check_password = CredentialManager.get(manager, identifier)
+    manager.set(identifier, value)
+    check_password = manager.get(identifier)
     assert check_password == value
 
 
@@ -23,7 +24,7 @@ def test_set_method2():
 
     with pytest.raises(AssertionException):
         manager = CredentialManager()
-        CredentialManager.set(manager, identifier, value)
+        CredentialManager.set(manager, identifier, x)
 
 
 
