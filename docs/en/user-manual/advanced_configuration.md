@@ -685,6 +685,28 @@ side, and removed users to be removed from the Adobe side.
 - Once the job has run, clear out the files (because their changes have been pushed) to prepare for
 the next batch.
 
+##Working with multiple identity source
+
+If you have multiple active directories or sources of identity, the sync tool can be used with all of them at once. This is accomplished with a pseudo connector called the multi directory connector. The multi directory connector will pull user information from all identity sources and compile a single list of users to sync. This list can be combined with specific directory grouping notation to inform user sync on where to send users on each identity source. This enables the sync tool to map any directory group from any identity source to any group on any target console. To use the multi sync functionality, specify the “–connector multi” option, and configure user-sync-config.yml to read from multiple directories as shown below.
+````yaml
+python user-sync.pex --process-groups --users mapped --connector multi
+````
+````yaml
+connectors:
+  ldap: connector-ldap.yml
+  multi:
+    - id: src1
+      type: ldap
+      path: connector-ldap1.yml
+    - id: src2
+      type: csv
+      path: connector-csv.yml
+    - id: src3
+      type: ldap
+      path: connector-ldap3.yml
+````
+All the identity sources should be specified in the format of a list of dictionaries where each source has an ID, a type, and a path. The ID is an arbitrary string but is needed to map groups from specific directories, and therefore must be unique. User Sync will raise an exception if duplicate IDs are found. The type must be one of the allowed connectors for UST (see [Command Parameters](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/command_parameters.html)). Each of the connectors in the list should also have a path to its configuration file. Note that the extra connector keys not nested under the multi key (shown above) will not cause an exception, but will be ignored by the sync. The identity sources will be processed in list order, and in the case where a user key is duplicated over identity sources, the most recent version of that user is taken.
+
 ## The Okta Connector
 
 In addition to LDAP and CSV, the User Sync tool supports [Okta](https://www.okta.com) as a source for user identity and product entitlement sync.  Since Okta always uses email addresses as the unique ID for users, the Okta connector does not support username-based federation.

@@ -134,7 +134,11 @@ class ConfigLoader(object):
                                          (connector_spec[0], connector_type))
             options['directory_connector_type'] = connector_type
         elif connector_type == "csv":
+            if len(connector_spec) > 2:
+                raise AssertionException("You must specify a single file with connector type csv")
             options['directory_connector_type'] = 'csv'
+            if len(connector_spec) == 2:
+                options['directory_connector_overridden_options'] = {'file_path': connector_spec[1]}
         else:
             raise AssertionException('Unknown connector type: %s' % connector_type)
 
@@ -185,6 +189,13 @@ class ConfigLoader(object):
             if users_action == 'all':
                 if options['directory_connector_type'] == 'okta':
                     raise AssertionException('Okta connector module does not support "--users all"')
+            elif users_action == 'file':
+                if options['directory_connector_type'] == 'csv':
+                    raise AssertionException('You cannot specify file input with both "users" and "connector" options')
+                if options['directory_connector_type'] == 'multi':
+                    raise AssertionException('You cannot use both users file option and multi connector together')
+                options['directory_connector_type'] = 'csv'
+                options['directory_connector_overridden_options'] = {'file_path': users_spec[1]}
             elif users_action == 'mapped':
                 options['directory_group_mapped'] = True
             elif users_action == 'group':
@@ -327,8 +338,10 @@ class ConfigLoader(object):
         :rtype str
         """
         options = self.get_dict_from_sources([path])
-        options = self.combine_dicts(
-            [options, self.invocation_options.get('directory_connector_overridden_options', {})])
+        overrides = self.invocation_options.get('directory_connector_overridden_options', {})
+        if 'file_path' in options and 'file_path' in overrides:
+            raise AssertionException('CSV file path cannot be specified in both options and connector csv file.')
+        options = self.combine_dicts([options, overrides])
         return options
 
     def get_directory_groups(self):

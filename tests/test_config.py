@@ -8,7 +8,7 @@ from user_sync import app
 from user_sync.error import AssertionException
 
 
-def load_ldap_config_options(args):
+def load_ldap_config_options(args, ldap_file):
     from user_sync.connector.directory import DirectoryConnector
     from user_sync.connector.directory_ldap import LDAPDirectoryConnector
 
@@ -16,7 +16,7 @@ def load_ldap_config_options(args):
     dc_mod_name = config_loader.get_directory_connector_module_name()
     dc_mod = __import__(dc_mod_name, fromlist=[''])
     dc = DirectoryConnector(dc_mod)
-    dc_config_options = config_loader.get_directory_connector_options(dc.name)
+    dc_config_options = config_loader.get_directory_connector_options(ldap_file)
     caller_config = DictConfig('%s configuration' % dc.name, dc_config_options)
     return LDAPDirectoryConnector.get_options(caller_config)
 
@@ -121,17 +121,17 @@ def test_twostep_config(tmp_config_files, modify_ldap_config, cli_args):
 
     # test invalid "two_steps_lookup" config
     with pytest.raises(AssertionException):
-        load_ldap_config_options(args)
+        load_ldap_config_options(args, ldap_config_file)
 
     # test valid "two_steps_lookup" config with "group_member_filter_format" still set
     modify_ldap_config(['two_steps_lookup', 'group_member_attribute_name'], 'member')
     with pytest.raises(AssertionException):
-        load_ldap_config_options(args)
+        load_ldap_config_options(args, ldap_config_file)
 
     # test valid "two_steps_lookup" setup
     modify_ldap_config(['two_steps_lookup', 'group_member_attribute_name'], 'member')
     modify_ldap_config(['group_member_filter_format'], "")
-    options = load_ldap_config_options(args)
+    options = load_ldap_config_options(args, ldap_config_file)
     assert 'two_steps_enabled' in options
     assert 'two_steps_lookup' in options
     assert 'group_member_attribute_name' in options['two_steps_lookup']
