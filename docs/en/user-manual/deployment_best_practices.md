@@ -155,6 +155,23 @@ On Linux, the secure storage application would have been installed and configure
 
 The credentials are added to the OS secure storage and given the username and credential id that you will use to specify the credential.  For umapi credentials, the username is the organization id.  For the LDAP password credential, the username is the LDAP username.  You can pick any identifier you wish for the specific credentials; they must match between what is in the credential store and the name used in the configuration file.  Suggested values for the key names are shown in the examples above.
 
+### Storing Credentials Via Command Line Argument
+
+The ```credentials``` command allows the user to securely get and
+set credentials using either the yaml files or Keyring. This automates
+ the process of securing credentials for the user.
+ 
+ ```credentials``` can be run with any of the
+following subcommands shown below.
+
+| Subcommand | Description |
+|------------------------------|------------------|
+| `store` | Replaces the plaintext values of sensitive credentials in yaml files with secure keys. |
+| `retrieve` | Retrieves currently stored credentials under the username "user_sync." |
+| `revert` | Reverts the yaml files to a plaintext state. |
+| `get` | Takes one parameter `--identifier [identifier]` either as a command line option or from a user prompt. Keyring then retrieves the corresponding credential from the backend. |
+| `set` | Takes two parameters, `--identifier [identifier]` and `--value [value]` either as command line options or from user prompts. Keyring then creates a new credential in the backend for the specified identifier. The username will be "user_sync." |
+
 
 ### Storing Credential Files in External Management Systems
 
