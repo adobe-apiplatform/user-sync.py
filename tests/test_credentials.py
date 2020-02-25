@@ -26,14 +26,7 @@ def test_set_method2():
         keyring.set_keyring(keyrings.cryptfile.cryptfile.CryptFileKeyring())
         check_password = CredentialManager().get(identifier)
         assert check_password == value
-
-
-def test_set_method3():
-    identifier = 'TestId3'
-    x = ""
-    for i in range(500):
-        x += str(uuid.uuid4())
-    value = x
     if isinstance(keyring.get_keyring(), keyring.backends.Windows.WinVaultKeyring):
         with pytest.raises(AssertionException):
             CredentialManager().set(identifier, value)
+
