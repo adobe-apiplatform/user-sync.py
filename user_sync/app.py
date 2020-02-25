@@ -125,6 +125,8 @@ def main():
               cls=user_sync.cli.OptionMulti,
               type=list,
               metavar='ldap|okta|csv|adobe_console [path-to-file.csv]')
+@click.option('--exclude-unmapped-users/--include-unmapped-users', default=None,
+              help='Exclude users that is not part of a mapped group from being created on Adobe side')
 @click.option('--process-groups/--no-process-groups', default=None,
               help='if membership in mapped groups differs between the enterprise directory and Adobe sides, '
                    'the group membership is updated on the Adobe side so that the memberships in mapped '

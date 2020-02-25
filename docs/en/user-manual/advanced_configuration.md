@@ -202,7 +202,7 @@ configuration file in the `directory_users` section:
 
 ```
 directory_users:
-  extension: extenstions_config.yml  # reference to file with custom mapping information
+  extension: extension-config.yml  # reference to file with custom mapping information
 ```
 
 Custom attribute handling is performed for each user, so the
@@ -768,9 +768,9 @@ directory_users:
   # ... additional directory config options
   groups:
     # ... group mappings, etc
-    additional_groups:
-      - source: "AEM-ACL-(.+)"
-        target: "AEM-(\\1)"
+  additional_groups:
+    - source: "AEM-ACL-(.+)"
+      target: "AEM-(\\1)"
 ```
 
 `additional_groups` contains a list of additional group rules. `source`

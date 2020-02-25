@@ -330,6 +330,11 @@ invocation_defaults:
   adobe_users: all
   # For argument --connector, the default is 'ldap'.
   connector: ldap
+  # For argument --exclude_unmapped_users, the default is False (include all).
+  # If you set this default to True, UST will automatically skip user creation
+  # on user that is not part of any mapped group.
+  # --include-unmapped-users to override the default.
+  exclude_unmapped_users: No
   # For argument --process-groups, the default is False (don't process).
   # If you set this default to True, you can supply the argument
   # --no-process-groups to override the default.
