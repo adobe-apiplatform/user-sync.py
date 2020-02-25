@@ -1,40 +1,38 @@
-import keyrings
-import pytest
 import uuid
+
+import pytest
+
+from user_sync.credentials import *
 from user_sync.error import AssertionException
-from user_sync.credentials import CredentialManager
-import user_sync.credentials
-import keyring
 
 
 def test_set():
     identifier = 'TestId'
     value = 'TestValue'
-    CredentialManager().set(identifier, value)
-    check_password = CredentialManager().get(identifier)
-    assert check_password == value
+    cm = CredentialManager()
+    cm.set(identifier, value)
 
 
-def test_get_valid():
-    identifier = 'TestId'
-    value = 'TestValue'
-    CredentialManager().set(identifier, value)
-    test_credential = CredentialManager().get(identifier)
-    assert value == test_credential
-def test_set_method2():
+def test_get():
     identifier = 'TestId2'
-    x = ""
-    for i in range(500):
-        x += str(uuid.uuid4())
-    value = x
+    value = 'TestValue2'
+    cm = CredentialManager()
+    # Assume set works
+    cm.set(identifier, value)
+    assert cm.get(identifier) == value
 
-    if isinstance(keyring.get_keyring(), keyring.backends.fail.Keyring):
-        keyring.set_keyring(keyrings.cryptfile.cryptfile.CryptFileKeyring())
-        check_password = CredentialManager().get(identifier)
-        assert check_password == value
+
+def test_set_long():
+    identifier = 'TestId3'
+    cm = CredentialManager()
+    value = "".join([str(uuid.uuid4()) for x in range(500)])
+
     if isinstance(keyring.get_keyring(), keyring.backends.Windows.WinVaultKeyring):
         with pytest.raises(AssertionException):
-            CredentialManager().set(identifier, value)
+            cm.set(identifier, value)
+    else:
+        cm.set(identifier, value)
+        assert cm.get(identifier) == value
 
 def test_get_not_valid():
     # This is an identifier which should not exist in your backed.

@@ -1,5 +1,4 @@
 import logging
-import sys
 
 import keyrings.cryptfile.cryptfile
 from keyring.errors import KeyringError
