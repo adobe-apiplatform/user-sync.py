@@ -382,10 +382,10 @@ def retrieve(revert):
     click.echo("you have called the retrieve credential command")
 
 
-@credentials.command(help="Allows for east fetch of stored credentials on any platform.")
+@credentials.command(help="Allows for east fetch of stored credentials on any platform.", name="get")
 @click.option('-i', '--identifier', prompt='Enter identifier',
               help="Name of service you want to get a value for.  Username will always be 'user_sync'.")
-def get(identifier):
+def get_credential(identifier):
     """
     Gets the specified credentials from keyring
     """
@@ -398,14 +398,14 @@ def get(identifier):
         click.echo(str(e))
 
 
-@credentials.command(help="Allows for easy setting of credentials on any platform.")
+@credentials.command(help="Allows for easy setting of credentials on any platform.", name="set")
 @click.option('-i', '--identifier', prompt='Enter identifier',
               help="Name of service you want to store a value for. You will be prompted for this if not specified."
                    "Username will always be 'user_sync'. ")
 @click.option('-v', '--value', prompt="Enter value", hide_input=True,
               help="The value to be stored. You will be prompted for this if not specified.  "
                    "Username will always be 'user_sync'.")
-def set(identifier, value):
+def set_credential(identifier, value):
     """
     Sets the specified credentials in keyring
     """
