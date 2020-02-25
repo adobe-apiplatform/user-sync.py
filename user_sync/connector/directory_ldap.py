@@ -305,8 +305,7 @@ class LDAPDirectoryConnector(object):
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
 
-        if not self.options['two_steps_enabled']:
-            user_attribute_names.append(six.text_type('memberOf'))
+        user_attribute_names.append(six.text_type('memberOf'))
 
         extended_attributes = [six.text_type(attr) for attr in extended_attributes]
         extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
