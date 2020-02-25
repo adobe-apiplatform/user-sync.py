@@ -15,6 +15,12 @@ def test_set():
     assert check_password == value
 
 
+def test_get_valid():
+    identifier = 'TestId'
+    value = 'TestValue'
+    CredentialManager().set(identifier, value)
+    test_credential = CredentialManager().get(identifier)
+    assert value == test_credential
 def test_set_method2():
     identifier = 'TestId2'
     x = ""
@@ -30,3 +36,10 @@ def test_set_method2():
         with pytest.raises(AssertionException):
             CredentialManager().set(identifier, value)
 
+def test_get_not_valid():
+    # This is an identifier which should not exist in your backed.
+    identifier = 'DoesNotExist'
+    # keyring.get_password returns None when it cannot find the identifier (such as the case of a typo). No exception
+    # is thrown in this case. This case is handled in app.py, which will throw an AssertionException if
+    # CredentialManager.get() returns None.
+    assert CredentialManager().get(identifier) is None

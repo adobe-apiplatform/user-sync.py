@@ -389,10 +389,13 @@ def get(identifier):
     """
     Gets the specified credentials from keyring
     """
-    credential = CredentialManager().get(identifier)
-    if credential is None:
-        raise AssertionException("Credential not found for identifier '{0}'".format(identifier))
-    click.echo(identifier + ': ' + credential)
+    try:
+        credential = CredentialManager().get(identifier)
+        if credential is None:
+            raise AssertionException("Credential not found for identifier '{0}'".format(identifier))
+        click.echo(identifier + ': ' + credential)
+    except AssertionException as e:
+        click.echo(str(e))
 
 
 @credentials.command(help="Allows for easy setting of credentials on any platform.")
