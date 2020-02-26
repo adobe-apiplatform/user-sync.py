@@ -159,20 +159,8 @@ The credentials are added to the OS secure storage and given the username and cr
 
 The ```credentials``` command allows the user to securely get and
 set credentials using either the yaml files or Keyring. This automates
- the process of securing credentials for the user.
+the process of securing credentials for the user.
  
- ```credentials``` can be run with any of the
-following subcommands shown below.
-
-| Subcommand | Description |
-|------------------------------|------------------|
-| `store` | Replaces the plaintext values of sensitive credentials in yaml files with secure keys. |
-| `retrieve` | Retrieves currently stored credentials under the username "user_sync." |
-| `revert` | Reverts the yaml files to a plaintext state. |
-| `get` | Takes one parameter `--identifier [identifier]` either as a command line option or from a user prompt. Keyring then retrieves the corresponding credential from the backend. |
-| `set` | Takes two parameters, `--identifier [identifier]` and `--value [value]` either as command line options or from user prompts. Keyring then creates a new credential in the backend for the specified identifier. The username will be "user_sync." |
-
-
 ### Storing Credential Files in External Management Systems
 
 As an alternative to storing credentials in the local credential store, it is possible to integrate User Sync with some other system or encryption mechanism.  To support such integrations, it is possible to store the entire configuration files for umapi and ldap externally in some other system or format.
