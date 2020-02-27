@@ -17,8 +17,11 @@ nav_order: 80
 
 #### Documentation goes here
 
-```credentials``` can be run with any of the
-following subcommands shown below.
+###Credential Manager
+
+The user can manage credentials from the command line using the 
+```credentials``` command with any of the
+following subcommands.
 
 | Subcommand | Description |
 |------------------------------|------------------|
@@ -28,6 +31,7 @@ following subcommands shown below.
 | `get` | Takes one parameter `--identifier [identifier]` either as a command line option or from a user prompt. Keyring then retrieves the corresponding credential from the backend. |
 | `set` | Takes two parameters, `--identifier [identifier]` and `--value [value]` either as command line options or from user prompts. Keyring then creates a new credential in the backend for the specified identifier. The username will be "user_sync." |
 
+**Sample Output (Windows)**
 
 
 [Previous Section](deployment_best_practices.md)
