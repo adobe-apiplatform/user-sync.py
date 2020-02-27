@@ -33,5 +33,44 @@ following subcommands.
 
 **Sample Output (Windows)**
 
+Successful output from ```set``` subcommand:
+
+```
+(venv) C:\Program Files\Adobe\Adobe User Sync Tool>python user-sync.pex credentials set
+Enter identifier: ldap_password
+Enter value:
+Using backend: Windows WinVaultKeyring
+Setting 'ldap_password' in keyring
+Using keyring 'Windows WinVaultKeyring' to set 'ldap_password'
+Validating...
+Using keyring 'Windows WinVaultKeyring' to retrieve 'ldap_password'
+Credentials stored successfully for: ldap_password
+```
+The identifier and value (password) can also be set as parameters:
+
+```
+(venv) C:\Program Files\Adobe\Adobe User Sync Tool>python user-sync.pex credentials set --identifier ldap_password --value password
+Using backend: Windows WinVaultKeyring
+Setting 'ldap_password' in keyring
+Using keyring 'Windows WinVaultKeyring' to set 'ldap_password'
+Validating...
+Using keyring 'Windows WinVaultKeyring' to retrieve 'ldap_password'
+Credentials stored successfully for: ldap_password
+```
+
+Successful output from ```get``` subcommand. Note that the 
+output echoes the requested identifier and password on the last line:
+
+```
+(venv) C:\Program Files\Adobe\Adobe User Sync Tool>python user-sync.pex credentials get
+Enter identifier: ldap_password
+Using backend: Windows WinVaultKeyring
+Getting 'ldap_password' from keyring
+Using keyring 'Windows WinVaultKeyring' to retrieve 'ldap_password'
+ldap_password: password
+```
+
+Similar to ```set```, ```get``` can also be run without the prompt by
+passing in the identifier as a parameter.
 
 [Previous Section](deployment_best_practices.md)
