@@ -1,3 +1,4 @@
+
 ### User Sync Tool
 
 The User Sync Tool is written in Python, but is available as a self-contained executable. In this format, the User Sync Tool is able to run without an external Python interpreter (no need to install python). This enhances both the security and convenience of using the tool. The tool is alternatively available as a PEX format artifact that can be run from a Python environment.
