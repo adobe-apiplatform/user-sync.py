@@ -158,8 +158,7 @@ The credentials are added to the OS secure storage and given the username and cr
 ### Storing Credentials Via Command Line Argument
 
 The ```credentials``` command allows the user to securely get and
-set credentials using either the yaml files or Keyring. This automates
-the process of securing credentials for the user.
+set credentials through the user-sync tool instead of going through the native process.  This is especially helpful on linux platforms, where it is not immediately obvious how to set credentials.  All credentials stored this way are stored under the username 'user_sync'.  See the credential manager section in additional tools for usage.
  
 ### Storing Credential Files in External Management Systems
 
