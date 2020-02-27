@@ -192,6 +192,8 @@ class ConfigLoader(object):
             elif users_action == 'file':
                 if options['directory_connector_type'] == 'csv':
                     raise AssertionException('You cannot specify file input with both "users" and "connector" options')
+                if len(users_spec) != 2:
+                    raise AssertionException('You must specify the file to read when using the users "file" option')
                 if options['directory_connector_type'] == 'multi':
                     raise AssertionException('You cannot use both users file option and multi connector together')
                 options['directory_connector_type'] = 'csv'
@@ -326,7 +328,13 @@ class ConfigLoader(object):
         if connectors_config is None:
             raise AssertionException("No Connectors Found in the user-sync-config.yml")
 
+        user_opt = self.invocation_options['users']
+        if isinstance(user_opt, list) and user_opt[0] == 'file':
+            return [{'id': 'users-file', 'type': 'csv', 'path': ''}]
+
         conn_options = connectors_config.get_list(connector)
+
+
 
         # If connector is not multi type, convert to equivalent dictionary
         if connector != 'multi':
@@ -337,7 +345,10 @@ class ConfigLoader(object):
         """
         :rtype str
         """
-        options = self.get_dict_from_sources([path])
+
+        options = {}
+        if path:
+            options.update(self.get_dict_from_sources([path]))
         overrides = self.invocation_options.get('directory_connector_overridden_options', {})
         if 'file_path' in options and 'file_path' in overrides:
             raise AssertionException('CSV file path cannot be specified in both options and connector csv file.')
