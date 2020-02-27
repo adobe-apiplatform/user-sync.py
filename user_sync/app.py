@@ -18,25 +18,24 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import argparse
 import logging
 import os
-import sys
-import click
 import shutil
-from click_default_group import DefaultGroup
+import sys
 from datetime import datetime
 
+import click
 import six
+from click_default_group import DefaultGroup
 
+import user_sync.cli
 import user_sync.config
 import user_sync.connector.directory
 import user_sync.connector.umapi
 import user_sync.helper
 import user_sync.lockfile
-import user_sync.rules
-import user_sync.cli
 import user_sync.resource
+import user_sync.rules
 from user_sync.credentials import CredentialManager
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
@@ -46,6 +45,13 @@ LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 # file logger, defined early so later functions can refer to it.
 logger = logging.getLogger('main')
+
+
+def clear_logger_format():
+    # Removes the LOG_STRING_FORMAT and LOG_DATE_FORMAT from the logger
+    # so that additional tools like credential manager can produce uniform output
+    # along side click I/O
+    logging.getLogger().handlers[0].setFormatter(logging.Formatter('', ''))
 
 
 def init_console_log():
@@ -357,11 +363,12 @@ def begin_work(config_loader):
 @click.group()
 @click.help_option('-h', '--help')
 def credentials():
+    clear_logger_format()
     pass
 
 
-@credentials.command(
-    help="Stores all sensitive fields and updates configuration files, replacing plaintext values with keys. ")
+@credentials.command(help="Stores all sensitive fields and updates configuration files, replacing plaintext values with keys")
+
 def store():
     """
     Stores secure credentials in the configuration file
@@ -385,6 +392,7 @@ def retrieve():
     By default, just prints out the values stored for UST
     """
     credential_manager = CredentialManager()
+
     retrieve_from_credman_keys = credential_manager.retrieve_from_credman_keys()
 
     if retrieve_from_credman_keys is None:
@@ -409,36 +417,46 @@ def revert():
     click.echo(f"Config files were restored to original unsecured state with the following plain text values: {retrieve_config_credentials}")
 
 
-@credentials.command(help="Allows for east fetch of stored credentials on any platform.")
+
+@credentials.command(help="Allows for east fetch of stored credentials on any platform.", name="get")
 @click.option('-i', '--identifier', prompt='Enter identifier',
               help="Name of service you want to get a value for.  Username will always be 'user_sync'.")
-def get(identifier):
+def get_credential(identifier):
     """
     Gets the specified credentials from keyring
     """
-    credential = CredentialManager().get(identifier)
-    if credential is None:
-        raise AssertionException("Credential not found for identifier '{0}'".format(identifier))
-    click.echo(identifier + ': ' + credential)
+    try:
+        credential_manager = CredentialManager()
+        click.echo("Using backend: " + credential_manager.keyring_name)
+        click.echo("Getting '{0}' from keyring".format(identifier))
+        credential = credential_manager.get(identifier)
+        if credential is None:
+            raise AssertionException("Credential not found for identifier '{0}'".format(identifier))
+        click.echo(identifier + ': ' + credential)
+    except AssertionException as e:
+        click.echo(str(e))
 
 
-@credentials.command(help="Allows for easy setting of credentials on any platform.")
+@credentials.command(help="Allows for easy setting of credentials on any platform.", name="set")
 @click.option('-i', '--identifier', prompt='Enter identifier',
               help="Name of service you want to store a value for. You will be prompted for this if not specified."
                    "Username will always be 'user_sync'. ")
 @click.option('-v', '--value', prompt="Enter value", hide_input=True,
               help="The value to be stored. You will be prompted for this if not specified.  "
                    "Username will always be 'user_sync'.")
-def set(identifier, value):
+def set_credential(identifier, value):
     """
     Sets the specified credentials in keyring
     """
     credential_manager = CredentialManager()
+    click.echo("Using backend: " + credential_manager.keyring_name)
+    click.echo("Setting '{0}' in keyring".format(identifier))
     credential_manager.set(identifier, value)
+    click.echo("Validating...")
     result = credential_manager.get(identifier)
     if result != value:
         raise AssertionException("Failed to set credential correctly, stored value was " + str(result))
-    click.echo("Credentials stored successfully for : " + identifier)
+    click.echo("Credentials stored successfully for: " + identifier)
 
 
 main.add_command(credentials)
