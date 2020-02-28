@@ -332,7 +332,7 @@ class ConfigLoader(object):
         if connectors_config is not None:
             conn = connectors_config.get_list(connector_type)
             if connector_type != 'multi':
-                return [{'type': connector_type, 'path': connectors_config.get_string(connector_type)}]
+                return [{'type': connector_type, 'path': conn[0]}]
             return conn
 
         raise AssertionException(
