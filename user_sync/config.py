@@ -338,7 +338,7 @@ class ConfigLoader(object):
         raise AssertionException(
             "You must specify a configuration file for connector type '{}'".format(connector_type))
 
-    def get_directory_connector_options(self, path):
+    def get_directory_connector_options(self, path=None):
         """
         :rtype str
         """
