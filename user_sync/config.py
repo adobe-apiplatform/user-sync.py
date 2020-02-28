@@ -134,10 +134,11 @@ class ConfigLoader(object):
                                          (connector_spec[0], connector_type))
             options['directory_connector_type'] = connector_type
         elif connector_type == "csv":
-            if len(connector_spec) != 2:
+            if len(connector_spec) > 2:
                 raise AssertionException("You must specify a single file with connector type csv")
             options['directory_connector_type'] = 'csv'
-            options['directory_connector_overridden_options'] = {'file_path': connector_spec[1]}
+            if len(connector_spec) == 2:
+                options['directory_connector_overridden_options'] = {'file_path': connector_spec[1]}
         else:
             raise AssertionException('Unknown connector type: %s' % connector_type)
 
@@ -189,8 +190,8 @@ class ConfigLoader(object):
                 if options['directory_connector_type'] == 'okta':
                     raise AssertionException('Okta connector module does not support "--users all"')
             elif users_action == 'file':
-                if options['directory_connector_type'] == 'csv':
-                    raise AssertionException('You cannot specify file input with both "users" and "connector" options')
+                options['users_file'] = True
+                self.logger.warning('When using --users file, all connector configuration is ignored')
                 if len(users_spec) != 2:
                     raise AssertionException('You must specify the file to read when using the users "file" option')
                 options['directory_connector_type'] = 'csv'
@@ -304,7 +305,12 @@ class ConfigLoader(object):
             return None
 
     def get_directory_connector_configs(self):
+        """
+        :return: A list of dicts for the specified connector type containing
+        at minimum, type and path fields.
+        """
         connectors_config = None
+        connector_type = self.invocation_options.get('directory_connector_type')
         directory_config = self.main_config.get_dict_config('directory_users', True)
         if directory_config is not None:
             connectors_config = directory_config.get_dict_config('connectors', True)
@@ -317,21 +323,33 @@ class ConfigLoader(object):
             connectors_config.get_list('multi', True)
             connectors_config.get_list('adobe_console', True)
 
-        connector = self.invocation_options.get('directory_connector_type')
-        conn_options = connectors_config.get_list(connector)
+        # If there is a stray list or --users file, do nothing
+        if self.invocation_options.get('stray_list_input_path', None) or self.invocation_options.get('users_file'):
+            return []
 
-        # If connector is not multi type, convert to equivalent dictionary
-        if connector != 'multi':
-            conn_options = [{'id': connector, 'type': connector, 'path': conn_options[0]}]
-        return conn_options
+        # Assume the connector config is already in list form (multi).  If not, just recreate the path
+        # in the form of a list of dict
+        if connectors_config is not None:
+            conn = connectors_config.get_list(connector_type)
+            if connector_type != 'multi':
+                return [{'type': connector_type, 'path': connectors_config.get_string(connector_type)}]
+            return conn
 
-    def get_directory_connector_options(self, path):
+        raise AssertionException(
+            "You must specify a configuration file for connector type '{}'".format(connector_type))
+
+    def get_directory_connector_options(self, path=None):
         """
         :rtype str
         """
-        options = self.get_dict_from_sources([path])
-        options = self.combine_dicts(
-            [options, self.invocation_options.get('directory_connector_overridden_options', {})])
+
+        options = {}
+        if path:
+            options.update(self.get_dict_from_sources([path]))
+        overrides = self.invocation_options.get('directory_connector_overridden_options', {})
+        if 'file_path' in options and 'file_path' in overrides and self.invocation_options.get('directory_connector_type') == 'csv':
+            raise AssertionException('CSV file path cannot be specified in both options and connector csv file.')
+        options = self.combine_dicts([options, overrides])
         return options
 
     def get_directory_groups(self):

@@ -26,7 +26,34 @@ from user_sync.connector.directory import DirectoryConnector
 from user_sync.error import AssertionException
 
 
+class DirectoryConnectorConfig(object):
+
+    def __init__(self, **options):
+
+        logger = logging.getLogger()
+        caller = DictConfig("connector_config", options)
+        builder = OptionsBuilder(caller)
+        builder.require_string_value('type')
+        builder.set_string_value('id', None)
+        builder.set_string_value('path', None)
+
+        caller.report_unused_values(logger)
+        options = builder.get_options()
+
+        # Shortcut for specifying connectors by type and path only
+        if options['id'] is None:
+            options['id'] = options['type']
+
+        # All connectors except CSV require a path (because CSV can be used with --users file)
+        if not options['path'] and options['id'] != 'users-file':
+            raise AssertionException("Config path is required for connectors of type '{}'".format(options['type']))
+
+        self.id = options['id']
+        self.type = options['type']
+        self.path = options['path']
+
 class DirectoryConnectorManager(object):
+
     def __init__(self, config_loader, additional_groups, default_account_type):
         self.logger = logging.getLogger("dc manager")
         self.config_loader = config_loader
@@ -34,36 +61,32 @@ class DirectoryConnectorManager(object):
         self.new_account_type = default_account_type
         self.connectors = {}
 
-        for k, v in six.iteritems(self.get_directory_connector_config()):
+        for k, v in six.iteritems(self.build_directory_config_dict()):
             self.connectors[k] = self.build_connector(v)
 
-    def get_directory_connector_config(self):
+    def build_directory_config_dict(self):
 
         config_dict = {}
-        for i in self.config_loader.get_directory_connector_configs():
-            caller = DictConfig("connectors", i)
-            builder = OptionsBuilder(caller)
-            builder.require_string_value('id')
-            builder.require_string_value('path')
-            builder.require_string_value('type')
-            caller.report_unused_values(self.logger)
-            options = builder.get_options()
-            conn_id = options['id']
+        if self.config_loader.invocation_options.get('users-file'):
+                config_dict['users-file'] = DirectoryConnectorConfig(id='users-file',type='csv')
+        else:
+            for i in self.config_loader.get_directory_connector_configs():
+                conf = DirectoryConnectorConfig(**i)
+                if conf.id in config_dict:
+                    raise AssertionException("Connector id: '{}' is already defined".format(conf.id))
+                config_dict[conf.id] = conf
 
-            if conn_id in config_dict:
-                raise AssertionException("Connector id: '{}' is already defined".format(conn_id))
-            config_dict[conn_id] = options
         return config_dict
 
     def build_connector(self, config):
 
         directory_connector = None
         directory_connector_options = None
-        directory_connector_module_name = self.config_loader.get_directory_connector_module_name(config['type'])
+        directory_connector_module_name = self.config_loader.get_directory_connector_module_name(config.type)
         if directory_connector_module_name is not None:
             directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
             directory_connector = DirectoryConnector(directory_connector_module)
-            directory_connector_options = self.config_loader.get_directory_connector_options(config['path'])
+            directory_connector_options = self.config_loader.get_directory_connector_options(config.path)
 
         if directory_connector is not None and directory_connector_options is not None:
             # specify the default user_identity_type if it's not already specified in the options
@@ -83,7 +106,7 @@ class DirectoryConnectorManager(object):
 
         users = []
         for c,v in six.iteritems(self.connectors):
-            self.logger.info("Loading users from connector: " + c)
+            self.logger.info("Loading users from connector: " + "id: " + c + "   type: " + v.name)
             new_users = list(v.load_users_and_groups(groups, extended_attributes, all_users))
             self.logger.info("Found {} users".format(len(new_users)))
             users.extend(new_users)
