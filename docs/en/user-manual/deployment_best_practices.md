@@ -17,7 +17,7 @@ nav_order: 70
 
 ---
 
-[Previous Section](advanced_configuration.md)
+[Previous Section](advanced_configuration.md)  \| [Next Section](additional_tools.md)
 
 ---
 
@@ -155,7 +155,11 @@ On Linux, the secure storage application would have been installed and configure
 
 The credentials are added to the OS secure storage and given the username and credential id that you will use to specify the credential.  For umapi credentials, the username is the organization id.  For the LDAP password credential, the username is the LDAP username.  You can pick any identifier you wish for the specific credentials; they must match between what is in the credential store and the name used in the configuration file.  Suggested values for the key names are shown in the examples above.
 
+### Storing Credentials Via Command Line Argument
 
+The ```credentials``` command allows the user to securely get and
+set credentials through the user-sync tool instead of going through the native process.  This is especially helpful on linux platforms, where it is not immediately obvious how to set credentials.  All credentials stored this way are stored under the username 'user_sync'.  See the credential manager section in additional tools for usage.
+ 
 ### Storing Credential Files in External Management Systems
 
 As an alternative to storing credentials in the local credential store, it is possible to integrate User Sync with some other system or encryption mechanism.  To support such integrations, it is possible to store the entire configuration files for umapi and ldap externally in some other system or format.
@@ -287,4 +291,4 @@ logging:
 
 ---
 
-[Previous Section](advanced_configuration.md)
+[Previous Section](advanced_configuration.md)  \| [Next Section](additional_tools.md)
