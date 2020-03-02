@@ -372,28 +372,31 @@ def credentials():
 def store():
     """
     Stores secure credentials in the configuration file
-    This is an automated process
+    This is an automated process.
     """
-    credential_manager = CredentialManager()
-    credential_manager.store()
-    retrieve_config_credentials = credential_manager.retrieve_config_credentials()
-    for cred_identifier in retrieve_config_credentials:
-        click.echo(f"{cred_identifier} stored securely in configuration file.")
+    try:
+        credential_manager = CredentialManager()
+        credential_manager.store()
+        for identifier in credential_manager.retrieve():
+            click.echo("'{0}' stored securely in configuration file.".format({identifier}))
+    except AssertionException as e:
+        click.echo(str(e))
 
 
 @credentials.command(help="Retrieves currently stored credentials under the username 'user_sync'.")
 def retrieve():
     """
-    Retrieves credentials from the configuration files
-    By default, just prints out the values stored for UST
+    Retrieves credentials from credential manager.
     """
-    credential_manager = CredentialManager()
-    retrieve_from_credman_keys = credential_manager.retrieve_from_credman_keys()
-
-    if retrieve_from_credman_keys is None:
-        raise AssertionException("Unable to retrieve credentials from configuration files.")
-    for key_value in retrieve_from_credman_keys.items():
-        click.echo(f"The following values were stored securely: {key_value}")
+    try:
+        credential_manager = CredentialManager()
+        retrieved_creds = credential_manager.retrieve()
+        if not retrieved_creds:
+            click.echo("No credentials stored with user name 'user_sync'.")
+        for key_value in retrieved_creds.items():
+            click.echo("The following values were stored securely: '{0}'".format(key_value))
+    except AssertionException as e:
+        click.echo(str(e))
 
 
 @credentials.command(help="Will return configuration file to unsecured state and replace all secrure values with "
@@ -404,13 +407,16 @@ def revert():
     with actual plaintext data This is an
     automated process.
     """
-    credential_manager = CredentialManager()
-    credential_manager.revert()
-    retrieve_config_credentials = credential_manager.retrieve_config_credentials()
-    for plaintext_cred_identifier in retrieve_config_credentials:
-        click.echo(
-            "Config files were restored to original unsecured state with the following plain text values for: "
-            f"{plaintext_cred_identifier}")
+    try:
+        credential_manager = CredentialManager()
+        creds = credential_manager.revert()
+        click.echo('reverting...')
+        for identifier in creds:
+            click.echo(
+                "Config files were restored to original unsecured state with the following plain text values "
+                "for:'{0}'".format(identifier))
+    except AssertionException as e:
+        click.echo(str(e))
 
 
 @credentials.command(help="Allows for east fetch of stored credentials on any platform.", name="get")
@@ -450,8 +456,9 @@ def set_credential(identifier, value):
     click.echo("Validating...")
     result = credential_manager.get(identifier)
     if result != value:
-        raise AssertionException("Failed to set credential correctly, stored value was " + str(result))
-    click.echo("Credentials stored successfully for: " + identifier)
+        click.echo("Failed to set credential correctly, stored value was " + str(result))
+    else:
+        click.echo("Credentials stored successfully for: " + identifier)
 
 
 main.add_command(credentials)
