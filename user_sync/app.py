@@ -371,28 +371,52 @@ def credentials():
     help="Stores all sensitive fields and updates configuration files, replacing plaintext values with keys")
 def store():
     """
-    Stores credentials in the configuration file
-    This is an automated process
+    Stores secure credentials in the configuration file
+    This is an automated process.
     """
-    credential_manager = CredentialManager()
-    click.echo("Using backend: " + credential_manager.keyring_name)
-    click.echo("You have called the store-credential command.")
+    try:
+        credential_manager = CredentialManager()
+        credential_manager.store()
+        for identifier in credential_manager.retrieve():
+            click.echo("'{0}' stored securely in configuration file.".format({identifier}))
+    except AssertionException as e:
+        click.echo(str(e))
 
 
-@credentials.command(help="Retreives currently stored credentials under the username 'user_sync'.")
-@click.option('--revert', default=False, is_flag=True, help="Reverts configuration files to plaintext state.")
-def retrieve(revert):
+@credentials.command(help="Retrieves currently stored credentials under the username 'user_sync'.")
+def retrieve():
     """
-    Retrieves credentials from the configuration files
-    By default, just prints out the values stored for UST
-    If --revert is used, updates config files with actual plaintext data
-    This is an automated process
+    Retrieves credentials from credential manager.
     """
-    credential_manager = CredentialManager()
-    click.echo("Using backend: " + credential_manager.keyring_name)
-    if revert:
-        click.echo("reverting...")
-    click.echo("you have called the retrieve credential command")
+    try:
+        credential_manager = CredentialManager()
+        retrieved_creds = credential_manager.retrieve()
+        if not retrieved_creds:
+            click.echo("No credentials stored with user name 'user_sync'.")
+        for key_value in retrieved_creds.items():
+            click.echo("The following values were stored securely: '{0}'".format(key_value))
+    except AssertionException as e:
+        click.echo(str(e))
+
+
+@credentials.command(help="Will return configuration file to unsecured state and replace all secrure values with "
+                          "plain text values.")
+def revert():
+    """
+    Revert updates config files
+    with actual plaintext data This is an
+    automated process.
+    """
+    try:
+        credential_manager = CredentialManager()
+        creds = credential_manager.revert()
+        click.echo('reverting...')
+        for identifier in creds:
+            click.echo(
+                "Config files were restored to original unsecured state with the following plain text values "
+                "for:'{0}'".format(identifier))
+    except AssertionException as e:
+        click.echo(str(e))
 
 
 @credentials.command(help="Allows for east fetch of stored credentials on any platform.", name="get")
@@ -432,8 +456,9 @@ def set_credential(identifier, value):
     click.echo("Validating...")
     result = credential_manager.get(identifier)
     if result != value:
-        raise AssertionException("Failed to set credential correctly, stored value was " + str(result))
-    click.echo("Credentials stored successfully for: " + identifier)
+        click.echo("Failed to set credential correctly, stored value was " + str(result))
+    else:
+        click.echo("Credentials stored successfully for: " + identifier)
 
 
 main.add_command(credentials)
