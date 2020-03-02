@@ -367,22 +367,18 @@ def credentials():
     pass
 
 
-@credentials.command(help="Stores all sensitive fields and updates configuration files, replacing plaintext values with keys")
-
+@credentials.command(
+    help="Stores all sensitive fields and updates configuration files, replacing plaintext values with keys")
 def store():
     """
     Stores secure credentials in the configuration file
     This is an automated process
     """
-
     credential_manager = CredentialManager()
     credential_manager.store()
-    retrieve_from_credman_keys = credential_manager.retrieve_from_credman_keys()
     retrieve_config_credentials = credential_manager.retrieve_config_credentials()
-    if retrieve_config_credentials != retrieve_from_credman_keys:
-        raise AssertionException("Values were not stored securely in configuration file. Stored values are:"
-                                 + dict(retrieve_config_credentials))
-    click.echo(f"{retrieve_config_credentials} stored securely in configuration file.")
+    for cred_identifier in retrieve_config_credentials:
+        click.echo(f"{cred_identifier} stored securely in configuration file.")
 
 
 @credentials.command(help="Retrieves currently stored credentials under the username 'user_sync'.")
@@ -392,12 +388,12 @@ def retrieve():
     By default, just prints out the values stored for UST
     """
     credential_manager = CredentialManager()
-
     retrieve_from_credman_keys = credential_manager.retrieve_from_credman_keys()
 
     if retrieve_from_credman_keys is None:
-        raise AssertionException("Unable to retrieve credentials")
-    click.echo(f"The following values were stored securely: {retrieve_from_credman_keys}")
+        raise AssertionException("Unable to retrieve credentials from configuration files.")
+    for key_value in retrieve_from_credman_keys.items():
+        click.echo(f"The following values were stored securely: {key_value}")
 
 
 @credentials.command(help="Will return configuration file to unsecured state and replace all secrure values with "
@@ -409,13 +405,12 @@ def revert():
     automated process.
     """
     credential_manager = CredentialManager()
-    retrieve_from_credman_txt = credential_manager.retrieve_from_credman_txt()
     credential_manager.revert()
     retrieve_config_credentials = credential_manager.retrieve_config_credentials()
-    if retrieve_config_credentials != retrieve_from_credman_txt:
-        AssertionException(f"Unable to revert to plain text state. Credentials are stored as {retrieve_config_credentials}")
-    click.echo(f"Config files were restored to original unsecured state with the following plain text values: {retrieve_config_credentials}")
-
+    for plaintext_cred_identifier in retrieve_config_credentials:
+        click.echo(
+            "Config files were restored to original unsecured state with the following plain text values for: "
+            f"{plaintext_cred_identifier}")
 
 
 @credentials.command(help="Allows for east fetch of stored credentials on any platform.", name="get")
