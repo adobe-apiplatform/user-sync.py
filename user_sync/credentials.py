@@ -4,6 +4,7 @@ from ruamel.yaml import YAML
 import keyrings.cryptfile.cryptfile
 from keyring.errors import KeyringError
 
+from user_sync.config import ConfigLoader, ConfigFileLoader
 from user_sync.error import AssertionException
 
 keyrings.cryptfile.cryptfile.CryptFileKeyring.keyring_key = "none"
@@ -14,7 +15,22 @@ if (isinstance(keyring.get_keyring(), keyring.backends.fail.Keyring) or
     keyring.set_keyring(keyrings.cryptfile.cryptfile.CryptFileKeyring())
 
 yaml = YAML()
+yaml.indent(mapping=4, sequence=4, offset=2)
 
+#from ruamel.yaml.scalarstring import PreservedScalarString as pss
+#full_config['umapi']['enterprise']['priv_key_data'] = pss(x)
+
+class ConfigHandler:
+
+    def __init__(self, root_config):
+
+        x = {
+            'config_filename': root_config,
+            'encoding_name': None
+        }
+        cl = ConfigLoader(x)
+        cl2 = ConfigFileLoader.load_root_config(root_config)
+        print()
 
 class CredentialManager:
 

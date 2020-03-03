@@ -1,3 +1,4 @@
+import os
 import uuid
 
 import pytest
@@ -5,6 +6,10 @@ import pytest
 from user_sync.credentials import *
 from user_sync.error import AssertionException
 
+
+@pytest.fixture
+def root_config_file(fixture_dir):
+    return os.path.join(fixture_dir, 'user-sync-config.yml')
 
 def test_set():
     identifier = 'TestId'
@@ -41,3 +46,8 @@ def test_get_not_valid():
     # is thrown in this case. This case is handled in app.py, which will throw an AssertionException if
     # CredentialManager.get() returns None.
     assert CredentialManager().get(identifier) is None
+
+def test_load_config(root_config_file):
+
+    c = ConfigHandler(root_config_file)
+

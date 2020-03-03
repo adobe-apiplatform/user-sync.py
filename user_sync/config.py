@@ -31,7 +31,6 @@ import user_sync.helper
 import user_sync.identity_type
 import user_sync.port
 import user_sync.rules
-from user_sync.credentials import CredentialManager
 from user_sync.error import AssertionException
 
 
@@ -819,6 +818,7 @@ class DictConfig(ObjectConfig):
             raise AssertionException('%s: cannot contain setting for both "%s" and "%s"' % (scope, name, keyring_name))
         if secure_value_key:
             try:
+                from user_sync.credentials import CredentialManager
                 credman = CredentialManager()
                 logging.getLogger("credential_manager").info("Using keyring '{0}' to retrieve '{1}'"
                                                              .format(credman.keyring_name, secure_value_key))
