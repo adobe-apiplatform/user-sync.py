@@ -77,6 +77,7 @@ class LDAPDirectoryConnector(object):
         self.user_given_name_formatter = LDAPValueFormatter(options['user_given_name_format'])
         self.user_surname_formatter = LDAPValueFormatter(options['user_surname_format'])
         self.user_country_code_formatter = LDAPValueFormatter(options['user_country_code_format'])
+        self.user_memberof_format_formatter = LDAPValueFormatter(options['user_memberof_format'])
 
         auth_method = options['authentication_method'].lower()
 
@@ -137,6 +138,7 @@ class LDAPDirectoryConnector(object):
         builder.set_string_value('user_given_name_format', six.text_type('{givenName}'))
         builder.set_string_value('user_surname_format', six.text_type('{sn}'))
         builder.set_string_value('user_country_code_format', six.text_type('{c}'))
+        builder.set_string_value('user_memberof_format', six.text_type('{memberOf}'))
         builder.set_string_value('user_identity_type', None)
         builder.set_int_value('search_page_size', 200)
         builder.set_string_value('logger_name', LDAPDirectoryConnector.name)
@@ -310,7 +312,7 @@ class LDAPDirectoryConnector(object):
         user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
-        user_attribute_names.append(six.text_type('memberOf'))
+        user_attribute_names.extend(self.user_memberof_format_formatter.get_attribute_names())
 
         extended_attributes = [six.text_type(attr) for attr in extended_attributes]
         extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
