@@ -48,6 +48,7 @@ setup(name='user-sync',
       install_requires=[
           'keyring',
           'keyrings.cryptfile',
+          'ruamel.yaml',
           'okta==0.0.3.1',
           'psutil',
           'pycryptodome==3.7.3',
