@@ -1,5 +1,6 @@
 import logging
 
+from ruamel.yaml import YAML
 import keyrings.cryptfile.cryptfile
 from keyring.errors import KeyringError
 
@@ -11,6 +12,8 @@ import keyring
 if (isinstance(keyring.get_keyring(), keyring.backends.fail.Keyring) or
         isinstance(keyring.get_keyring(), keyring.backends.chainer.ChainerBackend)):
     keyring.set_keyring(keyrings.cryptfile.cryptfile.CryptFileKeyring())
+
+yaml = YAML()
 
 
 class CredentialManager:
@@ -38,4 +41,11 @@ class CredentialManager:
                 raise AssertionException("Value for {0} too long for backend to store: {1}".format(identifier, str(e)))
             raise e
 
+    def read(self, filename):
+        with open(filename) as file:
+            file_dict = yaml.load(file)
+        return file_dict
 
+    def write(self, filename, data):
+        with open(filename, 'w') as file:
+            yaml.dump(data, file)
