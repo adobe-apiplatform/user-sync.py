@@ -369,22 +369,34 @@ def credentials():
 
 @credentials.command(
     help="Stores all sensitive fields and updates configuration files, replacing plaintext values with keys")
-def store():
+@click.option('-c', '--config-filename',
+              help="path to your main configuration file",
+              type=str,
+              nargs=1,
+              default="user-sync-config.yml",
+              metavar='path-to-file')
+def store(config_filename):
     """
     Stores secure credentials in the configuration file
     This is an automated process.
     """
     try:
-        credential_manager = CredentialManager()
+        credential_manager = CredentialManager(config_filename)
         credential_manager.store()
-        for identifier in credential_manager.retrieve():
-            click.echo("'{0}' stored securely in configuration file.".format({identifier}))
+        # for identifier in credential_manager.retrieve():
+        #     click.echo("'{0}' stored securely in configuration file.".format({identifier}))
     except AssertionException as e:
         click.echo(str(e))
 
 
 @credentials.command(help="Retrieves currently stored credentials under the username 'user_sync'.")
-def retrieve():
+@click.option('-c', '--config-filename',
+              help="path to your main configuration file",
+              type=str,
+              nargs=1,
+              default="user-sync-config.yml",
+              metavar='path-to-file')
+def retrieve(config_filename):
     """
     Retrieves credentials from credential manager.
     """
