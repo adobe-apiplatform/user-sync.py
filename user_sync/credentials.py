@@ -186,6 +186,12 @@ class CredentialConfig:
             self.set_nested_key(key_list, {'secure': k})
 
 
+    def fetch_key(self, key_list):
+        pass
+
+    def revert_key(self, key_list, value):
+        self.set_nested_key(key_list, value)
+
     def parse_secure_key(self, value):
         """
         Returns the identifier for the secure key if present, or else None
