@@ -94,11 +94,10 @@ class CredentialConfig:
     it all organized since filenames and config is stored within.  Shared methods are get_key, load and save.
     """
 
-    def __init__(self, filename=None, absolute=True):
+    def __init__(self, filename=None):
         # filename will be the unique identifier for each file.  This can be an absolute path - but if so we cannot
         # move the sync tool.  More to consider here....
         self.filename = filename
-        self.absolute = absolute
 
         # The dictionary including comments that will be updated and re-saved
         self.load()
@@ -135,16 +134,15 @@ class CredentialConfig:
         with open(self.filename, 'w') as file:
             yaml.dump(self.config, file)
 
-    def get_identifier(self, identifier):
-        if not self.absolute:
-            base = self.filename.split(os.sep)[-1]
-        else:
-            base = self.filename
-        if isinstance(identifier, list):
-            return base + ":"+ ":".join(identifier)
-        elif isinstance(identifier, six.text_type):
-            return base + ":" + identifier
-        raise AssertionException("Bad keyring identifier: {0}".format(identifier))
+    def get_qualified_identifier(self, identifier):
+        """
+        Just creates a unique string (absolute filename) which pre-pends the keyname
+        This ensures that all keys are stored across files, even when the key names are the same
+        Additionally, this makes it clear which stored keys correspond to which files (e.g., multiple umapi)
+        :param identifier: list of keys
+        :return: concatenated string of keys
+        """
+        return self.filename + ":" + ":".join(identifier)
 
     def get_nested_key(self, ks, d=None):
         d = d or self.config
@@ -181,7 +179,7 @@ class CredentialConfig:
         if value is None:
             raise AssertionException("Cannot store key - value not found for: {0}".format(key_list))
         if not self.parse_secure_key(value):
-            k = self.get_identifier(key_list)
+            k = self.get_qualified_identifier(key_list)
             CredentialManager.set(k, value)
             self.set_nested_key(key_list, {'secure': k})
 
