@@ -47,7 +47,4 @@ def test_get_not_valid():
     # CredentialManager.get() returns None.
     assert CredentialManager().get(identifier) is None
 
-def test_load_config(root_config_file):
-
-    c = ConfigHandler(root_config_file)
 
