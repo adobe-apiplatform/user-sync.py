@@ -1,39 +1,58 @@
 import logging
+import os
+from collections import Mapping
 
-from ruamel.yaml import YAML
 import keyrings.cryptfile.cryptfile
+import six
 from keyring.errors import KeyringError
+from ruamel.yaml import YAML
 
+from user_sync.config import ConfigFileLoader, ConfigLoader
 from user_sync.error import AssertionException
 
 keyrings.cryptfile.cryptfile.CryptFileKeyring.keyring_key = "none"
 
 import keyring
+
 if (isinstance(keyring.get_keyring(), keyring.backends.fail.Keyring) or
         isinstance(keyring.get_keyring(), keyring.backends.chainer.ChainerBackend)):
     keyring.set_keyring(keyrings.cryptfile.cryptfile.CryptFileKeyring())
 
 yaml = YAML()
+yaml.indent(mapping=4, sequence=4, offset=2)
 
+
+# from ruamel.yaml.scalarstring import PreservedScalarString as pss
+# full_config['umapi']['enterprise']['priv_key_data'] = pss(x)
 
 class CredentialManager:
+    username = 'user_sync'
+    logger = logging.getLogger("credential_manager")
+    keyring_name = keyring.get_keyring().name
 
-    def __init__(self):
-        self.username = 'user_sync'
-        self.logger = logging.getLogger("credential_manager")
-        self.keyring_name = keyring.get_keyring().name
+    def __init__(self, root_config=None):
 
-    def get(self, identifier, username=None):
+        self.config_files = {}
+        self.root_config = root_config
+
+        if self.root_config:
+            self.load_configs()
+
+        print()
+
+    @classmethod
+    def get(cls, identifier, username=None):
         try:
-            self.logger.debug("Using keyring '{0}' to retrieve '{1}'".format(self.keyring_name, identifier))
-            return keyring.get_password(identifier, username or self.username)
+            cls.logger.debug("Using keyring '{0}' to retrieve '{1}'".format(cls.keyring_name, identifier))
+            return keyring.get_password(identifier, username or cls.username)
         except KeyringError as e:
             raise AssertionException("Error retrieving value for identifier '{0}': {1}".format(identifier, str(e)))
 
-    def set(self, identifier, value):
+    @classmethod
+    def set(cls, identifier, value):
         try:
-            self.logger.debug("Using keyring '{0}' to set '{1}'".format(self.keyring_name, identifier))
-            keyring.set_password(identifier, self.username, value)
+            cls.logger.debug("Using keyring '{0}' to set '{1}'".format(cls.keyring_name, identifier))
+            keyring.set_password(identifier, cls.username, value)
         except KeyringError as e:
             raise AssertionException("Error in setting credentials '{0}' : {1}".format(identifier, str(e)))
         except Exception as e:
@@ -41,11 +60,219 @@ class CredentialManager:
                 raise AssertionException("Value for {0} too long for backend to store: {1}".format(identifier, str(e)))
             raise e
 
-    def read(self, filename):
-        with open(filename) as file:
-            file_dict = yaml.load(file)
-        return file_dict
+    def store(self):
+        for k, v in self.config_files.items():
+            self.logger.info("Storing values for: " + k)
+            v.store()
 
-    def write(self, filename, data):
-        with open(filename, 'w') as file:
-            yaml.dump(data, file)
+    def load_configs(self):
+        """
+        This method will be responsible for reading all config files specified in user-sync-config.yml
+        so that credential manager knows which keys and values are needed per file
+        """
+        root_cfg = ConfigFileLoader.load_root_config(self.root_config)
+
+        # fragile
+        umapis = ConfigLoader.as_list(root_cfg['adobe_users']['connectors']['umapi'])
+        connectors = root_cfg['directory_users']['connectors']
+
+        for u in umapis:
+            self.config_files[u] = UmapiCredentialConfig(u)
+
+        for c, v in connectors.items():
+            if c == "ldap":
+                self.config_files[v] = LdapCredentialConfig(v)
+            elif c == "okta":
+                self.config_files[v] = OktaCredentialConfig(v)
+            elif c == "console":
+                self.config_files[v] = ConsoleCredentialConfig(v)
+
+
+class CredentialConfig:
+    """
+    Each method (store, revert, fetch) should be written in a subclass of this class.  This will help keep
+    it all organized since filenames and config is stored within.  Shared methods are get_key, load and save.
+    """
+
+    def __init__(self, filename=None, absolute=True):
+        # filename will be the unique identifier for each file.  This can be an absolute path - but if so we cannot
+        # move the sync tool.  More to consider here....
+        self.filename = filename
+        self.absolute = absolute
+
+        # The dictionary including comments that will be updated and re-saved
+        self.load()
+
+    def store(self):
+        # Store will explicitly save all targeted keys
+        # For example:
+        # CredentialManager.set(filename + ":password", "1234)
+        # Then update self.config to match with secure key
+        # save file
+        pass
+
+    def revert(self):
+        # calls fetch first to get values
+        # Then updates config to replace secure key format with value
+        # save file
+        pass
+
+    def fetch(self):
+        # probably should return a dictionary for the config using CredentialManager.get()
+        # Maybe looks like:
+        # {
+        #   'connector-ldap.yml:password': '1234'
+        # }
+        # where self.get_key(password) will return the full identifier
+        # don't update config since this is meant to get the values only - revert will persist
+        pass
+
+    def load(self):
+        with open(self.filename) as file:
+            self.config = yaml.load(file)
+
+    def save(self):
+        with open(self.filename, 'w') as file:
+            yaml.dump(self.config, file)
+
+    def get_identifier(self, identifier):
+        if not self.absolute:
+            base = self.filename.split(os.sep)[-1]
+        else:
+            base = self.filename
+        if isinstance(identifier, list):
+            return base + ":"+ ":".join(identifier)
+        elif isinstance(identifier, six.text_type):
+            return base + ":" + identifier
+        raise AssertionException("Bad keyring identifier: {0}".format(identifier))
+
+    def get_nested_key(self, ks, d=None):
+        d = d or self.config
+        k, ks = ks[0], ks[1:]
+        v = d.get(k)
+        if not ks:
+            return v
+        if isinstance(v, Mapping):
+            v = self.get_nested_key(ks, v)
+        elif len(ks) > 0:
+            raise AssertionException("Expected dict for nested key: '{0}'".format(k))
+        return v
+
+    def set_nested_key(self, ks, u, d=None):
+        d = d or self.config
+        k, ks = ks[0], ks[1:]
+        v = d.get(k)
+        if isinstance(v, Mapping):
+            d[k] = self.set_nested_key(ks, u, v)
+        else:
+            d[k] = u
+        return d
+
+    def store_key(self, key_list):
+        """
+        Takes a list of keys representing the path to a value in the YAML file, and constructs an identifier.
+        If the key is a string and NOT in secure format, calls credential manager to set the key
+        If key is already in the form 'secure:identifier', no action is taken.
+        :param key_list: list of nested keys from a YAML file
+        :return:
+        """
+        key_list = ConfigLoader.as_list(key_list)
+        value = self.get_nested_key(key_list)
+        if value is None:
+            raise AssertionException("Cannot store key - value not found for: {0}".format(key_list))
+        if not self.parse_secure_key(value):
+            k = self.get_identifier(key_list)
+            CredentialManager.set(k, value)
+            self.set_nested_key(key_list, {'secure': k})
+
+
+    def fetch_key(self, key_list):
+        pass
+
+    def revert_key(self, key_list, value):
+        self.set_nested_key(key_list, value)
+
+    def parse_secure_key(self, value):
+        """
+        Returns the identifier for the secure key if present, or else None
+        The queried key must be a string if not secured, or a properly formatted dictionary
+        containing exactly one key named 'secure' whose value is the identifier in keyring.
+        """
+        if value is None:
+            raise AssertionException("Key is missing or emtpy:" + str(value))
+        if isinstance(value, dict):
+            if len(value) == 1 and 'secure' in value:
+                return value['secure']
+            raise AssertionException("Invalid secure key format for '{0}'. Dict should have "
+                                     "exactly one key called 'secure': {1}".format(value, value))
+        elif not isinstance(value, six.text_type):
+            raise AssertionException("Invalid credential format for '{0}'.  "
+                                     "Key must be dict or string: {1}".format(value, value))
+
+
+class LdapCredentialConfig(CredentialConfig):
+    """
+    Example config provided
+    """
+
+    def store(self):
+        self.store_key(['this', 'is', 'a', 'nested'])
+        self.store_key('password')
+        self.save()
+
+        pass
+
+    def revert(self):
+        # calls fetch first
+        pass
+
+    def fetch(self):
+        pass
+
+
+class UmapiCredentialConfig(CredentialConfig):
+    """
+    Example config provided
+    """
+
+    def store(self):
+        pass
+
+    def revert(self):
+        # calls fetch first
+        pass
+
+    def fetch(self):
+        pass
+
+
+class OktaCredentialConfig(CredentialConfig):
+    """
+    Example config provided
+    """
+
+    def store(self):
+        pass
+
+    def revert(self):
+        # calls fetch first
+        pass
+
+    def fetch(self):
+        pass
+
+
+class ConsoleCredentialConfig(CredentialConfig):
+    """
+    Example config provided
+    """
+
+    def store(self):
+        pass
+
+    def revert(self):
+        # calls fetch first
+        pass
+
+    def fetch(self):
+        pass
