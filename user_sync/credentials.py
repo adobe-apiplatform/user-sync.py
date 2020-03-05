@@ -185,19 +185,6 @@ class CredentialConfig:
             CredentialManager.set(k, value)
             self.set_nested_key(key_list, {'secure': k})
 
-    def make_dict(self, key_list, value):
-        """
-        Helper method to build a dictionary in reverse given a key list.  This is useful to convert
-        a list to a dict which enables updating a nested dict without explicitly calling the keys.
-        :param key_list: list of nested keys used to update target file
-        :param value: target value to assign to the final key
-        :return:
-        """
-        tree_dict = {}
-        for i, key in enumerate(reversed(key_list)):
-            val = value if i == 0 else tree_dict
-            tree_dict = {key: val}
-        return tree_dict
 
     def parse_secure_key(self, value):
         """
