@@ -133,12 +133,12 @@ sign_orgs:
     key: [API key]
     admin_email: signadmin@example.com
 
+entitlement_groups:
+  - Adobe Sign
+
 user_groups:
   - Sign Users
   - More Sign Users
-
-entitlement_groups:
-  - Adobe Sign
 
 identity_types:
   - federatedID
@@ -151,6 +151,66 @@ admin_roles:
     adobe_groups:
       - Adobe Sign Group Admins
 ```
+
+### A Closer Look
+
+```yaml
+sign_orgs:
+  - host: api.echosign.com
+    key: [API key]
+    admin_email: signadmin@example.com
+```
+
+All Sign Connector configs must specify at least one item in the `sign_orgs` list. This list defines the Sign API connections to be used
+by the connector. Each `sign_org` connection corresponds with a UMAPI connection as defined in `user-sync-config.yml`.
+
+Note that for secondary Sign connections, the `console_org` key must be used to identify the secondary connection.
+
+For more information, see the [tutorial on multiple connections](../success-guide/sync_adobe_sign.html#configuring-multiple-sign-targets).
+
+```yaml
+entitlement_groups:
+  - Adobe Sign
+```
+
+`entitlement_groups` define which product profiles or groups designate a Sign entitlement. It prevents the Sign connector from operating
+on users that have not been given access to Adobe Sign. This list typically consists of the names of any Sign Enterprise product profile
+defined in the Admin Console and/or any User Group with an associated Sign Enterprise profile.
+
+```yaml
+user_groups:
+  - Sign Users
+  - More Sign Users
+```
+
+`user_groups` define Admin Console group memberships that should also be assigned in Adobe Sign. Any group defined in this list will
+be created in Sign if a group by that name doesn't already exist. Any user assigned to any of these groups in the Admin Console will
+be assigned the same group in Adobe Sign.
+
+For more information, see the [tutorial on group assignment](../success-guide/sync_adobe_sign.html#managing-group-assignments).
+
+```yaml
+identity_types:
+  - federatedID
+```
+
+`identity_types` designates which type of Admin Console users will be included in the Sign Sync. This should typically match the
+identity type of users created by the main sync process as defined in `user-sync-config.yml`.
+
+```yaml
+admin_roles:
+  - sign_role: ACCOUNT_ADMIN
+    adobe_groups:
+      - Adobe Sign Account Admins
+  - sign_role: GROUP_ADMIN
+    adobe_groups:
+      - Adobe Sign Group Admins
+```
+
+`admin_roles` defines a list of mapping rules that tie a list of Admin Console groups and/or roles to a Sign admin role.
+
+For more information, see the [tutorial on managing role assignments](../success-guide/sync_adobe_sign.html#managing-admin-role-assignments).
+
 
 ### Config Spec
 
