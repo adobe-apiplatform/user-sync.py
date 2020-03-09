@@ -79,3 +79,7 @@ username_column_name: username
 # in the username field.  If this field is left blank, the domain part of the email
 # address will be used for the user's domain.
 domain_column_name: domain
+
+# (optional) The CSV file path can be specified here, or on the command line, but not both.
+# The path may be absolute or relative to the cwd of User-Sync
+file_path: /path/to/csv
