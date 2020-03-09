@@ -1,6 +1,7 @@
 import logging
 import requests
 import json
+from user_sync.error import AssertionException
 
 
 class SignClient:
@@ -59,8 +60,20 @@ class SignClient:
         url = 'https://' + self.host + '/' + endpoint
 
         if self.version == "v6":
-            return requests.get(url + "baseUris", headers=self.header()).json()['apiAccessPoint'] + endpoint
-        return requests.get(url + "base_uris", headers=self.header()).json()['api_access_point'] + endpoint
+            url_path = 'baseUris'
+            access_point_key = 'apiAccessPoint'
+        else:
+            url_path = 'base_uris'
+            access_point_key = 'api_access_point'
+
+        result = requests.get(url + url_path, headers=self.header())
+        if result.status_code != 200:
+            raise AssertionException("Error getting base URI from Sign API, is API key valid?")
+
+        if access_point_key not in result.json():
+            raise AssertionException("Error getting base URI for Sign API, result invalid")
+        
+        return result.json()[access_point_key] + endpoint
 
     def get_users(self):
         """
