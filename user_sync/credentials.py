@@ -62,7 +62,7 @@ class CredentialManager:
 
     def store(self):
         for k, v in self.config_files.items():
-            self.logger.info("Storing values for: " + k)
+            self.logger.info("Analyzing: " + k)
             v.store()
 
     def load_configs(self):
@@ -87,6 +87,7 @@ class CredentialManager:
             elif c == "console":
                 self.config_files[v] = ConsoleCredentialConfig(v)
 
+        print()
 
 class CredentialConfig:
     """
@@ -184,11 +185,16 @@ class CredentialConfig:
             self.set_nested_key(key_list, {'secure': k})
 
 
-    def fetch_key(self, key_list):
+    def retrieve_key(self, key_list, revert=False):
+        """
+        Retrieves the value (if any) for key_list, and updates the config if revert=True
+        Returns a dictionary of identifiers and values for this config
+        :param key_list:
+        :param revert:
+        :return:
+        """
         pass
 
-    def revert_key(self, key_list, value):
-        self.set_nested_key(key_list, value)
 
     def parse_secure_key(self, value):
         """
@@ -214,18 +220,17 @@ class LdapCredentialConfig(CredentialConfig):
     """
 
     def store(self):
-        self.store_key(['this', 'is', 'a', 'nested'])
-        self.store_key('password')
+        self.store_key(['password'])
         self.save()
 
-        pass
-
     def revert(self):
-        # calls fetch first
-        pass
+        self.retrieve_key(['password'], revert=True)
+        self.save()
 
     def fetch(self):
-        pass
+        creds = {}
+        creds.update(self.retrieve_key(['password']))
+        return creds
 
 
 class UmapiCredentialConfig(CredentialConfig):
@@ -237,7 +242,6 @@ class UmapiCredentialConfig(CredentialConfig):
         pass
 
     def revert(self):
-        # calls fetch first
         pass
 
     def fetch(self):
@@ -253,7 +257,6 @@ class OktaCredentialConfig(CredentialConfig):
         pass
 
     def revert(self):
-        # calls fetch first
         pass
 
     def fetch(self):
@@ -269,7 +272,6 @@ class ConsoleCredentialConfig(CredentialConfig):
         pass
 
     def revert(self):
-        # calls fetch first
         pass
 
     def fetch(self):
