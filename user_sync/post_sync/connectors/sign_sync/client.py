@@ -18,7 +18,6 @@ class SignClient:
         self.console_org = config['console_org'] if 'console_org' in config else None
         self.api_url = self.base_uri()
         self.groups = self.get_groups()
-        self.default_group_id, = [_id for name, _id in self.groups.items() if name == self.DEFAULT_GROUP_NAME]
         self.logger = logging.getLogger(self.logger_name())
 
     def logger_name(self):
@@ -72,7 +71,7 @@ class SignClient:
 
         if access_point_key not in result.json():
             raise AssertionException("Error getting base URI for Sign API, result invalid")
-        
+
         return result.json()[access_point_key] + endpoint
 
     def get_users(self):
