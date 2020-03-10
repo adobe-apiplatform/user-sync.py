@@ -239,7 +239,11 @@ class UmapiCredentialConfig(CredentialConfig):
     """
 
     def store(self):
-        pass
+        self.store_key(['enterprise', 'org_id'])
+        self.store_key(['enterprise', 'api_key'])
+        self.store_key(['enterprise', 'client_secret'])
+        self.store_key(['enterprise', 'tech_acct'])
+        self.save()
 
     def revert(self):
         pass
@@ -254,7 +258,8 @@ class OktaCredentialConfig(CredentialConfig):
     """
 
     def store(self):
-        pass
+        self.store_key(['api_token'])
+        self.save()
 
     def revert(self):
         pass
@@ -269,7 +274,11 @@ class ConsoleCredentialConfig(CredentialConfig):
     """
 
     def store(self):
-        pass
+        self.store_key(['integration', 'org_id'])
+        self.store_key(['integration', 'api_key'])
+        self.store_key(['integration', 'client_secret'])
+        self.store_key(['integration', 'tech_acct'])
+        self.save()
 
     def revert(self):
         pass
