@@ -65,14 +65,6 @@ adobe_users:
     # location of this configuration file, not relative to the
     # working directory of your User Sync process.
     umapi: "connector-umapi.yml"
-    # An alternate form for referencing the umapi configuration allows for storage
-    # of the umapi credentials in a secure way:
-    #umapi: $(cat connector-umapi.yml)  # This runs the indicated command and uses
-    # the output as the configuration file.  In this example we are simply
-    # echoing the file contents so it is no more secure than the other form
-    # of file reference.  To make it more secure, you need to provide a
-    # command or script that fetches the data from a secure source.
-    # ("cat" would need to be "type" on a Windows platform.)
 
 # The directory_users section controls how enterprise-side users are accessed,
 # sets default values for attributes not specified in the enterprise directory,
@@ -130,14 +122,6 @@ directory_users:
     # location of this configuration file, not relative to the
     # working directory of your User Sync process.
     ldap: "connector-ldap.yml"
-    # An alternate form for referencing the ldap configuration allows for storage
-    # of the ldap credentials in a secure way:
-    #ldap: $(cat connector-ldap.yml)  # This form runs the indicated command and uses
-    # the output as the configuration file.  In this example we are simply
-    # echoing the file contents so it is no more secure than the other form
-    # of file reference.  To make it more secure, you need to provide a
-    # command or script that fetches the data from a secure source.
-    # ("cat" would need to be "type" on a Windows platform.)
 
     # (optional) csv (no default value)
     # csv stands for "comma-separated values", which is the most common form

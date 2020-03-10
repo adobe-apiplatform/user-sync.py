@@ -5,7 +5,7 @@ before_install:
 - chmod +x .build/.travis/*.sh
 matrix:
   include:
-  - env: IMG="ubuntu1604" BUILD_TARGET="pex" UST_BUILD_EXE=0 UST_EXTENSION=1 UST_SHELL_EXEC=1
+  - env: IMG="ubuntu1604" BUILD_TARGET="pex" UST_BUILD_EXE=0 UST_EXTENSION=1
     python:
     - 3.6
     install:
@@ -15,7 +15,6 @@ matrix:
     - ".build/.travis/release.sh"
     - python setup.py test
   - env: IMG="ubuntu1604" BUILD_TARGET="standalone" UST_BUILD_EXE=1 UST_EXTENSION=0
-      UST_SHELL_EXEC=0
     python:
     - 3.6
     install:
@@ -24,7 +23,7 @@ matrix:
     - ".build/.travis/build-py36.sh"
     - ".build/.travis/release.sh"
     - python setup.py test
-  - env: IMG="ubuntu1604" BUILD_TARGET="pex" UST_BUILD_EXE=0 UST_EXTENSION=1 UST_SHELL_EXEC=1
+  - env: IMG="ubuntu1604" BUILD_TARGET="pex" UST_BUILD_EXE=0 UST_EXTENSION=1
     python:
     - 2.7
     install:
@@ -42,7 +41,7 @@ matrix:
     - chmod +x .build/.travis/*.sh
     - docker run -d --name ${IMG} -v $(pwd):/travis -w /travis -e IMG="${IMG}" -e
       TRAVIS_TAG="${TRAVIS_TAG}" -e BUILD_TARGET="${BUILD_TARGET}" -e UST_BUILD_EXE=0
-      -e UST_EXTENSION=1 -e UST_SHELL_EXEC=1 ${OS} tail -f /dev/null
+      -e UST_EXTENSION=1 -e ${OS} tail -f /dev/null
     - docker ps
     install:
     - "$SH .build/.travis/install-centos.sh"
@@ -57,7 +56,7 @@ matrix:
     - chmod +x .build/.travis/*.sh
     - docker run -d --name ${IMG} -v $(pwd):/travis -w /travis -e IMG="${IMG}" -e
       TRAVIS_TAG="${TRAVIS_TAG}" -e BUILD_TARGET="${BUILD_TARGET}" -e UST_BUILD_EXE=1
-      -e UST_EXTENSION=0 -e UST_SHELL_EXEC=0 ${OS} tail -f /dev/null
+      -e UST_EXTENSION=0 -e ${OS} tail -f /dev/null
     - docker ps
     install:
     - "$SH .build/.travis/install-centos.sh"
@@ -72,7 +71,7 @@ matrix:
     - chmod +x .build/.travis/*.sh
     - docker run -d --name ${IMG} -v $(pwd):/travis -w /travis -e IMG="${IMG}" -e
       TRAVIS_TAG="${TRAVIS_TAG}" -e BUILD_TARGET="${BUILD_TARGET}" -e UST_BUILD_EXE=0
-      -e UST_EXTENSION=1 -e UST_SHELL_EXEC=1 ${OS} tail -f /dev/null
+      -e UST_EXTENSION=1 -e ${OS} tail -f /dev/null
     - docker ps
     install:
     - "$SH .build/.travis/install-centos.sh"
