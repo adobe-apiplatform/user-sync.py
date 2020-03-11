@@ -66,10 +66,11 @@ class CredentialManager:
             v.store()
 
     def retrieve(self):
+        creds = {}
         for k, v in self.config_files.items():
             self.logger.info("Analyzing: " + k)
-            creds = v.fetch()
-            return creds
+            creds.update(v.fetch())
+        return creds
 
     def load_configs(self):
         """
@@ -268,10 +269,9 @@ class UmapiCredentialConfig(CredentialConfig):
         pass
 
     def fetch(self):
-        # creds = {}
-        # creds.update(self.retrieve_key(['enterprise', 'org_id']))
-        # return creds
-        return self.retrieve_key((['enterprise', 'org_id']))
+        creds = {}
+        creds.update(self.retrieve_key(['enterprise', 'org_id']))
+        return creds
 
 
 class OktaCredentialConfig(CredentialConfig):
