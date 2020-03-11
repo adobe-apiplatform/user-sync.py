@@ -41,7 +41,7 @@ matrix:
     - chmod +x .build/.travis/*.sh
     - docker run -d --name ${IMG} -v $(pwd):/travis -w /travis -e IMG="${IMG}" -e
       TRAVIS_TAG="${TRAVIS_TAG}" -e BUILD_TARGET="${BUILD_TARGET}" -e UST_BUILD_EXE=0
-      -e UST_EXTENSION=1 -e ${OS} tail -f /dev/null
+      -e UST_EXTENSION=1 ${OS} tail -f /dev/null
     - docker ps
     install:
     - "$SH .build/.travis/install-centos.sh"
@@ -56,7 +56,7 @@ matrix:
     - chmod +x .build/.travis/*.sh
     - docker run -d --name ${IMG} -v $(pwd):/travis -w /travis -e IMG="${IMG}" -e
       TRAVIS_TAG="${TRAVIS_TAG}" -e BUILD_TARGET="${BUILD_TARGET}" -e UST_BUILD_EXE=1
-      -e UST_EXTENSION=0 -e ${OS} tail -f /dev/null
+      -e UST_EXTENSION=0 ${OS} tail -f /dev/null
     - docker ps
     install:
     - "$SH .build/.travis/install-centos.sh"
@@ -71,7 +71,7 @@ matrix:
     - chmod +x .build/.travis/*.sh
     - docker run -d --name ${IMG} -v $(pwd):/travis -w /travis -e IMG="${IMG}" -e
       TRAVIS_TAG="${TRAVIS_TAG}" -e BUILD_TARGET="${BUILD_TARGET}" -e UST_BUILD_EXE=0
-      -e UST_EXTENSION=1 -e ${OS} tail -f /dev/null
+      -e UST_EXTENSION=1  ${OS} tail -f /dev/null
     - docker ps
     install:
     - "$SH .build/.travis/install-centos.sh"
