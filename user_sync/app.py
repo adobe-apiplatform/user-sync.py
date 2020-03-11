@@ -401,7 +401,7 @@ def retrieve(config_filename):
     Retrieves credentials from credential manager.
     """
     try:
-        credential_manager = CredentialManager()
+        credential_manager = CredentialManager(config_filename)
         retrieved_creds = credential_manager.retrieve()
         if not retrieved_creds:
             click.echo("No credentials stored with user name 'user_sync'.")

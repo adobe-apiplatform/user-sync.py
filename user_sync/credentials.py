@@ -65,6 +65,12 @@ class CredentialManager:
             self.logger.info("Analyzing: " + k)
             v.store()
 
+    def retrieve(self):
+        for k, v in self.config_files.items():
+            self.logger.info("Analyzing: " + k)
+            creds = v.fetch()
+            return creds
+
     def load_configs(self):
         """
         This method will be responsible for reading all config files specified in user-sync-config.yml
@@ -184,7 +190,6 @@ class CredentialConfig:
             CredentialManager.set(k, value)
             self.set_nested_key(key_list, {'secure': k})
 
-
     def retrieve_key(self, key_list, revert=False):
         """
         Retrieves the value (if any) for key_list, and updates the config if revert=True
@@ -193,8 +198,22 @@ class CredentialConfig:
         :param revert:
         :return:
         """
-        pass
+        key_list = ConfigLoader.as_list(key_list)
+        value = self.get_nested_key(key_list)
+        creds = {}
+        if value is None:
+            raise AssertionException("Cannot retrieve key - value not found for: {0}".format(key_list))
+        try:
+            self.parse_secure_key(value)
+            identifier = value['secure']
+            creds[identifier] = CredentialManager.get(identifier)
+            return creds
+        except AssertionException as e:
+            raise e
 
+    def revert_key(self, ks, u, d):
+        self.set_nested_key(self, ks, u, d=None)
+        self.save()
 
     def parse_secure_key(self, value):
         """
@@ -249,7 +268,10 @@ class UmapiCredentialConfig(CredentialConfig):
         pass
 
     def fetch(self):
-        pass
+        # creds = {}
+        # creds.update(self.retrieve_key(['enterprise', 'org_id']))
+        # return creds
+        return self.retrieve_key((['enterprise', 'org_id']))
 
 
 class OktaCredentialConfig(CredentialConfig):
