@@ -156,47 +156,6 @@ On Linux, the secure storage application would have been installed and configure
 The credentials are added to the OS secure storage and given the username and credential id that you will use to specify the credential.  For umapi credentials, the username is the organization id.  For the LDAP password credential, the username is the LDAP username.  You can pick any identifier you wish for the specific credentials; they must match between what is in the credential store and the name used in the configuration file.  Suggested values for the key names are shown in the examples above.
 
 
-### Storing Credential Files in External Management Systems
-
-As an alternative to storing credentials in the local credential store, it is possible to integrate User Sync with some other system or encryption mechanism.  To support such integrations, it is possible to store the entire configuration files for umapi and ldap externally in some other system or format.
-
-This is done by specifying, in the main User Sync configuration file, a command to be executed whose output is used as the umapi or ldap configuration file contents.  You will need to provide the command that fetches the configuration information and sends it to standard output in yaml format, matching what the configuration file would have contained.
-
-To set this up, use the following items in the main configuration file.
-
-
-user-sync-config.yml (showing partial file only)
-
-	adobe_users:
-	   connectors:
-	      # umapi: connector-umapi.yml   # instead of this file reference, use:
-	      umapi: $(read_umapi_config_from_s3)
-	
-	directory_users:
-	   connectors:
-	      # ldap: connector-ldap.yml # instead of this file reference, use:
-	      ldap: $(read_ldap_config_from_server)
- 
-The general format for external command references is
-
-	$(command args)
-
-The above examples assume there is a command with the name `read_umapi_config_from_s3`
-and `read_ldap_config_from_server` that you have supplied.
-
-A command shell is launched by User Sync which
-runs the command.  The standard output from the command is captured and that
-output is used as the umapi or ldap configuration file.
-
-The command is run with the working directory as the directory containing the configuration file.
-
-If the command terminates abnormally, User Sync will terminate with an error.
-
-The command can reference a new or existing program or a script.
-
-Note: If you use this technique for the connector-umapi.yml file, you will want to embed the private key data in connector-umapi-yml directly by using the priv_key_data key and the private key value.  If you use the priv_key_path and the filename containing the private key, you would also need to store the private key somewhere 
-secure and have a command that retrieves it in the file reference.
-
 ## Scheduled task examples
 
 You can use a scheduler provided by your operating system to run
