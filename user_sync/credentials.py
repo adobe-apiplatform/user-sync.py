@@ -271,6 +271,9 @@ class UmapiCredentialConfig(CredentialConfig):
     def fetch(self):
         creds = {}
         creds.update(self.retrieve_key(['enterprise', 'org_id']))
+        creds.update(self.retrieve_key(['enterprise', 'api_key']))
+        creds.update(self.retrieve_key(['enterprise', 'client_secret']))
+        creds.update(self.retrieve_key(['enterprise', 'tech_acct']))
         return creds
 
 
