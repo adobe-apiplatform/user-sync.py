@@ -290,7 +290,9 @@ class OktaCredentialConfig(CredentialConfig):
         pass
 
     def fetch(self):
-        pass
+        creds = {}
+        creds.update(self.retrieve_key(['api_token']))
+        return creds
 
 
 class ConsoleCredentialConfig(CredentialConfig):
@@ -309,4 +311,9 @@ class ConsoleCredentialConfig(CredentialConfig):
         pass
 
     def fetch(self):
-        pass
+        creds = {}
+        creds.update(self.retrieve_key(['integration', 'org_id']))
+        creds.update(self.retrieve_key(['integration', 'api_key']))
+        creds.update(self.retrieve_key(['integration', 'client_secret']))
+        creds.update(self.retrieve_key(['integration', 'tech_acct']))
+        return creds
