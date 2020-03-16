@@ -65,6 +65,14 @@ class CredentialManager:
             self.logger.info("Analyzing: " + k)
             v.store()
 
+    def retrieve(self):
+        creds = {}
+        for k, v in self.config_files.items():
+            self.logger.info("Analyzing for retrieval " + k)
+            creds.update(v.fetch())
+        return creds
+
+
     def load_configs(self):
         """
         This method will be responsible for reading all config files specified in user-sync-config.yml
@@ -184,7 +192,6 @@ class CredentialConfig:
             CredentialManager.set(k, value)
             self.set_nested_key(key_list, {'secure': k})
 
-
     def retrieve_key(self, key_list, revert=False):
         """
         Retrieves the value (if any) for key_list, and updates the config if revert=True
@@ -193,8 +200,29 @@ class CredentialConfig:
         :param revert:
         :return:
         """
-        pass
+        key_list = ConfigLoader.as_list(key_list)
+        value = self.get_nested_key(key_list)
+        creds = {}
+        # if value is None:
+        #     raise AssertionException("Cannot retrieve key - value not found for: {0}".format(key_list))
+        try:
+            # self.parse_secure_key(value)
+            # identifier = value['secure']
+            identifier = self.parse_secure_key(value)
+            creds[identifier] = CredentialManager.get(identifier)
+            return creds
+        except AssertionException as e:
+            raise e
 
+    def revert_key(self, ks, u, d):
+        key_list = ConfigLoader.as_list(ks)
+        value = self.get_nested_key(key_list)
+        creds = {}
+        try:
+            identifier = self.parse_secure_key(value)
+        except AssertionException as e:
+            raise e
+        self.save()
 
     def parse_secure_key(self, value):
         """
@@ -249,7 +277,12 @@ class UmapiCredentialConfig(CredentialConfig):
         pass
 
     def fetch(self):
-        pass
+        creds = {}
+        creds.update(self.retrieve_key(['enterprise', 'org_id']))
+        creds.update(self.retrieve_key(['enterprise', 'api_key']))
+        creds.update(self.retrieve_key(['enterprise', 'client_secret']))
+        creds.update(self.retrieve_key(['enterprise', 'tech_acct']))
+        return creds
 
 
 class OktaCredentialConfig(CredentialConfig):
@@ -265,7 +298,9 @@ class OktaCredentialConfig(CredentialConfig):
         pass
 
     def fetch(self):
-        pass
+        creds = {}
+        creds.update(self.retrieve_key(['api_token']))
+        return creds
 
 
 class ConsoleCredentialConfig(CredentialConfig):
@@ -284,4 +319,9 @@ class ConsoleCredentialConfig(CredentialConfig):
         pass
 
     def fetch(self):
-        pass
+        creds = {}
+        creds.update(self.retrieve_key(['integration', 'org_id']))
+        creds.update(self.retrieve_key(['integration', 'api_key']))
+        creds.update(self.retrieve_key(['integration', 'client_secret']))
+        creds.update(self.retrieve_key(['integration', 'tech_acct']))
+        return creds
