@@ -202,18 +202,25 @@ class CredentialConfig:
         key_list = ConfigLoader.as_list(key_list)
         value = self.get_nested_key(key_list)
         creds = {}
-        if value is None:
-            raise AssertionException("Cannot retrieve key - value not found for: {0}".format(key_list))
+        # if value is None:
+        #     raise AssertionException("Cannot retrieve key - value not found for: {0}".format(key_list))
         try:
-            self.parse_secure_key(value)
-            identifier = value['secure']
+            # self.parse_secure_key(value)
+            # identifier = value['secure']
+            identifier = self.parse_secure_key(value)
             creds[identifier] = CredentialManager.get(identifier)
             return creds
         except AssertionException as e:
             raise e
 
     def revert_key(self, ks, u, d):
-        self.set_nested_key(self, ks, u, d=None)
+        key_list = ConfigLoader.as_list(ks)
+        value = self.get_nested_key(key_list)
+        creds = {}
+        try:
+            identifier = self.parse_secure_key(value)
+        except AssertionException as e:
+            raise e
         self.save()
 
     def parse_secure_key(self, value):
