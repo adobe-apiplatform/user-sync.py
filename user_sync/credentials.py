@@ -72,6 +72,13 @@ class CredentialManager:
             creds.update(v.fetch())
         return creds
 
+    def revert(self):
+        creds = {}
+        for k, v in self.config_files.items():
+            self.logger.info("Analyzing: " + k)
+            creds.update(v.revert())
+        return creds
+
     def load_configs(self):
         """
         This method will be responsible for reading all config files specified in user-sync-config.yml
@@ -171,7 +178,10 @@ class CredentialConfig:
         if isinstance(v, Mapping):
             d[k] = self.set_nested_key(ks, u, v)
         else:
-            d[k] = u
+            d[k] = u # you want to get to this line. right now u is passed in as the correct value (from OS backend)
+            # right now it never gets here. once the dict it's parsing is only one pair it behaves weird.
+            # as in, the orange values appear on the screen next to the code. it stops stepping through
+            # and pops those up instead.
         return d
 
     def store_key(self, key_list):
@@ -202,26 +212,20 @@ class CredentialConfig:
         key_list = ConfigLoader.as_list(key_list)
         value = self.get_nested_key(key_list)
         creds = {}
-        # if value is None:
-        #     raise AssertionException("Cannot retrieve key - value not found for: {0}".format(key_list))
         try:
-            # self.parse_secure_key(value)
-            # identifier = value['secure']
             identifier = self.parse_secure_key(value)
             creds[identifier] = CredentialManager.get(identifier)
+            if revert:
+                self.revert_key(key_list, creds[identifier])
             return creds
         except AssertionException as e:
             raise e
 
-    def revert_key(self, ks, u, d):
-        key_list = ConfigLoader.as_list(ks)
-        value = self.get_nested_key(key_list)
-        creds = {}
+    def revert_key(self, identifier, value):
         try:
-            identifier = self.parse_secure_key(value)
+            self.set_nested_key(identifier, value)
         except AssertionException as e:
             raise e
-        self.save()
 
     def parse_secure_key(self, value):
         """
@@ -251,8 +255,10 @@ class LdapCredentialConfig(CredentialConfig):
         self.save()
 
     def revert(self):
-        self.retrieve_key(['password'], revert=True)
+        creds = {}
+        creds.update(self.retrieve_key(['password'], revert=True))
         self.save()
+        return creds
 
     def fetch(self):
         creds = {}
@@ -273,7 +279,10 @@ class UmapiCredentialConfig(CredentialConfig):
         self.save()
 
     def revert(self):
-        pass
+        creds = {}
+        creds.update(self.retrieve_key(['enterprise', 'org_id'], revert=True))
+        self.save()
+        return creds
 
     def fetch(self):
         creds = {}
