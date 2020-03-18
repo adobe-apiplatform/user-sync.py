@@ -1,4 +1,3 @@
-import os
 import uuid
 
 import pytest
@@ -6,10 +5,6 @@ import pytest
 from user_sync.credentials import *
 from user_sync.error import AssertionException
 
-
-@pytest.fixture
-def root_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'user-sync-config.yml')
 
 def test_set():
     identifier = 'TestId'
@@ -39,6 +34,7 @@ def test_set_long():
         cm.set(identifier, value)
         assert cm.get(identifier) == value
 
+
 def test_get_not_valid():
     # This is an identifier which should not exist in your backed.
     identifier = 'DoesNotExist'
@@ -46,5 +42,17 @@ def test_get_not_valid():
     # is thrown in this case. This case is handled in app.py, which will throw an AssertionException if
     # CredentialManager.get() returns None.
     assert CredentialManager().get(identifier) is None
+
+
+def test_config_store(tmp_config_files):
+    (_, ldap_config_file, _) = tmp_config_files
+    ldap = LdapCredentialConfig(ldap_config_file)
+    assert not ldap.parse_secure_key(ldap.get_nested_key(['password']))
+    ldap.store()
+    with open(ldap_config_file) as f:
+        data = yaml.load(f)
+        assert ldap.parse_secure_key(data['password'])
+
+
 
 
