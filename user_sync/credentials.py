@@ -203,6 +203,8 @@ class CredentialConfig:
         creds = {}
         try:
             secure_identifier = self.parse_secure_key(value)
+            if secure_identifier is None:
+                raise AssertionException("No secure key found for the given identifier.")
             plaintext_cred = CredentialManager.get(secure_identifier)
             creds[secure_identifier] = plaintext_cred
             if revert:
