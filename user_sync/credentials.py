@@ -66,18 +66,10 @@ class CredentialManager:
             v.store()
 
     def retrieve(self):
-        creds = {}
-        for k, v in self.config_files.items():
-            self.logger.info("Analyzing: " + k)
-            creds.update(v.fetch())
-        return creds
+        pass
 
     def revert(self):
-        creds = {}
-        for k, v in self.config_files.items():
-            self.logger.info("Analyzing: " + k)
-            creds.update(v.revert())
-        return creds
+        pass
 
     def load_configs(self):
         """
@@ -178,10 +170,7 @@ class CredentialConfig:
         if isinstance(v, Mapping):
             d[k] = self.set_nested_key(ks, u, v)
         else:
-            d[k] = u # you want to get to this line. right now u is passed in as the correct value (from OS backend)
-            # right now it never gets here. once the dict it's parsing is only one pair it behaves weird.
-            # as in, the orange values appear on the screen next to the code. it stops stepping through
-            # and pops those up instead.
+            d[k] = u
         return d
 
     def store_key(self, key_list):
@@ -213,17 +202,12 @@ class CredentialConfig:
         value = self.get_nested_key(key_list)
         creds = {}
         try:
-            identifier = self.parse_secure_key(value)
-            creds[identifier] = CredentialManager.get(identifier)
+            secure_identifier = self.parse_secure_key(value)
+            plaintext_cred = CredentialManager.get(secure_identifier)
+            creds[secure_identifier] = plaintext_cred
             if revert:
-                self.revert_key(key_list, creds[identifier])
+                self.set_nested_key(key_list, plaintext_cred)
             return creds
-        except AssertionException as e:
-            raise e
-
-    def revert_key(self, identifier, value):
-        try:
-            self.set_nested_key(identifier, value)
         except AssertionException as e:
             raise e
 
@@ -272,25 +256,13 @@ class UmapiCredentialConfig(CredentialConfig):
     """
 
     def store(self):
-        self.store_key(['enterprise', 'org_id'])
-        self.store_key(['enterprise', 'api_key'])
-        self.store_key(['enterprise', 'client_secret'])
-        self.store_key(['enterprise', 'tech_acct'])
-        self.save()
+        pass
 
     def revert(self):
-        creds = {}
-        creds.update(self.retrieve_key(['enterprise', 'org_id'], revert=True))
-        self.save()
-        return creds
+        pass
 
     def fetch(self):
-        creds = {}
-        creds.update(self.retrieve_key(['enterprise', 'org_id']))
-        creds.update(self.retrieve_key(['enterprise', 'api_key']))
-        creds.update(self.retrieve_key(['enterprise', 'client_secret']))
-        creds.update(self.retrieve_key(['enterprise', 'tech_acct']))
-        return creds
+        pass
 
 
 class OktaCredentialConfig(CredentialConfig):
@@ -299,16 +271,13 @@ class OktaCredentialConfig(CredentialConfig):
     """
 
     def store(self):
-        self.store_key(['api_token'])
-        self.save()
+        pass
 
     def revert(self):
         pass
 
     def fetch(self):
-        creds = {}
-        creds.update(self.retrieve_key(['api_token']))
-        return creds
+        pass
 
 
 class ConsoleCredentialConfig(CredentialConfig):
@@ -317,19 +286,10 @@ class ConsoleCredentialConfig(CredentialConfig):
     """
 
     def store(self):
-        self.store_key(['integration', 'org_id'])
-        self.store_key(['integration', 'api_key'])
-        self.store_key(['integration', 'client_secret'])
-        self.store_key(['integration', 'tech_acct'])
-        self.save()
+        pass
 
     def revert(self):
         pass
 
     def fetch(self):
-        creds = {}
-        creds.update(self.retrieve_key(['integration', 'org_id']))
-        creds.update(self.retrieve_key(['integration', 'api_key']))
-        creds.update(self.retrieve_key(['integration', 'client_secret']))
-        creds.update(self.retrieve_key(['integration', 'tech_acct']))
-        return creds
+        pass

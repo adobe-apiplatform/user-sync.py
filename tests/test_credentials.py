@@ -11,6 +11,27 @@ from user_sync.error import AssertionException
 def root_config_file(fixture_dir):
     return os.path.join(fixture_dir, 'user-sync-config.yml')
 
+
+@pytest.fixture
+def ldap_config_file(fixture_dir):
+    return os.path.join(fixture_dir, 'connector-ldap.yml')
+
+
+def test_nested_set(ldap_config_file):
+    c = CredentialConfig(ldap_config_file)
+    c.set_nested_key(['password'], {'secure': 'somethingverysecure'})
+    r = c.get_nested_key(['password', 'secure'])
+    assert r == 'somethingverysecure'
+    print()
+
+def test_retrieve_ldap_creds(ldap_config_file):
+    # will need to use store first, then...
+    c = CredentialConfig(ldap_config_file)
+    key_list = ['password', 'secure']
+    retrieved_key_dict = c.retrieve_key(key_list)
+    # now make some assertions...
+
+
 def test_set():
     identifier = 'TestId'
     value = 'TestValue'
@@ -38,6 +59,7 @@ def test_set_long():
     else:
         cm.set(identifier, value)
         assert cm.get(identifier) == value
+
 
 def test_get_not_valid():
     # This is an identifier which should not exist in your backed.
