@@ -106,42 +106,39 @@ class DirectoryConnectorManager(object):
         for i in range(len(group_list)):
             return {g.common_name for g in group_list if (g.directory_id == id or g.directory_id is None)}
 
-    def duplcate_groups(self, groups):
-        duplicate_list = []
-        list_of_groups = []
+    def add_on_groups(self, groups):
+        additional_groups = set()
         for g in groups:
-            if g.common_name in list_of_groups:
-                duplicate_list.append(g.common_name)
-            list_of_groups.append(g.common_name)
-        return duplicate_list
+            for x in groups[1:]:
+                if g.common_name == x.common_name and g.directory_id != x.directory_id and (g.directory_id is None or x.directory_id is None):
+                        additional_groups.add(g.common_name)
+        return additional_groups
 
-
-    def update_groups_for_user(self, user, groups, source_id, duplicate_groups):
+    def update_groups_for_user(self, user, groups, source_id, additional_groups):
         list_of_groups = user['groups']
         for i in range(len(user['groups'])):
             for g in groups:
                 if user['groups'][i] == g.common_name and g.directory_id is not None and source_id == g.directory_id:
                     list_of_groups[i] = g.directory_id + "::" + user['groups'][i]
-                    if g.common_name in duplicate_groups:
+                    if g.common_name in additional_groups:
                         list_of_groups.append(g.common_name)
                     break
             user['groups'] = list_of_groups
         return user
-
 
     def load_users_and_groups(self, groups, extended_attributes, all_users):
         group_list = []
         users = []
         for g in groups:
             group_list.append(DirectoryGroup(g))
-        duplicate_groups = self.duplcate_groups(group_list)
+        add_groups = self.add_on_groups(group_list)
         for c,v in six.iteritems(self.connectors):
             self.logger.info("Loading users from connector: " + "id: " + c + "   type: " + v.name)
             dir_groups = self.get_groups_for_connector(c, group_list)
             new_users = list(v.load_users_and_groups(dir_groups, extended_attributes, all_users))
             self.logger.info("Found {} users".format(len(new_users)))
             for u in new_users:
-                self.update_groups_for_user(u, group_list, c, duplicate_groups)
+                self.update_groups_for_user(u, group_list, c, add_groups)
             users.extend(new_users)
         return iter(users)
 
