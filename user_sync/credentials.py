@@ -208,7 +208,7 @@ class CredentialConfig:
             plaintext_cred = CredentialManager.get(secure_identifier)
             creds[secure_identifier] = plaintext_cred
             if revert:
-                self.set_nested_key(key_list, plaintext_cred)
+                self.set_nested_key(key_list, plaintext_cred, creds)
             return creds
         except AssertionException as e:
             raise e
