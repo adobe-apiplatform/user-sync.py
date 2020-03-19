@@ -25,33 +25,43 @@ def test_nested_set(ldap_config_file):
     print()
 
 
-def test_retrieve_ldap_creds_valid(ldap_config_file):
+def test_retrieve_ldap_creds_valid(tmp_config_files):
+    (_, ldap_config_file, _) = tmp_config_files
     c = CredentialConfig(ldap_config_file)
-    plaintext_cred = c.get_nested_key(['password'])
     key_list = ['password']
+    plaintext_cred = c.get_nested_key(key_list)
     c.store_key(key_list)
-    secure_identifier = c.get_qualified_identifier(['password'])
-    retrieved_key_dict = c.retrieve_key(key_list)
-    assert retrieved_key_dict[secure_identifier] == plaintext_cred
+    secure_identifier = c.get_qualified_identifier(key_list)
+    retrieved_plaintext_cred = c.retrieve_key(key_list)
+    assert retrieved_plaintext_cred == plaintext_cred
 
 
-def test_retrieve_ldap_creds_invalid(ldap_config_file):
+def test_retrieve_ldap_creds_invalid(tmp_config_files):
+    (_, ldap_config_file, _) = tmp_config_files
     c = CredentialConfig(ldap_config_file)
     key_list = ['password']
-    # if the key is never stored, the retrieve command will raise an AssertionException because
-    # parse_secure_key returns None
+    # if store_key has not been called previously, retrieve_key returns None
+    assert c.retrieve_key(key_list) is None
+
+
+def test_revert_valid(tmp_config_files):
+    (_, ldap_config_file, _) = tmp_config_files
+    c = CredentialConfig(ldap_config_file)
+    key_list = ['password']
+    plaintext_cred = c.get_nested_key(key_list)
+    c.store_key(key_list)
+    reverted_plaintext_cred = c.revert_key(key_list)
+    assert reverted_plaintext_cred == plaintext_cred
+
+
+def test_revert_invalid(tmp_config_files):
+    (_, ldap_config_file, _) = tmp_config_files
+    c = CredentialConfig(ldap_config_file)
+    key_list = ['password']
+    # assume store_key has not been called
     with pytest.raises(AssertionException):
-        c.retrieve_key(key_list)
+        reverted_plaintext_cred = c.revert_key(key_list)
 
-
-def test_revert(ldap_config_file):
-    c = CredentialConfig(ldap_config_file)
-    plaintext_cred = c.get_nested_key(['password'])
-    key_list = ['password']
-    c.store_key(key_list)
-    secure_identifier = c.get_qualified_identifier(['password'])
-    reverted_key_dict = c.retrieve_key(key_list, revert=True)
-    assert reverted_key_dict['password'] == plaintext_cred
 
 def test_set():
     identifier = 'TestId'

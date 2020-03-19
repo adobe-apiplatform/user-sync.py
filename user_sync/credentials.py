@@ -109,6 +109,7 @@ class CredentialConfig:
         # The dictionary including comments that will be updated and re-saved
         self.load()
 
+
     def store(self):
         # Store will explicitly save all targeted keys
         # For example:
@@ -190,28 +191,24 @@ class CredentialConfig:
             CredentialManager.set(k, value)
             self.set_nested_key(key_list, {'secure': k})
 
-    def retrieve_key(self, key_list, revert=False):
+    def retrieve_key(self, key_list):
         """
         Retrieves the value (if any) for key_list, and updates the config if revert=True
         Returns a dictionary of identifiers and values for this config
         :param key_list:
-        :param revert:
         :return:
         """
         key_list = ConfigLoader.as_list(key_list)
-        value = self.get_nested_key(key_list)
-        creds = {}
-        try:
-            secure_identifier = self.parse_secure_key(value)
-            if secure_identifier is None:
-                raise AssertionException("No secure key found for the given identifier.")
-            plaintext_cred = CredentialManager.get(secure_identifier)
-            creds[secure_identifier] = plaintext_cred
-            if revert:
-                self.set_nested_key(key_list, plaintext_cred, creds)
-            return creds
-        except AssertionException as e:
-            raise e
+        secure_identifier = self.parse_secure_key(self.get_nested_key(key_list))
+        if secure_identifier is not None:
+            return CredentialManager.get(secure_identifier)
+
+    def revert_key(self, key_list):
+        plaintext_cred = self.retrieve_key(key_list)
+        if plaintext_cred is None:
+            raise AssertionException('No secure key found for given identifier.')
+        self.set_nested_key(key_list, plaintext_cred)
+        return plaintext_cred
 
     def parse_secure_key(self, value):
         """
