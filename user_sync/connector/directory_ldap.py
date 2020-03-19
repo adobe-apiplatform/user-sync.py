@@ -517,6 +517,10 @@ class LDAPDirectoryConnector(object):
         :param dn: str
         :return: bool
         """
+        # return true if base_dn is empty string such as global scope and no need to check user_dn is part of base_dn
+        if (not (base_dn and base_dn.strip())):
+            return True
+
         split_base_dn = ldap3.utils.dn.parse_dn(base_dn.lower())
         split_dn = ldap3.utils.dn.parse_dn(dn.lower())
         if split_base_dn == split_dn[-len(split_base_dn):]:
