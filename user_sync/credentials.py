@@ -239,7 +239,7 @@ class LdapCredentialConfig(CredentialConfig):
 
     def revert(self):
         creds = {}
-        creds.update(self.retrieve_key(['password'], revert=True))
+        creds.update(self.revert_key(['password']))
         self.save()
         return creds
 
