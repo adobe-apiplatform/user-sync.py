@@ -168,7 +168,7 @@ class CredentialConfig:
         d = d or self.config
         k, ks = ks[0], ks[1:]
         v = d.get(k)
-        if isinstance(v, Mapping):
+        if ks and isinstance(v, Mapping):
             d[k] = self.set_nested_key(ks, u, v)
         else:
             d[k] = u
