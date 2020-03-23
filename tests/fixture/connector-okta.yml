@@ -1,0 +1,116 @@
+# This is a sample configuration file for the okta connector type.
+#
+# Okta is an identity hosting company that supports being the Identity Provider
+# for Adobe Enterprise Federated ID.
+#
+# This sample file contains all of the settable options for this protocol.
+# It is recommended that you make a copy of this file and edit it for your needs.
+# While you are at it, you will likely want to remove a lot of this  commentary,
+# in order to enhance the readability of your file.
+
+# connection settings (required)
+# You must specify both of these settings.  The token should be protected.
+# For more information on getting an Okta API Token, see:
+# http://developer.okta.com/docs/api/getting_started/getting_a_token.html
+host: "sample-817042.oktapreview.com"
+api_token: "00R_KJEaIcgAswrlO_sample_ZdgxC5scYZn8IZ-zi"
+
+# (required) group_filter_format (default given below)
+# specifies the string format used to construct a group query.
+# {group} is replaced with the name of the group to find.
+group_filter_format: "{group}"
+
+# (required) all_users_filter (default given below)
+# specifies the string filter used to find all users in the directory.
+# Filter Examples:
+#   Filter user based on countryCode attribute in user profile
+#      all_users_filter: 'user.profile.countryCode == "MX"'
+#   Filter user based on status of ACTIVE
+#      all_users_filter: 'user.status == "ACTIVE"'
+all_users_filter: 'user.status == "ACTIVE"'
+
+# (optional) default_identity_type (no default)
+# specifies the identity type of the dashboard user to create.
+# the valid values are: enterpriseID, federatedID
+# If not specified, the default identity type from the main config file is used.
+# user_identity_type: federatedID
+
+# (optional) string_encoding (default value given below)
+# string_encoding specifies the Unicode string encoding used by the directory.
+# All values retrieved from the directory are converted to Unicode before being
+# sent to or compared with values on the Adobe side, to avoid encoding issues.
+# The value must be a Python codec name or alias, such as 'latin1' or 'big5'.
+# See https://docs.python.org/2/library/codecs.html#standard-encodings for details.
+#string_encoding: utf8
+
+# (optional) user_identity_type_format (no default)
+# user_identity_type_format specifies how to construct a user's desired identity
+# type on the Adobe side by combining constant strings with attribute values.
+# Any names in curly braces are take as attribute names, and everything including
+# the braces will be replaced on a per-user basis with the values of the attributes.
+# There is no default value for this setting, because most directories don't contain
+# users with different identity types (so setting the default identity type suffices).
+# If your directory contains users of different identity types, you should define
+# this field to look at the value of an appropriate attribute in your okta user profile.
+# For example, if your Okta user profile attribute "idType" had one of the values
+# adobe, enterprise, or federated in it for each user, you could use:
+#user_identity_type_format: "{idType}ID"
+
+# (optional) user_email_format (default value given below)
+# user_email_format specifies how to construct a user's email address by
+# combining constant strings with the values of specific Okta profile attributes.
+# Any names in curly braces are taken as attribute names, and everything including
+# the braces will be replaced on a per-user basis with the values of the attributes.
+# The default value is from "email" field in Okta user profile.
+# NOTE: for this and every format setting, the constant strings must be in
+# the encoding specified by the string_encoding setting, above.
+user_email_format: "{email}"
+
+# (optional) user_domain_format (no default value)
+# user_domain_format is analogous to user_email_format in syntax, but it
+# is used to discover the domain for a given user.  If not specified, the
+# domain is taken from the domain part of the user's email address.
+#user_domain_format: "{domain}"
+
+# (optional) user_username_format (no default value)
+# user_username_format specifies how to construct a user's username on the
+# Adobe side by combining constant strings with attribute values.
+# Any names in curly braces are taken as attribute names, and everything including
+# the braces will be replaced on a per-user basis with the values of the attributes.
+# This setting should only be used when you are using federatedID and your
+# federation configuration specifies username-based login.  In all other cases,
+# make sure this is not set or returns an empty value, and the user's username
+# will be taken from the user's email.
+# This example supposes that the department and user_id are concatenated to
+# produce a unique username for each user.
+#user_username_format: "{department}_{user_id}"
+
+# (optional) user_given_name_format (default value given below)
+# user_given_name_format specifies how to construct a user's given name by
+# combining constant strings with the values of specific Okta profile attributes.
+# Any names in curly braces are taken as attribute names, and everything including
+# the braces will be replaced on a per-user basis with the values of the attributes.
+# The default value is from "firstName" field in Okta user profile..
+# NOTE: for this and every format setting, the constant strings must be in
+# the encoding specified by the string_encoding setting, above.
+#user_given_name_format: "{firstName}"
+
+# (optional) user_surname_format (default value given below)
+# user_surname_format specifies how to construct a user's surname by
+# combining constant strings with the values of specific Okta profile attributes.
+# Any names in curly braces are taken as attribute names, and everything including
+# the braces will be replaced on a per-user basis with the values of the attributes.
+# The default value is from "lastName" field in Okta user profile.
+# NOTE: for this and every format setting, the constant strings must be in
+# the encoding specified by the string_encoding setting, above.
+#user_surname_format: "{lastName}"
+
+# (optional) user_country_code_format (default value given below)
+# user_country_code_format specifies how to construct a user's country code by
+# combining constant strings with the values of specific Okta profile attributes.
+# Any names in curly braces are taken as attribute names, and everything including
+# the braces will be replaced on a per-user basis with the values of the attributes.
+# The default value is from "countryCode" field in Okta user profile.
+# NOTE: for this and every format setting, the constant strings must be in
+# the encoding specified by the string_encoding setting, above.
+#user_country_code_format: "{countryCode}"

@@ -21,6 +21,7 @@ import logging
 
 import six
 
+from user_sync import identity_type
 from user_sync.config import DictConfig, OptionsBuilder
 from user_sync.connector.directory import DirectoryConnector
 from user_sync.error import AssertionException
@@ -55,11 +56,11 @@ class DirectoryConnectorConfig(object):
 
 class DirectoryConnectorManager(object):
 
-    def __init__(self, config_loader, additional_groups, default_account_type):
+    def __init__(self, config_loader, additional_groups=None, default_account_type=None):
         self.logger = logging.getLogger("dc manager")
         self.config_loader = config_loader
-        self.additional_groups = additional_groups
-        self.new_account_type = default_account_type
+        self.additional_groups = additional_groups or []
+        self.new_account_type = default_account_type or identity_type.FEDERATED_IDENTITY_TYPE
         self.connectors = {}
 
         for k, v in six.iteritems(self.build_directory_config_dict()):
@@ -103,34 +104,10 @@ class DirectoryConnectorManager(object):
 
         return directory_connector
 
-    def map_list(self, obj_list, field):
-        result = {}
-        for o in obj_list:
-            key = getattr(o, field)
-            if key not in result:
-                result[key] = [o]
-            else:
-                result[key].append(o)
-        return result
-
-    def common_names_for_connector(self, groups, id):
-        groups_by_id = self.map_list(groups, 'directory_id')
-        return {g.common_name for g in groups_by_id.get(id, [])}
-
-    def substitute_groups_for_user(self, user, groups):
-        groups_by_cn = self.map_list(groups, 'common_name')
-        qualified_groups = []
-        for g in user['groups']:
-            if g in groups_by_cn:
-                qualified_groups.extend([g.fq_name for g in groups_by_cn[g]])
-            else:
-                qualified_groups.append(g)
-        user['groups'] = qualified_groups
-
     def build_directory_groups(self, group_names):
         groups = [DirectoryGroup(g) for g in group_names]
         for g in groups:
-            if g.directory_id not in self.connectors:
+            if g.directory_id not in self.connectors and g.directory_id is not None:
                 raise AssertionException("Missing connector {0} for group mapping: {1}".format(g.directory_id, g.fq_name))
         return groups
 
@@ -149,6 +126,32 @@ class DirectoryConnectorManager(object):
             users.extend(new_users)
         return iter(users)
 
+    @staticmethod
+    def map_list(obj_list, field):
+        result = {}
+        for o in obj_list:
+            key = getattr(o, field)
+            if key not in result:
+                result[key] = [o]
+            else:
+                result[key].append(o)
+        return result
+
+    @staticmethod
+    def common_names_for_connector(groups, id):
+        groups_by_id = DirectoryConnectorManager.map_list(groups, 'directory_id')
+        return {g.common_name for g in groups_by_id.get(id, [])}
+
+    @staticmethod
+    def substitute_groups_for_user(user, groups):
+        groups_by_cn = DirectoryConnectorManager.map_list(groups, 'common_name')
+        qualified_groups = []
+        for g in user['groups']:
+            if g in groups_by_cn:
+                qualified_groups.extend([g.fq_name for g in groups_by_cn[g]])
+            else:
+                qualified_groups.append(g)
+        user['groups'] = qualified_groups
 
 class DirectoryGroup:
 
