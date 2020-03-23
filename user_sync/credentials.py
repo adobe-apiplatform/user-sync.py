@@ -66,12 +66,10 @@ class CredentialManager:
             v.store()
 
     def retrieve(self):
-        creds = {}
-        for k, v in self.config_files.items():
-            self.logger.info("Analyzing for retrieval " + k)
-            creds.update(v.fetch())
-        return creds
+        pass
 
+    def revert(self):
+        pass
 
     def load_configs(self):
         """
@@ -110,6 +108,7 @@ class CredentialConfig:
 
         # The dictionary including comments that will be updated and re-saved
         self.load()
+
 
     def store(self):
         # Store will explicitly save all targeted keys
@@ -169,7 +168,7 @@ class CredentialConfig:
         d = d or self.config
         k, ks = ks[0], ks[1:]
         v = d.get(k)
-        if isinstance(v, Mapping):
+        if ks and isinstance(v, Mapping):
             d[k] = self.set_nested_key(ks, u, v)
         else:
             d[k] = u
@@ -192,37 +191,26 @@ class CredentialConfig:
             CredentialManager.set(k, value)
             self.set_nested_key(key_list, {'secure': k})
 
-    def retrieve_key(self, key_list, revert=False):
+
+    def retrieve_key(self, key_list):
         """
         Retrieves the value (if any) for key_list, and updates the config if revert=True
         Returns a dictionary of identifiers and values for this config
         :param key_list:
-        :param revert:
         :return:
         """
         key_list = ConfigLoader.as_list(key_list)
-        value = self.get_nested_key(key_list)
-        creds = {}
-        # if value is None:
-        #     raise AssertionException("Cannot retrieve key - value not found for: {0}".format(key_list))
-        try:
-            # self.parse_secure_key(value)
-            # identifier = value['secure']
-            identifier = self.parse_secure_key(value)
-            creds[identifier] = CredentialManager.get(identifier)
-            return creds
-        except AssertionException as e:
-            raise e
+        secure_identifier = self.parse_secure_key(self.get_nested_key(key_list))
+        if secure_identifier is not None:
+            return CredentialManager.get(secure_identifier)
 
-    def revert_key(self, ks, u, d):
-        key_list = ConfigLoader.as_list(ks)
-        value = self.get_nested_key(key_list)
-        creds = {}
-        try:
-            identifier = self.parse_secure_key(value)
-        except AssertionException as e:
-            raise e
-        self.save()
+    def revert_key(self, key_list):
+        plaintext_cred = self.retrieve_key(key_list)
+        if plaintext_cred is None:
+            raise AssertionException('No secure key found for given identifier.')
+        self.set_nested_key(key_list, plaintext_cred)
+        return plaintext_cred
+
 
     def parse_secure_key(self, value):
         """
@@ -252,8 +240,10 @@ class LdapCredentialConfig(CredentialConfig):
         self.save()
 
     def revert(self):
-        self.retrieve_key(['password'], revert=True)
+        creds = {}
+        creds.update(self.revert_key(['password']))
         self.save()
+        return creds
 
     def fetch(self):
         creds = {}
