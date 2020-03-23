@@ -401,7 +401,7 @@ def retrieve(config_filename):
     Retrieves credentials from credential manager.
     """
     try:
-        credential_manager = CredentialManager()
+        credential_manager = CredentialManager(config_filename)
         retrieved_creds = credential_manager.retrieve()
         if not retrieved_creds:
             click.echo("No credentials stored with user name 'user_sync'.")
@@ -413,14 +413,20 @@ def retrieve(config_filename):
 
 @credentials.command(help="Will return configuration file to unsecured state and replace all secrure values with "
                           "plain text values.")
-def revert():
+@click.option('-c', '--config-filename',
+              help="path to your main configuration file",
+              type=str,
+              nargs=1,
+              default="user-sync-config.yml",
+              metavar='path-to-file')
+def revert(config_filename):
     """
     Revert updates config files
     with actual plaintext data This is an
     automated process.
     """
     try:
-        credential_manager = CredentialManager()
+        credential_manager = CredentialManager(config_filename)
         creds = credential_manager.revert()
         click.echo('reverting...')
         for identifier in creds:

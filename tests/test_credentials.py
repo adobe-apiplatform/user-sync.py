@@ -11,6 +11,58 @@ from user_sync.error import AssertionException
 def root_config_file(fixture_dir):
     return os.path.join(fixture_dir, 'user-sync-config.yml')
 
+
+@pytest.fixture
+def ldap_config_file(fixture_dir):
+    return os.path.join(fixture_dir, 'connector-ldap.yml')
+
+
+def test_nested_set(ldap_config_file):
+    c = CredentialConfig(ldap_config_file)
+    c.set_nested_key(['password'], {'secure': 'somethingverysecure'})
+    r = c.get_nested_key(['password', 'secure'])
+    assert r == 'somethingverysecure'
+    print()
+
+
+def test_retrieve_ldap_creds_valid(tmp_config_files):
+    (_, ldap_config_file, _) = tmp_config_files
+    c = CredentialConfig(ldap_config_file)
+    key_list = ['password']
+    plaintext_cred = c.get_nested_key(key_list)
+    c.store_key(key_list)
+    secure_identifier = c.get_qualified_identifier(key_list)
+    retrieved_plaintext_cred = c.retrieve_key(key_list)
+    assert retrieved_plaintext_cred == plaintext_cred
+
+
+def test_retrieve_ldap_creds_invalid(tmp_config_files):
+    (_, ldap_config_file, _) = tmp_config_files
+    c = CredentialConfig(ldap_config_file)
+    key_list = ['password']
+    # if store_key has not been called previously, retrieve_key returns None
+    assert c.retrieve_key(key_list) is None
+
+
+def test_revert_valid(tmp_config_files):
+    (_, ldap_config_file, _) = tmp_config_files
+    c = CredentialConfig(ldap_config_file)
+    key_list = ['password']
+    plaintext_cred = c.get_nested_key(key_list)
+    c.store_key(key_list)
+    reverted_plaintext_cred = c.revert_key(key_list)
+    assert reverted_plaintext_cred == plaintext_cred
+
+
+def test_revert_invalid(tmp_config_files):
+    (_, ldap_config_file, _) = tmp_config_files
+    c = CredentialConfig(ldap_config_file)
+    key_list = ['password']
+    # assume store_key has not been called
+    with pytest.raises(AssertionException):
+        reverted_plaintext_cred = c.revert_key(key_list)
+
+
 def test_set():
     identifier = 'TestId'
     value = 'TestValue'
@@ -38,6 +90,7 @@ def test_set_long():
     else:
         cm.set(identifier, value)
         assert cm.get(identifier) == value
+
 
 def test_get_not_valid():
     # This is an identifier which should not exist in your backed.

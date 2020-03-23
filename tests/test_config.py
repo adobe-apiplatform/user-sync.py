@@ -21,30 +21,7 @@ def load_ldap_config_options(args):
     return LDAPDirectoryConnector.get_options(caller_config)
 
 
-@pytest.fixture
-def root_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'user-sync-config.yml')
 
-
-@pytest.fixture
-def ldap_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'connector-ldap.yml')
-
-
-@pytest.fixture
-def umapi_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'connector-umapi.yml')
-
-
-@pytest.fixture
-def tmp_config_files(root_config_file, ldap_config_file, umapi_config_file, tmpdir):
-    tmpfiles = []
-    for fname in [root_config_file, ldap_config_file, umapi_config_file]:
-        basename = os.path.split(fname)[-1]
-        tmpfile = os.path.join(str(tmpdir), basename)
-        shutil.copy(fname, tmpfile)
-        tmpfiles.append(tmpfile)
-    return tuple(tmpfiles)
 
 
 @pytest.fixture
