@@ -24,7 +24,7 @@ import six
 from user_sync.config import DictConfig, OptionsBuilder
 from user_sync.connector.directory import DirectoryConnector
 from user_sync.error import AssertionException
-
+from collections import Counter
 
 class DirectoryConnectorConfig(object):
 
@@ -102,12 +102,56 @@ class DirectoryConnectorManager(object):
 
         return directory_connector
 
-    def load_users_and_groups(self, groups, extended_attributes, all_users):
+    def get_groups_for_connector(self, id, group_list):
+        for i in range(len(group_list)):
+            return {g.common_name for g in group_list if (g.directory_id == id or g.directory_id is None)}
 
+    def add_on_groups(self, groups):
+        additional_groups = set()
+        for g in groups:
+            for x in groups[1:]:
+                if g.common_name == x.common_name and g.directory_id != x.directory_id and (g.directory_id is None or x.directory_id is None):
+                        additional_groups.add(g.common_name)
+        return additional_groups
+
+    def update_groups_for_user(self, user, groups, source_id, additional_groups):
+        list_of_groups = user['groups']
+        for i in range(len(user['groups'])):
+            for g in groups:
+                if user['groups'][i] == g.common_name and g.directory_id is not None and source_id == g.directory_id:
+                    list_of_groups[i] = g.directory_id + "::" + user['groups'][i]
+                    if g.common_name in additional_groups:
+                        list_of_groups.append(g.common_name)
+                    break
+            user['groups'] = list_of_groups
+        return user
+
+    def load_users_and_groups(self, groups, extended_attributes, all_users):
+        group_list = []
         users = []
+        for g in groups:
+            group_list.append(DirectoryGroup(g))
+        add_groups = self.add_on_groups(group_list)
         for c,v in six.iteritems(self.connectors):
             self.logger.info("Loading users from connector: " + "id: " + c + "   type: " + v.name)
-            new_users = list(v.load_users_and_groups(groups, extended_attributes, all_users))
+            dir_groups = self.get_groups_for_connector(c, group_list)
+            new_users = list(v.load_users_and_groups(dir_groups, extended_attributes, all_users))
             self.logger.info("Found {} users".format(len(new_users)))
+            for u in new_users:
+                self.update_groups_for_user(u, group_list, c, add_groups)
             users.extend(new_users)
         return iter(users)
+
+
+class DirectoryGroup:
+
+    def __init__(self, fq_name):
+        self.fq_name = fq_name
+        self.directory_id = None
+        self.common_name = fq_name
+        tokens = fq_name.split('::')
+
+        if len(tokens) > 1:
+            self.directory_id = tokens[0]
+            self.common_name = "::".join(tokens[1:])
+            self.fq_name = fq_name
