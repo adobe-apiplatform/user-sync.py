@@ -878,6 +878,19 @@ created on those organizations if `auto_create` is enabled.
 Refer to [Accessing Users in Other Organizations](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/advanced_configuration.html#accessing-users-in-other-organizations)
 for more information.
 
+###   Entering groups associated with different directories
+This section describes how users can enter groups associated with different directories. For example, multiple Active Directory (LDAP) scenario is given below.
+
+```yaml
+  groups:
+     directory_group: "ldap_1::users"
+     # ...adobe_groups:
+        "Ldap 1 Group"
+     directory_group: "ldap_2::users"
+     # ...adobe_groups:
+        "Ldap 2 Group
+```
+
 ---
 
 [Previous Section](usage_scenarios.md)  \| [Next Section](deployment_best_practices.md)
