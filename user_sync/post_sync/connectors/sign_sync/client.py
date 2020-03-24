@@ -16,9 +16,13 @@ class SignClient:
         self.key = config['key']
         self.admin_email = config['admin_email']
         self.console_org = config['console_org'] if 'console_org' in config else None
+        self.api_url = None
+        self.groups = None
+        self.logger = logging.getLogger(self.logger_name())
+
+    def _init(self):
         self.api_url = self.base_uri()
         self.groups = self.get_groups()
-        self.logger = logging.getLogger(self.logger_name())
 
     def logger_name(self):
         return 'sign_client.{}'.format(self.console_org if self.console_org else 'main')
@@ -79,6 +83,8 @@ class SignClient:
         Get list of all users from Sign (indexed by email address)
         :return: dict()
         """
+        if self.api_url is None or self.groups is None:
+            self._init()
 
         users = {}
         self.logger.debug('getting list of all Sign users')
@@ -105,6 +111,9 @@ class SignClient:
         API request to get group information
         :return: dict()
         """
+        if self.api_url is None:
+            self.api_url = self.base_uri()
+
         res = requests.get(self.api_url + 'groups', headers=self.header())
         assert res.status_code == 200, "Error retrieving Sign group list"
         groups = {}
@@ -119,6 +128,8 @@ class SignClient:
         :param group: str
         :return:
         """
+        if self.api_url is None or self.groups is None:
+            self._init()
         res = requests.post(self.api_url + 'groups', headers=self.header_json(), data=json.dumps({'groupName': group}))
         assert res.status_code == 201, "Failed to create Sign group '{}' (reason: {})".format(group, res.reason)
         self.groups[group] = res.json()['groupId']
@@ -130,6 +141,8 @@ class SignClient:
         :param data: dict()
         :return: dict()
         """
+        if self.api_url is None or self.groups is None:
+            self._init()
 
         res = requests.put(self.api_url + 'users/' + user_id, headers=self.header_json(), data=json.dumps(data))
         assert res.status_code == 200, "Failed to update user '{}' (reason: {})".format(user_id, res.reason)
