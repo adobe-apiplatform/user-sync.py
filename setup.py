@@ -27,7 +27,7 @@ with open('user_sync/version.py') as f:
 test_deps = ['mock', 'pytest', 'pytest-cov']
 setup_deps = ['pytest-runner']
 
-setup(name='user-sync-sign-sync',
+setup(name='user-sync',
       version=version_namespace['__version__'],
       description='Application for synchronizing customer directories with the Adobe Enterprise Admin Console',
       classifiers=[
