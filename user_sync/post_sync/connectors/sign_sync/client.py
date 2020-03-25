@@ -11,7 +11,8 @@ class SignClient:
 
     def __init__(self, config):
         for k in ['host', 'key', 'admin_email']:
-            assert k in config, "Key '{}' must be specified for all Sign orgs".format(k)
+            if k not in config:
+                raise AssertionException("Key '{}' must be specified for all Sign orgs".format(k))
         self.host = config['host']
         self.key = config['key']
         self.admin_email = config['admin_email']
@@ -90,10 +91,12 @@ class SignClient:
         self.logger.debug('getting list of all Sign users')
         users_res = requests.get(self.api_url + 'users', headers=self.header())
 
-        assert users_res.status_code == 200, "Error retrieving Sign user list"
+        if users_res.status_code != 200:
+            raise AssertionException("Error retrieving Sign user list")
         for user_id in map(lambda u: u['userId'], users_res.json()['userInfoList']):
             user_res = requests.get(self.api_url + 'users/' + user_id, headers=self.header())
-            assert user_res.status_code == 200, "Error retrieving details for Sign user '{}'".format(user_id)
+            if users_res.status_code != 200:
+                raise AssertionException("Error retrieving details for Sign user '{}'".format(user_id))
             user = user_res.json()
             if user['userStatus'] != 'ACTIVE':
                 continue
@@ -115,7 +118,8 @@ class SignClient:
             self.api_url = self.base_uri()
 
         res = requests.get(self.api_url + 'groups', headers=self.header())
-        assert res.status_code == 200, "Error retrieving Sign group list"
+        if res.status_code != 200:
+            raise AssertionException("Error retrieving Sign group list")
         groups = {}
         sign_groups = res.json()
         for group in sign_groups['groupInfoList']:
@@ -131,7 +135,8 @@ class SignClient:
         if self.api_url is None or self.groups is None:
             self._init()
         res = requests.post(self.api_url + 'groups', headers=self.header_json(), data=json.dumps({'groupName': group}))
-        assert res.status_code == 201, "Failed to create Sign group '{}' (reason: {})".format(group, res.reason)
+        if res.status_code != 201:
+            raise AssertionException("Failed to create Sign group '{}' (reason: {})".format(group, res.reason))
         self.groups[group] = res.json()['groupId']
 
     def update_user(self, user_id, data):
@@ -145,7 +150,8 @@ class SignClient:
             self._init()
 
         res = requests.put(self.api_url + 'users/' + user_id, headers=self.header_json(), data=json.dumps(data))
-        assert res.status_code == 200, "Failed to update user '{}' (reason: {})".format(user_id, res.reason)
+        if res.status_code != 200:
+            raise AssertionException("Failed to update user '{}' (reason: {})".format(user_id, res.reason))
 
     @staticmethod
     def user_roles(user):

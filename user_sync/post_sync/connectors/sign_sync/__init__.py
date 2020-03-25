@@ -4,6 +4,7 @@ from user_sync.post_sync import PostSyncConnector
 from user_sync.config import DictConfig, OptionsBuilder
 from user_sync.rules import AdobeGroup
 from .client import SignClient
+from user_sync.error import AssertionException
 
 
 class SignConnector(PostSyncConnector):
@@ -47,7 +48,8 @@ class SignConnector(PostSyncConnector):
                 self.logger.info("Creating new Sign group: {}".format(new_group))
                 sign_client.create_group(new_group)
             umapi_users = post_sync_data.umapi_data.get(org_name)
-            assert umapi_users is not None, "Error getting umapi users from post_sync_data"
+            if umapi_users is None:
+                raise AssertionException("Error getting umapi users from post_sync_data")
             self.update_sign_users(umapi_users, sign_client, org_name)
 
     def update_sign_users(self, umapi_users, sign_client, org_name):
@@ -134,7 +136,8 @@ class SignConnector(PostSyncConnector):
         mapped_admin_roles = {}
         for mapping in admin_roles:
             sign_role = mapping.get('sign_role')
-            assert sign_role is not None, "must define a Sign role in admin role mapping"
+            if sign_role is None:
+                raise AssertionException("must define a Sign role in admin role mapping")
             adobe_groups = mapping.get('adobe_groups')
             if adobe_groups is None or not len(adobe_groups):
                 continue
