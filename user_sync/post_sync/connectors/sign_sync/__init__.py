@@ -44,7 +44,7 @@ class SignConnector(PostSyncConnector):
             return
         for org_name, sign_client in self.clients.items():
             # create any new Sign groups
-            for new_group in set(self.user_groups[org_name]) - set(sign_client.groups):
+            for new_group in set(self.user_groups[org_name]) - set(sign_client.sign_groups()):
                 self.logger.info("Creating new Sign group: {}".format(new_group))
                 sign_client.create_group(new_group)
             umapi_users = post_sync_data.umapi_data.get(org_name)

@@ -25,6 +25,11 @@ class SignClient:
         self.api_url = self.base_uri()
         self.groups = self.get_groups()
 
+    def sign_groups(self):
+        if self.api_url is None or self.groups is None:
+            self._init()
+        return self.groups
+
     def logger_name(self):
         return 'sign_client.{}'.format(self.console_org if self.console_org else 'main')
 
