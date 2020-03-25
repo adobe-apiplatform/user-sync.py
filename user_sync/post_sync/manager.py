@@ -2,6 +2,7 @@ import logging
 import six
 from copy import deepcopy
 from .connectors import get_connector
+from user_sync.error import AssertionException
 
 
 class PostSyncManager:
@@ -28,7 +29,10 @@ class PostSyncManager:
         """
         for connector in self.connectors:
             self.logger.info("Running module " + connector.name)
-            connector.run(post_sync_data)
+            try:
+                connector.run(post_sync_data)
+            except AssertionException as e:
+                self.logger.error("%s", e)
             self.logger.info("Finished running " + connector.name)
 
 
