@@ -14,15 +14,6 @@ matrix:
     - .travis/build-py36.sh
     - .travis/release.sh
     - python setup.py test
-  - env: IMG="ubuntu1604"
-    python:
-    - 2.7
-    install:
-    - .travis/install-ubuntu.sh
-    script:
-    - .travis/build-py27.sh
-    - .travis/release.sh
-    - python setup.py test
   - env:
     - OS="centos:7"
     - IMG="centos7"
@@ -40,25 +31,6 @@ matrix:
     - $SH .travis/install-centos.sh
     script:
     - $SH .travis/build-py36-centos.sh
-  - env:
-    - OS="centos:7"
-    - IMG="centos7"
-    - SH="docker exec -t ${IMG} bash -c"
-    services:
-    - docker
-    # for logging purposes
-    python:
-    - 2.7
-    before_install:
-    - chmod +x .travis/*.sh
-    - docker run -d --name ${IMG} -v $(pwd):/travis -w /travis -e IMG="${IMG}" -e TRAVIS_TAG="${TRAVIS_TAG}" ${OS} tail -f /dev/null
-    - docker ps
-    install:
-    - $SH .travis/install-centos.sh
-    script:
-    - $SH .travis/build-py27.sh
-    - $SH .travis/release.sh
-    - $SH "python setup.py test"
 
 deploy:
   provider: releases
