@@ -860,6 +860,29 @@ created on those organizations if `auto_create` is enabled.
 Refer to [Accessing Users in Other Organizations](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/advanced_configuration.html#accessing-users-in-other-organizations)
 for more information.
 
+## Two-Step Lookup
+
+Some LDAP systems may not support a `memberOf` overlay the way other systems like Active Directory do. This can make it
+impossible for the LDAP connector to use its group-based queries to get members for particular groups in an LDAP system.
+
+The `two_steps_lookup` option in `connector-ldap.yml` can be used to overcome this limitation. With two-step lookup
+enabled and configured, the sync tool will query all users (with respect to `all_users_filter`) and look for a specific
+user attribute to get group membership information. Users queried in this manner will be synced according to the `--users`
+command-line option.
+
+Example:
+
+```yaml
+two_steps_lookup:
+  group_member_attribute_name: "member"
+  nested_group: False
+```
+
+`group_member_attribute_name` defines the user attribute to use for group membership information. `nested_group` will
+recursively query nested group memberships.
+
+**NOTE:** `group_member_filter_format` may not be defined when two-step lookup is enabled.
+
 ---
 
 [Previous Section](usage_scenarios.md)  \| [Next Section](deployment_best_practices.md)
