@@ -1,4 +1,3 @@
-import os
 import uuid
 
 import pytest
@@ -62,7 +61,6 @@ def test_revert_invalid(tmp_config_files):
     with pytest.raises(AssertionException):
         reverted_plaintext_cred = c.revert_key(key_list)
 
-
 def test_set():
     identifier = 'TestId'
     value = 'TestValue'
@@ -99,5 +97,41 @@ def test_get_not_valid():
     # is thrown in this case. This case is handled in app.py, which will throw an AssertionException if
     # CredentialManager.get() returns None.
     assert CredentialManager().get(identifier) is None
+
+
+def test_config_store(tmp_config_files):
+    (_, ldap_config_file, _) = tmp_config_files
+    ldap = LdapCredentialConfig(ldap_config_file)
+    assert not ldap.parse_secure_key(ldap.get_nested_key(['password']))
+    ldap.store()
+    with open(ldap_config_file) as f:
+        data = yaml.load(f)
+        assert ldap.parse_secure_key(data['password'])
+
+
+def test_config_store_key(tmp_config_files):
+    (_, ldap_config_file, _) = tmp_config_files
+    ldap = LdapCredentialConfig(ldap_config_file)
+    assert not ldap.parse_secure_key(ldap.get_nested_key(['password']))
+    ldap.store_key(['password'])
+    assert ldap.parse_secure_key(ldap.get_nested_key(['password']))
+
+
+def test_config_store_key_none(tmp_config_files):
+    (_, ldap_config_file, _) = tmp_config_files
+    ldap = LdapCredentialConfig(ldap_config_file)
+    ldap.set_nested_key(['password'], [])
+    with pytest.raises(AssertionException):
+        ldap.store_key(['password'])
+
+# def test_config_store_key_secured(tmp_config_files):
+#     (_, ldap_config_file, _) = tmp_config_files
+#     ldap = LdapCredentialConfig(ldap_config_file)
+#     assert not ldap.parse_secure_key(ldap.get_nested_key(['password']))
+#     ldap.store_key(['password'])
+#     assert ldap.parse_secure_key(ldap.get_nested_key(['password']))
+#     ldap.store_key(['password'])
+#     assert ldap.parse_secure_key(ldap.get_nested_key(['password']))
+
 
 

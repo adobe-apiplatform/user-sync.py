@@ -383,8 +383,8 @@ def store(config_filename):
     try:
         credential_manager = CredentialManager(config_filename)
         credential_manager.store()
-        # for identifier in credential_manager.retrieve():
-        #     click.echo("'{0}' stored securely in configuration file.".format({identifier}))
+        for identifier in credential_manager.retrieve():
+            click.echo("'{0} was stored securely.".format({identifier}))
     except AssertionException as e:
         click.echo(str(e))
 

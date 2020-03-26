@@ -191,6 +191,7 @@ class CredentialConfig:
             CredentialManager.set(k, value)
             self.set_nested_key(key_list, {'secure': k})
 
+
     def retrieve_key(self, key_list):
         """
         Retrieves the value (if any) for key_list, and updates the config if revert=True
@@ -209,6 +210,7 @@ class CredentialConfig:
             raise AssertionException('No secure key found for given identifier.')
         self.set_nested_key(key_list, plaintext_cred)
         return plaintext_cred
+
 
     def parse_secure_key(self, value):
         """
@@ -255,13 +257,22 @@ class UmapiCredentialConfig(CredentialConfig):
     """
 
     def store(self):
-        pass
+        self.store_key(['enterprise', 'org_id'])
+        self.store_key(['enterprise', 'api_key'])
+        self.store_key(['enterprise', 'client_secret'])
+        self.store_key(['enterprise', 'tech_acct'])
+        self.save()
 
     def revert(self):
         pass
 
     def fetch(self):
-        pass
+        creds = {}
+        creds.update(self.retrieve_key(['enterprise', 'org_id']))
+        creds.update(self.retrieve_key(['enterprise', 'api_key']))
+        creds.update(self.retrieve_key(['enterprise', 'client_secret']))
+        creds.update(self.retrieve_key(['enterprise', 'tech_acct']))
+        return creds
 
 
 class OktaCredentialConfig(CredentialConfig):
@@ -270,13 +281,16 @@ class OktaCredentialConfig(CredentialConfig):
     """
 
     def store(self):
-        pass
+        self.store_key(['api_token'])
+        self.save()
 
     def revert(self):
         pass
 
     def fetch(self):
-        pass
+        creds = {}
+        creds.update(self.retrieve_key(['api_token']))
+        return creds
 
 
 class ConsoleCredentialConfig(CredentialConfig):
@@ -285,10 +299,19 @@ class ConsoleCredentialConfig(CredentialConfig):
     """
 
     def store(self):
-        pass
+        self.store_key(['integration', 'org_id'])
+        self.store_key(['integration', 'api_key'])
+        self.store_key(['integration', 'client_secret'])
+        self.store_key(['integration', 'tech_acct'])
+        self.save()
 
     def revert(self):
         pass
 
     def fetch(self):
-        pass
+        creds = {}
+        creds.update(self.retrieve_key(['integration', 'org_id']))
+        creds.update(self.retrieve_key(['integration', 'api_key']))
+        creds.update(self.retrieve_key(['integration', 'client_secret']))
+        creds.update(self.retrieve_key(['integration', 'tech_acct']))
+        return creds

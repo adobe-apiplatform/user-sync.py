@@ -3,7 +3,7 @@ import shutil
 
 import pytest
 from user_sync import config
-
+import shutil
 
 @pytest.fixture
 def fixture_dir():
@@ -53,3 +53,4 @@ def tmp_config_files(root_config_file, ldap_config_file, umapi_config_file, tmpd
         shutil.copy(fname, tmpfile)
         tmpfiles.append(tmpfile)
     return tuple(tmpfiles)
+

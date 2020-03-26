@@ -22,8 +22,6 @@ def load_ldap_config_options(args):
 
 
 
-
-
 @pytest.fixture
 def modify_root_config(tmp_config_files):
     (root_config_file, _, _) = tmp_config_files
