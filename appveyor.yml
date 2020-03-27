@@ -3,6 +3,11 @@ environment:
     - PYTHON: "C:\\Python36-x64"
       BUILD_TARGET: standalone
       UST_EXTENSION: "1"
+      BUILD_EDITION: ""
+    - PYTHON: "C:\\Python36-x64"
+      BUILD_TARGET: standalone
+      UST_EXTENSION: "0"
+      BUILD_EDITION: "-noext"
 
 install:
 - ps: choco install make
