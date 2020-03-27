@@ -2,7 +2,6 @@ environment:
   matrix:
     - PYTHON: "C:\\Python36-x64"
       BUILD_TARGET: standalone
-      UST_BUILD_EXE: "1"
       UST_EXTENSION: "1"
 
 install:

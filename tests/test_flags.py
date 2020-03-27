@@ -45,9 +45,7 @@ def flag_data_file(resource_file, tmpdir):
 def default_flag_data():
     """Data for default_flags.cfg"""
     return {
-        'UST_BUILD_EXE': '0',
         'UST_EXTENSION': '1',
-        'UST_SHELL_EXEC': '1',
     }
 
 
@@ -64,9 +62,7 @@ def patch_flag_resource(flag_file_path, default_file_path):
 def test_flags_cfg_init(flag_data_file, default_flag_data, monkeypatch):
     """Ensure the flag manager is using the flag data over the default_config"""
     flag_data = {
-        'UST_BUILD_EXE': '1',
         'UST_EXTENSION': '0',
-        'UST_SHELL_EXEC': '0',
     }
     flag_file = flag_data_file('flags.cfg', flag_data)
     default_file = flag_data_file('default_flags.cfg', default_flag_data)
@@ -75,17 +71,13 @@ def test_flags_cfg_init(flag_data_file, default_flag_data, monkeypatch):
         m.setattr(resource, 'get_resource', patch_flag_resource(flag_file, default_file))
         m.setattr(resource, '_config', {}, False)
         flags._init_config()
-        assert 'UST_BUILD_EXE' in flags._config and flags.get_flag('UST_BUILD_EXE')
         assert 'UST_EXTENSION' in flags._config and not flags.get_flag('UST_EXTENSION')
-        assert 'UST_SHELL_EXEC' in flags._config and not flags.get_flag('UST_SHELL_EXEC')
 
 
 def test_flags_cfg_invalid_key(flag_data_file, default_flag_data, monkeypatch):
     """Raise an exception when giving the flag manager an invalid key"""
     flag_data = {
-        'UST_BUILD_EXE': '1',
         'UST_EXTENSION': '0',
-        'UST_SHELL_EXEC': '0',
     }
     flag_file = flag_data_file('flags.cfg', flag_data)
     default_file = flag_data_file('default_flags.cfg', default_flag_data)
@@ -103,15 +95,11 @@ def test_flags_default_cfg(flag_data_file, default_flag_data, monkeypatch):
     default_file = flag_data_file('default_flags.cfg', default_flag_data)
 
     with monkeypatch.context() as m:
-        m.delenv('UST_BUILD_EXE', raising=False)
         m.delenv('UST_EXTENSION', raising=False)
-        m.delenv('UST_SHELL_EXEC', raising=False)
         m.setattr(resource, 'get_resource', patch_flag_resource(None, default_file))
         m.setattr(resource, '_config', {}, False)
         flags._init_config()
-        assert 'UST_BUILD_EXE' in flags._config and not flags.get_flag('UST_BUILD_EXE')
         assert 'UST_EXTENSION' in flags._config and flags.get_flag('UST_EXTENSION')
-        assert 'UST_SHELL_EXEC' in flags._config and flags.get_flag('UST_SHELL_EXEC')
 
 
 def test_flags_env_vars(flag_data_file, default_flag_data, monkeypatch):
@@ -121,21 +109,15 @@ def test_flags_env_vars(flag_data_file, default_flag_data, monkeypatch):
     with monkeypatch.context() as m:
         m.setattr(resource, 'get_resource', patch_flag_resource(None, default_file))
         m.setattr(resource, '_config', {}, False)
-        m.setenv('UST_BUILD_EXE', '1')
         m.setenv('UST_EXTENSION', '0')
-        m.setenv('UST_SHELL_EXEC', '0')
         flags._init_config()
-        assert 'UST_BUILD_EXE' in flags._config and flags.get_flag('UST_BUILD_EXE')
         assert 'UST_EXTENSION' in flags._config and not flags.get_flag('UST_EXTENSION')
-        assert 'UST_SHELL_EXEC' in flags._config and not flags.get_flag('UST_SHELL_EXEC')
 
 
 def test_flags_flags_and_envs(flag_data_file, default_flag_data, monkeypatch):
     """If flags file and env vars specified, ensure that flags take precedence"""
     flag_data = {
-        'UST_BUILD_EXE': '1',
         'UST_EXTENSION': '1',
-        'UST_SHELL_EXEC': '1',
     }
     flag_file = flag_data_file('flags.cfg', flag_data)
     default_file = flag_data_file('default_flags.cfg', default_flag_data)
@@ -143,10 +125,6 @@ def test_flags_flags_and_envs(flag_data_file, default_flag_data, monkeypatch):
     with monkeypatch.context() as m:
         m.setattr(resource, 'get_resource', patch_flag_resource(flag_file, default_file))
         m.setattr(resource, '_config', {}, False)
-        m.setenv('UST_BUILD_EXE', '1')
         m.setenv('UST_EXTENSION', '0')
-        m.setenv('UST_SHELL_EXEC', '0')
         flags._init_config()
-        assert 'UST_BUILD_EXE' in flags._config and flags.get_flag('UST_BUILD_EXE')
         assert 'UST_EXTENSION' in flags._config and flags.get_flag('UST_EXTENSION')
-        assert 'UST_SHELL_EXEC' in flags._config and flags.get_flag('UST_SHELL_EXEC')
