@@ -21,7 +21,7 @@ mkdir release
 
 cp dist\user-sync.exe release\
 cd release
-mv user-sync.exe "user-sync-${env:APPVEYOR_REPO_TAG_NAME}${env:BUILD_EDITION}-win64.exe"
+7z a "user-sync-${env:APPVEYOR_REPO_TAG_NAME}${env:BUILD_EDITION}-win64.zip" user-sync.exe
 cd ..
 7z a -ttar -r release\examples.tar examples
 7z a -tgzip release\examples.tar.gz release\examples.tar
