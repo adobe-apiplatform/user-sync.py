@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-PY_VER=$(2>&1 python -V | sed -e 's/Python /py/g' | sed -e 's/\.//g')
-echo ${PY_VER}
 cd dist
-mv user-sync "user-sync-${TRAVIS_TAG}${BUILD_EDITION}-${IMG}"
+tar czf "user-sync-${TRAVIS_TAG}${BUILD_EDITION}-${IMG}.tar.gz" user-sync
 cd ..
 mkdir -p release
 mv dist/* release/
