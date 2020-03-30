@@ -61,6 +61,17 @@ def test_revert_invalid(tmp_config_files):
     with pytest.raises(AssertionException):
         reverted_plaintext_cred = c.revert_key(key_list)
 
+
+def test_retrieve_revert_ldap(tmp_config_files):
+    (_, ldap_config_file, _) = tmp_config_files
+    ldap = LdapCredentialConfig(ldap_config_file)
+
+
+def test_retrieve_revert_umapi(tmp_config_files):
+    (_, umapi_config_file, _) = tmp_config_files
+    umapi = UmapiCredentialConfig(umapi_config_file)
+
+
 def test_set():
     identifier = 'TestId'
     value = 'TestValue'

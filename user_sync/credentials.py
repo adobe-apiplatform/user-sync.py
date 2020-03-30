@@ -191,7 +191,6 @@ class CredentialConfig:
             CredentialManager.set(k, value)
             self.set_nested_key(key_list, {'secure': k})
 
-
     def retrieve_key(self, key_list):
         """
         Retrieves the value (if any) for key_list, and updates the config if revert=True
@@ -240,15 +239,17 @@ class LdapCredentialConfig(CredentialConfig):
         self.save()
 
     def revert(self):
-        creds = {}
-        creds.update(self.revert_key(['password']))
-        self.save()
-        return creds
+        # creds = {}
+        # creds.update(self.revert_key(['password']))
+        # self.save()
+        # return creds
+        pass
 
-    def fetch(self):
-        creds = {}
-        creds.update(self.retrieve_key(['password']))
-        return creds
+    def retrieve(self):
+        # creds = {}
+        # creds.update(self.retrieve_key(['password']))
+        # return creds
+        pass
 
 
 class UmapiCredentialConfig(CredentialConfig):
@@ -266,13 +267,14 @@ class UmapiCredentialConfig(CredentialConfig):
     def revert(self):
         pass
 
-    def fetch(self):
-        creds = {}
-        creds.update(self.retrieve_key(['enterprise', 'org_id']))
-        creds.update(self.retrieve_key(['enterprise', 'api_key']))
-        creds.update(self.retrieve_key(['enterprise', 'client_secret']))
-        creds.update(self.retrieve_key(['enterprise', 'tech_acct']))
-        return creds
+    def retrieve(self):
+        # creds = {}
+        # creds.update(self.retrieve_key(['enterprise', 'org_id']))
+        # creds.update(self.retrieve_key(['enterprise', 'api_key']))
+        # creds.update(self.retrieve_key(['enterprise', 'client_secret']))
+        # creds.update(self.retrieve_key(['enterprise', 'tech_acct']))
+        # return creds
+        pass
 
 
 class OktaCredentialConfig(CredentialConfig):
@@ -287,11 +289,11 @@ class OktaCredentialConfig(CredentialConfig):
     def revert(self):
         pass
 
-    def fetch(self):
-        creds = {}
-        creds.update(self.retrieve_key(['api_token']))
-        return creds
-
+    def retrieve(self):
+        # creds = {}
+        # creds.update(self.retrieve_key(['api_token']))
+        # return creds
+        pass
 
 class ConsoleCredentialConfig(CredentialConfig):
     """
@@ -308,10 +310,11 @@ class ConsoleCredentialConfig(CredentialConfig):
     def revert(self):
         pass
 
-    def fetch(self):
-        creds = {}
-        creds.update(self.retrieve_key(['integration', 'org_id']))
-        creds.update(self.retrieve_key(['integration', 'api_key']))
-        creds.update(self.retrieve_key(['integration', 'client_secret']))
-        creds.update(self.retrieve_key(['integration', 'tech_acct']))
-        return creds
+    def retrieve(self):
+        # creds = {}
+        # creds.update(self.retrieve_key(['integration', 'org_id']))
+        # creds.update(self.retrieve_key(['integration', 'api_key']))
+        # creds.update(self.retrieve_key(['integration', 'client_secret']))
+        # creds.update(self.retrieve_key(['integration', 'tech_acct']))
+        # return creds
+        pass
