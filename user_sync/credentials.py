@@ -124,7 +124,7 @@ class CredentialConfig:
         # save file
         pass
 
-    def fetch(self):
+    def retrieve(self):
         # probably should return a dictionary for the config using CredentialManager.get()
         # Maybe looks like:
         # {
@@ -239,17 +239,15 @@ class LdapCredentialConfig(CredentialConfig):
         self.save()
 
     def revert(self):
-        # creds = {}
-        # creds.update(self.revert_key(['password']))
-        # self.save()
-        # return creds
-        pass
+        creds = {}
+        creds['password'] = self.revert_key(['password'])
+        self.save()
+        return creds
 
     def retrieve(self):
-        # creds = {}
-        # creds.update(self.retrieve_key(['password']))
-        # return creds
-        pass
+        creds = {}
+        creds['password'] = self.retrieve_key(['password'])
+        return creds
 
 
 class UmapiCredentialConfig(CredentialConfig):

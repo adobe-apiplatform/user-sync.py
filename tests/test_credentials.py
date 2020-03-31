@@ -65,6 +65,20 @@ def test_revert_invalid(tmp_config_files):
 def test_retrieve_revert_ldap(tmp_config_files):
     (_, ldap_config_file, _) = tmp_config_files
     ldap = LdapCredentialConfig(ldap_config_file)
+    assert not ldap.parse_secure_key(ldap.get_nested_key(['password']))
+    unsecured_key = ldap.get_nested_key(['password'])
+    ldap.store()
+    with open(ldap_config_file) as f:
+        data = yaml.load(f)
+        assert ldap.parse_secure_key(data['password'])
+    retrieved_key_dict = ldap.retrieve()
+    assert retrieved_key_dict['password'] == unsecured_key
+    reverted_creds_dict = ldap.revert()
+    assert reverted_creds_dict['password'] == unsecured_key
+    with open(ldap_config_file) as f:
+        data = yaml.load(f)
+        assert data['password'] == unsecured_key
+
 
 
 def test_retrieve_revert_umapi(tmp_config_files):
