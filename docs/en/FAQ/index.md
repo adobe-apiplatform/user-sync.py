@@ -130,7 +130,7 @@ User Sync has been run successfully on Python 3.x.  We started development with 
 User sync is an open source project.  Users can download and build the latest 
 sources at their discretion.  Adobe will post new releases with builds periodically.  
 Users can stay informed of them via git notifications.  When adopting a new release, 
-only the single pex file needs to be updated by the user.  If there are configuration 
+only the single executable file needs to be updated by the user.  If there are configuration 
 changes or command line changes to support new features, there may be updates in 
 those files to take advantage of them.
 
