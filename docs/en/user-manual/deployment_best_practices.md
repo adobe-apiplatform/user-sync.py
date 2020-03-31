@@ -75,7 +75,7 @@ detailed in the next two sections.
 
 ### Storing Credentials in OS Level Storage
 
-To setup User Sync to pull credentials from the Python Keyring OS credential store, set the connector-umapi.yml and connector-ldap.yml files as follows:
+To set up User Sync to pull credentials from the OS keyring (e.g. Windows Credential Manager), set the connector-umapi.yml and connector-ldap.yml files as follows:
 
 connector-umapi.yml
 
@@ -179,7 +179,7 @@ The following example shows how to set up a batch file `run_sync.bat` in
 Windows.
 
 ```sh
-python C:\\...\\user-sync.pex --users file users-file.csv --process-groups | findstr /I "WARNING ERROR CRITICAL ---- ==== Number" > temp.file.txt
+C:\\...\\user-sync.exe --users file users-file.csv --process-groups | findstr /I "WARNING ERROR CRITICAL ---- ==== Number" > temp.file.txt
 rem email the contents of temp.file.txt to the user sync administration
 sendmail -s “Adobe User Sync Report for today” UserSyncAdmins@example.com < temp.file.txt
 ```
