@@ -1,12 +1,12 @@
 ---
 layout: default
 lang: en
-nav_link: Install User Sync
+nav_link: Installation
 nav_level: 2
 nav_order: 270
 ---
 
-# Install User Sync
+# Installation
 
 [Previous Section](identify_server.md) \| [Back to Contents](index.md) \| [Next Section](setup_config_files.md)
 
