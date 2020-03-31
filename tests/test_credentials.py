@@ -62,7 +62,7 @@ def test_revert_invalid(tmp_config_files):
         reverted_plaintext_cred = c.revert_key(key_list)
 
 
-def test_retrieve_revert_ldap(tmp_config_files):
+def test_retrieve_revert_ldap_valid(tmp_config_files):
     (_, ldap_config_file, _) = tmp_config_files
     ldap = LdapCredentialConfig(ldap_config_file)
     assert not ldap.parse_secure_key(ldap.get_nested_key(['password']))
@@ -80,10 +80,34 @@ def test_retrieve_revert_ldap(tmp_config_files):
         assert data['password'] == unsecured_key
 
 
+def test_retrieve_revert_ldap_invalid(tmp_config_files):
+    (_, ldap_config_file, _) = tmp_config_files
+    ldap = LdapCredentialConfig(ldap_config_file)
+    assert not ldap.parse_secure_key(ldap.get_nested_key(['password']))
+    unsecured_key = ldap.get_nested_key(['password'])
+    # if store has not been previously called before retrieve and revert we can expect the following
+    retrieved_key_dict = ldap.retrieve()
+    assert retrieved_key_dict['password'] is None
+    with pytest.raises(AssertionException):
+        reverted_creds_dict = ldap.revert()
 
-def test_retrieve_revert_umapi(tmp_config_files):
-    (_, umapi_config_file, _) = tmp_config_files
+
+def test_retrieve_revert_umapi_valid(tmp_config_files):
+    (_, _, umapi_config_file) = tmp_config_files
     umapi = UmapiCredentialConfig(umapi_config_file)
+    assert not umapi.parse_secure_key(umapi.get_nested_key(['enterprise', 'org_id']))
+    unsecured_org_id = umapi.get_nested_key(['enterprise', 'org_id'])
+    umapi.store()
+    with open(umapi_config_file) as f:
+        data = yaml.load(f)
+        assert umapi.parse_secure_key(data['enterprise']['org_id'])
+    retrieved_key_dict = umapi.retrieve()
+    assert retrieved_key_dict['enterprise']['org_id'] == unsecured_org_id
+    reverted_creds_dict = umapi.revert()
+    assert reverted_creds_dict['enterprise']['org_id'] == unsecured_org_id
+    with open(umapi_config_file) as f:
+        data = yaml.load(f)
+        assert data['enterprise']['org_id'] == unsecured_org_id
 
 
 def test_set():
