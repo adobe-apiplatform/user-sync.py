@@ -19,9 +19,9 @@ nav_order: 80
 
 [Previous Section](deployment_best_practices.md)
 
----
 <br/>
 
+---
 ## Certificate Generation
 
 ```
