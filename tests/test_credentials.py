@@ -73,8 +73,7 @@ def test_retrieve_revert_ldap_valid(tmp_config_files):
         assert ldap.parse_secure_key(data['password'])
     retrieved_key_dict = ldap.retrieve()
     assert retrieved_key_dict['password'] == unsecured_key
-    reverted_creds_dict = ldap.revert()
-    assert reverted_creds_dict['password'] == unsecured_key
+    ldap.revert()
     with open(ldap_config_file) as f:
         data = yaml.load(f)
         assert data['password'] == unsecured_key
@@ -104,8 +103,7 @@ def test_retrieve_revert_umapi_valid(tmp_config_files):
         assert umapi.parse_secure_key(data['enterprise']['org_id'])
     retrieved_key_dict = umapi.retrieve()
     assert retrieved_key_dict['enterprise']['org_id'] == unsecured_org_id
-    reverted_creds_dict = umapi.revert()
-    assert reverted_creds_dict['enterprise']['org_id'] == unsecured_org_id
+    umapi.revert()
     with open(umapi_config_file) as f:
         data = yaml.load(f)
         assert data['enterprise']['org_id'] == unsecured_org_id

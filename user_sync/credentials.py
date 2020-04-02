@@ -238,10 +238,8 @@ class LdapCredentialConfig(CredentialConfig):
         self.save()
 
     def revert(self):
-        creds = {}
-        creds['password'] = self.revert_key(['password'])
+        self.revert_key(['password'])
         self.save()
-        return creds
 
     def retrieve(self):
         creds = {}
@@ -262,15 +260,11 @@ class UmapiCredentialConfig(CredentialConfig):
         self.save()
 
     def revert(self):
-        creds = {}
-        creds['enterprise'] = {
-            'org_id': self.revert_key(['enterprise', 'org_id']),
-            'api_key': self.revert_key(['enterprise', 'api_key']),
-            'client_secret': self.revert_key(['enterprise', 'client_secret']),
-            'tech_acct': self.revert_key(['enterprise', 'tech_acct'])
-        }
+        self.revert_key(['enterprise', 'org_id'])
+        self.revert_key(['enterprise', 'api_key'])
+        self.revert_key(['enterprise', 'client_secret'])
+        self.revert_key(['enterprise', 'tech_acct'])
         self.save()
-        return creds
 
     def retrieve(self):
         creds = {}
@@ -293,10 +287,8 @@ class OktaCredentialConfig(CredentialConfig):
         self.save()
 
     def revert(self):
-        creds = {}
-        creds['api_token'] = self.revert_key(['api_token'])
+        self.revert_key(['api_token'])
         self.save()
-        return creds
 
     def retrieve(self):
         creds = {}
@@ -317,15 +309,11 @@ class ConsoleCredentialConfig(CredentialConfig):
         self.save()
 
     def revert(self):
-        creds = {}
-        creds['integration'] = {
-            'org_id': self.revert_key(['integration', 'org_id']),
-            'api_key': self.revert_key(['integration', 'api_key']),
-            'client_secret': self.revert_key(['integration', 'client_secret']),
-            'tech_acct': self.revert_key(['integration', 'tech_acct'])
-        }
+        self.revert_key(['integration', 'org_id'])
+        self.revert_key(['integration', 'api_key'])
+        self.revert_key(['integration', 'client_secret'])
+        self.revert_key(['integration', 'tech_acct'])
         self.save()
-        return creds
 
     def retrieve(self):
         creds = {}
