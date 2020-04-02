@@ -45,6 +45,7 @@ setup(name='user-sync',
       packages=find_packages(),
       install_requires=[
           'keyring',
+          'keyrings.cryptfile',
           'okta==0.0.3.1',
           'psutil',
           'pycryptodome==3.7.3',
@@ -54,6 +55,7 @@ setup(name='user-sync',
           'umapi-client>=2.12',
           'click',
           'click-default-group',
+          'configparser==3.7.4'
       ],
       extras_require={
           ':sys_platform=="linux" or sys_platform=="linux2"': [
@@ -61,7 +63,8 @@ setup(name='user-sync',
               'dbus-python',
           ],
           ':sys_platform=="win32"': [
-              'pywin32-ctypes'
+              'pywin32-ctypes',
+              'pywin32'
           ],
           'test': test_deps,
           'setup': setup_deps,

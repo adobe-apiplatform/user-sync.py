@@ -6,7 +6,7 @@ nav_level: 2
 nav_order: 280
 ---
 
-# Setup Configuration Files
+# Set Up Configuration Files
 
 
 [Previous Section](install_sync.md) \| [Back to Contents](index.md) \| [Next Section](test_run.md)
@@ -28,7 +28,7 @@ Be sure to use spaces, not tabs in .yml files.
 
 ## Let’s Setup the Configuration Files
 
-In previous steps, you set up a file system directory for the user sync tool Python code and configuration files.  There are three configuration files to set up now.  One is for accessing the directory system, one is for accessing your Adobe organization, and one defines the group mapping and configures other User Sync features. 
+In previous steps, you set up a file system directory for the User Sync Tool and configuration files.  There are three configuration files to set up now.  One is for accessing the directory system, one is for accessing your Adobe organization, and one defines the group mapping and configures other User Sync features. 
 
 ### Directory Access Configuration File
 

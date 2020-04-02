@@ -4,4 +4,4 @@ pip install -e .
 pip install -e .[test]
 pip install -e .[setup]
 pip uninstall -y enum34
-make
+make $BUILD_TARGET
