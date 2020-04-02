@@ -41,3 +41,15 @@ def private_key(fixture_dir, tmpdir):
 def public_cert(fixture_dir, tmpdir):
     shutil.copy(os.path.join(fixture_dir, 'test_cert.crt'), tmpdir.dirname)
     return os.path.join(tmpdir.dirname, 'test_cert.crt')
+
+@pytest.fixture
+def resource_file():
+    """
+    Create an empty resource file
+    :return:
+    """
+    def _resource_file(dirname, filename):
+        filepath = os.path.join(dirname, filename)
+        open(filepath, 'a').close()
+        return filepath
+    return _resource_file
