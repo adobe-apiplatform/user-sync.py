@@ -49,6 +49,7 @@ class RuleProcessor(object):
         'exclude_strays': False,
         'exclude_users': [],
         'extended_attributes': None,
+        'extension_enabled': False,
         'process_groups': False,
         'max_adobe_only_users': 200,
         'new_account_type': user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,

@@ -122,87 +122,34 @@ It is a best practice to note in the description field of the Product Configurat
 
 ### System requirements
 
-The User Sync tool is implemented using Python, and requires
-Python version 2.7.9 or higher. For each environment in which you
-intend to install, configure and run the script, you must make
-sure that Python has been installed on the operating system
-before moving to the next step. For more information, see the
-[Python web site](https://www.python.org/).
+The User Sync Tool is self-contained and does not require any external tools.
 
-The tool is built using a Python LDAP package, `pyldap`, which in
-turn is built on the OpenLDAP client library. Windows Server,
-Apple OSX and many flavors of Linux have an OpenLDAP client
-installed out of the box.  However, some UNIX operating systems,
-such as OpenBSD and FreeBSD do not have this included in the base
-installation.
+We recommend running a pre-built binary, which can be obtained on the 
+[latest release](https://github.com/adobe-apiplatform/user-sync.py/releases/latest) page.
 
-Check your environment to be sure that an OpenLDAP client is
-installed before running the script. If it is not present in your
-system, you must install it before you install the User Sync
-tool.
+The User Sync Tool does not have any specific system requirements, but we do recommend
+running on a server or VM with at least 4GB of avaiable RAM.
 
 ### Installation
 
-The User Sync Tool is available from the
-[User Sync repository on GitHub](https://github.com/adobe-apiplatform/user-sync.py). To
-install the tool:
-
-1. Create a folder on your server where you will install the 
-User Sync tool and place the configuration files.
-
-1. Click the **Releases** link to locate the latest release,
-which contains the release notes, sample
-configuration files, and all the built versions (as well as
-source archives).
-
-2. Select and download the compressed package for your platform
-(the `.tar.gz` file). Builds for Windows, OSX, Centos, and Ubuntu are
-available. (If you are building from source, you can download the
-Source Code package that corresponds to the release, or use the
-latest source off the master branch.)  Python 3 builds are also
-available for later releases of User Sync.
-
-3. Locate the Python executable file (`user-sync` or
-`user-sync.pex` for Windows) and place it in your User Sync
-folder.
-
-4. Download the `example-configurations.tar.gz` archive of sample configuration
-files.  Within the archive, there is a folder for “config files –
-basic”.  The first 3 files in this folder are required. Other
-files in the package are optional and/or alternate versions for
-specific purposes. You can copy these to your root folder, then
-rename and edit them to make your own configuration files. (See
-the following section,
-[Configuring the User Sync Tool](configuring_user_sync_tool.md#configuring-the-user-sync-tool).)
-
-5. **In Windows only:**
-
-    Before running the user-sync.pex executable in Windows, you might
-need to work around a Windows-only Python execution issue:
-
-    The Windows operating system enforces a file path length limit of
-260 characters. When executing a Python PEX file, it creates a
-temporary location to extract the contents of the package. If the
-path to that location exceeds 260 characters, the script will not
-execute properly.
-
-    By default, the temporary cache is in your home folder, which may
-cause pathnames to exceed the limit. To work around this issue,
-create an environment variable in Windows called PEX\_ROOT, a set
-the path to C:\\pex. The OS uses this variable for
-the cache location, which prevents the path from exceeding the
-260 character limit.
-
-    This step may not be necessary if:
-
-    - You are running Windows 10
-    - You are running Python 3.6 or later, 64 bit version (also called X86-64, for AMD64), and
-    - You have enabled the long pathname support in Windows 10 as described in the Maximum Path Length Limitation section of this [Microsoft Dev Note](https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx?#maxpath). You can also enable long pathname support by pressing the button in the Python Windows executable installer (in the final dialog box, when installation finishes) that performs this action.
-
-    If these conditions are met, you can run without setting PEX\_ROOT.
-
-6. To run the User Sync tool, run the Python executable file,
-`user-sync` (or execute `python user-sync.pex` on Windows).
+1. Create a directory where the sync tool will run
+    * Windows example: `C:\adobe_user_sync`
+    * Linux example: `~/adobe_user_sync`
+2. Get the [latest release](https://github.com/adobe-apiplatform/user-sync.py/releases/latest)
+    * Binary downloads are found in the "Assets" box immediately below the release notes
+    * Be sure to select the correct release for your platform - the naming convention is `user-sync-[VERSION][EDITION]-[PLATFORM]`.
+      Windows releases are packaged in `.zip` format and Linux releases are packaged in `.tar.gz` format.
+    * **NOTE:** Releases tagged with the `-noext` edition tag ship with [extension support](../user-manual/advanced_configuration.html#custom-attributes-and-mappings)
+      disabled. Do not install this variant unless that restriction is desired.
+3. Extract the UST archive to the directory created in step 1.
+    * Windows filename: `user-sync.exe`
+    * Linux filename: `user-sync`
+4. Generate the example configuration files
+    * From the command line, run the command `./user-sync example-config` in the sync tool directory created in step 1
+    * The tool will prompt you to specify the filename of each file. Press Enter for each to accept the default filenames.
+    * For additional example configuration files and CSV templates, download `examples.zip` or `examples.tar.gz` from the
+      release asset list (see step 2)
+5. Make sure the UST runs in your environment by running `./user-sync --help` or `./user-sync --version`
 
 ### Security Considerations
 
