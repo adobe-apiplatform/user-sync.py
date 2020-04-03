@@ -1,5 +1,4 @@
 import logging
-import os
 from collections import Mapping
 
 import keyrings.cryptfile.cryptfile
@@ -95,6 +94,7 @@ class CredentialManager:
 
         print()
 
+
 class CredentialConfig:
     """
     Each method (store, revert, fetch) should be written in a subclass of this class.  This will help keep
@@ -108,7 +108,6 @@ class CredentialConfig:
 
         # The dictionary including comments that will be updated and re-saved
         self.load()
-
 
     def store(self):
         # Store will explicitly save all targeted keys
@@ -272,14 +271,13 @@ class UmapiCredentialConfig(CredentialConfig):
         self.save()
         return creds
 
-
     def retrieve(self):
         creds = {}
         creds['enterprise'] = {
-        'org_id': self.retrieve_key(['enterprise', 'org_id']),
-        'api_key': self.retrieve_key(['enterprise', 'api_key']),
-        'client_secret': self.retrieve_key(['enterprise', 'client_secret']),
-        'tech_acct': self.retrieve_key(['enterprise', 'tech_acct'])
+            'org_id': self.retrieve_key(['enterprise', 'org_id']),
+            'api_key': self.retrieve_key(['enterprise', 'api_key']),
+            'client_secret': self.retrieve_key(['enterprise', 'client_secret']),
+            'tech_acct': self.retrieve_key(['enterprise', 'tech_acct'])
         }
         return creds
 
