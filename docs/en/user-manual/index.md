@@ -42,11 +42,9 @@ directory to match your directory.
 
 ## Prerequisites
 
-You run User Sync on the command line or from a script, from a
-server that your enterprise operates, which must have Python
-2.7.9 or higher installed. The server must have an internet
-connection, and be able to access Adobe's User Management system
-and your own enterprise directory system.
+The User Sync Tool is a command-line application. Run it in a shell
+terminal or in a shell script. It is self contained and does not require
+any additional tools to be installed to the system.
 
 The User Sync tool is a client of the User Management API
 (UMAPI). In order to use it, you must first register it as an API

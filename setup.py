@@ -32,8 +32,6 @@ setup(name='user-sync',
       description='Application for synchronizing customer directories with the Adobe Enterprise Admin Console',
       classifiers=[
           'Development Status :: 5 - Production/Stable',
-          'Programming Language :: Python :: 2.7',
-          'Programming Language :: Python :: 3.4',
           'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
           'License :: OSI Approved :: MIT License',
@@ -58,17 +56,16 @@ setup(name='user-sync',
           'umapi-client>=2.12',
           'click',
           'click-default-group',
+          'configparser==3.7.4'
       ],
       extras_require={
-          ':python_version<"3"':[
-              'zipp==1.1.0',
-          ],
           ':sys_platform=="linux" or sys_platform=="linux2"': [
               'secretstorage',
               'dbus-python',
           ],
           ':sys_platform=="win32"': [
-              'pywin32-ctypes'
+              'pywin32-ctypes',
+              'pywin32'
           ],
           'test': test_deps,
           'setup': setup_deps,
