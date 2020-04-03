@@ -364,12 +364,24 @@ class RuleProcessor(object):
         directory_users = directory_connector_manager.load_users_and_groups(groups=directory_groups,
                                                                     extended_attributes=extended_attributes,
                                                                     all_users=directory_group_filter is None)
+        users_email_list = []
+        users_name_list = []
 
         for directory_user in directory_users:
             user_key = self.get_directory_user_key(directory_user)
             if not user_key:
                 self.logger.warning("Ignoring directory user with empty user key: %s", directory_user)
                 continue
+
+            if users_email_list.__contains__(directory_user['email']):
+                self.logger.warning("We cannot add this user as the user with same email address is already exist  %s", directory_user['email'])
+                continue
+            elif users_name_list.__contains__(directory_user['username']):
+                self.logger.warning("We cannot add this user as the user with same username is already exist  %s",
+                                    directory_user['username'])
+                continue
+            users_email_list.append(directory_user['email'])
+            users_name_list.append(directory_user['username'])
             directory_user_by_user_key[user_key] = directory_user
 
             if not self.is_directory_user_in_groups(directory_user, directory_group_filter):
@@ -438,6 +450,8 @@ class RuleProcessor(object):
                     umapi_info.add_desired_group_for(user_key, rename_group)
 
         self.logger.debug('Total directory users after filtering: %d', len(filtered_directory_user_by_user_key))
+        users_name_list.clear()
+        users_email_list.clear()
         if self.logger.isEnabledFor(logging.DEBUG):
             self.logger.debug('Group work list: %s', dict([(umapi_name, umapi_info.get_desired_groups_by_user_key())
                                                            for umapi_name, umapi_info
