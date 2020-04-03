@@ -102,9 +102,9 @@ A table. Include the borderstyle underneath for formatting
 
 An image from URL:<br/>
 ![img](http://signpost.mywebermedia.com/wp-content/uploads/sites/2/2019/08/2000px-Adobe_Systems_logo_and_wordmark.svg_.png)
-A locally referenced image:<br/>
 
-![img](images/setup_adobe_io_data.png)
+A locally referenced image:<br/>
+![img](en/success-guide/images/setup_adobe_io_data.png)
 
 A resized image:<br/>
 <img height=50 src="http://signpost.mywebermedia.com/wp-content/uploads/sites/2/2019/08/2000px-Adobe_Systems_logo_and_wordmark.svg_.png"/>
