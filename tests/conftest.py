@@ -43,6 +43,9 @@ def ldap_config_file(fixture_dir):
 def umapi_config_file(fixture_dir):
     return os.path.join(fixture_dir, 'connector-umapi.yml')
 
+@pytest.fixture
+def extension_config_file(fixture_dir):
+    return os.path.join(fixture_dir, 'extension-config.yml')
 
 @pytest.fixture
 def tmp_config_files(root_config_file, ldap_config_file, umapi_config_file, tmpdir):
@@ -54,3 +57,16 @@ def tmp_config_files(root_config_file, ldap_config_file, umapi_config_file, tmpd
         tmpfiles.append(tmpfile)
     return tuple(tmpfiles)
 
+
+
+@pytest.fixture
+def resource_file():
+    """
+    Create an empty resource file
+    :return:
+    """
+    def _resource_file(dirname, filename):
+        filepath = os.path.join(dirname, filename)
+        open(filepath, 'a').close()
+        return filepath
+    return _resource_file
