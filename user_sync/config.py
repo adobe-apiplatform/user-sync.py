@@ -22,7 +22,6 @@ import codecs
 import logging
 import os
 import re
-import subprocess
 from copy import deepcopy
 
 import six
@@ -34,6 +33,7 @@ import user_sync.port
 import user_sync.rules
 from user_sync import flags
 from user_sync.error import AssertionException
+from user_sync.post_sync.connectors import _CONNECTOR_CLASSES
 
 
 class ConfigLoader(object):
@@ -399,11 +399,22 @@ class ConfigLoader(object):
 
         connectors = ps_opts.get_dict('connectors')
         module_list = ps_opts.get_list('modules')
+        allowed_modules = list(_CONNECTOR_CLASSES.keys())
+        post_sync_modules = {}
 
         try:
-            post_sync_modules = {m: self.get_dict_from_sources([connectors[m]]) for m in module_list}
+            for m in module_list:
+                if m in post_sync_modules:
+                    raise AssertionException("Duplicate module specified: " + m)
+                elif m not in allowed_modules:
+                    raise AssertionException(
+                        'Unknown post-sync module: {0} - available are: {1}'.format(m, allowed_modules))
+                post_sync_modules[m] = self.get_dict_from_sources([connectors.pop(m)])
         except KeyError as e:
             raise AssertionException("Error! Post-sync module " + str(e) + " specified without a configuration file...")
+
+        if connectors:
+            self.logger.warning("Unused post-sync configuration file: " + str(connectors))
 
         return {
             'modules': post_sync_modules,
