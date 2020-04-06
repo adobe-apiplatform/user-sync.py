@@ -65,10 +65,18 @@ class CredentialManager:
             v.store()
 
     def retrieve(self):
-        pass
+        creds = {}
+        for k, v in self.config_files.items():
+            self.logger.info("Analyzing: " + k)
+            creds.update(v.retrieve())
+        return creds
 
     def revert(self):
-        pass
+        creds = {}
+        for k, v in self.config_files.items():
+            self.logger.info("Analyzing: " + k)
+            creds.update(v.revert())
+        return creds
 
     def load_configs(self):
         """

@@ -2,6 +2,8 @@ import uuid
 
 import pytest
 
+import os
+
 from user_sync.credentials import *
 from user_sync.error import AssertionException
 
@@ -107,6 +109,45 @@ def test_retrieve_revert_umapi_valid(tmp_config_files):
     with open(umapi_config_file) as f:
         data = yaml.load(f)
         assert data['enterprise']['org_id'] == unsecured_org_id
+
+
+def test_credman_retrieve_revert_valid(tmp_config_files):
+    (root_config_file, ldap_config_file, umapi_config_file) = tmp_config_files
+    credman = CredentialManager(root_config_file)
+    with open(ldap_config_file) as f:
+        data = yaml.load(f)
+        plaintext_ldap_password = data['password']
+    with open(umapi_config_file) as f:
+        data = yaml.load(f)
+        plaintext_umapi_org_id = data['enterprise']['org_id']
+    credman.store()
+    retrieved_creds = credman.retrieve()
+    assert retrieved_creds['password'] == plaintext_ldap_password
+    assert retrieved_creds['enterprise']['org_id'] == plaintext_umapi_org_id
+    # make sure the config files are still in secure format
+    with open(ldap_config_file) as f:
+        data = yaml.load(f)
+        assert data['password'] != plaintext_ldap_password
+    with open(umapi_config_file) as f:
+        data = yaml.load(f)
+        assert data['enterprise']['org_id'] != plaintext_umapi_org_id
+    credman.revert()
+    with open(ldap_config_file) as f:
+        data = yaml.load(f)
+        assert data['password'] == plaintext_ldap_password
+    with open(umapi_config_file) as f:
+        data = yaml.load(f)
+        assert data['enterprise']['org_id'] == plaintext_umapi_org_id
+
+
+def test_credman_retrieve_revert_invalid(tmp_config_files):
+    (root_config_file, ldap_config_file, umapi_config_file) = tmp_config_files
+    credman = CredentialManager(root_config_file)
+    # if credman.store() has not been called first then we can expect the following
+    retrieved_creds = credman.retrieve()
+    assert retrieved_creds['password'] is None
+    with pytest.raises(AssertionException):
+        credman.revert()
 
 
 def test_set():
