@@ -409,8 +409,9 @@ def retrieve(config_filename):
     try:
         credential_manager = CredentialManager(config_filename)
         retrieved_creds = credential_manager.retrieve()
-        if not retrieved_creds:
-            click.echo("No credentials stored with user name 'user_sync'.")
+        # right now, if store hasn't been called the retrieved_creds dict will still fill up with the expected
+        # keys, but their value will be None. So we can't check for proper storage by checking if the whole dict
+        # is None. we'd need to loop over and check for individual values that are None, or something.
         for key_value in retrieved_creds.items():
             click.echo("The following values were stored securely: '{0}'".format(key_value))
     except AssertionException as e:
@@ -433,9 +434,8 @@ def revert(config_filename):
     """
     try:
         credential_manager = CredentialManager(config_filename)
-        creds = credential_manager.revert()
-        click.echo('reverting...')
-        for identifier in creds:
+        reverted_creds = credential_manager.revert()
+        for identifier in reverted_creds:
             click.echo(
                 "Config files were restored to original unsecured state with the following plain text values "
                 "for:'{0}'".format(identifier))
