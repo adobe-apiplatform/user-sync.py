@@ -409,11 +409,9 @@ def retrieve(config_filename):
     try:
         credential_manager = CredentialManager(config_filename)
         retrieved_creds = credential_manager.retrieve()
-        # right now, if store hasn't been called the retrieved_creds dict will still fill up with the expected
-        # keys, but their value will be None. So we can't check for proper storage by checking if the whole dict
-        # is None. we'd need to loop over and check for individual values that are None, or something.
-        for key_value in retrieved_creds.items():
-            click.echo("The following values were stored securely: '{0}'".format(key_value))
+        for k,v in retrieved_creds.items():
+            if k[v] is not None:
+                click.echo("The following values were stored securely: '{0}'".format(k))
     except AssertionException as e:
         click.echo(str(e))
 
