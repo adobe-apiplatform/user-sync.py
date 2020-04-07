@@ -2,6 +2,8 @@ import uuid
 
 import pytest
 
+import os
+
 from user_sync.credentials import *
 from user_sync.error import AssertionException
 
@@ -60,6 +62,93 @@ def test_revert_invalid(tmp_config_files):
     # assume store_key has not been called
     with pytest.raises(AssertionException):
         reverted_plaintext_cred = c.revert_key(key_list)
+
+
+def test_retrieve_revert_ldap_valid(tmp_config_files):
+    (_, ldap_config_file, _) = tmp_config_files
+    ldap = LdapCredentialConfig(ldap_config_file)
+    assert not ldap.parse_secure_key(ldap.get_nested_key(['password']))
+    unsecured_key = ldap.get_nested_key(['password'])
+    ldap.store()
+    with open(ldap_config_file) as f:
+        data = yaml.load(f)
+        assert ldap.parse_secure_key(data['password'])
+    retrieved_key_dict = ldap.retrieve()
+    assert retrieved_key_dict['password'] == unsecured_key
+    ldap.revert()
+    with open(ldap_config_file) as f:
+        data = yaml.load(f)
+        assert data['password'] == unsecured_key
+
+
+def test_retrieve_revert_ldap_invalid(tmp_config_files):
+    (_, ldap_config_file, _) = tmp_config_files
+    ldap = LdapCredentialConfig(ldap_config_file)
+    assert not ldap.parse_secure_key(ldap.get_nested_key(['password']))
+    unsecured_key = ldap.get_nested_key(['password'])
+    # if store has not been previously called before retrieve and revert we can expect the following
+    retrieved_key_dict = ldap.retrieve()
+    assert retrieved_key_dict['password'] is None
+    with pytest.raises(AssertionException):
+        reverted_creds_dict = ldap.revert()
+
+
+def test_retrieve_revert_umapi_valid(tmp_config_files):
+    (_, _, umapi_config_file) = tmp_config_files
+    umapi = UmapiCredentialConfig(umapi_config_file)
+    # Using the org_id for assertions. The rest can be added in later if deemed necessary
+    assert not umapi.parse_secure_key(umapi.get_nested_key(['enterprise', 'org_id']))
+    unsecured_org_id = umapi.get_nested_key(['enterprise', 'org_id'])
+    umapi.store()
+    with open(umapi_config_file) as f:
+        data = yaml.load(f)
+        assert umapi.parse_secure_key(data['enterprise']['org_id'])
+    retrieved_key_dict = umapi.retrieve()
+    assert retrieved_key_dict['enterprise']['org_id'] == unsecured_org_id
+    umapi.revert()
+    with open(umapi_config_file) as f:
+        data = yaml.load(f)
+        assert data['enterprise']['org_id'] == unsecured_org_id
+
+
+def test_credman_retrieve_revert_valid(tmp_config_files):
+    (root_config_file, ldap_config_file, umapi_config_file) = tmp_config_files
+    credman = CredentialManager(root_config_file)
+    with open(ldap_config_file) as f:
+        data = yaml.load(f)
+        plaintext_ldap_password = data['password']
+    with open(umapi_config_file) as f:
+        data = yaml.load(f)
+        plaintext_umapi_org_id = data['enterprise']['org_id']
+    credman.store()
+    retrieved_creds = credman.retrieve()
+    assert retrieved_creds['password'] == plaintext_ldap_password
+    assert retrieved_creds['enterprise']['org_id'] == plaintext_umapi_org_id
+    # make sure the config files are still in secure format
+    with open(ldap_config_file) as f:
+        data = yaml.load(f)
+        assert data['password'] != plaintext_ldap_password
+    with open(umapi_config_file) as f:
+        data = yaml.load(f)
+        assert data['enterprise']['org_id'] != plaintext_umapi_org_id
+    credman.revert()
+    with open(ldap_config_file) as f:
+        data = yaml.load(f)
+        assert data['password'] == plaintext_ldap_password
+    with open(umapi_config_file) as f:
+        data = yaml.load(f)
+        assert data['enterprise']['org_id'] == plaintext_umapi_org_id
+
+
+def test_credman_retrieve_revert_invalid(tmp_config_files):
+    (root_config_file, ldap_config_file, umapi_config_file) = tmp_config_files
+    credman = CredentialManager(root_config_file)
+    # if credman.store() has not been called first then we can expect the following
+    retrieved_creds = credman.retrieve()
+    assert retrieved_creds['password'] is None
+    with pytest.raises(AssertionException):
+        credman.revert()
+
 
 def test_set():
     identifier = 'TestId'

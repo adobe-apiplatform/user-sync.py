@@ -409,10 +409,9 @@ def retrieve(config_filename):
     try:
         credential_manager = CredentialManager(config_filename)
         retrieved_creds = credential_manager.retrieve()
-        if not retrieved_creds:
-            click.echo("No credentials stored with user name 'user_sync'.")
-        for key_value in retrieved_creds.items():
-            click.echo("The following values were stored securely: '{0}'".format(key_value))
+        for k,v in retrieved_creds.items():
+            if k[v] is not None:
+                click.echo("The following values were stored securely: '{0}'".format(k))
     except AssertionException as e:
         click.echo(str(e))
 
@@ -433,9 +432,8 @@ def revert(config_filename):
     """
     try:
         credential_manager = CredentialManager(config_filename)
-        creds = credential_manager.revert()
-        click.echo('reverting...')
-        for identifier in creds:
+        reverted_creds = credential_manager.revert()
+        for identifier in reverted_creds:
             click.echo(
                 "Config files were restored to original unsecured state with the following plain text values "
                 "for:'{0}'".format(identifier))
