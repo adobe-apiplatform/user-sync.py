@@ -245,7 +245,7 @@ def init_log(logging_config):
         if self.show_progress:
             count = int(count)
             total = int(total)
-            message = "{0}/{1} ({2}%) - {3}".format(count, total, round(100*count/total,1), message)
+            message = "{0}/{1} ({2}%) {3}".format(count, total, round(100*count/total,1), message)
         if message:
             self._log(logging.INFO, message, args, **kws)
     logging.Logger.progress = progress
@@ -267,7 +267,7 @@ def init_log(logging_config):
         'critical': logging.CRITICAL
     }
 
-    logging.Logger.show_progress = options['log_progress']
+    logging.Logger.show_progress = bool(options['log_progress'])
     console_log_level = level_lookup.get(options['console_log_level'])
     if console_log_level is None:
         console_log_level = logging.INFO
