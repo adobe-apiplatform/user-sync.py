@@ -240,12 +240,23 @@ def init_log(logging_config):
     """
     :type logging_config: user_sync.config.DictConfig
     """
+
+    def progress(self, count, total, message="", *args, **kws):
+        if self.show_progress:
+            count = int(count)
+            total = int(total)
+            message = "{0}/{1} ({2}%) - {3}".format(count, total, round(100*count/total,1), message)
+        if message:
+            self._log(logging.INFO, message, args, **kws)
+    logging.Logger.progress = progress
+
     builder = user_sync.config.OptionsBuilder(logging_config)
     builder.set_bool_value('log_to_file', False)
     builder.set_string_value('file_log_directory', 'logs')
     builder.set_string_value('file_log_name_format', '{:%Y-%m-%d}.log')
     builder.set_string_value('file_log_level', 'info')
     builder.set_string_value('console_log_level', 'info')
+    builder.set_bool_value('log_progress', True)
     options = builder.get_options()
 
     level_lookup = {
@@ -256,6 +267,7 @@ def init_log(logging_config):
         'critical': logging.CRITICAL
     }
 
+    logging.Logger.show_progress = options['log_progress']
     console_log_level = level_lookup.get(options['console_log_level'])
     if console_log_level is None:
         console_log_level = logging.INFO

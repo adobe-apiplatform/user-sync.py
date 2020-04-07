@@ -480,12 +480,17 @@ class RuleProcessor(object):
             primary_adds_by_user_key = umapi_info.get_desired_groups_by_user_key()
         else:
             primary_adds_by_user_key = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
+
+        total_users = len(primary_adds_by_user_key)
+
+        user_count = 0
         for user_key, groups_to_add in six.iteritems(primary_adds_by_user_key):
+            user_count += 1
             if exclude_unmapped_users and not groups_to_add:
                 # If user is not part of any group and ignore outcast is enabled. Do not create user.
                 continue
             # We always create every user in the primary umapi, because it's believed to own the directories.
-            self.logger.info('Creating user with user key: %s', user_key)
+            self.logger.progress(user_count, total_users, 'Creating user with user key: ' + user_key)
             self.primary_users_created.add(user_key)
             self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector)
 
@@ -499,10 +504,12 @@ class RuleProcessor(object):
                 secondary_adds_by_user_key = umapi_info.get_desired_groups_by_user_key()
             else:
                 secondary_adds_by_user_key = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
+            total_users = len(secondary_adds_by_user_key)
             for user_key, groups_to_add in six.iteritems(secondary_adds_by_user_key):
                 # We only create users who have group mappings in the secondary umapi
                 if groups_to_add:
-                    self.logger.info('Adding user to umapi %s with user key: %s', umapi_name, user_key)
+                    self.logger.progress(user_count, total_users,
+                                         'Adding user to umapi {0} with user key: {1}'.format(umapi_name, user_key))
                     self.secondary_users_created.add(user_key)
                     if user_key not in self.primary_users_created:
                         # We pushed an existing user to a secondary in order to update his groups

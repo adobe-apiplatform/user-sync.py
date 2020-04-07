@@ -21,6 +21,7 @@
 import json
 import logging
 # import helper
+import math
 
 import jwt
 import six
@@ -111,15 +112,17 @@ class UmapiConnector(object):
     def iter_users(self, in_group=None):
         users = {}
         try:
-            if in_group:
-                u_query = umapi_client.UsersQuery(self.connection, in_group=in_group)
-            else:
-                u_query = umapi_client.UsersQuery(self.connection)
-            for u in u_query:
+            u_query = umapi_client.UsersQuery(self.connection, in_group=in_group)
+            for i, u in enumerate(u_query):
                 email = u['email']
                 if not (email in users):
                     users[email] = u
                     yield u
+
+                if ((i + 1) % u_query._page_size == 0):
+                    self.logger.progress(len(users), u_query._total_count)
+            self.logger.progress(u_query._total_count, u_query._total_count)
+
         except umapi_client.UnavailableError as e:
             raise AssertionException("Error contacting UMAPI server: %s" % e)
 
