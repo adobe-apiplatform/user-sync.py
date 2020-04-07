@@ -370,6 +370,10 @@ class RuleProcessor(object):
             if not user_key:
                 self.logger.warning("Ignoring directory user with empty user key: %s", directory_user)
                 continue
+            elif user_key in directory_user_by_user_key:
+                self.logger.warning("Warning: duplicate user, skipping entry and keeping original: {0}".format(user_key))
+                continue
+
             directory_user_by_user_key[user_key] = directory_user
 
             if not self.is_directory_user_in_groups(directory_user, directory_group_filter):

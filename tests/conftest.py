@@ -4,7 +4,7 @@ import shutil
 import pytest
 import yaml
 
-from tests.util import make_dict, merge_dict
+from util import make_dict, merge_dict
 from user_sync import config
 
 
