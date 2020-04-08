@@ -382,7 +382,7 @@ def credentials():
               default="user-sync-config.yml",
               metavar='path-to-file')
 @click.option('--typ',
-              help=" ldap, umapi, okta, console ",
+              help=" Specify all, ldap, umapi, okta, console. ",
               type=str,
               nargs=1,
               default="all",
@@ -408,12 +408,22 @@ def store(config_filename, typ):
               nargs=1,
               default="user-sync-config.yml",
               metavar='path-to-file')
-def retrieve(config_filename):
+@click.option('--typ',
+              help=" Specify all, ldap, umapi, okta, console. ",
+              type=str,
+              nargs=1,
+              default="all",
+              metavar='all|ldap|umapi|okta|console')
+def revert(config_filename, typ):
+    """
+    Stores secure credentials in the configuration file
+    This is an automated process.
+    """
     """
     Retrieves credentials from credential manager.
     """
     try:
-        credential_manager = CredentialManager(config_filename)
+        credential_manager = CredentialManager(config_filename, typ)
         retrieved_creds = credential_manager.retrieve()
         for k,v in retrieved_creds.items():
             if k[v] is not None:
