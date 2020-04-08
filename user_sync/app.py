@@ -381,16 +381,22 @@ def credentials():
               nargs=1,
               default="user-sync-config.yml",
               metavar='path-to-file')
-def store(config_filename):
+@click.option('--typ',
+              help=" ldap, umapi, okta, console ",
+              type=str,
+              nargs=1,
+              default=all,
+              metavar='all|ldap|umapi|okta|console')
+def store(config_filename, typ):
     """
     Stores secure credentials in the configuration file
     This is an automated process.
     """
     try:
-        credential_manager = CredentialManager(config_filename)
-        credential_manager.store()
-        for identifier in credential_manager.retrieve():
-            click.echo("'{0} was stored securely.".format({identifier}))
+            credential_manager = CredentialManager(config_filename, typ)
+            credential_manager.store()
+            # for identifier in credential_manager.retrieve():
+            #     click.echo("'{0} was stored securely.".format({identifier}))
     except AssertionException as e:
         click.echo(str(e))
 
