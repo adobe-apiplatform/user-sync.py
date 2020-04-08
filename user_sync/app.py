@@ -385,7 +385,7 @@ def credentials():
               help=" ldap, umapi, okta, console ",
               type=str,
               nargs=1,
-              default=all,
+              default="all",
               metavar='all|ldap|umapi|okta|console')
 def store(config_filename, typ):
     """

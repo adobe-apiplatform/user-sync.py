@@ -29,13 +29,13 @@ class CredentialManager:
     logger = logging.getLogger("credential_manager")
     keyring_name = keyring.get_keyring().name
 
-    def __init__(self, root_config=None):
+    def __init__(self, root_config=None, typ="all"):
 
         self.config_files = {}
         self.root_config = root_config
 
         if self.root_config:
-            self.load_configs()
+            self.load_configs(typ)
 
         print()
 
@@ -78,7 +78,7 @@ class CredentialManager:
             creds.update(v.revert())
         return creds
 
-    def load_configs(self):
+    def load_configs(self, typ="all"):
         """
         This method will be responsible for reading all config files specified in user-sync-config.yml
         so that credential manager knows which keys and values are needed per file
@@ -89,17 +89,29 @@ class CredentialManager:
         umapis = ConfigLoader.as_list(root_cfg['adobe_users']['connectors']['umapi'])
         connectors = root_cfg['directory_users']['connectors']
 
-        for u in umapis:
-            self.config_files[u] = UmapiCredentialConfig(u)
+        if typ == "all":
+            for u in umapis:
+                self.config_files[u] = UmapiCredentialConfig(u)
 
-        for c, v in connectors.items():
-            if c == "ldap":
-                self.config_files[v] = LdapCredentialConfig(v)
-            elif c == "okta":
-                self.config_files[v] = OktaCredentialConfig(v)
-            elif c == "console":
-                self.config_files[v] = ConsoleCredentialConfig(v)
+            for c, v in connectors.items():
+                if c == "ldap":
+                    self.config_files[v] = LdapCredentialConfig(v)
+                elif c == "okta":
+                    self.config_files[v] = OktaCredentialConfig(v)
+                elif c == "console":
+                    self.config_files[v] = ConsoleCredentialConfig(v)
 
+        elif typ == "umapi":
+            for u in umapis:
+                self.config_files[u] = UmapiCredentialConfig(u)
+        else:
+            for c, v in connectors.items():
+                if typ == "ldap" and c == 'ldap':
+                    self.config_files[v] = LdapCredentialConfig(v)
+                elif typ == "okta" and c == 'okta':
+                    self.config_files[v] = OktaCredentialConfig(v)
+                elif typ == 'console' and c == "console":
+                    self.config_files[v] = ConsoleCredentialConfig(v)
         print()
 
 
