@@ -217,6 +217,7 @@ directory_users:
 #   NOTE: the key of each config file path must be a valid connector name,
 #         and must be represented in the `modules` list
 #  TODO create doc page and link it here
+#  More info: https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/post_sync_connector.html
 #post_sync:
 #  modules:
 #    - sign_sync
