@@ -33,7 +33,7 @@ import user_sync.port
 import user_sync.rules
 from user_sync import flags
 from user_sync.error import AssertionException
-from user_sync.post_sync.connectors import _CONNECTOR_CLASSES
+import user_sync.post_sync.connectors as post_sync_connectors
 
 
 class ConfigLoader(object):
@@ -399,7 +399,7 @@ class ConfigLoader(object):
 
         connectors = ps_opts.get_dict('connectors')
         module_list = ps_opts.get_list('modules')
-        allowed_modules = list(_CONNECTOR_CLASSES.keys())
+        allowed_modules = post_sync_connectors.valid_connectors()
         post_sync_modules = {}
 
         try:
