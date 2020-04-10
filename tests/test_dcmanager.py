@@ -57,7 +57,7 @@ def dc_manager(multi_config_files, modify_root_config):
 def test_map_list():
     groups = [DirectoryGroup('src1::group name'), DirectoryGroup('second group'), DirectoryGroup('third group')]
 
-    r = DirectoryConnectorManager.map_list(groups, 'directory_id')
+    r = DirectoryConnectorManager.list_to_map(groups, 'directory_id')
     assert r['src1'][0] == groups[0]
     assert r[None][0] == groups[1]
     assert r[None][1] == groups[2]

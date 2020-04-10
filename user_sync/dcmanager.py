@@ -62,6 +62,7 @@ class DirectoryConnectorManager(object):
         self.additional_groups = additional_groups or []
         self.new_account_type = default_account_type or identity_type.FEDERATED_IDENTITY_TYPE
         self.connectors = {}
+        self.is_multi = config_loader.invocation_options['connector'] == ['multi']
 
         for k, v in six.iteritems(self.build_directory_config_dict()):
             self.connectors[k] = self.build_connector(v)
@@ -81,7 +82,6 @@ class DirectoryConnectorManager(object):
         return config_dict
 
     def build_connector(self, config):
-
         directory_connector = None
         directory_connector_options = None
         directory_connector_module_name = self.config_loader.get_directory_connector_module_name(config.type)
@@ -105,7 +105,8 @@ class DirectoryConnectorManager(object):
         return directory_connector
 
     def build_directory_groups(self, group_names):
-        groups = [DirectoryGroup(g) for g in group_names]
+        # If multi connector is not used, assume all group names are literal
+        groups = [DirectoryGroup(g, literal=(not self.is_multi)) for g in group_names]
         for g in groups:
             if g.directory_id not in self.connectors and g.directory_id is not None:
                 raise AssertionException("Missing connector {0} for group mapping: {1}".format(g.directory_id, g.fq_name))
@@ -127,7 +128,7 @@ class DirectoryConnectorManager(object):
         return iter(users)
 
     @staticmethod
-    def map_list(obj_list, field):
+    def list_to_map(obj_list, field):
         result = {}
         for o in obj_list:
             key = getattr(o, field)
@@ -139,12 +140,12 @@ class DirectoryConnectorManager(object):
 
     @staticmethod
     def common_names_for_connector(groups, id):
-        groups_by_id = DirectoryConnectorManager.map_list(groups, 'directory_id')
+        groups_by_id = DirectoryConnectorManager.list_to_map(groups, 'directory_id')
         return {g.common_name for g in groups_by_id.get(id, [])}
 
     @staticmethod
     def substitute_groups_for_user(user, groups):
-        groups_by_cn = DirectoryConnectorManager.map_list(groups, 'common_name')
+        groups_by_cn = DirectoryConnectorManager.list_to_map(groups, 'common_name')
         qualified_groups = []
         for g in user['groups']:
             if g in groups_by_cn:
@@ -155,12 +156,17 @@ class DirectoryConnectorManager(object):
 
 class DirectoryGroup:
 
-    def __init__(self, fq_name):
+    def __init__(self, fq_name, literal=False):
         self.fq_name = fq_name
         self.directory_id = None
         self.common_name = fq_name
-        tokens = fq_name.split('::')
 
+        # if literal is specified, treat the group name as a literal string
+        # in this case, fq_name = common_name
+        if literal:
+            return
+
+        tokens = fq_name.split('::')
         if len(tokens) > 1:
             self.directory_id = tokens[0]
             self.common_name = "::".join(tokens[1:])
