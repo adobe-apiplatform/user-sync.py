@@ -837,19 +837,6 @@ class DictConfig(ObjectConfig):
                 '%s: No value in secure storage for user "%s", key "%s"' % (scope, user_name, secure_value_key))
         return value
 
-    @staticmethod
-    def get_value_from_keyring(secure_value_key, user_name):
-        import keyrings.cryptfile.cryptfile
-        keyrings.cryptfile.cryptfile.CryptFileKeyring.keyring_key = "none"
-
-        import keyring
-        if (isinstance(keyring.get_keyring(), keyring.backends.fail.Keyring) or
-                isinstance(keyring.get_keyring(), keyring.backends.chainer.ChainerBackend)):
-            keyring.set_keyring(keyrings.cryptfile.cryptfile.CryptFileKeyring())
-
-        logging.getLogger("keyring").info("Using keyring '" + keyring.get_keyring().name + "' to retrieve: " + secure_value_key)
-        return keyring.get_password(service_name=secure_value_key, username=user_name)
-
 
 class ConfigFileLoader:
     """
