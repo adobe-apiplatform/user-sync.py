@@ -21,6 +21,7 @@ username: "LDAP or Credential Manager username goes here"
 password: "LDAP password goes here"
 host: "ldap://ldap.example.com"
 base_dn: "DC=example,DC=com"
+# Test Commit
 
 # (optional) You can specify what Authentication method to bind LDAP
 # connection with. You can choose either Anonymous, Simple or NTLM.
