@@ -217,6 +217,7 @@ class CredentialConfig:
         self.set_nested_key(key_list, plaintext_cred)
         return plaintext_cred
 
+    @classmethod
     def parse_secure_key(self, value):
         """
         Returns the identifier for the secure key if present, or else None

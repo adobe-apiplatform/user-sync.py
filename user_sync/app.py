@@ -409,9 +409,9 @@ def retrieve(config_filename):
     try:
         credential_manager = CredentialManager(config_filename)
         retrieved_creds = credential_manager.retrieve()
-        for k,v in retrieved_creds.items():
-            if k[v] is not None:
-                click.echo("The following values were stored securely: '{0}'".format(k))
+        for k, v in retrieved_creds.items():
+            if v is not None:
+                click.echo('"{}":"{}"').format(k, v)
     except AssertionException as e:
         click.echo(str(e))
 

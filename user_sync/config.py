@@ -822,12 +822,19 @@ class DictConfig(ObjectConfig):
         if cleartext_value and secure_value_key:
             raise AssertionException('%s: cannot contain setting for both "%s" and "%s"' % (scope, name, keyring_name))
         if secure_value_key:
+            identifier = secure_value_key
+        secure_key = user_sync.credentials.CredentialConfig.parse_secure_key(name)
+        # checks for new format
+        if secure_key:
+            identifier = secure_key
+        # use CredentialManager.get() if the value is in either secure format, else use the plaintext value
+        if secure_value_key or secure_key:
             try:
                 from user_sync.credentials import CredentialManager
                 credman = CredentialManager()
                 logging.getLogger("credential_manager").info("Using keyring '{0}' to retrieve '{1}'"
                                                              .format(credman.keyring_name, secure_value_key))
-                value = credman.get(identifier=secure_value_key, username=user_name)
+                value = credman.get(identifier, username=user_name)
             except Exception as e:
                 raise AssertionException('%s: Error accessing secure storage: %s' % (scope, e))
         else:
@@ -836,19 +843,6 @@ class DictConfig(ObjectConfig):
             raise AssertionException(
                 '%s: No value in secure storage for user "%s", key "%s"' % (scope, user_name, secure_value_key))
         return value
-
-    @staticmethod
-    def get_value_from_keyring(secure_value_key, user_name):
-        import keyrings.cryptfile.cryptfile
-        keyrings.cryptfile.cryptfile.CryptFileKeyring.keyring_key = "none"
-
-        import keyring
-        if (isinstance(keyring.get_keyring(), keyring.backends.fail.Keyring) or
-                isinstance(keyring.get_keyring(), keyring.backends.chainer.ChainerBackend)):
-            keyring.set_keyring(keyrings.cryptfile.cryptfile.CryptFileKeyring())
-
-        logging.getLogger("keyring").info("Using keyring '" + keyring.get_keyring().name + "' to retrieve: " + secure_value_key)
-        return keyring.get_password(service_name=secure_value_key, username=user_name)
 
 
 class ConfigFileLoader:
