@@ -813,9 +813,9 @@ class DictConfig(ObjectConfig):
         keyring_name = self.keyring_prefix + name + self.keyring_suffix
         scope = self.get_full_scope()
         # sometimes the credential is in plain text
-        cleartext_value = self.get_string(name, True)
+        cleartext_value = self.get_value(name, (str, dict), True)
         # sometimes the value is in the keyring
-        secure_value_key = self.get_string(keyring_name, True)
+        secure_value_key = self.get_value(keyring_name, (str, dict), True)
         # but it has to be in exactly one of those two places!
         if not cleartext_value and not secure_value_key and not none_allowed:
             raise AssertionException('%s: must contain setting for "%s" or "%s"' % (scope, name, keyring_name))
@@ -823,17 +823,18 @@ class DictConfig(ObjectConfig):
             raise AssertionException('%s: cannot contain setting for both "%s" and "%s"' % (scope, name, keyring_name))
         if secure_value_key:
             identifier = secure_value_key
-        secure_key = user_sync.credentials.CredentialConfig.parse_secure_key(name)
-        # checks for new format
-        if secure_key:
-            identifier = secure_key
+        if cleartext_value is not None:
+            secure_key = user_sync.credentials.CredentialConfig.parse_secure_key(cleartext_value)
+            if secure_key:
+                identifier = secure_key
         # use CredentialManager.get() if the value is in either secure format, else use the plaintext value
         if secure_value_key or secure_key:
             try:
                 from user_sync.credentials import CredentialManager
                 credman = CredentialManager()
                 logging.getLogger("credential_manager").info("Using keyring '{0}' to retrieve '{1}'"
-                                                             .format(credman.keyring_name, secure_value_key))
+                                                             .format(credman.keyring_name, secure_value_key or secure_key))
+                # user_name is the actual ldap account username (from the yml file). does that matter for credman?
                 value = credman.get(identifier, username=user_name)
             except Exception as e:
                 raise AssertionException('%s: Error accessing secure storage: %s' % (scope, e))
@@ -841,7 +842,7 @@ class DictConfig(ObjectConfig):
             value = cleartext_value
         if not value and not none_allowed:
             raise AssertionException(
-                '%s: No value in secure storage for user "%s", key "%s"' % (scope, user_name, secure_value_key))
+                '%s: No value in secure storage for user "%s", key "%s"' % (scope, user_name, secure_value_key or secure_key))
         return value
 
 
