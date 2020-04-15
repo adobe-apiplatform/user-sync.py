@@ -6,6 +6,8 @@ from util import update_dict
 from user_sync.config import ConfigFileLoader, ConfigLoader, DictConfig
 from user_sync import flags
 from user_sync.error import AssertionException
+# this does not work because then it tries to use YAML from ruamel.yaml which has no safe_load method...
+# from user_sync.credentials import *
 
 
 def load_ldap_config_options(args):
@@ -190,3 +192,7 @@ def test_shell_exec_flag(tmp_config_files, modify_root_config, cli_args, monkeyp
             directory_connector = DirectoryConnector(directory_connector_module)
             with pytest.raises(AssertionException):
                 config_loader.get_directory_connector_options(directory_connector.name)
+
+
+# def test_get_credential(tmp_config_files):
+#     (root_config_file, ldap_config_file, umapi_config_file) = tmp_config_files

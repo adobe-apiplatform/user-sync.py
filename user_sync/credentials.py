@@ -263,19 +263,15 @@ class UmapiCredentialConfig(CredentialConfig):
     """
 
     def store(self):
-        self.store_key(['enterprise', 'org_id'])
         self.store_key(['enterprise', 'api_key'])
         self.store_key(['enterprise', 'client_secret'])
-        self.store_key(['enterprise', 'tech_acct'])
         self.save()
 
     def revert(self):
         creds = {}
         creds['enterprise'] = {
-            'org_id': self.revert_key(['enterprise', 'org_id']),
             'api_key': self.revert_key(['enterprise', 'api_key']),
-            'client_secret': self.revert_key(['enterprise', 'client_secret']),
-            'tech_acct': self.revert_key(['enterprise', 'tech_acct'])
+            'client_secret': self.revert_key(['enterprise', 'client_secret'])
         }
         self.save()
         return creds
@@ -283,10 +279,8 @@ class UmapiCredentialConfig(CredentialConfig):
     def retrieve(self):
         creds = {}
         creds['enterprise'] = {
-            'org_id': self.retrieve_key(['enterprise', 'org_id']),
             'api_key': self.retrieve_key(['enterprise', 'api_key']),
-            'client_secret': self.retrieve_key(['enterprise', 'client_secret']),
-            'tech_acct': self.retrieve_key(['enterprise', 'tech_acct'])
+            'client_secret': self.retrieve_key(['enterprise', 'client_secret'])
         }
         return creds
 
@@ -318,19 +312,15 @@ class ConsoleCredentialConfig(CredentialConfig):
     """
 
     def store(self):
-        self.store_key(['integration', 'org_id'])
         self.store_key(['integration', 'api_key'])
         self.store_key(['integration', 'client_secret'])
-        self.store_key(['integration', 'tech_acct'])
         self.save()
 
     def revert(self):
         creds = {}
         creds['integration'] = {
-            'org_id': self.revert_key(['integration', 'org_id']),
             'api_key': self.revert_key(['integration', 'api_key']),
-            'client_secret': self.revert_key(['integration', 'client_secret']),
-            'tech_acct': self.revert_key(['integration', 'tech_acct'])
+            'client_secret': self.revert_key(['integration', 'client_secret'])
         }
         self.save()
         return creds
@@ -338,9 +328,7 @@ class ConsoleCredentialConfig(CredentialConfig):
     def retrieve(self):
         creds = {}
         creds['integration'] = {
-            'org_id': self.retrieve_key(['integration', 'org_id']),
             'api_key': self.retrieve_key(['integration', 'api_key']),
-            'client_secret': self.retrieve_key(['integration', 'client_secret']),
-            'tech_acct': self.retrieve_key(['integration', 'tech_acct'])
+            'client_secret': self.retrieve_key(['integration', 'client_secret'])
         }
         return creds
