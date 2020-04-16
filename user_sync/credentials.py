@@ -225,7 +225,7 @@ class CredentialConfig:
         containing exactly one key named 'secure' whose value is the identifier in keyring.
         """
         if value is None:
-            raise AssertionException("Key is missing or emtpy:" + str(value))
+            return None
         if isinstance(value, dict):
             if len(value) == 1 and 'secure' in value:
                 return value['secure']

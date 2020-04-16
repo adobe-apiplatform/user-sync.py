@@ -34,7 +34,6 @@ import user_sync.port
 import user_sync.rules
 from user_sync import flags
 from user_sync.error import AssertionException
-import user_sync.credentials
 
 
 class ConfigLoader(object):
