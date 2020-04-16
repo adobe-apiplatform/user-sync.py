@@ -34,6 +34,7 @@ import user_sync.port
 import user_sync.rules
 from user_sync import flags
 from user_sync.error import AssertionException
+import user_sync.credentials
 
 
 class ConfigLoader(object):
@@ -799,14 +800,14 @@ class DictConfig(ObjectConfig):
         else:
             return None
 
-    def get_credential(self, name, user_name, none_allowed=False):
+    def get_credential(self, name, username, none_allowed=False):
         """
         Get the credential with the given name.  Raises an AssertionException if there
         is no credential, or if the credential is specified both in plaintext and the keyring.
         If the credential is kept in the keyring, the value of the keyring_name setting
         gives the secure storage key, and we fetch that key for the given user.
         :param name: setting name for the plaintext credential
-        :param user_name: the user for whom we should fetch the service name password in secure storage
+        :param username: the user for whom we should fetch the service name password in secure storage
         :param none_allowed: whether the credential can be missing or empty
         :return: credential string
         """
@@ -815,7 +816,8 @@ class DictConfig(ObjectConfig):
         # sometimes the credential is in plain text
         cleartext_value = self.get_value(name, (str, dict), True)
         # sometimes the value is in the keyring
-        secure_value_key = self.get_value(keyring_name, (str, dict), True)
+        secure_value_key = self.get_string(keyring_name, True)
+        secure_dict_key = user_sync.credentials.CredentialConfig.parse_secure_key(cleartext_value)
         # but it has to be in exactly one of those two places!
         if not cleartext_value and not secure_value_key and not none_allowed:
             raise AssertionException('%s: must contain setting for "%s" or "%s"' % (scope, name, keyring_name))
@@ -823,35 +825,25 @@ class DictConfig(ObjectConfig):
             raise AssertionException('%s: cannot contain setting for both "%s" and "%s"' % (scope, name, keyring_name))
         if secure_value_key:
             identifier = secure_value_key
-        if isinstance(cleartext_value, dict):
-            secure_key = user_sync.credentials.CredentialConfig.parse_secure_key(cleartext_value)
-            identifier = secure_key
+        elif secure_dict_key:
+            identifier = secure_dict_key
+            username = user_sync.credentials.CredentialManager.username
         else:
-            secure_key = None
-        # use CredentialManager.get() if the value is in either secure format, else use the plaintext value
-        if secure_value_key:
+            identifier = None
+        if identifier:
             try:
-                value = self.get_secured_credential(identifier, username=user_name)
-            except Exception as e:
-                raise AssertionException('%s: Error accessing secure storage: %s' % (scope, e))
-        elif secure_key:
-            try:
-                value = self.get_secured_credential(identifier, username='user_sync')
+                from user_sync.credentials import CredentialManager
+                credman = CredentialManager()
+                logging.getLogger("credential_manager").info("Using keyring '{0}' to retrieve '{1}'"
+                                                             .format(credman.keyring_name, identifier))
+                value = credman.get(identifier, username)
+                if not value and not none_allowed:
+                    raise AssertionException(
+                        '%s: No value in secure storage for user "%s", key "%s"' % (scope, username, identifier))
             except Exception as e:
                 raise AssertionException('%s: Error accessing secure storage: %s' % (scope, e))
         else:
             value = cleartext_value
-        if not value and not none_allowed:
-            raise AssertionException(
-                '%s: No value in secure storage for user "%s", key "%s"' % (scope, user_name, secure_value_key or secure_key))
-        return value
-
-    def get_secured_credential(self, identifier, username):
-        from user_sync.credentials import CredentialManager
-        credman = CredentialManager()
-        logging.getLogger("credential_manager").info("Using keyring '{0}' to retrieve '{1}'"
-                                                     .format(credman.keyring_name, identifier))
-        value = credman.get(identifier, username)
         return value
 
 
