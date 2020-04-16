@@ -204,6 +204,37 @@ def sync(**kwargs):
 
 @main.command()
 @click.help_option('-h', '--help')
+@click.pass_context
+def init(ctx):
+#genrerate example configs
+    sync = os.path.abspath('user-sync-config.yml')
+    umapi = os.path.abspath('connector-umapi.yml')
+    ldap = os.path.abspath('connector-ldap.yml')
+    existing = "\n".join({f for f in (sync, umapi, ldap) if os.path.exists(f)})
+    if existing:
+        if click.confirm('\nWarning: files already exist: \n{}\nOverwrite?'.format(existing)):
+            ctx.forward(example_config, root='user-sync-config.yml', umapi='connector-umapi.yml',
+                        ldap='connector-ldap.yml')
+#generate private.key and certificate_pub.crt
+    ctx.forward(certgen, randomize=True, key='private.key', certificate='certificate_pub.crt')
+    cwd = os.getcwd()
+#generate batch files
+    with open(os.path.join(cwd, 'Run_UST_Test_Mode.bat'), 'w+') as OPATH:
+        OPATH.writelines(['mode 155,50', '\ncd /D "%~dp0"', '\nuser-sync.exe --process-groups --users mapped -t',
+                          '\npause'])
+    with open(os.path.join(cwd, "Run_UST_Live.bat"), 'w+') as OPATH:
+        OPATH.writelines(
+            ['mode 155,50', '\ncd /D "%~dp0"', '\nuser-sync.exe --configure-filename user-sync-config.yml'])
+
+
+
+
+
+
+
+
+@main.command()
+@click.help_option('-h', '--help')
 @click.option('--root', help="Filename of root user sync config file",
               prompt='Main Config Filename', default='user-sync-config.yml')
 @click.option('--umapi', help="Filename of UMAPI credential config file",
