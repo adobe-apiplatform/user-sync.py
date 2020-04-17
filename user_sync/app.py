@@ -17,7 +17,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+from sys import platform
 import logging
 import os
 import shutil
@@ -202,35 +202,29 @@ def sync(**kwargs):
             run_stats.log_end(logger)
 
 
-@main.command()
-@click.help_option('-h', '--help')
+@main.command(help='Generates configuration files, an X509 certificate/keypair, and the batch '
+                   'files for running the user-sync tool in test and live mode.')
 @click.pass_context
 def init(ctx):
-#genrerate example configs
-    sync = os.path.abspath('user-sync-config.yml')
-    umapi = os.path.abspath('connector-umapi.yml')
-    ldap = os.path.abspath('connector-ldap.yml')
-    existing = "\n".join({f for f in (sync, umapi, ldap) if os.path.exists(f)})
-    if existing:
-        if click.confirm('\nWarning: files already exist: \n{}\nOverwrite?'.format(existing)):
-            ctx.forward(example_config, root='user-sync-config.yml', umapi='connector-umapi.yml',
-                        ldap='connector-ldap.yml')
-#generate private.key and certificate_pub.crt
-    ctx.forward(certgen, randomize=True, key='private.key', certificate='certificate_pub.crt')
-    cwd = os.getcwd()
-#generate batch files
-    with open(os.path.join(cwd, 'Run_UST_Test_Mode.bat'), 'w+') as OPATH:
+    # generate private.key and certificate_pub.crt
+    ctx.forward(certgen, randomize=True)
+
+    # generate batch files
+    with open('Run_UST_Test_Mode.bat', 'w') as OPATH:
         OPATH.writelines(['mode 155,50', '\ncd /D "%~dp0"', '\nuser-sync.exe --process-groups --users mapped -t',
                           '\npause'])
-    with open(os.path.join(cwd, "Run_UST_Live.bat"), 'w+') as OPATH:
+    with open("Run_UST_Live.bat", 'w') as OPATH:
         OPATH.writelines(
-            ['mode 155,50', '\ncd /D "%~dp0"', '\nuser-sync.exe --configure-filename user-sync-config.yml'])
+            ['mode 155,50', '\ncd /D "%~dp0"', '\nuser-sync.exe --process-groups --users mapped'])
 
-
-
-
-
-
+    # genrerate example configs
+    sync = 'user-sync-config.yml'
+    umapi = 'connector-umapi.yml'
+    ldap = 'connector-ldap.yml'
+    existing = "\n".join({f for f in (sync, umapi, ldap) if os.path.exists(f)})
+    if existing and not click.confirm('\nWarning: files already exist: \n{}\nOverwrite?'.format(existing)):
+        return
+    ctx.forward(example_config, root=sync, umapi=umapi, ldap=ldap)
 
 
 @main.command()
@@ -255,6 +249,39 @@ def example_config(**kwargs):
         assert res_file is not None, "Resource file '{}' not found".format(res_files[k])
         click.echo("Generating file '{}'".format(fname))
         shutil.copy(res_file, fname)
+
+
+@main.command()
+@click.help_option('-h', '--help')
+@click.option('--root', help="Filename of root user sync config file",
+              prompt='Main Config Filename', default='user-sync-config.yml')
+@click.option('--umapi', help="Filename of UMAPI credential config file",
+              prompt='UMAPI Config Filename', default='connector-umapi.yml')
+@click.option('--ldap', help="Filename of LDAP credential config file",
+              prompt='LDAP Config Filename', default='connector-ldap.yml')
+def example_configz(**kwargs):
+    """Generate example configuration files"""
+
+    res_files = {
+        'root': os.path.join('examples', 'user-sync-config.yml'),
+        'umapi': os.path.join('examples', 'connector-umapi.yml'),
+        'ldap': os.path.join('examples', 'connector-ldap.yml'),
+    }
+    windows = b'\r\n'
+    unix = b'\n'
+
+    for k, fname in kwargs.items():
+        assert k in res_files, "Invalid option specified"
+        res_file = user_sync.resource.get_resource(res_files[k])
+        assert res_file is not None, "Resource file '{}' not found".format(res_files[k])
+        click.echo("Generating file '{}'".format(fname))
+        shutil.copy(res_file, fname)
+        if platform == "linux" or platform == "linux2":
+            with open(fname, 'rb') as open_file:
+                content = open_file.read()
+            content = content.replace(windows, unix)
+            with open(fname, 'wb') as open_file:
+                open_file.write(content)
 
 
 @main.command()
