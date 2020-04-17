@@ -6,8 +6,7 @@ from util import update_dict
 from user_sync.config import ConfigFileLoader, ConfigLoader, DictConfig
 from user_sync import flags
 from user_sync.error import AssertionException
-# this does not work because then it tries to use YAML from ruamel.yaml which has no safe_load method...
-# from user_sync.credentials import *
+from user_sync.credentials import CredentialConfig, CredentialManager
 
 
 def load_ldap_config_options(args):
@@ -194,5 +193,13 @@ def test_shell_exec_flag(tmp_config_files, modify_root_config, cli_args, monkeyp
                 config_loader.get_directory_connector_options(directory_connector.name)
 
 
-# def test_get_credential(tmp_config_files):
-#     (root_config_file, ldap_config_file, umapi_config_file) = tmp_config_files
+def test_get_credential(tmp_config_files):
+    (root_config_file, ldap_config_file, umapi_config_file) = tmp_config_files
+    ldap_config = ConfigFileLoader.load_sub_config(ldap_config_file)
+    ldap_dict_config = DictConfig('testscope', ldap_config)
+    # if no credentials have been stored then get_credential should return the plaintext value
+    assert ldap_dict_config.get_credential('password', 'username') == 'password'
+    credman = CredentialManager(root_config_file)
+    credman.store()
+    assert ldap_dict_config.get_credential('password', 'username') == 'password'
+
