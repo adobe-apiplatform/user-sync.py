@@ -58,8 +58,8 @@ integration:
   # The actual credential values are placed in the credential store with the
   # username as the org_id value, and the key name (perhaps called internet
   # or network address) as one of the values below.
-  #secure_api_key_key: umapi_api_key
-  #secure_client_secret_key: umapi_client_secret
+  # You can secure the credentials by using the credentials store commands in the command line
+  # Refer to the (URL to Additional Tools) 
   #secure_priv_key_data_key: umapi_private_key_data
   # Note: the Windows credential store generally can't store data as large as a private
   # key, so the recommended path for securing your private key on windows is given next.
@@ -73,7 +73,7 @@ integration:
   # For better security, you should save your passphrase into the secure credential store
   # on your platform (username = your org ID, service/internet address = "umapi_private_key_passphrase")
   # and then uncomment this setting:
-  #secure_priv_key_pass_key: umapi_private_key_passphrase
+  # Private key pass can also be stored using credentils store command
 
 # (optional) identity_type_filter (default value is all)
 # By default, connector will automatically load users from all identity type to be load as directory users.

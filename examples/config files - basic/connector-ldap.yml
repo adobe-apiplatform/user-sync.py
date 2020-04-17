@@ -18,7 +18,7 @@
 # enterprise directory administrators to get suitable values.
 # These access credentials are sensitive and must be protected.
 username: "LDAP or Credential Manager username goes here"
-password: "LDAP password goes here"
+password:  "LDAP Password"    
 host: "ldap://ldap.example.com"
 base_dn: "DC=example,DC=com"
 # Test Commit
@@ -37,13 +37,8 @@ base_dn: "DC=example,DC=com"
 # (optional) You can store credentials in the operating system credential store
 # (Windows Credential Manager, Mac Keychain, Linux Freedesktop Secret Service
 # or KWallet - these will be built into the Linux distribution).
-# To use this feature, uncomment the following entry and remove the 
-# password entry above.
-# The actual credential value are placed in the credential store with the
-# username as the username field value, and the key name (perhaps called internet 
-# or network address) as the value below.
-#secure_password_key: ldap_password
-
+# You can secure the credential by using the credentials store commands in the command line. 
+#  Refer to the (URL to Additional Tools) 
 # (optional) user_identity_type (default is inherited from main configuration)
 # user_identity_type specifies a default identity type for when directory users
 # are created on the Adobe side (one of adobeID, enterpriseID, federatedID).
