@@ -205,6 +205,10 @@ def test_get_credential_new_format(tmp_config_files):
     credman.set('ldap_key', 'test_password')
     # make sure get_cred still works when passed in a dict with a valid identifier
     assert ldap_dict_config.get_credential('password', 'user_sync') == 'test_password'
+    # if the identifier is invalid it should throw an exception
+    ldap_config['password'] = {'secure': 'invalid_identifier'}
+    with pytest.raises(AssertionException):
+        ldap_dict_config.get_credential('password', 'user_sync')
     # check for exception to be thrown if there is no value for 'password'
     ldap_config['password'] = None
     with pytest.raises(AssertionException):
