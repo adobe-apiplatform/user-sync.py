@@ -28,6 +28,7 @@ def tmp_extension_config(extension_config_file, tmpdir):
     shutil.copy(extension_config_file, tmpfile)
     return tmpfile
 
+
 @pytest.fixture
 def modify_root_config(tmp_config_files):
     (root_config_file, _, _) = tmp_config_files
@@ -193,13 +194,33 @@ def test_shell_exec_flag(tmp_config_files, modify_root_config, cli_args, monkeyp
                 config_loader.get_directory_connector_options(directory_connector.name)
 
 
-def test_get_credential(tmp_config_files):
+def test_get_credential_new_format(tmp_config_files):
     (root_config_file, ldap_config_file, umapi_config_file) = tmp_config_files
-    ldap_config = ConfigFileLoader.load_sub_config(ldap_config_file)
+    credman = CredentialManager()
+    ldap_config = ConfigFileLoader.load_from_yaml(ldap_config_file, {})
     ldap_dict_config = DictConfig('testscope', ldap_config)
-    # if no credentials have been stored then get_credential should return the plaintext value
-    assert ldap_dict_config.get_credential('password', 'username') == 'password'
-    credman = CredentialManager(root_config_file)
-    credman.store()
-    assert ldap_dict_config.get_credential('password', 'username') == 'password'
+    # make sure it still works in plaintext format
+    assert ldap_dict_config.get_credential('password', 'user_sync') == 'password'
+    ldap_config['password'] = {'secure': 'ldap_key'}
+    credman.set('ldap_key', 'test_password')
+    # make sure get_cred still works when passed in a dict with a valid identifier
+    assert ldap_dict_config.get_credential('password', 'user_sync') == 'test_password'
+    # check for exception to be thrown if there is no value for 'password'
+    ldap_config['password'] = None
+    with pytest.raises(AssertionException):
+        ldap_dict_config.get_credential('password', 'user_sync')
 
+
+def test_get_credential_old_format(tmp_config_files):
+    (root_config_file, ldap_config_file, umapi_config_file) = tmp_config_files
+    credman = CredentialManager()
+    ldap_config = ConfigFileLoader.load_from_yaml(ldap_config_file, {})
+    ldap_dict_config = DictConfig('testscope', ldap_config)
+    # adding the secure key format without removing the plain format should throw an exception
+    ldap_config['secure_password_key'] = 'ldap_secure_identifier'
+    with pytest.raises(AssertionException):
+        ldap_dict_config.get_credential('password', 'user_sync')
+    credman.set('ldap_secure_identifier', 'test_password')
+    # set the plain key to None so get_credential will look for the secure_password_key format
+    ldap_config['password'] = None
+    assert ldap_dict_config.get_credential('password', 'user_sync') == 'test_password'
