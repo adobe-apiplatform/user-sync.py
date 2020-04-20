@@ -18,7 +18,7 @@
 # enterprise directory administrators to get suitable values.
 # These access credentials are sensitive and must be protected.
 username: "LDAP or Credential Manager username goes here"
-password:  "LDAP Password"    
+password:  "LDAP Password goes here"    
 host: "ldap://ldap.example.com"
 base_dn: "DC=example,DC=com"
 # Test Commit
@@ -37,7 +37,7 @@ base_dn: "DC=example,DC=com"
 # (optional) You can store credentials in the operating system credential store
 # (Windows Credential Manager, Mac Keychain, Linux Freedesktop Secret Service
 # or KWallet - these will be built into the Linux distribution).
-# You can secure the credential by using the credentials store commands in the command line. 
+# Store your LDAP account password using the credentials store command in the command line. 
 #  Refer to the (URL to Additional Tools) 
 # (optional) user_identity_type (default is inherited from main configuration)
 # user_identity_type specifies a default identity type for when directory users
