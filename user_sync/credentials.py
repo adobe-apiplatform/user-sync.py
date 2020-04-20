@@ -271,33 +271,24 @@ class UmapiCredentialConfig(CredentialConfig):
 
     def revert(self):
         creds = {}
+        creds['enterprise'] = {
+            'api_key': self.revert_key(['enterprise', 'api_key']),
+            'client_secret': self.revert_key(['enterprise', 'client_secret'])
+        }
         if self.get_nested_key(['enterprise', 'priv_key_pass']) is not None:
-            creds['enterprise'] = {
-                'api_key': self.revert_key(['enterprise', 'api_key']),
-                'client_secret': self.revert_key(['enterprise', 'client_secret']),
-                'priv_key_pass': self.revert_key(['enterprise', 'priv_key_pass'])
-            }
-        else:
-            creds['enterprise'] = {
-                'api_key': self.revert_key(['enterprise', 'api_key']),
-                'client_secret': self.revert_key(['enterprise', 'client_secret'])
-            }
+            creds['enterprise']['priv_key_pass'] = self.revert_key(['enterprise', 'priv_key_pass'])
         self.save()
         return creds
 
     def retrieve(self):
         creds = {}
+        creds['enterprise'] = {
+            'api_key': self.retrieve_key(['enterprise', 'api_key']),
+            'client_secret': self.retrieve_key(['enterprise', 'client_secret'])
+        }
         if self.get_nested_key(['enterprise', 'priv_key_pass']) is not None:
-            creds['enterprise'] = {
-                'api_key': self.retrieve_key(['enterprise', 'api_key']),
-                'client_secret': self.retrieve_key(['enterprise', 'client_secret']),
-                'priv_key_pass': self.retrieve_key(['enterprise', 'priv_key_pass'])
-            }
-        else:
-            creds['enterprise'] = {
-                'api_key': self.retrieve_key(['enterprise', 'api_key']),
-                'client_secret': self.retrieve_key(['enterprise', 'client_secret'])
-            }
+            creds['enterprise']['priv_key_pass'] = self.retrieve_key(['enterprise', 'priv_key_pass'])
+        self.save()
         return creds
 
 
@@ -336,31 +327,22 @@ class ConsoleCredentialConfig(CredentialConfig):
 
     def revert(self):
         creds = {}
+        creds['integration'] = {
+            'api_key': self.revert_key(['integration', 'api_key']),
+            'client_secret': self.revert_key(['integration', 'client_secret'])
+        }
         if self.get_nested_key(['integration', 'priv_key_pass']) is not None:
-            creds['integration'] = {
-                'api_key': self.revert_key(['integration', 'api_key']),
-                'client_secret': self.revert_key(['integration', 'client_secret']),
-                'priv_key_pass': self.revert_key(['integration', 'priv_key_pass'])
-            }
-        else:
-            creds['integration'] = {
-                'api_key': self.revert_key(['integration', 'api_key']),
-                'client_secret': self.revert_key(['integration', 'client_secret'])
-            }
+            creds['integration']['priv_key_pass'] = self.revert_key(['integration', 'priv_key_pass'])
         self.save()
         return creds
 
     def retrieve(self):
         creds = {}
+        creds['integration'] = {
+            'api_key': self.retrieve_key(['integration', 'api_key']),
+            'client_secret': self.retrieve_key(['integration', 'client_secret'])
+        }
         if self.get_nested_key(['integration', 'priv_key_pass']) is not None:
-            creds['integration'] = {
-                'api_key': self.retrieve_key(['integration', 'api_key']),
-                'client_secret': self.retrieve_key(['integration', 'client_secret']),
-                'priv_key_pass': self.retrieve_key(['integration', 'priv_key_pass'])
-            }
-        else:
-            creds['integration'] = {
-                'api_key': self.retrieve_key(['integration', 'api_key']),
-                'client_secret': self.retrieve_key(['integration', 'client_secret'])
-            }
+            creds['integration']['priv_key_pass'] = self.retrieve_key(['integration', 'priv_key_pass'])
+        self.save()
         return creds
