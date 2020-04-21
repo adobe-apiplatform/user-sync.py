@@ -17,7 +17,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+from sys import platform
 import logging
 import os
 import shutil
@@ -202,6 +202,28 @@ def sync(**kwargs):
             run_stats.log_end(logger)
 
 
+@main.command(help='Generates configuration files, an X509 certificate/keypair, and the batch '
+                   'files for running the user-sync tool in test and live mode.')
+@click.pass_context
+def init(ctx):
+    ctx.forward(certgen, randomize=True)
+
+    with open('Run_UST_Test_Mode.bat', 'w') as OPATH:
+        OPATH.writelines(['mode 155,50', '\ncd /D "%~dp0"', '\nuser-sync.exe --process-groups --users mapped -t',
+                          '\npause'])
+    with open("Run_UST_Live.bat", 'w') as OPATH:
+        OPATH.writelines(
+            ['mode 155,50', '\ncd /D "%~dp0"', '\nuser-sync.exe --process-groups --users mapped'])
+
+    sync = 'user-sync-config.yml'
+    umapi = 'connector-umapi.yml'
+    ldap = 'connector-ldap.yml'
+    existing = "\n".join({f for f in (sync, umapi, ldap) if os.path.exists(f)})
+    if existing and not click.confirm('\nWarning: files already exist: \n{}\nOverwrite?'.format(existing)):
+        return
+    ctx.forward(example_config, root=sync, umapi=umapi, ldap=ldap)
+
+
 @main.command()
 @click.help_option('-h', '--help')
 @click.option('--root', help="Filename of root user sync config file",
@@ -223,7 +245,10 @@ def example_config(**kwargs):
         res_file = user_sync.resource.get_resource(res_files[k])
         assert res_file is not None, "Resource file '{}' not found".format(res_files[k])
         click.echo("Generating file '{}'".format(fname))
-        shutil.copy(res_file, fname)
+        with open(res_file, 'r') as file:
+            content = file.read()
+        with open(fname, 'w') as file:
+            file.write(content)
 
 
 @main.command()
