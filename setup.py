@@ -39,8 +39,8 @@ setup(name='user-sync',
           'Intended Audience :: System Administrators',
       ],
       url='https://github.com/adobe-apiplatform/user-sync.py',
-      maintainer='Daniel Brotsky',
-      maintainer_email='dbrotsky@adobe.com',
+      maintainer='Andrew Dorton',
+      maintainer_email='adorton@adobe.com',
       license='MIT',
       packages=find_packages(),
       install_requires=[
@@ -52,7 +52,7 @@ setup(name='user-sync',
           'ldap3',
           'PyYAML',
           'six',
-          'umapi-client>=2.12',
+          'umapi-client>=2.13',
           'click',
           'click-default-group',
           'configparser==3.7.4'
@@ -76,5 +76,5 @@ setup(name='user-sync',
               'user_sync = user_sync.app:main'
           ]
       },
-      package_data={'user_sync.resources': ['*', 'examples/*']},
+      package_data={'user_sync.resources': ['*', 'examples/**']},
       zip_safe=False)
