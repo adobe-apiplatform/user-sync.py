@@ -29,6 +29,20 @@ from user_sync import resource
 from user_sync.app import example_config
 
 
+@pytest.fixture
+def root_config_file(fixture_dir):
+    return os.path.join(fixture_dir, 'user-sync-config.yml')
+
+
+@pytest.fixture
+def ldap_config_file(fixture_dir):
+    return os.path.join(fixture_dir, 'connector-ldap.yml')
+
+@pytest.fixture
+def umapi_config_file(fixture_dir):
+    return os.path.join(fixture_dir, 'connector-umapi.yml')
+
+
 def test_resource_file_bundle(resource_file, tmpdir, monkeypatch):
     """test for valid resource file in an EXE bundle"""
     tmpdir = str(tmpdir)
@@ -92,7 +106,7 @@ def test_resource_dir_bundle(resource_file, tmpdir, monkeypatch):
 
         resfile = "test_{}.txt"
 
-        res_paths = [resource_file(test_dir, resfile.format(n+1)) for n in range(3)]
+        res_paths = [resource_file(test_dir, resfile.format(n + 1)) for n in range(3)]
 
         assert sorted(res_paths) == sorted(resource.get_resource_dir('test'))
 
@@ -108,11 +122,11 @@ def test_resource_dir_package(resource_file, tmpdir, monkeypatch):
 
         resfile = "test_{}.txt"
 
-        res_test_files = [resfile.format(n+1) for n in range(3)]
+        res_test_files = [resfile.format(n + 1) for n in range(3)]
 
         m.setattr(pkg_resources, "resource_listdir", lambda *args: res_test_files)
 
-        res_paths = [resource_file(test_dir, resfile.format(n+1)) for n in range(3)]
+        res_paths = [resource_file(test_dir, resfile.format(n + 1)) for n in range(3)]
 
         assert sorted(res_paths) == sorted(resource.get_resource_dir('test'))
 
@@ -147,8 +161,10 @@ def test_resource_dir_invalid(tmpdir, monkeypatch):
         with pytest.raises(AssertionError):
             resource.get_resource_dir('test')
 
-def test_example_config_line_endings():
-    runner= CliRunner()
+
+def test_example_config_line_endings(tmp_config_files):
+    (_,ldap_config_file,_)=tmp_config_files
+    runner = CliRunner()
     runner.invoke(example_config)
     with open('connector-ldap.yml', 'rb') as f:
         content = f.read()
@@ -157,4 +173,3 @@ def test_example_config_line_endings():
     else:
         assert b'\n' in content
         assert b'\r' not in content
-
