@@ -119,18 +119,18 @@ is "Username", User Sync supports update of username as well as the other fields
 
 ### Is the user sync tool dedicated to a particular OS?
 
-User Sync is an open source python project.  Users can build for any OS platform they desire.  We provide builds for Windows, OS X, Ubuntu, and Cent OS 7 platforms.
-
-### Has this been tested on python 3.5?
-
-User Sync has been run successfully on Python 3.x.  We started development with 2.7 but most work is now on the Python 3.6.x series and Python 3 builds are available for recent releases.  Feel free to report problems (and contribute fixes) to the open source site at https://github.com/adobe-apiplatform/user-sync.py.
+Builds for Windows, Ubuntu and CentOS are provided on the
+[latest release](https://github.com/adobe-apiplatform/user-sync.py/releases/latest) page.
+Users that need builds for other environments can build their own version assuming the
+system can run Python 3.6 and all of the Sync Tool's dependencies are available on that
+platform.
 
 ### If something changes in the API (new field in creating users, for example ) how will the update  be applied to the user sync tool?
 
 User sync is an open source project.  Users can download and build the latest 
 sources at their discretion.  Adobe will post new releases with builds periodically.  
 Users can stay informed of them via git notifications.  When adopting a new release, 
-only the single pex file needs to be updated by the user.  If there are configuration 
+only the single executable file needs to be updated by the user.  If there are configuration 
 changes or command line changes to support new features, there may be updates in 
 those files to take advantage of them.
 

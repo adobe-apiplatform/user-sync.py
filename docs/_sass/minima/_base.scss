@@ -218,9 +218,21 @@ pre {
  */
 .bordertablestyle {
    border-collapse: collapse;
+   margin-bottom: 10px !IMPORTANT;
 
-   > table, td, th {
-        border: 1px solid black;
-	padding: 2px;
-        }
+   th {
+     background-color: #666;
+     color: #fff;
+   }
+
+   td {
+     background-color: #ddd;
+   }
+
+
+   table, td, th {
+     border: 3px solid #fff;
+     border-radius: 5px;
+     padding: 3px 6px;
+   }
 }

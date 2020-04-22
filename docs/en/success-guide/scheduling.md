@@ -13,10 +13,11 @@ nav_order: 320
 
 ## Setting Up Scheduled Run on Windows
 
-First, create a batch file with the invocation of user-sync piped to a scan to pull out relevant log entries for a summary.  Create the file run_sync.bat for this with contents like:
+First, create a batch file with the invocation of user-sync piped to a scan to pull out relevant log entries for a summary.
+Create the file run_sync.bat for this with contents like:
 
 	cd user-sync-directory
-	python user-sync.pex --users file example.users-file.csv --process-groups | findstr /I "==== ----- WARNING ERROR CRITICAL Number" > temp.file.txt
+	user_sync.exe --users file example.users-file.csv --process-groups | findstr /I "==== ----- WARNING ERROR CRITICAL Number" > temp.file.txt
 	rem email the contents of temp.file.txt to the user sync administration
 	your-mail-tool –send file temp.file.txt
 

@@ -8,6 +8,8 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+venv*
+test-config
 env/
 /build/
 develop-eggs/
@@ -24,11 +26,12 @@ var/
 .installed.cfg
 *.egg
 
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
-*.spec
+# *.spec
 
 # Installer logs
 pip-log.txt
@@ -79,7 +82,9 @@ celerybeat-schedule
 .env
 
 # virtualenv
-venv/
+venv*
+build/
+dist/
 ENV/
 
 # Spyder project settings
@@ -100,5 +105,7 @@ user_sync/resources/*
 !user_sync/resources/__init__.py
 !user_sync/resources/README.md
 !user_sync/resources/manual_url
-
 .DS_Store
+!user_sync/resources/default_flags.cfg
+test_config/
+*.swp

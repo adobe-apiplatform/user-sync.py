@@ -155,6 +155,7 @@ class LDAPDirectoryConnector(object):
         builder.set_string_value('user_given_name_format', six.text_type('{givenName}'))
         builder.set_string_value('user_surname_format', six.text_type('{sn}'))
         builder.set_string_value('user_country_code_format', six.text_type('{c}'))
+        builder.set_string_value('dynamic_group_member_attribute', None)
         builder.set_string_value('user_identity_type', None)
         builder.set_int_value('search_page_size', 200)
         builder.set_string_value('logger_name', LDAPDirectoryConnector.name)
@@ -320,6 +321,9 @@ class LDAPDirectoryConnector(object):
             pass
 
     def iter_users(self, base_dn, users_filter, extended_attributes):
+        options = self.options
+        dynamic_group_member_attribute = options['dynamic_group_member_attribute']
+
         user_attribute_names = []
         user_attribute_names.extend(self.user_given_name_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_surname_formatter.get_attribute_names())
@@ -328,7 +332,8 @@ class LDAPDirectoryConnector(object):
         user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
-        user_attribute_names.append(six.text_type('memberOf'))
+        if dynamic_group_member_attribute is not None:
+            user_attribute_names.append(six.text_type(dynamic_group_member_attribute))
 
         extended_attributes = [six.text_type(attr) for attr in extended_attributes]
         extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
@@ -407,7 +412,7 @@ class LDAPDirectoryConnector(object):
             if c_value is not None:
                 user['country'] = c_value.upper()
 
-            user['member_groups'] = self.get_member_groups(record) if self.additional_group_filters else []
+            user['member_groups'] = self.get_member_groups(record, dynamic_group_member_attribute) if self.additional_group_filters else []
 
             if extended_attributes is not None:
                 for extended_attribute in extended_attributes:
@@ -421,7 +426,7 @@ class LDAPDirectoryConnector(object):
 
             yield (dn, user)
 
-    def get_member_groups(self, user):
+    def get_member_groups(self, user, dynamic_group_member_attribute):
         """
         Get a list of member group common names for user
         Assumes groups are contained in attribute memberOf
@@ -429,7 +434,7 @@ class LDAPDirectoryConnector(object):
         :return:
         """
         group_names = []
-        groups = LDAPValueFormatter.get_attribute_value(user, 'memberOf')
+        groups = LDAPValueFormatter.get_attribute_value(user, dynamic_group_member_attribute)
 
         if not groups:
             return group_names
@@ -530,6 +535,10 @@ class LDAPDirectoryConnector(object):
         :param dn: str
         :return: bool
         """
+        # return true if base_dn is empty string such as global scope and no need to check user_dn is part of base_dn
+        if (not (base_dn and base_dn.strip())):
+            return True
+
         split_base_dn = ldap3.utils.dn.parse_dn(base_dn.lower())
         split_dn = ldap3.utils.dn.parse_dn(dn.lower())
         if split_base_dn == split_dn[-len(split_base_dn):]:

@@ -93,6 +93,12 @@ group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objec
 # group_member_filter_format: "(memberOf:1.2.840.113556.1.4.1941:={group_dn})"
 group_member_filter_format: "(memberOf={group_dn})"
 
+# (optional) configure dynamic_group_member_attribute with dynamic group mappings 
+# From User Sync tool 2.5.0 onward, if additional_groups defined in user-sync-config.yml 
+# then dynamic_group_member_attribute is required. Here you specify the LDAP attribute 
+# used to filter groups mentioned in dynamic group mappings.
+#dynamic_group_member_attribute: "memberOf"
+
 # (optional) two_steps_lookup (no default)
 #two_steps_lookup:
   # (required) group_member_attribute_name (no default)
