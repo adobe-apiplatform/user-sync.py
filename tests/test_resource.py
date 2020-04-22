@@ -29,20 +29,6 @@ from user_sync import resource
 from user_sync.app import example_config
 
 
-@pytest.fixture
-def root_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'user-sync-config.yml')
-
-
-@pytest.fixture
-def ldap_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'connector-ldap.yml')
-
-@pytest.fixture
-def umapi_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'connector-umapi.yml')
-
-
 def test_resource_file_bundle(resource_file, tmpdir, monkeypatch):
     """test for valid resource file in an EXE bundle"""
     tmpdir = str(tmpdir)
