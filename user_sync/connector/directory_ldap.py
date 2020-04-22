@@ -81,9 +81,14 @@ class LDAPDirectoryConnector(object):
         self.user_country_code_formatter = LDAPValueFormatter(options['user_country_code_format'])
 
         auth_method = options['authentication_method'].lower()
+        auth_cred_required = ['simple', 'ntlm']
 
         if options['username'] is not None:
-            password = caller_config.get_credential('password', options['username'])
+            if auth_method in auth_cred_required:
+                password = caller_config.get_credential('password', options['username'])
+            else:
+                # Ignore specified credential if authentication method is either 'Kerberos' or 'Anonymous'
+                raise AssertionException("'username' and 'password' are not allowed when 'authentication_method' is '%s" % auth_method)
         else:
             # override authentication method to anonymous if username is not specified
             if auth_method != 'anonymous' and auth_method != 'kerberos':
