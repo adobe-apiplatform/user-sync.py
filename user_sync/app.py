@@ -17,29 +17,30 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
-import argparse
+from sys import platform
 import logging
 import os
-import sys
-import click
 import shutil
-from click_default_group import DefaultGroup
+import sys
 from datetime import datetime
 
+import click
 import six
+from click_default_group import DefaultGroup
 
+import user_sync.certgen
+import user_sync.cli
 import user_sync.config
 import user_sync.connector.directory
 import user_sync.connector.directory_ldap
 import user_sync.connector.directory_okta
 import user_sync.connector.directory_csv
 import user_sync.connector.umapi
+import user_sync.encryption
 import user_sync.helper
 import user_sync.lockfile
-import user_sync.rules
-import user_sync.cli
 import user_sync.resource
+import user_sync.rules
 
 import user_sync.connector.umapi
 from user_sync.post_sync.manager import PostSyncManager
@@ -208,6 +209,28 @@ def sync(**kwargs):
             run_stats.log_end(logger)
 
 
+@main.command(help='Generates configuration files, an X509 certificate/keypair, and the batch '
+                   'files for running the user-sync tool in test and live mode.')
+@click.pass_context
+def init(ctx):
+    ctx.forward(certgen, randomize=True)
+
+    with open('Run_UST_Test_Mode.bat', 'w') as OPATH:
+        OPATH.writelines(['mode 155,50', '\ncd /D "%~dp0"', '\nuser-sync.exe --process-groups --users mapped -t',
+                          '\npause'])
+    with open("Run_UST_Live.bat", 'w') as OPATH:
+        OPATH.writelines(
+            ['mode 155,50', '\ncd /D "%~dp0"', '\nuser-sync.exe --process-groups --users mapped'])
+
+    sync = 'user-sync-config.yml'
+    umapi = 'connector-umapi.yml'
+    ldap = 'connector-ldap.yml'
+    existing = "\n".join({f for f in (sync, umapi, ldap) if os.path.exists(f)})
+    if existing and not click.confirm('\nWarning: files already exist: \n{}\nOverwrite?'.format(existing)):
+        return
+    ctx.forward(example_config, root=sync, umapi=umapi, ldap=ldap)
+
+
 @main.command()
 @click.help_option('-h', '--help')
 @click.option('--root', help="Filename of root user sync config file",
@@ -229,7 +252,10 @@ def example_config(**kwargs):
         res_file = user_sync.resource.get_resource(res_files[k])
         assert res_file is not None, "Resource file '{}' not found".format(res_files[k])
         click.echo("Generating file '{}'".format(fname))
-        shutil.copy(res_file, fname)
+        with open(res_file, 'r') as file:
+            content = file.read()
+        with open(fname, 'w') as file:
+            file.write(content)
 
 
 @main.command()
@@ -392,6 +418,62 @@ def begin_work(config_loader):
     #  Post sync section
     if post_sync_manager:
         post_sync_manager.run(rule_processor.post_sync_data)
+
+
+@main.command(help='Encrypt an existing RSA private key file with a passphrase')
+@click.argument('key-path', default='private.key', type=click.Path(exists=True))
+@click.option('--password', '-p', prompt='Create password', hide_input=True, confirmation_prompt=True)
+def encrypt(password, key_path):
+    try:
+        data = user_sync.encryption.encrypt_file(password, key_path)
+        user_sync.encryption.write_key(data, key_path)
+        click.echo('Encryption was successful.\n{0}'.format(os.path.abspath(key_path)))
+    except AssertionException as e:
+        click.echo(str(e))
+
+
+@main.command(help='Decrypt an RSA private key file with a passphrase')
+@click.argument('key-path', default='private.key', type=click.Path(exists=True))
+@click.option('--password', '-p', prompt='Enter password', hide_input=True)
+def decrypt(password, key_path):
+    try:
+        data = user_sync.encryption.decrypt_file(password, key_path)
+        user_sync.encryption.write_key(data, key_path)
+        click.echo('Decryption was successful.\n{0}'.format(os.path.abspath(key_path)))
+    except AssertionException as e:
+        click.echo(str(e))
+
+
+@main.command(help='Generates an X509 certificate/keypair with random or user-specified subject. '
+                   'User Sync Tool can use these files to communicate with the admin console. '
+                   'Please visit https://console.adobe.io to complete the integration process. '
+                   'Use the --randomize argument to create a secure keypair with no user input.')
+@click.option('--overwrite', '-o', '-y', help='Overwrite existing files without being asked to confirm', is_flag=True)
+@click.option('--randomize', '-r', help='Randomize the values rather than entering credentials', is_flag=True)
+@click.option('--key', '-k', help='Set a custom output path for private key', default='private.key')
+@click.option('--certificate', '-c', help='Set a custom output path for certificate', default='certificate_pub.crt')
+def certgen(randomize, key, certificate, overwrite):
+    key = os.path.abspath(key)
+    certificate = os.path.abspath(certificate)
+    existing = "\n".join({f for f in (key, certificate) if os.path.exists(f)})
+    if existing and not overwrite:
+        if not click.confirm('\nWarning: files already exist: \n{}\nOverwrite?'.format(existing)):
+            return
+    try:
+        if randomize:
+            click.echo("\nSkipping user input due to --randomize flag")
+        else:
+            click.echo(
+                "\nEnter information as required to generate the X509 certificate/key pair for your organization. "
+                "This information is used only for authentication with UMAPI and does not need to reflect "
+                "an SSL or other official identity.  Specify values as you deem fit.\n")
+        subject_fields = user_sync.certgen.get_subject_fields(randomize)
+        user_sync.certgen.generate(key, certificate, subject_fields)
+        click.echo("----------------------------------------------------")
+        click.echo("Success! Files were created at:\n{0}\n{1}".format(key, certificate))
+    except AssertionException as e:
+        click.echo("Error creating keypair: " + str(e))
+        click.echo('Files have not been created/overwritten.')
 
 
 if __name__ == '__main__':

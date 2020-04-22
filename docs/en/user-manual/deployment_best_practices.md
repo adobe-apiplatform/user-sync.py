@@ -17,7 +17,7 @@ nav_order: 80
 
 ---
 
-[Previous Section](advanced_configuration.md)
+[Previous Section](advanced_configuration.md)  \| [Next Section](additional_tools.md)
 
 ---
 
@@ -246,4 +246,5 @@ logging:
 
 ---
 
-[Previous Section](advanced_configuration.md)
+[Previous Section](advanced_configuration.md)  \| [Next Section](additional_tools.md)
+
