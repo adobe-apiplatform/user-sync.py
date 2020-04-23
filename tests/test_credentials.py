@@ -96,19 +96,19 @@ def test_retrieve_revert_ldap_invalid(tmp_config_files):
 def test_retrieve_revert_umapi_valid(tmp_config_files):
     (_, _, umapi_config_file) = tmp_config_files
     umapi = UmapiCredentialConfig(umapi_config_file)
-    # Using the org_id for assertions. The rest can be added in later if deemed necessary
-    assert not umapi.parse_secure_key(umapi.get_nested_key(['enterprise', 'org_id']))
-    unsecured_org_id = umapi.get_nested_key(['enterprise', 'org_id'])
+    # Using the api_key for assertions. The rest can be added in later if deemed necessary
+    assert not umapi.parse_secure_key(umapi.get_nested_key(['enterprise', 'api_key']))
+    unsecured_api_key = umapi.get_nested_key(['enterprise', 'api_key'])
     umapi.store()
     with open(umapi_config_file) as f:
         data = yaml.load(f)
-        assert umapi.parse_secure_key(data['enterprise']['org_id'])
+        assert umapi.parse_secure_key(data['enterprise']['api_key'])
     retrieved_key_dict = umapi.retrieve()
-    assert retrieved_key_dict['enterprise']['org_id'] == unsecured_org_id
+    assert retrieved_key_dict['enterprise']['api_key'] == unsecured_api_key
     umapi.revert()
     with open(umapi_config_file) as f:
         data = yaml.load(f)
-        assert data['enterprise']['org_id'] == unsecured_org_id
+        assert data['enterprise']['api_key'] == unsecured_api_key
 
 
 def test_credman_retrieve_revert_valid(tmp_config_files):
@@ -119,25 +119,25 @@ def test_credman_retrieve_revert_valid(tmp_config_files):
         plaintext_ldap_password = data['password']
     with open(umapi_config_file) as f:
         data = yaml.load(f)
-        plaintext_umapi_org_id = data['enterprise']['org_id']
+        plaintext_umapi_api_key = data['enterprise']['api_key']
     credman.store()
     retrieved_creds = credman.retrieve()
     assert retrieved_creds['password'] == plaintext_ldap_password
-    assert retrieved_creds['enterprise']['org_id'] == plaintext_umapi_org_id
+    assert retrieved_creds['enterprise']['api_key'] == plaintext_umapi_api_key
     # make sure the config files are still in secure format
     with open(ldap_config_file) as f:
         data = yaml.load(f)
         assert data['password'] != plaintext_ldap_password
     with open(umapi_config_file) as f:
         data = yaml.load(f)
-        assert data['enterprise']['org_id'] != plaintext_umapi_org_id
+        assert data['enterprise']['api_key'] != plaintext_umapi_api_key
     credman.revert()
     with open(ldap_config_file) as f:
         data = yaml.load(f)
         assert data['password'] == plaintext_ldap_password
     with open(umapi_config_file) as f:
         data = yaml.load(f)
-        assert data['enterprise']['org_id'] == plaintext_umapi_org_id
+        assert data['enterprise']['api_key'] == plaintext_umapi_api_key
 
 
 def test_credman_retrieve_revert_invalid(tmp_config_files):

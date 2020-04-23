@@ -425,14 +425,12 @@ def revert(config_filename, typ):
     try:
         credential_manager = CredentialManager(config_filename, typ)
         retrieved_creds = credential_manager.retrieve()
-        for k,v in retrieved_creds.items():
-            if k[v] is not None:
-                click.echo("The following values were stored securely: '{0}'".format(k))
+        # echo the identifier:value pairs to the console
     except AssertionException as e:
         click.echo(str(e))
 
 
-@credentials.command(help="Will return configuration file to unsecured state and replace all secrure values with "
+@credentials.command(help="Will return configuration file to unsecured state and replace all secure values with "
                           "plain text values.")
 @click.option('-c', '--config-filename',
               help="path to your main configuration file",
@@ -457,7 +455,7 @@ def revert(config_filename):
         click.echo(str(e))
 
 
-@credentials.command(help="Allows for east fetch of stored credentials on any platform.", name="get")
+@credentials.command(help="Allows for easy fetch of stored credentials on any platform.", name="get")
 @click.option('-i', '--identifier', prompt='Enter identifier',
               help="Name of service you want to get a value for.  Username will always be 'user_sync'.")
 def get_credential(identifier):
