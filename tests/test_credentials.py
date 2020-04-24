@@ -1,8 +1,7 @@
+import os
 import uuid
 
 import pytest
-
-import os
 
 from user_sync.credentials import *
 from user_sync.error import AssertionException
@@ -23,7 +22,6 @@ def test_nested_set(ldap_config_file):
     c.set_nested_key(['password'], {'secure': 'somethingverysecure'})
     r = c.get_nested_key(['password', 'secure'])
     assert r == 'somethingverysecure'
-    print()
 
 
 def test_retrieve_ldap_creds_valid(tmp_config_files):
@@ -32,7 +30,6 @@ def test_retrieve_ldap_creds_valid(tmp_config_files):
     key_list = ['password']
     plaintext_cred = c.get_nested_key(key_list)
     c.store_key(key_list)
-    secure_identifier = c.get_qualified_identifier(key_list)
     retrieved_plaintext_cred = c.retrieve_key(key_list)
     assert retrieved_plaintext_cred == plaintext_cred
 
@@ -60,8 +57,7 @@ def test_revert_invalid(tmp_config_files):
     c = CredentialConfig(ldap_config_file)
     key_list = ['password']
     # assume store_key has not been called
-    with pytest.raises(AssertionException):
-        reverted_plaintext_cred = c.revert_key(key_list)
+    assert c.revert_key(key_list) is None
 
 
 def test_retrieve_revert_ldap_valid(tmp_config_files):
@@ -73,7 +69,7 @@ def test_retrieve_revert_ldap_valid(tmp_config_files):
     with open(ldap_config_file) as f:
         data = yaml.load(f)
         assert ldap.parse_secure_key(data['password'])
-    retrieved_key_dict = ldap.retrieve()
+    retrieved_key_dict, errors = ldap.retrieve()
     assert retrieved_key_dict['password'] == unsecured_key
     ldap.revert()
     with open(ldap_config_file) as f:
@@ -85,12 +81,13 @@ def test_retrieve_revert_ldap_invalid(tmp_config_files):
     (_, ldap_config_file, _) = tmp_config_files
     ldap = LdapCredentialConfig(ldap_config_file)
     assert not ldap.parse_secure_key(ldap.get_nested_key(['password']))
-    unsecured_key = ldap.get_nested_key(['password'])
     # if store has not been previously called before retrieve and revert we can expect the following
-    retrieved_key_dict = ldap.retrieve()
-    assert retrieved_key_dict['password'] is None
-    with pytest.raises(AssertionException):
-        reverted_creds_dict = ldap.revert()
+    retrieved_key_dict, errors = ldap.retrieve()
+    assert retrieved_key_dict == {}
+    assert errors == []
+    creds, errors = ldap.revert()
+    assert creds == {}
+    assert errors == []
 
 
 def test_retrieve_revert_umapi_valid(tmp_config_files):
@@ -103,8 +100,8 @@ def test_retrieve_revert_umapi_valid(tmp_config_files):
     with open(umapi_config_file) as f:
         data = yaml.load(f)
         assert umapi.parse_secure_key(data['enterprise']['api_key'])
-    retrieved_key_dict = umapi.retrieve()
-    assert retrieved_key_dict['enterprise']['api_key'] == unsecured_api_key
+    retrieved_key_dict, errors = umapi.retrieve()
+    assert retrieved_key_dict['enterprise:api_key'] == unsecured_api_key
     umapi.revert()
     with open(umapi_config_file) as f:
         data = yaml.load(f)
@@ -121,9 +118,9 @@ def test_credman_retrieve_revert_valid(tmp_config_files):
         data = yaml.load(f)
         plaintext_umapi_api_key = data['enterprise']['api_key']
     credman.store()
-    retrieved_creds = credman.retrieve()
-    assert retrieved_creds['password'] == plaintext_ldap_password
-    assert retrieved_creds['enterprise']['api_key'] == plaintext_umapi_api_key
+    retrieved_creds, errors = credman.retrieve()
+    assert retrieved_creds[ldap_config_file]['password'] == plaintext_ldap_password
+    assert retrieved_creds[umapi_config_file]['enterprise:api_key'] == plaintext_umapi_api_key
     # make sure the config files are still in secure format
     with open(ldap_config_file) as f:
         data = yaml.load(f)
@@ -144,10 +141,11 @@ def test_credman_retrieve_revert_invalid(tmp_config_files):
     (root_config_file, ldap_config_file, umapi_config_file) = tmp_config_files
     credman = CredentialManager(root_config_file)
     # if credman.store() has not been called first then we can expect the following
-    retrieved_creds = credman.retrieve()
-    assert retrieved_creds['password'] is None
-    with pytest.raises(AssertionException):
-        credman.revert()
+    retrieved_creds, errors = credman.retrieve()
+    assert retrieved_creds == {}
+    creds, errors = credman.revert()
+    assert creds == {}
+    assert errors == []
 
 
 def test_set():
@@ -212,15 +210,3 @@ def test_config_store_key_none(tmp_config_files):
     ldap.set_nested_key(['password'], [])
     with pytest.raises(AssertionException):
         ldap.store_key(['password'])
-
-# def test_config_store_key_secured(tmp_config_files):
-#     (_, ldap_config_file, _) = tmp_config_files
-#     ldap = LdapCredentialConfig(ldap_config_file)
-#     assert not ldap.parse_secure_key(ldap.get_nested_key(['password']))
-#     ldap.store_key(['password'])
-#     assert ldap.parse_secure_key(ldap.get_nested_key(['password']))
-#     ldap.store_key(['password'])
-#     assert ldap.parse_secure_key(ldap.get_nested_key(['password']))
-
-
-
