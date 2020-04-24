@@ -12,7 +12,7 @@ def make_auth_dict(name, config, org_id, tech_acct, logger):
     # get the private key
     key_path = config.get_string('priv_key_path', True)
     if key_path:
-        data_setting = has_credential('priv_key_data')
+        data_setting = has_credential('priv_key_data', config)
         if data_setting:
             raise AssertionException('%s: cannot specify both "priv_key_path" and "%s"' %
                                      (config.get_full_scope(), data_setting))
@@ -37,17 +37,17 @@ def make_auth_dict(name, config, org_id, tech_acct, logger):
     return auth_dict
 
 
-def has_credential(name):
+def has_credential(name, config):
     """
     Check if there is a credential setting with the given name
     :param name: plaintext setting name for the credential
+    :param config: DictConfig object passed in from umapi_util.make_auth_dict
     :return: setting that was specified, or None if none was
     """
-    from user_sync.config import ObjectConfig, DictConfig
-    scope = ObjectConfig.get_full_scope()
-    keyring_name = DictConfig.keyring_prefix + name + DictConfig.keyring_suffix
-    plaintext = DictConfig.get_string(name, True)
-    secure = DictConfig.get_string(keyring_name, True)
+    scope = config.get_full_scope()
+    keyring_name = config.keyring_prefix + name + config.keyring_suffix
+    plaintext = config.get_string(name, True)
+    secure = config.get_string(keyring_name, True)
     if plaintext and secure:
         raise AssertionException('%s: cannot contain setting for both "%s" and "%s"' % (scope, name, keyring_name))
     if plaintext is not None:
