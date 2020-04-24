@@ -132,30 +132,6 @@ Successful output from ```revert``` is shown below.
    <output from revert goes here>
 ```
 
-
-
-[Previous Section](deployment_best_practices.md)
----
-layout: default
-lang: en
-nav_link: Additional Tools
-nav_level: 2
-nav_order: 80
----
-
-
-# Additional Tools
-
-## In This Section
-{:."no_toc"}
-
-* TOC Placeholder
-{:toc}
-
----
-
-[Previous Section](deployment_best_practices.md)
-
 <br/>
 
 ---
