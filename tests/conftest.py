@@ -1,15 +1,15 @@
 import os
-import shutil
 
 import pytest
+
 from user_sync import config
 import shutil
 
 @pytest.fixture
 def fixture_dir():
     return os.path.abspath(
-           os.path.join(
-             os.path.dirname(__file__), 'fixture'))
+        os.path.join(
+            os.path.dirname(__file__), 'fixture'))
 
 
 @pytest.fixture
@@ -26,8 +26,20 @@ def cli_args():
         for k, v in args_in.items():
             args_out[k] = v
         return args_out
+
     return _cli_args
 
+
+@pytest.fixture
+def private_key(fixture_dir, tmpdir):
+    shutil.copy(os.path.join(fixture_dir, 'test_private.key'), tmpdir.dirname)
+    return os.path.join(tmpdir.dirname, 'test_private.key')
+
+
+@pytest.fixture
+def public_cert(fixture_dir, tmpdir):
+    shutil.copy(os.path.join(fixture_dir, 'test_cert.crt'), tmpdir.dirname)
+    return os.path.join(tmpdir.dirname, 'test_cert.crt')
 
 @pytest.fixture
 def root_config_file(fixture_dir):
@@ -56,8 +68,6 @@ def tmp_config_files(root_config_file, ldap_config_file, umapi_config_file, tmpd
         shutil.copy(fname, tmpfile)
         tmpfiles.append(tmpfile)
     return tuple(tmpfiles)
-
-
 
 @pytest.fixture
 def resource_file():
