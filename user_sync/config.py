@@ -814,25 +814,6 @@ class DictConfig(ObjectConfig):
     keyring_prefix = 'secure_'
     keyring_suffix = '_key'
 
-    def has_credential(self, name):
-        """
-        Check if there is a credential setting with the given name
-        :param name: plaintext setting name for the credential
-        :return: setting that was specified, or None if none was
-        """
-        scope = self.get_full_scope()
-        keyring_name = self.keyring_prefix + name + self.keyring_suffix
-        plaintext = self.get_string(name, True)
-        secure = self.get_string(keyring_name, True)
-        if plaintext and secure:
-            raise AssertionException('%s: cannot contain setting for both "%s" and "%s"' % (scope, name, keyring_name))
-        if plaintext is not None:
-            return name
-        elif secure is not None:
-            return keyring_name
-        else:
-            return None
-
     def get_credential(self, name, username, none_allowed=False):
         """
         Get the credential with the given name.  Raises an AssertionException if there
