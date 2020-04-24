@@ -119,7 +119,7 @@ class CredentialConfig:
                 if val is not None:
                     credentials[':'.join(c)] = val
             except AssertionException as e:
-                logging.getLogger().exception("\nError: {}".format(str(e)), exc_info=False)
+                logging.getLogger().exception("\nError: {}\n".format(str(e)), exc_info=False)
         return credentials
 
     def store(self):
