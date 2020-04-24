@@ -465,7 +465,7 @@ def store(config_filename, type):
         click.echo("The following keys were stored:")
         log_credentials(stored)
     else:
-        click.echo("No keys were stored because none were found.")
+        click.echo("No keys were stored because no valid credentials were found.")
 
 
 @credentials.command(help="Will return configuration file to unsecured state and replace all secure values with "
@@ -491,7 +491,7 @@ def revert(config_filename, type):
         click.echo("The following keys were reverted to plaintext:")
         log_credentials(reverted)
     else:
-        click.echo("No keys were reverted because none were stored. ")
+        click.echo("No keys were reverted because no valid identifiers were stored.")
 
 
 @credentials.command(help="Will get the stored credentials without altering config files")
@@ -513,7 +513,7 @@ def retrieve(config_filename, type):
     """
     retrieved = CredentialManager(config_filename, type).retrieve()
     if not retrieved:
-        click.echo("No credentials currently stored.")
+        click.echo("No credentials currently stored valid identifiers.")
     log_credentials(retrieved, show_values=True)
 
 
