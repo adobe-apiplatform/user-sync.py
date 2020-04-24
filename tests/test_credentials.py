@@ -22,7 +22,6 @@ def test_nested_set(ldap_config_file):
     c.set_nested_key(['password'], {'secure': 'somethingverysecure'})
     r = c.get_nested_key(['password', 'secure'])
     assert r == 'somethingverysecure'
-    print()
 
 
 def test_retrieve_ldap_creds_valid(tmp_config_files):

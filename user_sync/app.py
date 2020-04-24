@@ -402,8 +402,7 @@ def log_credentials(credentials, show_values=False):
               metavar='all|ldap|umapi|okta|console')
 def store(config_filename, type):
     """
-    Stores secure credentials in the configuration file
-    This is an automated process.
+    Stores secure credentials in the configuration file. This is an automated process.
     """
     click.echo()
     stored, errors = CredentialManager(config_filename, type).store()
@@ -431,9 +430,7 @@ def store(config_filename, type):
               metavar='all|ldap|umapi|okta|console')
 def revert(config_filename, type):
     """
-    Revert updates config files
-    with actual plaintext data This is an
-    automated process.
+    Revert updates config files with actual plaintext data. This is an automated process.
     """
     reverted, errors = CredentialManager(config_filename, type).revert()
     log_credential_errors(errors)

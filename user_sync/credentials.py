@@ -29,13 +29,11 @@ class CredentialManager:
     logger = logging.getLogger("credential_manager")
     keyring_name = keyring.get_keyring().name
 
-    def __init__(self, root_config=None, typ="all"):
-
+    def __init__(self, root_config=None, connector_type="all"):
         self.config_files = {}
         self.root_config = root_config
-
         if self.root_config:
-            self.load_configs(typ)
+            self.load_configs(connector_type)
 
     @classmethod
     def get(cls, identifier, username=None):
@@ -56,15 +54,6 @@ class CredentialManager:
             if "stub received bad data" in str(e):
                 raise AssertionException("Value for {0} too long for backend to store: {1}".format(identifier, str(e)))
             raise e
-
-    def store(self):
-        return self.modify_credentials('store')
-
-    def retrieve(self):
-        return self.modify_credentials('retrieve')
-
-    def revert(self):
-        return self.modify_credentials('revert')
 
     def modify_credentials(self, action):
         all_credentials = {}
@@ -92,6 +81,15 @@ class CredentialManager:
             if connector_type in ['all', c]:
                 self.config_files[v] = CredentialConfig.create(c, v)
 
+    def store(self):
+        return self.modify_credentials('store')
+
+    def retrieve(self):
+        return self.modify_credentials('retrieve')
+
+    def revert(self):
+        return self.modify_credentials('revert')
+
 
 class CredentialConfig:
     """
@@ -113,19 +111,6 @@ class CredentialConfig:
         name = subclass.capitalize() + "CredentialConfig"
         return globals()[name](filename)
 
-    def store(self):
-        credentials, errors = self.modify_credentials(self.store_key)
-        self.save()
-        return credentials, errors
-
-    def revert(self):
-        credentials, errors = self.modify_credentials(self.revert_key)
-        self.save()
-        return credentials, errors
-
-    def retrieve(self):
-        return self.modify_credentials(self.retrieve_key)
-
     def modify_credentials(self, action):
         credentials = {}
         errors = []
@@ -140,6 +125,19 @@ class CredentialConfig:
                 errors.append(e)
                 continue
         return credentials, errors
+
+    def store(self):
+        credentials, errors = self.modify_credentials(self.store_key)
+        self.save()
+        return credentials, errors
+
+    def revert(self):
+        credentials, errors = self.modify_credentials(self.revert_key)
+        self.save()
+        return credentials, errors
+
+    def retrieve(self):
+        return self.modify_credentials(self.retrieve_key)
 
     def load(self):
         with open(self.filename) as file:
