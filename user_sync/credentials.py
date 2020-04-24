@@ -57,14 +57,12 @@ class CredentialManager:
 
     def modify_credentials(self, action):
         all_credentials = {}
-        collected_errors = []
         for k, v in self.config_files.items():
-            self.logger.info("Analyzing: " + k)
-            result, errors = getattr(v, action)()
+            self.logger.debug("Analyzing: " + k)
+            result = getattr(v, action)()
             if result:
                 all_credentials[k] = result
-            collected_errors.extend(errors)
-        return all_credentials, collected_errors
+        return all_credentials
 
     def load_configs(self, connector_type="all"):
         """
@@ -113,7 +111,6 @@ class CredentialConfig:
 
     def modify_credentials(self, action):
         credentials = {}
-        errors = []
         for c in self.secured_keys:
             try:
                 # Try to do the action, but don't break on exception because rest of actions
@@ -122,19 +119,18 @@ class CredentialConfig:
                 if val is not None:
                     credentials[':'.join(c)] = val
             except AssertionException as e:
-                errors.append(e)
-                continue
-        return credentials, errors
+                logging.getLogger().exception("\nError: {}".format(str(e)), exc_info=False)
+        return credentials
 
     def store(self):
-        credentials, errors = self.modify_credentials(self.store_key)
+        credentials = self.modify_credentials(self.store_key)
         self.save()
-        return credentials, errors
+        return credentials
 
     def revert(self):
-        credentials, errors = self.modify_credentials(self.revert_key)
+        credentials = self.modify_credentials(self.revert_key)
         self.save()
-        return credentials, errors
+        return credentials
 
     def retrieve(self):
         return self.modify_credentials(self.retrieve_key)
