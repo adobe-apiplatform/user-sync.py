@@ -31,9 +31,9 @@ from click_default_group import DefaultGroup
 import user_sync.cli
 import user_sync.config
 import user_sync.connector.directory
+import user_sync.connector.directory_csv
 import user_sync.connector.directory_ldap
 import user_sync.connector.directory_okta
-import user_sync.connector.directory_csv
 import user_sync.connector.umapi
 import user_sync.helper
 import user_sync.lockfile
@@ -373,6 +373,19 @@ def credentials():
     pass
 
 
+def log_credential_errors(errors):
+    click.echo()
+    for e in errors:
+        click.echo("Error: {}\n".format(str(e)))
+
+
+def log_credentials(credentials, show_values=False):
+    for file, cred in credentials.items():
+        click.echo('\n' + file.split(os.sep)[-1] + ":")
+        for k, v in cred.items():
+            click.echo("  " + k + (": " + v if show_values else ""))
+
+
 @credentials.command(
     help="Stores all sensitive fields and updates configuration files, replacing plaintext values with keys")
 @click.option('-c', '--config-filename',
@@ -381,53 +394,25 @@ def credentials():
               nargs=1,
               default="user-sync-config.yml",
               metavar='path-to-file')
-@click.option('--typ',
+@click.option('-t', '--type',
               help=" Specify all, ldap, umapi, okta, console. ",
               type=str,
               nargs=1,
               default="all",
               metavar='all|ldap|umapi|okta|console')
-def store(config_filename, typ):
+def store(config_filename, type):
     """
     Stores secure credentials in the configuration file
     This is an automated process.
     """
-    try:
-            credential_manager = CredentialManager(config_filename, typ)
-            credential_manager.store()
-            # for identifier in credential_manager.retrieve():
-            #     click.echo("'{0} was stored securely.".format({identifier}))
-    except AssertionException as e:
-        click.echo(str(e))
-
-
-@credentials.command(help="Retrieves currently stored credentials under the username 'user_sync'.")
-@click.option('-c', '--config-filename',
-              help="path to your main configuration file",
-              type=str,
-              nargs=1,
-              default="user-sync-config.yml",
-              metavar='path-to-file')
-@click.option('--typ',
-              help=" Specify all, ldap, umapi, okta, console. ",
-              type=str,
-              nargs=1,
-              default="all",
-              metavar='all|ldap|umapi|okta|console')
-def revert(config_filename, typ):
-    """
-    Stores secure credentials in the configuration file
-    This is an automated process.
-    """
-    """
-    Retrieves credentials from credential manager.
-    """
-    try:
-        credential_manager = CredentialManager(config_filename, typ)
-        retrieved_creds = credential_manager.retrieve()
-        # echo the identifier:value pairs to the console
-    except AssertionException as e:
-        click.echo(str(e))
+    click.echo()
+    stored, errors = CredentialManager(config_filename, type).store()
+    log_credential_errors(errors)
+    if stored:
+        click.echo("The following keys were stored:")
+        log_credentials(stored)
+    else:
+        click.echo("No keys were stored because none were found. " + ("(some errors encountered)" if errors else ""))
 
 
 @credentials.command(help="Will return configuration file to unsecured state and replace all secure values with "
@@ -438,21 +423,49 @@ def revert(config_filename, typ):
               nargs=1,
               default="user-sync-config.yml",
               metavar='path-to-file')
-def revert(config_filename):
+@click.option('-t', '--type',
+              help=" Specify all, ldap, umapi, okta, console. ",
+              type=str,
+              nargs=1,
+              default="all",
+              metavar='all|ldap|umapi|okta|console')
+def revert(config_filename, type):
     """
     Revert updates config files
     with actual plaintext data This is an
     automated process.
     """
-    try:
-        credential_manager = CredentialManager(config_filename)
-        reverted_creds = credential_manager.revert()
-        for identifier in reverted_creds:
-            click.echo(
-                "Config files were restored to original unsecured state with the following plain text values "
-                "for:'{0}'".format(identifier))
-    except AssertionException as e:
-        click.echo(str(e))
+    reverted, errors = CredentialManager(config_filename, type).revert()
+    log_credential_errors(errors)
+    if reverted:
+        click.echo("The following keys were reverted to plaintext:")
+        log_credentials(reverted)
+    else:
+        click.echo("No keys were reverted because none were stored. " + ("(errors encountered)" if errors else ""))
+
+
+@credentials.command(help="Will get the stored credentials without altering config files")
+@click.option('-c', '--config-filename',
+              help="path to your main configuration file",
+              type=str,
+              nargs=1,
+              default="user-sync-config.yml",
+              metavar='path-to-file')
+@click.option('-t', '--type',
+              help=" Specify all, ldap, umapi, okta, console. ",
+              type=str,
+              nargs=1,
+              default="all",
+              metavar='all|ldap|umapi|okta|console')
+def retrieve(config_filename, type):
+    """
+    Fetch and display currently stored credentials
+    """
+    retrieved, errors = CredentialManager(config_filename, type).retrieve()
+    log_credential_errors(errors)
+    if not retrieved:
+        click.echo("No credentials currently stored. " + ("(errors encountered)" if errors else ""))
+    log_credentials(retrieved, show_values=True)
 
 
 @credentials.command(help="Allows for easy fetch of stored credentials on any platform.", name="get")

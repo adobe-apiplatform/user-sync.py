@@ -37,8 +37,6 @@ class CredentialManager:
         if self.root_config:
             self.load_configs(typ)
 
-        print()
-
     @classmethod
     def get(cls, identifier, username=None):
         try:
@@ -60,59 +58,39 @@ class CredentialManager:
             raise e
 
     def store(self):
-        for k, v in self.config_files.items():
-            self.logger.info("Analyzing: " + k)
-            v.store()
+        return self.modify_credentials('store')
 
     def retrieve(self):
-        creds = {}
-        for k, v in self.config_files.items():
-            self.logger.info("Analyzing: " + k)
-            creds.update(v.retrieve())
-        return creds
+        return self.modify_credentials('retrieve')
 
     def revert(self):
-        creds = {}
+        return self.modify_credentials('revert')
+
+    def modify_credentials(self, action):
+        all_credentials = {}
+        collected_errors = []
         for k, v in self.config_files.items():
             self.logger.info("Analyzing: " + k)
-            creds.update(v.revert())
-        return creds
+            result, errors = getattr(v, action)()
+            if result:
+                all_credentials[k] = result
+            collected_errors.extend(errors)
+        return all_credentials, collected_errors
 
-    def load_configs(self, typ="all"):
+    def load_configs(self, connector_type="all"):
         """
         This method will be responsible for reading all config files specified in user-sync-config.yml
         so that credential manager knows which keys and values are needed per file
         """
         root_cfg = ConfigFileLoader.load_root_config(self.root_config)
 
-        # fragile
-        umapis = ConfigLoader.as_list(root_cfg['adobe_users']['connectors']['umapi'])
-        connectors = root_cfg['directory_users']['connectors']
-
-        if typ == "all":
-            for u in umapis:
+        if connector_type in ['all', 'umapi']:
+            for u in ConfigLoader.as_list(root_cfg['adobe_users']['connectors']['umapi']):
                 self.config_files[u] = UmapiCredentialConfig(u)
 
-            for c, v in connectors.items():
-                if c == "ldap":
-                    self.config_files[v] = LdapCredentialConfig(v)
-                elif c == "okta":
-                    self.config_files[v] = OktaCredentialConfig(v)
-                elif c == "console":
-                    self.config_files[v] = ConsoleCredentialConfig(v)
-
-        elif typ == "umapi":
-            for u in umapis:
-                self.config_files[u] = UmapiCredentialConfig(u)
-        else:
-            for c, v in connectors.items():
-                if typ == "ldap" and c == 'ldap':
-                    self.config_files[v] = LdapCredentialConfig(v)
-                elif typ == "okta" and c == 'okta':
-                    self.config_files[v] = OktaCredentialConfig(v)
-                elif typ == 'console' and c == "console":
-                    self.config_files[v] = ConsoleCredentialConfig(v)
-        print()
+        for c, v in root_cfg['directory_users']['connectors'].items():
+            if connector_type in ['all', c]:
+                self.config_files[v] = CredentialConfig.create(c, v)
 
 
 class CredentialConfig:
@@ -120,6 +98,7 @@ class CredentialConfig:
     Each method (store, revert, fetch) should be written in a subclass of this class.  This will help keep
     it all organized since filenames and config is stored within.  Shared methods are get_key, load and save.
     """
+    secured_keys = []
 
     def __init__(self, filename=None):
         # filename will be the unique identifier for each file.  This can be an absolute path - but if so we cannot
@@ -129,29 +108,38 @@ class CredentialConfig:
         # The dictionary including comments that will be updated and re-saved
         self.load()
 
+    @classmethod
+    def create(self, subclass, filename):
+        name = subclass.capitalize() + "CredentialConfig"
+        return globals()[name](filename)
+
     def store(self):
-        # Store will explicitly save all targeted keys
-        # For example:
-        # CredentialManager.set(filename + ":password", "1234)
-        # Then update self.config to match with secure key
-        # save file
-        pass
+        credentials, errors = self.modify_credentials(self.store_key)
+        self.save()
+        return credentials, errors
 
     def revert(self):
-        # calls fetch first to get values
-        # Then updates config to replace secure key format with value
-        # save file
-        pass
+        credentials, errors = self.modify_credentials(self.revert_key)
+        self.save()
+        return credentials, errors
 
     def retrieve(self):
-        # probably should return a dictionary for the config using CredentialManager.get()
-        # Maybe looks like:
-        # {
-        #   'connector-ldap.yml:password': '1234'
-        # }
-        # where self.get_key(password) will return the full identifier
-        # don't update config since this is meant to get the values only - revert will persist
-        pass
+        return self.modify_credentials(self.retrieve_key)
+
+    def modify_credentials(self, action):
+        credentials = {}
+        errors = []
+        for c in self.secured_keys:
+            try:
+                # Try to do the action, but don't break on exception because rest of actions
+                # can still be completed
+                val = action(c)
+                if val is not None:
+                    credentials[':'.join(c)] = val
+            except AssertionException as e:
+                errors.append(e)
+                continue
+        return credentials, errors
 
     def load(self):
         with open(self.filename) as file:
@@ -170,6 +158,64 @@ class CredentialConfig:
         :return: concatenated string of keys
         """
         return self.filename + ":" + ":".join(identifier)
+
+    def store_key(self, key_list):
+        """
+        Takes a list of keys representing the path to a value in the YAML file, and constructs an identifier.
+        If the key is a string and NOT in secure format, calls credential manager to set the key
+        If key is already in the form 'secure:identifier', no action is taken.
+        :param key_list: list of nested keys from a YAML file
+        :return:
+        """
+        key_list = ConfigLoader.as_list(key_list)
+        value = self.get_nested_key(key_list)
+        if value is None:
+            return
+        if not self.parse_secure_key(value):
+            k = self.get_qualified_identifier(key_list)
+            CredentialManager.set(k, value)
+            self.set_nested_key(key_list, {'secure': k})
+            return k
+
+    def retrieve_key(self, key_list):
+        """
+        Retrieves the value (if any) for key_list and returns the secure identifier if present
+        If the key is not a secure key, returns None
+        :param key_list:
+        :return:
+        """
+        key_list = ConfigLoader.as_list(key_list)
+        secure_identifier = self.parse_secure_key(self.get_nested_key(key_list))
+        if secure_identifier is None:
+            return
+        value = CredentialManager.get(secure_identifier)
+        if value is not None:
+            return value
+        raise AssertionException("No stored value found for identifier: {}".format(secure_identifier))
+
+    def revert_key(self, key_list):
+        stored_credential = self.retrieve_key(key_list)
+        if stored_credential is not None:
+            self.set_nested_key(key_list, stored_credential)
+        return stored_credential
+
+    @classmethod
+    def parse_secure_key(self, value):
+        """
+        Returns the identifier for the secure key if present, or else None
+        The queried key must be a string if not secured, or a properly formatted dictionary
+        containing exactly one key named 'secure' whose value is the identifier in keyring.
+        """
+        if value is None:
+            return None
+        if isinstance(value, dict):
+            if len(value) == 1 and 'secure' in value:
+                return value['secure']
+            raise AssertionException("Invalid secure key format for '{0}'. Dict should have "
+                                     "exactly one key called 'secure': {1}".format(value, value))
+        elif not isinstance(value, six.text_type):
+            raise AssertionException("Invalid credential format for '{0}'.  "
+                                     "Key must be dict or string: {1}".format(value, value))
 
     def get_nested_key(self, ks, d=None):
         d = d or self.config
@@ -193,168 +239,26 @@ class CredentialConfig:
             d[k] = u
         return d
 
-    def store_key(self, key_list):
-        """
-        Takes a list of keys representing the path to a value in the YAML file, and constructs an identifier.
-        If the key is a string and NOT in secure format, calls credential manager to set the key
-        If key is already in the form 'secure:identifier', no action is taken.
-        :param key_list: list of nested keys from a YAML file
-        :return:
-        """
-        key_list = ConfigLoader.as_list(key_list)
-        value = self.get_nested_key(key_list)
-        if value is None:
-            raise AssertionException("Cannot store key - value not found for: {0}".format(key_list))
-        if not self.parse_secure_key(value):
-            k = self.get_qualified_identifier(key_list)
-            CredentialManager.set(k, value)
-            self.set_nested_key(key_list, {'secure': k})
-
-    def retrieve_key(self, key_list):
-        """
-        Retrieves the value (if any) for key_list, and updates the config if revert=True
-        Returns a dictionary of identifiers and values for this config
-        :param key_list:
-        :return:
-        """
-        key_list = ConfigLoader.as_list(key_list)
-        secure_identifier = self.parse_secure_key(self.get_nested_key(key_list))
-        if secure_identifier is not None:
-            return CredentialManager.get(secure_identifier)
-
-    def revert_key(self, key_list):
-        plaintext_cred = self.retrieve_key(key_list)
-        if plaintext_cred is None:
-            raise AssertionException("No secure key found for: '{0}'".format(key_list))
-        self.set_nested_key(key_list, plaintext_cred)
-        return plaintext_cred
-
-    @classmethod
-    def parse_secure_key(self, value):
-        """
-        Returns the identifier for the secure key if present, or else None
-        The queried key must be a string if not secured, or a properly formatted dictionary
-        containing exactly one key named 'secure' whose value is the identifier in keyring.
-        """
-        if value is None:
-            return None
-        if isinstance(value, dict):
-            if len(value) == 1 and 'secure' in value:
-                return value['secure']
-            raise AssertionException("Invalid secure key format for '{0}'. Dict should have "
-                                     "exactly one key called 'secure': {1}".format(value, value))
-        elif not isinstance(value, six.text_type):
-            raise AssertionException("Invalid credential format for '{0}'.  "
-                                     "Key must be dict or string: {1}".format(value, value))
-
 
 class LdapCredentialConfig(CredentialConfig):
-    """
-    Example config provided
-    """
-
-    def store(self):
-        self.store_key(['password'])
-        self.save()
-
-    def revert(self):
-        creds = {}
-        creds['password'] = self.revert_key(['password'])
-        self.save()
-        return creds
-
-    def retrieve(self):
-        creds = {}
-        creds['password'] = self.retrieve_key(['password'])
-        return creds
-
-
-class UmapiCredentialConfig(CredentialConfig):
-    """
-    Example config provided
-    """
-
-    def store(self):
-        self.store_key(['enterprise', 'api_key'])
-        self.store_key(['enterprise', 'client_secret'])
-        if self.get_nested_key(['enterprise', 'priv_key_pass']) is not None:
-            self.store_key(['enterprise', 'priv_key_pass'])
-        self.save()
-
-    def revert(self):
-        creds = {}
-        creds['enterprise'] = {
-            'api_key': self.revert_key(['enterprise', 'api_key']),
-            'client_secret': self.revert_key(['enterprise', 'client_secret'])
-        }
-        if self.get_nested_key(['enterprise', 'priv_key_pass']) is not None:
-            creds['enterprise']['priv_key_pass'] = self.revert_key(['enterprise', 'priv_key_pass'])
-        self.save()
-        return creds
-
-    def retrieve(self):
-        creds = {}
-        creds['enterprise'] = {
-            'api_key': self.retrieve_key(['enterprise', 'api_key']),
-            'client_secret': self.retrieve_key(['enterprise', 'client_secret'])
-        }
-        if self.get_nested_key(['enterprise', 'priv_key_pass']) is not None:
-            creds['enterprise']['priv_key_pass'] = self.retrieve_key(['enterprise', 'priv_key_pass'])
-        self.save()
-        return creds
+    secured_keys = [['password']]
 
 
 class OktaCredentialConfig(CredentialConfig):
-    """
-    Example config provided
-    """
+    secured_keys = [['api_token']]
 
-    def store(self):
-        self.store_key(['api_token'])
-        self.save()
 
-    def revert(self):
-        creds = {}
-        creds['api_token'] = self.revert_key(['api_token'])
-        self.save()
-        return creds
-
-    def retrieve(self):
-        creds = {}
-        creds['api_token'] = self.retrieve_key(['api_token'])
-        return creds
+class UmapiCredentialConfig(CredentialConfig):
+    secured_keys = [
+        ['enterprise', 'api_key'],
+        ['enterprise', 'client_secret'],
+        ['enterprise', 'priv_key_pass']
+    ]
 
 
 class ConsoleCredentialConfig(CredentialConfig):
-    """
-    Example config provided
-    """
-
-    def store(self):
-        self.store_key(['integration', 'api_key'])
-        self.store_key(['integration', 'client_secret'])
-        if self.get_nested_key(['integration', 'priv_key_pass']) is not None:
-            self.store_key(['integration', 'priv_key_pass'])
-        self.save()
-
-    def revert(self):
-        creds = {}
-        creds['integration'] = {
-            'api_key': self.revert_key(['integration', 'api_key']),
-            'client_secret': self.revert_key(['integration', 'client_secret'])
-        }
-        if self.get_nested_key(['integration', 'priv_key_pass']) is not None:
-            creds['integration']['priv_key_pass'] = self.revert_key(['integration', 'priv_key_pass'])
-        self.save()
-        return creds
-
-    def retrieve(self):
-        creds = {}
-        creds['integration'] = {
-            'api_key': self.retrieve_key(['integration', 'api_key']),
-            'client_secret': self.retrieve_key(['integration', 'client_secret'])
-        }
-        if self.get_nested_key(['integration', 'priv_key_pass']) is not None:
-            creds['integration']['priv_key_pass'] = self.retrieve_key(['integration', 'priv_key_pass'])
-        self.save()
-        return creds
+    secured_keys = [
+        ['integration', 'api_key'],
+        ['integration', 'client_secret'],
+        ['integration', 'priv_key_pass']
+    ]
