@@ -65,7 +65,7 @@ setup(name='user-sync',
           ],
           ':sys_platform=="win32"': [
               'pywin32-ctypes',
-              'winkerberos'
+              'winkerberos',
               'pywin32'
           ],
           'test': test_deps,
