@@ -41,7 +41,7 @@ def test_example_config_line_endings(tmpdir, monkeypatch, tmp_config_files):
     shutil.copyfile(root_tmp_file, res_path / Path(root_tmp_file).parts[-1])
     shutil.copyfile(umapi_tmp_file, res_path / Path(umapi_tmp_file).parts[-1])
 
-    # patch pkg_resources
+    # patch resource.get_resource()
     def resource_patch(res):
         if 'ldap' in res:
             return str(res_path / Path(ldap_tmp_file).parts[-1])
