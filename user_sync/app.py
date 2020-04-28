@@ -207,14 +207,7 @@ def sync(**kwargs):
 @click.pass_context
 def init(ctx):
     ctx.forward(certgen, randomize=True)
-
-    with open('Run_UST_Test_Mode.bat', 'w') as OPATH:
-        OPATH.writelines(['mode 155,50', '\ncd /D "%~dp0"', '\nuser-sync.exe --process-groups --users mapped -t',
-                          '\npause'])
-    with open("Run_UST_Live.bat", 'w') as OPATH:
-        OPATH.writelines(
-            ['mode 155,50', '\ncd /D "%~dp0"', '\nuser-sync.exe --process-groups --users mapped'])
-
+    ctx.forward(batch_files)
     sync = 'user-sync-config.yml'
     umapi = 'connector-umapi.yml'
     ldap = 'connector-ldap.yml'
@@ -222,6 +215,26 @@ def init(ctx):
     if existing and not click.confirm('\nWarning: files already exist: \n{}\nOverwrite?'.format(existing)):
         return
     ctx.forward(example_config, root=sync, umapi=umapi, ldap=ldap)
+
+
+@main.command()
+@click.help_option('Generates batch files to run the user_sync tool in test and live mode.')
+def batch_files():
+    if sys.platform =='win32':
+        with open('Run_UST_Test_Mode.bat', 'w') as OPATH:
+            OPATH.writelines(['mode 155,50', '\r\n\cd /D "%~dp0"', '\r\nuser-sync.exe --process-groups --users mapped -t',
+                              '\r\npause'])
+        with open("Run_UST_Live.bat", 'w') as OPATH:
+            OPATH.writelines(
+                ['mode 155,50', '\r\ncd /D "%~dp0"', '\r\nuser-sync.exe --process-groups --users mapped'])
+    else:
+        with open("Run_UST_Live.bat", 'w') as OPATH:
+            OPATH.writelines(
+                ['/usr/bin/env bash\ncd "$(dirname "$(realpath "$0")")";\n./user-sync --users mapped --process-groups '])
+
+        with open("Run_UST_Test.bat", 'w') as OPATH:
+            OPATH.writelines(
+                ['/usr/bin/env bash\ncd "$(dirname "$(realpath "$0")")";\n./user-sync --users mapped --process-groups -t'])
 
 
 @main.command()
