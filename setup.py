@@ -61,9 +61,11 @@ setup(name='user-sync',
           ':sys_platform=="linux" or sys_platform=="linux2"': [
               'secretstorage',
               'dbus-python',
+              'kerberos'
           ],
           ':sys_platform=="win32"': [
               'pywin32-ctypes',
+              'winkerberos',
               'pywin32'
           ],
           'test': test_deps,
