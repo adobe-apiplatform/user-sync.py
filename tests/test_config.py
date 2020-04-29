@@ -227,4 +227,5 @@ def test_get_credential_old_format(tmp_config_files):
     credman.set('ldap_secure_identifier', 'test_password')
     # set the plain key to None so get_credential will look for the secure_password_key format
     ldap_config['password'] = None
+    # this would fail if the client followed the old directions and set the username to the org_id!!
     assert ldap_dict_config.get_credential('password', 'user_sync') == 'test_password'

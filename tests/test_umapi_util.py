@@ -4,7 +4,7 @@ from user_sync.config import ConfigFileLoader, DictConfig
 from user_sync.connector.umapi_util import make_auth_dict
 from user_sync.error import AssertionException
 import user_sync.connector.helper
-from user_sync.credentials import CredentialConfig
+from user_sync.credentials import CredentialConfig, CredentialManager
 
 
 def test_make_auth_dict(umapi_config_file, private_key):
@@ -26,14 +26,24 @@ def test_make_auth_dict(umapi_config_file, private_key):
     with open(private_key) as f:
         key_data_from_file = f.read()
     assert auth_dict['private_key_data'] == key_data_from_file
-    # set priv_key_path to none and use priv_key_data instead
-    umapi_config['enterprise']['priv_key_path'] = None
+    # add priv_key_data along with path and check for the exception
     umapi_config['enterprise']['priv_key_data'] = key_data_from_file
-    # make sure that auth dict will still return the key data correctly
+    with pytest.raises(AssertionException):
+        invalid_auth_dict = make_auth_dict(name, umapi_dict_config, org_id_from_file, tech_acct_from_file, logger)
+    # now set the path to none and make sure that auth dict will still return the key data correctly
+    umapi_config['enterprise']['priv_key_path'] = None
     auth_dict_key_data = make_auth_dict(name, umapi_dict_config, org_id_from_file, tech_acct_from_file, logger)
     assert auth_dict_key_data['private_key_data'] == key_data_from_file
-
-
-
-
-
+    # if there are settings for both priv_key_data and secure_priv_key_data_key make_auth_dict throws the same
+    # AssertionException thrown by get_credential (from the DictConfig)
+    umapi_config['enterprise']['secure_priv_key_data_key'] = 'make_auth_identifier'
+    with pytest.raises(AssertionException):
+        invalid_auth_dict = make_auth_dict(name, umapi_dict_config, org_id_from_file, tech_acct_from_file, logger)
+    # and if there is only the secure format it should work as long as the credential has been set
+    # can't get the username right. need user_sync not org_id
+    credman = CredentialManager()
+    credman.set('make_auth_identifier', 'keydata')
+    # have to go manually the the username as org_id for this to work
+    umapi_config['enterprise']['priv_key_data'] = None
+    auth_dict = make_auth_dict(name, umapi_dict_config, org_id_from_file, tech_acct_from_file, logger)
+    assert auth_dict['private_key_data'] == 'keydata'

@@ -13,13 +13,7 @@ def make_auth_dict(name, config, org_id, tech_acct, logger):
     key_path = config.get_string('priv_key_path', True)
     data_setting = config.get_string('priv_key_data', True)
     secure_data_setting = config.get_string(config.keyring_prefix + 'priv_key_data' + config.keyring_suffix, True)
-    if data_setting or secure_data_setting:
-        try:
-            # this covers the case of having both the plaintext and secure format for priv_key_data
-            key_data = config.get_credential('priv_key_data', org_id, True)
-        except AssertionException as e:
-            raise e
-    elif key_path and data_setting:
+    if key_path and data_setting:
         raise AssertionException('%s: cannot specify both "priv_key_path" and "%s"' %
                                  (config.get_full_scope(), data_setting))
     elif key_path and secure_data_setting:
@@ -34,7 +28,11 @@ def make_auth_dict(name, config, org_id, tech_acct, logger):
             raise AssertionException('%s: cannot read file "%s": %s' %
                                      (config.get_full_scope(), key_path, e))
     else:
-        raise AssertionException('No value found for priv_key_path or priv_key_data')
+        try:
+            # this covers the case of having both the plaintext and secure format for priv_key_data
+            key_data = config.get_credential('priv_key_data', org_id, True)
+        except AssertionException as e:
+            raise e
     # decrypt the private key, if needed
     passphrase = config.get_credential('priv_key_pass', org_id, True)
     if passphrase:
