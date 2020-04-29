@@ -11,11 +11,21 @@ def make_auth_dict(name, config, org_id, tech_acct, logger):
     }
     # get the private key
     key_path = config.get_string('priv_key_path', True)
-    if key_path:
-        data_setting = has_credential('priv_key_data', config)
-        if data_setting:
-            raise AssertionException('%s: cannot specify both "priv_key_path" and "%s"' %
-                                     (config.get_full_scope(), data_setting))
+    data_setting = config.get_string('priv_key_data', True)
+    secure_data_setting = config.get_string(config.keyring_prefix + 'priv_key_data' + config.keyring_suffix, True)
+    if data_setting or secure_data_setting:
+        try:
+            # this covers the case of having both the plaintext and secure format for priv_key_data
+            key_data = config.get_credential('priv_key_data', org_id, True)
+        except AssertionException as e:
+            raise e
+    elif key_path and data_setting:
+        raise AssertionException('%s: cannot specify both "priv_key_path" and "%s"' %
+                                 (config.get_full_scope(), data_setting))
+    elif key_path and secure_data_setting:
+        raise AssertionException('%s: cannot specify both "priv_key_path" and "%s"' %
+                                 (config.get_full_scope(), secure_data_setting))
+    elif key_path is not None:
         logger.debug('%s: reading private key data from file %s', name, key_path)
         try:
             with open(key_path, 'r') as f:
@@ -24,7 +34,7 @@ def make_auth_dict(name, config, org_id, tech_acct, logger):
             raise AssertionException('%s: cannot read file "%s": %s' %
                                      (config.get_full_scope(), key_path, e))
     else:
-        key_data = config.get_credential('priv_key_data', org_id)
+        raise AssertionException('No value found for priv_key_path or priv_key_data')
     # decrypt the private key, if needed
     passphrase = config.get_credential('priv_key_pass', org_id, True)
     if passphrase:
