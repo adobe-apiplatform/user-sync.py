@@ -44,10 +44,10 @@ class CredentialManager:
             raise AssertionException("Error retrieving value for identifier '{0}': {1}".format(identifier, str(e)))
 
     @classmethod
-    def set(cls, identifier, value):
+    def set(cls, identifier, value, username=None):
         try:
             cls.logger.debug("Using keyring '{0}' to set '{1}'".format(cls.keyring_name, identifier))
-            keyring.set_password(identifier, cls.username, value)
+            keyring.set_password(identifier, username or cls.username, value)
         except KeyringError as e:
             raise AssertionException("Error in setting credentials '{0}' : {1}".format(identifier, str(e)))
         except Exception as e:

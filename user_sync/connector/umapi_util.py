@@ -30,7 +30,7 @@ def make_auth_dict(name, config, org_id, tech_acct, logger):
     else:
         try:
             # this covers the case of having both the plaintext and secure format for priv_key_data
-            key_data = config.get_credential('priv_key_data', org_id, True)
+            key_data = config.get_credential('priv_key_data', org_id)
         except AssertionException as e:
             raise e
     # decrypt the private key, if needed
