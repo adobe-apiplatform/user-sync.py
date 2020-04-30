@@ -52,7 +52,7 @@ setup(name='user-sync',
           'ldap3',
           'PyYAML',
           'six',
-          'umapi-client>=2.13',
+          'umapi-client>=2.14',
           'click',
           'click-default-group',
           'configparser==3.7.4'
