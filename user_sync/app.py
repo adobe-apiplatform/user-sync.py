@@ -513,7 +513,7 @@ def retrieve(config_filename, type):
     """
     retrieved = CredentialManager(config_filename, type).retrieve()
     if not retrieved:
-        click.echo("No credentials currently stored valid identifiers.")
+        click.echo("No credentials currently stored with valid identifiers.")
     log_credentials(retrieved, show_values=True)
 
 
