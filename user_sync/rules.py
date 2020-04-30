@@ -72,6 +72,7 @@ class RuleProcessor(object):
         self.directory_user_by_user_key = {}
         self.filtered_directory_user_by_user_key = {}
         self.umapi_info_by_name = {}
+        self.adobeid_user_by_email = {}
         # counters for action summary log
         self.action_summary = {
             # these are in alphabetical order!  Always add new ones that way!
@@ -489,8 +490,6 @@ class RuleProcessor(object):
                 # If user is not part of any group and ignore outcast is enabled. Do not create user.
                 continue
             # We always create every user in the primary umapi, because it's believed to own the directories.
-            self.logger.info('Creating user with user key: %s', user_key)
-            self.primary_users_created.add(user_key)
             self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector)
 
         # then sync the secondary connectors
@@ -506,8 +505,6 @@ class RuleProcessor(object):
             for user_key, groups_to_add in six.iteritems(secondary_adds_by_user_key):
                 # We only create users who have group mappings in the secondary umapi
                 if groups_to_add:
-                    self.logger.info('Adding user to umapi %s with user key: %s', umapi_name, user_key)
-                    self.secondary_users_created.add(user_key)
                     if user_key not in self.primary_users_created:
                         # We pushed an existing user to a secondary in order to update his groups
                         self.updated_user_keys.add(user_key)
@@ -719,6 +716,15 @@ class RuleProcessor(object):
         """
         identity_type = self.get_identity_type_from_directory_user(directory_user)
         update_username = None
+
+        # check to see if AdobeID exist for FederatedID/EnterpriseID user. Skip user if same email exist.
+        if ((identity_type == user_sync.identity_type.FEDERATED_IDENTITY_TYPE or
+             identity_type == user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE) and
+                self.is_adobeID_email_exist(directory_user['email'])):
+            self.logger.warning("Skipping user creation for: %s - AdobeID already exists with %s",
+                                self.get_directory_user_key(directory_user), directory_user['email'])
+            return None
+
         if (identity_type == user_sync.identity_type.FEDERATED_IDENTITY_TYPE and directory_user['username'] and
                 '@' in directory_user['username'] and
                 normalize_string(directory_user['email']) != normalize_string(directory_user['username'])):
@@ -777,6 +783,12 @@ class RuleProcessor(object):
                 groups_to_remove = umapi_info.get_mapped_groups() - groups_to_add
                 commands.remove_groups(groups_to_remove)
             commands.add_groups(groups_to_add)
+        if umapi_connector.trusted:
+            self.logger.info('Adding user to umapi %s with user key: %s', umapi_connector.name, user_key)
+            self.secondary_users_created.add(user_key)
+        else:
+            self.logger.info('Creating user with user key: %s', user_key)
+            self.primary_users_created.add(user_key)
         post_sync_user = {
             'type': directory_user['identity_type'],
             'username': directory_user['username'],
@@ -880,6 +892,8 @@ class RuleProcessor(object):
         # Walk all the adobe users, getting their group data, matching them with directory users,
         # and adjusting their attribute and group data accordingly.
         for umapi_user in umapi_users:
+            # let save adobeID users to a seperate list
+            self.filter_adobeID_user(umapi_user)
             # get the basic data about this user; initialize change markers to "no change"
             user_key = self.get_umapi_user_key(umapi_user)
             if not user_key:
@@ -983,6 +997,14 @@ class RuleProcessor(object):
             # in all other umapis, we exclude every user that
             #  doesn't match an included user from the primary umapi
             return user_key not in self.included_user_keys
+
+    def filter_adobeID_user(self, umapi_user):
+        id_type = self.get_identity_type_from_umapi_user(umapi_user)
+        if id_type == user_sync.identity_type.ADOBEID_IDENTITY_TYPE:
+            self.adobeid_user_by_email[normalize_string(umapi_user['email'])] = umapi_user
+
+    def is_adobeID_email_exist(self, email):
+        return bool(self.adobeid_user_by_email.get(normalize_string(email)))
 
     @staticmethod
     def normalize_groups(group_names):
