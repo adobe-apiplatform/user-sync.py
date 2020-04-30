@@ -23,13 +23,14 @@ host: "ldap://ldap.example.com"
 base_dn: "DC=example,DC=com"
 
 # (optional) You can specify what Authentication method to bind LDAP
-# connection with. You can choose either Anonymous, Simple or NTLM.
+# connection with. You can choose either Anonymous, Simple, NTLM, or Kerberos.
 # If username is not specified above, the LDAP connector will override
 # the authentication method and set it to 'anonymous'.
 # If you choose anonymous, you don't have to specify username and password above.
 # If you choose simple, you must provide a username and password.
 # If you choose NTLM, you have to specify the username in this format [Domain]\[Username]
 # for example EXAMPLE\JDOE. You can specify NTLM Password Hash or ClearText for a password.
+# If you choose Kerberos, you do not need to specify username and password.
 # Default authentication method: Simple
 # authentication_method: Simple
 
@@ -91,6 +92,12 @@ group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objec
 # use this value instead of the default:
 # group_member_filter_format: "(memberOf:1.2.840.113556.1.4.1941:={group_dn})"
 group_member_filter_format: "(memberOf={group_dn})"
+
+# (optional) configure dynamic_group_member_attribute with dynamic group mappings 
+# From User Sync tool 2.5.0 onward, if additional_groups defined in user-sync-config.yml 
+# then dynamic_group_member_attribute is required. Here you specify the LDAP attribute 
+# used to filter groups mentioned in dynamic group mappings.
+#dynamic_group_member_attribute: "memberOf"
 
 # (optional) two_steps_lookup (no default)
 #two_steps_lookup:

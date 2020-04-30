@@ -202,7 +202,7 @@ configuration file in the `directory_users` section:
 
 ```
 directory_users:
-  extension: extenstions_config.yml  # reference to file with custom mapping information
+  extension: extension-config.yml  # reference to file with custom mapping information
 ```
 
 Custom attribute handling is performed for each user, so the
@@ -742,6 +742,17 @@ targeted Adobe groups.
 **Note:** Additional group mapping will fail if a multiple source groups
 map to the same target group.
 
+### Configure 'dynamic_group_member_attribute'
+
+From User Sync tool 2.5 onward, you are required to mention the `memberOf` 
+LDAP attribute in `connector-ldap.yml`. There is no default value and if 
+`addtional_groups` is defined but `dynamic_group_member_attribute` not defined,
+you would see an warning. Here is example:
+
+```yaml
+dynamic_group_member_attribute: 'memberOf'
+```
+
 ### Additional Group Example
 
 Suppose an Adobe Experience Manager customer would like
@@ -768,9 +779,9 @@ directory_users:
   # ... additional directory config options
   groups:
     # ... group mappings, etc
-    additional_groups:
-      - source: "AEM-ACL-(.+)"
-        target: "AEM-(\\1)"
+  additional_groups:
+    - source: "AEM-ACL-(.+)"
+      target: "AEM-(\\1)"
 ```
 
 `additional_groups` contains a list of additional group rules. `source`

@@ -32,8 +32,6 @@ setup(name='user-sync',
       description='Application for synchronizing customer directories with the Adobe Enterprise Admin Console',
       classifiers=[
           'Development Status :: 5 - Production/Stable',
-          'Programming Language :: Python :: 2.7',
-          'Programming Language :: Python :: 3.4',
           'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
           'License :: OSI Approved :: MIT License',
@@ -41,32 +39,34 @@ setup(name='user-sync',
           'Intended Audience :: System Administrators',
       ],
       url='https://github.com/adobe-apiplatform/user-sync.py',
-      maintainer='Daniel Brotsky',
-      maintainer_email='dbrotsky@adobe.com',
+      maintainer='Andrew Dorton',
+      maintainer_email='adorton@adobe.com',
       license='MIT',
       packages=find_packages(),
       install_requires=[
           'keyring',
+          'keyrings.cryptfile',
           'okta==0.0.3.1',
           'psutil',
           'pycryptodome==3.7.3',
           'ldap3',
           'PyYAML',
           'six',
-          'umapi-client>=2.12',
+          'umapi-client>=2.14',
           'click',
           'click-default-group',
+          'configparser==3.7.4'
       ],
       extras_require={
-          ':python_version>="3" and (sys_platform=="linux" or sys_platform=="linux2")':[
-              'jeepney==0.4'
-          ],
           ':sys_platform=="linux" or sys_platform=="linux2"': [
               'secretstorage',
               'dbus-python',
+              'kerberos'
           ],
           ':sys_platform=="win32"': [
-              'pywin32-ctypes'
+              'pywin32-ctypes',
+              'winkerberos',
+              'pywin32'
           ],
           'test': test_deps,
           'setup': setup_deps,
@@ -78,5 +78,5 @@ setup(name='user-sync',
               'user_sync = user_sync.app:main'
           ]
       },
-      package_data={'user_sync.resources': ['*', 'examples/*']},
+      package_data={'user_sync.resources': ['*', 'examples/**']},
       zip_safe=False)

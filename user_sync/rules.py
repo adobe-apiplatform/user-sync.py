@@ -21,13 +21,13 @@
 
 import logging
 import six
-import re
 from itertools import chain
+from collections import defaultdict
 
 import user_sync.connector.umapi
 import user_sync.error
 import user_sync.identity_type
-from collections import defaultdict
+from user_sync.post_sync.manager import PostSyncData
 from user_sync.helper import normalize_string, CSVAdapter, JobStats
 
 GROUP_NAME_DELIMITER = '::'
@@ -48,7 +48,8 @@ class RuleProcessor(object):
         'exclude_identity_types': [],
         'exclude_strays': False,
         'exclude_users': [],
-        'extended_attributes': None,
+        'extended_attributes': set(),
+        'extension_enabled': False,
         'process_groups': False,
         'max_adobe_only_users': 200,
         'new_account_type': user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
@@ -157,6 +158,9 @@ class RuleProcessor(object):
         # differs from the user's email address
         self.email_override = {}  # type: dict[str, str]
 
+        # Data to provide to post-sync connectors
+        self.post_sync_data = PostSyncData()
+
         if logger.isEnabledFor(logging.DEBUG):
             options_to_report = options.copy()
             username_filter_regex = options_to_report['username_filter_regex']
@@ -233,10 +237,10 @@ class RuleProcessor(object):
             self.action_summary['unchanged_user_count'] = 0
         else:
             self.action_summary['unchanged_user_count'] = (
-                self.action_summary['primary_users_read'] -
-                self.action_summary['excluded_user_count'] -
-                self.action_summary['updated_user_count'] -
-                self.action_summary['primary_strays_processed']
+                    self.action_summary['primary_users_read'] -
+                    self.action_summary['excluded_user_count'] -
+                    self.action_summary['updated_user_count'] -
+                    self.action_summary['primary_strays_processed']
             )
         # find out the number of users created in the primary and secondary umapis
         self.action_summary['primary_users_created'] = len(self.primary_users_created)
@@ -326,6 +330,9 @@ class RuleProcessor(object):
     def will_process_groups(self):
         return self.options['process_groups']
 
+    def will_exclude_unmapped_users(self):
+        return self.options['exclude_unmapped_users']
+
     def get_umapi_info(self, umapi_name):
         umapi_info = self.umapi_info_by_name.get(umapi_name)
         if umapi_info is None:
@@ -354,7 +361,6 @@ class RuleProcessor(object):
         extended_attributes = options.get('extended_attributes')
 
         directory_user_by_user_key = self.directory_user_by_user_key
-        filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
 
         directory_groups = set(six.iterkeys(mappings)) if self.will_process_groups() else set()
         if directory_group_filter is not None:
@@ -375,7 +381,8 @@ class RuleProcessor(object):
             if not self.is_selected_user_key(user_key):
                 continue
 
-            filtered_directory_user_by_user_key[user_key] = directory_user
+            self.filtered_directory_user_by_user_key[user_key] = directory_user
+            self.post_sync_data.update_source_attributes(user_key, directory_user['source_attributes'])
             self.get_umapi_info(PRIMARY_UMAPI_NAME).add_desired_group_for(user_key, None)
 
             # set up groups in hook scope; the target groups will be used whether or not there's customer hook code
@@ -435,7 +442,7 @@ class RuleProcessor(object):
                     umapi_info.add_additional_group(rename_group, member_group)
                     umapi_info.add_desired_group_for(user_key, rename_group)
 
-        self.logger.debug('Total directory users after filtering: %d', len(filtered_directory_user_by_user_key))
+        self.logger.debug('Total directory users after filtering: %d', len(self.filtered_directory_user_by_user_key))
         if self.logger.isEnabledFor(logging.DEBUG):
             self.logger.debug('Group work list: %s', dict([(umapi_name, umapi_info.get_desired_groups_by_user_key())
                                                            for umapi_name, umapi_info
@@ -466,6 +473,7 @@ class RuleProcessor(object):
             verb = "Push"
         else:
             verb = "Sync"
+        exclude_unmapped_users = self.will_exclude_unmapped_users()
         # first sync the primary connector, so the users get created in the primary
         if umapi_connectors.get_secondary_connectors():
             self.logger.debug('%sing users to primary umapi...', verb)
@@ -476,7 +484,11 @@ class RuleProcessor(object):
             primary_adds_by_user_key = umapi_info.get_desired_groups_by_user_key()
         else:
             primary_adds_by_user_key = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
+        # save groups for new users
         for user_key, groups_to_add in six.iteritems(primary_adds_by_user_key):
+            if exclude_unmapped_users and not groups_to_add:
+                # If user is not part of any group and ignore outcast is enabled. Do not create user.
+                continue
             # We always create every user in the primary umapi, because it's believed to own the directories.
             self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector)
 
@@ -506,7 +518,7 @@ class RuleProcessor(object):
         :type umapi_connectors: UmapiConnectors
         """
         for umapi_connector in umapi_connectors.connectors:
-            umapi_name = None if umapi_connector.name.split('.')[-1] == 'primary'\
+            umapi_name = None if umapi_connector.name.split('.')[-1] == 'primary' \
                 else umapi_connector.name.split('.')[-1]
             if umapi_name == 'umapi':
                 umapi_name = None
@@ -624,16 +636,19 @@ class RuleProcessor(object):
                     if disentitle_strays:
                         self.logger.info('Removing all adobe groups in %s for Adobe-only user: %s',
                                          umapi_name, user_key)
+                        self.post_sync_data.remove_umapi_user_groups(umapi_name, user_key)
                         commands.remove_all_groups()
                     elif remove_strays or delete_strays:
                         self.logger.info('Removing Adobe-only user from %s: %s',
                                          umapi_name, user_key)
+                        self.post_sync_data.remove_umapi_user(umapi_name, user_key)
                         commands.remove_from_org(False)
                     elif manage_stray_groups:
                         groups_to_remove = secondary_strays[user_key]
                         if groups_to_remove:
                             self.logger.info('Removing mapped groups in %s from Adobe-only user: %s',
                                              umapi_name, user_key)
+                            self.post_sync_data.update_umapi_data(umapi_name, user_key, [], groups_to_remove)
                             commands.remove_groups(groups_to_remove)
                         else:
                             continue
@@ -650,15 +665,18 @@ class RuleProcessor(object):
             commands = get_commands(user_key)
             if disentitle_strays:
                 self.logger.info('Removing all adobe groups for Adobe-only user: %s', user_key)
+                self.post_sync_data.remove_umapi_user_groups(None, user_key)
                 commands.remove_all_groups()
             elif remove_strays or delete_strays:
                 action = "Deleting" if delete_strays else "Removing"
                 self.logger.info('%s Adobe-only user: %s', action, user_key)
+                self.post_sync_data.remove_umapi_user(None, user_key)
                 commands.remove_from_org(True if delete_strays else False)
             elif manage_stray_groups:
                 groups_to_remove = primary_strays[user_key]
                 if groups_to_remove:
                     self.logger.info('Removing mapped groups from Adobe-only user: %s', user_key)
+                    self.post_sync_data.update_umapi_data(None, user_key, [], groups_to_remove)
                     commands.remove_groups(groups_to_remove)
                 else:
                     continue
@@ -669,12 +687,10 @@ class RuleProcessor(object):
         # make sure the actions get sent
         primary_connector.get_action_manager().flush()
 
-    def get_user_attributes(self, directory_user):
-        attributes = {}
-        attributes['email'] = directory_user['email']
-        attributes['firstname'] = directory_user['firstname']
-        attributes['lastname'] = directory_user['lastname']
-        return attributes
+    @staticmethod
+    def get_user_attributes(directory_user):
+        return {'email': directory_user['email'], 'firstname': directory_user['firstname'],
+                'lastname': directory_user['lastname']}
 
     def get_identity_type_from_directory_user(self, directory_user):
         identity_type = directory_user.get('identity_type')
@@ -773,6 +789,17 @@ class RuleProcessor(object):
         else:
             self.logger.info('Creating user with user key: %s', user_key)
             self.primary_users_created.add(user_key)
+        post_sync_user = {
+            'type': directory_user['identity_type'],
+            'username': directory_user['username'],
+            'domain': directory_user['domain'],
+            'email': directory_user['email'],
+            'country': directory_user['country'],
+            'firstname': directory_user['firstname'],
+            'lastname': directory_user['lastname'],
+        }
+        self.post_sync_data.update_umapi_data(umapi_info.name, user_key,
+                                              groups_to_add if self.will_process_groups() else [], [], **post_sync_user)
         umapi_connector.send_commands(commands)
 
     def update_umapi_user(self, umapi_info, user_key, umapi_connector,
@@ -820,6 +847,8 @@ class RuleProcessor(object):
                 attributes_to_update['username'] = umapi_user['username']
                 directory_user['username'] = umapi_user['email']
 
+        self.post_sync_data.update_umapi_data(umapi_info.name, user_key, groups_to_add, groups_to_remove,
+                                              **attributes_to_update)
         commands = user_sync.connector.umapi.Commands(identity_type, directory_user['email'],
                                                       directory_user['username'], directory_user['domain'])
         commands.update_user(attributes_to_update)
@@ -841,7 +870,7 @@ class RuleProcessor(object):
         """
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
 
-        # the way we construct the return vaue is to start with a map from all directory users
+        # the way we construct the return value is to start with a map from all directory users
         # to their groups in this umapi, make a copy, and pop off any adobe users we find.
         # That way, any key/value pairs left in the map are the unmatched adobe users and their groups.
         user_to_group_map = umapi_info.get_desired_groups_by_user_key()
@@ -874,6 +903,7 @@ class RuleProcessor(object):
                 self.logger.debug("Ignoring umapi user. This user has already been processed: %s", umapi_user)
                 continue
             umapi_info.add_umapi_user(user_key, umapi_user)
+            self.post_sync_data.update_umapi_data(None, user_key, [], [], **umapi_user)
             attribute_differences = {}
             current_groups = self.normalize_groups(umapi_user.get('groups'))
             groups_to_add = set()
@@ -956,8 +986,8 @@ class RuleProcessor(object):
                 self.logger.debug("Excluding adobe user (due to group): %s", user_key)
                 self.excluded_user_count += 1
                 return True
-            for re in self.exclude_users:
-                if re.match(username):
+            for re_ in self.exclude_users:
+                if re_.match(username):
                     self.logger.debug("Excluding adobe user (due to name): %s", user_key)
                     self.excluded_user_count += 1
                     return True
@@ -1114,9 +1144,7 @@ class RuleProcessor(object):
                 if not secondary_count:
                     fieldnames.append('umapi')
                 secondary_count += 1
-        # None sorts before strings, so sorting the keys in the map
-        # puts the primary umapi first in the output, which is handy
-        for umapi_name in sorted(self.stray_key_map.keys()):
+        for umapi_name in self.stray_key_map:
             for user_key in self.get_stray_keys(umapi_name):
                 id_type, username, domain = self.parse_user_key(user_key)
                 umapi = umapi_name if umapi_name else ""
@@ -1125,6 +1153,7 @@ class RuleProcessor(object):
                 else:
                     row_dict = {'type': id_type, 'username': username, 'domain': domain}
                 rows.append(row_dict)
+
         CSVAdapter.write_csv_rows(file_path, fieldnames, rows)
         user_count = len(self.stray_key_map.get(PRIMARY_UMAPI_NAME, []))
         user_plural = "" if user_count == 1 else "s"
@@ -1283,7 +1312,7 @@ class UmapiTargetInfo(object):
     def add_additional_group(self, rename_group, member_group):
         normalized_rename_group = normalize_string(rename_group)
         if member_group not in self.additional_group_map[normalized_rename_group]:
-            self.additional_group_map[normalize_string(normalized_rename_group)].append(member_group)
+            self.additional_group_map[normalized_rename_group].append(member_group)
 
     def get_additional_group_map(self):
         return self.additional_group_map

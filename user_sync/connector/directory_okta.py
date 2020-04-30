@@ -309,8 +309,15 @@ class OktaDirectoryConnector(object):
         return users
 
     def filter_users(self, users, filter_string):
+        # Allow the following builtin functions to be used in eval()
+        whitelist = {
+            "len": len, "int": int, "float": float, "str": str, "enumerate": enumerate, "filter": filter,
+            "getattr": getattr, "hasattr": hasattr, "list": list, "map": map, "max": max, "min": min,
+            "range": range, "sorted": sorted, "sum": sum, "tuple": tuple, "zip": zip
+        }
+
         try:
-            return list(filter(lambda user: eval(filter_string), users))
+            return list(filter(lambda user: eval(filter_string, {"__builtins__": whitelist}, {"user": user}), users))
         except SyntaxError as e:
             raise AssertionException("Invalid syntax in predicate (%s): cannot evaluate" % filter_string)
         except Exception as e:
