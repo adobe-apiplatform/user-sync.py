@@ -1,63 +1,34 @@
 ---
 layout: default
 lang: en
-nav_link: Install User Sync
+nav_link: Installation
 nav_level: 2
 nav_order: 270
 ---
 
-# Install User Sync
+# Installation
 
 [Previous Section](identify_server.md) \| [Back to Contents](index.md) \| [Next Section](setup_config_files.md)
 
-Once you have access to the server where User Sync will run, pick a directory where you will install and operate User Sync.
+## Installation Procedure
 
-On Windows, you will need to install Python.  As of this writing, version 3.6.x is recommended.  Windows and Python need to be 64 bit versions.
-
-On Windows, you also are very likely to need to set an environment variable PEX\_ROOT to C:\\pex.  This is needed to work around Windows pathname length limits.
-
-Note: Setting PEX\_ROOT may not be necessary if:
-
-- You are running Windows 10
-- You are running Python 3.6 or later, 64 bit version (also called X86-64, for AMD64), and
-- You have enabled the long pathname support in Windows 10 as described in the Maximum Path Length Limitation section of this [Microsoft Dev Note](https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx?#maxpath). You can also enable long pathname support by pressing the button in the Python Windows executable installer (in the final dialog box, when installation finishes) that performs this action.
-
-If these conditions are met, you can run without setting PEX\_ROOT.
-
-
-Initial steps:
-
-&#9744; Setup a user and file directory for installing and running sync.  For example, we'll create a folder /home/user_sync/user_sync_tool and a user user_sync.  On Windows an example would be C:\Users\user_sync\user_sync_tool.
-
-&#9744; Windows only: set the environment variable **PEX\_ROOT** to **C:\pex**. (But see note above.)
-
-&#9744; Windows only: Install python 3.6.2 (or later in the 3.6 series), 64 bit. 
-
-The next few sections show the installation process.
-
-To find the latest release:  Start here: 
-[https://github.com/adobe-apiplatform/user-sync.py](https://github.com/adobe-apiplatform/user-sync.py "https://github.com/adobe-apiplatform/user-sync.py")
-
-![install](images/install_finding_releases.png)
-
-Select “release”
-
-
-![install2](images/install_release_screen.png)
-
-&#9744; Download the example-configurations.tar.gz, User Sync Guide, and build for your platform, osx, ubuntu, windows, or centos.
-
-&#9744; Decide whether you will run Python 2.x or 3.x (recommended) and download that version of User Sync.  You need to install the corresponding version of Python on your server.
-
-&#9744; Extract the user-sync (or user-sync.pex) file from the archive and place the file for your OS in the folder.  In our example, this would be /home/user_sync/user_sync_tool/user-sync or C:\Users\user_sync\user_sync_tool\user-sync.pex.  
-
-&#9744; In the example-configurations.tar.gz file there is a directory **config files - basic**.  From this folder extract the first 3 files and place in the user_sync_tool folder.  
-
-&#9744; Next, rename the 3 config example files by removing the leading "1 ", "2 ", and "3 " from the names.  We will edit these files to create the real User Sync configuration files.
-
-
-
-![install2](images/install_config_files.png)
-
+1. Create a directory where the sync tool will run
+    * Windows example: `C:\adobe_user_sync`
+    * Linux example: `~/adobe_user_sync`
+2. Get the [latest release](https://github.com/adobe-apiplatform/user-sync.py/releases/latest)
+    * Binary downloads are found in the "Assets" box immediately below the release notes
+    * Be sure to select the correct release for your platform - the naming convention is `user-sync-[VERSION][EDITION]-[PLATFORM]`.
+      Windows releases are packaged in `.zip` format and Linux releases are packaged in `.tar.gz` format.
+    * **NOTE:** Releases tagged with the `-noext` edition tag ship with [extension support](../user-manual/advanced_configuration.html#custom-attributes-and-mappings)
+      disabled. Do not install this variant unless that restriction is desired.
+3. Extract the UST archive to the directory created in step 1.
+    * Windows filename: `user-sync.exe`
+    * Linux filename: `user-sync`
+4. Generate the example configuration files
+    * From the command line, run the command `./user-sync example-config` in the sync tool directory created in step 1
+    * The tool will prompt you to specify the filename of each file. Press Enter for each to accept the default filenames.
+    * For additional example configuration files and CSV templates, download `examples.zip` or `examples.tar.gz` from the
+      release asset list (see step 2)
+5. Refer to the [User Manual](../user-manual) for full User Sync Tool documentation.
 
 [Previous Section](identify_server.md) \| [Back to Contents](index.md) \| [Next Section](setup_config_files.md)

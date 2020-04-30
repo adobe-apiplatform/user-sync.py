@@ -55,8 +55,11 @@ User Sync can handle user creation and update as well as license management.  Us
 There are a variety of options available for handling account deletion.  You may wish Adobe accounts to be deleted immediately when the corresponding enterprise account is removed, or you may have some other process in place to leave the Adobe account until someone checks if there are assets in that account to be recovered.  User Sync can handle a range of deletion processes including these.
 
 
-## User Sync runs on your systems.  
-You’ll need a server on which to host it.  User Sync is a Python application and is open source.  You can use a pre-build Python package or build it yourself from source.
+## Server or VM
+
+The User Sync Tool is designed to be hosted on-premise inside your network. To run a 
+[pre-built release](https://github.com/adobe-apiplatform/user-sync.py/releases/latest), you will need
+a Windows, Ubuntu or CentOS server with at least 4GB available RAM.
 
 ## What you will need to know and do
 

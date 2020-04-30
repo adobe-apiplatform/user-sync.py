@@ -22,7 +22,7 @@ import codecs
 import logging
 import os
 import re
-import subprocess
+from copy import deepcopy
 
 import six
 import yaml
@@ -31,7 +31,9 @@ import user_sync.helper
 import user_sync.identity_type
 import user_sync.port
 import user_sync.rules
+from user_sync import flags
 from user_sync.error import AssertionException
+import user_sync.post_sync.connectors as post_sync_connectors
 
 
 class ConfigLoader(object):
@@ -51,12 +53,13 @@ class ConfigLoader(object):
         'config_filename': 'user-sync-config.yml',
         'connector': ['ldap'],
         'encoding_name': 'utf8',
+        'exclude_unmapped_users': False,
         'process_groups': False,
         'strategy': 'sync',
         'test_mode': False,
         'update_user_info': False,
         'user_filter': None,
-        'users': ['all'],
+        'users': ['all']
     }
 
     def __init__(self, args):
@@ -96,7 +99,7 @@ class ConfigLoader(object):
 
         # copy instead of direct assignment to preserve original invocation_defaults object
         # otherwise, setting options also sets invocation_defaults (same memory ref)
-        options = self.invocation_defaults.copy()
+        options = deepcopy(self.invocation_defaults)
 
         # get overrides from the main config
         invocation_config = self.main_config.get_dict_config('invocation_defaults', True)
@@ -127,7 +130,7 @@ class ConfigLoader(object):
         # --connector
         connector_spec = options['connector']
         connector_type = user_sync.helper.normalize_string(connector_spec[0])
-        if connector_type in ["ldap", "okta"]:
+        if connector_type in ["ldap", "okta", "adobe_console"]:
             if len(connector_spec) > 1:
                 raise AssertionException('Must not specify a file (%s) with connector type %s' %
                                          (connector_spec[0], connector_type))
@@ -246,6 +249,7 @@ class ConfigLoader(object):
                     options['adobe_group_filter'].append(user_sync.rules.AdobeGroup.create(group))
             else:
                 raise AssertionException('Unknown option "%s" for adobe-users' % adobe_users_action)
+
         return options
 
     def get_logging_config(self):
@@ -312,6 +316,7 @@ class ConfigLoader(object):
             connectors_config.get_list('ldap', True)
             connectors_config.get_list('csv', True)
             connectors_config.get_list('okta', True)
+            connectors_config.get_list('adobe_console', True)
         return connectors_config
 
     def get_directory_connector_options(self, connector_name):
@@ -382,6 +387,39 @@ class ConfigLoader(object):
                         raise AssertionError("No after_mapping_hook found in extension configuration")
         return options
 
+    def get_post_sync_options(self):
+        """
+        Read the post_sync options from main_config_file, if there are any modules specified, and return its dictionary of options
+        :return: dict
+        """
+
+        ps_opts = self.main_config.get_dict_config('post_sync', True)
+        if not ps_opts:
+            return
+
+        connectors = ps_opts.get_dict('connectors')
+        module_list = ps_opts.get_list('modules')
+        allowed_modules = post_sync_connectors.valid_connectors()
+        post_sync_modules = {}
+
+        try:
+            for m in module_list:
+                if m in post_sync_modules:
+                    raise AssertionException("Duplicate module specified: " + m)
+                elif m not in allowed_modules:
+                    raise AssertionException(
+                        'Unknown post-sync module: {0} - available are: {1}'.format(m, allowed_modules))
+                post_sync_modules[m] = self.get_dict_from_sources([connectors.pop(m)])
+        except KeyError as e:
+            raise AssertionException("Error! Post-sync module " + str(e) + " specified without a configuration file...")
+
+        if connectors:
+            self.logger.warning("Unused post-sync configuration file: " + str(connectors))
+
+        return {
+            'modules': post_sync_modules,
+        }
+
     @staticmethod
     def as_list(value):
         if value is None:
@@ -441,7 +479,7 @@ class ConfigLoader(object):
         """
         Return a dict representing options for RuleProcessor.
         """
-        options = user_sync.rules.RuleProcessor.default_options
+        options = deepcopy(user_sync.rules.RuleProcessor.default_options)
         options.update(self.invocation_options)
 
         # process directory configuration options
@@ -515,8 +553,8 @@ class ConfigLoader(object):
 
         # get the limits
         limits_config = self.main_config.get_dict_config('limits')
-        max_missing = limits_config.get_value('max_adobe_only_users',(int, str),False)
-        percent_pattern = re.compile("(\d*(\.\d+)?%)")
+        max_missing = limits_config.get_value('max_adobe_only_users', (int, str), False)
+        percent_pattern = re.compile(r"(\d*(\.\d+)?%)")
         if isinstance(max_missing, str) and percent_pattern.match(max_missing):
             max_missing_percent = float(max_missing.strip('%'))
             if 0.0 <= max_missing_percent <= 100.0:
@@ -531,10 +569,13 @@ class ConfigLoader(object):
 
         # now get the directory extension, if any
         extension_config = self.get_directory_extension_options()
-        if extension_config:
+        options['extension_enabled'] = flags.get_flag('UST_EXTENSION')
+        if extension_config and not options['extension_enabled']:
+            self.logger.warning('Extension config functionality is disabled - skipping after-map hook')
+        elif extension_config:
             after_mapping_hook_text = extension_config.get_string('after_mapping_hook')
             options['after_mapping_hook'] = compile(after_mapping_hook_text, '<per-user after-mapping-hook>', 'exec')
-            options['extended_attributes'] = extension_config.get_list('extended_attributes', True) or []
+            options['extended_attributes'].update(extension_config.get_list('extended_attributes', True))
             # declaration of extended adobe groups: this is needed for two reasons:
             # 1. it allows validation of group names, and matching them to adobe groups
             # 2. it allows removal of adobe groups not assigned by the hook
@@ -816,8 +857,7 @@ class DictConfig(ObjectConfig):
             raise AssertionException('%s: cannot contain setting for both "%s" and "%s"' % (scope, name, keyring_name))
         if secure_value_key:
             try:
-                import keyring
-                value = keyring.get_password(service_name=secure_value_key, username=user_name)
+                value = self.get_value_from_keyring(secure_value_key, user_name)
             except Exception as e:
                 raise AssertionException('%s: Error accessing secure storage: %s' % (scope, e))
         else:
@@ -826,6 +866,19 @@ class DictConfig(ObjectConfig):
             raise AssertionException(
                 '%s: No value in secure storage for user "%s", key "%s"' % (scope, user_name, secure_value_key))
         return value
+
+    @staticmethod
+    def get_value_from_keyring(secure_value_key, user_name):
+        import keyrings.cryptfile.cryptfile
+        keyrings.cryptfile.cryptfile.CryptFileKeyring.keyring_key = "none"
+
+        import keyring
+        if (isinstance(keyring.get_keyring(), keyring.backends.fail.Keyring) or
+                isinstance(keyring.get_keyring(), keyring.backends.chainer.ChainerBackend)):
+            keyring.set_keyring(keyrings.cryptfile.cryptfile.CryptFileKeyring())
+
+        logging.getLogger("keyring").info("Using keyring '" + keyring.get_keyring().name + "' to retrieve: " + secure_value_key)
+        return keyring.get_password(service_name=secure_value_key, username=user_name)
 
 
 class ConfigFileLoader:
@@ -842,10 +895,13 @@ class ConfigFileLoader:
                              '/directory_users/connectors/*': (True, False, None),
                              '/directory_users/extension': (True, False, None),
                              '/logging/file_log_directory': (False, False, "logs"),
+        '/post_sync/connectors/sign_sync': (False, False, False),
+        '/post_sync/connectors/future_feature': (False, False, False)
                              }
 
     # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files
-    SUB_CONFIG_PATH_KEYS = {'/enterprise/priv_key_path': (True, False, None)}
+    SUB_CONFIG_PATH_KEYS = {'/enterprise/priv_key_path': (True, False, None),
+                            '/integration/priv_key_path': (True, False, None)}
 
     @classmethod
     def load_root_config(cls, filename):
@@ -880,7 +936,7 @@ class ConfigFileLoader:
     # key_path is being searched for in what file in what directory
     filepath = None  # absolute path of file currently being loaded
     filename = None  # filename of file currently being loaded
-    dirpath = None   # directory path of file currently being loaded
+    dirpath = None  # directory path of file currently being loaded
     key_path = None  # the full pathname of the setting key being processed
 
     @classmethod
@@ -900,45 +956,28 @@ class ConfigFileLoader:
                           the dictionary if there is not already a value found.
         """
         if filename.startswith('$(') and filename.endswith(')'):
-            # it's a command line to execute and read standard output
-            dir_end = filename.index(']')
-            if filename.startswith('$([') and dir_end > 0:
-                dir_name = filename[3:dir_end]
-                cmd_name = filename[dir_end + 1:-1]
-            else:
-                dir_name = os.path.abspath(".")
-                cmd_name = filename[3:-1]
-            try:
-                byte_string = subprocess.check_output(cmd_name, cwd=dir_name, shell=True)
+            raise AssertionException("Shell execution is no longer supported: {}".format(filename))
+
+        cls.filepath = os.path.abspath(filename)
+        if not os.path.isfile(cls.filepath):
+            raise AssertionException('No such configuration file: %s' % (cls.filepath,))
+        cls.filename = os.path.split(cls.filepath)[1]
+        cls.dirpath = os.path.dirname(cls.filepath)
+        try:
+            with open(filename, 'rb', 1) as input_file:
+                byte_string = input_file.read()
                 yml = yaml.safe_load(byte_string.decode(cls.config_encoding, 'strict'))
-            except subprocess.CalledProcessError as e:
-                raise AssertionException("Error executing process '%s' in dir '%s': %s" % (cmd_name, dir_name, e))
-            except UnicodeDecodeError as e:
-                raise AssertionException('Encoding error in process output: %s' % e)
-            except yaml.error.MarkedYAMLError as e:
-                raise AssertionException('Error parsing process YAML data: %s' % e)
-        else:
-            # it's a pathname to a configuration file to read
-            cls.filepath = os.path.abspath(filename)
-            if not os.path.isfile(cls.filepath):
-                raise AssertionException('No such configuration file: %s' % (cls.filepath,))
-            cls.filename = os.path.split(cls.filepath)[1]
-            cls.dirpath = os.path.dirname(cls.filepath)
-            try:
-                with open(filename, 'rb', 1) as input_file:
-                    byte_string = input_file.read()
-                    yml = yaml.safe_load(byte_string.decode(cls.config_encoding, 'strict'))
-            except IOError as e:
-                # if a file operation error occurred while loading the
-                # configuration file, swallow up the exception and re-raise it
-                # as an configuration loader exception.
-                raise AssertionException("Error reading configuration file '%s': %s" % (cls.filepath, e))
-            except UnicodeDecodeError as e:
-                # as above, but in case of encoding errors
-                raise AssertionException("Encoding error in configuration file '%s: %s" % (cls.filepath, e))
-            except yaml.error.MarkedYAMLError as e:
-                # as above, but in case of parse errors
-                raise AssertionException("Error parsing configuration file '%s': %s" % (cls.filepath, e))
+        except IOError as e:
+            # if a file operation error occurred while loading the
+            # configuration file, swallow up the exception and re-raise it
+            # as an configuration loader exception.
+            raise AssertionException("Error reading configuration file '%s': %s" % (cls.filepath, e))
+        except UnicodeDecodeError as e:
+            # as above, but in case of encoding errors
+            raise AssertionException("Encoding error in configuration file '%s: %s" % (cls.filepath, e))
+        except yaml.error.MarkedYAMLError as e:
+            # as above, but in case of parse errors
+            raise AssertionException("Error parsing configuration file '%s': %s" % (cls.filepath, e))
 
         # process the content of the dict
         if yml is None:
@@ -946,7 +985,7 @@ class ConfigFileLoader:
             yml = {}
         elif not isinstance(yml, dict):
             # malformed YML files produce a non-dictionary
-            raise AssertionException("Configuration file '%s' does not contain settings" % cls.filepath)
+            raise AssertionException("Configuration file or command '%s' does not contain settings" % cls.filepath)
         for path_key, options in six.iteritems(path_keys):
             cls.key_path = path_key
             keys = path_key.split('/')

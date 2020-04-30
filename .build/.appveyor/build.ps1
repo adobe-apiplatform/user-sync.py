@@ -15,17 +15,13 @@ if ($env:python.endswith("36-x64")) {
     pip uninstall -y enum34
 }
 
-make 2>&1
+make $env:BUILD_TARGET 2>&1
 dir dist
 mkdir release
-cp dist\user-sync.pex release\
-cd release\
-Get-Command python
-$pyver=$(python -V 2>&1) -replace "Python ","py" -replace "\.",""
-echo "pyver: ${pyver}"
-7z a -ttar "user-sync-${env:APPVEYOR_REPO_TAG_NAME}-win64-${pyver}.tar" user-sync.pex
-7z a -tgzip "user-sync-${env:APPVEYOR_REPO_TAG_NAME}-win64-${pyver}.tar.gz" "user-sync-${env:APPVEYOR_REPO_TAG_NAME}-win64-${pyver}.tar"
-7z a "user-sync-${env:APPVEYOR_REPO_TAG_NAME}-win64-${pyver}.zip" user-sync.pex
+
+cp dist\user-sync.exe release\
+cd release
+7z a "user-sync-${env:APPVEYOR_REPO_TAG_NAME}${env:BUILD_EDITION}-win64.zip" user-sync.exe
 cd ..
 7z a -ttar -r release\examples.tar examples
 7z a -tgzip release\examples.tar.gz release\examples.tar
