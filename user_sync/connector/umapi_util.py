@@ -43,24 +43,3 @@ def make_auth_dict(name, config, org_id, tech_acct, logger):
                                      (config.get_full_scope(), e))
     auth_dict['private_key_data'] = key_data
     return auth_dict
-
-
-def has_credential(name, config):
-    """
-    Check if there is a credential setting with the given name
-    :param name: plaintext setting name for the credential
-    :param config: DictConfig object passed in from umapi_util.make_auth_dict
-    :return: setting that was specified, or None if none was
-    """
-    scope = config.get_full_scope()
-    keyring_name = config.keyring_prefix + name + config.keyring_suffix
-    plaintext = config.get_string(name, True)
-    secure = config.get_string(keyring_name, True)
-    if plaintext and secure:
-        raise AssertionException('%s: cannot contain setting for both "%s" and "%s"' % (scope, name, keyring_name))
-    if plaintext is not None:
-        return name
-    elif secure is not None:
-        return keyring_name
-    else:
-        return None
