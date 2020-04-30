@@ -839,12 +839,19 @@ class RuleProcessor(object):
 
         # if user has email-type username and it is different from email address, then we need to
         # override the username with email address
-        if '@' in directory_user['username'] and directory_user['email'] != directory_user['username']:
+        if '@' in directory_user['username'] and normalize_string(directory_user['email']) != normalize_string(directory_user['username']):
             if groups_to_add or groups_to_remove or attributes_to_update:
                 directory_user['username'] = directory_user['email']
             if attributes_to_update and 'email' in attributes_to_update:
                 directory_user['email'] = umapi_user['email']
                 attributes_to_update['username'] = umapi_user['username']
+                directory_user['username'] = umapi_user['email']
+
+        # if email based username on umapi is differ than email on umapi and need to update email, then we need to
+        # override the username with email address
+        if '@' in umapi_user['username'] and normalize_string(umapi_user['username']) != normalize_string(umapi_user['email']):
+            if attributes_to_update and 'email' in attributes_to_update:
+                directory_user['email'] = umapi_user['email']
                 directory_user['username'] = umapi_user['email']
 
         self.post_sync_data.update_umapi_data(umapi_info.name, user_key, groups_to_add, groups_to_remove,
