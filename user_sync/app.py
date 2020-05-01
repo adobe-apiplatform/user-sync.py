@@ -55,11 +55,12 @@ LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 logger = logging.getLogger('main')
 
 
-def clear_logger_format():
+def init_cli_logger():
     # Removes the LOG_STRING_FORMAT and LOG_DATE_FORMAT from the logger
     # so that additional tools like credential manager can produce uniform output
-    # along side click I/O
+    # along side click I/O. Console log level is INFO by default, but can be overwritten in user_sync_config.yml
     logging.getLogger().handlers[0].setFormatter(logging.Formatter('', ''))
+    logging.getLogger().setLevel(logging.INFO)
 
 
 def init_console_log():
@@ -430,7 +431,7 @@ def begin_work(config_loader):
 @click.group()
 @click.help_option('-h', '--help')
 def credentials():
-    clear_logger_format()
+    init_cli_logger()
     pass
 
 

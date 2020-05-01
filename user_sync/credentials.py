@@ -70,6 +70,10 @@ class CredentialManager:
         so that credential manager knows which keys and values are needed per file
         """
         root_cfg = ConfigFileLoader.load_root_config(self.root_config)
+        root_cfg = ConfigFileLoader.load_root_config(self.root_config)
+        console_log_level = root_cfg['logging']['console_log_level']
+        if console_log_level == 'debug':
+            self.logger.setLevel(logging.DEBUG)
 
         if connector_type in ['all', 'umapi']:
             for u in ConfigLoader.as_list(root_cfg['adobe_users']['connectors']['umapi']):
