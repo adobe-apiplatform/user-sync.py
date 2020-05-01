@@ -432,6 +432,7 @@ def begin_work(config_loader):
 @click.help_option('-h', '--help')
 def credentials():
     init_cli_logger()
+    click.echo('Using keyring: ' + CredentialManager.keyring_name)
     pass
 
 
