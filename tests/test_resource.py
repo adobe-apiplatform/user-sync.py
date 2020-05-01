@@ -19,14 +19,11 @@
 # SOFTWARE.
 
 
-from click.testing import CliRunner
-
 import os
 import sys
 import pytest
 import pkg_resources
 from user_sync import resource
-from user_sync.app import example_config
 
 
 def test_resource_file_bundle(resource_file, tmpdir, monkeypatch):
@@ -146,16 +143,3 @@ def test_resource_dir_invalid(tmpdir, monkeypatch):
 
         with pytest.raises(AssertionError):
             resource.get_resource_dir('test')
-
-
-def test_example_config_line_endings(tmp_config_files):
-    (_,ldap_config_file,_)=tmp_config_files
-    runner = CliRunner()
-    runner.invoke(example_config)
-    with open('connector-ldap.yml', 'rb') as f:
-        content = f.read()
-    if sys.platform == 'win32':
-        assert b'\r\n' in content
-    else:
-        assert b'\n' in content
-        assert b'\r' not in content
