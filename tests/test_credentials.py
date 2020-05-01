@@ -69,7 +69,7 @@ def test_retrieve_revert_ldap_valid(tmp_config_files):
     with open(ldap_config_file) as f:
         data = yaml.load(f)
         assert ldap.parse_secure_key(data['password'])
-    retrieved_key_dict, errors = ldap.retrieve()
+    retrieved_key_dict = ldap.retrieve()
     assert retrieved_key_dict['password'] == unsecured_key
     ldap.revert()
     with open(ldap_config_file) as f:
@@ -82,12 +82,12 @@ def test_retrieve_revert_ldap_invalid(tmp_config_files):
     ldap = LdapCredentialConfig(ldap_config_file)
     assert not ldap.parse_secure_key(ldap.get_nested_key(['password']))
     # if store has not been previously called before retrieve and revert we can expect the following
-    retrieved_key_dict, errors = ldap.retrieve()
+    retrieved_key_dict = ldap.retrieve()
     assert retrieved_key_dict == {}
-    assert errors == []
-    creds, errors = ldap.revert()
+
+    creds = ldap.revert()
     assert creds == {}
-    assert errors == []
+
 
 
 def test_retrieve_revert_umapi_valid(tmp_config_files):
@@ -100,7 +100,7 @@ def test_retrieve_revert_umapi_valid(tmp_config_files):
     with open(umapi_config_file) as f:
         data = yaml.load(f)
         assert umapi.parse_secure_key(data['enterprise']['api_key'])
-    retrieved_key_dict, errors = umapi.retrieve()
+    retrieved_key_dict = umapi.retrieve()
     assert retrieved_key_dict['enterprise:api_key'] == unsecured_api_key
     umapi.revert()
     with open(umapi_config_file) as f:
@@ -118,7 +118,7 @@ def test_credman_retrieve_revert_valid(tmp_config_files):
         data = yaml.load(f)
         plaintext_umapi_api_key = data['enterprise']['api_key']
     credman.store()
-    retrieved_creds, errors = credman.retrieve()
+    retrieved_creds = credman.retrieve()
     assert retrieved_creds[ldap_config_file]['password'] == plaintext_ldap_password
     assert retrieved_creds[umapi_config_file]['enterprise:api_key'] == plaintext_umapi_api_key
     # make sure the config files are still in secure format
@@ -141,11 +141,11 @@ def test_credman_retrieve_revert_invalid(tmp_config_files):
     (root_config_file, ldap_config_file, umapi_config_file) = tmp_config_files
     credman = CredentialManager(root_config_file)
     # if credman.store() has not been called first then we can expect the following
-    retrieved_creds, errors = credman.retrieve()
+    retrieved_creds = credman.retrieve()
     assert retrieved_creds == {}
-    creds, errors = credman.revert()
+    creds = credman.revert()
     assert creds == {}
-    assert errors == []
+
 
 
 def test_set():

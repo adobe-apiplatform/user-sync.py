@@ -18,7 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from sys import platform
 import logging
 import os
 import shutil
@@ -29,8 +28,8 @@ import click
 import six
 from click_default_group import DefaultGroup
 
-import user_sync.cli
 import user_sync.certgen
+import user_sync.cli
 import user_sync.cli
 import user_sync.config
 import user_sync.connector.directory
@@ -38,17 +37,15 @@ import user_sync.connector.directory_csv
 import user_sync.connector.directory_ldap
 import user_sync.connector.directory_okta
 import user_sync.connector.umapi
+import user_sync.connector.umapi
 import user_sync.encryption
 import user_sync.helper
 import user_sync.lockfile
 import user_sync.resource
 import user_sync.rules
 from user_sync.credentials import CredentialManager
-
-import user_sync.connector.umapi
-from user_sync.post_sync.manager import PostSyncManager
-
 from user_sync.error import AssertionException
+from user_sync.post_sync.manager import PostSyncManager
 from user_sync.version import __version__ as app_version
 
 LOG_STRING_FORMAT = '%(asctime)s %(process)d %(levelname)s %(name)s - %(message)s'
@@ -177,7 +174,7 @@ def sync(**kwargs):
     run_stats = None
     sign_config_file = kwargs.get('sign_sync_config')
     if 'sign_sync_config' in kwargs:
-        del(kwargs['sign_sync_config'])
+        del (kwargs['sign_sync_config'])
     try:
         # load the config files and start the file logger
         config_loader = user_sync.config.ConfigLoader(kwargs)
@@ -429,17 +426,12 @@ def begin_work(config_loader):
     if post_sync_manager:
         post_sync_manager.run(rule_processor.post_sync_data)
 
+
 @click.group()
 @click.help_option('-h', '--help')
 def credentials():
     clear_logger_format()
     pass
-
-
-def log_credential_errors(errors):
-    click.echo()
-    for e in errors:
-        click.echo("Error: {}\n".format(str(e)))
 
 
 def log_credentials(credentials, show_values=False):
@@ -468,13 +460,12 @@ def store(config_filename, type):
     Stores secure credentials in the configuration file. This is an automated process.
     """
     click.echo()
-    stored, errors = CredentialManager(config_filename, type).store()
-    log_credential_errors(errors)
+    stored = CredentialManager(config_filename, type).store()
     if stored:
         click.echo("The following keys were stored:")
         log_credentials(stored)
     else:
-        click.echo("No keys were stored because none were found. " + ("(some errors encountered)" if errors else ""))
+        click.echo("No keys were stored because no valid credentials were found.")
 
 
 @credentials.command(help="Will return configuration file to unsecured state and replace all secure values with "
@@ -495,13 +486,12 @@ def revert(config_filename, type):
     """
     Revert updates config files with actual plaintext data. This is an automated process.
     """
-    reverted, errors = CredentialManager(config_filename, type).revert()
-    log_credential_errors(errors)
+    reverted = CredentialManager(config_filename, type).revert()
     if reverted:
         click.echo("The following keys were reverted to plaintext:")
         log_credentials(reverted)
     else:
-        click.echo("No keys were reverted because none were stored. " + ("(errors encountered)" if errors else ""))
+        click.echo("No keys were reverted because no valid identifiers were stored.")
 
 
 @credentials.command(help="Will get the stored credentials without altering config files")
@@ -521,10 +511,9 @@ def retrieve(config_filename, type):
     """
     Fetch and display currently stored credentials
     """
-    retrieved, errors = CredentialManager(config_filename, type).retrieve()
-    log_credential_errors(errors)
+    retrieved = CredentialManager(config_filename, type).retrieve()
     if not retrieved:
-        click.echo("No credentials currently stored. " + ("(errors encountered)" if errors else ""))
+        click.echo("No credentials currently stored valid identifiers.")
     log_credentials(retrieved, show_values=True)
 
 
