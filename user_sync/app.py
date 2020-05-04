@@ -41,6 +41,10 @@ import user_sync.helper
 import user_sync.lockfile
 import user_sync.resource
 import user_sync.rules
+
+import user_sync.connector.umapi
+from user_sync.post_sync.manager import PostSyncManager
+
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 
@@ -161,6 +165,9 @@ def main():
 def sync(**kwargs):
     """Run User Sync [default command]"""
     run_stats = None
+    sign_config_file = kwargs.get('sign_sync_config')
+    if 'sign_sync_config' in kwargs:
+        del(kwargs['sign_sync_config'])
     try:
         # load the config files and start the file logger
         config_loader = user_sync.config.ConfigLoader(kwargs)
@@ -266,6 +273,20 @@ def example_config(**kwargs):
 
 @main.command()
 @click.help_option('-h', '--help')
+@click.option('--filename', help="Filename of Sign Sync config",
+              prompt='Sign Sync Config Filename', default='connector-sign-sync.yml')
+def example_config_sign(filename):
+    """Generate Sign Sync Config"""
+    res_filename = os.path.join('examples', 'connector-sign-sync.yml')
+
+    res_file = user_sync.resource.get_resource(res_filename)
+    assert res_file is not None, "Resource file '{}' not found".format(res_filename)
+    click.echo("Generating file '{}'".format(filename))
+    shutil.copy(res_file, filename)
+
+
+@main.command()
+@click.help_option('-h', '--help')
 def docs():
     """Open user manual in browser"""
     res_file = user_sync.resource.get_resource('manual_url')
@@ -365,6 +386,16 @@ def begin_work(config_loader):
         directory_connector = user_sync.connector.directory.DirectoryConnector(directory_connector_module)
         directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
 
+    post_sync_manager = None
+    # get post-sync config unconditionally so we don't get an 'unused key' error
+    post_sync_config = config_loader.get_post_sync_options()
+    if rule_config['strategy'] == 'sync':
+        if post_sync_config:
+            post_sync_manager = PostSyncManager(post_sync_config, rule_config['test_mode'])
+            rule_config['extended_attributes'] |= post_sync_manager.get_directory_attributes()
+    else:
+        logger.warn('Post-Sync Connectors only support "sync" strategy')
+
     config_loader.check_unused_config_keys()
 
     if directory_connector is not None and directory_connector_options is not None:
@@ -396,6 +427,10 @@ def begin_work(config_loader):
     if len(directory_groups) == 0 and rule_processor.will_process_groups():
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
     rule_processor.run(directory_groups, directory_connector, umapi_connectors)
+
+    #  Post sync section
+    if post_sync_manager:
+        post_sync_manager.run(rule_processor.post_sync_data)
 
 
 @main.command(help='Encrypt an existing RSA private key file with a passphrase')
