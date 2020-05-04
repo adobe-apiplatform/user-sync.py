@@ -73,7 +73,7 @@ class CredentialManager:
         try:
             console_log_level = root_cfg['logging']['console_log_level'].upper()
             self.logger.setLevel(console_log_level)
-        except (KeyError, ValueError) as e:
+        except KeyError as e:
             pass
 
         if connector_type in ['all', 'umapi']:
