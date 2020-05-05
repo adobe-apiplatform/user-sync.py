@@ -401,8 +401,9 @@ class RuleProcessor(object):
                 def user_drop_callback():
                     self.get_umapi_info(PRIMARY_UMAPI_NAME).get_desired_groups_by_user_key().pop(user_key)
                     self.directory_user_by_user_key.pop(user_key)
-                    if user_key in filtered_directory_user_by_user_key:
-                        self.filtered_directory_user_by_user_key.pop(user_key)
+                    # if user_key in filtered_directory_user_by_user_key:
+                    #     self.filtered_directory_user_by_user_key.pop(user_key)
+                    self.filtered_directory_user_by_user_key.pop(user_key, None)
                     self.dropped_user_count += 1
                 self.after_mapping_hook_scope['source_attributes'] = directory_user['source_attributes'].copy()
 
