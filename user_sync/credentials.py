@@ -52,6 +52,8 @@ class CredentialManager:
             raise AssertionException("Error in setting credentials '{0}' : {1}".format(identifier, str(e)))
         except Exception as e:
             if "stub received bad data" in str(e):
+                cls.logger.warning("{0} does not support private key storage. "
+                                   "Encrypt private key instead?".format(cls.keyring_name))
                 raise AssertionException("Value for {0} too long for backend to store: {1}".format(identifier, str(e)))
             raise e
 
@@ -251,7 +253,8 @@ class UmapiCredentialConfig(CredentialConfig):
     secured_keys = [
         ['enterprise', 'api_key'],
         ['enterprise', 'client_secret'],
-        ['enterprise', 'priv_key_pass']
+        ['enterprise', 'priv_key_pass'],
+        ['enterprise', 'priv_key_data']
     ]
 
 
@@ -259,5 +262,6 @@ class ConsoleCredentialConfig(CredentialConfig):
     secured_keys = [
         ['integration', 'api_key'],
         ['integration', 'client_secret'],
-        ['integration', 'priv_key_pass']
+        ['integration', 'priv_key_pass'],
+        ['integration', 'priv_key_data']
     ]
