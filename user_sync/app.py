@@ -217,9 +217,10 @@ def init(ctx):
     ctx.forward(example_config, root=sync, umapi=umapi, ldap=ldap)
 
 
-@main.command()
-@click.help_option('Generates batch files to run the user_sync tool in test and live mode.')
+@main.command(help='Generates batch files to run the user_sync tool in test and live mode.')
+@click.help_option('-h', '--help')
 def batch_files():
+    click.echo("Generating batch files...")
     if sys.platform =='win32':
         with open('Run_UST_Test_Mode.bat', 'w') as OPATH:
             OPATH.writelines(['mode 155,50', '\r\n\cd /D "%~dp0"', '\r\nuser-sync.exe --process-groups --users mapped -t',
@@ -227,6 +228,7 @@ def batch_files():
         with open("Run_UST_Live.bat", 'w') as OPATH:
             OPATH.writelines(
                 ['mode 155,50', '\r\ncd /D "%~dp0"', '\r\nuser-sync.exe --process-groups --users mapped'])
+        click.echo("Windows batch files generated.")
     else:
         with open("Run_UST_Live.bat", 'w') as OPATH:
             OPATH.writelines(
@@ -235,7 +237,7 @@ def batch_files():
         with open("Run_UST_Test.bat", 'w') as OPATH:
             OPATH.writelines(
                 ['/usr/bin/env bash\ncd "$(dirname "$(realpath "$0")")";\n./user-sync --users mapped --process-groups -t'])
-
+        click.echo("Linux batch files generated.")
 
 @main.command()
 @click.help_option('-h', '--help')
