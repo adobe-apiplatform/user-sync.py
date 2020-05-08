@@ -440,6 +440,7 @@ def log_credentials(credentials, show_values=False):
     for file, cred in credentials.items():
         click.echo('\n' + file.split(os.sep)[-1] + ":")
         for k, v in cred.items():
+            # conditional for priv key data
             click.echo("  " + k + (": " + v if show_values else ""))
 
 

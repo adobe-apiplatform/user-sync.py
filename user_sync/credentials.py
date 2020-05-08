@@ -21,7 +21,7 @@ yaml = YAML()
 yaml.indent(mapping=4, sequence=4, offset=2)
 
 
-# from ruamel.yaml.scalarstring import PreservedScalarString as pss
+from ruamel.yaml.scalarstring import PreservedScalarString as pss
 # full_config['umapi']['enterprise']['priv_key_data'] = pss(x)
 
 class CredentialManager:
@@ -52,9 +52,7 @@ class CredentialManager:
             raise AssertionException("Error in setting credentials '{0}' : {1}".format(identifier, str(e)))
         except Exception as e:
             if "stub received bad data" in str(e):
-                cls.logger.warning("{0} does not support private key storage. "
-                                   "Encrypt private key instead?".format(cls.keyring_name))
-                raise AssertionException("Value for {0} too long for backend to store: {1}".format(identifier, str(e)))
+                raise AssertionException("Bad value for {0} too long for backend to store: {1}".format(identifier, str(e)))
             raise e
 
     def modify_credentials(self, action):
@@ -124,7 +122,7 @@ class CredentialConfig:
                 # can still be completed
                 val = action(c)
                 if val is not None:
-                    credentials[':'.join(c)] = val
+                    credentials[':'.join(c.credential)] = val
             except AssertionException as e:
                 logging.getLogger().exception("\nError: {}\n".format(str(e)), exc_info=False)
         return credentials
@@ -168,7 +166,7 @@ class CredentialConfig:
         :param key_list: list of nested keys from a YAML file
         :return:
         """
-        key_list = ConfigLoader.as_list(key_list)
+        key_list = ConfigLoader.as_list(key_list.credential)
         value = self.get_nested_key(key_list)
         if value is None:
             return
@@ -185,11 +183,14 @@ class CredentialConfig:
         :param key_list:
         :return:
         """
-        key_list = ConfigLoader.as_list(key_list)
+        is_block = key_list.is_block
+        key_list = ConfigLoader.as_list(key_list.credential)
         secure_identifier = self.parse_secure_key(self.get_nested_key(key_list))
         if secure_identifier is None:
             return
         value = CredentialManager.get(secure_identifier)
+        if is_block:
+            value = pss(value)
         if value is not None:
             return value
         raise AssertionException("No stored value found for identifier: {}".format(secure_identifier))
@@ -197,7 +198,7 @@ class CredentialConfig:
     def revert_key(self, key_list):
         stored_credential = self.retrieve_key(key_list)
         if stored_credential is not None:
-            self.set_nested_key(key_list, stored_credential)
+            self.set_nested_key(key_list.credential, stored_credential)
         return stored_credential
 
     @classmethod
@@ -241,27 +242,34 @@ class CredentialConfig:
         return d
 
 
+class Credential:
+    def __init__(self, credential, is_block):
+        self.credential = credential
+        self.is_block = is_block
+
+
 class LdapCredentialConfig(CredentialConfig):
-    secured_keys = [['password']]
+    secured_keys = [Credential(['password'], is_block=False)]
 
 
 class OktaCredentialConfig(CredentialConfig):
-    secured_keys = [['api_token']]
+    secured_keys = [Credential(['api_token'], is_block=False)]
 
 
 class UmapiCredentialConfig(CredentialConfig):
     secured_keys = [
-        ['enterprise', 'api_key'],
-        ['enterprise', 'client_secret'],
-        ['enterprise', 'priv_key_pass'],
-        ['enterprise', 'priv_key_data']
+        Credential(['enterprise', 'api_key'], is_block=False),
+        Credential(['enterprise', 'client_secret'], is_block=False),
+        Credential(['enterprise', 'priv_key_pass'], is_block=False),
+        Credential(['enterprise', 'priv_key_data'], is_block=True)
     ]
 
 
 class ConsoleCredentialConfig(CredentialConfig):
     secured_keys = [
-        ['integration', 'api_key'],
-        ['integration', 'client_secret'],
-        ['integration', 'priv_key_pass'],
-        ['integration', 'priv_key_data']
+        Credential(['integration', 'api_key'], is_block=False),
+        Credential(['integration', 'client_secret'], is_block=False),
+        Credential(['integration', 'priv_key_pass'], is_block=False),
+        Credential(['integration', 'priv_key_data'], is_block=True)
     ]
+
