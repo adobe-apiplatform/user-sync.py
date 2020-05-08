@@ -243,33 +243,33 @@ class CredentialConfig:
 
 
 class Credential:
-    def __init__(self, credential, is_block):
+    def __init__(self, credential, is_block=False):
         self.credential = credential
         self.is_block = is_block
 
 
 class LdapCredentialConfig(CredentialConfig):
-    secured_keys = [Credential(['password'], is_block=False)]
+    secured_keys = [Credential(['password'])]
 
 
 class OktaCredentialConfig(CredentialConfig):
-    secured_keys = [Credential(['api_token'], is_block=False)]
+    secured_keys = [Credential(['api_token'])]
 
 
 class UmapiCredentialConfig(CredentialConfig):
     secured_keys = [
-        Credential(['enterprise', 'api_key'], is_block=False),
-        Credential(['enterprise', 'client_secret'], is_block=False),
-        Credential(['enterprise', 'priv_key_pass'], is_block=False),
+        Credential(['enterprise', 'api_key']),
+        Credential(['enterprise', 'client_secret']),
+        Credential(['enterprise', 'priv_key_pass']),
         Credential(['enterprise', 'priv_key_data'], is_block=True)
     ]
 
 
 class ConsoleCredentialConfig(CredentialConfig):
     secured_keys = [
-        Credential(['integration', 'api_key'], is_block=False),
-        Credential(['integration', 'client_secret'], is_block=False),
-        Credential(['integration', 'priv_key_pass'], is_block=False),
+        Credential(['integration', 'api_key']),
+        Credential(['integration', 'client_secret']),
+        Credential(['integration', 'priv_key_pass']),
         Credential(['integration', 'priv_key_data'], is_block=True)
     ]
 
