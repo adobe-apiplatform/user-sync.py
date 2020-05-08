@@ -27,8 +27,8 @@ def test_nested_set(ldap_config_file):
 def test_retrieve_ldap_creds_valid(tmp_config_files):
     (_, ldap_config_file, _) = tmp_config_files
     c = CredentialConfig(ldap_config_file)
-    key_list = ['password']
-    plaintext_cred = c.get_nested_key(key_list)
+    key_list = Credential(['password'])
+    plaintext_cred = c.get_nested_key(key_list.credential)
     c.store_key(key_list)
     retrieved_plaintext_cred = c.retrieve_key(key_list)
     assert retrieved_plaintext_cred == plaintext_cred
@@ -37,7 +37,7 @@ def test_retrieve_ldap_creds_valid(tmp_config_files):
 def test_retrieve_ldap_creds_invalid(tmp_config_files):
     (_, ldap_config_file, _) = tmp_config_files
     c = CredentialConfig(ldap_config_file)
-    key_list = ['password']
+    key_list = Credential(['password'])
     # if store_key has not been called previously, retrieve_key returns None
     assert c.retrieve_key(key_list) is None
 
@@ -45,8 +45,8 @@ def test_retrieve_ldap_creds_invalid(tmp_config_files):
 def test_revert_valid(tmp_config_files):
     (_, ldap_config_file, _) = tmp_config_files
     c = CredentialConfig(ldap_config_file)
-    key_list = ['password']
-    plaintext_cred = c.get_nested_key(key_list)
+    key_list = Credential(['password'])
+    plaintext_cred = c.get_nested_key(key_list.credential)
     c.store_key(key_list)
     reverted_plaintext_cred = c.revert_key(key_list)
     assert reverted_plaintext_cred == plaintext_cred
@@ -55,7 +55,7 @@ def test_revert_valid(tmp_config_files):
 def test_revert_invalid(tmp_config_files):
     (_, ldap_config_file, _) = tmp_config_files
     c = CredentialConfig(ldap_config_file)
-    key_list = ['password']
+    key_list = Credential(['password'])
     # assume store_key has not been called
     assert c.revert_key(key_list) is None
 
@@ -189,7 +189,8 @@ def test_get_not_valid():
 def test_config_store(tmp_config_files):
     (_, ldap_config_file, _) = tmp_config_files
     ldap = LdapCredentialConfig(ldap_config_file)
-    assert not ldap.parse_secure_key(ldap.get_nested_key(['password']))
+    key_list = Credential(['password'])
+    assert not ldap.parse_secure_key(ldap.get_nested_key(key_list.credential))
     ldap.store()
     with open(ldap_config_file) as f:
         data = yaml.load(f)
@@ -199,14 +200,16 @@ def test_config_store(tmp_config_files):
 def test_config_store_key(tmp_config_files):
     (_, ldap_config_file, _) = tmp_config_files
     ldap = LdapCredentialConfig(ldap_config_file)
-    assert not ldap.parse_secure_key(ldap.get_nested_key(['password']))
-    ldap.store_key(['password'])
-    assert ldap.parse_secure_key(ldap.get_nested_key(['password']))
+    key_list = Credential(['password'])
+    assert not ldap.parse_secure_key(ldap.get_nested_key(key_list.credential))
+    ldap.store_key(key_list)
+    assert ldap.parse_secure_key(ldap.get_nested_key(key_list.credential))
 
 
 def test_config_store_key_none(tmp_config_files):
     (_, ldap_config_file, _) = tmp_config_files
     ldap = LdapCredentialConfig(ldap_config_file)
-    ldap.set_nested_key(['password'], [])
+    key_list = Credential(['password'])
+    ldap.set_nested_key(key_list.credential, [])
     with pytest.raises(AssertionException):
-        ldap.store_key(['password'])
+        ldap.store_key(key_list)
