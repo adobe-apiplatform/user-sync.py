@@ -771,6 +771,17 @@ targeted Adobe groups.
 **Note:** Additional group mapping will fail if a multiple source groups
 map to the same target group.
 
+### Configure 'dynamic_group_member_attribute'
+
+From User Sync tool 2.5 onward, you are required to mention the `memberOf` 
+LDAP attribute in `connector-ldap.yml`. There is no default value and if 
+`addtional_groups` is defined but `dynamic_group_member_attribute` not defined,
+you would see an warning. Here is example:
+
+```yaml
+dynamic_group_member_attribute: 'memberOf'
+```
+
 ### Additional Group Example
 
 Suppose an Adobe Experience Manager customer would like

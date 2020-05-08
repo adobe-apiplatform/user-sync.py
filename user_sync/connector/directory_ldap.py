@@ -29,6 +29,8 @@ import user_sync.error
 import user_sync.identity_type
 from user_sync.error import AssertionException
 
+import platform
+import ssl
 
 def connector_metadata():
     metadata = {
@@ -79,16 +81,23 @@ class LDAPDirectoryConnector(object):
         self.user_country_code_formatter = LDAPValueFormatter(options['user_country_code_format'])
 
         auth_method = options['authentication_method'].lower()
+        auth_cred_required = ['simple', 'ntlm']
 
         if options['username'] is not None:
-            password = caller_config.get_credential('password', options['username'])
+            if auth_method in auth_cred_required:
+                password = caller_config.get_credential('password', options['username'])
+            else:
+                # Ignore specified credential if authentication method is either 'Kerberos' or 'Anonymous'
+                raise AssertionException("'username' and 'password' are not allowed when 'authentication_method' is '%s" % auth_method)
         else:
             # override authentication method to anonymous if username is not specified
-            if auth_method != 'anonymous':
+            if auth_method != 'anonymous' and auth_method != 'kerberos':
                 auth_method = 'anonymous'
                 logger.info("Username not specified, overriding authentication method to 'anonymous'")
         # this check must come after we get the password value
         caller_config.report_unused_values(logger)
+        if auth_method != 'kerberos':
+            from ldap3 import Connection
 
         if auth_method == 'anonymous':
             auth = {'authentication': ldap3.ANONYMOUS}
@@ -103,19 +112,28 @@ class LDAPDirectoryConnector(object):
                     'password': six.text_type(password)}
             logger.debug('Connecting to: %s - Authentication Method: NTLM using username: %s', options['host'],
                          options['username'])
+        elif auth_method == 'kerberos':
+            if(platform.system() == 'Windows'):
+                from .ldap3_extended.Connection import Connection
+                auth = {'authentication': ldap3.SASL, 'sasl_mechanism': ldap3.GSSAPI}
+                logger.debug('Connecting to: %s - Authentication Method: Kerberos', options['host'])
+            else:
+                raise AssertionException('Kerberos Authentication Method is not supported on this OS. Windows Only')
         else:
             raise AssertionException('LDAP Authentication Method is not supported: %s' % auth_method)
 
-        # TODO TLS****
-        # if not options['require_tls_cert']:
-        #    ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+        tls = None
+        auto_bind = ldap3.AUTO_BIND_NO_TLS
+        if options['require_tls_cert']:
+            tls = ldap3.Tls(validate=ssl.CERT_REQUIRED, version=ssl.PROTOCOL_TLSv1_2)
+            auto_bind = ldap3.AUTO_BIND_TLS_BEFORE_BIND
         try:
-            server = ldap3.Server(host=options['host'], allowed_referral_hosts=True)
-            connection = ldap3.Connection(server, auto_bind=True, read_only=True, **auth)
+            server = ldap3.Server(host=options['host'], allowed_referral_hosts=True, tls=tls)
+            connection = Connection(server, auto_bind=auto_bind, read_only=True, **auth)
         except Exception as e:
             raise AssertionException('LDAP connection failure: %s' % e)
         self.connection = connection
-        logger.debug('Connected')
+        logger.debug('Connected as %s', connection.extend.standard.who_am_i())
         self.user_by_dn = {}
         self.additional_group_filters = None
 
@@ -137,6 +155,7 @@ class LDAPDirectoryConnector(object):
         builder.set_string_value('user_given_name_format', six.text_type('{givenName}'))
         builder.set_string_value('user_surname_format', six.text_type('{sn}'))
         builder.set_string_value('user_country_code_format', six.text_type('{c}'))
+        builder.set_string_value('dynamic_group_member_attribute', None)
         builder.set_string_value('user_identity_type', None)
         builder.set_int_value('search_page_size', 200)
         builder.set_string_value('logger_name', LDAPDirectoryConnector.name)
@@ -302,6 +321,9 @@ class LDAPDirectoryConnector(object):
             pass
 
     def iter_users(self, base_dn, users_filter, extended_attributes):
+        options = self.options
+        dynamic_group_member_attribute = options['dynamic_group_member_attribute']
+
         user_attribute_names = []
         user_attribute_names.extend(self.user_given_name_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_surname_formatter.get_attribute_names())
@@ -310,7 +332,8 @@ class LDAPDirectoryConnector(object):
         user_attribute_names.extend(self.user_email_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
-        user_attribute_names.append(six.text_type('memberOf'))
+        if dynamic_group_member_attribute is not None:
+            user_attribute_names.append(six.text_type(dynamic_group_member_attribute))
 
         extended_attributes = [six.text_type(attr) for attr in extended_attributes]
         extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
@@ -389,7 +412,7 @@ class LDAPDirectoryConnector(object):
             if c_value is not None:
                 user['country'] = c_value.upper()
 
-            user['member_groups'] = self.get_member_groups(record) if self.additional_group_filters else []
+            user['member_groups'] = self.get_member_groups(record, dynamic_group_member_attribute) if self.additional_group_filters else []
 
             if extended_attributes is not None:
                 for extended_attribute in extended_attributes:
@@ -403,7 +426,7 @@ class LDAPDirectoryConnector(object):
 
             yield (dn, user)
 
-    def get_member_groups(self, user):
+    def get_member_groups(self, user, dynamic_group_member_attribute):
         """
         Get a list of member group common names for user
         Assumes groups are contained in attribute memberOf
@@ -411,7 +434,7 @@ class LDAPDirectoryConnector(object):
         :return:
         """
         group_names = []
-        groups = LDAPValueFormatter.get_attribute_value(user, 'memberOf')
+        groups = LDAPValueFormatter.get_attribute_value(user, dynamic_group_member_attribute)
 
         if not groups:
             return group_names
@@ -512,6 +535,10 @@ class LDAPDirectoryConnector(object):
         :param dn: str
         :return: bool
         """
+        # return true if base_dn is empty string such as global scope and no need to check user_dn is part of base_dn
+        if (not (base_dn and base_dn.strip())):
+            return True
+
         split_base_dn = ldap3.utils.dn.parse_dn(base_dn.lower())
         split_dn = ldap3.utils.dn.parse_dn(dn.lower())
         if split_base_dn == split_dn[-len(split_base_dn):]:

@@ -65,14 +65,6 @@ adobe_users:
     # location of this configuration file, not relative to the
     # working directory of your User Sync process.
     umapi: "connector-umapi.yml"
-    # An alternate form for referencing the umapi configuration allows for storage
-    # of the umapi credentials in a secure way:
-    #umapi: $(cat connector-umapi.yml)  # This runs the indicated command and uses
-    # the output as the configuration file.  In this example we are simply
-    # echoing the file contents so it is no more secure than the other form
-    # of file reference.  To make it more secure, you need to provide a
-    # command or script that fetches the data from a secure source.
-    # ("cat" would need to be "type" on a Windows platform.)
 
 # The directory_users section controls how enterprise-side users are accessed,
 # sets default values for attributes not specified in the enterprise directory,
@@ -130,14 +122,6 @@ directory_users:
     # location of this configuration file, not relative to the
     # working directory of your User Sync process.
     ldap: "connector-ldap.yml"
-    # An alternate form for referencing the ldap configuration allows for storage
-    # of the ldap credentials in a secure way:
-    #ldap: $(cat connector-ldap.yml)  # This form runs the indicated command and uses
-    # the output as the configuration file.  In this example we are simply
-    # echoing the file contents so it is no more secure than the other form
-    # of file reference.  To make it more secure, you need to provide a
-    # command or script that fetches the data from a secure source.
-    # ("cat" would need to be "type" on a Windows platform.)
 
     # (optional) csv (no default value)
     # csv stands for "comma-separated values", which is the most common form
@@ -226,6 +210,19 @@ directory_users:
   #   be enabled for groups to be auto-created
   # group_sync_options:
   #   auto_create: False
+
+# Post-sync connectors are enabled here
+# `modules` specifies by name the modules to be enabled
+# `connectors` specifies the location of each connector's config file
+#   NOTE: the key of each config file path must be a valid connector name,
+#         and must be represented in the `modules` list
+#  More info: https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/post_sync_connector.html
+#post_sync:
+#  modules:
+#    - sign_sync
+#
+#  connectors:
+#    sign_sync: connector-sign-sync.yml
 
 # The limits section provides processing limits which can help ensure that
 # User Sync jobs do not exceed expected guardrails in their operation
