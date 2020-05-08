@@ -52,7 +52,9 @@ class CredentialManager:
             raise AssertionException("Error in setting credentials '{0}' : {1}".format(identifier, str(e)))
         except Exception as e:
             if "stub received bad data" in str(e):
-                raise AssertionException("Bad value for {0} too long for backend to store: {1}".format(identifier, str(e)))
+                raise AssertionException("Bad value for {0}: {1} \nPrivate key data"
+                                         " storage may not be supported"
+                                         " due to character limits. Encrypt private key data instead?".format(identifier, str(e)))
             raise e
 
     def modify_credentials(self, action):
