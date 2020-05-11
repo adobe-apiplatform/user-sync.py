@@ -384,22 +384,6 @@ def begin_work(config_loader):
 
     config_loader.check_unused_config_keys()
 
-    if directory_connector is not None and directory_connector_options is not None:
-        # specify the default user_identity_type if it's not already specified in the options
-        if 'user_identity_type' not in directory_connector_options:
-            directory_connector_options['user_identity_type'] = rule_config['new_account_type']
-        directory_connector.initialize(directory_connector_options)
-
-    additional_group_filters = None
-    additional_groups = rule_config.get('additional_groups', None)
-    if additional_groups and isinstance(additional_groups, list):
-        additional_group_filters = [r['source'] for r in additional_groups]
-    if directory_connector is not None:
-        directory_connector.state.additional_group_filters = additional_group_filters
-        # show error dynamic mappings enabled but 'dynamic_group_member_attribute' is not defined
-        if additional_group_filters and directory_connector.state.options['dynamic_group_member_attribute'] is None:
-            raise AssertionException(
-                "Failed to enable dynamic group mappings. 'dynamic_group_member_attribute' is not defined in config")
     primary_name = '.primary' if secondary_umapi_configs else ''
     umapi_primary_connector = user_sync.connector.umapi.UmapiConnector(primary_name, primary_umapi_config)
     umapi_other_connectors = {}

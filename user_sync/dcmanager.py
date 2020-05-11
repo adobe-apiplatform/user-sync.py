@@ -101,6 +101,10 @@ class DirectoryConnectorManager(object):
             additional_group_filters = [r['source'] for r in self.additional_groups]
         if directory_connector is not None:
             directory_connector.state.additional_group_filters = additional_group_filters
+            # show error dynamic mappings enabled but 'dynamic_group_member_attribute' is not defined
+            if additional_group_filters and directory_connector.state.options['dynamic_group_member_attribute'] is None:
+                raise AssertionException(
+                    "Failed to enable dynamic group mappings. 'dynamic_group_member_attribute' is not defined in config")
 
         return directory_connector
 
