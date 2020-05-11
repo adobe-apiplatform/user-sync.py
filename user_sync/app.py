@@ -440,7 +440,10 @@ def log_credentials(credentials, show_values=False):
     for file, cred in credentials.items():
         click.echo('\n' + file.split(os.sep)[-1] + ":")
         for k, v in cred.items():
-            click.echo("  " + k + (": " + v if show_values else ""))
+            if k == 'enterprise:priv_key_data':
+                click.echo("  " + k + (": " + v[40:80] + ' (partial data)' if show_values else ""))
+            else:
+                click.echo("  " + k + (": " + v if show_values else ""))
 
 
 @credentials.command(
