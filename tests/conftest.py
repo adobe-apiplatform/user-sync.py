@@ -8,7 +8,6 @@ from util import make_dict, merge_dict
 from user_sync import config
 import shutil
 
-
 @pytest.fixture
 def fixture_dir():
     return os.path.abspath(
