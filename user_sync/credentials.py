@@ -5,6 +5,7 @@ import keyrings.cryptfile.cryptfile
 import six
 from keyring.errors import KeyringError
 from ruamel.yaml import YAML
+from ruamel.yaml.scalarstring import PreservedScalarString as pss
 
 from user_sync.config import ConfigFileLoader, ConfigLoader
 from user_sync.error import AssertionException
@@ -21,8 +22,6 @@ yaml = YAML()
 yaml.indent(mapping=4, sequence=4, offset=2)
 
 
-from ruamel.yaml.scalarstring import PreservedScalarString as pss
-# full_config['umapi']['enterprise']['priv_key_data'] = pss(x)
 
 class CredentialManager:
     username = 'user_sync'
