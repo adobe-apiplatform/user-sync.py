@@ -5,8 +5,8 @@ from user_sync.encryption import decrypt
 def make_auth_dict(name, config, org_id, tech_acct, logger):
     auth_dict = {
         'org_id': org_id,
-        'tech_acct_id': tech_acct,
-        'api_key': config.get_credential('api_key', org_id),
+        'tech_acct': tech_acct,
+        'api_key': config.get_credential('client_id', org_id),
         'client_secret': config.get_credential('client_secret', org_id),
     }
     # get the private key

@@ -90,7 +90,7 @@ class AdobeConsoleConnector(object):
         enterprise_config = caller_config.get_dict_config('integration')
         integration_builder = user_sync.config.OptionsBuilder(enterprise_config)
         integration_builder.require_string_value('org_id')
-        integration_builder.require_string_value('tech_acct')
+        integration_builder.require_string_value('tech_acct_id')
         options['integration'] = integration_options = integration_builder.get_options()
 
         self.logger = logger = user_sync.connector.helper.create_logger(options)
