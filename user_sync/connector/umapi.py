@@ -71,7 +71,8 @@ class UmapiConnector(object):
         enterprise_config = caller_config.get_dict_config('enterprise')
         enterprise_builder = user_sync.config.OptionsBuilder(enterprise_config)
         enterprise_builder.require_string_value('org_id')
-        enterprise_builder.require_string_value('tech_acct_id')
+        tech_field = 'tech_acct_id' if 'tech_acct_id' in enterprise_config else 'tech_acct'
+        enterprise_builder.require_string_value(tech_field)
         options['enterprise'] = enterprise_options = enterprise_builder.get_options()
         self.options = options
         self.logger = logger = user_sync.connector.helper.create_logger(options)
@@ -81,7 +82,8 @@ class UmapiConnector(object):
 
         ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
-        auth_dict = make_auth_dict(self.name, enterprise_config, org_id, enterprise_options['tech_acct_id'], logger)
+        tech_field = 'tech_acct_id' if 'tech_acct_id' in enterprise_options else 'tech_acct'
+        auth_dict = make_auth_dict(self.name, enterprise_config, org_id, enterprise_options[tech_field], logger)
         # this check must come after we fetch all the settings
         enterprise_config.report_unused_values(logger)
         # open the connection
