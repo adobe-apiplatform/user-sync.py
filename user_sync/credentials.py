@@ -78,10 +78,12 @@ class CredentialManager:
 
         if root_cfg['directory_users']['connectors'].__contains__('multi'):
             for dx in root_cfg['directory_users']['connectors']['multi']:
+                if dx['type'] == 'csv':
+                    continue
                 self.config_files[dx['type']] = CredentialConfig.create(dx['type'], dx['path'])
         else:
             for c, v in root_cfg['directory_users']['connectors'].items():
-                if connector_type in ['all', c]:
+                if connector_type in ['all', c] and c!= 'csv':
                     self.config_files[v] = CredentialConfig.create(c, v)
 
         if connector_type in ['all', 'umapi']:
