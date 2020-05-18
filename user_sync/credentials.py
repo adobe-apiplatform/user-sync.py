@@ -76,15 +76,17 @@ class CredentialManager:
         except KeyError as e:
             pass
 
-        if root_cfg['directory_users']['connectors'].__contains__('multi'):
-            for dx in root_cfg['directory_users']['connectors']['multi']:
-                if dx['type'] == 'csv':
-                    continue
-                self.config_files[dx['type']] = CredentialConfig.create(dx['type'], dx['path'])
-        else:
-            for c, v in root_cfg['directory_users']['connectors'].items():
-                if connector_type in ['all', c] and c!= 'csv':
-                    self.config_files[v] = CredentialConfig.create(c, v)
+        directory_connectors = []
+
+        for c, v in root_cfg['directory_users']['connectors'].items():
+            if c == 'multi':
+                directory_connectors.extend([(conn['type'], conn['path']) for conn in v])
+            else:
+                directory_connectors.append((c, v))
+
+        for c in directory_connectors:
+            if connector_type in ['all', c[0]] and c[0] != 'csv':
+                self.config_files[c[1]] = CredentialConfig.create(c[0], c[1])
 
         if connector_type in ['all', 'umapi']:
             for u in ConfigLoader.as_list(root_cfg['adobe_users']['connectors']['umapi']):
