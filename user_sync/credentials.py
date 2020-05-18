@@ -61,7 +61,6 @@ class CredentialManager:
                 else:
                     # not sure if necessary and if so what to do in this case
                     raise AssertionException("Private key will remain in plaintext, unencrypted format.")
-            raise e
 
     @classmethod
     def encrypt(cls, data):
