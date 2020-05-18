@@ -1,12 +1,14 @@
 import logging
 from collections import Mapping
 
+import click
 import keyrings.cryptfile.cryptfile
 import six
 from keyring.errors import KeyringError
 from ruamel.yaml import YAML
 from ruamel.yaml.scalarstring import PreservedScalarString as pss
 
+from user_sync import encryption
 from user_sync.config import ConfigFileLoader, ConfigLoader
 from user_sync.error import AssertionException
 
@@ -20,7 +22,6 @@ if (isinstance(keyring.get_keyring(), keyring.backends.fail.Keyring) or
 
 yaml = YAML()
 yaml.indent(mapping=4, sequence=4, offset=2)
-
 
 
 class CredentialManager:
@@ -51,10 +52,21 @@ class CredentialManager:
             raise AssertionException("Error in setting credentials '{0}' : {1}".format(identifier, str(e)))
         except Exception as e:
             if "stub received bad data" in str(e):
-                raise AssertionException("Bad value for {0}: {1} \nPrivate key data"
-                                         " storage may not be supported"
-                                         " due to character limits. Encrypt private key data instead?".format(identifier, str(e)))
+                # check that private key is in plaintext, unencrypted state?
+                response = click.prompt("Bad value for '{0}': '{1}'. \nPrivate key storage may not be supported"
+                                        " due to character limits.\n"
+                                        "Encrypt private key instead? (y/n)".format(identifier, str(e)))
+                if response == 'y':
+                    result = cls.encrypt(value)
+                else:
+                    # not sure if necessary and if so what to do in this case
+                    raise AssertionException("Private key will remain in plaintext, unencrypted format.")
             raise e
+
+    @classmethod
+    def encrypt(cls, data):
+        passphrase = click.prompt('Create password ', hide_input=True, confirmation_prompt=True)
+        return encryption.encrypt(passphrase, data)
 
     def modify_credentials(self, action):
         all_credentials = {}
@@ -273,4 +285,3 @@ class ConsoleCredentialConfig(CredentialConfig):
         Credential(['integration', 'priv_key_pass']),
         Credential(['integration', 'priv_key_data'], is_block=True)
     ]
-
