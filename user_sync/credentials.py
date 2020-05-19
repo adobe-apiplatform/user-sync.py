@@ -1,5 +1,7 @@
+import binascii
 import logging
 from collections import Mapping
+from os import urandom
 
 import click
 import keyrings.cryptfile.cryptfile
@@ -68,7 +70,7 @@ class CredentialManager:
     @classmethod
     def encrypt(cls, data, *auto_encrypt):
         if auto_encrypt:
-            passphrase = 'notrandomyet'
+            passphrase = str(binascii.b2a_hex(urandom(16)).decode())
         else:
             passphrase = click.prompt('Create password ', hide_input=True, confirmation_prompt=True)
         return encryption.encrypt(passphrase, data)
