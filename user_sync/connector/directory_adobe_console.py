@@ -101,8 +101,6 @@ class AdobeConsoleConnector(object):
 
         ims_host = server_options['ims_host']
         self.org_id = org_id = integration_options['org_id']
-
-        tech_field = 'tech_acct_id' if 'tech_acct_id' in integration_options else 'tech_acct'
         auth_dict = make_auth_dict(self.name, enterprise_config, org_id, integration_options[tech_field], logger)
 
         # this check must come after we fetch all the settings
