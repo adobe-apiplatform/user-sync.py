@@ -57,7 +57,7 @@ class CredentialManager:
                                         " due to character limits.\n"
                                         "Encrypt private key instead? (y/n)".format(identifier, str(e)))
                 if response == 'y':
-                    result = cls.encrypt(value)
+                    return cls.encrypt(value)
                 else:
                     # not sure if necessary and if so what to do in this case
                     raise AssertionException("Private key will remain in plaintext, unencrypted format.")
@@ -184,8 +184,11 @@ class CredentialConfig:
             return
         if not self.parse_secure_key(value):
             k = self.get_qualified_identifier(key_list)
-            CredentialManager.set(k, value)
-            self.set_nested_key(key_list, {'secure': k})
+            value = CredentialManager.set(k, value)
+            if value is not None:
+                self.set_nested_key(key_list, pss(value))
+            else:
+                self.set_nested_key(key_list, {'secure': k})
             return k
 
     def retrieve_key(self, key_list):
