@@ -460,12 +460,14 @@ def log_credentials(credentials, show_values=False):
               nargs=1,
               default="all",
               metavar='all|ldap|umapi|okta|console')
-def store(config_filename, type):
+@click.option('--auto-encrypt', '-a', help='Automatically encrypt private key data if storage fails.'
+                                           ' Passphrase will be randomly generated', is_flag=True)
+def store(config_filename, type, auto_encrypt):
     """
     Stores secure credentials in the configuration file. This is an automated process.
     """
     click.echo()
-    stored = CredentialManager(config_filename, type).store()
+    stored = CredentialManager(config_filename, type).store(auto_encrypt)
     if stored:
         click.echo("The following keys were stored:")
         log_credentials(stored)
