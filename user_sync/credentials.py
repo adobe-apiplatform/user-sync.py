@@ -55,7 +55,7 @@ class CredentialManager:
         except Exception as e:
             if "stub received bad data" in str(e):
                 # check that private key is in plaintext, unencrypted state?
-                if auto_encrypt:
+                if auto_encrypt[0]:
                     return cls.encrypt(value, *auto_encrypt)
                 else:
                     response = click.prompt("Bad value for '{0}': '{1}'. \nPrivate key storage may not be supported"
