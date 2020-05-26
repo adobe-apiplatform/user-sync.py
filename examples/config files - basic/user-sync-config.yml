@@ -336,6 +336,13 @@ invocation_defaults:
   # If you set this default to True, you can supply the argument
   # --no-process-groups to override the default.
   process_groups: Yes
+  # Allows you to disable the SSL verification used by the requests module.  This can
+  # come in handy for troubleshooting or working around network / proxy related issues when
+  # the following error is encountered:
+  #  'connection failed: [SSL: CERTIFICATE_VERIFY_FAILED]'
+  # It is recommended to leave this set to default (True), since it leaves UST potentially
+  # vulnerable to middle man attacks and set to False only if absolutely needed.
+  ssl_cert_verify: Yes
   # For argument --strategy, the default is 'sync'.
   strategy: sync
   # For argument --test-mode (or -t), the default is False (live run).

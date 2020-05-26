@@ -42,6 +42,8 @@ except:
 
 
 class UmapiConnector(object):
+    ssl_cert_verify = True
+
     def __init__(self, name, caller_options):
         """
         :type name: str
@@ -79,6 +81,10 @@ class UmapiConnector(object):
             server_config.report_unused_values(logger)
         logger.debug('UMAPI initialized with options: %s', options)
 
+        if server_options.get('ssl_verify') is not None:
+            self.logger.warning("The ssl_verify key has moved. To use it, please see: "
+        "https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/deployment_best_practices.html#disabling-ssl-verification")
+
         ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
         auth_dict = make_auth_dict(self.name, enterprise_config, org_id, enterprise_options['tech_acct'], logger)
@@ -99,7 +105,7 @@ class UmapiConnector(object):
                 logger=self.logger,
                 timeout_seconds=float(server_options['timeout']),
                 retry_max_attempts=server_options['retries'] + 1,
-                ssl_verify=server_options['ssl_verify']
+                ssl_verify=self.ssl_cert_verify
             )
         except Exception as e:
             raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))

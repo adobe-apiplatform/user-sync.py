@@ -54,6 +54,7 @@ class ConfigLoader(object):
         'connector': ['ldap'],
         'encoding_name': 'utf8',
         'exclude_unmapped_users': False,
+        'ssl_cert_verify': True,
         'process_groups': False,
         'strategy': 'sync',
         'test_mode': False,

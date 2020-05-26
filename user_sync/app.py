@@ -25,8 +25,10 @@ import sys
 from datetime import datetime
 
 import click
+import requests
 import six
 from click_default_group import DefaultGroup
+from urllib3.exceptions import InsecureRequestWarning
 
 import user_sync.certgen
 import user_sync.cli
@@ -35,6 +37,7 @@ import user_sync.connector.directory
 import user_sync.connector.directory_ldap
 import user_sync.connector.directory_okta
 import user_sync.connector.directory_csv
+import user_sync.post_sync.connectors.sign_sync
 import user_sync.connector.umapi
 import user_sync.encryption
 import user_sync.helper
@@ -139,6 +142,9 @@ def main():
               help='if membership in mapped groups differs between the enterprise directory and Adobe sides, '
                    'the group membership is updated on the Adobe side so that the memberships in mapped '
                    'groups match those on the enterprise directory side.')
+@click.option('--ssl-cert-verify/--no-ssl-cert-verify', default=None,
+              help='enable or disables SSL cert verification.  Can be used when SSL inspection on the firewall interrupts'
+                   'connection.  Default: enabled')
 @click.option('--strategy',
               help="whether to fetch and sync the Adobe directory against the customer directory "
                    "or just to push each customer user to the Adobe side.  Default is to fetch and sync.",
@@ -353,6 +359,17 @@ def begin_work(config_loader):
     directory_groups = config_loader.get_directory_groups()
     rule_config = config_loader.get_rule_options()
 
+    ssl_cert_verify = rule_config.get('ssl_cert_verify', True)
+    user_sync.connector.umapi.UmapiConnector.ssl_cert_verify = ssl_cert_verify
+    user_sync.post_sync.connectors.sign_sync.SignClient.ssl_cert_verify = ssl_cert_verify
+
+    if not ssl_cert_verify:
+      logger.warning("SSL certificate verification is bypassed.  Consider disabling this option and using the "
+                     "REQUESTS_CA_BUNDLE environment variable to specify the PEM firewall bundle...")
+      # Suppress only the single warning from urllib3 needed.
+      # noinspection PyUnresolvedReferences
+      requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+
     # make sure that all the adobe groups are from known umapi connector names
     primary_umapi_config, secondary_umapi_configs = config_loader.get_umapi_options()
     referenced_umapi_names = set()
@@ -397,6 +414,7 @@ def begin_work(config_loader):
         additional_group_filters = [r['source'] for r in additional_groups]
     if directory_connector is not None:
         directory_connector.state.additional_group_filters = additional_group_filters
+        directory_connector.state.ssl_cert_verify = ssl_cert_verify
         # show error dynamic mappings enabled but 'dynamic_group_member_attribute' is not defined
         if additional_group_filters and directory_connector.state.options['dynamic_group_member_attribute'] is None:
             raise AssertionException(

@@ -20,15 +20,6 @@
 # highly recommended that you leave these values commented out
 # so that the default values are guaranteed to be used.
 
-# (optional) ssl_verify
-# Allows you to disable the SSL verification used by the requests module.  This can
-# come in handy for troubleshooting or working around network / proxy related issues when
-# the following error is encountered:
-
-#  'UMAPI connection to org id failed: [SSL: CERTIFICATE_VERIFY_FAILED]'
-
-# It is recommended to leave this set to default (True), since it leaves UST potentially
-# vulnerable to middle man attacks and set to False only if absolutely needed.
 server:
   #host: usermanagement.adobe.io
   #endpoint: /v2/usermanagement
@@ -36,7 +27,6 @@ server:
   #ims_endpoint_jwt: /ims/exchange/jwt
   #timeout: 120
   #retries: 3
-  #ssl_verify: True
 
 # (required) enterprise organization settings
 # You must specify all five of these settings.  Consult the
