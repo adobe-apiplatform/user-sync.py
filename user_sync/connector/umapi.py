@@ -67,7 +67,6 @@ class UmapiConnector(object):
         server_builder.set_string_value('ims_endpoint_jwt', '/ims/exchange/jwt')
         server_builder.set_int_value('timeout', 120)
         server_builder.set_int_value('retries', 3)
-        server_builder.set_bool_value('ssl_verify', True)
         options['server'] = server_options = server_builder.get_options()
 
         enterprise_config = caller_config.get_dict_config('enterprise')
@@ -78,12 +77,12 @@ class UmapiConnector(object):
         self.options = options
         self.logger = logger = user_sync.connector.helper.create_logger(options)
         if server_config:
+            if caller_options['server'].get('ssl_verify') is not None:
+                raise AssertionException(
+                    "The ssl_verify key has moved to user-sync-config.yml. To use it, please see the "
+                    "documentation in the example user-sync-config.yml in the invocation_defaults section.")
             server_config.report_unused_values(logger)
         logger.debug('UMAPI initialized with options: %s', options)
-
-        if server_options.get('ssl_verify') is not None:
-            self.logger.warning("The ssl_verify key has moved. To use it, please see: "
-        "https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/deployment_best_practices.html#disabling-ssl-verification")
 
         ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
