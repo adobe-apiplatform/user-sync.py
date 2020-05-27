@@ -67,7 +67,7 @@ enterprise:
   # To use this feature, You can secure the credentials by using the credentials store commands in the command line
 
   # Refer to the (URL to Additional Tools) 
-  # secure_priv_key_data_key: umapi_private_key_data
+  
   # Note: the Windows credential store generally can't store data as large as a private
   # key, so the recommended path for securing your private key on windows is given next.
 
