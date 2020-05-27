@@ -55,7 +55,7 @@ class CredentialManager:
         except Exception as e:
             if "stub received bad data" in str(e):
                 # check that private key is in plaintext, unencrypted state?
-                if auto_encrypt[0]:
+                if auto_encrypt:
                     return cls.encrypt(value, *auto_encrypt)
                 else:
                     response = click.prompt("Bad value for '{0}': '{1}'. \nPrivate key storage may not be supported"
@@ -66,6 +66,8 @@ class CredentialManager:
                     else:
                         # not sure if necessary and if so what to do in this case
                         raise AssertionException("Private key will remain in plaintext, unencrypted format.")
+            else:
+                raise e
 
     @classmethod
     def encrypt(cls, data, *auto_encrypt):
@@ -143,14 +145,11 @@ class CredentialConfig:
             try:
                 # Try to do the action, but don't break on exception because rest of actions
                 # can still be completed
-<<<<<<< HEAD
                 if action == self.store_key:
-                    val = action(c, *auto_encrypt)
+                    val = action(k, *auto_encrypt)
                 else:
-                    val = action(c)
-=======
+                    val = action(k)
                 val = action(k)
->>>>>>> no-str-creds
                 if val is not None:
                     credentials[':'.join(k.key_path)] = val
             except AssertionException as e:
@@ -188,11 +187,7 @@ class CredentialConfig:
         """
         return self.filename + ":" + ":".join(identifier)
 
-<<<<<<< HEAD
-    def store_key(self, key_list, *auto_encrypt):
-=======
-    def store_key(self, key):
->>>>>>> no-str-creds
+    def store_key(self, key, *auto_encrypt):
         """
         Takes a list of keys representing the path to a value in the YAML file, and constructs an identifier.
         If the key is a string and NOT in secure format, calls credential manager to set the key
@@ -204,25 +199,19 @@ class CredentialConfig:
         if value is None:
             return
         if not self.parse_secure_key(value):
-<<<<<<< HEAD
-            k = self.get_qualified_identifier(key_list)
-            value = CredentialManager.set(k, value, *auto_encrypt)
-            if value is not None:
-                self.set_nested_key(key_list, pss(value))
-            else:
-                self.set_nested_key(key_list, {'secure': k})
-=======
             k = self.get_qualified_identifier(key.key_path)
-            CredentialManager.set(k, value)
-            self.set_nested_key(key.key_path, {'secure': k})
->>>>>>> no-str-creds
+            block_value = CredentialManager.set(k, value, *auto_encrypt)
+            if block_value is not None:
+                self.set_nested_key(key.key_path, pss(block_value))
+            else:
+                self.set_nested_key(key.key_path, {'secure': k})
             return k
 
     def retrieve_key(self, key):
         """
         Retrieves the value (if any) for key_list and returns the secure identifier if present
         If the key is not a secure key, returns None
-        :param key_list:
+        :param key:
         :return:
         """
         is_block = key.is_block
@@ -308,16 +297,8 @@ class UmapiCredentialConfig(CredentialConfig):
 
 class ConsoleCredentialConfig(CredentialConfig):
     secured_keys = [
-<<<<<<< HEAD
-        Credential(['integration', 'api_key']),
-        Credential(['integration', 'client_secret']),
-        Credential(['integration', 'priv_key_pass']),
-        Credential(['integration', 'priv_key_data'], is_block=True)
-    ]
-=======
         Key(key_path=['integration', 'api_key']),
         Key(key_path=['integration', 'client_secret']),
         Key(key_path=['integration', 'priv_key_pass']),
         Key(key_path=['integration', 'priv_key_data'], is_block=True)
     ]
->>>>>>> no-str-creds
