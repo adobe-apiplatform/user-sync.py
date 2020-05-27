@@ -35,6 +35,8 @@ import user_sync.connector.directory
 import user_sync.connector.directory_ldap
 import user_sync.connector.directory_okta
 import user_sync.connector.directory_csv
+import user_sync.connector.directory_adobe_console
+import user_sync.connector.umapi
 import user_sync.connector.umapi
 import user_sync.encryption
 import user_sync.helper
@@ -42,8 +44,8 @@ import user_sync.lockfile
 import user_sync.resource
 import user_sync.rules
 
-import user_sync.connector.umapi
 from user_sync.post_sync.manager import PostSyncManager
+import user_sync.post_sync.connectors.sign_sync
 
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
