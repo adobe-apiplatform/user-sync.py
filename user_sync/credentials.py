@@ -139,16 +139,20 @@ class CredentialConfig:
 
     def modify_credentials(self, action, *auto_encrypt):
         credentials = {}
-        for c in self.secured_keys:
+        for k in self.secured_keys:
             try:
                 # Try to do the action, but don't break on exception because rest of actions
                 # can still be completed
+<<<<<<< HEAD
                 if action == self.store_key:
                     val = action(c, *auto_encrypt)
                 else:
                     val = action(c)
+=======
+                val = action(k)
+>>>>>>> no-str-creds
                 if val is not None:
-                    credentials[':'.join(c.credential)] = val
+                    credentials[':'.join(k.key_path)] = val
             except AssertionException as e:
                 logging.getLogger().exception("\nError: {}\n".format(str(e)), exc_info=False)
         return credentials
@@ -184,7 +188,11 @@ class CredentialConfig:
         """
         return self.filename + ":" + ":".join(identifier)
 
+<<<<<<< HEAD
     def store_key(self, key_list, *auto_encrypt):
+=======
+    def store_key(self, key):
+>>>>>>> no-str-creds
         """
         Takes a list of keys representing the path to a value in the YAML file, and constructs an identifier.
         If the key is a string and NOT in secure format, calls credential manager to set the key
@@ -192,29 +200,33 @@ class CredentialConfig:
         :param key_list: list of nested keys from a YAML file
         :return:
         """
-        key_list = ConfigLoader.as_list(key_list.credential)
-        value = self.get_nested_key(key_list)
+        value = self.get_nested_key(key.key_path)
         if value is None:
             return
         if not self.parse_secure_key(value):
+<<<<<<< HEAD
             k = self.get_qualified_identifier(key_list)
             value = CredentialManager.set(k, value, *auto_encrypt)
             if value is not None:
                 self.set_nested_key(key_list, pss(value))
             else:
                 self.set_nested_key(key_list, {'secure': k})
+=======
+            k = self.get_qualified_identifier(key.key_path)
+            CredentialManager.set(k, value)
+            self.set_nested_key(key.key_path, {'secure': k})
+>>>>>>> no-str-creds
             return k
 
-    def retrieve_key(self, key_list):
+    def retrieve_key(self, key):
         """
         Retrieves the value (if any) for key_list and returns the secure identifier if present
         If the key is not a secure key, returns None
         :param key_list:
         :return:
         """
-        is_block = key_list.is_block
-        key_list = ConfigLoader.as_list(key_list.credential)
-        secure_identifier = self.parse_secure_key(self.get_nested_key(key_list))
+        is_block = key.is_block
+        secure_identifier = self.parse_secure_key(self.get_nested_key(key.key_path))
         if secure_identifier is None:
             return
         value = CredentialManager.get(secure_identifier)
@@ -224,10 +236,10 @@ class CredentialConfig:
             return value
         raise AssertionException("No stored value found for identifier: {}".format(secure_identifier))
 
-    def revert_key(self, key_list):
-        stored_credential = self.retrieve_key(key_list)
+    def revert_key(self, key):
+        stored_credential = self.retrieve_key(key)
         if stored_credential is not None:
-            self.set_nested_key(key_list.credential, stored_credential)
+            self.set_nested_key(key.key_path, stored_credential)
         return stored_credential
 
     @classmethod
@@ -271,33 +283,41 @@ class CredentialConfig:
         return d
 
 
-class Credential:
-    def __init__(self, credential, is_block=False):
-        self.credential = credential
+class Key:
+    def __init__(self, key_path, is_block=False):
+        self.key_path = key_path
         self.is_block = is_block
 
 
 class LdapCredentialConfig(CredentialConfig):
-    secured_keys = [Credential(['password'])]
+    secured_keys = [Key(key_path=['password'])]
 
 
 class OktaCredentialConfig(CredentialConfig):
-    secured_keys = [Credential(['api_token'])]
+    secured_keys = [Key(key_path=['api_token'])]
 
 
 class UmapiCredentialConfig(CredentialConfig):
     secured_keys = [
-        Credential(['enterprise', 'api_key']),
-        Credential(['enterprise', 'client_secret']),
-        Credential(['enterprise', 'priv_key_pass']),
-        Credential(['enterprise', 'priv_key_data'], is_block=True)
+        Key(key_path=['enterprise', 'api_key']),
+        Key(key_path=['enterprise', 'client_secret']),
+        Key(key_path=['enterprise', 'priv_key_pass']),
+        Key(key_path=['enterprise', 'priv_key_data'], is_block=True)
     ]
 
 
 class ConsoleCredentialConfig(CredentialConfig):
     secured_keys = [
+<<<<<<< HEAD
         Credential(['integration', 'api_key']),
         Credential(['integration', 'client_secret']),
         Credential(['integration', 'priv_key_pass']),
         Credential(['integration', 'priv_key_data'], is_block=True)
     ]
+=======
+        Key(key_path=['integration', 'api_key']),
+        Key(key_path=['integration', 'client_secret']),
+        Key(key_path=['integration', 'priv_key_pass']),
+        Key(key_path=['integration', 'priv_key_data'], is_block=True)
+    ]
+>>>>>>> no-str-creds
