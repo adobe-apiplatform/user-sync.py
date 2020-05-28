@@ -56,9 +56,6 @@ integration:
   # To use this feature, You can secure the credentials by using the credentials store commands in the command line
 
   # Refer to the (URL to Additional Tools) 
-  # priv_key_data_key: umapi_private_key_data
-  
-  
   
 
 # (optional) identity_type_filter (default value is all)

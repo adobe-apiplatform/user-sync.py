@@ -77,9 +77,11 @@ detailed in the next two sections.
 
 Refer to the (URL to Additional Tools)
 
-To store the priv_key_data when its too long
+To store the priv_key_data when it's too long
 In order to save the priv_key_data which is present in the  connector-umapi or connector-adobe-console file, Credential Store command will attempt to store the key data in the OS.
-Window credential store generally cant store data as large as Private Key. To store the key, Sync Tool asks the user to encrypt the key. If yes then user will be prompted for a password, an encrypted password protected key is saved in the file as priv_key_pass. If no, the key data will remain in the file in an unencrypted state.
+Window credential store generally can't store data as large as Private Key. To store the key, Sync Tool asks the user to encrypt the key. 
+If yes then user will be prompted for a password which will be saved as priv_key_pass and the encrypted key itself will be saved as priv_key_data in the file. 
+If no, the key data will remain in the file in an unencrypted state.
 
 connector-ldap.yml
 

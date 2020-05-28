@@ -67,6 +67,7 @@ enterprise:
   # To use this feature, You can secure the credentials by using the credentials store commands in the command line
 
   # Refer to the (URL to Additional Tools) 
-  
+  # priv_key_pass: "my passphrase for my private key"
+  # Private key pass can also be stored using credentials store command
   
 
