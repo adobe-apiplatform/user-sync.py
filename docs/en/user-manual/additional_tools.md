@@ -105,8 +105,12 @@ Successful console output after running the ```store``` command:
 
 ```
 To store the priv_key_data when its too long
-In order to save the priv_key_data which is present in the  connector-umapi or connector-adobe-console file, Credential Store command will attempt to store the key data in the OS.
-Window credentail store generally cant store data as large as Private Key. To store the key, Sync Tool asks the user to encrypt the key. If yes then user will be prompted for a password, an encrypted password protected key is saved in the file as priv_key_data. If no, the key data will remain in the file in an unencrypted state.
+In order to save the priv_key_data which is present in the  connector-umapi or connector-adobe-console 
+file, Credential Store command will attempt to store the key data in the OS.
+Window credential store generally cant store data as large as Private Key. To store the key, Sync Tool 
+asks the user to encrypt the key. If yes then user will be prompted for a password, an encrypted 
+password protected key is saved in the file as priv_key_pass. If no, the key data will remain in the 
+file in an unencrypted state.
 
 Refer to the (URL)
 

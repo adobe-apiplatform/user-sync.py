@@ -77,35 +77,9 @@ detailed in the next two sections.
 
 Refer to the (URL to Additional Tools)
 
-A slight variant on this approach is available (in User Sync version 2.1.1 or later) to encrypt the
-private key file using the standard RSA encrypted representation for private keys (known as the
-PKCS#8 format).  This approach must be used on Windows because the Windows secure store is not
-able to store strings longer than 512 bytes which prevents its use with private keys. This approach
-can also be used on the other platforms if you wish.
-
-To store the private key in encrypted format proceed as follows.  First, create an encrypted
-version of the private key file.  Select a passphrase and encrypt the
-private key file:
-
-    openssl pkcs8 -in private.key -topk8 -v2 des3 -out private-encrypted.key
-
-On Windows, you will need to run openssl from Cygwin or some other provider; it is not included
-in the standard Windows distribution.
-
-Next, uncomment the line Priv_key_pass. The value must be the password for decrypting the private key.  
-
-	server:
-	
-	enterprise:
-	  org_id: your org id
-	  api_key: umapi_api_key
-	  client_secret: umapi_client_secret
-	  tech_acct: your tech account@techacct.adobe.com
-	  priv_key_pass: umapi_private_key_passphrase
-	  priv_key_path: private-encrypted.key
-
-This passphrase can be saved using crendential store command
-This ends the description of the variant where the RSA private key encryption is used.
+To store the priv_key_data when its too long
+In order to save the priv_key_data which is present in the  connector-umapi or connector-adobe-console file, Credential Store command will attempt to store the key data in the OS.
+Window credential store generally cant store data as large as Private Key. To store the key, Sync Tool asks the user to encrypt the key. If yes then user will be prompted for a password, an encrypted password protected key is saved in the file as priv_key_pass. If no, the key data will remain in the file in an unencrypted state.
 
 connector-ldap.yml
 
