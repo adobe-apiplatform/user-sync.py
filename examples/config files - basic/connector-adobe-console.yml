@@ -56,7 +56,8 @@ integration:
   # To use this feature, You can secure the credentials by using the credentials store commands in the command line
 
   # Refer to the (URL to Additional Tools) 
-  
+  # priv_key_pass: "my passphrase for my private key"
+  # Private key pass can also be stored using credentials store command
 
 # (optional) identity_type_filter (default value is all)
 # By default, connector will automatically load users from all identity type to be load as directory users.
