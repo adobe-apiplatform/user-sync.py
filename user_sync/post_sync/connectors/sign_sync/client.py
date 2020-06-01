@@ -91,7 +91,7 @@ class SignClient:
         """
         if self.api_url is None or self.groups is None:
             self._init()
-
+        #############
         users = {}
         self.logger.debug('getting list of all Sign users')
         users_res = requests.get(self.api_url + 'users', headers=self.header())
