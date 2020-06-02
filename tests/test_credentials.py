@@ -169,10 +169,8 @@ def test_set_long():
     value = "".join([str(uuid.uuid4()) for x in range(500)])
 
     if isinstance(keyring.get_keyring(), keyring.backends.Windows.WinVaultKeyring):
-        # a value that is too long for Windows sets off the encryption workflow for the private key
-        # the existing encryption format expects RSA format, so this random long string will trigger an exception there
-        with pytest.raises(AssertionException):
-            cm.set(identifier, value, True)
+        with pytest.raises(Exception):
+            cm.set(identifier, value)
     else:
         cm.set(identifier, value)
         assert cm.get(identifier) == value

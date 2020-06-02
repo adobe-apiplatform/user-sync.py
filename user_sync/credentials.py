@@ -46,45 +46,18 @@ class CredentialManager:
             raise AssertionException("Error retrieving value for identifier '{0}': {1}".format(identifier, str(e)))
 
     @classmethod
-    def set(cls, identifier, value, *auto_encrypt, username=None):
+    def set(cls, identifier, value, username=None):
         try:
             cls.logger.debug("Using keyring '{0}' to set '{1}'".format(cls.keyring_name, identifier))
             keyring.set_password(identifier, username or cls.username, value)
         except KeyringError as e:
             raise AssertionException("Error in setting credentials '{0}' : {1}".format(identifier, str(e)))
-        except Exception as e:
-            if "stub received bad data" in str(e):
-                # check that private key is in plaintext, unencrypted state?
-                if auto_encrypt:
-                    return cls.encrypt(value, *auto_encrypt)
-                else:
-                    response = click.prompt("Bad value for '{0}': '{1}'. \nPrivate key storage may not be supported"
-                                            " due to character limits.\n"
-                                            "Encrypt private key instead? (y/n)".format(identifier, str(e)))
-                    if response == 'y':
-                        return cls.encrypt(value)
-                    else:
-                        # not sure if necessary and if so what to do in this case
-                        raise AssertionException("Private key will remain in plaintext, unencrypted format.")
-            else:
-                raise e
 
-    @classmethod
-    def encrypt(cls, data, *auto_encrypt):
-        if auto_encrypt:
-            passphrase = str(binascii.b2a_hex(urandom(16)).decode())
-        else:
-            passphrase = click.prompt('Create password ', hide_input=True, confirmation_prompt=True)
-        return encryption.encrypt(passphrase, data)
-
-    def modify_credentials(self, action, *auto_encrypt):
+    def modify_credentials(self, action, auto_encrypt=False):
         all_credentials = {}
         for k, v in self.config_files.items():
             self.logger.debug("Analyzing: " + k)
-            if action == 'store':
-                result = getattr(v, action)(*auto_encrypt)
-            else:
-                result = getattr(v, action)()
+            result = getattr(v, action)(auto_encrypt=auto_encrypt)
             if result:
                 all_credentials[k] = result
         return all_credentials
@@ -109,13 +82,13 @@ class CredentialManager:
             if connector_type in ['all', c]:
                 self.config_files[v] = CredentialConfig.create(c, v)
 
-    def store(self, *auto_encrypt):
-        return self.modify_credentials('store', *auto_encrypt)
+    def store(self, auto_encrypt=False):
+        return self.modify_credentials('store', auto_encrypt)
 
-    def retrieve(self):
+    def retrieve(self, **kwargs):
         return self.modify_credentials('retrieve')
 
-    def revert(self):
+    def revert(self, **kwargs):
         return self.modify_credentials('revert')
 
 
@@ -139,34 +112,55 @@ class CredentialConfig:
         name = subclass.capitalize() + "CredentialConfig"
         return globals()[name](filename)
 
-    def modify_credentials(self, action, *auto_encrypt):
+    def modify_credentials(self, action, **kwargs):
         credentials = {}
         for k in self.secured_keys:
             try:
                 # Try to do the action, but don't break on exception because rest of actions
                 # can still be completed
-                if action == self.store_key:
-                    val = action(k, *auto_encrypt)
-                else:
-                    val = action(k)
                 val = action(k)
                 if val is not None:
                     credentials[':'.join(k.key_path)] = val
             except AssertionException as e:
                 logging.getLogger().exception("\nError: {}\n".format(str(e)), exc_info=False)
+            except Exception as e:
+                if "stub received bad data" in str(e):
+                    val = self.get_nested_key(k.key_path)
+                    auto_encrypt = kwargs.get('auto_encrypt')
+                    if auto_encrypt:
+                        data = self.encrypt(val, auto_encrypt)
+                        self.set_nested_key(k.key_path, pss(data))
+                    else:
+                        response = click.prompt("Bad value for '{0}': '{1}'. \nPrivate key storage may not be supported"
+                                                " due to character limits.\n"
+                                                "Encrypt private key instead? (y/n)".format(k, str(e)))
+                        if response == 'y':
+                            data = self.encrypt(val, auto_encrypt)
+                            self.set_nested_key(k.key_path, pss(data))
+                        else:
+                            raise AssertionException("Private key will remain in plaintext, unencrypted format.")
+                else:
+                    raise e
         return credentials
 
-    def store(self, *auto_encrypt):
-        credentials = self.modify_credentials(self.store_key, *auto_encrypt)
+    def encrypt(self, data, auto_encrypt):
+        if auto_encrypt:
+            passphrase = str(binascii.b2a_hex(urandom(16)).decode())
+        else:
+            passphrase = click.prompt('Create password ', hide_input=True, confirmation_prompt=True)
+        return encryption.encrypt(passphrase, data)
+
+    def store(self, **kwargs):
+        credentials = self.modify_credentials(self.store_key, **kwargs)
         self.save()
         return credentials
 
-    def revert(self):
+    def revert(self, **kwargs):
         credentials = self.modify_credentials(self.revert_key)
         self.save()
         return credentials
 
-    def retrieve(self):
+    def retrieve(self, **kwargs):
         return self.modify_credentials(self.retrieve_key)
 
     def load(self):
@@ -187,7 +181,7 @@ class CredentialConfig:
         """
         return self.filename + ":" + ":".join(identifier)
 
-    def store_key(self, key, *auto_encrypt):
+    def store_key(self, key):
         """
         Takes a list of keys representing the path to a value in the YAML file, and constructs an identifier.
         If the key is a string and NOT in secure format, calls credential manager to set the key
@@ -200,11 +194,8 @@ class CredentialConfig:
             return
         if not self.parse_secure_key(value):
             k = self.get_qualified_identifier(key.key_path)
-            block_value = CredentialManager.set(k, value, *auto_encrypt)
-            if block_value is not None:
-                self.set_nested_key(key.key_path, pss(block_value))
-            else:
-                self.set_nested_key(key.key_path, {'secure': k})
+            CredentialManager.set(k, value)
+            self.set_nested_key(key.key_path, {'secure': k})
             return k
 
     def retrieve_key(self, key):
