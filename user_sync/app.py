@@ -23,6 +23,7 @@ import os
 import shutil
 import sys
 from datetime import datetime
+from pathlib import Path
 
 import click
 import six
@@ -221,12 +222,14 @@ def init(ctx):
     """
     ctx.forward(certgen, randomize=True)
 
-    with open('Run_UST_Test_Mode.bat', 'w') as OPATH:
-        OPATH.writelines(['mode 155,50', '\ncd /D "%~dp0"', '\nuser-sync.exe --process-groups --users mapped -t',
-                          '\npause'])
-    with open("Run_UST_Live.bat", 'w') as OPATH:
-        OPATH.writelines(
-            ['mode 155,50', '\ncd /D "%~dp0"', '\nuser-sync.exe --process-groups --users mapped'])
+    shell_scripts = user_sync.resource.get_resource_dir('shell_scripts/win')
+    for script in shell_scripts:
+        with open(script, 'r') as fh:
+            content = fh.read()
+        target = Path.cwd()/Path(script).parts[-1]
+        with open(target, 'w') as fh:
+            fh.write(content)
+        click.echo("Wrote shell script: {}".format(target))
 
     sync = 'user-sync-config.yml'
     umapi = 'connector-umapi.yml'
@@ -294,7 +297,7 @@ def init_log(logging_config):
     :type logging_config: user_sync.config.DictConfig
     """
     builder = user_sync.config.OptionsBuilder(logging_config)
-    builder.set_bool_value('log_to_file', False)
+    builder.set_bool_value('log_to_file//', False)
     builder.set_string_value('file_log_directory', 'logs')
     builder.set_string_value('file_log_name_format', '{:%Y-%m-%d}.log')
     builder.set_string_value('file_log_level', 'info')

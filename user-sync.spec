@@ -4,10 +4,13 @@ block_cipher = None
 
 a = Analysis(['user_sync/app.py'],
              binaries=[],
-             datas=[('user_sync/resources/*.cfg', 'resources'),
+             datas=[
+                    ('user_sync/resources/*.cfg', 'resources'),
                     ('user_sync/resources/manual_url', 'resources'),
                     ('user_sync/resources/README.md', 'resources'),
-                    ('user_sync/resources/examples/*', 'resources/examples')],
+                    ('user_sync/resources/examples/*', 'resources/examples'),
+                    ('user_sync/resources/shell_scripts/win', 'resources/shell_scripts/win'),
+              ],
              hiddenimports=['win32timezone', 'pkg_resources.py2_warn', 'keyring'],
              hookspath=['.build'],
              runtime_hooks=[],
