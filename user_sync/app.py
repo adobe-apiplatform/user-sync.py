@@ -309,7 +309,7 @@ def init_log(logging_config):
     :type logging_config: user_sync.config.DictConfig
     """
     builder = user_sync.config.OptionsBuilder(logging_config)
-    builder.set_bool_value('log_to_file//', False)
+    builder.set_bool_value('log_to_file', False)
     builder.set_string_value('file_log_directory', 'logs')
     builder.set_string_value('file_log_name_format', '{:%Y-%m-%d}.log')
     builder.set_string_value('file_log_level', 'info')
