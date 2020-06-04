@@ -226,9 +226,6 @@ def init(ctx):
     sync = 'user-sync-config.yml'
     umapi = 'connector-umapi.yml'
     ldap = 'connector-ldap.yml'
-    existing = "\n".join({f for f in (sync, umapi, ldap) if os.path.exists(f)})
-    if existing and not click.confirm('\nWarning: files already exist: \n{}\nOverwrite?'.format(existing)):
-        return
     ctx.forward(example_config, root=sync, umapi=umapi, ldap=ldap)
 
 
@@ -269,13 +266,16 @@ def example_config(**kwargs):
     }
 
     for k, fname in kwargs.items():
+        target = Path.cwd() / fname
         assert k in res_files, "Invalid option specified"
         res_file = user_sync.resource.get_resource(res_files[k])
         assert res_file is not None, "Resource file '{}' not found".format(res_files[k])
+        if target.exists() and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(target)):
+            continue
         click.echo("Generating file '{}'".format(fname))
         with open(res_file, 'r') as file:
             content = file.read()
-        with open(fname, 'w') as file:
+        with open(target, 'w') as file:
             file.write(content)
 
 
