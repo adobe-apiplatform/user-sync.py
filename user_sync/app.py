@@ -211,10 +211,14 @@ def sync(**kwargs):
             run_stats.log_end(logger)
 
 
-@main.command(help='Generates configuration files, an X509 certificate/keypair, and the batch '
-                   'files for running the user-sync tool in test and live mode.')
+@main.command(short_help="Generate conf files, certificates and shell scripts")
+@click.help_option('-h', '--help')
 @click.pass_context
 def init(ctx):
+    """
+    Generates configuration files, an X509 certificate/keypair, and the batch files for running the user-sync tool
+    in test and live mode.
+    """
     ctx.forward(certgen, randomize=True)
 
     with open('Run_UST_Test_Mode.bat', 'w') as OPATH:
@@ -422,10 +426,12 @@ def begin_work(config_loader):
         post_sync_manager.run(rule_processor.post_sync_data)
 
 
-@main.command(help='Encrypt an existing RSA private key file with a passphrase')
+@main.command(short_help="Encrypt an existing RSA private key")
+@click.help_option('-h', '--help')
 @click.argument('key-path', default='private.key', type=click.Path(exists=True))
 @click.option('--password', '-p', prompt='Create password', hide_input=True, confirmation_prompt=True)
 def encrypt(password, key_path):
+    """Encrypt an existing RSA private key file with a passphrase"""
     try:
         data = user_sync.encryption.encrypt_file(password, key_path)
         user_sync.encryption.write_key(data, key_path)
@@ -434,10 +440,12 @@ def encrypt(password, key_path):
         click.echo(str(e))
 
 
-@main.command(help='Decrypt an RSA private key file with a passphrase')
+@main.command()
+@click.help_option('-h', '--help')
 @click.argument('key-path', default='private.key', type=click.Path(exists=True))
 @click.option('--password', '-p', prompt='Enter password', hide_input=True)
 def decrypt(password, key_path):
+    """Decrypt an RSA private key file with a passphrase"""
     try:
         data = user_sync.encryption.decrypt_file(password, key_path)
         user_sync.encryption.write_key(data, key_path)
@@ -446,15 +454,19 @@ def decrypt(password, key_path):
         click.echo(str(e))
 
 
-@main.command(help='Generates an X509 certificate/keypair with random or user-specified subject. '
-                   'User Sync Tool can use these files to communicate with the admin console. '
-                   'Please visit https://console.adobe.io to complete the integration process. '
-                   'Use the --randomize argument to create a secure keypair with no user input.')
+@main.command(short_help="Generate service integration certificates")
+@click.help_option('-h', '--help')
 @click.option('--overwrite', '-o', '-y', help='Overwrite existing files without being asked to confirm', is_flag=True)
 @click.option('--randomize', '-r', help='Randomize the values rather than entering credentials', is_flag=True)
 @click.option('--key', '-k', help='Set a custom output path for private key', default='private.key')
 @click.option('--certificate', '-c', help='Set a custom output path for certificate', default='certificate_pub.crt')
 def certgen(randomize, key, certificate, overwrite):
+    """
+    Generates an X509 certificate/keypair with random or user-specified subject.
+    User Sync Tool can use these files to communicate with the admin console.
+    Please visit https://console.adobe.io to complete the integration process.
+    Use the --randomize argument to create a secure keypair with no user input.
+    """
     key = os.path.abspath(key)
     certificate = os.path.abspath(certificate)
     existing = "\n".join({f for f in (key, certificate) if os.path.exists(f)})
