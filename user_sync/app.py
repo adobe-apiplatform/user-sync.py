@@ -441,30 +441,54 @@ def begin_work(config_loader):
         post_sync_manager.run(rule_processor.post_sync_data)
 
 
-@main.command(short_help="Encrypt an existing RSA private key")
+@main.command(short_help="Encrypt RSA private key")
 @click.help_option('-h', '--help')
 @click.argument('key-path', default='private.key', type=click.Path(exists=True))
+@click.option('-o', '--output-file', help="Path of encrypted file [default: key specified by KEY_PATH will be overwritten]",
+              default=None)
 @click.option('--password', '-p', prompt='Create password', hide_input=True, confirmation_prompt=True)
-def encrypt(password, key_path):
-    """Encrypt an existing RSA private key file with a passphrase"""
+def encrypt(output_file, password, key_path):
+    """Encrypt RSA private key specified by KEY_PATH.
+
+       KEY_PATH default: private.key
+
+       A passphrase is required to encrypt the file"""
+    if output_file is None:
+        output_file = key_path
+    if output_file != key_path and Path(output_file).exists() \
+        and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(output_file)):
+        return
     try:
         data = user_sync.encryption.encrypt_file(password, key_path)
-        user_sync.encryption.write_key(data, key_path)
-        click.echo('Encryption was successful.\n{0}'.format(os.path.abspath(key_path)))
+        user_sync.encryption.write_key(data, output_file)
+        click.echo('Encryption was successful.')
+        click.echo('Wrote file: {}'.format(os.path.abspath(output_file)))
     except AssertionException as e:
         click.echo(str(e))
 
 
-@main.command()
+@main.command(short_help="Decrypt RSA private key")
 @click.help_option('-h', '--help')
 @click.argument('key-path', default='private.key', type=click.Path(exists=True))
+@click.option('-o', '--output-file', help="Path of decrypted file [default: key specified by KEY_PATH will be overwritten]",
+              default=None)
 @click.option('--password', '-p', prompt='Enter password', hide_input=True)
-def decrypt(password, key_path):
-    """Decrypt an RSA private key file with a passphrase"""
+def decrypt(output_file, password, key_path):
+    """Decrypt RSA private key specified by KEY_PATH.
+
+       KEY_PATH default: private.key
+
+       A passphrase is required to decrypt the file"""
+    if output_file is None:
+        output_file = key_path
+    if output_file != key_path and Path(output_file).exists() \
+        and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(output_file)):
+        return
     try:
         data = user_sync.encryption.decrypt_file(password, key_path)
-        user_sync.encryption.write_key(data, key_path)
-        click.echo('Decryption was successful.\n{0}'.format(os.path.abspath(key_path)))
+        user_sync.encryption.write_key(data, output_file)
+        click.echo('Decryption was successful.')
+        click.echo('Wrote file: {}'.format(os.path.abspath(output_file)))
     except AssertionException as e:
         click.echo(str(e))
 
