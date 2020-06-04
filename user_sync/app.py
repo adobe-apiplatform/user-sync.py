@@ -221,15 +221,7 @@ def init(ctx):
     in test and live mode.
     """
     ctx.forward(certgen, randomize=True)
-
-    shell_scripts = user_sync.resource.get_resource_dir('shell_scripts/win')
-    for script in shell_scripts:
-        with open(script, 'r') as fh:
-            content = fh.read()
-        target = Path.cwd()/Path(script).parts[-1]
-        with open(target, 'w') as fh:
-            fh.write(content)
-        click.echo("Wrote shell script: {}".format(target))
+    ctx.forward(shell_scripts, platform=None)
 
     sync = 'user-sync-config.yml'
     umapi = 'connector-umapi.yml'
@@ -238,6 +230,26 @@ def init(ctx):
     if existing and not click.confirm('\nWarning: files already exist: \n{}\nOverwrite?'.format(existing)):
         return
     ctx.forward(example_config, root=sync, umapi=umapi, ldap=ldap)
+
+
+@main.command(short_help="Generate invocation scripts")
+@click.help_option('-h', '--help')
+@click.option('-p', '--platform', help="Platform for which to generate scripts [default: current system platform]",
+              type=click.Choice(['win', 'linux'], case_sensitive=False))
+def shell_scripts(platform):
+    """Generate invocation shell scripts for the given platform."""
+    if platform is None:
+        platform = 'win' if 'win' in sys.platform.lower() else 'linux'
+    shell_scripts = user_sync.resource.get_resource_dir('shell_scripts/{}'.format(platform))
+    for script in shell_scripts:
+        with open(script, 'r') as fh:
+            content = fh.read()
+        target = Path.cwd()/Path(script).parts[-1]
+        if target.exists() and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(target)):
+            continue
+        with open(target, 'w') as fh:
+            fh.write(content)
+        click.echo("Wrote shell script: {}".format(target))
 
 
 @main.command()
