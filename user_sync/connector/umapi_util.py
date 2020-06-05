@@ -3,7 +3,11 @@ from user_sync.encryption import decrypt
 
 
 def make_auth_dict(name, config, org_id, tech_acct, logger):
-    api_field = 'client_id' if 'client_id' in config or 'secure_client_id' in config else "api_key"
+    api_field = 'client_id' if 'client_id' in config or 'secure_client_id_key' in config else "api_key"
+    if "api_key" and "client_id" in config:
+        raise AssertionException('Please use client_id. Cannot contain setting for both "api_key" and "client_id".')
+    if "api_key" and "secure_client_id" in config:
+        raise AssertionException('Please use "secure_client_id_key". Cannot contain setting for both "api_key" and "secure_client_id_key".')
     auth_dict = {
         'org_id': org_id,
         'tech_acct_id': tech_acct,
