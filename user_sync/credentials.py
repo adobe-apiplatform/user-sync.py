@@ -128,17 +128,19 @@ class CredentialConfig:
                     val = self.get_nested_key(k.key_path)
                     auto_encrypt = kwargs.get('auto_encrypt')
                     if auto_encrypt:
-                        data = self.encrypt(val, auto_encrypt)
+                        data, passphrase = self.encrypt(val, auto_encrypt)
                         self.set_nested_key(k.key_path, pss(data))
                     else:
                         response = click.prompt("Bad value for '{0}': '{1}'. \nPrivate key storage may not be supported"
                                                 " due to character limits.\n"
                                                 "Encrypt private key instead? (y/n)".format(k, str(e)))
                         if response == 'y':
-                            data = self.encrypt(val, auto_encrypt)
+                            data, passphrase = self.encrypt(val, auto_encrypt)
                             self.set_nested_key(k.key_path, pss(data))
                         else:
                             raise AssertionException("Private key will remain in plaintext, unencrypted format.")
+                    self.set_nested_key(k.key_path, pss(data))
+                    self.store_key(Key(['enterprise', 'priv_key_pass']), value=passphrase)
                 else:
                     raise e
         return credentials
@@ -148,7 +150,7 @@ class CredentialConfig:
             passphrase = str(binascii.b2a_hex(urandom(16)).decode())
         else:
             passphrase = click.prompt('Create password ', hide_input=True, confirmation_prompt=True)
-        return encryption.encrypt(passphrase, data)
+        return encryption.encrypt(passphrase, data), passphrase;
 
     def store(self, **kwargs):
         credentials = self.modify_credentials(self.store_key, **kwargs)
@@ -181,15 +183,16 @@ class CredentialConfig:
         """
         return self.filename + ":" + ":".join(identifier)
 
-    def store_key(self, key):
+    def store_key(self, key, value=None):
         """
         Takes a list of keys representing the path to a value in the YAML file, and constructs an identifier.
         If the key is a string and NOT in secure format, calls credential manager to set the key
         If key is already in the form 'secure:identifier', no action is taken.
-        :param key_list: list of nested keys from a YAML file
+        :param key: list of nested keys from a YAML file
+        :param value: credential value to be stored
         :return:
         """
-        value = self.get_nested_key(key.key_path)
+        value = self.get_nested_key(key.key_path) or value
         if value is None:
             return
         if not self.parse_secure_key(value):
