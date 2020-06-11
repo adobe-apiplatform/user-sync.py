@@ -210,5 +210,4 @@ def test_config_store_key_none(tmp_config_files):
     ldap = LdapCredentialConfig(ldap_config_file)
     key = Key(['password'])
     ldap.set_nested_key(key.key_path, [])
-    with pytest.raises(AssertionException):
-        ldap.store_key(key)
+    assert ldap.store_key(key) is None
