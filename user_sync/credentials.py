@@ -141,6 +141,7 @@ class CredentialConfig:
                             raise AssertionException("Private key will remain in plaintext, unencrypted format.")
                     self.set_nested_key(k.key_path, pss(data))
                     self.store_key(Key(['enterprise', 'priv_key_pass']), value=passphrase)
+                    credentials[':'.join(['enterprise', 'priv_key_pass'])] = self.get_qualified_identifier(['enterprise', 'priv_key_pass'])
                 else:
                     raise e
         return credentials
