@@ -1,6 +1,8 @@
 import json
 from unittest import mock
+
 from requests import Response
+
 from user_sync.post_sync.connectors.sign_sync.client import SignClient
 
 
