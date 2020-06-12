@@ -91,11 +91,9 @@ class SignClient:
         """
         if self.api_url is None or self.groups is None:
             self._init()
-        #############
         users = {}
         self.logger.debug('getting list of all Sign users')
         users_res = requests.get(self.api_url + 'users', headers=self.header())
-
         if users_res.status_code != 200:
             raise AssertionException("Error retrieving Sign user list")
         for user_id in map(lambda u: u['userId'], users_res.json()['userInfoList']):
@@ -103,7 +101,8 @@ class SignClient:
             if users_res.status_code != 200:
                 raise AssertionException("Error retrieving details for Sign user '{}'".format(user_id))
             user = user_res.json()
-            if user['userStatus'] != 'ACTIVE':
+            user_status = user.get('userStatus')
+            if user_status and user_status != 'ACTIVE':
                 continue
             if user['email'] == self.admin_email:
                 continue
