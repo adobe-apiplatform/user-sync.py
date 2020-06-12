@@ -23,7 +23,8 @@ import string
 
 import ldap3
 
-import user_sync.config
+import user_sync.config.common
+import user_sync.config.user_sync
 import user_sync.connector.helper
 import user_sync.error
 import user_sync.identity_type
@@ -60,7 +61,7 @@ class LDAPDirectoryConnector(object):
     name = 'ldap'
 
     def __init__(self, caller_options):
-        caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
+        caller_config = user_sync.config.common.DictConfig('%s configuration' % self.name, caller_options)
 
         options = self.get_options(caller_config)
         self.options = options
@@ -121,7 +122,7 @@ class LDAPDirectoryConnector(object):
 
     @staticmethod
     def get_options(caller_config):
-        builder = user_sync.config.OptionsBuilder(caller_config)
+        builder = user_sync.config.common.OptionsBuilder(caller_config)
         builder.set_string_value('group_filter_format', six.text_type(
             '(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))'))
         builder.set_string_value('all_users_filter', six.text_type(
@@ -150,7 +151,7 @@ class LDAPDirectoryConnector(object):
         options['two_steps_enabled'] = False
         if options['two_steps_lookup'] is not None:
             ts_config = caller_config.get_dict_config('two_steps_lookup', True)
-            ts_builder = user_sync.config.OptionsBuilder(ts_config)
+            ts_builder = user_sync.config.common.OptionsBuilder(ts_config)
             ts_builder.require_string_value('group_member_attribute_name')
             ts_builder.set_bool_value('nested_group', False)
             options['two_steps_enabled'] = True

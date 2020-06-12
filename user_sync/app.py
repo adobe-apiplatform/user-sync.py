@@ -18,7 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import argparse
 import logging
 import os
 import sys
@@ -29,7 +28,8 @@ from datetime import datetime
 
 import six
 
-import user_sync.config
+import user_sync.config.user_sync
+import user_sync.config.common
 import user_sync.connector.directory
 import user_sync.connector.directory_ldap
 import user_sync.connector.directory_okta
@@ -169,7 +169,7 @@ def sync(**kwargs):
         del(kwargs['sign_sync_config'])
     try:
         # load the config files and start the file logger
-        config_loader = user_sync.config.ConfigLoader(kwargs)
+        config_loader = user_sync.config.user_sync.ConfigLoader(kwargs)
         init_log(config_loader.get_logging_config())
 
         # add start divider, app version number, and invocation parameters to log
@@ -261,7 +261,7 @@ def init_log(logging_config):
     """
     :type logging_config: user_sync.config.DictConfig
     """
-    builder = user_sync.config.OptionsBuilder(logging_config)
+    builder = user_sync.config.common.OptionsBuilder(logging_config)
     builder.set_bool_value('log_to_file', False)
     builder.set_string_value('file_log_directory', 'logs')
     builder.set_string_value('file_log_name_format', '{:%Y-%m-%d}.log')

@@ -3,7 +3,8 @@ import pytest
 import yaml
 import shutil
 from util import update_dict
-from user_sync.config import ConfigFileLoader, ConfigLoader, DictConfig
+from user_sync.config.user_sync import ConfigLoader
+from user_sync.config.common import ConfigFileLoader, DictConfig
 from user_sync import flags
 from user_sync.error import AssertionException
 
