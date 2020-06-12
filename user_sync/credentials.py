@@ -126,6 +126,7 @@ class CredentialConfig:
             except Exception as e:
                 if "stub received bad data" in str(e):
                     #refactor into method
+                    #hellothere
                     val = self.get_nested_key(k.key_path)
                     if kwargs.get('auto_encrypt'):
                         data, passphrase = self.encrypt(val, True)
