@@ -2,10 +2,9 @@ import os
 
 import pytest
 
-
 import shutil
 
-from user_sync.config.user_sync_config import ConfigLoader
+from user_sync.config.user_sync import ConfigLoader
 
 
 @pytest.fixture
