@@ -125,23 +125,21 @@ class CredentialConfig:
                 logging.getLogger().exception("\nError: {}\n".format(str(e)), exc_info=False)
             except Exception as e:
                 if "stub received bad data" in str(e):
+                    #refactor into method
                     val = self.get_nested_key(k.key_path)
-                    auto_encrypt = kwargs.get('auto_encrypt')
-                    if auto_encrypt:
-                        data, passphrase = self.encrypt(val, auto_encrypt)
-                        self.set_nested_key(k.key_path, pss(data))
+                    if kwargs.get('auto_encrypt'):
+                        data, passphrase = self.encrypt(val, True)
                     else:
                         response = click.prompt("Bad value for '{0}': '{1}'. \nPrivate key storage may not be supported"
                                                 " due to character limits.\n"
                                                 "Encrypt private key instead? (y/n)".format(k, str(e)))
                         if response == 'y':
-                            data, passphrase = self.encrypt(val, auto_encrypt)
-                            self.set_nested_key(k.key_path, pss(data))
+                            data, passphrase = self.encrypt(val, False)
                         else:
                             raise AssertionException("Private key will remain in plaintext, unencrypted format.")
                     self.set_nested_key(k.key_path, pss(data))
                     self.store_key(Key(['enterprise', 'priv_key_pass']), value=passphrase)
-                    credentials[':'.join(['enterprise', 'priv_key_pass'])] = self.get_qualified_identifier(['enterprise', 'priv_key_pass'])
+                    credentials[':'.join(['enterprise', 'priv_key_pass'])] = passphrase
                 else:
                     raise e
         return credentials
