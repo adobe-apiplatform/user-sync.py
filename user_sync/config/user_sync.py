@@ -39,7 +39,7 @@ from user_sync.config.common import DictConfig
 from user_sync.config.common import ConfigFileLoader
 from user_sync.config.common import OptionsBuilder
 
-class ConfigLoader(object):
+class UserSyncConfigLoader(object):
     # default values for reading configuration files
     # these are in alphabetical order!  Always add new ones that way!
     config_defaults = {

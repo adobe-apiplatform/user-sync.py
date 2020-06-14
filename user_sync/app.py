@@ -169,7 +169,7 @@ def sync(**kwargs):
         del(kwargs['sign_sync_config'])
     try:
         # load the config files and start the file logger
-        config_loader = user_sync.config.user_sync.ConfigLoader(kwargs)
+        config_loader = user_sync.config.user_sync.UserSyncConfigLoader(kwargs)
         init_log(config_loader.get_logging_config())
 
         # add start divider, app version number, and invocation parameters to log
