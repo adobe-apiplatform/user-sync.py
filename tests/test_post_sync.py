@@ -68,10 +68,8 @@ def test_update_sign_users(mock_client, mock_get, example_user):
         r.status_code = 200
         r._content = json.dumps(data).encode()
         return r
-    #     user_list = mock_response({'userInfoList': [{"userId": "123"}, {"userId": "456"}]})
     user_list = mock_response({'userInfoList': [{"userId": "123"}]})
     user_one = mock_response({'userStatus': 'ACTIVE', 'email': 'user@example.com'})
-    # user_two = mock_response({'userStatus': 'ACTIVE', 'email': 'user2@example.com'})
     mock_get.side_effect = [user_list, user_one]
     client_config = {
                 'console_org': None,
@@ -81,24 +79,20 @@ def test_update_sign_users(mock_client, mock_get, example_user):
             }
     sign_client = SignClient(client_config)
     sign_client.api_url = "whatever"
-    # sign_users = sign_client.get_users()
-    # assert sign_users is not None
     connector_config = {
-        'sign_orgs': [{'console_org': None,
-        'host': 'api.na2.echosignstage.com',
-        'key': 'allsortsofgibberish1234567890',
-        'admin_email': 'brian.nickila@gmail.com'}],
+        'sign_orgs': [client_config],
         'entitlement_groups': ['group1']
     }
     sign_connector = SignConnector(connector_config)
-    assert isinstance(sign_connector, SignConnector)
+    # set the email from the fixture example user to use an uppercase letter
     example_user['email'] = 'User@example.com'
-    assert example_user['email'].lower() != example_user['email']
-    #define replacement should_sync
-    def hello(cls, umapi_user, sign_user, org_name):
-        print('x')
-        #assert sign_user not None
-    sign_connector.should_sync = hello
-    sign_connector.update_sign_users(example_user, sign_client, None)
-    # assert sign_users['user@example.com']['email'] == 'user@example.com'
-    # sign_connector.should_sync replacement method
+    # make a new dict indexed by the uppercase email to pass in to the update method from the sign connector
+    umapi_users = {example_user['email']: example_user}
+
+    def should_sync_replacement(umapi_user, sign_user, org_name):
+        assert sign_user is not None
+    # going to exit the update method early because this bug fix is only concerned with the email mismatch
+    # looking up the sign user from the umapi_users dict should return a sign user even if there is a casing mismatch
+    sign_connector.should_sync = should_sync_replacement
+    sign_connector.update_sign_users(umapi_users, sign_client, 'testOrg')
+    
