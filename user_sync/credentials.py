@@ -125,24 +125,29 @@ class CredentialConfig:
                 logging.getLogger().exception("\nError: {}\n".format(str(e)), exc_info=False)
             except Exception as e:
                 if "stub received bad data" in str(e):
-                    #refactor into method
-                    #hellothere
                     val = self.get_nested_key(k.key_path)
-                    if kwargs.get('auto_encrypt'):
-                        data, passphrase = self.encrypt(val, True)
-                    else:
-                        response = click.prompt("Bad value for '{0}': '{1}'. \nPrivate key storage may not be supported"
-                                                " due to character limits.\n"
-                                                "Encrypt private key instead? (y/n)".format(k, str(e)))
-                        if response == 'y':
-                            data, passphrase = self.encrypt(val, False)
-                        else:
-                            raise AssertionException("Private key will remain in plaintext, unencrypted format.")
-                    self.set_nested_key(k.key_path, pss(data))
-                    self.store_key(Key(['enterprise', 'priv_key_pass']), value=passphrase)
-                    credentials[':'.join(['enterprise', 'priv_key_pass'])] = passphrase
+                    try:
+                        credentials = self.handle_key_encryption(k, val, credentials, e, **kwargs)
+                    except AssertionException as e:
+                        logging.getLogger().exception("\nError: {}\n".format(str(e)), exc_info=False)
                 else:
                     raise e
+        return credentials
+
+    def handle_key_encryption(self, k, val, credentials, e, **kwargs):
+        if kwargs.get('auto_encrypt'):
+            data, passphrase = self.encrypt(val, True)
+        else:
+            if click.confirm(
+                    "Bad value for '{0}': '{1}'. \nPrivate key storage may not be supported"
+                    " due to character limits.\n"
+                    "Encrypt private key instead?".format(k, str(e))):
+                data, passphrase = self.encrypt(val, False)
+            else:
+                raise AssertionException("Private key will remain in plaintext, unencrypted format.")
+        self.set_nested_key(k.key_path, pss(data))
+        self.store_key(Key(['enterprise', 'priv_key_pass']), value=passphrase)
+        credentials[':'.join(['enterprise', 'priv_key_pass'])] = passphrase
         return credentials
 
     def encrypt(self, data, auto_encrypt):
@@ -150,7 +155,7 @@ class CredentialConfig:
             passphrase = str(binascii.b2a_hex(urandom(16)).decode())
         else:
             passphrase = click.prompt('Create password ', hide_input=True, confirmation_prompt=True)
-        return encryption.encrypt(passphrase, data), passphrase;
+        return encryption.encrypt(passphrase, data), passphrase
 
     def store(self, **kwargs):
         credentials = self.modify_credentials(self.store_key, **kwargs)
