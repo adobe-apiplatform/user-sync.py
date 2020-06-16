@@ -78,9 +78,8 @@ class SignClient:
         result = requests.get(url + url_path, headers=self.header())
         if result.status_code != 200:
             raise AssertionException(
-                "Error getting base URI from Sign API, is API key valid? (error: {}, reason: {})".format(
-                    result.status_code,
-                    result.reason))
+                "Error getting base URI from Sign API, is API key valid? (error: {}, reason: {})".format
+                (result.status_code, result.reason))
 
         if access_point_key not in result.json():
             raise AssertionException("Error getting base URI for Sign API, result invalid")
