@@ -77,7 +77,9 @@ class SignClient:
 
         result = requests.get(url + url_path, headers=self.header())
         if result.status_code != 200:
-            raise AssertionException("Error getting base URI from Sign API, is API key valid?")
+            raise AssertionException(
+                "Error getting base URI from Sign API, is API key valid? (error: {}, reason: {})".format(result.status_code,
+                                                                                          result.reason))
 
         if access_point_key not in result.json():
             raise AssertionException("Error getting base URI for Sign API, result invalid")
@@ -97,7 +99,8 @@ class SignClient:
         users_res = requests.get(self.api_url + 'users', headers=self.header())
 
         if users_res.status_code != 200:
-            raise AssertionException("Error retrieving Sign user list")
+            raise AssertionException("Error retrieving Sign user list, (error: {}, reason: {})".format(users_res.status_code,
+                                                                                     users_res.reason))
         for user_id in map(lambda u: u['userId'], users_res.json()['userInfoList']):
             user_res = requests.get(self.api_url + 'users/' + user_id, headers=self.header())
             if users_res.status_code != 200:
