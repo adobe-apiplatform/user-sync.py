@@ -8,7 +8,7 @@ Tool are to streamline the process of named user deployment and automate user ma
 This application is open source, maintained by Adobe, and distributed under the terms
 of the OSI-approved MIT license.  See the LICENSE file for details.
 
-Copyright (c) 2016-2017 Adobe Inc.
+Copyright (c) 2016-2020 Adobe Inc.
 
 ## Documentation
 
@@ -18,15 +18,20 @@ The [User Sync Documentation](https://adobe-apiplatform.github.io/user-sync.py/)
 - [User Manual](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/)
 - [Step-by-Step Setup](https://adobe-apiplatform.github.io/user-sync.py/en/success-guide/)
 
-## System Requirements
+## Technical Requirements
 
-To run User Sync, you must have an up-to-date 64-bit Python installed on your system, either Python 2.7 or Python 3.4+.  In addition you must have User Management API Credentials for your organization (see [the official documentation](https://www.adobe.io/products/usermanagement/docs/gettingstarted))
+* Windows, Ubuntu or CentOS server/VM (if using a [pre-built release](https://github.com/adobe-apiplatform/user-sync.py/releases/latest))
+* At least 4GB of available RAM
+* Service account for the User Management API (see the [official docs](https://www.adobe.io/apis/experienceplatform/console/docs.html#!AdobeDocs/adobeio-console/master/integrations.md))
+* Public/private keys for service account (see the [official docs](https://www.adobe.io/authentication/auth-methods.html#!AdobeDocs/adobeio-auth/master/JWT/JWTCertificate.md))
 
 ## Installation and Use
 
-The connector is packaged as a self-contained executable.  See the [releases page](https://github.com/adobe-apiplatform/user-sync.py/releases)
+The connector is packaged as a self-contained executable.  See the [latest release page](https://github.com/adobe-apiplatform/user-sync.py/releases/latest)
 to get the latest build for your platform. Releases are distributed as archives (`.zip` or `.tar.gz`). Each release file
 contains the UST executable.
+
+Full installation instructions can be found [here](https://adobe-apiplatform.github.io/user-sync.py/en/success-guide/install_sync.html).
 
 * On Linux systems, the executable is named `user-sync`.
 * On Windows systems, the executable is named `user-sync.exe`.
@@ -58,9 +63,9 @@ to learn how to build the Sync Tool from source.
 4. `cd` to the `user-sync.py` directory
 5. Install the Okta client wheel `pip install external/okta-0.0.3.1-py2.py3-none-any.whl`
 6. Install the sync tool locally
-  1. `pip install -e .`
-  2. `pip install -e .[test]`
-  3. `pip install -e .[setup]`
+    1. `pip install -e .`
+    2. `pip install -e .[test]`
+    3. `pip install -e .[setup]`
 7. Create the build by running `make`
 
 If the Sync Tool was built successfully, then the executable can be found in the `dist/` directory. The binary will be named

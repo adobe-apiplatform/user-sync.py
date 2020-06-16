@@ -66,6 +66,7 @@ class UmapiConnector(object):
         server_builder.set_string_value('ims_endpoint_jwt', '/ims/exchange/jwt')
         server_builder.set_int_value('timeout', 120)
         server_builder.set_int_value('retries', 3)
+        server_builder.set_bool_value('ssl_verify', True)
         options['server'] = server_options = server_builder.get_options()
 
         enterprise_config = caller_config.get_dict_config('enterprise')
@@ -99,6 +100,7 @@ class UmapiConnector(object):
                 logger=self.logger,
                 timeout_seconds=float(server_options['timeout']),
                 retry_max_attempts=server_options['retries'] + 1,
+                ssl_verify=server_options['ssl_verify']
             )
         except Exception as e:
             raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))

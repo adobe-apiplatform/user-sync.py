@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
 import os
 import sys
 import pytest
@@ -88,7 +89,7 @@ def test_resource_dir_bundle(resource_file, tmpdir, monkeypatch):
 
         resfile = "test_{}.txt"
 
-        res_paths = [resource_file(test_dir, resfile.format(n+1)) for n in range(3)]
+        res_paths = [resource_file(test_dir, resfile.format(n + 1)) for n in range(3)]
 
         assert sorted(res_paths) == sorted(resource.get_resource_dir('test'))
 
@@ -104,11 +105,11 @@ def test_resource_dir_package(resource_file, tmpdir, monkeypatch):
 
         resfile = "test_{}.txt"
 
-        res_test_files = [resfile.format(n+1) for n in range(3)]
+        res_test_files = [resfile.format(n + 1) for n in range(3)]
 
         m.setattr(pkg_resources, "resource_listdir", lambda *args: res_test_files)
 
-        res_paths = [resource_file(test_dir, resfile.format(n+1)) for n in range(3)]
+        res_paths = [resource_file(test_dir, resfile.format(n + 1)) for n in range(3)]
 
         assert sorted(res_paths) == sorted(resource.get_resource_dir('test'))
 
