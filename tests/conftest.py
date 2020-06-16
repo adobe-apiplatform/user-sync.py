@@ -1,8 +1,8 @@
 import os
 
 import pytest
+from user_sync.config.user_sync import UserSyncConfigLoader
 
-from user_sync import config
 import shutil
 
 
@@ -22,7 +22,7 @@ def cli_args():
         """
 
         args_out = {}
-        for k in config.ConfigLoader.invocation_defaults:
+        for k in UserSyncConfigLoader.invocation_defaults:
             args_out[k] = None
         for k, v in args_in.items():
             args_out[k] = v
