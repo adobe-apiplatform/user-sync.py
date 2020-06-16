@@ -141,7 +141,7 @@ class CredentialConfig:
             if click.confirm(
                     "Bad value for '{0}': '{1}'. \nPrivate key storage may not be supported"
                     " due to character limits.\n"
-                    "Encrypt private key instead?".format(k, str(e))):
+                    "Encrypt private key instead?".format(k.key_path, str(e))):
                 data, passphrase = self.encrypt(val, False)
             else:
                 raise AssertionException("Private key will remain in plaintext, unencrypted format.")
