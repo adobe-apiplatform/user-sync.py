@@ -62,23 +62,28 @@ def test_add_remove_groups(example_user):
     delta_groups -= set(groups_remove)
     assert post_sync_data.umapi_data[None][email_id]['groups'] == delta_groups
 
+
 @mock.patch('requests.get')
 @mock.patch('user_sync.post_sync.connectors.sign_sync.client.SignClient._init')
-def test_base_uri_401_Unauthorized(mock_client, mock_get):
+def test_123(mock_client, mock_get):
     def mock_response(data):
         r = Response()
-        r.status_code = 403
+        # r.status_code = 401
         r.reason = 'Unauthorized'
+        r._content = json.dumps(data).encode()
         return r
 
     config = {
-            'console_org': None,
-            'host': 'api.na2.echosignstage.com',
-            'key': 'allsortsofgibberish1234567890',
-            'admin_email': 'admin@admin.com'
+        'console_org': None,
+        'host': 'api.na2.echosignstage.com',
+        'key': 'allsortsofgibberish1234567890',
+        'admin_email': 'admin@admin.com'
     }
-    mock_get.return_value = mock_response({})
+    # mock_get.status_code = 401
+    mock_get.return_value = mock_response({'status_code': 200})
+    # mock_get.side_effect = mock_response()
     sc = SignClient(config)
     sc.api_url = "example.com"
+
     with pytest.raises(AssertionException):
-          sc.base_uri()
+        sc.base_uri()
