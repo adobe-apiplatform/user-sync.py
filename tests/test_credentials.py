@@ -27,37 +27,37 @@ def test_nested_set(ldap_config_file):
 def test_retrieve_ldap_creds_valid(tmp_config_files):
     (_, ldap_config_file, _) = tmp_config_files
     c = CredentialConfig(ldap_config_file)
-    key_list = Credential(['password'])
-    plaintext_cred = c.get_nested_key(key_list.credential)
-    c.store_key(key_list)
-    retrieved_plaintext_cred = c.retrieve_key(key_list)
+    key = Key(['password'])
+    plaintext_cred = c.get_nested_key(key.key_path)
+    c.store_key(key)
+    retrieved_plaintext_cred = c.retrieve_key(key)
     assert retrieved_plaintext_cred == plaintext_cred
 
 
 def test_retrieve_ldap_creds_invalid(tmp_config_files):
     (_, ldap_config_file, _) = tmp_config_files
     c = CredentialConfig(ldap_config_file)
-    key_list = Credential(['password'])
+    key = Key(['password'])
     # if store_key has not been called previously, retrieve_key returns None
-    assert c.retrieve_key(key_list) is None
+    assert c.retrieve_key(key) is None
 
 
 def test_revert_valid(tmp_config_files):
     (_, ldap_config_file, _) = tmp_config_files
     c = CredentialConfig(ldap_config_file)
-    key_list = Credential(['password'])
-    plaintext_cred = c.get_nested_key(key_list.credential)
-    c.store_key(key_list)
-    reverted_plaintext_cred = c.revert_key(key_list)
+    key = Key(['password'])
+    plaintext_cred = c.get_nested_key(key.key_path)
+    c.store_key(key)
+    reverted_plaintext_cred = c.revert_key(key)
     assert reverted_plaintext_cred == plaintext_cred
 
 
 def test_revert_invalid(tmp_config_files):
     (_, ldap_config_file, _) = tmp_config_files
     c = CredentialConfig(ldap_config_file)
-    key_list = Credential(['password'])
+    key = Key(['password'])
     # assume store_key has not been called
-    assert c.revert_key(key_list) is None
+    assert c.revert_key(key) is None
 
 
 def test_retrieve_revert_ldap_valid(tmp_config_files):
@@ -84,7 +84,6 @@ def test_retrieve_revert_ldap_invalid(tmp_config_files):
     # if store has not been previously called before retrieve and revert we can expect the following
     retrieved_key_dict = ldap.retrieve()
     assert retrieved_key_dict == {}
-
     creds = ldap.revert()
     assert creds == {}
 
@@ -170,7 +169,7 @@ def test_set_long():
     value = "".join([str(uuid.uuid4()) for x in range(500)])
 
     if isinstance(keyring.get_keyring(), keyring.backends.Windows.WinVaultKeyring):
-        with pytest.raises(AssertionException):
+        with pytest.raises(Exception):
             cm.set(identifier, value)
     else:
         cm.set(identifier, value)
@@ -189,8 +188,8 @@ def test_get_not_valid():
 def test_config_store(tmp_config_files):
     (_, ldap_config_file, _) = tmp_config_files
     ldap = LdapCredentialConfig(ldap_config_file)
-    key_list = Credential(['password'])
-    assert not ldap.parse_secure_key(ldap.get_nested_key(key_list.credential))
+    key = Key(['password'])
+    assert not ldap.parse_secure_key(ldap.get_nested_key(key.key_path))
     ldap.store()
     with open(ldap_config_file) as f:
         data = yaml.load(f)
@@ -200,16 +199,15 @@ def test_config_store(tmp_config_files):
 def test_config_store_key(tmp_config_files):
     (_, ldap_config_file, _) = tmp_config_files
     ldap = LdapCredentialConfig(ldap_config_file)
-    key_list = Credential(['password'])
-    assert not ldap.parse_secure_key(ldap.get_nested_key(key_list.credential))
-    ldap.store_key(key_list)
-    assert ldap.parse_secure_key(ldap.get_nested_key(key_list.credential))
+    key = Key(['password'])
+    assert not ldap.parse_secure_key(ldap.get_nested_key(key.key_path))
+    ldap.store_key(key)
+    assert ldap.parse_secure_key(ldap.get_nested_key(key.key_path))
 
 
 def test_config_store_key_none(tmp_config_files):
     (_, ldap_config_file, _) = tmp_config_files
     ldap = LdapCredentialConfig(ldap_config_file)
-    key_list = Credential(['password'])
-    ldap.set_nested_key(key_list.credential, [])
-    with pytest.raises(AssertionException):
-        ldap.store_key(key_list)
+    key = Key(['password'])
+    ldap.set_nested_key(key.key_path, [])
+    assert ldap.store_key(key) is None
