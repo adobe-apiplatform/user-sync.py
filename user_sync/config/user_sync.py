@@ -20,24 +20,21 @@
 
 import codecs
 import logging
-import os
 import re
 from copy import deepcopy
 
 import six
-import yaml
 
+import user_sync.engine.user_sync
 import user_sync.helper
 import user_sync.identity_type
 import user_sync.port
-import user_sync.rules
-from user_sync import flags
-from user_sync.error import AssertionException
 import user_sync.post_sync.connectors as post_sync_connectors
-
-from user_sync.config.common import DictConfig
+from user_sync import flags
 from user_sync.config.common import ConfigFileLoader
-from user_sync.config.common import OptionsBuilder
+from user_sync.config.common import DictConfig
+from user_sync.error import AssertionException
+
 
 class UserSyncConfigLoader(object):
     # default values for reading configuration files
@@ -249,7 +246,7 @@ class UserSyncConfigLoader(object):
                         'You must specify the groups to read when using the adobe-users "group" option')
                 options['adobe_group_filter'] = []
                 for group in adobe_users_spec[1].split(','):
-                    options['adobe_group_filter'].append(user_sync.rules.AdobeGroup.create(group))
+                    options['adobe_group_filter'].append(user_sync.engine.user_sync.AdobeGroup.create(group))
             else:
                 raise AssertionException('Unknown option "%s" for adobe-users' % adobe_users_action)
 
@@ -344,7 +341,7 @@ class UserSyncConfigLoader(object):
 
     def load_directory_groups(self):
         """
-        :rtype dict(str, list(user_sync.rules.AdobeGroup))
+        :rtype dict(str, list(user_sync.engine.user_sync.AdobeGroup))
         """
         adobe_groups_by_directory_group = {}
         if self.main_config.get_dict_config('directory', True):
@@ -364,7 +361,7 @@ class UserSyncConfigLoader(object):
 
             adobe_groups = item.get_list('adobe_groups', True)
             for adobe_group in adobe_groups or []:
-                group = user_sync.rules.AdobeGroup.create(adobe_group)
+                group = user_sync.engine.user_sync.AdobeGroup.create(adobe_group)
                 if group is None:
                     validation_message = ('Bad adobe group: "%s" in directory group: "%s"' %
                                           (adobe_group, directory_group))
@@ -482,7 +479,7 @@ class UserSyncConfigLoader(object):
         """
         Return a dict representing options for RuleProcessor.
         """
-        options = deepcopy(user_sync.rules.RuleProcessor.default_options)
+        options = deepcopy(user_sync.engine.user_sync.RuleProcessor.default_options)
         options.update(self.invocation_options)
 
         # process directory configuration options
@@ -504,7 +501,7 @@ class UserSyncConfigLoader(object):
         additional_groups = directory_config.get_list('additional_groups', True) or []
         try:
             additional_groups = [{'source': re.compile(r['source']),
-                                  'target': user_sync.rules.AdobeGroup.create(r['target'], index=False)}
+                                  'target': user_sync.engine.user_sync.AdobeGroup.create(r['target'], index=False)}
                                  for r in additional_groups]
         except Exception as e:
             raise AssertionException("Additional group rule error: {}".format(str(e)))
@@ -543,8 +540,8 @@ class UserSyncConfigLoader(object):
         if exclude_group_names:
             exclude_groups = []
             for name in exclude_group_names:
-                group = user_sync.rules.AdobeGroup.create(name)
-                if not group or group.get_umapi_name() != user_sync.rules.PRIMARY_UMAPI_NAME:
+                group = user_sync.engine.user_sync.AdobeGroup.create(name)
+                if not group or group.get_umapi_name() != user_sync.engine.user_sync.PRIMARY_UMAPI_NAME:
                     validation_message = 'Illegal value for %s in config file: %s' % ('exclude_groups', name)
                     if not group:
                         validation_message += ' (Not a legal group name)'
@@ -583,7 +580,7 @@ class UserSyncConfigLoader(object):
             # 1. it allows validation of group names, and matching them to adobe groups
             # 2. it allows removal of adobe groups not assigned by the hook
             for extended_adobe_group in extension_config.get_list('extended_adobe_groups', True) or []:
-                group = user_sync.rules.AdobeGroup.create(extended_adobe_group)
+                group = user_sync.engine.user_sync.AdobeGroup.create(extended_adobe_group)
                 if group is None:
                     message = 'Extension contains illegal extended_adobe_group spec: ' + str(extended_adobe_group)
                     raise AssertionException(message)
@@ -595,7 +592,7 @@ class UserSyncConfigLoader(object):
 
         # set the adobe group filter from the mapping, if requested.
         if options.get('adobe_group_mapped') is True:
-            options['adobe_group_filter'] = set(user_sync.rules.AdobeGroup.iter_groups())
+            options['adobe_group_filter'] = set(user_sync.engine.user_sync.AdobeGroup.iter_groups())
 
         return options
 

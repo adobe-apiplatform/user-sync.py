@@ -10,7 +10,7 @@ import yaml
 import user_sync.helper
 import user_sync.identity_type
 import user_sync.port
-import user_sync.rules
+import user_sync.engine.user_sync
 from user_sync import flags
 from user_sync.error import AssertionException
 

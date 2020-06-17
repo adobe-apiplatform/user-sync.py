@@ -17,7 +17,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from sys import platform
 import logging
 import os
 import shutil
@@ -29,28 +28,24 @@ import click
 import six
 from click_default_group import DefaultGroup
 
-
-import user_sync.config.user_sync
-import user_sync.config.common
 import user_sync.certgen
 import user_sync.cli
+import user_sync.config.common
+import user_sync.config.user_sync
 import user_sync.connector.directory
+import user_sync.connector.directory_adobe_console
+import user_sync.connector.directory_csv
 import user_sync.connector.directory_ldap
 import user_sync.connector.directory_okta
-import user_sync.connector.directory_csv
-import user_sync.connector.directory_adobe_console
-import user_sync.connector.umapi
 import user_sync.connector.umapi
 import user_sync.encryption
+import user_sync.engine.user_sync
 import user_sync.helper
 import user_sync.lockfile
-import user_sync.resource
-import user_sync.engine.user_sync
-
-from user_sync.post_sync.manager import PostSyncManager
 import user_sync.post_sync.connectors.sign_sync
-
+import user_sync.resource
 from user_sync.error import AssertionException
+from user_sync.post_sync.manager import PostSyncManager
 from user_sync.version import __version__ as app_version
 
 LOG_STRING_FORMAT = '%(asctime)s %(process)d %(levelname)s %(name)s - %(message)s'
