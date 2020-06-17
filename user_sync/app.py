@@ -23,6 +23,7 @@ import os
 import shutil
 import sys
 from datetime import datetime
+from pathlib import Path
 
 import click
 import six
@@ -36,6 +37,8 @@ import user_sync.connector.directory
 import user_sync.connector.directory_csv
 import user_sync.connector.directory_ldap
 import user_sync.connector.directory_okta
+import user_sync.connector.directory_csv
+import user_sync.connector.directory_adobe_console
 import user_sync.connector.umapi
 import user_sync.connector.umapi
 import user_sync.encryption
@@ -43,9 +46,13 @@ import user_sync.helper
 import user_sync.lockfile
 import user_sync.resource
 import user_sync.rules
+
 from user_sync.credentials import CredentialManager
 from user_sync.error import AssertionException
 from user_sync.post_sync.manager import PostSyncManager
+import user_sync.post_sync.connectors.sign_sync
+
+from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 
 LOG_STRING_FORMAT = '%(asctime)s %(process)d %(levelname)s %(name)s - %(message)s'
@@ -217,26 +224,41 @@ def sync(**kwargs):
             run_stats.log_end(logger)
 
 
-@main.command(help='Generates configuration files, an X509 certificate/keypair, and the batch '
-                   'files for running the user-sync tool in test and live mode.')
+@main.command(short_help="Generate conf files, certificates and shell scripts")
+@click.help_option('-h', '--help')
 @click.pass_context
 def init(ctx):
+    """
+    Generates configuration files, an X509 certificate/keypair, and the batch files for running the user-sync tool
+    in test and live mode.
+    """
     ctx.forward(certgen, randomize=True)
-
-    with open('Run_UST_Test_Mode.bat', 'w') as OPATH:
-        OPATH.writelines(['mode 155,50', '\ncd /D "%~dp0"', '\nuser-sync.exe --process-groups --users mapped -t',
-                          '\npause'])
-    with open("Run_UST_Live.bat", 'w') as OPATH:
-        OPATH.writelines(
-            ['mode 155,50', '\ncd /D "%~dp0"', '\nuser-sync.exe --process-groups --users mapped'])
+    ctx.forward(shell_scripts, platform=None)
 
     sync = 'user-sync-config.yml'
     umapi = 'connector-umapi.yml'
     ldap = 'connector-ldap.yml'
-    existing = "\n".join({f for f in (sync, umapi, ldap) if os.path.exists(f)})
-    if existing and not click.confirm('\nWarning: files already exist: \n{}\nOverwrite?'.format(existing)):
-        return
     ctx.forward(example_config, root=sync, umapi=umapi, ldap=ldap)
+
+
+@main.command(short_help="Generate invocation scripts")
+@click.help_option('-h', '--help')
+@click.option('-p', '--platform', help="Platform for which to generate scripts [default: current system platform]",
+              type=click.Choice(['win', 'linux'], case_sensitive=False))
+def shell_scripts(platform):
+    """Generate invocation shell scripts for the given platform."""
+    if platform is None:
+        platform = 'win' if 'win' in sys.platform.lower() else 'linux'
+    shell_scripts = user_sync.resource.get_resource_dir('shell_scripts/{}'.format(platform))
+    for script in shell_scripts:
+        with open(script, 'r') as fh:
+            content = fh.read()
+        target = Path.cwd()/Path(script).parts[-1]
+        if target.exists() and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(target)):
+            continue
+        with open(target, 'w') as fh:
+            fh.write(content)
+        click.echo("Wrote shell script: {}".format(target))
 
 
 @main.command()
@@ -256,13 +278,16 @@ def example_config(**kwargs):
     }
 
     for k, fname in kwargs.items():
+        target = Path.cwd() / fname
         assert k in res_files, "Invalid option specified"
         res_file = user_sync.resource.get_resource(res_files[k])
         assert res_file is not None, "Resource file '{}' not found".format(res_files[k])
+        if target.exists() and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(target)):
+            continue
         click.echo("Generating file '{}'".format(fname))
         with open(res_file, 'r') as file:
             content = file.read()
-        with open(fname, 'w') as file:
+        with open(target, 'w') as file:
             file.write(content)
 
 
@@ -566,40 +591,71 @@ def set_credential(identifier, value):
 
 main.add_command(credentials)
 
-
-@main.command(help='Encrypt an existing RSA private key file with a passphrase')
+@main.command(short_help="Encrypt RSA private key")
+@click.help_option('-h', '--help')
 @click.argument('key-path', default='private.key', type=click.Path(exists=True))
+@click.option('-o', '--output-file', help="Path of encrypted file [default: key specified by KEY_PATH will be overwritten]",
+              default=None)
 @click.option('--password', '-p', prompt='Create password', hide_input=True, confirmation_prompt=True)
-def encrypt(password, key_path):
+def encrypt(output_file, password, key_path):
+    """Encrypt RSA private key specified by KEY_PATH.
+
+       KEY_PATH default: private.key
+
+       A passphrase is required to encrypt the file"""
+    if output_file is None:
+        output_file = key_path
+    if output_file != key_path and Path(output_file).exists() \
+        and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(output_file)):
+        return
     try:
         data = user_sync.encryption.encrypt_file(password, key_path)
-        user_sync.encryption.write_key(data, key_path)
-        click.echo('Encryption was successful.\n{0}'.format(os.path.abspath(key_path)))
+        user_sync.encryption.write_key(data, output_file)
+        click.echo('Encryption was successful.')
+        click.echo('Wrote file: {}'.format(os.path.abspath(output_file)))
     except AssertionException as e:
         click.echo(str(e))
 
 
-@main.command(help='Decrypt an RSA private key file with a passphrase')
+@main.command(short_help="Decrypt RSA private key")
+@click.help_option('-h', '--help')
 @click.argument('key-path', default='private.key', type=click.Path(exists=True))
+@click.option('-o', '--output-file', help="Path of decrypted file [default: key specified by KEY_PATH will be overwritten]",
+              default=None)
 @click.option('--password', '-p', prompt='Enter password', hide_input=True)
-def decrypt(password, key_path):
+def decrypt(output_file, password, key_path):
+    """Decrypt RSA private key specified by KEY_PATH.
+
+       KEY_PATH default: private.key
+
+       A passphrase is required to decrypt the file"""
+    if output_file is None:
+        output_file = key_path
+    if output_file != key_path and Path(output_file).exists() \
+        and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(output_file)):
+        return
     try:
         data = user_sync.encryption.decrypt_file(password, key_path)
-        user_sync.encryption.write_key(data, key_path)
-        click.echo('Decryption was successful.\n{0}'.format(os.path.abspath(key_path)))
+        user_sync.encryption.write_key(data, output_file)
+        click.echo('Decryption was successful.')
+        click.echo('Wrote file: {}'.format(os.path.abspath(output_file)))
     except AssertionException as e:
         click.echo(str(e))
 
 
-@main.command(help='Generates an X509 certificate/keypair with random or user-specified subject. '
-                   'User Sync Tool can use these files to communicate with the admin console. '
-                   'Please visit https://console.adobe.io to complete the integration process. '
-                   'Use the --randomize argument to create a secure keypair with no user input.')
+@main.command(short_help="Generate service integration certificates")
+@click.help_option('-h', '--help')
 @click.option('--overwrite', '-o', '-y', help='Overwrite existing files without being asked to confirm', is_flag=True)
 @click.option('--randomize', '-r', help='Randomize the values rather than entering credentials', is_flag=True)
 @click.option('--key', '-k', help='Set a custom output path for private key', default='private.key')
 @click.option('--certificate', '-c', help='Set a custom output path for certificate', default='certificate_pub.crt')
 def certgen(randomize, key, certificate, overwrite):
+    """
+    Generates an X509 certificate/keypair with random or user-specified subject.
+    User Sync Tool can use these files to communicate with the admin console.
+    Please visit https://console.adobe.io to complete the integration process.
+    Use the --randomize argument to create a secure keypair with no user input.
+    """
     key = os.path.abspath(key)
     certificate = os.path.abspath(certificate)
     existing = "\n".join({f for f in (key, certificate) if os.path.exists(f)})
