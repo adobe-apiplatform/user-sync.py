@@ -31,9 +31,10 @@ class CredentialManager:
     logger = logging.getLogger("credential_manager")
     keyring_name = keyring.get_keyring().name
 
-    def __init__(self, root_config=None, connector_type="all"):
+    def __init__(self, root_config=None, connector_type="all", auto=False):
         self.config_files = {}
         self.root_config = root_config
+        self.auto = auto
         if self.root_config:
             self.load_configs(connector_type)
 
@@ -53,11 +54,11 @@ class CredentialManager:
         except KeyringError as e:
             raise AssertionException("Error in setting credentials '{0}' : {1}".format(identifier, str(e)))
 
-    def modify_credentials(self, action, auto_encrypt=False):
+    def modify_credentials(self, action):
         all_credentials = {}
         for k, v in self.config_files.items():
             self.logger.debug("Analyzing: " + k)
-            result = getattr(v, action)(auto_encrypt=auto_encrypt)
+            result = getattr(v, action)()
             if result:
                 all_credentials[k] = result
         return all_credentials
@@ -76,19 +77,19 @@ class CredentialManager:
 
         if connector_type in ['all', 'umapi']:
             for u in ConfigLoader.as_list(root_cfg['adobe_users']['connectors']['umapi']):
-                self.config_files[u] = UmapiCredentialConfig(u)
+                self.config_files[u] = UmapiCredentialConfig(u, auto=self.auto)
 
         for c, v in root_cfg['directory_users']['connectors'].items():
             if connector_type in ['all', c]:
-                self.config_files[v] = CredentialConfig.create(c, v)
+                self.config_files[v] = CredentialConfig.create(c, v, auto=self.auto)
 
-    def store(self, auto_encrypt=False):
-        return self.modify_credentials('store', auto_encrypt)
+    def store(self):
+        return self.modify_credentials('store')
 
-    def retrieve(self, **kwargs):
+    def retrieve(self):
         return self.modify_credentials('retrieve')
 
-    def revert(self, **kwargs):
+    def revert(self):
         return self.modify_credentials('revert')
 
 
@@ -99,75 +100,67 @@ class CredentialConfig:
     """
     secured_keys = []
 
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, auto=False):
         # filename will be the unique identifier for each file.  This can be an absolute path - but if so we cannot
         # move the sync tool.  More to consider here....
         self.filename = filename
+        self.auto = auto
+        self.logger = logging.getLogger('credman')
 
         # The dictionary including comments that will be updated and re-saved
         self.load()
 
     @classmethod
-    def create(self, subclass, filename):
+    def create(self, subclass, filename, auto=False):
         name = subclass.capitalize() + "CredentialConfig"
-        return globals()[name](filename)
+        return globals()[name](filename, auto)
 
-    def modify_credentials(self, action, **kwargs):
+    def modify_credentials(self, action):
         credentials = {}
         for k in self.secured_keys:
+            val = label = None
             try:
                 # Try to do the action, but don't break on exception because rest of actions
                 # can still be completed
                 val = action(k)
-                if val is not None:
-                    credentials[':'.join(k.key_path)] = val
+                label = k.key_path
             except AssertionException as e:
-                logging.getLogger().exception("\nError: {}\n".format(str(e)), exc_info=False)
+                self.logger.exception("\nError: {}\n".format(str(e)), exc_info=False)
             except Exception as e:
-                if "stub received bad data" in str(e):
-                    val = self.get_nested_key(k.key_path)
+                if not "stub received bad data" in str(e) and 'priv_key_data' in k.key_path:
+                    raise
+
+                # Do not encrypt data if already encrypted - passphrase in file will still be stored
+                if not encryption.is_encryptable(self.get_nested_key(k.key_path)):
+                    self.logger.info("Skipping '{}' - likely already encrypted".format(k.key_path[-1]))
+                    continue
+
+                if self.auto or click.confirm(
+                        "Private key storage is not supported on this platform due to character limits."
+                        "\n Encrypt private key instead?".format(k.key_path, str(e))):
                     try:
-                        credentials = self.handle_key_encryption(k, val, credentials, e, **kwargs)
+                        val, label = self.encrypt_key(k)
                     except AssertionException as e:
-                        logging.getLogger().exception("\nError: {}\n".format(str(e)), exc_info=False)
+                        self.logger.exception("\nError: {}\n".format(str(e)), exc_info=False)
+                        continue
                 else:
-                    raise e
+                    self.logger.warning("Private key will remain in plaintext, unencrypted format.")
+
+            if val is not None:
+                credentials[':'.join(label)] = val
         return credentials
 
-    def handle_key_encryption(self, k, val, credentials, e, **kwargs):
-        if kwargs.get('auto_encrypt'):
-            data, passphrase = self.encrypt(val, True)
-        else:
-            if click.confirm(
-                    "Bad value for '{0}': '{1}'. \nPrivate key storage may not be supported"
-                    " due to character limits.\n"
-                    "Encrypt private key instead?".format(k.key_path, str(e))):
-                data, passphrase = self.encrypt(val, False)
-            else:
-                raise AssertionException("Private key will remain in plaintext, unencrypted format.")
-        self.set_nested_key(k.key_path, pss(data))
-        self.store_key(Key(['enterprise', 'priv_key_pass']), value=passphrase)
-        credentials[':'.join(['enterprise', 'priv_key_pass'])] = passphrase
-        return credentials
-
-    def encrypt(self, data, auto_encrypt):
-        if auto_encrypt:
-            passphrase = str(binascii.b2a_hex(urandom(16)).decode())
-        else:
-            passphrase = click.prompt('Create password ', hide_input=True, confirmation_prompt=True)
-        return encryption.encrypt(passphrase, data), passphrase
-
-    def store(self, **kwargs):
-        credentials = self.modify_credentials(self.store_key, **kwargs)
+    def store(self):
+        credentials = self.modify_credentials(self.store_key)
         self.save()
         return credentials
 
-    def revert(self, **kwargs):
+    def revert(self):
         credentials = self.modify_credentials(self.revert_key)
         self.save()
         return credentials
 
-    def retrieve(self, **kwargs):
+    def retrieve(self):
         return self.modify_credentials(self.retrieve_key)
 
     def load(self):
@@ -205,6 +198,26 @@ class CredentialConfig:
             CredentialManager.set(k, value)
             self.set_nested_key(key.key_path, {'secure': k})
             return k
+
+    def get_passphrase(self):
+        return str(binascii.b2a_hex(urandom(16)).decode()) if self.auto else \
+            click.prompt('Create password ', hide_input=True, confirmation_prompt=True)
+
+    def encrypt_key(self, key):
+        data = self.get_nested_key(key.key_path)
+        passphrase = None
+        if key.has_linked():
+            # If key has associated password, we should use this instead of prompting
+            passphrase = self.retrieve_key(key.linked_key) or self.get_nested_key(key.linked_key.key_path)
+        if passphrase is None:
+            passphrase = self.get_passphrase()
+
+        enc_data = encryption.encrypt(passphrase, data)
+        self.set_nested_key(key.key_path, pss(enc_data))
+        if key.has_linked():
+            self.store_key(key.linked_key, value=passphrase)
+            return passphrase, key.linked_key.key_path
+        return passphrase, key.key_path
 
     def retrieve_key(self, key):
         """
@@ -272,10 +285,13 @@ class CredentialConfig:
 
 
 class Key:
-    def __init__(self, key_path, is_block=False):
+    def __init__(self, key_path, is_block=False, linked_key=None):
         self.key_path = key_path
         self.is_block = is_block
+        self.linked_key = linked_key
 
+    def has_linked(self):
+        return not self.linked_key is None
 
 class LdapCredentialConfig(CredentialConfig):
     secured_keys = [Key(key_path=['password'])]
@@ -286,18 +302,16 @@ class OktaCredentialConfig(CredentialConfig):
 
 
 class UmapiCredentialConfig(CredentialConfig):
+    pass_key = Key(key_path=['enterprise', 'priv_key_pass'])
     secured_keys = [
         Key(key_path=['enterprise', 'api_key']),
         Key(key_path=['enterprise', 'client_secret']),
-        Key(key_path=['enterprise', 'priv_key_pass']),
-        Key(key_path=['enterprise', 'priv_key_data'], is_block=True)
+        pass_key,
+        Key(key_path=['enterprise', 'priv_key_data'],
+            is_block=True,
+            linked_key=pass_key)
     ]
 
 
-class ConsoleCredentialConfig(CredentialConfig):
-    secured_keys = [
-        Key(key_path=['integration', 'api_key']),
-        Key(key_path=['integration', 'client_secret']),
-        Key(key_path=['integration', 'priv_key_pass']),
-        Key(key_path=['integration', 'priv_key_data'], is_block=True)
-    ]
+class ConsoleCredentialConfig(UmapiCredentialConfig):
+    pass
