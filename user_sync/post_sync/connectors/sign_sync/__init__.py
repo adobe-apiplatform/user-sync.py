@@ -1,8 +1,8 @@
 import logging
 from collections import defaultdict
 from user_sync.post_sync import PostSyncConnector
-from user_sync.config import DictConfig, OptionsBuilder
 from user_sync.engine.user_sync import AdobeGroup
+from user_sync.config.common import DictConfig
 from .client import SignClient
 from user_sync.error import AssertionException
 
