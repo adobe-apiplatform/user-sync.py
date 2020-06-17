@@ -10,6 +10,7 @@ def test_should_sync():
     }
     config = {'sign_orgs': [client_config], 'entitlement_groups': ['example product profile']}
     sc = SignConnector(config)
+    # Verify that extra characters from umapi profiles is removed when comparing profile names
     umapi_user = {'type': 'adobeID', 'groups': ['example product profile_76TT88T-provisioning']}
     assert sc.should_sync(umapi_user, {}, None)
     umapi_user['groups'] = ['example product profile', 'other profile']
