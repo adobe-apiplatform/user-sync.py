@@ -4,7 +4,6 @@ import uuid
 import pytest
 
 from user_sync.credentials import *
-from user_sync.error import AssertionException
 
 
 @pytest.fixture
