@@ -628,7 +628,7 @@ class RuleProcessor(object):
 
         # all our processing is controlled by the strays in the primary organization
         primary_strays = self.get_stray_keys()
-        self.action_summary['primary_strays_processed'] = len(primary_strays)
+        self.action_summary['primary_strays_processed'] = total_strays = len(primary_strays)
 
         # convenience function to get umapi Commands given a user key
         def get_commands(key):
@@ -672,7 +672,8 @@ class RuleProcessor(object):
 
         # finish with the primary umapi
         primary_connector = umapi_connectors.get_primary_connector()
-        for user_key in primary_strays:
+        for i, user_key in enumerate(primary_strays):
+            per = round(100*(float(i)/float(total_strays)),3)
             commands = get_commands(user_key)
             if disentitle_strays:
                 self.logger.info('Removing all adobe groups for Adobe-only user: %s', user_key)
@@ -680,7 +681,7 @@ class RuleProcessor(object):
                 commands.remove_all_groups()
             elif remove_strays or delete_strays:
                 action = "Deleting" if delete_strays else "Removing"
-                self.logger.info('%s Adobe-only user: %s', action, user_key)
+                self.logger.info('(%s/%s)(%s%%) %s Adobe-only user: %s', i, total_strays, per, action, user_key)
                 self.post_sync_data.remove_umapi_user(None, user_key)
                 commands.remove_from_org(True if delete_strays else False)
             elif manage_stray_groups:
