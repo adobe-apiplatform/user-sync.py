@@ -39,8 +39,8 @@ setup(name='user-sync',
           'Intended Audience :: System Administrators',
       ],
       url='https://github.com/adobe-apiplatform/user-sync.py',
-      maintainer='Daniel Brotsky',
-      maintainer_email='dbrotsky@adobe.com',
+      maintainer='Andrew Dorton',
+      maintainer_email='adorton@adobe.com',
       license='MIT',
       packages=find_packages(),
       install_requires=[
@@ -48,11 +48,11 @@ setup(name='user-sync',
           'keyrings.cryptfile',
           'okta==0.0.3.1',
           'psutil',
-          'pycryptodome==3.7.3',
+          'pycryptodome==3.9.7',
           'ldap3',
           'PyYAML',
           'six',
-          'umapi-client>=2.12',
+          'umapi-client>=2.14',
           'click',
           'click-default-group',
           'configparser==3.7.4'
@@ -61,9 +61,11 @@ setup(name='user-sync',
           ':sys_platform=="linux" or sys_platform=="linux2"': [
               'secretstorage',
               'dbus-python',
+              'kerberos'
           ],
           ':sys_platform=="win32"': [
               'pywin32-ctypes',
+              'winkerberos',
               'pywin32'
           ],
           'test': test_deps,
@@ -76,5 +78,5 @@ setup(name='user-sync',
               'user_sync = user_sync.app:main'
           ]
       },
-      package_data={'user_sync.resources': ['*', 'examples/*']},
+      package_data={'user_sync.resources': ['*', 'examples/**']},
       zip_safe=False)
