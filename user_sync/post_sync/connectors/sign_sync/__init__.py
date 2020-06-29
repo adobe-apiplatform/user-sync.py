@@ -43,6 +43,8 @@ class SignConnector(PostSyncConnector):
             self.logger.info("Sign Sync disabled in test mode")
             return
         for org_name, sign_client in self.clients.items():
+            if sign_client.sign_test_mode:
+                self.logger.info("::SIGN TEST MODE::")
             # create any new Sign groups
             for new_group in set(self.user_groups[org_name]) - set(sign_client.sign_groups()):
                 self.logger.info("Creating new Sign group: {}".format(new_group))

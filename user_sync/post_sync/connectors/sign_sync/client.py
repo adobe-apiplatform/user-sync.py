@@ -10,12 +10,13 @@ class SignClient:
     DEFAULT_GROUP_NAME = 'default group'
 
     def __init__(self, config):
-        for k in ['host', 'key', 'admin_email']:
+        for k in ['host', 'key', 'admin_email', 'sign_test_mode']:
             if k not in config:
                 raise AssertionException("Key '{}' must be specified for all Sign orgs".format(k))
         self.host = config['host']
         self.key = config['key']
         self.admin_email = config['admin_email']
+        self.sign_test_mode = config['sign_test_mode']
         self.console_org = config['console_org'] if 'console_org' in config else None
         self.api_url = None
         self.groups = None
@@ -137,12 +138,14 @@ class SignClient:
         :param group: str
         :return:
         """
+        self.logger.debug("Creating {}".format(group))
         if self.api_url is None or self.groups is None:
             self._init()
-        res = requests.post(self.api_url + 'groups', headers=self.header_json(), data=json.dumps({'groupName': group}))
-        if res.status_code != 201:
-            raise AssertionException("Failed to create Sign group '{}' (reason: {})".format(group, res.reason))
-        self.groups[group] = res.json()['groupId']
+        if not self.sign_test_mode:
+            res = requests.post(self.api_url + 'groups', headers=self.header_json(), data=json.dumps({'groupName': group}))
+            if res.status_code != 201:
+                raise AssertionException("Failed to create Sign group '{}' (reason: {})".format(group, res.reason))
+            self.groups[group] = res.json()['groupId']
 
     def update_user(self, user_id, data):
         """
@@ -153,6 +156,9 @@ class SignClient:
         """
         if self.api_url is None or self.groups is None:
             self._init()
+
+        if self.sign_test_mode:
+            return
 
         res = requests.put(self.api_url + 'users/' + user_id, headers=self.header_json(), data=json.dumps(data))
         if res.status_code != 200:
