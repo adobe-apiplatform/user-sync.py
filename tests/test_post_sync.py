@@ -66,10 +66,10 @@ def test_add_remove_groups(example_user):
 @mock.patch('requests.get')
 @mock.patch('user_sync.post_sync.connectors.sign_sync.client.SignClient._init')
 def test_assertion_exception_sucess(mock_client, mock_get):
-    def mock_response(data):
-        r = Response()
-        r.status_code = 400
-        return r
+
+    mock_response = Response()
+    mock_response.status_code = 400
+    mock_get.return_value = mock_response
 
     config = {
         'console_org': None,
@@ -78,7 +78,6 @@ def test_assertion_exception_sucess(mock_client, mock_get):
         'admin_email': 'admin@admin.com'
     }
 
-    mock_get.return_value = mock_response({})
     sc = SignClient(config)
     sc.api_url = "example.com"
 
