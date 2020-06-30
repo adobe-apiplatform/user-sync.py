@@ -126,7 +126,7 @@ class SignConnector(PostSyncConnector):
             if group_fixed != group:
                 self.logger.debug("Likely provisioning group mismatch - overriding group name: {0} -> {1}"
                                   .format(group, group_fixed))
-            umapi_group.append(group)
+            umapi_group.append(group_fixed)
         return sign_user is not None and set(umapi_group) & set(self.entitlement_groups[org_name]) and \
                umapi_user['type'] in self.identity_types
 
