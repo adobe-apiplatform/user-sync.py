@@ -51,6 +51,12 @@ server:
 # To use this feature, You can secure the credentials by using the credentials store command in the command line
 # Refer to the (URL to Additional Tools)
 
+# (optional) You can encrypt the private key by running `user-sync.exe encrypt'.  
+# This will encrypt the private key as RSA 256. you should uncomment 
+# priv_key_pass key so that User Sync is knows to decrypt the key.  priv_key_pass should have the plaintext value
+# of the password (or, see credential storage above).  The decryption also works for keys encrypted
+# externally with OpenSSL or other libraries, provided the format is correct.
+
 enterprise:
   org_id: "Org ID goes here"
   api_key: "API key goes here"
@@ -63,7 +69,7 @@ enterprise:
   # data directly in this file.  To do this, remove the priv_key_path entry above 
   # and uncomment the following entry.  Replace the sample data with the data 
   # from your private key file (which will be much longer).
-  # Note: the Windows credential store generally can't store data as large as a private
+  # Note: the Windows credential store can't store data as large as a private
   # key, so Windows users will be prompted to encrypt the private key data instead.
   #priv_key_data: |
   #   -----BEGIN RSA PRIVATE KEY-----
