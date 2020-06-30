@@ -1,4 +1,14 @@
+import json
+from unittest import mock
+from unittest.mock import patch
+
 import pytest
+import requests
+from requests import Response
+from requests.exceptions import ConnectionError
+
+from user_sync.error import AssertionException
+from user_sync.post_sync.connectors.sign_sync import SignClient
 from user_sync.post_sync.manager import PostSyncData
 
 
@@ -51,3 +61,31 @@ def test_add_remove_groups(example_user):
     delta_groups = example_user['groups'] | set(groups_add)
     delta_groups -= set(groups_remove)
     assert post_sync_data.umapi_data[None][email_id]['groups'] == delta_groups
+
+
+@mock.patch('requests.get')
+@mock.patch('user_sync.post_sync.connectors.sign_sync.client.SignClient._init')
+def test_assertion_exception_sucess(mock_client, mock_get):
+
+    mock_response = Response()
+    mock_response.status_code = 400
+    mock_get.return_value = mock_response
+
+    config = {
+        'console_org': None,
+        'host': 'api.na2.echosignstage.com',
+        'key': 'allsortsofgibberish1234567890',
+        'admin_email': 'admin@admin.com'
+    }
+
+    sc = SignClient(config)
+    sc.api_url = "example.com"
+
+    with pytest.raises(AssertionException):
+        sc.base_uri()
+
+    with pytest.raises(AssertionException):
+        sc.get_users()
+
+    with pytest.raises(AssertionException):
+        sc.get_groups()
