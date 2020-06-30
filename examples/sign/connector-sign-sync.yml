@@ -10,7 +10,11 @@ sign_orgs:
     key: "Sign API key"
     # Sign account associated with admin_email value will be skipped
     admin_email: "Admin user associated with key e.g. user@example.com"
-
+      # Test_mode presents post_sync output without performing any updates of users or user groups to the Sign Dashbaord
+      # sign_test_mode possible values are yes or no. (default no)
+      # sign_test_mode is independent of user_sync test mode.
+      # Post Sync option does not run if user_sync tool is in test mode
+      sign_test_mode: no
 # User groups to sync to Adobe Sign
 # Secondary orgs (as defined in user-sync-config.yml) can optionally be targeted
 # NOTE: if targeting a group on a secondary org here, there MUST be at least one entitlement_group
