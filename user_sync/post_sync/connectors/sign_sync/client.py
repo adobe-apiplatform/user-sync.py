@@ -10,13 +10,13 @@ class SignClient:
     DEFAULT_GROUP_NAME = 'default group'
 
     def __init__(self, config):
-        for k in ['host', 'key', 'admin_email', 'sign_test_mode']:
+        for k in ['host', 'key', 'admin_email']:
             if k not in config:
                 raise AssertionException("Key '{}' must be specified for all Sign orgs".format(k))
         self.host = config['host']
         self.key = config['key']
         self.admin_email = config['admin_email']
-        self.sign_test_mode = config['sign_test_mode']
+        self.sign_test_mode = config['sign_test_mode'] if 'sign_test_mode' in config else False
         self.console_org = config['console_org'] if 'console_org' in config else None
         self.api_url = None
         self.groups = None
