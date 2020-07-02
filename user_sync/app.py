@@ -31,7 +31,7 @@ from click_default_group import DefaultGroup
 import user_sync.certgen
 import user_sync.cli
 import user_sync.config.common
-import user_sync.config.user_sync
+import user_sync.config.user_sync_config
 import user_sync.connector.directory
 import user_sync.connector.directory_adobe_console
 import user_sync.connector.directory_csv
@@ -39,7 +39,7 @@ import user_sync.connector.directory_ldap
 import user_sync.connector.directory_okta
 import user_sync.connector.umapi
 import user_sync.encryption
-import user_sync.engine.user_sync
+import user_sync.engine.umapi_engine
 import user_sync.helper
 import user_sync.lockfile
 import user_sync.post_sync.connectors.sign_sync
@@ -170,7 +170,7 @@ def sync(**kwargs):
         del(kwargs['sign_sync_config'])
     try:
         # load the config files and start the file logger
-        config_loader = user_sync.config.user_sync.UserSyncConfigLoader(kwargs)
+        config_loader = user_sync.config.user_sync_config.ConfigLoader(kwargs)
         init_log(config_loader.get_logging_config())
 
         # add start divider, app version number, and invocation parameters to log
@@ -377,7 +377,7 @@ def begin_work(config_loader):
     for groups in six.itervalues(directory_groups):
         for group in groups:
             umapi_name = group.umapi_name
-            if umapi_name != user_sync.engine.user_sync.PRIMARY_UMAPI_NAME:
+            if umapi_name != user_sync.engine.umapi_engine.PRIMARY_UMAPI_NAME:
                 referenced_umapi_names.add(umapi_name)
     referenced_umapi_names.difference_update(six.iterkeys(secondary_umapi_configs))
     if len(referenced_umapi_names) > 0:
@@ -426,9 +426,9 @@ def begin_work(config_loader):
         umapi_secondary_conector = user_sync.connector.umapi.UmapiConnector(".secondary.%s" % secondary_umapi_name,
                                                                             secondary_config)
         umapi_other_connectors[secondary_umapi_name] = umapi_secondary_conector
-    umapi_connectors = user_sync.engine.user_sync.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
+    umapi_connectors = user_sync.engine.umapi_engine.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
 
-    rule_processor = user_sync.engine.user_sync.RuleProcessor(rule_config)
+    rule_processor = user_sync.engine.umapi_engine.RuleProcessor(rule_config)
     if len(directory_groups) == 0 and rule_processor.will_process_groups():
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
     rule_processor.run(directory_groups, directory_connector, umapi_connectors)

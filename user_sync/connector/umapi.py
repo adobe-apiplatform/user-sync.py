@@ -27,7 +27,6 @@ import six
 import umapi_client
 
 import user_sync.connector.helper
-import user_sync.config.user_sync
 import user_sync.config.common
 import user_sync.helper
 import user_sync.identity_type

@@ -1,8 +1,5 @@
-import codecs
 import logging
 import os
-import re
-from copy import deepcopy
 
 import six
 import yaml
@@ -10,8 +7,6 @@ import yaml
 import user_sync.helper
 import user_sync.identity_type
 import user_sync.port
-import user_sync.engine.user_sync
-from user_sync import flags
 from user_sync.error import AssertionException
 
 
@@ -286,7 +281,8 @@ class DictConfig(ObjectConfig):
                 isinstance(keyring.get_keyring(), keyring.backends.chainer.ChainerBackend)):
             keyring.set_keyring(keyrings.cryptfile.cryptfile.CryptFileKeyring())
 
-        logging.getLogger("keyring").info("Using keyring '" + keyring.get_keyring().name + "' to retrieve: " + secure_value_key)
+        logging.getLogger("keyring").info(
+            "Using keyring '" + keyring.get_keyring().name + "' to retrieve: " + secure_value_key)
         return keyring.get_password(service_name=secure_value_key, username=user_name)
 
 
@@ -304,8 +300,8 @@ class ConfigFileLoader:
                              '/directory_users/connectors/*': (True, False, None),
                              '/directory_users/extension': (True, False, None),
                              '/logging/file_log_directory': (False, False, "logs"),
-        '/post_sync/connectors/sign_sync': (False, False, False),
-        '/post_sync/connectors/future_feature': (False, False, False)
+                             '/post_sync/connectors/sign_sync': (False, False, False),
+                             '/post_sync/connectors/future_feature': (False, False, False)
                              }
 
     # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files

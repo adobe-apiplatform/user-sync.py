@@ -24,7 +24,6 @@ import string
 import ldap3
 
 import user_sync.config.common
-import user_sync.config.user_sync
 import user_sync.connector.helper
 import user_sync.error
 import user_sync.identity_type
