@@ -122,7 +122,7 @@ class SignConnector(PostSyncConnector):
         # eg. 'Example Product Profile' will come through as 'Example Product Profile_EC79122-provisioning'
         umapi_group = []
         for group in umapi_user['groups']:
-            group_fixed = re.sub("_[A-Za-z0-9]+-provisioning$", '', group)
+            group_fixed = re.sub("_[A-Za-z0-9]+(?i)-provisioning$", '', group)
             if group_fixed != group:
                 self.logger.debug("Likely provisioning group mismatch - overriding group name: {0} -> {1}"
                                   .format(group, group_fixed))
