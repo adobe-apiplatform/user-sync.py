@@ -219,6 +219,13 @@ class CredentialConfig:
             return passphrase, key.linked_key.key_path
         return passphrase, key.key_path
 
+    def decrypt_key(self, key):
+        data = self.get_nested_key(key.key_path)
+        if key.has_linked():
+            passphrase = self.retrieve_key(key.linked_key) or self.get_nested_key(key.linked_key.key_path)
+        decrypted_data = encryption.decrypt(passphrase, data)
+        return decrypted_data
+
     def retrieve_key(self, key):
         """
         Retrieves the value (if any) for key_list and returns the secure identifier if present
@@ -241,6 +248,11 @@ class CredentialConfig:
         stored_credential = self.retrieve_key(key)
         if stored_credential is not None:
             self.set_nested_key(key.key_path, stored_credential)
+        if key.is_block and not self.parse_secure_key(self.get_nested_key(key.key_path)):
+            if not encryption.is_encryptable(self.get_nested_key(key.key_path)):
+                decrypted_key = self.decrypt_key(key)
+                self.set_nested_key(key.key_path, pss(decrypted_key))
+                # return decrypted key value for credentials dict? need some way to log that it got decrypted
         return stored_credential
 
     @classmethod
