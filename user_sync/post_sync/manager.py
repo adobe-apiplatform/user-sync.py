@@ -83,7 +83,7 @@ class PostSyncData:
 
     def remove_umapi_user(self, org_id, user_key):
         umapi_data = self.umapi_data.get(org_id)
-        if user_key not in umapi_data:
+        if umapi_data is None or user_key not in umapi_data:
             return
         del umapi_data[user_key]
 
