@@ -87,8 +87,7 @@ def test_retrieve_revert_ldap_invalid(tmp_config_files):
     assert creds == {}
 
 
-
-def test_retrieve_revert_umapi_valid(tmp_config_files):
+def test_retrieve_revert_umapi_valid(tmp_config_files, private_key):
     (_, _, umapi_config_file) = tmp_config_files
     umapi = UmapiCredentialConfig(umapi_config_file)
     # Using the api_key for assertions. The rest can be added in later if deemed necessary
