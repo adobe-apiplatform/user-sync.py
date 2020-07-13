@@ -220,11 +220,19 @@ class CredentialConfig:
         return passphrase, key.key_path
 
     def decrypt_key(self, key):
-        data = self.get_nested_key(key.key_path)
+        value = self.get_nested_key(key.key_path)
+        if key.is_filepath:
+            with open(value, 'r') as f:
+                data = f.read()
+                if encryption.is_encryptable(data):
+                    return
+        else:
+            data = value
         if key.has_linked():
             passphrase = self.retrieve_key(key.linked_key) or self.get_nested_key(key.linked_key.key_path)
-        decrypted_data = encryption.decrypt(passphrase, data)
-        return decrypted_data
+        if data is not None:
+            decrypted_data = encryption.decrypt(passphrase, data)
+            return decrypted_data
 
     def retrieve_key(self, key):
         """
@@ -251,8 +259,14 @@ class CredentialConfig:
         if key.is_block and not self.parse_secure_key(self.get_nested_key(key.key_path)):
             if not encryption.is_encryptable(self.get_nested_key(key.key_path)):
                 decrypted_key = self.decrypt_key(key)
-                self.set_nested_key(key.key_path, pss(decrypted_key))
+                if decrypted_key is not None:
+                    self.set_nested_key(key.key_path, pss(decrypted_key))
                 # return decrypted key value for credentials dict? need some way to log that it got decrypted
+                # also would probably want to comment out priv_key_pass at this point or else it won't run
+        if key.is_filepath:
+            decrypted_key = self.decrypt_key(key)
+            if decrypted_key is not None:
+                encryption.write_key(decrypted_key, self.get_nested_key(key.key_path))
         return stored_credential
 
     @classmethod
@@ -297,13 +311,15 @@ class CredentialConfig:
 
 
 class Key:
-    def __init__(self, key_path, is_block=False, linked_key=None):
+    def __init__(self, key_path, is_block=False, linked_key=None, is_filepath=False):
         self.key_path = key_path
         self.is_block = is_block
         self.linked_key = linked_key
+        self.is_filepath = is_filepath
 
     def has_linked(self):
         return not self.linked_key is None
+
 
 class LdapCredentialConfig(CredentialConfig):
     secured_keys = [Key(key_path=['password'])]
@@ -321,7 +337,8 @@ class UmapiCredentialConfig(CredentialConfig):
         pass_key,
         Key(key_path=['enterprise', 'priv_key_data'],
             is_block=True,
-            linked_key=pass_key)
+            linked_key=pass_key),
+        Key(key_path=['enterprise', 'priv_key_path'], is_block=False, linked_key=pass_key, is_filepath=True)
     ]
 
 
