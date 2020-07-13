@@ -220,6 +220,8 @@ class CredentialConfig:
         return passphrase, key.key_path
 
     def decrypt_key(self, key):
+        if not key.has_linked():
+            raise AssertionException("Cannot decrypt key '{}'. Missing linked key '{}'".format(key.key_path, key.linked_key.key_path))
         value = self.get_nested_key(key.key_path)
         if key.is_filepath:
             with open(value, 'r') as f:
@@ -228,9 +230,8 @@ class CredentialConfig:
                     return
         else:
             data = value
-        if key.has_linked():
-            passphrase = self.retrieve_key(key.linked_key) or self.get_nested_key(key.linked_key.key_path)
         if data is not None:
+            passphrase = self.retrieve_key(key.linked_key) or self.get_nested_key(key.linked_key.key_path)
             decrypted_data = encryption.decrypt(passphrase, data)
             return decrypted_data
 
@@ -261,8 +262,6 @@ class CredentialConfig:
                 decrypted_key = self.decrypt_key(key)
                 if decrypted_key is not None:
                     self.set_nested_key(key.key_path, pss(decrypted_key))
-                # return decrypted key value for credentials dict? need some way to log that it got decrypted
-                # also would probably want to comment out priv_key_pass at this point or else it won't run
         if key.is_filepath:
             decrypted_key = self.decrypt_key(key)
             if decrypted_key is not None:
@@ -337,9 +336,9 @@ class UmapiCredentialConfig(CredentialConfig):
         pass_key,
         Key(key_path=['enterprise', 'priv_key_data'],
             is_block=True,
-            linked_key=pass_key),
-        Key(key_path=['enterprise', 'priv_key_path'], is_block=False, linked_key=pass_key, is_filepath=True)
+            linked_key=pass_key)
     ]
+    priv_key_path = Key(key_path=['enterprise', 'priv_key_path'], is_block=False, linked_key=pass_key, is_filepath=True)
 
 
 class ConsoleCredentialConfig(UmapiCredentialConfig):
