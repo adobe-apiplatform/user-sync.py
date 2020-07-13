@@ -37,6 +37,23 @@ import user_sync.post_sync.connectors as post_sync_connectors
 
 
 class ConfigLoader(object):
+    """
+    Loads config files and does pathname expansion on settings that refer to files or directories
+    """
+    # key_paths in the root configuration file that should have filename values
+    # mapped to their value options.  See load_from_yaml for the option meanings.
+    ROOT_CONFIG_PATH_KEYS = {'/adobe_users/connectors/umapi': (True, True, None),
+                             '/directory_users/connectors/*': (True, False, None),
+                             '/directory_users/extension': (True, False, None),
+                             '/logging/file_log_directory': (False, False, "logs"),
+                             '/post_sync/connectors/sign_sync': (False, False, False),
+                             '/post_sync/connectors/future_feature': (False, False, False)
+                             }
+
+    # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files
+    SUB_CONFIG_PATH_KEYS = {'/enterprise/priv_key_path': (True, False, None),
+                            '/integration/priv_key_path': (True, False, None)}
+
     # default values for reading configuration files
     # these are in alphabetical order!  Always add new ones that way!
     config_defaults = {
@@ -84,9 +101,9 @@ class ConfigLoader(object):
             codecs.lookup(config_encoding)
         except LookupError:
             raise AssertionException("Unknown encoding '%s' specified for configuration files" % config_encoding)
-        ConfigFileLoader.config_encoding = config_encoding
         self.logger.info("Using main config file: %s (encoding %s)", config_filename, config_encoding)
-        main_config_content = ConfigFileLoader.load_root_config(config_filename)
+        self.config_loader = ConfigFileLoader(config_encoding, self.ROOT_CONFIG_PATH_KEYS, self.SUB_CONFIG_PATH_KEYS)
+        main_config_content = self.config_loader.load_root_config(config_filename)
         return DictConfig("<%s>" % config_filename, main_config_content)
 
     def get_invocation_options(self):
@@ -439,7 +456,7 @@ class ConfigLoader(object):
             return {}
         options = []
         for source in sources:
-            config = ConfigFileLoader.load_sub_config(source)
+            config = self.config_loader.load_sub_config(source)
             options.append(config)
         return self.combine_dicts(options)
 
@@ -882,29 +899,13 @@ class DictConfig(ObjectConfig):
 
 
 class ConfigFileLoader:
-    """
-    Loads config files and does pathname expansion on settings that refer to files or directories
-    """
-    # config files can contain Unicode characters, so an encoding for them
-    # can be specified as a command line argument.  This defaults to utf8.
-    config_encoding = 'utf8'
 
-    # key_paths in the root configuration file that should have filename values
-    # mapped to their value options.  See load_from_yaml for the option meanings.
-    ROOT_CONFIG_PATH_KEYS = {'/adobe_users/connectors/umapi': (True, True, None),
-                             '/directory_users/connectors/*': (True, False, None),
-                             '/directory_users/extension': (True, False, None),
-                             '/logging/file_log_directory': (False, False, "logs"),
-        '/post_sync/connectors/sign_sync': (False, False, False),
-        '/post_sync/connectors/future_feature': (False, False, False)
-                             }
+    def __init__(self, encoding: str, root_path_keys: dict, sub_path_keys: dict):
+        self.encoding = encoding
+        self.root_path_keys = root_path_keys
+        self.sub_path_keys = sub_path_keys
 
-    # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files
-    SUB_CONFIG_PATH_KEYS = {'/enterprise/priv_key_path': (True, False, None),
-                            '/integration/priv_key_path': (True, False, None)}
-
-    @classmethod
-    def load_root_config(cls, filename):
+    def load_root_config(self, filename: str) -> dict:
         """
         loads the specified file as a root configuration file. This basically
         means that on top of loading the file as a yaml file into a dictionary,
@@ -914,39 +915,29 @@ class ConfigFileLoader:
         type filename: str
         rtype dict
         """
-        return cls.load_from_yaml(filename, cls.ROOT_CONFIG_PATH_KEYS)
+        return self.load_from_yaml(filename, self.root_path_keys)
 
-    @classmethod
-    def load_sub_config(cls, filename):
+    def load_sub_config(self, filename: str) -> dict:
         """
         same as load_root_config, but applies SUB_CONFIG_PATH_KEYS to the
         dictionary loaded from the yaml file.
         """
-        return cls.load_from_yaml(filename, cls.SUB_CONFIG_PATH_KEYS)
+        return self.load_from_yaml(filename, self.sub_path_keys)
 
-    @classmethod
-    def load_other_config(cls, filename):
+    def load_other_config(self, filename: str) -> dict:
         """
         same as load_root_config, but does no post-processing.
         :type filename: str
         """
-        return cls.load_from_yaml(filename, {})
+        return self.load_from_yaml(filename, {})
 
-    # these are set by load_from_yaml to hold the current state of what
-    # key_path is being searched for in what file in what directory
-    filepath = None  # absolute path of file currently being loaded
-    filename = None  # filename of file currently being loaded
-    dirpath = None  # directory path of file currently being loaded
-    key_path = None  # the full pathname of the setting key being processed
-
-    @classmethod
-    def load_from_yaml(cls, filename, path_keys):
+    def load_from_yaml(self, filepath, path_keys):
         """
         loads a yaml file, processes the resulting dict to adapt values for keys
         (the path to which is defined in path_keys) to a value that represents
         a file reference relative to the source file being loaded, and returns the
         processed dict.
-        :param filename: the file to load yaml from
+        :param filepath: the file to load yaml from
         :param path_keys: a dict whose keys are "path_keys" such as /key1/key2/key3
                           and whose values are tuples: (must_exist, can_have_subdict, default_val)
                           which are options on the value of the key whose values
@@ -955,45 +946,45 @@ class ConfigFileLoader:
                           does the key have a default value so that must be added to
                           the dictionary if there is not already a value found.
         """
-        if filename.startswith('$(') and filename.endswith(')'):
-            raise AssertionException("Shell execution is no longer supported: {}".format(filename))
+        print(filepath)
+        if filepath.startswith('$(') and filepath.endswith(')'):
+            raise AssertionException("Shell execution is no longer supported: {}".format(filepath))
 
-        cls.filepath = os.path.abspath(filename)
-        if not os.path.isfile(cls.filepath):
-            raise AssertionException('No such configuration file: %s' % (cls.filepath,))
-        cls.filename = os.path.split(cls.filepath)[1]
-        cls.dirpath = os.path.dirname(cls.filepath)
+        filepath = os.path.abspath(filepath)
+        if not os.path.isfile(filepath):
+            raise AssertionException('No such configuration file: {}'.format(filepath))
+        filename = os.path.split(filepath)[1]
+        dirpath = os.path.dirname(filepath)
         try:
-            with open(filename, 'rb', 1) as input_file:
+            with open(filepath, 'rb', 1) as input_file:
                 byte_string = input_file.read()
-                yml = yaml.safe_load(byte_string.decode(cls.config_encoding, 'strict'))
+                yml = yaml.safe_load(byte_string.decode(self.encoding, 'strict'))
         except IOError as e:
             # if a file operation error occurred while loading the
             # configuration file, swallow up the exception and re-raise it
             # as an configuration loader exception.
-            raise AssertionException("Error reading configuration file '%s': %s" % (cls.filepath, e))
+            raise AssertionException("Error reading configuration file '{}': {}".format(filepath, e))
         except UnicodeDecodeError as e:
             # as above, but in case of encoding errors
-            raise AssertionException("Encoding error in configuration file '%s: %s" % (cls.filepath, e))
+            raise AssertionException("Encoding error in configuration file '{}: {}".format(filepath, e))
         except yaml.error.MarkedYAMLError as e:
             # as above, but in case of parse errors
-            raise AssertionException("Error parsing configuration file '%s': %s" % (cls.filepath, e))
+            raise AssertionException("Error parsing configuration file '{}': {}".format(filepath, e))
 
         # process the content of the dict
         if yml is None:
             # empty YML files are parsed as None
-            yml = {}
-        elif not isinstance(yml, dict):
+            return {}
+        if not isinstance(yml, dict):
             # malformed YML files produce a non-dictionary
-            raise AssertionException("Configuration file or command '%s' does not contain settings" % cls.filepath)
+            raise AssertionException("Configuration file or command '{}' does not contain settings".format(filepath))
         for path_key, options in six.iteritems(path_keys):
-            cls.key_path = path_key
+            key_path = path_key
             keys = path_key.split('/')
-            cls.process_path_key(yml, keys, 1, *options)
+            self.process_path_key(dirpath, filename, key_path, yml, keys, 1, *options)
         return yml
 
-    @classmethod
-    def process_path_key(cls, dictionary, keys, level, must_exist, can_have_subdict, default_val):
+    def process_path_key(self, dirpath, filename, key_path, dictionary, keys, level, must_exist, can_have_subdict, default_val):
         """
         this function is given the list of keys in the current key_path, and searches
         recursively into the given dictionary until it finds the designated value, and then
@@ -1014,36 +1005,29 @@ class ConfigFileLoader:
             # should process all keys as path values
             if key == "*":
                 for key, val in six.iteritems(dictionary):
-                    dictionary[key] = cls.process_path_value(val, must_exist, can_have_subdict)
+                    dictionary[key] = self.process_path_value(dirpath, filename, key_path, val, must_exist, can_have_subdict)
             elif key in dictionary:
-                dictionary[key] = cls.process_path_value(dictionary[key], must_exist, can_have_subdict)
+                dictionary[key] = self.process_path_value(dirpath, filename, key_path, dictionary[key], must_exist, can_have_subdict)
             # key was not found, but default value was set, so apply it
             elif default_val:
-                dictionary[key] = cls.relative_path(default_val, must_exist)
+                dictionary[key] = self.relative_path(dirpath, filename, key_path, default_val, must_exist)
         # otherwise recurse deeper into the dict
         elif level < len(keys) - 1:
             key = keys[level]
-            # if a wildcard is specified at this level, this indicates this
-            # should select all keys that have dict type values, and recurse
-            # into them at the next level
-            if key == "*":
-                for key in dictionary.keys():
-                    if isinstance(dictionary[key], dict):
-                        cls.process_path_key(dictionary[key], keys, level + 1,
-                                             must_exist, can_have_subdict, default_val)
-            elif key in dictionary:
+            if key in dictionary:
                 # if the key refers to a dictionary, recurse into it to go
                 # further down the path key
                 if isinstance(dictionary[key], dict):
-                    cls.process_path_key(dictionary[key], keys, level + 1, must_exist, can_have_subdict, default_val)
+                    self.process_path_key(dirpath, filename, key_path, dictionary[key], keys, level + 1,
+                                          must_exist, can_have_subdict, default_val)
             # if the key was not found, but a default value is specified,
             # drill down further to set the default value
             elif default_val:
                 dictionary[key] = {}
-                cls.process_path_key(dictionary[key], keys, level + 1, must_exist, can_have_subdict, default_val)
+                self.process_path_key(dirpath, filename, key_path, dictionary[key], keys, level + 1,
+                                      must_exist, can_have_subdict, default_val)
 
-    @classmethod
-    def process_path_value(cls, val, must_exist, can_have_subdict):
+    def process_path_value(self, dirpath, filename, key_path, val, must_exist, can_have_subdict):
         """
         does the relative path processing for a value from the dictionary,
         which can be a string, a list of strings, or a list of strings
@@ -1053,33 +1037,30 @@ class ConfigFileLoader:
         :param can_have_subdict: whether the value can be a tagged string
         """
         if isinstance(val, six.string_types):
-            return cls.relative_path(val, must_exist)
+            return self.relative_path(dirpath, filename, key_path, val, must_exist)
         elif isinstance(val, list):
             vals = []
             for entry in val:
                 if can_have_subdict and isinstance(entry, dict):
                     for subkey, subval in six.iteritems(entry):
-                        vals.append({subkey: cls.relative_path(subval, must_exist)})
+                        vals.append({subkey: self.relative_path(dirpath, filename, key_path, subval, must_exist)})
                 else:
-                    vals.append(cls.relative_path(entry, must_exist))
+                    vals.append(self.relative_path(dirpath, filename, key_path, entry, must_exist))
             return vals
 
-    @classmethod
-    def relative_path(cls, val, must_exist):
+    @staticmethod
+    def relative_path(dirpath, filename, key_path, val, must_exist):
         """
         returns an absolute path that is resolved relative to the file being loaded
         """
         if not isinstance(val, six.string_types):
-            raise AssertionException("Expected pathname for setting %s in config file %s" %
-                                     (cls.key_path, cls.filename))
+            raise AssertionException("Expected pathname for setting {} in config file {}".format(key_path, filename))
         if val.startswith('$(') and val.endswith(')'):
-            # this presumes
-            return "$([" + cls.dirpath + "]" + val[2:-1] + ")"
-        if cls.dirpath and not os.path.isabs(val):
-            val = os.path.abspath(os.path.join(cls.dirpath, val))
+            raise AssertionException("Shell execution is no longer supported: {}".format(val))
+        if dirpath and not os.path.isabs(val):
+            val = os.path.abspath(os.path.join(dirpath, val))
         if must_exist and not os.path.isfile(val):
-            raise AssertionException('In setting %s in config file %s: No such file %s' %
-                                     (cls.key_path, cls.filename, val))
+            raise AssertionException('In setting {} in config file {}: No such file {}'.format(key_path, filename, val))
         return val
 
 
