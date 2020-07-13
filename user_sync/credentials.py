@@ -148,6 +148,9 @@ class CredentialConfig:
 
             if val is not None:
                 credentials[':'.join(label)] = val
+        if isinstance(self, UmapiCredentialConfig):
+            if self.priv_key_path is not None:
+                result = action(self.priv_key_path)
         return credentials
 
     def store(self):
@@ -191,7 +194,7 @@ class CredentialConfig:
         :return:
         """
         value = self.get_nested_key(key.key_path) or value
-        if value is None:
+        if value is None or key.is_filepath:
             return
         if not self.parse_secure_key(value):
             k = self.get_qualified_identifier(key.key_path)
@@ -221,7 +224,8 @@ class CredentialConfig:
 
     def decrypt_key(self, key):
         if not key.has_linked():
-            raise AssertionException("Cannot decrypt key '{}'. Missing linked key '{}'".format(key.key_path, key.linked_key.key_path))
+            raise AssertionException(
+                "Cannot decrypt key '{}'. Missing linked key '{}'".format(key.key_path, key.linked_key.key_path))
         value = self.get_nested_key(key.key_path)
         if key.is_filepath:
             with open(value, 'r') as f:
