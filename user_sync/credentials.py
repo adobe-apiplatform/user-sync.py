@@ -149,7 +149,7 @@ class CredentialConfig:
             if val is not None:
                 credentials[':'.join(label)] = val
         if isinstance(self, UmapiCredentialConfig):
-            if self.priv_key_path is not None:
+            if self.get_nested_key(self.priv_key_path.key_path) is not None:
                 result = action(self.priv_key_path)
         return credentials
 
