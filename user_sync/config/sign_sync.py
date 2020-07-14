@@ -1,7 +1,7 @@
 import logging
 import codecs
 
-from user_sync.config.user_sync import DictConfig, ConfigFileLoader
+from user_sync.config.common import DictConfig, ConfigFileLoader
 from user_sync.error import AssertionException
 
 
