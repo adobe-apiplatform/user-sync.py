@@ -24,7 +24,7 @@ import six
 from itertools import chain
 from collections import defaultdict
 
-import user_sync.connector.umapi
+import user_sync.connector.connector_umapi
 import user_sync.error
 import user_sync.identity_type
 from user_sync.post_sync.manager import PostSyncData

@@ -35,15 +35,14 @@ import user_sync.connector.directory_adobe_console
 import user_sync.connector.directory_csv
 import user_sync.connector.directory_ldap
 import user_sync.connector.directory_okta
-import user_sync.connector.umapi
 import user_sync.encryption
-import user_sync.engine.umapi_engine
 import user_sync.helper
 import user_sync.lockfile
 import user_sync.resource
-import user_sync.rules
 from user_sync.config import user_sync as config
 from user_sync.config import common as config_common
+from user_sync.connector.connector_umapi import UmapiConnector
+from user_sync.engine import umapi as rules
 
 from user_sync.post_sync.manager import PostSyncManager
 import user_sync.post_sync.connectors.sign_sync
@@ -424,10 +423,10 @@ def begin_work(config_loader):
             raise AssertionException(
                 "Failed to enable dynamic group mappings. 'dynamic_group_member_attribute' is not defined in config")
     primary_name = '.primary' if secondary_umapi_configs else ''
-    umapi_primary_connector = user_sync.connector.umapi.UmapiConnector(primary_name, primary_umapi_config)
+    umapi_primary_connector = UmapiConnector(primary_name, primary_umapi_config)
     umapi_other_connectors = {}
     for secondary_umapi_name, secondary_config in six.iteritems(secondary_umapi_configs):
-        umapi_secondary_conector = user_sync.connector.umapi.UmapiConnector(".secondary.%s" % secondary_umapi_name,
+        umapi_secondary_conector = UmapiConnector(".secondary.%s" % secondary_umapi_name,
                                                                             secondary_config)
         umapi_other_connectors[secondary_umapi_name] = umapi_secondary_conector
     umapi_connectors = user_sync.engine.umapi_engine.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
