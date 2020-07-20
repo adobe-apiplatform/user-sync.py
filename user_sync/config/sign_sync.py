@@ -2,9 +2,16 @@ import logging
 import codecs
 
 from copy import deepcopy
+from schema import Schema
 
 from user_sync.config.common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options
 from user_sync.error import AssertionException
+from .error import ConfigValidationError
+
+
+def config_schema() -> Schema:
+    from schema import And, Use, Optional, Or
+    return Schema({})
 
 
 class SignConfigLoader(ConfigLoader):
@@ -33,7 +40,10 @@ class SignConfigLoader(ConfigLoader):
     def __init__(self, args: dict):
         self.logger = logging.getLogger('sign_config')
         self.args = args
-        self.main_config = self.load_main_config()
+        filename, encoding = self._config_file_info()
+        self.raw_config = self._load_raw_config(filename, encoding)
+        self._validate(self.raw_config)
+        self.main_config = self.load_main_config(filename, self.raw_config)
         self.invocation_options = self.load_invocation_options()
     
     def load_invocation_options(self) -> dict:
@@ -42,17 +52,30 @@ class SignConfigLoader(ConfigLoader):
         options = resolve_invocation_options(options, invocation_config, self.invocation_defaults, self.args)
         return options
 
-    def load_main_config(self) -> DictConfig:
-        config_filename = self.args.get('config_filename') or self.config_defaults['config_filename']
-        config_encoding = self.args.get('encoding_name') or self.config_defaults['config_encoding']
+    def load_main_config(self, filename, content) -> DictConfig:
+        return DictConfig("<%s>" % filename, content)
+    
+    def _config_file_info(self) -> (str, str):
+        filename = self.args.get('config_filename') or self.config_defaults['config_filename']
+        encoding = self.args.get('encoding_name') or self.config_defaults['config_encoding']
         try:
-            codecs.lookup(config_encoding)
+            codecs.lookup(encoding)
         except LookupError:
-            raise AssertionException("Unknown encoding '%s' specified for configuration files" % config_encoding)
-        self.logger.info("Using main config file: %s (encoding %s)", config_filename, config_encoding)
-        config_loader = ConfigFileLoader(config_encoding, self.ROOT_CONFIG_PATH_KEYS, self.SUB_CONFIG_PATH_KEYS)
-        main_config_content = config_loader.load_root_config(config_filename)
-        return DictConfig("<%s>" % config_filename, main_config_content)
+            raise AssertionException("Unknown encoding '%s' specified for configuration files" % encoding)
+        return filename, encoding
+
+    def _load_raw_config(self, filename, encoding) -> dict:
+        self.logger.info("Using main config file: %s (encoding %s)", filename, encoding)
+        config_loader = ConfigFileLoader(encoding, self.ROOT_CONFIG_PATH_KEYS, self.SUB_CONFIG_PATH_KEYS)
+        return config_loader.load_root_config(filename)
+    
+    @staticmethod
+    def _validate(raw_config):
+        from schema import SchemaError
+        try:
+            config_schema().validate(raw_config)
+        except SchemaError as e:
+            raise ConfigValidationError(e.code) from e
 
     def get_directory_groups(self):
         pass
