@@ -44,6 +44,7 @@ from user_sync.config import common as config_common
 from user_sync.config.sign_sync import SignConfigLoader
 from user_sync.connector.connector_umapi import UmapiConnector
 from user_sync.engine import umapi as rules
+from user_sync.engine.common import PRIMARY_TARGET_NAME
 
 from user_sync.post_sync.manager import PostSyncManager
 import user_sync.post_sync.connectors.sign_sync
@@ -462,7 +463,7 @@ def begin_work(config_loader):
     for groups in six.itervalues(directory_groups):
         for group in groups:
             umapi_name = group.umapi_name
-            if umapi_name != user_sync.engine.umapi.PRIMARY_UMAPI_NAME:
+            if umapi_name != PRIMARY_TARGET_NAME:
                 referenced_umapi_names.add(umapi_name)
     referenced_umapi_names.difference_update(six.iterkeys(secondary_umapi_configs))
     if len(referenced_umapi_names) > 0:
