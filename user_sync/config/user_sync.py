@@ -34,7 +34,7 @@ from user_sync import flags
 from user_sync.engine import umapi as rules
 from user_sync.error import AssertionException
 import user_sync.post_sync.connectors as post_sync_connectors
-from .common import DictConfig, ConfigFileLoader
+from .common import DictConfig, ConfigFileLoader, resolve_invocation_options
 
 
 class ConfigLoader(object):
@@ -119,28 +119,8 @@ class ConfigLoader(object):
         # otherwise, setting options also sets invocation_defaults (same memory ref)
         options = deepcopy(self.invocation_defaults)
 
-        # get overrides from the main config
         invocation_config = self.main_config.get_dict_config('invocation_defaults', True)
-        if invocation_config:
-            for k, v in six.iteritems(self.invocation_defaults):
-                if isinstance(v, bool):
-                    val = invocation_config.get_bool(k, True)
-                    if val is not None:
-                        options[k] = val
-                elif isinstance(v, list):
-                    val = invocation_config.get_list(k, True)
-                    if val:
-                        options[k] = val
-                else:
-                    val = invocation_config.get_string(k, True)
-                    if val:
-                        options[k] = val
-
-        # now handle overrides from CLI options
-        for k, arg_val in self.args.items():
-            if arg_val is None:
-                continue
-            options[k] = arg_val
+        options = resolve_invocation_options(options, invocation_config, self.invocation_defaults, self.args)
 
         # now process command line options.  the order of these is important,
         # because options processed later depend on the values of those processed earlier

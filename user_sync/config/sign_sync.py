@@ -1,7 +1,9 @@
 import logging
 import codecs
 
-from user_sync.config.common import DictConfig, ConfigFileLoader
+from copy import deepcopy
+
+from user_sync.config.common import DictConfig, ConfigFileLoader, resolve_invocation_options
 from user_sync.error import AssertionException
 
 
@@ -34,11 +36,14 @@ class SignConfigLoader:
     def __init__(self, args: dict):
         self.logger = logging.getLogger('sign_config')
         self.args = args
-        self.invocation_options = self.load_invocation_options()
         self.main_config = self.load_main_config()
+        self.invocation_options = self.load_invocation_options()
     
     def load_invocation_options(self) -> dict:
-        return self.invocation_defaults
+        options = deepcopy(self.invocation_defaults)
+        invocation_config = self.main_config.get_dict_config('invocation_defaults', True)
+        options = resolve_invocation_options(options, invocation_config, self.invocation_defaults, self.args)
+        return options
 
     def load_main_config(self) -> DictConfig:
         config_filename = self.args.get('config_filename') or self.config_defaults['config_filename']

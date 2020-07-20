@@ -507,3 +507,28 @@ class OptionsBuilder(object):
             raise AssertionException("No config found.")
         self.options[key] = value = config.get_value(key, allowed_types)
         return value
+        
+        
+def resolve_invocation_options(options: dict, invocation_config: DictConfig, invocation_defaults: dict, args: dict) -> dict:
+    # get overrides from the main config
+    if invocation_config:
+        for k, v in six.iteritems(invocation_defaults):
+            if isinstance(v, bool):
+                val = invocation_config.get_bool(k, True)
+                if val is not None:
+                    options[k] = val
+            elif isinstance(v, list):
+                val = invocation_config.get_list(k, True)
+                if val:
+                    options[k] = val
+            else:
+                val = invocation_config.get_string(k, True)
+                if val:
+                    options[k] = val
+
+    # now handle overrides from CLI options
+    for k, arg_val in args.items():
+        if arg_val is None:
+            continue
+        options[k] = arg_val
+    return options
