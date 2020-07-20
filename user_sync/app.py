@@ -177,7 +177,7 @@ def sync(**kwargs):
         del(kwargs['sign_sync_config'])
     try:
         # load the config files and start the file logger
-        config_loader = config.ConfigLoader(kwargs)
+        config_loader = config.UMAPIConfigLoader(kwargs)
         init_log(config_loader.get_logging_config())
 
         # add start divider, app version number, and invocation parameters to log
@@ -437,7 +437,7 @@ def log_parameters(argv, config_loader):
     :param argv: command line arguments (a la sys.argv)
     :type argv: list(str)
     :param config_loader: the main configuration loader
-    :type config_loader: config.ConfigLoader
+    :type config_loader: config.UMAPIConfigLoader
     :return: None
     """
     logger.info('Python version: %s.%s.%s on %s' % (sys.version_info[:3] + (sys.platform,)))
@@ -451,7 +451,7 @@ def log_parameters(argv, config_loader):
 
 def begin_work(config_loader):
     """
-    :type config_loader: config.ConfigLoader
+    :type config_loader: config.UMAPIConfigLoader
     """
     directory_groups = config_loader.get_directory_groups()
     rule_config = config_loader.get_rule_options()

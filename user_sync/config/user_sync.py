@@ -37,7 +37,7 @@ import user_sync.post_sync.connectors as post_sync_connectors
 from .common import DictConfig, ConfigFileLoader, resolve_invocation_options
 
 
-class ConfigLoader(object):
+class UMAPIConfigLoader:
     """
     Loads config files and does pathname expansion on settings that refer to files or directories
     """

@@ -4,8 +4,9 @@ import shutil
 import pytest
 import yaml
 
-from tests.util import update_dict
-from user_sync.config.user_sync import ConfigLoader
+import shutil
+
+from user_sync.config.user_sync import UMAPIConfigLoader
 
 
 @pytest.fixture
@@ -24,7 +25,7 @@ def cli_args():
         """
 
         args_out = {}
-        for k in ConfigLoader.invocation_defaults:
+        for k in UMAPIConfigLoader.invocation_defaults:
             args_out[k] = None
         for k, v in args_in.items():
             args_out[k] = v
