@@ -34,10 +34,10 @@ from user_sync import flags
 from user_sync.engine import umapi as rules
 from user_sync.error import AssertionException
 import user_sync.post_sync.connectors as post_sync_connectors
-from .common import DictConfig, ConfigFileLoader, resolve_invocation_options
+from .common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options
 
 
-class UMAPIConfigLoader:
+class UMAPIConfigLoader(ConfigLoader):
     """
     Loads config files and does pathname expansion on settings that refer to files or directories
     """

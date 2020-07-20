@@ -3,11 +3,38 @@ import os
 
 import six
 import yaml
+from abc import ABC, abstractmethod
 
 import user_sync.helper
 import user_sync.identity_type
 import user_sync.port
 from user_sync.error import AssertionException
+
+
+class ConfigLoader(ABC):
+    @abstractmethod
+    def get_invocation_options(self):
+        pass
+
+    @abstractmethod
+    def get_directory_groups(self):
+        pass
+
+    @abstractmethod
+    def get_directory_connector_module_name(self):
+        pass
+
+    @abstractmethod
+    def get_directory_connector_options(self):
+        pass
+
+    @abstractmethod
+    def check_unused_config_keys(self):
+        pass
+
+    @abstractmethod
+    def get_logging_config(self):
+        pass
 
 
 class ObjectConfig:

@@ -3,11 +3,11 @@ import codecs
 
 from copy import deepcopy
 
-from user_sync.config.common import DictConfig, ConfigFileLoader, resolve_invocation_options
+from user_sync.config.common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options
 from user_sync.error import AssertionException
 
 
-class SignConfigLoader:
+class SignConfigLoader(ConfigLoader):
     """
     Loads config files and does pathname expansion on settings that refer to files or directories
     """
@@ -53,3 +53,21 @@ class SignConfigLoader:
         config_loader = ConfigFileLoader(config_encoding, self.ROOT_CONFIG_PATH_KEYS, self.SUB_CONFIG_PATH_KEYS)
         main_config_content = config_loader.load_root_config(config_filename)
         return DictConfig("<%s>" % config_filename, main_config_content)
+
+    def get_directory_groups(self):
+        pass
+
+    def get_directory_connector_module_name(self):
+        pass
+
+    def get_directory_connector_options(self):
+        pass
+
+    def check_unused_config_keys(self):
+        pass
+
+    def get_logging_config(self):
+        pass
+
+    def get_invocation_options(self):
+        pass
