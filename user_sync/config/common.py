@@ -10,7 +10,7 @@ import user_sync.port
 from user_sync.error import AssertionException
 
 
-class ObjectConfig(object):
+class ObjectConfig:
     def __init__(self, scope):
         """
         :type scope: str
@@ -452,7 +452,7 @@ class ConfigFileLoader:
         return val
 
 
-class OptionsBuilder(object):
+class OptionsBuilder:
     def __init__(self, default_config):
         """
         :type default_config: DictConfig
