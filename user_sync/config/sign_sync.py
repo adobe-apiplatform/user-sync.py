@@ -13,12 +13,9 @@ class SignConfigLoader:
     """
     # key_paths in the root configuration file that should have filename values
     # mapped to their value options.  See load_from_yaml for the option meanings.
-    ROOT_CONFIG_PATH_KEYS = {'/adobe_users/connectors/umapi': (True, True, None),
-                             '/directory_users/connectors/*': (True, False, None),
-                             '/directory_users/extension': (True, False, None),
-                             '/logging/file_log_directory': (False, False, "logs"),
-                             '/post_sync/connectors/sign_sync': (False, False, False),
-                             '/post_sync/connectors/future_feature': (False, False, False)
+    ROOT_CONFIG_PATH_KEYS = {'/sign_orgs/*': (True, False, None),
+                             '/identity_source/connector': (True, False, None),
+                             '/logging/file_log_directory': (False, False, "sign_logs"),
                              }
 
     # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files
