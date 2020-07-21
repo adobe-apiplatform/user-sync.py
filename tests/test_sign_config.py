@@ -104,3 +104,18 @@ def test_group_config(modify_sign_config, tmp_sign_connector_config, tmp_config_
     assert 'Test Group 2' in group_mappings
     for mapping in group_mappings['Test Group 2']:
         assert mapping in [AdobeGroup.create('Sign Group 2'), AdobeGroup.create('Sign Group 3')]
+
+
+
+# NOTE: tmp_sign_connector_config and tmp_config_files are needed to prevent the ConfigFileLoader
+# from complaining that there are no temporary sign connector or ldap connector files
+def test_identity_module(sign_config_file, modify_sign_config, tmp_sign_connector_config, tmp_config_files):
+    """ensure directory module name is correct"""
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    assert config.get_directory_connector_module_name() == 'user_sync.connector.directory_ldap'
+
+    sign_config_file = modify_sign_config(['identity_source', 'type'], 'okta')
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    assert config.get_directory_connector_module_name() == 'user_sync.connector.directory_okta'

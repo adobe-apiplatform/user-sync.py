@@ -120,10 +120,13 @@ class SignConfigLoader(ConfigLoader):
                 group_mapping[dir_group].append(group)
         return dict(group_mapping)
 
-    def get_directory_connector_module_name(self):
-        pass
+    def get_directory_connector_module_name(self) -> str:
+        # these .get()s can be safely chained because we've already validated the config schema
+        connector_type = self.main_config.get_dict('identity_source').get('type')
+        # we can also assume connector_type is valid, no need to check it
+        return 'user_sync.connector.directory_' + connector_type
 
-    def get_directory_connector_options(self):
+    def get_directory_connector_options(self, name: str) -> dict:
         pass
 
     def check_unused_config_keys(self):

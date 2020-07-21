@@ -21,11 +21,11 @@ class ConfigLoader(ABC):
         pass
 
     @abstractmethod
-    def get_directory_connector_module_name(self):
+    def get_directory_connector_module_name(self) -> str:
         pass
 
     @abstractmethod
-    def get_directory_connector_options(self):
+    def get_directory_connector_options(self, name: str) -> dict:
         pass
 
     @abstractmethod
