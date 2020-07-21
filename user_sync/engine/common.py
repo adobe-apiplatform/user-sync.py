@@ -25,7 +25,10 @@ class AdobeGroup:
         return hash(frozenset(self.__dict__))
 
     def __str__(self):
-        return str(self.__dict__)
+        return 'AdobeGroup({})'.format(str(self.__dict__))
+
+    def __repr__(self):
+        return 'AdobeGroup({})'.format(str(self.__dict__))
 
     def get_qualified_name(self):
         prefix = ""

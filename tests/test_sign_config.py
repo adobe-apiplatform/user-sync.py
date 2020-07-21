@@ -6,6 +6,7 @@ import shutil
 from util import update_dict
 from user_sync.config.sign_sync import SignConfigLoader
 from user_sync.config.user_sync import DictConfig
+from user_sync.engine.common import AdobeGroup
 
 
 @pytest.fixture
@@ -92,3 +93,30 @@ def test_invocation_defaults(modify_sign_config, tmp_sign_connector_config, tmp_
     config = SignConfigLoader(args)
     assert 'users' in config.invocation_options
     assert config.invocation_options['users'] == ['some_option']
+
+
+# NOTE: tmp_sign_connector_config and tmp_config_files are needed to prevent the ConfigFileLoader
+# from complaining that there are no temporary sign connector or ldap connector files
+def test_group_config(modify_sign_config, tmp_sign_connector_config, tmp_config_files):
+    """ensure that group mappings are loaded correctly"""
+    # simple case
+    group_config = [{'directory_group': 'Test Group 1', 'sign_group': 'Sign Group 1', 'admin_role': None}]
+    sign_config_file = modify_sign_config(['user_management'], group_config)
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    group_mappings = config.get_directory_groups()
+    assert 'Test Group 1' in group_mappings
+    assert group_mappings['Test Group 1'] == [AdobeGroup.create('Sign Group 1')]
+
+    # complex case
+    group_config.append({'directory_group': 'Test Group 2', 'sign_group': 'Sign Group 2', 'admin_role': None})
+    group_config.append({'directory_group': 'Test Group 2', 'sign_group': 'Sign Group 3', 'admin_role': None})
+    sign_config_file = modify_sign_config(['user_management'], group_config)
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    group_mappings = config.get_directory_groups()
+    assert len(group_mappings) == 2
+    assert 'Test Group 1' in group_mappings
+    assert 'Test Group 2' in group_mappings
+    for mapping in group_mappings['Test Group 2']:
+        assert mapping in [AdobeGroup.create('Sign Group 2'), AdobeGroup.create('Sign Group 3')]

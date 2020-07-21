@@ -2,20 +2,23 @@ import logging
 import codecs
 
 from copy import deepcopy
+from collections import defaultdict
+from typing import Dict
 from schema import Schema
 
 from user_sync.config.common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options
 from user_sync.error import AssertionException
+from user_sync.engine.common import AdobeGroup
 from .error import ConfigValidationError
 
 
 def config_schema() -> Schema:
-    from schema import And, Use, Optional, Or, Regex
+    from schema import And, Optional, Or, Regex
     return Schema({
         'sign_orgs': { str: str },
         'identity_source': {
             'connector': And(str, len),
-            'type': Or('csv', 'okta', 'ldap', 'adobe_console'),
+            'type': Or('csv', 'okta', 'ldap', 'adobe_console'), #TODO: single "source of truth" for these options
         },
         'user_sync': {
             'create_users': bool,
@@ -24,7 +27,7 @@ def config_schema() -> Schema:
         'user_management': [{
             'directory_group': Or(None, And(str, len)),
             'sign_group': Or(None, And(str, len)),
-            'admin_role': Or(None, 'GROUP_ADMIN', 'ACCOUNT_ADMIN'),
+            'admin_role': Or(None, 'GROUP_ADMIN', 'ACCOUNT_ADMIN'), #TODO: single "source of truth" for these options
         }],
         'logging': {
             'log_to_file': bool,
@@ -34,7 +37,7 @@ def config_schema() -> Schema:
             'console_log_level': Or('info', 'debug'), #TODO: what are the valid values here?
         },
         'invocation_defaults': {
-            'users': Or('mapped', 'all'),
+            'users': Or('mapped', 'all'), #TODO: single "source of truth" for these options
         }
     })
 
@@ -95,15 +98,27 @@ class SignConfigLoader(ConfigLoader):
         return config_loader.load_root_config(filename)
     
     @staticmethod
-    def _validate(raw_config):
+    def _validate(raw_config: dict):
         from schema import SchemaError
         try:
             config_schema().validate(raw_config)
         except SchemaError as e:
             raise ConfigValidationError(e.code) from e
 
-    def get_directory_groups(self):
-        pass
+    def get_directory_groups(self) -> Dict[str, AdobeGroup]:
+        group_mapping = defaultdict(list)
+        group_config = self.main_config.get_list_config('user_management', True)
+        if group_config is None:
+            return group_mapping
+        for mapping in group_config.iter_dict_configs():
+            dir_group = mapping.get_string('directory_group')
+            adobe_group = mapping.get_string('sign_group', True)
+            group = AdobeGroup.create(adobe_group)
+            if group is None:
+                raise AssertionException('Bad Sign group: "{}" in directory group: "{}"'.format(adobe_group, dir_group))
+            if group not in group_mapping[dir_group]:
+                group_mapping[dir_group].append(group)
+        return dict(group_mapping)
 
     def get_directory_connector_module_name(self):
         pass
@@ -118,4 +133,4 @@ class SignConfigLoader(ConfigLoader):
         pass
 
     def get_invocation_options(self):
-        pass
+        return self.invocation_options

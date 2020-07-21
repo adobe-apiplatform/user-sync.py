@@ -211,7 +211,7 @@ class DictConfig(ObjectConfig):
             value = [value]
         return value
 
-    def get_list_config(self, key, none_allowed=False):
+    def get_list_config(self, key, none_allowed=False) -> ListConfig:
         """
         :rtype ListConfig
         """
