@@ -10,8 +10,33 @@ from .error import ConfigValidationError
 
 
 def config_schema() -> Schema:
-    from schema import And, Use, Optional, Or
-    return Schema({})
+    from schema import And, Use, Optional, Or, Regex
+    return Schema({
+        'sign_orgs': { str: str },
+        'identity_source': {
+            'connector': And(str, len),
+            'type': Or('csv', 'okta', 'ldap', 'adobe_console'),
+        },
+        'user_sync': {
+            'create_users': bool,
+            'sign_only_limit': Or(int, Regex(r'^\d+%$')),
+        },
+        'user_management': [{
+            'directory_group': Or(None, And(str, len)),
+            'sign_group': Or(None, And(str, len)),
+            'admin_role': Or(None, 'GROUP_ADMIN', 'ACCOUNT_ADMIN'),
+        }],
+        'logging': {
+            'log_to_file': bool,
+            'file_log_directory': And(str, len),
+            'file_log_name_format': And(str, len),
+            'file_log_level': Or('info', 'debug'), #TODO: what are the valid values here?
+            'console_log_level': Or('info', 'debug'), #TODO: what are the valid values here?
+        },
+        'invocation_defaults': {
+            'users': Or('mapped', 'all'),
+        }
+    })
 
 
 class SignConfigLoader(ConfigLoader):
