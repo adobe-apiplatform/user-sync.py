@@ -66,11 +66,6 @@ def root_config_file(fixture_dir):
 
 
 @pytest.fixture
-def sign_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'sign-sync-config.yml')
-
-
-@pytest.fixture
 def ldap_config_file(fixture_dir):
     return os.path.join(fixture_dir, 'connector-ldap.yml')
 

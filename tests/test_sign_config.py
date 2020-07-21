@@ -1,19 +1,47 @@
 import logging
 import pytest
 import yaml
+import os
+import shutil
 from util import update_dict
 from user_sync.config.sign_sync import SignConfigLoader
 from user_sync.config.user_sync import DictConfig
 
 
 @pytest.fixture
-def modify_sign_config(sign_config_file):
-    def _modify_sign_config(keys, val):
-        conf = yaml.safe_load(open(sign_config_file))
-        conf = update_dict(conf, keys, val)
-        yaml.dump(conf, open(sign_config_file, 'w'))
+def sign_config_file(fixture_dir):
+    return os.path.join(fixture_dir, 'sign-sync-config.yml')
 
-        return sign_config_file
+
+@pytest.fixture
+def sign_connector_config(fixture_dir):
+    return os.path.join(fixture_dir, 'connector-sign.yml')
+
+
+@pytest.fixture
+def tmp_sign_config_file(sign_config_file, tmpdir):
+    basename = os.path.split(sign_config_file)[-1]
+    tmpfile = os.path.join(str(tmpdir), basename)
+    shutil.copy(sign_config_file, tmpfile)
+    return tmpfile
+
+
+@pytest.fixture
+def tmp_sign_connector_config(sign_connector_config, tmpdir):
+    basename = os.path.split(sign_connector_config)[-1]
+    tmpfile = os.path.join(str(tmpdir), basename)
+    shutil.copy(sign_connector_config, tmpfile)
+    return tmpfile
+
+
+@pytest.fixture
+def modify_sign_config(tmp_sign_config_file):
+    def _modify_sign_config(keys, val):
+        conf = yaml.safe_load(open(tmp_sign_config_file))
+        conf = update_dict(conf, keys, val)
+        yaml.dump(conf, open(tmp_sign_config_file, 'w'))
+
+        return tmp_sign_config_file
     return _modify_sign_config
 
 
@@ -51,7 +79,9 @@ def test_config_structure(sign_config_file):
     assert 'users' in config.main_config.get_dict('invocation_defaults')
 
 
-def test_invocation_defaults(modify_sign_config):
+# NOTE: tmp_sign_connector_config and tmp_config_files are needed to prevent the ConfigFileLoader
+# from complaining that there are no temporary sign connector or ldap connector files
+def test_invocation_defaults(modify_sign_config, tmp_sign_connector_config, tmp_config_files):
     """ensure that invocation defaults are resolved correctly"""
     sign_config_file = modify_sign_config(['invocation_defaults', 'users'], 'all')
     args = {'config_filename': sign_config_file}
