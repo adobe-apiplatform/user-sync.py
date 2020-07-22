@@ -107,7 +107,6 @@ def test_group_config(modify_sign_config, tmp_sign_connector_config, tmp_config_
         assert mapping in [AdobeGroup.create('Sign Group 2'), AdobeGroup.create('Sign Group 3')]
 
 
-
 # NOTE: tmp_sign_connector_config and tmp_config_files are needed to prevent the ConfigFileLoader
 # from complaining that there are no temporary sign connector or ldap connector files
 def test_identity_module(sign_config_file, modify_sign_config, tmp_sign_connector_config, tmp_config_files):
@@ -134,3 +133,14 @@ def test_sign_connector_options(sign_config_file):
 
     with pytest.raises(AssertionException):
         config.get_directory_connector_options('okta')
+
+
+def test_logging_config(sign_config_file):
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    logging_config = config.get_logging_config()
+    assert logging_config.get_bool('log_to_file') is True
+    assert logging_config.get_string('file_log_directory').endswith('sign_logs')
+    assert logging_config.get_string('file_log_name_format') == '{:%Y-%m-%d}-sign.log'
+    assert logging_config.get_string('file_log_level') == 'info'
+    assert logging_config.get_string('console_log_level') == 'debug'

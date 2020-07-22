@@ -184,7 +184,7 @@ class DictConfig(ObjectConfig):
         value = self.get_value(key, dict, none_allowed)
         return value
 
-    def get_string(self, key, none_allowed=False):
+    def get_string(self, key, none_allowed=False) -> str:
         """
         :rtype: basestring
         """

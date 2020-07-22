@@ -135,10 +135,11 @@ class SignConfigLoader(ConfigLoader):
         return self.config_loader.load_sub_config(source_config_path)
 
     def check_unused_config_keys(self):
+        # not clear if we need this since we are validating the config schema
         pass
 
-    def get_logging_config(self):
-        pass
+    def get_logging_config(self) -> DictConfig:
+        return self.main_config.get_dict_config('logging', True)
 
     def get_invocation_options(self):
         return self.invocation_options
