@@ -200,7 +200,10 @@ class CredentialConfig:
         if value is None:
             return
         if key.is_filepath:
-            return self.encrypt_key(key)
+            if self.auto or click.confirm("Encrypt private key file?"):
+                return self.encrypt_key(key)
+            else:
+                return
         if not self.parse_secure_key(value):
             k = self.get_qualified_identifier(key.key_path)
             CredentialManager.set(k, value)
