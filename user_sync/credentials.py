@@ -150,7 +150,10 @@ class CredentialConfig:
                 credentials[':'.join(label)] = val
         if isinstance(self, UmapiCredentialConfig):
             if self.get_nested_key(self.priv_key_path.key_path) is not None:
-                result = action(self.priv_key_path)
+                try:
+                    result = action(self.priv_key_path)
+                except AssertionException as e:
+                    self.logger.exception("\nError: {}\n".format(str(e)), exc_info=False)
         return credentials
 
     def store(self):
@@ -230,7 +233,7 @@ class CredentialConfig:
         return passphrase, key.key_path
 
     def decrypt_key(self, key):
-        if not key.has_linked():
+        if self.get_nested_key(key.linked_key.key_path) is None:
             raise AssertionException(
                 "Cannot decrypt key '{}'. Missing linked key '{}'".format(key.key_path, key.linked_key.key_path))
         value = self.get_nested_key(key.key_path)
