@@ -201,7 +201,11 @@ class CredentialConfig:
             return
         if key.is_filepath:
             if self.auto or click.confirm("Encrypt private key file?"):
-                return self.encrypt_key(key)
+                enc_key = self.encrypt_key(key)
+                self.logger.info("Encrypted private key file saved to: '{}' \n"
+                                 "'{}' added to '{}' and stored securely."
+                                 .format(self.get_nested_key(key.key_path), key.linked_key.key_path, self.filename))
+                return enc_key
             else:
                 return
         if not self.parse_secure_key(value):
@@ -278,10 +282,14 @@ class CredentialConfig:
             if not encryption.is_encryptable(self.get_nested_key(key.key_path)):
                 decrypted_key = self.decrypt_key(key)
                 if decrypted_key is not None:
+                    self.logger.info("Private key file decrypted and saved to: '{}'"
+                                     .format(self.get_nested_key(key.key_path)))
                     self.set_nested_key(key.key_path, pss(decrypted_key))
         if key.is_filepath:
             decrypted_key = self.decrypt_key(key)
             if decrypted_key is not None:
+                self.logger.info("Private key file decrypted and saved to: '{}'"
+                                 .format(self.get_nested_key(key.key_path)))
                 encryption.write_key(decrypted_key, self.get_nested_key(key.key_path))
         return stored_credential
 
