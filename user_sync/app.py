@@ -458,7 +458,7 @@ def begin_work(config_loader):
     rule_config = config_loader.get_rule_options()
 
     # make sure that all the adobe groups are from known umapi connector names
-    primary_umapi_config, secondary_umapi_configs = config_loader.get_umapi_options()
+    primary_umapi_config, secondary_umapi_configs = config_loader.get_target_options()
     referenced_umapi_names = set()
     for groups in six.itervalues(directory_groups):
         for group in groups:

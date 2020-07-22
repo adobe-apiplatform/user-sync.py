@@ -254,7 +254,7 @@ class UMAPIConfigLoader(ConfigLoader):
     def get_logging_config(self):
         return self.main_config.get_dict_config('logging', True)
 
-    def get_umapi_options(self):
+    def get_target_options(self):
         """
         Read and return the primary and secondary umapi connector configs.
         The primary is a singleton, the secondaries are a map from name to config.

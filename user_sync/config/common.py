@@ -29,6 +29,10 @@ class ConfigLoader(ABC):
         pass
 
     @abstractmethod
+    def get_target_options(self) -> (dict, dict):
+        pass
+
+    @abstractmethod
     def check_unused_config_keys(self):
         pass
 

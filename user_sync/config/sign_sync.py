@@ -134,6 +134,18 @@ class SignConfigLoader(ConfigLoader):
         source_config_path = identity_config['connector']
         return self.config_loader.load_sub_config(source_config_path)
 
+    def get_target_options(self) -> (dict, dict):
+        target_configs = self.main_config.get_dict('sign_orgs')
+        if 'primary' not in target_configs:
+            raise AssertionException("'sign_orgs' config must specify a connector with 'primary' key")
+        primary_options = self.config_loader.load_sub_config(target_configs['primary'])
+        secondary_options = {}
+        for target_id, config_file in target_configs.items():
+            if target_id == 'primary':
+                continue
+            secondary_options[target_id] = self.config_loader.load_sub_config(config_file)
+        return primary_options, secondary_options
+
     def check_unused_config_keys(self):
         # not clear if we need this since we are validating the config schema
         pass

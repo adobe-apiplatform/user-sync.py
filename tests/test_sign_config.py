@@ -121,7 +121,7 @@ def test_identity_module(sign_config_file, modify_sign_config, tmp_sign_connecto
     assert config.get_directory_connector_module_name() == 'user_sync.connector.directory_okta'
 
 
-def test_sign_connector_options(sign_config_file):
+def test_identity_connector_options(sign_config_file):
     """ensure sign connector options are retrieved from Sign config handler"""
     options = {'username': 'ldapuser@example.com', 'password': 'password', 'host': 'ldap://host', 'base_dn': 'DC=example,DC=com', 'search_page_size': 200,
                'require_tls_cert': False, 'all_users_filter': '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))',
@@ -133,6 +133,37 @@ def test_sign_connector_options(sign_config_file):
 
     with pytest.raises(AssertionException):
         config.get_directory_connector_options('okta')
+
+
+# NOTE: tmp_sign_connector_config and tmp_config_files are needed to prevent the ConfigFileLoader
+# from complaining that there are no temporary sign connector or ldap connector files
+def test_target_config_options(sign_config_file, modify_sign_config, tmp_sign_connector_config, tmp_config_files):
+    """ensure directory module name is correct"""
+    # simple case
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    primary_options, _ = config.get_target_options()
+    assert primary_options['host'] == 'api.echosignstage.com'
+    assert primary_options['key'] == '[Sign API Key]'
+    assert primary_options['admin_email'] == 'user@example.com'
+
+    # complex case
+    sign_config_file = modify_sign_config(['sign_orgs'], {'primary': 'connector-sign.yml', 'org2': 'connector-sign.yml'})
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    primary_options, secondary_options = config.get_target_options()
+    assert 'org2' in secondary_options
+    assert secondary_options['org2']['host'] == 'api.echosignstage.com'
+    assert secondary_options['org2']['key'] == '[Sign API Key]'
+    assert secondary_options['org2']['admin_email'] == 'user@example.com'
+
+    # invalid case
+    sign_config_file = modify_sign_config(['sign_orgs'], {'org1': 'connector-sign.yml'})
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    # 'sign_orgs' must specify a config with the key 'primary'
+    with pytest.raises(AssertionException):
+        config.get_target_options()
 
 
 def test_logging_config(sign_config_file):
