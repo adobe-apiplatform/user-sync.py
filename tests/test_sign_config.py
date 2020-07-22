@@ -7,6 +7,7 @@ from util import update_dict
 from user_sync.config.sign_sync import SignConfigLoader
 from user_sync.config.user_sync import DictConfig
 from user_sync.engine.common import AdobeGroup
+from user_sync.error import AssertionException
 
 
 @pytest.fixture
@@ -119,3 +120,17 @@ def test_identity_module(sign_config_file, modify_sign_config, tmp_sign_connecto
     args = {'config_filename': sign_config_file}
     config = SignConfigLoader(args)
     assert config.get_directory_connector_module_name() == 'user_sync.connector.directory_okta'
+
+
+def test_sign_connector_options(sign_config_file):
+    """ensure sign connector options are retrieved from Sign config handler"""
+    options = {'username': 'ldapuser@example.com', 'password': 'password', 'host': 'ldap://host', 'base_dn': 'DC=example,DC=com', 'search_page_size': 200,
+               'require_tls_cert': False, 'all_users_filter': '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))',
+               'group_filter_format': '(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))',
+               'group_member_filter_format': '(memberOf={group_dn})', 'user_email_format': '{mail}'}
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    assert config.get_directory_connector_options('ldap') == options
+
+    with pytest.raises(AssertionException):
+        config.get_directory_connector_options('okta')

@@ -69,6 +69,7 @@ class SignConfigLoader(ConfigLoader):
         self.logger = logging.getLogger('sign_config')
         self.args = args
         filename, encoding = self._config_file_info()
+        self.config_loader = ConfigFileLoader(encoding, self.ROOT_CONFIG_PATH_KEYS, self.SUB_CONFIG_PATH_KEYS)
         self.raw_config = self._load_raw_config(filename, encoding)
         self._validate(self.raw_config)
         self.main_config = self.load_main_config(filename, self.raw_config)
@@ -94,8 +95,7 @@ class SignConfigLoader(ConfigLoader):
 
     def _load_raw_config(self, filename, encoding) -> dict:
         self.logger.info("Using main config file: %s (encoding %s)", filename, encoding)
-        config_loader = ConfigFileLoader(encoding, self.ROOT_CONFIG_PATH_KEYS, self.SUB_CONFIG_PATH_KEYS)
-        return config_loader.load_root_config(filename)
+        return self.config_loader.load_root_config(filename)
     
     @staticmethod
     def _validate(raw_config: dict):
@@ -127,7 +127,12 @@ class SignConfigLoader(ConfigLoader):
         return 'user_sync.connector.directory_' + connector_type
 
     def get_directory_connector_options(self, name: str) -> dict:
-        pass
+        identity_config = self.main_config.get_dict('identity_source')
+        source_name = identity_config['type']
+        if name != source_name:
+            raise AssertionException("requested identity source '{}' does not match configured source '{}'".format(source_name, name))
+        source_config_path = identity_config['connector']
+        return self.config_loader.load_sub_config(source_config_path)
 
     def check_unused_config_keys(self):
         pass
