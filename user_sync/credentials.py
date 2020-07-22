@@ -194,8 +194,10 @@ class CredentialConfig:
         :return:
         """
         value = self.get_nested_key(key.key_path) or value
-        if value is None or key.is_filepath:
+        if value is None:
             return
+        if key.is_filepath:
+            return self.encrypt_key(key)
         if not self.parse_secure_key(value):
             k = self.get_qualified_identifier(key.key_path)
             CredentialManager.set(k, value)
@@ -214,9 +216,14 @@ class CredentialConfig:
             passphrase = self.retrieve_key(key.linked_key) or self.get_nested_key(key.linked_key.key_path)
         if passphrase is None:
             passphrase = self.get_passphrase()
-
+        if key.is_filepath:
+            with open(self.get_nested_key(key.key_path)) as f:
+                data = f.read()
         enc_data = encryption.encrypt(passphrase, data)
-        self.set_nested_key(key.key_path, pss(enc_data))
+        if key.is_filepath:
+            encryption.write_key(enc_data, self.get_nested_key(key.key_path))
+        if key.is_block:
+            self.set_nested_key(key.key_path, pss(enc_data))
         if key.has_linked():
             self.store_key(key.linked_key, value=passphrase)
             return passphrase, key.linked_key.key_path
@@ -261,7 +268,7 @@ class CredentialConfig:
         stored_credential = self.retrieve_key(key)
         if stored_credential is not None:
             self.set_nested_key(key.key_path, stored_credential)
-        if key.is_block and not self.parse_secure_key(self.get_nested_key(key.key_path)):
+        if key.is_block and self.get_nested_key(key.key_path) is not None:
             if not encryption.is_encryptable(self.get_nested_key(key.key_path)):
                 decrypted_key = self.decrypt_key(key)
                 if decrypted_key is not None:
