@@ -105,6 +105,7 @@ def test_retrieve_revert_ldap_invalid(tmp_config_files):
 
 def test_retrieve_revert_umapi_valid(private_key, modify_umapi_config):
     umapi_config_file = modify_umapi_config(['enterprise', 'priv_key_path'], private_key)
+    umapi_config_file = modify_umapi_config(['enterprise', 'priv_key_pass'], 'password')
     umapi = UmapiCredentialConfig(umapi_config_file)
     # Using the api_key for assertions. The rest can be added in later if deemed necessary
     assert not umapi.parse_secure_key(umapi.get_nested_key(['enterprise', 'api_key']))
@@ -124,7 +125,7 @@ def test_retrieve_revert_umapi_valid(private_key, modify_umapi_config):
 def test_credman_retrieve_revert_valid(tmp_config_files, private_key, modify_umapi_config):
     (root_config_file, ldap_config_file, _) = tmp_config_files
     umapi_config_file = modify_umapi_config(['enterprise', 'priv_key_path'], private_key)
-    credman = CredentialManager(root_config_file)
+    credman = CredentialManager(root_config_file, auto=True)
     with open(ldap_config_file) as f:
         data = yaml.load(f)
         plaintext_ldap_password = data['password']
