@@ -21,6 +21,10 @@ class ConfigLoader(ABC):
         pass
 
     @abstractmethod
+    def get_engine_options(self) -> dict:
+        pass
+
+    @abstractmethod
     def get_directory_connector_module_name(self) -> str:
         pass
 

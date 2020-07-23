@@ -146,6 +146,9 @@ class SignConfigLoader(ConfigLoader):
             secondary_options[target_id] = self.config_loader.load_sub_config(config_file)
         return primary_options, secondary_options
 
+    def get_engine_options(self) -> dict:
+        return {}
+
     def check_unused_config_keys(self):
         # not clear if we need this since we are validating the config schema
         pass

@@ -474,7 +474,7 @@ class UMAPIConfigLoader(ConfigLoader):
                         result[dict_key] = dict_val
         return result
 
-    def get_rule_options(self):
+    def get_engine_options(self):
         """
         Return a dict representing options for RuleProcessor.
         """

@@ -175,3 +175,9 @@ def test_logging_config(sign_config_file):
     assert logging_config.get_string('file_log_name_format') == '{:%Y-%m-%d}-sign.log'
     assert logging_config.get_string('file_log_level') == 'info'
     assert logging_config.get_string('console_log_level') == 'debug'
+
+
+def test_engine_options(sign_config_file):
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    

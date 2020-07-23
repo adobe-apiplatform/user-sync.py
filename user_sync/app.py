@@ -455,7 +455,7 @@ def begin_work(config_loader):
     :type config_loader: config.UMAPIConfigLoader
     """
     directory_groups = config_loader.get_directory_groups()
-    rule_config = config_loader.get_rule_options()
+    rule_config = config_loader.get_engine_options()
 
     # make sure that all the adobe groups are from known umapi connector names
     primary_umapi_config, secondary_umapi_configs = config_loader.get_target_options()

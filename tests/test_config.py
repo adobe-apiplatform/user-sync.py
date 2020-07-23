@@ -54,12 +54,12 @@ def test_max_adobe_percentage(modify_root_config, cli_args, ust_config_root_path
             config['limits']['max_adobe_only_users'] == "50%")
 
     args = cli_args({'config_filename': root_config_file})
-    options = UMAPIConfigLoader(args).get_rule_options()
+    options = UMAPIConfigLoader(args).get_engine_options()
     assert 'max_adobe_only_users' in options and options['max_adobe_only_users'] == '50%'
 
     modify_root_config(['limits', 'max_adobe_only_users'], "error%")
     with pytest.raises(AssertionException):
-        UMAPIConfigLoader(args).get_rule_options()
+        UMAPIConfigLoader(args).get_engine_options()
 
 
 def test_additional_groups_config(modify_root_config, cli_args, ust_config_root_path_keys, ust_config_sub_path_keys):
@@ -74,7 +74,7 @@ def test_additional_groups_config(modify_root_config, cli_args, ust_config_root_
             len(config['directory_users']['additional_groups']) == 2)
 
     args = cli_args({'config_filename': root_config_file})
-    options = UMAPIConfigLoader(args).get_rule_options()
+    options = UMAPIConfigLoader(args).get_engine_options()
     assert addl_groups[0]['source'] in options['additional_groups'][0]['source'].pattern
     assert addl_groups[1]['source'] in options['additional_groups'][1]['source'].pattern
 
@@ -137,16 +137,11 @@ def test_extension_load(tmp_config_files, modify_root_config, cli_args, extensio
         (root_config_file, _, _) = tmp_config_files
 
         args = cli_args({'config_filename': root_config_file})
-        options = UMAPIConfigLoader(args).get_rule_options()
+        options = UMAPIConfigLoader(args).get_engine_options()
         assert 'after_mapping_hook' in options and options['after_mapping_hook'] is None
 
-<<<<<<< HEAD
-        modify_root_config(['directory_users', 'extension'], extension_config_file)
-        options = ConfigLoader(args).get_rule_options()
-=======
         modify_root_config(['directory_users', 'extension'], tmp_extension_config)
-        options = UMAPIConfigLoader(args).get_rule_options()
->>>>>>> rename ConfigLoader to UMAPIConfigLoader
+        options = UMAPIConfigLoader(args).get_engine_options()
         assert 'after_mapping_hook' in options and options['after_mapping_hook'] is not None
 
 
@@ -158,13 +153,8 @@ def test_extension_flag(tmp_config_files, modify_root_config, cli_args, extensio
         (root_config_file, _, _) = tmp_config_files
 
         args = cli_args({'config_filename': root_config_file})
-<<<<<<< HEAD
-        modify_root_config(['directory_users', 'extension'], extension_config_file)
-        options = ConfigLoader(args).get_rule_options()
-=======
         modify_root_config(['directory_users', 'extension'], tmp_extension_config)
-        options = UMAPIConfigLoader(args).get_rule_options()
->>>>>>> rename ConfigLoader to UMAPIConfigLoader
+        options = UMAPIConfigLoader(args).get_engine_options()
         assert 'after_mapping_hook' in options and options['after_mapping_hook'] is None
 
 
