@@ -30,18 +30,21 @@ from click_default_group import DefaultGroup
 
 import user_sync.certgen
 import user_sync.cli
-import user_sync.config.common
-import user_sync.config.user_sync_config
 import user_sync.connector.directory
 import user_sync.connector.directory_adobe_console
 import user_sync.connector.directory_csv
 import user_sync.connector.directory_ldap
 import user_sync.connector.directory_okta
-import user_sync.connector.umapi
 import user_sync.encryption
-import user_sync.engine.umapi_engine
 import user_sync.helper
 import user_sync.lockfile
+import user_sync.resource
+from user_sync.config import user_sync as config
+from user_sync.config import common as config_common
+from user_sync.connector.connector_umapi import UmapiConnector
+from user_sync.engine import umapi as rules
+
+from user_sync.post_sync.manager import PostSyncManager
 import user_sync.post_sync.connectors.sign_sync
 import user_sync.resource
 from user_sync.error import AssertionException
@@ -170,7 +173,7 @@ def sync(**kwargs):
         del(kwargs['sign_sync_config'])
     try:
         # load the config files and start the file logger
-        config_loader = user_sync.config.user_sync_config.ConfigLoader(kwargs)
+        config_loader = config.ConfigLoader(kwargs)
         init_log(config_loader.get_logging_config())
 
         # add start divider, app version number, and invocation parameters to log
@@ -303,9 +306,9 @@ def docs():
 
 def init_log(logging_config):
     """
-    :type logging_config: user_sync.config.DictConfig
+    :type logging_config: config.DictConfig
     """
-    builder = user_sync.config.common.OptionsBuilder(logging_config)
+    builder = config_common.OptionsBuilder(logging_config)
     builder.set_bool_value('log_to_file', False)
     builder.set_string_value('file_log_directory', 'logs')
     builder.set_string_value('file_log_name_format', '{:%Y-%m-%d}.log')
@@ -352,7 +355,7 @@ def log_parameters(argv, config_loader):
     :param argv: command line arguments (a la sys.argv)
     :type argv: list(str)
     :param config_loader: the main configuration loader
-    :type config_loader: user_sync.config.ConfigLoader
+    :type config_loader: config.ConfigLoader
     :return: None
     """
     logger.info('Python version: %s.%s.%s on %s' % (sys.version_info[:3] + (sys.platform,)))
@@ -366,7 +369,7 @@ def log_parameters(argv, config_loader):
 
 def begin_work(config_loader):
     """
-    :type config_loader: user_sync.config.ConfigLoader
+    :type config_loader: config.ConfigLoader
     """
     directory_groups = config_loader.get_directory_groups()
     rule_config = config_loader.get_rule_options()
@@ -420,10 +423,10 @@ def begin_work(config_loader):
             raise AssertionException(
                 "Failed to enable dynamic group mappings. 'dynamic_group_member_attribute' is not defined in config")
     primary_name = '.primary' if secondary_umapi_configs else ''
-    umapi_primary_connector = user_sync.connector.umapi.UmapiConnector(primary_name, primary_umapi_config)
+    umapi_primary_connector = UmapiConnector(primary_name, primary_umapi_config)
     umapi_other_connectors = {}
     for secondary_umapi_name, secondary_config in six.iteritems(secondary_umapi_configs):
-        umapi_secondary_conector = user_sync.connector.umapi.UmapiConnector(".secondary.%s" % secondary_umapi_name,
+        umapi_secondary_conector = UmapiConnector(".secondary.%s" % secondary_umapi_name,
                                                                             secondary_config)
         umapi_other_connectors[secondary_umapi_name] = umapi_secondary_conector
     umapi_connectors = user_sync.engine.umapi_engine.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
