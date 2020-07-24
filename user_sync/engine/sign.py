@@ -1,19 +1,20 @@
 import logging
 from collections import defaultdict
 
-import user_sync
-from user_sync.post_sync import PostSyncConnector
-from user_sync.engine.umapi import AdobeGroup
 from user_sync.config.common import DictConfig
 from user_sync.connector.connector_sign import SignConnector
+from user_sync.engine.umapi import AdobeGroup
 from user_sync.error import AssertionException
 
-class SignEngine(PostSyncConnector):
+
+class SignEngine():
     name = 'sign_sync'
     DEFAULT_GROUP_NAME = 'default group'
+
     def __init__(self, config_options, test_mode=False):
         super().__init__()
         self.logger = logging.getLogger(self.name)
+        self.test_mode = test_mode
         sync_config = DictConfig('<%s configuration>' % self.name, config_options)
         self.user_groups = sync_config.get_list('user_groups', True)
         if self.user_groups is None:
@@ -27,18 +28,13 @@ class SignEngine(PostSyncConnector):
         # dict w/ structure - umapi_name -> adobe_group -> [set of roles]
         self.admin_roles = self._admin_role_mapping(sync_config)
 
+        # builder = user_sync.config.common.OptionsBuilder(sync_config)
+        # builder.set_string_value('logger_name', self.name)
+        # builder.set_bool_value('test_mode', False)
+        # options = builder.get_options()
+
         sign_orgs = sync_config.get_list('sign_orgs')
-
-        builder = user_sync.config.common.OptionsBuilder(sync_config)
-        builder.set_string_value('logger_name', self.name)
-        builder.set_bool_value('test_mode', False)
-        options = builder.get_options()
-
-        self.connectors = {}
-        for sign_org_config in sign_orgs:
-            sign_connector = SignConnector(sign_org_config)
-            self.connectors[SignConnector.console_org] = sign_connector
-        self.test_mode = test_mode
+        self.connectors = {cfg.get('console_org'): SignConnector(cfg) for cfg in sign_orgs}
 
     def run(self, post_sync_data):
         """
@@ -124,7 +120,7 @@ class SignEngine(PostSyncConnector):
         :return:
         """
         return sign_user is not None and set(umapi_user['groups']) & set(self.entitlement_groups[org_name]) and \
-            umapi_user['type'] in self.identity_types
+               umapi_user['type'] in self.identity_types
 
     @staticmethod
     def _groupify(groups):

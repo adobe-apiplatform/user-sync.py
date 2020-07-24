@@ -30,45 +30,38 @@ from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 from user_sync.connector.client import SignClient
 
+
 class SignConnector(object):
-    def __init__(self, name, caller_options):
+    name = 'sign'
+    
+    def __init__(self, caller_options):
         """
         :type name: str
         :type caller_options: dict
         """
-        self.name = 'sign' + name
         caller_config = user_sync.config.common.DictConfig(self.name + ' configuration', caller_options)
         sign_builder = user_sync.config.common.OptionsBuilder(caller_config)
         sign_builder.require_string_value('host')
         sign_builder.require_string_value('key')
         sign_builder.require_string_value('admin_email')
-        self.option= sign_builder.get_options()
-        self.sign_client =   SignClient(self.option)
+        sign_builder.set_string_value('console_org', None)
+        self.options = sign_builder.get_options()
+        self.sign_client = SignClient(self.options)
 
     def sign_groups(self):
         return self.sign_client.get_groups()
-    def create_group(self,new_group):
+
+    def create_group(self, new_group):
         return self.sign_client.create_group(new_group)
+
     def get_users(self):
         return self.sign_client.get_users()
-    def update_user(self,user_id,update_data):
-        return self.sign_client.update_user(user_id,update_data)
-    def get_group(self,assignment_group):
+
+    def update_user(self, user_id, update_data):
+        return self.sign_client.update_user(user_id, update_data)
+
+    def get_group(self, assignment_group):
         return self.sign_client.groups.get(assignment_group)
+
     def get_console_org(self):
         return self.sign_client.console_org
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
