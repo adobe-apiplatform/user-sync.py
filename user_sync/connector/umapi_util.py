@@ -9,9 +9,22 @@ def make_auth_dict(name, config, org_id, tech_acct, logger):
         'api_key': config.get_credential('api_key', org_id),
         'client_secret': config.get_credential('client_secret', org_id),
     }
-    # get the private key
+    key_data = get_key_data(name, config, org_id, logger)
+    # decrypt the private key, if needed
+    passphrase = config.get_credential('priv_key_pass', org_id, True)
+    if passphrase:
+        try:
+            key_data = decrypt(passphrase, key_data)
+        except (ValueError, IndexError, TypeError, AssertionException) as e:
+            raise AssertionException('%s: Error decrypting private key, either the password is wrong or: %s' %
+                                     (config.get_full_scope(), e))
+    auth_dict['private_key_data'] = key_data
+    return auth_dict
+
+
+def get_key_data(name, config, org_id, logger):
     key_path = config.get_string('priv_key_path', True)
-    data_setting = config.get_string('priv_key_data', True)
+    data_setting = config.get_value('priv_key_data', (str, dict), True)
     secure_data_setting = config.get_string(config.keyring_prefix + 'priv_key_data' + config.keyring_suffix, True)
     if key_path and data_setting:
         raise AssertionException('%s: cannot specify both "priv_key_path" and "%s"' %
@@ -33,14 +46,4 @@ def make_auth_dict(name, config, org_id, tech_acct, logger):
             key_data = config.get_credential('priv_key_data', org_id)
         except AssertionException as e:
             raise e
-    # decrypt the private key, if needed
-    passphrase = config.get_credential('priv_key_pass', org_id, True)
-    if passphrase:
-        try:
-            # try to decrypt the private key data within the file first
-            key_data = decrypt(passphrase, key_data)
-        except (ValueError, IndexError, TypeError, AssertionException) as e:
-            raise AssertionException('%s: Error decrypting private key, either the password is wrong or: %s' %
-                                     (config.get_full_scope(), e))
-    auth_dict['private_key_data'] = key_data
-    return auth_dict
+    return key_data
