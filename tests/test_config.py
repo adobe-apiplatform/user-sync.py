@@ -3,7 +3,7 @@ import pytest
 import yaml
 import shutil
 from util import update_dict
-from user_sync.config.sync_config_loader import ConfigLoader
+from user_sync.config.user_sync import ConfigLoader
 from user_sync.config.common import ConfigFileLoader, DictConfig
 from user_sync import flags
 from user_sync.error import AssertionException
@@ -86,18 +86,36 @@ def modify_ldap_config(tmp_config_files):
     return _modify_ldap_config
 
 
-def test_load_root(root_config_file):
+@pytest.fixture
+def ust_config_root_path_keys():
+    return {'/adobe_users/connectors/umapi': (True, True, None),
+            '/directory_users/connectors/*': (True, False, None),
+            '/directory_users/extension': (True, False, None),
+            '/logging/file_log_directory': (False, False, "logs"),
+            '/post_sync/connectors/sign_sync': (False, False, False),
+            '/post_sync/connectors/future_feature': (False, False, False)
+            }
+
+
+@pytest.fixture
+def ust_config_sub_path_keys():
+    return {'/integration/priv_key_path': (True, False, None)}
+
+
+def test_load_root(root_config_file, ust_config_root_path_keys, ust_config_sub_path_keys):
     """Load root config file and test for presence of root-level keys"""
-    config = ConfigFileLoader.load_root_config(root_config_file)
+    config_loader = ConfigFileLoader('utf8', ust_config_root_path_keys, ust_config_sub_path_keys)
+    config = config_loader.load_root_config(root_config_file)
     assert isinstance(config, dict)
     assert ('adobe_users' in config and 'directory_users' in config and
             'logging' in config and 'limits' in config and
             'invocation_defaults' in config)
 
 
-def test_max_adobe_percentage(modify_root_config, cli_args):
+def test_max_adobe_percentage(modify_root_config, cli_args, ust_config_root_path_keys, ust_config_sub_path_keys):
     root_config_file = modify_root_config(['limits', 'max_adobe_only_users'], "50%")
-    config = ConfigFileLoader.load_root_config(root_config_file)
+    config_loader = ConfigFileLoader('utf8', ust_config_root_path_keys, ust_config_sub_path_keys)
+    config = config_loader.load_root_config(root_config_file)
     assert ('limits' in config and 'max_adobe_only_users' in config['limits'] and
             config['limits']['max_adobe_only_users'] == "50%")
 
@@ -110,13 +128,14 @@ def test_max_adobe_percentage(modify_root_config, cli_args):
         ConfigLoader(args).get_rule_options()
 
 
-def test_additional_groups_config(modify_root_config, cli_args):
+def test_additional_groups_config(modify_root_config, cli_args, ust_config_root_path_keys, ust_config_sub_path_keys):
     addl_groups = [
         {"source": r"ACL-(.+)", "target": r"ACL-Grp-(\1)"},
         {"source": r"(.+)-ACL", "target": r"ACL-Grp-(\1)"},
     ]
     root_config_file = modify_root_config(['directory_users', 'additional_groups'], addl_groups)
-    config = ConfigFileLoader.load_root_config(root_config_file)
+    config_loader = ConfigFileLoader('utf8', ust_config_root_path_keys, ust_config_sub_path_keys)
+    config = config_loader.load_root_config(root_config_file)
     assert ('additional_groups' in config['directory_users'] and
             len(config['directory_users']['additional_groups']) == 2)
 
@@ -215,11 +234,12 @@ def test_shell_exec_flag(tmp_config_files, modify_root_config, cli_args, monkeyp
 
         args = cli_args({'config_filename': root_config_file})
         modify_root_config(['directory_users', 'connectors', 'ldap'], "$(some command)")
-        config_loader = ConfigLoader(args)
+        with pytest.raises(AssertionException):
+            config_loader = ConfigLoader(args)
 
-        directory_connector_module_name = config_loader.get_directory_connector_module_name()
-        if directory_connector_module_name is not None:
-            directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
-            directory_connector = DirectoryConnector(directory_connector_module)
-            with pytest.raises(AssertionException):
-                config_loader.get_directory_connector_options(directory_connector.name)
+            directory_connector_module_name = config_loader.get_directory_connector_module_name()
+            if directory_connector_module_name is not None:
+                directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
+                directory_connector = DirectoryConnector(directory_connector_module)
+                with pytest.raises(AssertionException):
+                    config_loader.get_directory_connector_options(directory_connector.name)
