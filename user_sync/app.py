@@ -47,6 +47,9 @@ from user_sync.engine import umapi as rules
 from user_sync.post_sync.manager import PostSyncManager
 import user_sync.post_sync.connectors.sign_sync
 import user_sync.resource
+import user_sync.engine.umapi
+import user_sync.config.user_sync
+import user_sync.connector.connector_umapi
 from user_sync.error import AssertionException
 from user_sync.post_sync.manager import PostSyncManager
 from user_sync.version import __version__ as app_version
@@ -380,7 +383,7 @@ def begin_work(config_loader):
     for groups in six.itervalues(directory_groups):
         for group in groups:
             umapi_name = group.umapi_name
-            if umapi_name != user_sync.engine.umapi_engine.PRIMARY_UMAPI_NAME:
+            if umapi_name != user_sync.engine.umapi.PRIMARY_UMAPI_NAME:
                 referenced_umapi_names.add(umapi_name)
     referenced_umapi_names.difference_update(six.iterkeys(secondary_umapi_configs))
     if len(referenced_umapi_names) > 0:
@@ -429,9 +432,9 @@ def begin_work(config_loader):
         umapi_secondary_conector = UmapiConnector(".secondary.%s" % secondary_umapi_name,
                                                                             secondary_config)
         umapi_other_connectors[secondary_umapi_name] = umapi_secondary_conector
-    umapi_connectors = user_sync.engine.umapi_engine.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
+    umapi_connectors = user_sync.engine.umapi.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
 
-    rule_processor = user_sync.engine.umapi_engine.RuleProcessor(rule_config)
+    rule_processor = user_sync.engine.umapi.RuleProcessor(rule_config)
     if len(directory_groups) == 0 and rule_processor.will_process_groups():
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
     rule_processor.run(directory_groups, directory_connector, umapi_connectors)
