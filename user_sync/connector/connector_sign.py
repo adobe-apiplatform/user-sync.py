@@ -23,7 +23,7 @@ import user_sync.config.common
 import user_sync.connector.helper
 import user_sync.helper
 import user_sync.identity_type
-from user_sync.post_sync.connectors.sign_sync.client import SignClient
+from sign_client.client import SignClient
 
 
 class SignConnector(object):

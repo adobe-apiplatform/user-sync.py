@@ -5,7 +5,7 @@ from requests import Response
 
 
 from user_sync.error import AssertionException
-from user_sync.post_sync.connectors.sign_sync.client import SignClient
+from sign_client.client import SignClient
 from user_sync.post_sync.manager import PostSyncData
 
 
@@ -61,7 +61,7 @@ def test_add_remove_groups(example_user):
 
 
 @mock.patch('requests.get')
-@mock.patch('user_sync.post_sync.connectors.sign_sync.client.SignClient._init')
+@mock.patch('sign_client.client.SignClient._init')
 def test_assertion_exception_sucess(mock_client, mock_get):
 
     mock_response = Response()
