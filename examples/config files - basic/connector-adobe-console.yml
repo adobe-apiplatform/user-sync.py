@@ -44,7 +44,7 @@ integration:
   # data directly in this file.  To do this, remove the priv_key_path entry above
   # and uncomment the following entry.  Replace the sample data with the data
   # from your private key file (which will be much longer).
-  #priv_key_data: |
+  # priv_key_data: |
   #   -----BEGIN RSA PRIVATE KEY-----
   #   MIIf74jfd84oAgEA6brj4uZ2f1Nkf84j843jfjjJGHYJ8756GHHGGz7jLyZWSscH
   #   CoifurKJY763GHKL98mJGYxWSBvhlWskdjdatagoeshere986fKFUNGd74kdfuEH
@@ -56,17 +56,7 @@ integration:
   # To use this feature, You can secure the credentials by using the credentials store commands in the command line
 
   # Refer to the (URL to Additional Tools) 
-  #secure_priv_key_data_key: umapi_private_key_data
-  # Note: the Windows credential store generally can't store data as large as a private
-  # key, so the recommended path for securing your private key on windows is given next.
-
-  # (optional): You can secure your private key data by encrypting it, as with
-  #     openssl pkcs8 -in private.key -topk8 -v2 des3 -out private-encrypted.key
-  # which prompts for a passphrase and creates a passphrase-encrypted file in PKCS#8 format.
-  # Having done this, you can use the setting priv_key_pass to specify the passphrase needed
-  # by User Sync to decrypt the private key file (or private key data), as in:
   # priv_key_pass: "my passphrase for my private key"
-  
   # Private key pass can also be stored using credentials store command
 
 # (optional) identity_type_filter (default value is all)
