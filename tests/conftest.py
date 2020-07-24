@@ -2,10 +2,9 @@ import os
 
 import pytest
 
-
 import shutil
 
-from user_sync.config.user_sync_config import ConfigLoader
+from user_sync.config.user_sync import ConfigLoader
 
 
 @pytest.fixture
@@ -44,9 +43,15 @@ def public_cert(fixture_dir, tmpdir):
     shutil.copy(os.path.join(fixture_dir, 'test_cert.crt'), tmpdir.dirname)
     return os.path.join(tmpdir.dirname, 'test_cert.crt')
 
+
 @pytest.fixture
 def root_config_file(fixture_dir):
     return os.path.join(fixture_dir, 'user-sync-config.yml')
+
+
+@pytest.fixture
+def sign_config_file(fixture_dir):
+    return os.path.join(fixture_dir, 'sign-sync-config.yml')
 
 
 @pytest.fixture

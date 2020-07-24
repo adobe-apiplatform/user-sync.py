@@ -1,14 +1,11 @@
-import json
 from unittest import mock
-from unittest.mock import patch
 
 import pytest
-import requests
 from requests import Response
-from requests.exceptions import ConnectionError
+
 
 from user_sync.error import AssertionException
-from user_sync.post_sync.connectors.sign_sync import SignClient
+from user_sync.post_sync.connectors.sign_sync.client import SignClient
 from user_sync.post_sync.manager import PostSyncData
 
 

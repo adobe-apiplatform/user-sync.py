@@ -1,38 +1,20 @@
-# Copyright (c) 2016-2020 Adobe Inc.  All rights reserved.
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
 import logging
 from collections import defaultdict
-from user_sync.post_sync import PostSyncConnector
-from user_sync.engine.umapi_engine import AdobeGroup
+
 from user_sync.config.common import DictConfig
-from .client import SignClient
+from user_sync.connector.connector_sign import SignConnector
+from user_sync.engine.umapi import AdobeGroup
 from user_sync.error import AssertionException
 
 
-class SignConnector(PostSyncConnector):
+class SignEngine():
     name = 'sign_sync'
+    DEFAULT_GROUP_NAME = 'default group'
 
     def __init__(self, config_options, test_mode=False):
         super().__init__()
         self.logger = logging.getLogger(self.name)
+        self.test_mode = test_mode
         sync_config = DictConfig('<%s configuration>' % self.name, config_options)
         self.user_groups = sync_config.get_list('user_groups', True)
         if self.user_groups is None:
@@ -46,12 +28,13 @@ class SignConnector(PostSyncConnector):
         # dict w/ structure - umapi_name -> adobe_group -> [set of roles]
         self.admin_roles = self._admin_role_mapping(sync_config)
 
+        # builder = user_sync.config.common.OptionsBuilder(sync_config)
+        # builder.set_string_value('logger_name', self.name)
+        # builder.set_bool_value('test_mode', False)
+        # options = builder.get_options()
+
         sign_orgs = sync_config.get_list('sign_orgs')
-        self.clients = {}
-        for sign_org_config in sign_orgs:
-            sign_client = SignClient(sign_org_config)
-            self.clients[sign_client.console_org] = sign_client
-        self.test_mode = test_mode
+        self.connectors = {cfg.get('console_org'): SignConnector(cfg) for cfg in sign_orgs}
 
     def run(self, post_sync_data):
         """
@@ -62,18 +45,18 @@ class SignConnector(PostSyncConnector):
         if self.test_mode:
             self.logger.info("Sign Sync disabled in test mode")
             return
-        for org_name, sign_client in self.clients.items():
+        for org_name, sign_connector in self.connectors.items():
             # create any new Sign groups
-            for new_group in set(self.user_groups[org_name]) - set(sign_client.sign_groups()):
+            for new_group in set(self.user_groups[org_name]) - set(sign_connector.sign_groups()):
                 self.logger.info("Creating new Sign group: {}".format(new_group))
-                sign_client.create_group(new_group)
+                sign_connector.create_group(new_group)
             umapi_users = post_sync_data.umapi_data.get(org_name)
             if umapi_users is None:
                 raise AssertionException("Error getting umapi users from post_sync_data")
-            self.update_sign_users(umapi_users, sign_client, org_name)
+            self.update_sign_users(umapi_users, sign_connector, org_name)
 
-    def update_sign_users(self, umapi_users, sign_client, org_name):
-        sign_users = sign_client.get_users()
+    def update_sign_users(self, umapi_users, sign_connector, org_name):
+        sign_users = sign_connector.get_users()
         for _, umapi_user in umapi_users.items():
             sign_user = sign_users.get(umapi_user['email'])
             if not self.should_sync(umapi_user, sign_user, org_name):
@@ -87,9 +70,9 @@ class SignConnector(PostSyncConnector):
                     break
 
             if assignment_group is None:
-                assignment_group = sign_client.DEFAULT_GROUP_NAME
+                assignment_group = self.DEFAULT_GROUP_NAME
 
-            group_id = sign_client.groups.get(assignment_group)
+            group_id = sign_connector.get_group(assignment_group)
             admin_roles = self.admin_roles.get(org_name, {})
             user_roles = self.resolve_new_roles(umapi_user, admin_roles)
             update_data = {
@@ -103,7 +86,7 @@ class SignConnector(PostSyncConnector):
                 self.logger.debug("skipping Sign update for '{}' -- no updates needed".format(umapi_user['email']))
                 continue
             try:
-                sign_client.update_user(sign_user['userId'], update_data)
+                sign_connector.update_user(sign_user['userId'], update_data)
                 self.logger.info("Updated Sign user '{}', Group: '{}', Roles: {}".format(
                     umapi_user['email'], assignment_group, update_data['roles']))
             except AssertionError as e:
@@ -137,7 +120,7 @@ class SignConnector(PostSyncConnector):
         :return:
         """
         return sign_user is not None and set(umapi_user['groups']) & set(self.entitlement_groups[org_name]) and \
-            umapi_user['type'] in self.identity_types
+               umapi_user['type'] in self.identity_types
 
     @staticmethod
     def _groupify(groups):
@@ -170,4 +153,3 @@ class SignConnector(PostSyncConnector):
                     mapped_admin_roles[group.umapi_name][group_name] = set()
                 mapped_admin_roles[group.umapi_name][group_name].add(sign_role)
         return mapped_admin_roles
-

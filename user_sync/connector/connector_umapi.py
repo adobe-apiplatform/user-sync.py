@@ -27,12 +27,13 @@ import six
 import umapi_client
 
 import user_sync.connector.helper
-import user_sync.config.common
 import user_sync.helper
 import user_sync.identity_type
+from user_sync.config import user_sync as config
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 from user_sync.connector.umapi_util import make_auth_dict
+from user_sync.config import common as config_common
 
 try:
     from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
@@ -48,17 +49,17 @@ class UmapiConnector(object):
         :type caller_options: dict
         """
         self.name = 'umapi' + name
-        caller_config = user_sync.config.common.DictConfig(self.name + ' configuration', caller_options)
+        caller_config = config_common.DictConfig(self.name + ' configuration', caller_options)
         self.trusted = caller_config.get_bool('trusted', True)
         if self.trusted is None:
             self.trusted = False
-        builder = user_sync.config.common.OptionsBuilder(caller_config)
+        builder = config_common.OptionsBuilder(caller_config)
         builder.set_string_value('logger_name', self.name)
         builder.set_bool_value('test_mode', False)
         options = builder.get_options()
 
         server_config = caller_config.get_dict_config('server', True)
-        server_builder = user_sync.config.common.OptionsBuilder(server_config)
+        server_builder = config_common.OptionsBuilder(server_config)
         server_builder.set_string_value('host', 'usermanagement.adobe.io')
         server_builder.set_string_value('endpoint', '/v2/usermanagement')
         server_builder.set_string_value('ims_host', 'ims-na1.adobelogin.com')
@@ -69,7 +70,7 @@ class UmapiConnector(object):
         options['server'] = server_options = server_builder.get_options()
 
         enterprise_config = caller_config.get_dict_config('enterprise')
-        enterprise_builder = user_sync.config.common.OptionsBuilder(enterprise_config)
+        enterprise_builder = config_common.OptionsBuilder(enterprise_config)
         enterprise_builder.require_string_value('org_id')
         enterprise_builder.require_string_value('tech_acct')
         options['enterprise'] = enterprise_options = enterprise_builder.get_options()

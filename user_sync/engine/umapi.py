@@ -24,7 +24,7 @@ import six
 from itertools import chain
 from collections import defaultdict
 
-import user_sync.connector.umapi
+import user_sync.connector.connector_umapi
 import user_sync.error
 import user_sync.identity_type
 from user_sync.post_sync.manager import PostSyncData
@@ -625,7 +625,7 @@ class RuleProcessor(object):
             id_type, username, domain = self.parse_user_key(key)
             if '@' in username and username in self.email_override:
                 username = self.email_override[username]
-            return user_sync.connector.umapi.Commands(identity_type=id_type, username=username, domain=domain)
+            return user_sync.connector.connector_umapi.Commands(identity_type=id_type, username=username, domain=domain)
 
         # do the secondary umapis first, in case we are deleting user accounts from the primary umapi at the end
         for umapi_name, umapi_connector in six.iteritems(umapi_connectors.get_secondary_connectors()):
@@ -712,7 +712,7 @@ class RuleProcessor(object):
         Update the attributes of an existing user if do_update is True.
         :type directory_user: dict
         :type do_update: bool
-        :return user_sync.connector.umapi.Commands (or None if there's an error)
+        :return user_sync.connector.connector_umapi.Commands (or None if there's an error)
         """
         identity_type = self.get_identity_type_from_directory_user(directory_user)
         update_username = None
@@ -731,7 +731,7 @@ class RuleProcessor(object):
             update_username = directory_user['username']
             directory_user['username'] = directory_user['email']
 
-        commands = user_sync.connector.umapi.Commands(identity_type, directory_user['email'],
+        commands = user_sync.connector.connector_umapi.Commands(identity_type, directory_user['email'],
                                                       directory_user['username'], directory_user['domain'])
         attributes = self.get_user_attributes(directory_user)
         # check whether the country is set in the directory, use default if not
@@ -771,7 +771,7 @@ class RuleProcessor(object):
         :type user_key: str
         :type groups_to_add: set
         :type umapi_info: UmapiTargetInfo
-        :type umapi_connector: user_sync.connector.umapi.UmapiConnector
+        :type umapi_connector: user_sync.connector.connector_umapi.UmapiConnector
         """
         directory_user = self.directory_user_by_user_key[user_key]
         commands = self.create_umapi_commands_for_directory_user(directory_user, self.will_update_user_info(umapi_info),
@@ -812,7 +812,7 @@ class RuleProcessor(object):
         Send the action to update aspects of an adobe user, like info and groups
         :type umapi_info: UmapiTargetInfo
         :type user_key: str
-        :type umapi_connector: user_sync.connector.umapi.UmapiConnector
+        :type umapi_connector: user_sync.connector.connector_umapi.UmapiConnector
         :type attributes_to_update: dict
         :type groups_to_add: set(str)
         :type groups_to_remove: set(str)
@@ -856,7 +856,7 @@ class RuleProcessor(object):
 
         self.post_sync_data.update_umapi_data(umapi_info.name, user_key, groups_to_add, groups_to_remove,
                                               **attributes_to_update)
-        commands = user_sync.connector.umapi.Commands(identity_type, directory_user['email'],
+        commands = user_sync.connector.connector_umapi.Commands(identity_type, directory_user['email'],
                                                       directory_user['username'], directory_user['domain'])
         commands.update_user(attributes_to_update)
         commands.remove_groups(groups_to_remove)
@@ -872,7 +872,7 @@ class RuleProcessor(object):
             the value for each key is the set of adobe groups in this umapi that the created user should be put into.
         The use of this return value by the caller is to create the user and add him to the right groups.
         :type umapi_info: UmapiTargetInfo
-        :type umapi_connector: user_sync.connector.umapi.UmapiConnector
+        :type umapi_connector: user_sync.connector.connector_umapi.UmapiConnector
         :rtype: map(string, set)
         """
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
@@ -1188,8 +1188,8 @@ class RuleProcessor(object):
 class UmapiConnectors(object):
     def __init__(self, primary_connector, secondary_connectors):
         """
-        :type primary_connector: user_sync.connector.umapi.UmapiConnector
-        :type secondary_connectors: dict(str, user_sync.connector.umapi.UmapiConnector)
+        :type primary_connector: user_sync.connector.connector_umapi.UmapiConnector
+        :type secondary_connectors: dict(str, user_sync.connector.connector_umapi.UmapiConnector)
         """
         self.primary_connector = primary_connector
         self.secondary_connectors = secondary_connectors
