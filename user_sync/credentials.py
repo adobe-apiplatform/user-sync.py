@@ -148,6 +148,12 @@ class CredentialConfig:
 
             if val is not None:
                 credentials[':'.join(label)] = val
+        if isinstance(self, UmapiCredentialConfig):
+            if self.get_nested_key(self.priv_key_path.key_path) is not None:
+                try:
+                    result = action(self.priv_key_path)
+                except AssertionException as e:
+                    self.logger.exception("\nError: {}\n".format(str(e)), exc_info=False)
         return credentials
 
     def store(self):
@@ -193,6 +199,15 @@ class CredentialConfig:
         value = self.get_nested_key(key.key_path) or value
         if value is None:
             return
+        if key.is_filepath:
+            if self.auto or click.confirm("Encrypt private key file?"):
+                enc_key = self.encrypt_key(key)
+                self.logger.info("Encrypted private key file saved to: '{}' \n"
+                                 "'{}' added to '{}' and stored securely."
+                                 .format(self.get_nested_key(key.key_path), key.linked_key.key_path, self.filename))
+                return enc_key
+            else:
+                return
         if not self.parse_secure_key(value):
             k = self.get_qualified_identifier(key.key_path)
             CredentialManager.set(k, value)
@@ -211,13 +226,35 @@ class CredentialConfig:
             passphrase = self.retrieve_key(key.linked_key) or self.get_nested_key(key.linked_key.key_path)
         if passphrase is None:
             passphrase = self.get_passphrase()
-
+        if key.is_filepath:
+            with open(self.get_nested_key(key.key_path)) as f:
+                data = f.read()
         enc_data = encryption.encrypt(passphrase, data)
-        self.set_nested_key(key.key_path, pss(enc_data))
+        if key.is_filepath:
+            encryption.write_key(enc_data, self.get_nested_key(key.key_path))
+        if key.is_block:
+            self.set_nested_key(key.key_path, pss(enc_data))
         if key.has_linked():
             self.store_key(key.linked_key, value=passphrase)
             return passphrase, key.linked_key.key_path
         return passphrase, key.key_path
+
+    def decrypt_key(self, key):
+        if self.get_nested_key(key.linked_key.key_path) is None:
+            raise AssertionException(
+                "Cannot decrypt key '{}'. Missing linked key '{}'".format(key.key_path, key.linked_key.key_path))
+        value = self.get_nested_key(key.key_path)
+        if key.is_filepath:
+            with open(value, 'r') as f:
+                data = f.read()
+                if encryption.is_encryptable(data):
+                    return
+        else:
+            data = value
+        if data is not None:
+            passphrase = self.retrieve_key(key.linked_key) or self.get_nested_key(key.linked_key.key_path)
+            decrypted_data = encryption.decrypt(passphrase, data)
+            return decrypted_data
 
     def retrieve_key(self, key):
         """
@@ -241,6 +278,19 @@ class CredentialConfig:
         stored_credential = self.retrieve_key(key)
         if stored_credential is not None:
             self.set_nested_key(key.key_path, stored_credential)
+        if key.is_block and self.get_nested_key(key.key_path) is not None:
+            if not encryption.is_encryptable(self.get_nested_key(key.key_path)):
+                decrypted_key = self.decrypt_key(key)
+                if decrypted_key is not None:
+                    self.logger.info("Private key file decrypted and saved to: '{}'"
+                                     .format(self.get_nested_key(key.key_path)))
+                    self.set_nested_key(key.key_path, pss(decrypted_key))
+        if key.is_filepath:
+            decrypted_key = self.decrypt_key(key)
+            if decrypted_key is not None:
+                self.logger.info("Private key file decrypted and saved to: '{}'"
+                                 .format(self.get_nested_key(key.key_path)))
+                encryption.write_key(decrypted_key, self.get_nested_key(key.key_path))
         return stored_credential
 
     @classmethod
@@ -285,13 +335,15 @@ class CredentialConfig:
 
 
 class Key:
-    def __init__(self, key_path, is_block=False, linked_key=None):
+    def __init__(self, key_path, is_block=False, linked_key=None, is_filepath=False):
         self.key_path = key_path
         self.is_block = is_block
         self.linked_key = linked_key
+        self.is_filepath = is_filepath
 
     def has_linked(self):
         return not self.linked_key is None
+
 
 class LdapCredentialConfig(CredentialConfig):
     secured_keys = [Key(key_path=['password'])]
@@ -311,6 +363,7 @@ class UmapiCredentialConfig(CredentialConfig):
             is_block=True,
             linked_key=pass_key)
     ]
+    priv_key_path = Key(key_path=['enterprise', 'priv_key_path'], is_block=False, linked_key=pass_key, is_filepath=True)
 
 
 class ConsoleCredentialConfig(UmapiCredentialConfig):
