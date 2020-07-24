@@ -225,7 +225,7 @@ def test_get_credential_old_format(tmp_config_files):
     with pytest.raises(AssertionException):
         ldap_dict_config.get_credential('password', 'user_sync')
     username = ldap_config['username']
-    credman.set('ldap_secure_identifier', 'test_password', username)
+    credman.set('ldap_secure_identifier', 'test_password', username=username)
     # set the plain key to None so get_credential will look for the secure_password_key format
     ldap_config['password'] = None
     assert ldap_dict_config.get_credential('password', username) == 'test_password'

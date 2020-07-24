@@ -1,12 +1,16 @@
+import binascii
 import logging
 from collections import Mapping
+from os import urandom
 
+import click
 import keyrings.cryptfile.cryptfile
 import six
 from keyring.errors import KeyringError
 from ruamel.yaml import YAML
 from ruamel.yaml.scalarstring import PreservedScalarString as pss
 
+from user_sync import encryption
 from user_sync.config import ConfigFileLoader, ConfigLoader
 from user_sync.error import AssertionException
 
@@ -22,15 +26,15 @@ yaml = YAML()
 yaml.indent(mapping=4, sequence=4, offset=2)
 
 
-
 class CredentialManager:
     username = 'user_sync'
     logger = logging.getLogger("credential_manager")
     keyring_name = keyring.get_keyring().name
 
-    def __init__(self, root_config=None, connector_type="all"):
+    def __init__(self, root_config=None, connector_type="all", auto=False):
         self.config_files = {}
         self.root_config = root_config
+        self.auto = auto
         if self.root_config:
             self.load_configs(connector_type)
 
@@ -49,12 +53,6 @@ class CredentialManager:
             keyring.set_password(identifier, username or cls.username, value)
         except KeyringError as e:
             raise AssertionException("Error in setting credentials '{0}' : {1}".format(identifier, str(e)))
-        except Exception as e:
-            if "stub received bad data" in str(e):
-                raise AssertionException("Bad value for {0}: {1} \nPrivate key data"
-                                         " storage may not be supported"
-                                         " due to character limits. Encrypt private key data instead?".format(identifier, str(e)))
-            raise e
 
     def modify_credentials(self, action):
         all_credentials = {}
@@ -79,11 +77,11 @@ class CredentialManager:
 
         if connector_type in ['all', 'umapi']:
             for u in ConfigLoader.as_list(root_cfg['adobe_users']['connectors']['umapi']):
-                self.config_files[u] = UmapiCredentialConfig(u)
+                self.config_files[u] = UmapiCredentialConfig(u, auto=self.auto)
 
         for c, v in root_cfg['directory_users']['connectors'].items():
             if connector_type in ['all', c]:
-                self.config_files[v] = CredentialConfig.create(c, v)
+                self.config_files[v] = CredentialConfig.create(c, v, auto=self.auto)
 
     def store(self):
         return self.modify_credentials('store')
@@ -102,30 +100,54 @@ class CredentialConfig:
     """
     secured_keys = []
 
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, auto=False):
         # filename will be the unique identifier for each file.  This can be an absolute path - but if so we cannot
         # move the sync tool.  More to consider here....
         self.filename = filename
+        self.auto = auto
+        self.logger = logging.getLogger('credman')
 
         # The dictionary including comments that will be updated and re-saved
         self.load()
 
     @classmethod
-    def create(self, subclass, filename):
+    def create(self, subclass, filename, auto=False):
         name = subclass.capitalize() + "CredentialConfig"
-        return globals()[name](filename)
+        return globals()[name](filename, auto)
 
     def modify_credentials(self, action):
         credentials = {}
-        for c in self.secured_keys:
+        for k in self.secured_keys:
+            val = label = None
             try:
                 # Try to do the action, but don't break on exception because rest of actions
                 # can still be completed
-                val = action(c)
-                if val is not None:
-                    credentials[':'.join(c.credential)] = val
+                val = action(k)
+                label = k.key_path
             except AssertionException as e:
-                logging.getLogger().exception("\nError: {}\n".format(str(e)), exc_info=False)
+                self.logger.exception("\nError: {}\n".format(str(e)), exc_info=False)
+            except Exception as e:
+                if not "stub received bad data" in str(e) and 'priv_key_data' in k.key_path:
+                    raise
+
+                # Do not encrypt data if already encrypted - passphrase in file will still be stored
+                if not encryption.is_encryptable(self.get_nested_key(k.key_path)):
+                    self.logger.info("Skipping '{}' - likely already encrypted".format(k.key_path[-1]))
+                    continue
+
+                if self.auto or click.confirm(
+                        "Private key storage is not supported on this platform due to character limits."
+                        "\n Encrypt private key instead?".format(k.key_path, str(e))):
+                    try:
+                        val, label = self.encrypt_key(k)
+                    except AssertionException as e:
+                        self.logger.exception("\nError: {}\n".format(str(e)), exc_info=False)
+                        continue
+                else:
+                    self.logger.warning("Private key will remain in plaintext, unencrypted format.")
+
+            if val is not None:
+                credentials[':'.join(label)] = val
         return credentials
 
     def store(self):
@@ -159,34 +181,53 @@ class CredentialConfig:
         """
         return self.filename + ":" + ":".join(identifier)
 
-    def store_key(self, key_list):
+    def store_key(self, key, value=None):
         """
         Takes a list of keys representing the path to a value in the YAML file, and constructs an identifier.
         If the key is a string and NOT in secure format, calls credential manager to set the key
         If key is already in the form 'secure:identifier', no action is taken.
-        :param key_list: list of nested keys from a YAML file
+        :param key: list of nested keys from a YAML file
+        :param value: credential value to be stored
         :return:
         """
-        key_list = ConfigLoader.as_list(key_list.credential)
-        value = self.get_nested_key(key_list)
+        value = self.get_nested_key(key.key_path) or value
         if value is None:
             return
         if not self.parse_secure_key(value):
-            k = self.get_qualified_identifier(key_list)
+            k = self.get_qualified_identifier(key.key_path)
             CredentialManager.set(k, value)
-            self.set_nested_key(key_list, {'secure': k})
+            self.set_nested_key(key.key_path, {'secure': k})
             return k
 
-    def retrieve_key(self, key_list):
+    def get_passphrase(self):
+        return str(binascii.b2a_hex(urandom(16)).decode()) if self.auto else \
+            click.prompt('Create password ', hide_input=True, confirmation_prompt=True)
+
+    def encrypt_key(self, key):
+        data = self.get_nested_key(key.key_path)
+        passphrase = None
+        if key.has_linked():
+            # If key has associated password, we should use this instead of prompting
+            passphrase = self.retrieve_key(key.linked_key) or self.get_nested_key(key.linked_key.key_path)
+        if passphrase is None:
+            passphrase = self.get_passphrase()
+
+        enc_data = encryption.encrypt(passphrase, data)
+        self.set_nested_key(key.key_path, pss(enc_data))
+        if key.has_linked():
+            self.store_key(key.linked_key, value=passphrase)
+            return passphrase, key.linked_key.key_path
+        return passphrase, key.key_path
+
+    def retrieve_key(self, key):
         """
         Retrieves the value (if any) for key_list and returns the secure identifier if present
         If the key is not a secure key, returns None
-        :param key_list:
+        :param key:
         :return:
         """
-        is_block = key_list.is_block
-        key_list = ConfigLoader.as_list(key_list.credential)
-        secure_identifier = self.parse_secure_key(self.get_nested_key(key_list))
+        is_block = key.is_block
+        secure_identifier = self.parse_secure_key(self.get_nested_key(key.key_path))
         if secure_identifier is None:
             return
         value = CredentialManager.get(secure_identifier)
@@ -196,10 +237,10 @@ class CredentialConfig:
             return value
         raise AssertionException("No stored value found for identifier: {}".format(secure_identifier))
 
-    def revert_key(self, key_list):
-        stored_credential = self.retrieve_key(key_list)
+    def revert_key(self, key):
+        stored_credential = self.retrieve_key(key)
         if stored_credential is not None:
-            self.set_nested_key(key_list.credential, stored_credential)
+            self.set_nested_key(key.key_path, stored_credential)
         return stored_credential
 
     @classmethod
@@ -243,34 +284,34 @@ class CredentialConfig:
         return d
 
 
-class Credential:
-    def __init__(self, credential, is_block=False):
-        self.credential = credential
+class Key:
+    def __init__(self, key_path, is_block=False, linked_key=None):
+        self.key_path = key_path
         self.is_block = is_block
+        self.linked_key = linked_key
 
+    def has_linked(self):
+        return not self.linked_key is None
 
 class LdapCredentialConfig(CredentialConfig):
-    secured_keys = [Credential(['password'])]
+    secured_keys = [Key(key_path=['password'])]
 
 
 class OktaCredentialConfig(CredentialConfig):
-    secured_keys = [Credential(['api_token'])]
+    secured_keys = [Key(key_path=['api_token'])]
 
 
 class UmapiCredentialConfig(CredentialConfig):
+    pass_key = Key(key_path=['enterprise', 'priv_key_pass'])
     secured_keys = [
-        Credential(['enterprise', 'api_key']),
-        Credential(['enterprise', 'client_secret']),
-        Credential(['enterprise', 'priv_key_pass']),
-        Credential(['enterprise', 'priv_key_data'], is_block=True)
+        Key(key_path=['enterprise', 'api_key']),
+        Key(key_path=['enterprise', 'client_secret']),
+        pass_key,
+        Key(key_path=['enterprise', 'priv_key_data'],
+            is_block=True,
+            linked_key=pass_key)
     ]
 
 
-class ConsoleCredentialConfig(CredentialConfig):
-    secured_keys = [
-        Credential(['integration', 'api_key']),
-        Credential(['integration', 'client_secret']),
-        Credential(['integration', 'priv_key_pass']),
-        Credential(['integration', 'priv_key_data'], is_block=True)
-    ]
-
+class ConsoleCredentialConfig(UmapiCredentialConfig):
+    pass

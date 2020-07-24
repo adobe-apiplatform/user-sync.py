@@ -44,30 +44,36 @@ server:
 # the correct settings for your enterprise organization.
 # [NOTE: the priv_key_path setting can be an absolute or relative pathname;
 # if relative, it is interpreted relative to this configuration file.]
+
+# (optional) You can store credentials in the operating system credential store
+# (Windows Credential Manager, Mac Keychain, Linux Freedesktop Secret Service
+# or KWallet - these will be built into the Linux distribution).
+# To use this feature, You can secure the credentials by using the credentials store command in the command line
+# Refer to the (URL to Additional Tools)
+
+# (optional) You can encrypt the private key by running `user-sync.exe encrypt'.  
+# This will encrypt the private key as RSA 256. you should uncomment 
+# priv_key_pass key so that User Sync is knows to decrypt the key.  priv_key_pass should have the plaintext value
+# of the password (or, see credential storage above).  The decryption also works for keys encrypted
+# externally with OpenSSL or other libraries, provided the format is correct.
+
 enterprise:
   org_id: "Org ID goes here"
   api_key: "API key goes here"
   client_secret: "Client secret goes here"
   tech_acct: "Tech account ID goes here"
   priv_key_path: "private.key"
+  #priv_key_pass: "my passphrase for my private key"
 
   # (optional) As an alternative to priv_key_path, you can place the private key 
   # data directly in this file.  To do this, remove the priv_key_path entry above 
   # and uncomment the following entry.  Replace the sample data with the data 
   # from your private key file (which will be much longer).
-  # priv_key_data: |
+  # Note: the Windows credential store can't store data as large as a private
+  # key, so Windows users will be prompted to encrypt the private key data instead.
+  #priv_key_data: |
   #   -----BEGIN RSA PRIVATE KEY-----
   #   MIIf74jfd84oAgEA6brj4uZ2f1Nkf84j843jfjjJGHYJ8756GHHGGz7jLyZWSscH
   #   CoifurKJY763GHKL98mJGYxWSBvhlWskdjdatagoeshere986fKFUNGd74kdfuEH
   #   -----END RSA PRIVATE KEY-----
-
-  # (optional) You can store credentials in the operating system credential store
-  # (Windows Credential Manager, Mac Keychain, Linux Freedesktop Secret Service
-  # or KWallet - these will be built into the Linux distribution).
-  # To use this feature, You can secure the credentials by using the credentials store commands in the command line
-
-  # Refer to the (URL to Additional Tools) 
-  # priv_key_pass: "my passphrase for my private key"
-  # Private key pass can also be stored using credentials store command
-  
 

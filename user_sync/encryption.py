@@ -53,3 +53,12 @@ def decrypt(passphrase, data):
 
 def contains_phrase(result, *args):
     return True in {x.lower() in result.lower() for x in args}
+
+def is_encryptable(data):
+    try:
+        encrypt("pass", data)
+        return True
+    except Exception:
+        return False
+
+

@@ -37,6 +37,7 @@ def make_auth_dict(name, config, org_id, tech_acct, logger):
     passphrase = config.get_credential('priv_key_pass', org_id, True)
     if passphrase:
         try:
+            # try to decrypt the private key data within the file first
             key_data = decrypt(passphrase, key_data)
         except (ValueError, IndexError, TypeError, AssertionException) as e:
             raise AssertionException('%s: Error decrypting private key, either the password is wrong or: %s' %
