@@ -48,7 +48,7 @@ from user_sync.post_sync.manager import PostSyncManager
 import user_sync.post_sync.connectors.sign_sync
 import user_sync.resource
 import user_sync.engine.umapi
-import user_sync.config.sync_config_loader
+import user_sync.config.user_sync
 import user_sync.connector.connector_umapi
 from user_sync.error import AssertionException
 from user_sync.post_sync.manager import PostSyncManager
