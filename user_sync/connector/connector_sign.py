@@ -17,23 +17,17 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
-import json
 import logging
-import jwt
-import six
-import user_sync.connector.helper
+
 import user_sync.config.common
+import user_sync.connector.helper
 import user_sync.helper
 import user_sync.identity_type
-from user_sync.error import AssertionException
-from user_sync.version import __version__ as app_version
-from user_sync.connector.client import SignClient
+from user_sync.post_sync.connectors.sign_sync.client import SignClient
 
 
 class SignConnector(object):
-    name = 'sign'
-    
+
     def __init__(self, caller_options):
         """
         :type name: str
@@ -46,7 +40,10 @@ class SignConnector(object):
         sign_builder.require_string_value('admin_email')
         sign_builder.set_string_value('console_org', None)
         self.options = sign_builder.get_options()
-        self.sign_client = SignClient(self.options)
+        self.console_org = self.options['console_org']
+        self.name = 'sign_{}'.format(self.console_org)
+        self.logger = logging.getLogger(self.name)
+        self.sign_client = SignClient(self.options, self.logger)
 
     def sign_groups(self):
         return self.sign_client.get_groups()
@@ -62,6 +59,3 @@ class SignConnector(object):
 
     def get_group(self, assignment_group):
         return self.sign_client.groups.get(assignment_group)
-
-    def get_console_org(self):
-        return self.sign_client.console_org

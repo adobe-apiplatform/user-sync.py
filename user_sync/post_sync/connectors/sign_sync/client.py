@@ -7,19 +7,17 @@ from user_sync.error import AssertionException
 class SignClient:
     version = 'v5'
     _endpoint_template = 'api/rest/{}/'
-    DEFAULT_GROUP_NAME = 'default group'
 
-    def __init__(self, config):
+    def __init__(self, config, logger=None):
         for k in ['host', 'key', 'admin_email']:
             if k not in config:
                 raise AssertionException("Key '{}' must be specified for all Sign orgs".format(k))
         self.host = config['host']
         self.key = config['key']
         self.admin_email = config['admin_email']
-        self.console_org = config['console_org'] if 'console_org' in config else None
         self.api_url = None
         self.groups = None
-        self.logger = logging.getLogger(self.logger_name())
+        self.logger = logger or logging.getLogger("sign_client_{}".format(self.key[0:4]))
 
     def _init(self):
         self.api_url = self.base_uri()
@@ -29,9 +27,6 @@ class SignClient:
         if self.api_url is None or self.groups is None:
             self._init()
         return self.groups
-
-    def logger_name(self):
-        return 'sign_client.{}'.format(self.console_org if self.console_org else 'main')
 
     def header(self):
         """

@@ -72,7 +72,7 @@ class SignEngine():
             if assignment_group is None:
                 assignment_group = self.DEFAULT_GROUP_NAME
 
-            group_id = sign_connector.groups.get(assignment_group)
+            group_id = sign_connector.get_group(assignment_group)
             admin_roles = self.admin_roles.get(org_name, {})
             user_roles = self.resolve_new_roles(umapi_user, admin_roles)
             update_data = {
