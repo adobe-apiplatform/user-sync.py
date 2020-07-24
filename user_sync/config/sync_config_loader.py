@@ -25,7 +25,7 @@ from copy import deepcopy
 
 import six
 
-import user_sync.engine.umapi_engine
+
 import user_sync.helper
 import user_sync.identity_type
 import user_sync.port
@@ -245,7 +245,7 @@ class ConfigLoader(object):
                         'You must specify the groups to read when using the adobe-users "group" option')
                 options['adobe_group_filter'] = []
                 for group in adobe_users_spec[1].split(','):
-                    options['adobe_group_filter'].append(user_sync.engine.umapi_engine.AdobeGroup.create(group))
+                    options['adobe_group_filter'].append(user_sync.engine.umapi.AdobeGroup.create(group))
             else:
                 raise AssertionException('Unknown option "%s" for adobe-users' % adobe_users_action)
 
@@ -340,7 +340,7 @@ class ConfigLoader(object):
 
     def load_directory_groups(self):
         """
-        :rtype dict(str, list(user_sync.engine.umapi_engine.AdobeGroup))
+        :rtype dict(str, list(user_sync.engine.umapi.AdobeGroup))
         """
         adobe_groups_by_directory_group = {}
         if self.main_config.get_dict_config('directory', True):
@@ -360,7 +360,7 @@ class ConfigLoader(object):
 
             adobe_groups = item.get_list('adobe_groups', True)
             for adobe_group in adobe_groups or []:
-                group = user_sync.engine.umapi_engine.AdobeGroup.create(adobe_group)
+                group = user_sync.engine.umapi.AdobeGroup.create(adobe_group)
                 if group is None:
                     validation_message = ('Bad adobe group: "%s" in directory group: "%s"' %
                                           (adobe_group, directory_group))
@@ -478,7 +478,7 @@ class ConfigLoader(object):
         """
         Return a dict representing options for RuleProcessor.
         """
-        options = deepcopy(user_sync.engine.umapi_engine.RuleProcessor.default_options)
+        options = deepcopy(user_sync.engine.umapi.RuleProcessor.default_options)
         options.update(self.invocation_options)
 
         # process directory configuration options
@@ -500,7 +500,7 @@ class ConfigLoader(object):
         additional_groups = directory_config.get_list('additional_groups', True) or []
         try:
             additional_groups = [{'source': re.compile(r['source']),
-                                  'target': user_sync.engine.umapi_engine.AdobeGroup.create(r['target'], index=False)}
+                                  'target': user_sync.engine.umapi.AdobeGroup.create(r['target'], index=False)}
                                  for r in additional_groups]
         except Exception as e:
             raise AssertionException("Additional group rule error: {}".format(str(e)))
@@ -539,8 +539,8 @@ class ConfigLoader(object):
         if exclude_group_names:
             exclude_groups = []
             for name in exclude_group_names:
-                group = user_sync.engine.umapi_engine.AdobeGroup.create(name)
-                if not group or group.get_umapi_name() != user_sync.engine.umapi_engine.PRIMARY_UMAPI_NAME:
+                group = user_sync.engine.umapi.AdobeGroup.create(name)
+                if not group or group.get_umapi_name() != user_sync.engine.umapi.PRIMARY_UMAPI_NAME:
                     validation_message = 'Illegal value for %s in config file: %s' % ('exclude_groups', name)
                     if not group:
                         validation_message += ' (Not a legal group name)'
@@ -579,7 +579,7 @@ class ConfigLoader(object):
             # 1. it allows validation of group names, and matching them to adobe groups
             # 2. it allows removal of adobe groups not assigned by the hook
             for extended_adobe_group in extension_config.get_list('extended_adobe_groups', True) or []:
-                group = user_sync.engine.umapi_engine.AdobeGroup.create(extended_adobe_group)
+                group = user_sync.engine.umapi.AdobeGroup.create(extended_adobe_group)
                 if group is None:
                     message = 'Extension contains illegal extended_adobe_group spec: ' + str(extended_adobe_group)
                     raise AssertionException(message)
@@ -591,7 +591,7 @@ class ConfigLoader(object):
 
         # set the adobe group filter from the mapping, if requested.
         if options.get('adobe_group_mapped') is True:
-            options['adobe_group_filter'] = set(user_sync.engine.umapi_engine.AdobeGroup.iter_groups())
+            options['adobe_group_filter'] = set(user_sync.engine.umapi.AdobeGroup.iter_groups())
 
         return options
 
