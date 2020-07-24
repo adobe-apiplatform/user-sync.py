@@ -7,7 +7,7 @@ from user_sync.engine.umapi import AdobeGroup
 from user_sync.error import AssertionException
 
 
-class SignEngine():
+class SignEngine:
     name = 'sign_sync'
     DEFAULT_GROUP_NAME = 'default group'
 
