@@ -41,6 +41,7 @@ import user_sync.lockfile
 import user_sync.resource
 from user_sync.config import user_sync as config
 from user_sync.config import common as config_common
+from user_sync.config.sign_sync import SignConfigLoader
 from user_sync.connector.connector_umapi import UmapiConnector
 from user_sync.engine import umapi as rules
 
@@ -190,6 +191,70 @@ def sync(**kwargs):
         if lock.set_lock():
             try:
                 begin_work(config_loader)
+            finally:
+                lock.unlock()
+        else:
+            logger.critical("A different User Sync process is currently running.")
+
+    except AssertionException as e:
+        if not e.is_reported():
+            logger.critical("%s", e)
+            e.set_reported()
+    except KeyboardInterrupt:
+        try:
+            logger.critical('Keyboard interrupt, exiting immediately.')
+        except:
+            pass
+    except:
+        try:
+            logger.error('Unhandled exception', exc_info=sys.exc_info())
+        except:
+            pass
+
+    finally:
+        if run_stats is not None:
+            run_stats.log_end(logger)
+
+@main.command()
+@click.help_option('-h', '--help')
+@click.option('-c', '--config-filename',
+                help = "path to your main configuration file",
+                type = str,
+                nargs = 1,
+                metavar = 'path-to-file')     #default should be sign-sync-config.yml
+@click.option('--users',
+              help="specify the users to be considered for sync. Legal values are 'all' (the default), "
+                   "'group names' (a comma-separated list of groups in the enterprise "
+                   "directory, and only users in those groups are selected), 'mapped' (all groups listed in "
+                   "the configuration file).",
+              cls=user_sync.cli.OptionMulti,
+              type=list,
+              metavar='all|mapped|group [group list or path-to-file.csv]') #default should mapped
+# Correct Sign only user actions??
+@click.option('--sign-only-user-action',
+              help="specify what action to take on Sign users that don't match users from the "
+                   "directory.  Options are 'exclude' (from all changes), "
+                   "'delete' (users and their cloud storage), and default perserve (no action taken) ",
+              cls=user_sync.cli.OptionMulti,
+              type=list,
+              metavar='exclude|preserve|delete')
+def sign_sync(**kwargs):
+    """Run Sign Sync """
+    run_stats = None
+    try:
+        #load the config files (sign-sync-config.yml) and start the file logger
+        sign_config_loader = SignConfigLoader(kwargs)
+        init_log(sign_config_loader.get_logging_config())
+
+        run_stats = user_sync.helper.JobStats('Run (Sign Sync  version: ' + app_version + ')', divider='=')
+        run_stats.log_start(logger)
+        log_parameters(sys.argv[1:], sign_config_loader)
+        script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
+        lock_path = os.path.join(script_dir, 'lockfile')
+        lock = user_sync.lockfile.ProcessLock(lock_path)
+        if lock.set_lock():
+            try:
+                begin_work_sign(sign_config_loader)
             finally:
                 lock.unlock()
         else:
@@ -411,6 +476,7 @@ def begin_work(config_loader):
 
     if directory_connector is not None and directory_connector_options is not None:
         # specify the default user_identity_type if it's not already specified in the options
+        #keep
         if 'user_identity_type' not in directory_connector_options:
             directory_connector_options['user_identity_type'] = rule_config['new_account_type']
         directory_connector.initialize(directory_connector_options)
@@ -442,6 +508,29 @@ def begin_work(config_loader):
     #  Post sync section
     if post_sync_manager:
         post_sync_manager.run(rule_processor.post_sync_data)
+
+def begin_work_sign (sign_config_loader):
+    directory_connector, directory_groups =load_root_config(sign_config_loader)
+    # initializing the sign engine
+
+def load_root_config(config_loader):
+    # will get the directory groups based off of sign_sync config
+    directory_groups = config_loader.get_directory_groups()
+
+    directory_connector = None
+    directory_connector_options = None
+    directory_connector_module_name = config_loader.get_directory_connector_module_name()
+    if directory_connector_module_name is not None:
+        directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
+        directory_connector = user_sync.connector.directory.DirectoryConnector(directory_connector_module)
+        directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
+
+    config_loader.check_unused_config_keys()
+
+    if directory_connector is not None and directory_connector_options is not None:
+        directory_connector.initialize(directory_connector_options)
+
+    return directory_connector, directory_groups
 
 
 @main.command(short_help="Encrypt RSA private key")
