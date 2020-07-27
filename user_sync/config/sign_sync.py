@@ -9,6 +9,7 @@ from schema import Schema
 from user_sync.config.common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options
 from user_sync.error import AssertionException
 from user_sync.engine.common import AdobeGroup
+from user_sync.engine.sign import SignSyncEngine
 from .error import ConfigValidationError
 
 
@@ -147,7 +148,13 @@ class SignConfigLoader(ConfigLoader):
         return primary_options, secondary_options
 
     def get_engine_options(self) -> dict:
-        return {}
+        options = deepcopy(SignSyncEngine.default_options)
+        options.update(self.invocation_options)
+
+        user_sync = self.main_config.get_dict_config('user_sync')
+        options['create_users'] = user_sync.get_bool('create_users')
+        options['sign_only_limit'] = user_sync.get_value('sign_only_limit', (int, str))
+        return options
 
     def check_unused_config_keys(self):
         # not clear if we need this since we are validating the config schema

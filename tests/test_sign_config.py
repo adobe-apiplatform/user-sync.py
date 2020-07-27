@@ -7,6 +7,7 @@ from util import update_dict
 from user_sync.config.sign_sync import SignConfigLoader
 from user_sync.config.user_sync import DictConfig
 from user_sync.engine.common import AdobeGroup
+from user_sync.engine.sign import SignSyncEngine
 from user_sync.error import AssertionException
 
 
@@ -177,7 +178,19 @@ def test_logging_config(sign_config_file):
     assert logging_config.get_string('console_log_level') == 'debug'
 
 
-def test_engine_options(sign_config_file):
+def test_engine_options(sign_config_file, modify_sign_config, tmp_sign_connector_config, tmp_config_files):
+    sign_config_file = modify_sign_config(['user_sync'], {'create_users': False, 'sign_only_limit': 1000})
     args = {'config_filename': sign_config_file}
     config = SignConfigLoader(args)
+    options = config.get_engine_options()
+    # ensure rule options dict is initialized from default_options
+    for k in SignSyncEngine.default_options:
+        assert k in options
+    # ensure rule options dict is updated with invocation_options
+    for k in config.invocation_options:
+        assert k in options
+    # ensure that we didn't accidentally introduce any new keys in get_engine_options()
+    assert not (set(SignSyncEngine.default_options.keys()) | set(config.invocation_options.keys())) - set(options.keys())
+    assert options['create_users'] == False
+    assert options['sign_only_limit'] == 1000
     
