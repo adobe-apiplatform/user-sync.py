@@ -30,10 +30,9 @@ class SignConnector(object):
 
     def __init__(self, caller_options):
         """
-        :type name: str
         :type caller_options: dict
         """
-        caller_config = user_sync.config.common.DictConfig(self.name + ' configuration', caller_options)
+        caller_config = user_sync.config.common.DictConfig('sign_configuration', caller_options)
         sign_builder = user_sync.config.common.OptionsBuilder(caller_config)
         sign_builder.require_string_value('host')
         sign_builder.require_string_value('key')
