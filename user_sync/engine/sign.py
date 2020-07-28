@@ -7,14 +7,23 @@ from user_sync.engine.umapi import AdobeGroup
 from user_sync.error import AssertionException
 
 
-class SignEngine:
+class SignSyncEngine:
+    default_options = {
+        'test_mode': False,
+        'user_groups': [],
+        'entitlement_groups': [],
+        'identity_types': [],
+        'admin_roles': None
+    }
     name = 'sign_sync'
     DEFAULT_GROUP_NAME = 'default group'
 
-    def __init__(self, config_options, test_mode=False):
+    def __init__(self, config_options):
         super().__init__()
+        options = dict(self.default_options)
+        options.update(config_options)
         self.logger = logging.getLogger(self.name)
-        self.test_mode = test_mode
+        self.test_mode = options.get('test_mode')
         sync_config = DictConfig('<%s configuration>' % self.name, config_options)
         self.user_groups = sync_config.get_list('user_groups', True)
         if self.user_groups is None:
@@ -36,7 +45,7 @@ class SignEngine:
         sign_orgs = sync_config.get_list('sign_orgs')
         self.connectors = {cfg.get('console_org'): SignConnector(cfg) for cfg in sign_orgs}
 
-    def run(self, post_sync_data):
+    def run(self, directory_groups, directory_connector, sign_connector):
         """
         Run the Sign sync
         :param post_sync_data:
