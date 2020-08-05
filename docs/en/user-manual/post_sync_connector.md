@@ -51,7 +51,7 @@ post_sync:
   modules:
     - sign_sync
   connectors:
-    sign_sync: connector-sign-sync.yml
+    sign_sync: sign-sync-config.yml
 ```
 
 This example shows the **Adobe Sign Sync** connector enabled.  The `modules` option specifies that the `sign_sync`
@@ -127,7 +127,7 @@ The Adobe Sign Sync configuration file, `connector-sign-sync.yml`, defines the b
 ### Example
 
 ```yaml
-# connector-sign-sync.yml
+# sign-sync-config.yml
 sign_orgs:
   - host: api.echosign.com
     key: [API key]
