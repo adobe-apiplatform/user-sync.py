@@ -291,11 +291,6 @@ def example_config(**kwargs):
               prompt='LDAP Config Filename', default='connector-ldap.yml')
 def example_config_sign(**kwargs):
     """Generate Sign Sync Config"""
-    res_filename = os.path.join('examples', 'connector-sign.yml')
-#    res_file = user_sync.resource.get_resource(res_filename)
-#    assert res_file is not None, "Resource file '{}' not found".format(res_filename)
-#    click.echo("Generating file '{}'".format(filename))
-#    shutil.copy(res_file, filename)
     res_files = {
         'root': os.path.join('examples', 'sign-sync-config.yml'),
         'sign': os.path.join('examples', 'connector-sign.yml'),
