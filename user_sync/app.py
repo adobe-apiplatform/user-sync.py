@@ -281,20 +281,39 @@ def example_config(**kwargs):
         with open(target, 'w') as file:
             file.write(content)
 
-
 @main.command()
 @click.help_option('-h', '--help')
-@click.option('--filename', help="Filename of Sign Sync config",
-              prompt='Sign Sync Config Filename', default='connector-sign-sync.yml')
-def example_config_sign(filename):
+@click.option('--root', help="Filename of root sign sync config file",
+              prompt='Main Config Filename', default='sign-sync-config.yml')
+@click.option('--sign', help="Filename of Sign Sync config",
+              prompt='Sign Sync Config Filename', default='connector-sign.yml')
+@click.option('--ldap', help="Filename of LDAP credential config file",
+              prompt='LDAP Config Filename', default='connector-ldap.yml')
+def example_config_sign(**kwargs):
     """Generate Sign Sync Config"""
-    res_filename = os.path.join('examples', 'connector-sign-sync.yml')
+    res_filename = os.path.join('examples', 'connector-sign.yml')
+#    res_file = user_sync.resource.get_resource(res_filename)
+#    assert res_file is not None, "Resource file '{}' not found".format(res_filename)
+#    click.echo("Generating file '{}'".format(filename))
+#    shutil.copy(res_file, filename)
+    res_files = {
+        'root': os.path.join('examples', 'sign-sync-config.yml'),
+        'sign': os.path.join('examples', 'connector-sign.yml'),
+        'ldap': os.path.join('examples', 'connector-ldap.yml'),
+    }
 
-    res_file = user_sync.resource.get_resource(res_filename)
-    assert res_file is not None, "Resource file '{}' not found".format(res_filename)
-    click.echo("Generating file '{}'".format(filename))
-    shutil.copy(res_file, filename)
-
+    for k, fname in kwargs.items():
+        target = Path.cwd() / fname
+        assert k in res_files, "Invalid option specified"
+        res_file = user_sync.resource.get_resource(res_files[k])
+        assert res_file is not None, "Resource file '{}' not found".format(res_files[k])
+        if target.exists() and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(target)):
+            continue
+        click.echo("Generating file '{}'".format(fname))
+        with open(res_file, 'r') as file:
+            content = file.read()
+        with open(target, 'w') as file:
+            file.write(content)
 
 @main.command()
 @click.help_option('-h', '--help')
