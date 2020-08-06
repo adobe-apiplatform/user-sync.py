@@ -3,11 +3,12 @@ from collections import defaultdict
 
 import six
 
-from user_sync import error
+from user_sync import error, identity_type
 from user_sync.config.common import DictConfig
 from user_sync.connector.connector_sign import SignConnector
 from user_sync.engine.umapi import AdobeGroup
 from user_sync.error import AssertionException
+from user_sync.helper import normalize_string
 
 
 class SignSyncEngine:
@@ -19,7 +20,10 @@ class SignSyncEngine:
         'identity_types': [],
         'admin_roles': None,
         'create_users': False,
-        'sign_only_limit': 200
+        'sign_only_limit': 200,
+        'process_groups': False,
+        'directory_group_filter': None,
+        'new_account_type': identity_type.ENTERPRISE_IDENTITY_TYPE
     }
     name = 'sign_sync'
     DEFAULT_GROUP_NAME = 'default group'
@@ -40,7 +44,7 @@ class SignSyncEngine:
         self.identity_types = sync_config.get_list('identity_types', True)
         if self.identity_types is None:
             self.identity_types = ['adobeID', 'enterpriseID', 'federatedID']
-
+        self.directory_user_by_user_key = {}
         # dict w/ structure - umapi_name -> adobe_group -> [set of roles]
         self.admin_roles = self._admin_role_mapping(sync_config)
 
@@ -64,7 +68,7 @@ class SignSyncEngine:
             return
         directory_users = self.read_desired_user_groups(directory_groups, directory_connector)
         if directory_users is None:
-            raise AssertionException("Error getting umapi users from post_sync_data")
+            raise AssertionException("Error retrieving users from directory")
         for org_name, sign_connector in self.connectors.items():
             # create any new Sign groups
             for new_group in set(self.user_groups[org_name]) - set(sign_connector.sign_groups()):
@@ -203,17 +207,50 @@ class SignSyncEngine:
             # if not self.is_selected_user_key(user_key):
             #     continue
 
-        return directory_users
+        return directory_user_by_user_key
 
-    def is_directory_user_in_groups(self, directory_user, groups):
+    def get_directory_user_key(self, directory_user):
         """
+        Identity-type aware user key management for directory users
         :type directory_user: dict
-        :type groups: set
-        :rtype bool
         """
-        if groups is None:
-            return True
-        for directory_user_group in directory_user['groups']:
-            if directory_user_group in groups:
-                return True
-        return False
+        id_type = self.get_identity_type_from_directory_user(directory_user)
+        return self.get_user_key(id_type, directory_user['username'], directory_user['domain'], directory_user['email'])
+
+    def get_user_key(self, id_type, username, domain, email=None):
+        """
+        Construct the user key for a directory or adobe user.
+        The user key is the stringification of the tuple (id_type, username, domain)
+        but the domain part is left empty if the username is an email address.
+        If the parameters are invalid, None is returned.
+        :param username: (required) username of the user, can be his email
+        :param domain: (optional) domain of the user
+        :param email: (optional) email of the user
+        :param id_type: (required) id_type of the user
+        :return: string "id_type,username,domain" (or None)
+        :rtype: str
+        """
+        id_type = identity_type.parse_identity_type(id_type)
+        email = normalize_string(email) if email else None
+        username = normalize_string(username) or email
+        domain = normalize_string(domain)
+
+        if not id_type:
+            return None
+        if not username:
+            return None
+        if username.find('@') >= 0:
+            domain = ""
+        elif not domain:
+            return None
+        return six.text_type(id_type) + u',' + six.text_type(username) + u',' + six.text_type(domain)
+
+    def get_identity_type_from_directory_user(self, directory_user):
+        identity_type = directory_user.get('identity_type')
+        if identity_type is None:
+            identity_type = self.options['new_account_type']
+            self.logger.warning('Found user with no identity type, using %s: %s', identity_type, directory_user)
+        return identity_type
+
+    def will_process_groups(self):
+        return self.options['process_groups']
