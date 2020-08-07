@@ -4,6 +4,7 @@ import yaml
 
 from tests.util import update_dict
 from user_sync.config.sign_sync import SignConfigLoader
+from user_sync.connector.connector_sign import SignConnector
 from user_sync.connector.directory import DirectoryConnector
 from user_sync.engine.sign import SignSyncEngine
 
@@ -37,22 +38,27 @@ def example_user():
     }
 
 
-def test_run_sign_engine(modify_root_config, sign_config_file, example_user):
+@pytest.fixture
+def example_engine(modify_root_config, sign_config_file):
     root_config_file = modify_root_config(['post_sync', 'modules'], 'sign_sync')
     root_config_file = modify_root_config(['post_sync', 'connectors'], sign_config_file)
     args = {'config_filename': sign_config_file}
     args['entitlement_groups'] = 'signgroup'
     args['sign_orgs'] = []
-    engine = SignSyncEngine(args)
-    assert isinstance(engine, SignSyncEngine)
+    return SignSyncEngine(args)
+
+
+def test_load_users_and_groups(example_engine, example_user):
     dc = DirectoryConnector
 
-    def dir_user_replacement(groups=['testgroup'], extended_attributes=[], all_users=False):
+    def dir_user_replacement(groups, extended_attributes, all_users):
         return six.itervalues(example_user)
 
+    # replace the call to load directory groups and users with the example user dict. this dict will then be modified
+    # by other methods in the engine/sign.py which are almost identical to the same methods in engine/umapi.py right now
+    # these methods should be altered for sign-specific usage - for example, there's no need to specify an identity
+    # type for sign-syncing purposes, but it has been left in there so that the code can run
     dc.load_users_and_groups = dir_user_replacement
-    # def update_sign_replacement()
-    engine.run(['testgroup'], dc)
-    assert 1 == 1
-    #DO TOMORROW MORNING
-    # get return value from load users and groups. replace reference to update with assert dir users not none, then do run and it should call that at the end
+    directory_users = example_engine.read_desired_user_groups({'directory_group': 'adobe_group'}, dc)
+    assert directory_users is not None
+

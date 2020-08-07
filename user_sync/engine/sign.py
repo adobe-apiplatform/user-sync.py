@@ -13,17 +13,16 @@ from user_sync.helper import normalize_string
 
 class SignSyncEngine:
     default_options = {
-        # based on what's required in sign-sync-config
-        'test_mode': False,
-        'user_groups': [],
-        'entitlement_groups': [],
-        'identity_types': [],
         'admin_roles': None,
         'create_users': False,
-        'sign_only_limit': 200,
-        'process_groups': False,
         'directory_group_filter': None,
-        'new_account_type': identity_type.ENTERPRISE_IDENTITY_TYPE
+        'entitlement_groups': [],
+        'identity_types': [],
+        'new_account_type': identity_type.FEDERATED_IDENTITY_TYPE,
+        'sign_only_limit': 200,
+        'sign_orgs': [],
+        'test_mode': False,
+        'user_groups': []
     }
     name = 'sign_sync'
     DEFAULT_GROUP_NAME = 'default group'
@@ -188,7 +187,7 @@ class SignSyncEngine:
 
         directory_user_by_user_key = self.directory_user_by_user_key
 
-        directory_groups = set(six.iterkeys(mappings)) if self.will_process_groups() else set()
+        directory_groups = set(six.iterkeys(mappings))
         if directory_group_filter is not None:
             directory_groups.update(directory_group_filter)
         directory_users = directory_connector.load_users_and_groups(groups=directory_groups,
@@ -252,5 +251,3 @@ class SignSyncEngine:
             self.logger.warning('Found user with no identity type, using %s: %s', identity_type, directory_user)
         return identity_type
 
-    def will_process_groups(self):
-        return self.options['process_groups']
