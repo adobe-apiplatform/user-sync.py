@@ -1,11 +1,8 @@
-import os
 import pytest
-import yaml
-import shutil
-from util import update_dict
-from user_sync.config.user_sync import ConfigLoader
-from user_sync.config.common import ConfigFileLoader, DictConfig
+
 from user_sync import flags
+from user_sync.config.common import ConfigFileLoader, DictConfig
+from user_sync.config.user_sync import ConfigLoader
 from user_sync.error import AssertionException
 
 
@@ -20,71 +17,6 @@ def load_ldap_config_options(args):
     dc_config_options = config_loader.get_directory_connector_options(dc.name)
     caller_config = DictConfig('%s configuration' % dc.name, dc_config_options)
     return LDAPDirectoryConnector.get_options(caller_config)
-
-
-@pytest.fixture
-def root_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'user-sync-config.yml')
-
-
-@pytest.fixture
-def ldap_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'connector-ldap.yml')
-
-
-@pytest.fixture
-def umapi_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'connector-umapi.yml')
-
-
-@pytest.fixture
-def extension_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'extension-config.yml')
-
-
-@pytest.fixture
-def tmp_config_files(root_config_file, ldap_config_file, umapi_config_file, tmpdir):
-    tmpfiles = []
-    for fname in [root_config_file, ldap_config_file, umapi_config_file]:
-        basename = os.path.split(fname)[-1]
-        tmpfile = os.path.join(str(tmpdir), basename)
-        shutil.copy(fname, tmpfile)
-        tmpfiles.append(tmpfile)
-    return tuple(tmpfiles)
-
-
-@pytest.fixture
-def tmp_extension_config(extension_config_file, tmpdir):
-    tmpfile = os.path.join(str(tmpdir), os.path.split(extension_config_file)[-1])
-    shutil.copy(extension_config_file, tmpfile)
-    return tmpfile
-
-
-@pytest.fixture
-def modify_root_config(tmp_config_files):
-    (root_config_file, _, _) = tmp_config_files
-
-    def _modify_root_config(keys, val):
-        conf = yaml.safe_load(open(root_config_file))
-        conf = update_dict(conf, keys, val)
-        yaml.dump(conf, open(root_config_file, 'w'))
-
-        return root_config_file
-    return _modify_root_config
-
-
-@pytest.fixture
-def modify_ldap_config(tmp_config_files):
-    (_, ldap_config_file, _) = tmp_config_files
-
-    def _modify_ldap_config(keys, val):
-        conf = yaml.safe_load(open(ldap_config_file))
-        conf = update_dict(conf, keys, val)
-        yaml.dump(conf, open(ldap_config_file, 'w'))
-
-        return ldap_config_file
-    return _modify_ldap_config
-
 
 @pytest.fixture
 def ust_config_root_path_keys():
@@ -196,7 +128,7 @@ def test_adobe_users_config(tmp_config_files, modify_root_config, cli_args):
     assert options['adobe_users'] == ['mapped']
 
 
-def test_extension_load(tmp_config_files, modify_root_config, cli_args, tmp_extension_config, monkeypatch):
+def test_extension_load(tmp_config_files, modify_root_config, cli_args, extension_config_file, monkeypatch):
     """Test that extension config is loaded when config option is specified"""
     with monkeypatch.context() as m:
         m.setattr(flags, 'get_flag', lambda *a: True)
@@ -206,12 +138,12 @@ def test_extension_load(tmp_config_files, modify_root_config, cli_args, tmp_exte
         options = ConfigLoader(args).get_rule_options()
         assert 'after_mapping_hook' in options and options['after_mapping_hook'] is None
 
-        modify_root_config(['directory_users', 'extension'], tmp_extension_config)
+        modify_root_config(['directory_users', 'extension'], extension_config_file)
         options = ConfigLoader(args).get_rule_options()
         assert 'after_mapping_hook' in options and options['after_mapping_hook'] is not None
 
 
-def test_extension_flag(tmp_config_files, modify_root_config, cli_args, tmp_extension_config, monkeypatch):
+def test_extension_flag(tmp_config_files, modify_root_config, cli_args, extension_config_file, monkeypatch):
     """Test that extension flag will prevent after-map hook from running"""
     with monkeypatch.context() as m:
         m.setattr(flags, 'get_flag', lambda *a: False)
@@ -219,7 +151,7 @@ def test_extension_flag(tmp_config_files, modify_root_config, cli_args, tmp_exte
         (root_config_file, _, _) = tmp_config_files
 
         args = cli_args({'config_filename': root_config_file})
-        modify_root_config(['directory_users', 'extension'], tmp_extension_config)
+        modify_root_config(['directory_users', 'extension'], extension_config_file)
         options = ConfigLoader(args).get_rule_options()
         assert 'after_mapping_hook' in options and options['after_mapping_hook'] is None
 
