@@ -9,18 +9,6 @@ from sign_client.client import SignClient
 from user_sync.post_sync.manager import PostSyncData
 
 
-@pytest.fixture
-def example_user():
-    return {
-        'type': 'federatedID',
-        'username': 'user@example.com',
-        'domain': 'example.com',
-        'email': 'user@example.com',
-        'firstname': 'Example',
-        'lastname': 'User',
-        'groups': set(),
-        'country': 'US',
-    }
 
 
 def test_add_umapi_user(example_user):

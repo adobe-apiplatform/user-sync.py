@@ -1,22 +1,41 @@
 import logging
 from collections import defaultdict
 
+import six
+
+from user_sync import error, identity_type
 from user_sync.config.common import DictConfig
 from user_sync.connector.connector_sign import SignConnector
 from user_sync.engine.umapi import AdobeGroup
 from user_sync.error import AssertionException
+from user_sync.helper import normalize_string
 
 
-class SignEngine():
+class SignSyncEngine:
+    default_options = {
+        'admin_roles': None,
+        'create_users': False,
+        'directory_group_filter': None,
+        'entitlement_groups': [],
+        'identity_types': [],
+        'new_account_type': identity_type.FEDERATED_IDENTITY_TYPE,
+        'sign_only_limit': 200,
+        'sign_orgs': [],
+        'test_mode': False,
+        'user_groups': []
+    }
     name = 'sign_sync'
     DEFAULT_GROUP_NAME = 'default group'
 
-    def __init__(self, config_options, test_mode=False):
+    def __init__(self, caller_options):
         super().__init__()
+        options = dict(self.default_options)
+        options.update(caller_options)
+        self.options = options
         self.logger = logging.getLogger(self.name)
-        self.test_mode = test_mode
-        sync_config = DictConfig('<%s configuration>' % self.name, config_options)
-        self.user_groups = sync_config.get_list('user_groups', True)
+        self.test_mode = options.get('test_mode')
+        sync_config = DictConfig('<%s configuration>' % self.name, caller_options)
+        self.user_groups = options['user_groups'] = sync_config.get_list('user_groups', True)
         if self.user_groups is None:
             self.user_groups = []
         self.user_groups = self._groupify(self.user_groups)
@@ -24,7 +43,7 @@ class SignEngine():
         self.identity_types = sync_config.get_list('identity_types', True)
         if self.identity_types is None:
             self.identity_types = ['adobeID', 'enterpriseID', 'federatedID']
-
+        self.directory_user_by_user_key = {}
         # dict w/ structure - umapi_name -> adobe_group -> [set of roles]
         self.admin_roles = self._admin_role_mapping(sync_config)
 
@@ -36,36 +55,37 @@ class SignEngine():
         sign_orgs = sync_config.get_list('sign_orgs')
         self.connectors = {cfg.get('console_org'): SignConnector(cfg) for cfg in sign_orgs}
 
-    def run(self, post_sync_data):
+    def run(self, directory_groups, directory_connector):
         """
         Run the Sign sync
-        :param post_sync_data:
+        :param directory_groups:
+        :param directory_connector:
         :return:
         """
         if self.test_mode:
             self.logger.info("Sign Sync disabled in test mode")
             return
+        directory_users = self.read_desired_user_groups(directory_groups, directory_connector)
+        if directory_users is None:
+            raise AssertionException("Error retrieving users from directory")
         for org_name, sign_connector in self.connectors.items():
             # create any new Sign groups
             for new_group in set(self.user_groups[org_name]) - set(sign_connector.sign_groups()):
                 self.logger.info("Creating new Sign group: {}".format(new_group))
                 sign_connector.create_group(new_group)
-            umapi_users = post_sync_data.umapi_data.get(org_name)
-            if umapi_users is None:
-                raise AssertionException("Error getting umapi users from post_sync_data")
-            self.update_sign_users(umapi_users, sign_connector, org_name)
+            self.update_sign_users(directory_users, sign_connector, org_name)
 
-    def update_sign_users(self, umapi_users, sign_connector, org_name):
+    def update_sign_users(self, directory_users, sign_connector, org_name):
         sign_users = sign_connector.get_users()
-        for _, umapi_user in umapi_users.items():
-            sign_user = sign_users.get(umapi_user['email'])
-            if not self.should_sync(umapi_user, sign_user, org_name):
+        for _, directory_user in directory_users.items():
+            sign_user = sign_users.get(directory_user['email'])
+            if not self.should_sync(directory_user, sign_user, org_name):
                 continue
 
             assignment_group = None
 
             for group in self.user_groups[org_name]:
-                if group in umapi_user['groups']:
+                if group in directory_user['groups']:
                     assignment_group = group
                     break
 
@@ -74,7 +94,7 @@ class SignEngine():
 
             group_id = sign_connector.get_group(assignment_group)
             admin_roles = self.admin_roles.get(org_name, {})
-            user_roles = self.resolve_new_roles(umapi_user, admin_roles)
+            user_roles = self.resolve_new_roles(directory_user, admin_roles)
             update_data = {
                 "email": sign_user['email'],
                 "firstName": sign_user['firstName'],
@@ -83,12 +103,12 @@ class SignEngine():
                 "roles": user_roles,
             }
             if sign_user['group'].lower() == assignment_group and self.roles_match(user_roles, sign_user['roles']):
-                self.logger.debug("skipping Sign update for '{}' -- no updates needed".format(umapi_user['email']))
+                self.logger.debug("skipping Sign update for '{}' -- no updates needed".format(directory_user['email']))
                 continue
             try:
                 sign_connector.update_user(sign_user['userId'], update_data)
                 self.logger.info("Updated Sign user '{}', Group: '{}', Roles: {}".format(
-                    umapi_user['email'], assignment_group, update_data['roles']))
+                    directory_user['email'], assignment_group, update_data['roles']))
             except AssertionError as e:
                 self.logger.error("Error updating user {}".format(e))
 
@@ -153,3 +173,81 @@ class SignEngine():
                     mapped_admin_roles[group.umapi_name][group_name] = set()
                 mapped_admin_roles[group.umapi_name][group_name].add(sign_role)
         return mapped_admin_roles
+
+    def read_desired_user_groups(self, mappings, directory_connector):
+        # this is only the first part of the same method in engine/umapi
+        # going to make it return the modified directory users list
+        self.logger.debug('Building work list...')
+
+        options = self.options
+        directory_group_filter = options['directory_group_filter']
+        if directory_group_filter is not None:
+            directory_group_filter = set(directory_group_filter)
+        extended_attributes = options.get('extended_attributes')
+
+        directory_user_by_user_key = self.directory_user_by_user_key
+
+        directory_groups = set(six.iterkeys(mappings))
+        if directory_group_filter is not None:
+            directory_groups.update(directory_group_filter)
+        directory_users = directory_connector.load_users_and_groups(groups=directory_groups,
+                                                                    extended_attributes=extended_attributes,
+                                                                    all_users=directory_group_filter is None)
+
+        for directory_user in directory_users:
+            user_key = self.get_directory_user_key(directory_user)
+            if not user_key:
+                self.logger.warning("Ignoring directory user with empty user key: %s", directory_user)
+                continue
+            directory_user_by_user_key[user_key] = directory_user
+
+            # if not self.is_directory_user_in_groups(directory_user, directory_group_filter):
+            #     continue
+            # if not self.is_selected_user_key(user_key):
+            #     continue
+
+        return directory_user_by_user_key
+
+    def get_directory_user_key(self, directory_user):
+        """
+        Identity-type aware user key management for directory users
+        :type directory_user: dict
+        """
+        id_type = self.get_identity_type_from_directory_user(directory_user)
+        return self.get_user_key(id_type, directory_user['username'], directory_user['domain'], directory_user['email'])
+
+    def get_user_key(self, id_type, username, domain, email=None):
+        """
+        Construct the user key for a directory or adobe user.
+        The user key is the stringification of the tuple (id_type, username, domain)
+        but the domain part is left empty if the username is an email address.
+        If the parameters are invalid, None is returned.
+        :param username: (required) username of the user, can be his email
+        :param domain: (optional) domain of the user
+        :param email: (optional) email of the user
+        :param id_type: (required) id_type of the user
+        :return: string "id_type,username,domain" (or None)
+        :rtype: str
+        """
+        id_type = identity_type.parse_identity_type(id_type)
+        email = normalize_string(email) if email else None
+        username = normalize_string(username) or email
+        domain = normalize_string(domain)
+
+        if not id_type:
+            return None
+        if not username:
+            return None
+        if username.find('@') >= 0:
+            domain = ""
+        elif not domain:
+            return None
+        return six.text_type(id_type) + u',' + six.text_type(username) + u',' + six.text_type(domain)
+
+    def get_identity_type_from_directory_user(self, directory_user):
+        identity_type = directory_user.get('identity_type')
+        if identity_type is None:
+            identity_type = self.options['new_account_type']
+            self.logger.warning('Found user with no identity type, using %s: %s', identity_type, directory_user)
+        return identity_type
+
