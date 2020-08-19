@@ -170,13 +170,46 @@ def main():
               help='user attributes on the Adobe side are updated from the directory.')
 def sync(**kwargs):
     """Run User Sync [default command]"""
-    run_stats = None
+
     sign_config_file = kwargs.get('sign_sync_config')
     if 'sign_sync_config' in kwargs:
         del(kwargs['sign_sync_config'])
+    run_sync(config.ConfigLoader(kwargs), begin_work_umapi)
+
+
+@main.command()
+@click.help_option('-h', '--help')
+@click.option('-c', '--config-filename',
+                help = "path to your main configuration file",
+                type = str,
+                nargs = 1,
+                metavar = 'path-to-file')     #default should be sign-sync-config.yml
+@click.option('--users',
+              help="specify the users to be considered for sync. Legal values are 'all' (the default), "
+                   "'group names' (a comma-separated list of groups in the enterprise "
+                   "directory, and only users in those groups are selected), 'mapped' (all groups listed in "
+                   "the configuration file).",
+              cls=user_sync.cli.OptionMulti,
+              type=list,
+              metavar='all|mapped|group [group list or path-to-file.csv]') #default should mapped
+# Correct Sign only user actions??
+@click.option('--sign-only-user-action',
+              help="specify what action to take on Sign users that don't match users from the "
+                   "directory.  Options are 'exclude' (from all changes), "
+                   "'delete' (users and their cloud storage), and default perserve (no action taken) ",
+              cls=user_sync.cli.OptionMulti,
+              type=list,
+              metavar='exclude|preserve|delete')
+def sign_sync(**kwargs):
+    """Run Sign Sync """
+    #load the config files (sign-sync-config.yml) and start the file logger
+    run_sync(config.SignConfigLoader(kwargs), begin_work_sign)
+
+
+def run_sync(config_loader, begin_work):
+    run_stats = None
     try:
         # load the config files and start the file logger
-        config_loader = config.ConfigLoader(kwargs)
         init_log(config_loader.get_logging_config())
 
         # add start divider, app version number, and invocation parameters to log
@@ -384,13 +417,13 @@ def log_parameters(argv, config_loader):
     logger.info('-------------------------------------')
 
 
-def begin_work(config_loader):
+def begin_work_umapi(config_loader):
     """
-    :type config_loader: config.ConfigLoader
+    :type config_loader: config.UMAPIConfigLoader
     """
-    directory_groups = config_loader.get_directory_groups()
+    # directory_groups = config_loader.get_directory_groups()
     rule_config = config_loader.get_rule_options()
-
+    directory_connector, directory_groups = load_root_config(config_loader, rule_config['new_account_type'])
     # make sure that all the adobe groups are from known umapi connector names
     primary_umapi_config, secondary_umapi_configs = config_loader.get_umapi_options()
     referenced_umapi_names = set()
@@ -402,14 +435,6 @@ def begin_work(config_loader):
     referenced_umapi_names.difference_update(six.iterkeys(secondary_umapi_configs))
     if len(referenced_umapi_names) > 0:
         raise AssertionException('Adobe groups reference unknown umapi connectors: %s' % referenced_umapi_names)
-
-    directory_connector = None
-    directory_connector_options = None
-    directory_connector_module_name = config_loader.get_directory_connector_module_name()
-    if directory_connector_module_name is not None:
-        directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
-        directory_connector = user_sync.connector.directory.DirectoryConnector(directory_connector_module)
-        directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
 
     post_sync_manager = None
     # get post-sync config unconditionally so we don't get an 'unused key' error
@@ -423,12 +448,6 @@ def begin_work(config_loader):
 
     config_loader.check_unused_config_keys()
 
-    if directory_connector is not None and directory_connector_options is not None:
-        # specify the default user_identity_type if it's not already specified in the options
-        if 'user_identity_type' not in directory_connector_options:
-            directory_connector_options['user_identity_type'] = rule_config['new_account_type']
-        directory_connector.initialize(directory_connector_options)
-
     additional_group_filters = None
     additional_groups = rule_config.get('additional_groups', None)
     if additional_groups and isinstance(additional_groups, list):
@@ -439,6 +458,7 @@ def begin_work(config_loader):
         if additional_group_filters and directory_connector.state.options['dynamic_group_member_attribute'] is None:
             raise AssertionException(
                 "Failed to enable dynamic group mappings. 'dynamic_group_member_attribute' is not defined in config")
+
     primary_name = '.primary' if secondary_umapi_configs else ''
     umapi_primary_connector = UmapiConnector(primary_name, primary_umapi_config)
     umapi_other_connectors = {}
@@ -456,6 +476,31 @@ def begin_work(config_loader):
     #  Post sync section
     if post_sync_manager:
         post_sync_manager.run(rule_processor.post_sync_data)
+
+
+def begin_work_sign(sign_config_loader):
+    rule_config = SignConfigLoader.get_engine_options()
+    directory_connector, directory_groups = load_root_config(sign_config_loader, rule_config['new_account_type'])
+    sign_engine = user_sync.engine.sign.SignSyncEngine(rule_config)
+    sign_engine.run(directory_groups, directory_connector)
+
+def load_root_config(root_config_loader, new_account_type):
+    # will get the directory groups based off of sign_sync config
+    directory_groups = root_config_loader.get_directory_groups()
+
+    directory_connector = None
+    directory_connector_options = None
+    directory_connector_module_name = root_config_loader.get_directory_connector_module_name()
+    if directory_connector_module_name is not None:
+        directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
+        directory_connector = user_sync.connector.directory.DirectoryConnector(directory_connector_module)
+        directory_connector_options = root_config_loader.get_directory_connector_options(directory_connector.name)
+
+    if directory_connector is not None and directory_connector_options is not None:
+        directory_connector_options['user_identity_type'] = new_account_type
+    directory_connector.initialize(directory_connector_options)
+
+    return directory_connector, directory_groups
 
 
 @main.command(short_help="Encrypt RSA private key")
