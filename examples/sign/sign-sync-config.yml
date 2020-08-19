@@ -42,3 +42,6 @@ logging:
 # Defaults for options that can be passed as CLI options
 invocation_defaults:
   users: mapped
+
+# Flag to (dis)allow creation of new users in the Sign Console
+create_new_users: False

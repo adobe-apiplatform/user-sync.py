@@ -58,3 +58,6 @@ class SignConnector(object):
 
     def get_group(self, assignment_group):
         return self.sign_client.groups.get(assignment_group)
+
+    def insert_user(self, insert_data):
+        return self.sign_client.insert_user(insert_data)

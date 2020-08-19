@@ -250,7 +250,7 @@ class SignSyncEngine:
                 "roles": user_roles,
             }
             if sign_user['group'].lower() == assignment_group and self.roles_match(user_roles, sign_user['roles']):
-                self.logger.debug("skipping Sign update for '{}' -- no updates needed".format(umapi_user['email']))
+                self.logger.debug("skipping Sign update for '{}' -- no updates needed".format(directory_user['email']))
                 return
             try:
                 sign_connector.update_user(sign_user['userId'], update_data)
