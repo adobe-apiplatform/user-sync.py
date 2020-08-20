@@ -30,3 +30,77 @@ def test_load_users_and_groups(example_engine, example_user):
     dc.load_users_and_groups = dir_user_replacement
     directory_users = example_engine.read_desired_user_groups({'directory_group': 'adobe_group'}, dc)
     assert directory_users is not None
+
+
+def test__groupify(example_engine,example_user):
+    processed_groups = example_engine._groupify(example_user)
+    assert processed_groups is not None
+
+
+def test_get_directory_user_key(example_engine,example_user):
+    tem_user =example_engine.get_directory_user_key(example_user)
+    assert tem_user is not None
+
+
+def test_should_sync(example_engine,example_user):
+    example_user1 = example_user
+    example_user2 = example_user
+    temp_sign_user = example_engine.should_sync(example_user1,example_user2,None)
+    assert temp_sign_user is not None
+
+
+@pytest.fixture
+def input_resolved_roles():
+    resolved_roles =""
+    return resolved_roles
+
+@pytest.fixture
+def input_sign_roles():
+    sign_roles =""
+    return sign_roles
+
+
+def test_roles_match(input_resolved_roles,input_sign_roles):
+    assert SignSyncEngine.roles_match(input_resolved_roles,input_sign_roles) == False
+    assert SignSyncEngine.roles_match("Admin", "Admin") == False
+    assert SignSyncEngine.roles_match('a','a') == True
+    assert isinstance("Admin", str) == True
+
+
+@pytest.fixture
+def input_umapi_user():
+     return {
+         'type': 'adobeID',
+         'username': 'test@adobe.com',
+         'domain': 'adobe.com',
+         'email': 'test@adobe.com',
+         'firstname': 'test',
+         'lastname': 'user',
+         'groups': {'all apps'},
+         'country': 'US'
+     }
+
+
+@pytest.fixture
+def input_role_mapping():
+    return {None: {'sign_group_one': {'ACCOUNT_ADMIN'}, 'sign_group_one admin': {'GROUP_ADMIN'}}}
+
+
+def test_resolve_new_roles(input_umapi_user,input_role_mapping):
+    check_list = isinstance(SignSyncEngine.resolve_new_roles(input_umapi_user,input_role_mapping), list)
+    assert check_list == True
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
