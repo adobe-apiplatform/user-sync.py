@@ -49,6 +49,7 @@ import user_sync.post_sync.connectors.sign_sync
 import user_sync.resource
 import user_sync.engine.umapi
 import user_sync.config.user_sync
+import user_sync.config.sign_sync
 import user_sync.connector.connector_umapi
 from user_sync.error import AssertionException
 from user_sync.post_sync.manager import PostSyncManager
@@ -170,7 +171,6 @@ def main():
               help='user attributes on the Adobe side are updated from the directory.')
 def sync(**kwargs):
     """Run User Sync [default command]"""
-
     sign_config_file = kwargs.get('sign_sync_config')
     if 'sign_sync_config' in kwargs:
         del(kwargs['sign_sync_config'])
@@ -192,7 +192,6 @@ def sync(**kwargs):
               cls=user_sync.cli.OptionMulti,
               type=list,
               metavar='all|mapped|group [group list or path-to-file.csv]') #default should mapped
-# Correct Sign only user actions??
 @click.option('--sign-only-user-action',
               help="specify what action to take on Sign users that don't match users from the "
                    "directory.  Options are 'exclude' (from all changes), "
@@ -203,7 +202,7 @@ def sync(**kwargs):
 def sign_sync(**kwargs):
     """Run Sign Sync """
     #load the config files (sign-sync-config.yml) and start the file logger
-    run_sync(config.SignConfigLoader(kwargs), begin_work_sign)
+    run_sync(sign_sync.SignConfigLoader(kwargs), begin_work_sign)
 
 
 def run_sync(config_loader, begin_work):
