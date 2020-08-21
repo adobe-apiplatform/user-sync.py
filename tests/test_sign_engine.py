@@ -91,16 +91,11 @@ def test_resolve_new_roles(input_umapi_user,input_role_mapping):
     assert check_list == True
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+def test_update_sign_users(example_engine,example_user):
+    Directory_user = "test@adobe.com"
+    org_name ="Sign test"
+    sc = SignSyncEngine.connectors ={}
+    update_user=""
+    for i in sc:
+        update_user = example_engine.update_sign_users(Directory_user,i,org_name )
+    assert update_user is not None
