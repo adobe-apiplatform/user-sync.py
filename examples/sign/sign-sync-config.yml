@@ -1,6 +1,6 @@
 # Sign API Connections
 sign_orgs:
-  - connector: connector-sign.yml
+  primary: connector-sign.yml
   
 # Similar to "directory_users.connectors" in user-sync-config.yml
 identity_source:

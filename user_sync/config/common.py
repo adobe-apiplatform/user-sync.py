@@ -3,6 +3,7 @@ import os
 
 import six
 import yaml
+from abc import ABC, abstractmethod
 
 import user_sync.helper
 import user_sync.identity_type
@@ -10,7 +11,41 @@ import user_sync.port
 from user_sync.error import AssertionException
 
 
-class ObjectConfig(object):
+class ConfigLoader(ABC):
+    @abstractmethod
+    def get_invocation_options(self):
+        pass
+
+    @abstractmethod
+    def get_directory_groups(self):
+        pass
+
+    @abstractmethod
+    def get_engine_options(self) -> dict:
+        pass
+
+    @abstractmethod
+    def get_directory_connector_module_name(self) -> str:
+        pass
+
+    @abstractmethod
+    def get_directory_connector_options(self, name: str) -> dict:
+        pass
+
+    @abstractmethod
+    def get_target_options(self) -> (dict, dict):
+        pass
+
+    @abstractmethod
+    def check_unused_config_keys(self):
+        pass
+
+    @abstractmethod
+    def get_logging_config(self):
+        pass
+
+
+class ObjectConfig:
     def __init__(self, scope):
         """
         :type scope: str
@@ -157,7 +192,7 @@ class DictConfig(ObjectConfig):
         value = self.get_value(key, dict, none_allowed)
         return value
 
-    def get_string(self, key, none_allowed=False):
+    def get_string(self, key, none_allowed=False) -> str:
         """
         :rtype: basestring
         """
@@ -184,7 +219,7 @@ class DictConfig(ObjectConfig):
             value = [value]
         return value
 
-    def get_list_config(self, key, none_allowed=False):
+    def get_list_config(self, key, none_allowed=False) -> ListConfig:
         """
         :rtype ListConfig
         """
@@ -452,7 +487,7 @@ class ConfigFileLoader:
         return val
 
 
-class OptionsBuilder(object):
+class OptionsBuilder:
     def __init__(self, default_config):
         """
         :type default_config: DictConfig
@@ -507,3 +542,28 @@ class OptionsBuilder(object):
             raise AssertionException("No config found.")
         self.options[key] = value = config.get_value(key, allowed_types)
         return value
+        
+        
+def resolve_invocation_options(options: dict, invocation_config: DictConfig, invocation_defaults: dict, args: dict) -> dict:
+    # get overrides from the main config
+    if invocation_config:
+        for k, v in six.iteritems(invocation_defaults):
+            if isinstance(v, bool):
+                val = invocation_config.get_bool(k, True)
+                if val is not None:
+                    options[k] = val
+            elif isinstance(v, list):
+                val = invocation_config.get_list(k, True)
+                if val:
+                    options[k] = val
+            else:
+                val = invocation_config.get_string(k, True)
+                if val:
+                    options[k] = val
+
+    # now handle overrides from CLI options
+    for k, arg_val in args.items():
+        if arg_val is None:
+            continue
+        options[k] = arg_val
+    return options

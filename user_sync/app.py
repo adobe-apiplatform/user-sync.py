@@ -44,6 +44,7 @@ from user_sync.config import common as config_common
 from user_sync.config.sign_sync import SignConfigLoader
 from user_sync.connector.connector_umapi import UmapiConnector
 from user_sync.engine import umapi as rules
+from user_sync.engine.common import PRIMARY_TARGET_NAME
 
 from user_sync.post_sync.manager import PostSyncManager
 import user_sync.post_sync.connectors.sign_sync
@@ -177,7 +178,7 @@ def sync(**kwargs):
         del(kwargs['sign_sync_config'])
     try:
         # load the config files and start the file logger
-        config_loader = config.ConfigLoader(kwargs)
+        config_loader = config.UMAPIConfigLoader(kwargs)
         init_log(config_loader.get_logging_config())
 
         # add start divider, app version number, and invocation parameters to log
@@ -437,7 +438,7 @@ def log_parameters(argv, config_loader):
     :param argv: command line arguments (a la sys.argv)
     :type argv: list(str)
     :param config_loader: the main configuration loader
-    :type config_loader: config.ConfigLoader
+    :type config_loader: config.UMAPIConfigLoader
     :return: None
     """
     logger.info('Python version: %s.%s.%s on %s' % (sys.version_info[:3] + (sys.platform,)))
@@ -451,18 +452,18 @@ def log_parameters(argv, config_loader):
 
 def begin_work(config_loader):
     """
-    :type config_loader: config.ConfigLoader
+    :type config_loader: config.UMAPIConfigLoader
     """
     directory_groups = config_loader.get_directory_groups()
-    rule_config = config_loader.get_rule_options()
+    rule_config = config_loader.get_engine_options()
 
     # make sure that all the adobe groups are from known umapi connector names
-    primary_umapi_config, secondary_umapi_configs = config_loader.get_umapi_options()
+    primary_umapi_config, secondary_umapi_configs = config_loader.get_target_options()
     referenced_umapi_names = set()
     for groups in six.itervalues(directory_groups):
         for group in groups:
             umapi_name = group.umapi_name
-            if umapi_name != user_sync.engine.umapi.PRIMARY_UMAPI_NAME:
+            if umapi_name != PRIMARY_TARGET_NAME:
                 referenced_umapi_names.add(umapi_name)
     referenced_umapi_names.difference_update(six.iterkeys(secondary_umapi_configs))
     if len(referenced_umapi_names) > 0:
