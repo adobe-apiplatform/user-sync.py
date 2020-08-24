@@ -1,7 +1,7 @@
 import pytest
 import yaml
 import shutil
-from util import update_dict
+from .util import update_dict
 from user_sync.config.user_sync import UMAPIConfigLoader
 from user_sync.config.common import ConfigFileLoader, DictConfig
 from user_sync import flags
@@ -140,7 +140,7 @@ def test_extension_load(tmp_config_files, modify_root_config, cli_args, extensio
         options = UMAPIConfigLoader(args).get_engine_options()
         assert 'after_mapping_hook' in options and options['after_mapping_hook'] is None
 
-        modify_root_config(['directory_users', 'extension'], tmp_extension_config)
+        modify_root_config(['directory_users', 'extension'], extension_config_file)
         options = UMAPIConfigLoader(args).get_engine_options()
         assert 'after_mapping_hook' in options and options['after_mapping_hook'] is not None
 
@@ -153,7 +153,7 @@ def test_extension_flag(tmp_config_files, modify_root_config, cli_args, extensio
         (root_config_file, _, _) = tmp_config_files
 
         args = cli_args({'config_filename': root_config_file})
-        modify_root_config(['directory_users', 'extension'], tmp_extension_config)
+        modify_root_config(['directory_users', 'extension'], extension_config_file)
         options = UMAPIConfigLoader(args).get_engine_options()
         assert 'after_mapping_hook' in options and options['after_mapping_hook'] is None
 

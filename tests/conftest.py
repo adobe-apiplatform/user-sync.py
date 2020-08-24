@@ -8,6 +8,8 @@ import shutil
 
 from user_sync.config.user_sync import UMAPIConfigLoader
 
+from .util import update_dict
+
 
 @pytest.fixture
 def fixture_dir():
@@ -117,6 +119,16 @@ def modify_ldap_config(tmp_config_files):
         return ldap_config_file
 
     return _modify_ldap_config
+
+
+@pytest.fixture
+def sign_config_file(fixture_dir):
+    return os.path.join(fixture_dir, 'sign-sync-config.yml')
+
+
+@pytest.fixture
+def sign_connector_config(fixture_dir):
+    return os.path.join(fixture_dir, 'connector-sign.yml')
 
 
 @pytest.fixture

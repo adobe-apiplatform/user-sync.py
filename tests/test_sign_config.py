@@ -3,22 +3,12 @@ import pytest
 import yaml
 import os
 import shutil
-from util import update_dict
+from .util import update_dict
 from user_sync.config.sign_sync import SignConfigLoader
 from user_sync.config.user_sync import DictConfig
 from user_sync.engine.common import AdobeGroup
 from user_sync.engine.sign import SignSyncEngine
 from user_sync.error import AssertionException
-
-
-@pytest.fixture
-def sign_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'sign-sync-config.yml')
-
-
-@pytest.fixture
-def sign_connector_config(fixture_dir):
-    return os.path.join(fixture_dir, 'connector-sign.yml')
 
 
 @pytest.fixture
