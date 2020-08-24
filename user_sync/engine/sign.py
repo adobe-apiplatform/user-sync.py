@@ -65,15 +65,16 @@ class SignSyncEngine:
         if self.test_mode:
             self.logger.info("Sign Sync disabled in test mode")
             return
-        directory_users = self.read_desired_user_groups(directory_groups, directory_connector)
-        if directory_users is None:
-            raise AssertionException("Error retrieving users from directory")
+        # directory_users = self.read_desired_user_groups(directory_groups, directory_connector)
+        self.read_desired_user_groups(directory_groups, directory_connector)
+        # if directory_users is None:
+        #     raise AssertionException("Error retrieving users from directory")
         for org_name, sign_connector in self.connectors.items():
             # create any new Sign groups
             for new_group in set(self.user_groups[org_name]) - set(sign_connector.sign_groups()):
                 self.logger.info("Creating new Sign group: {}".format(new_group))
                 sign_connector.create_group(new_group)
-            self.update_sign_users(directory_users, sign_connector, org_name)
+            self.update_sign_users(self.directory_user_by_user_key, sign_connector, org_name)
 
     def update_sign_users(self, directory_users, sign_connector, org_name):
         sign_users = sign_connector.get_users()
@@ -206,7 +207,7 @@ class SignSyncEngine:
             # if not self.is_selected_user_key(user_key):
             #     continue
 
-        return directory_user_by_user_key
+        # return directory_user_by_user_key
 
     def get_directory_user_key(self, directory_user):
         """
@@ -251,3 +252,4 @@ class SignSyncEngine:
             self.logger.warning('Found user with no identity type, using %s: %s', identity_type, directory_user)
         return identity_type
 
+ 

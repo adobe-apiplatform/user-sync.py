@@ -28,5 +28,5 @@ def test_load_users_and_groups(example_engine, example_user):
     # these methods should be altered for sign-specific usage - for example, there's no need to specify an identity
     # type for sign-syncing purposes, but it has been left in there so that the code can run
     dc.load_users_and_groups = dir_user_replacement
-    directory_users = example_engine.read_desired_user_groups({'directory_group': 'adobe_group'}, dc)
-    assert directory_users is not None
+    example_engine.read_desired_user_groups({'directory_group': 'adobe_group'}, dc)
+    assert example_engine.directory_user_by_user_key != {}
