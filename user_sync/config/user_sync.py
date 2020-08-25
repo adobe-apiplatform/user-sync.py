@@ -32,12 +32,13 @@ import user_sync.identity_type
 import user_sync.port
 from user_sync import flags
 from user_sync.engine import umapi as rules
+from user_sync.engine.common import AdobeGroup, PRIMARY_TARGET_NAME
 from user_sync.error import AssertionException
 import user_sync.post_sync.connectors as post_sync_connectors
-from .common import DictConfig, ConfigFileLoader
+from .common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options
 
 
-class ConfigLoader(object):
+class UMAPIConfigLoader(ConfigLoader):
     """
     Loads config files and does pathname expansion on settings that refer to files or directories
     """
@@ -119,28 +120,8 @@ class ConfigLoader(object):
         # otherwise, setting options also sets invocation_defaults (same memory ref)
         options = deepcopy(self.invocation_defaults)
 
-        # get overrides from the main config
         invocation_config = self.main_config.get_dict_config('invocation_defaults', True)
-        if invocation_config:
-            for k, v in six.iteritems(self.invocation_defaults):
-                if isinstance(v, bool):
-                    val = invocation_config.get_bool(k, True)
-                    if val is not None:
-                        options[k] = val
-                elif isinstance(v, list):
-                    val = invocation_config.get_list(k, True)
-                    if val:
-                        options[k] = val
-                else:
-                    val = invocation_config.get_string(k, True)
-                    if val:
-                        options[k] = val
-
-        # now handle overrides from CLI options
-        for k, arg_val in self.args.items():
-            if arg_val is None:
-                continue
-            options[k] = arg_val
+        options = resolve_invocation_options(options, invocation_config, self.invocation_defaults, self.args)
 
         # now process command line options.  the order of these is important,
         # because options processed later depend on the values of those processed earlier
@@ -264,7 +245,7 @@ class ConfigLoader(object):
                         'You must specify the groups to read when using the adobe-users "group" option')
                 options['adobe_group_filter'] = []
                 for group in adobe_users_spec[1].split(','):
-                    options['adobe_group_filter'].append(rules.AdobeGroup.create(group))
+                    options['adobe_group_filter'].append(AdobeGroup.create(group))
             else:
                 raise AssertionException('Unknown option "%s" for adobe-users' % adobe_users_action)
 
@@ -273,7 +254,7 @@ class ConfigLoader(object):
     def get_logging_config(self):
         return self.main_config.get_dict_config('logging', True)
 
-    def get_umapi_options(self):
+    def get_target_options(self):
         """
         Read and return the primary and secondary umapi connector configs.
         The primary is a singleton, the secondaries are a map from name to config.
@@ -359,7 +340,7 @@ class ConfigLoader(object):
 
     def load_directory_groups(self):
         """
-        :rtype dict(str, list(user_sync.rules.AdobeGroup))
+        :rtype dict(str, list(AdobeGroup))
         """
         adobe_groups_by_directory_group = {}
         if self.main_config.get_dict_config('directory', True):
@@ -379,7 +360,7 @@ class ConfigLoader(object):
 
             adobe_groups = item.get_list('adobe_groups', True)
             for adobe_group in adobe_groups or []:
-                group = rules.AdobeGroup.create(adobe_group)
+                group = AdobeGroup.create(adobe_group)
                 if group is None:
                     validation_message = ('Bad adobe group: "%s" in directory group: "%s"' %
                                           (adobe_group, directory_group))
@@ -493,7 +474,7 @@ class ConfigLoader(object):
                         result[dict_key] = dict_val
         return result
 
-    def get_rule_options(self):
+    def get_engine_options(self):
         """
         Return a dict representing options for RuleProcessor.
         """
@@ -519,7 +500,7 @@ class ConfigLoader(object):
         additional_groups = directory_config.get_list('additional_groups', True) or []
         try:
             additional_groups = [{'source': re.compile(r['source']),
-                                  'target': rules.AdobeGroup.create(r['target'], index=False)}
+                                  'target': AdobeGroup.create(r['target'], index=False)}
                                  for r in additional_groups]
         except Exception as e:
             raise AssertionException("Additional group rule error: {}".format(str(e)))
@@ -558,8 +539,8 @@ class ConfigLoader(object):
         if exclude_group_names:
             exclude_groups = []
             for name in exclude_group_names:
-                group = rules.AdobeGroup.create(name)
-                if not group or group.get_umapi_name() != rules.PRIMARY_UMAPI_NAME:
+                group = AdobeGroup.create(name)
+                if not group or group.get_umapi_name() != PRIMARY_TARGET_NAME:
                     validation_message = 'Illegal value for %s in config file: %s' % ('exclude_groups', name)
                     if not group:
                         validation_message += ' (Not a legal group name)'
@@ -598,7 +579,7 @@ class ConfigLoader(object):
             # 1. it allows validation of group names, and matching them to adobe groups
             # 2. it allows removal of adobe groups not assigned by the hook
             for extended_adobe_group in extension_config.get_list('extended_adobe_groups', True) or []:
-                group = rules.AdobeGroup.create(extended_adobe_group)
+                group = AdobeGroup.create(extended_adobe_group)
                 if group is None:
                     message = 'Extension contains illegal extended_adobe_group spec: ' + str(extended_adobe_group)
                     raise AssertionException(message)
@@ -610,7 +591,7 @@ class ConfigLoader(object):
 
         # set the adobe group filter from the mapping, if requested.
         if options.get('adobe_group_mapped') is True:
-            options['adobe_group_filter'] = set(rules.AdobeGroup.iter_groups())
+            options['adobe_group_filter'] = set(AdobeGroup.iter_groups())
 
         return options
 
