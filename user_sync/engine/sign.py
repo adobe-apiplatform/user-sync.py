@@ -18,7 +18,6 @@ class SignSyncEngine:
         'directory_group_filter': None,
         'entitlement_groups': [],
         'identity_types': [],
-        'new_account_type': identity_type.FEDERATED_IDENTITY_TYPE,
         'sign_only_limit': 200,
         'sign_orgs': [],
         'test_mode': False,
@@ -176,8 +175,6 @@ class SignSyncEngine:
         return mapped_admin_roles
 
     def read_desired_user_groups(self, mappings, directory_connector):
-        # this is only the first part of the same method in engine/umapi
-        # going to make it return the modified directory users list
         self.logger.debug('Building work list...')
 
         options = self.options
@@ -202,54 +199,11 @@ class SignSyncEngine:
                 continue
             directory_user_by_user_key[user_key] = directory_user
 
-            # if not self.is_directory_user_in_groups(directory_user, directory_group_filter):
-            #     continue
-            # if not self.is_selected_user_key(user_key):
-            #     continue
-
-        # return directory_user_by_user_key
-
     def get_directory_user_key(self, directory_user):
         """
-        Identity-type aware user key management for directory users
         :type directory_user: dict
         """
-        id_type = self.get_identity_type_from_directory_user(directory_user)
-        return self.get_user_key(id_type, directory_user['username'], directory_user['domain'], directory_user['email'])
-
-    def get_user_key(self, id_type, username, domain, email=None):
-        """
-        Construct the user key for a directory or adobe user.
-        The user key is the stringification of the tuple (id_type, username, domain)
-        but the domain part is left empty if the username is an email address.
-        If the parameters are invalid, None is returned.
-        :param username: (required) username of the user, can be his email
-        :param domain: (optional) domain of the user
-        :param email: (optional) email of the user
-        :param id_type: (required) id_type of the user
-        :return: string "id_type,username,domain" (or None)
-        :rtype: str
-        """
-        id_type = identity_type.parse_identity_type(id_type)
-        email = normalize_string(email) if email else None
-        username = normalize_string(username) or email
-        domain = normalize_string(domain)
-
-        if not id_type:
-            return None
-        if not username:
-            return None
-        if username.find('@') >= 0:
-            domain = ""
-        elif not domain:
-            return None
-        return six.text_type(id_type) + u',' + six.text_type(username) + u',' + six.text_type(domain)
-
-    def get_identity_type_from_directory_user(self, directory_user):
-        identity_type = directory_user.get('identity_type')
-        if identity_type is None:
-            identity_type = self.options['new_account_type']
-            self.logger.warning('Found user with no identity type, using %s: %s', identity_type, directory_user)
-        return identity_type
-
- 
+        email = directory_user.get('email')
+        if email:
+            return six.text_type(email)
+        return None

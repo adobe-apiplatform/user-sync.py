@@ -23,10 +23,16 @@ def test_load_users_and_groups(example_engine, example_user):
     def dir_user_replacement(groups, extended_attributes, all_users):
         return six.itervalues(user)
 
-    # replace the call to load directory groups and users with the example user dict. this dict will then be modified
-    # by other methods in the engine/sign.py which are almost identical to the same methods in engine/umapi.py right now
-    # these methods should be altered for sign-specific usage - for example, there's no need to specify an identity
-    # type for sign-syncing purposes, but it has been left in there so that the code can run
     dc.load_users_and_groups = dir_user_replacement
     example_engine.read_desired_user_groups({'directory_group': 'adobe_group'}, dc)
-    assert example_engine.directory_user_by_user_key != {}
+    # if the user has an email attribute, the method will index the user dict by email, which is how it's passed
+    # in in this test anyway
+    assert example_engine.directory_user_by_user_key == user
+
+
+def test_get_directory_user_key(example_engine, example_user):
+    # user = {'user@example.com': example_user}
+    # if the method is passed a dict with an email, it should return the email key
+    assert example_engine.get_directory_user_key(example_user) == example_user['email']
+    # if the user object passed in has no email value, it should return None
+    assert example_engine.get_directory_user_key({'': {'username': 'user@example.com'}}) is None
