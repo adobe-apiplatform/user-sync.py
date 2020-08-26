@@ -112,8 +112,20 @@ class CredentialConfig:
 
     @classmethod
     def create(self, subclass, filename, auto=False):
-        name = subclass.capitalize() + "CredentialConfig"
-        return globals()[name](filename, auto)
+        clazz = {
+            'ldap': LdapCredentialConfig,
+            'umapi': UmapiCredentialConfig,
+            'okta': OktaCredentialConfig,
+            'csv': CsvCredentialConfig,
+            'adobe_console': AdobeConsoleCredentialConfig
+        }.get(subclass)
+
+        if not clazz:
+            raise AssertionException("Class {} does not exist".format(subclass))
+        return clazz(filename, auto)
+
+        # name = subclass.capitalize().replace("_","") + "CredentialConfig"
+        # return globals()[name](filename, auto)
 
     def modify_credentials(self, action):
         credentials = {}
@@ -365,6 +377,17 @@ class UmapiCredentialConfig(CredentialConfig):
     ]
     priv_key_path = Key(key_path=['enterprise', 'priv_key_path'], is_block=False, linked_key=pass_key, is_filepath=True)
 
-
-class ConsoleCredentialConfig(UmapiCredentialConfig):
+class CsvCredentialConfig(CredentialConfig):
     pass
+
+class AdobeConsoleCredentialConfig(UmapiCredentialConfig):
+    pass_key = Key(key_path=['integration', 'priv_key_pass'])
+    secured_keys = [
+        Key(key_path=['integration', 'api_key']),
+        Key(key_path=['integration', 'client_secret']),
+        pass_key,
+        Key(key_path=['integration', 'priv_key_data'],
+            is_block=True,
+            linked_key=pass_key)
+    ]
+    priv_key_path = Key(key_path=['integration', 'priv_key_path'], is_block=False, linked_key=pass_key, is_filepath=True)
