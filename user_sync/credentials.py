@@ -77,6 +77,7 @@ class CredentialManager:
 
         if connector_type in ['all', 'umapi']:
             for u in ConfigLoader.as_list(root_cfg['adobe_users']['connectors']['umapi']):
+                u = list(u.values())[0] if isinstance(u, dict) else u
                 self.config_files[u] = UmapiCredentialConfig(u, auto=self.auto)
 
         for c, v in root_cfg['directory_users']['connectors'].items():
@@ -148,8 +149,8 @@ class CredentialConfig:
                     continue
 
                 if self.auto or click.confirm(
-                        "Private key storage is not supported on this platform due to character limits."
-                        "\n Encrypt private key instead?".format(k.key_path, str(e))):
+                        "Key: [{}] \nPrivate key storage is not supported on this platform due to character limits."
+                        "\nEncrypt private key and store password instead?".format(self.get_qualified_identifier(k.key_path))):
                     try:
                         val, label = self.encrypt_key(k)
                     except AssertionException as e:
@@ -294,14 +295,10 @@ class CredentialConfig:
             if not encryption.is_encryptable(self.get_nested_key(key.key_path)):
                 decrypted_key = self.decrypt_key(key)
                 if decrypted_key is not None:
-                    self.logger.info("Private key file decrypted and saved to: '{}'"
-                                     .format(self.get_nested_key(key.key_path)))
                     self.set_nested_key(key.key_path, pss(decrypted_key))
         if key.is_filepath:
             decrypted_key = self.decrypt_key(key)
             if decrypted_key is not None:
-                self.logger.info("Private key file decrypted and saved to: '{}'"
-                                 .format(self.get_nested_key(key.key_path)))
                 encryption.write_key(decrypted_key, self.get_nested_key(key.key_path))
         return stored_credential
 
