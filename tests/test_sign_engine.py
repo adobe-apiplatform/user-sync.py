@@ -83,27 +83,18 @@ def sign_user_1():
 
 
 def test_should_sync(example_engine, input_umapi_user, sign_user_1):
-    temp_sign_user = example_engine.should_sync(input_umapi_user, sign_user_1, None)
+    temp_sign_user = example_engine.should_sync(input_umapi_user, sign_user_1, "Org_name")
     assert temp_sign_user is not None
 
 
-@pytest.fixture
-def input_resolved_roles():
-    resolved_roles = ""
-    return resolved_roles
+def test_roles_match():
+    resolved_roles = ['ACCOUNT_ADMIN', 'GROUP_ADMIN', 'NORMAL_USER']
+    sign_roles = ['ACCOUNT_ADMIN', 'GROUP_ADMIN', 'NORMAL_USER']
+    assert SignSyncEngine.roles_match(resolved_roles, sign_roles) == True
 
-
-@pytest.fixture
-def input_sign_roles():
-    sign_roles = ""
-    return sign_roles
-
-
-def test_roles_match(input_resolved_roles, input_sign_roles):
-    assert SignSyncEngine.roles_match(input_resolved_roles, input_sign_roles) == False
-    assert SignSyncEngine.roles_match("Admin", "Admin") == False
-    assert SignSyncEngine.roles_match('a', 'a') == True
-    assert isinstance("Admin", str) == True
+    resolved_roles = ['GROUP_ADMIN','NORMAL_USER','ACCOUNT_ADMIN']
+    sign_roles = ['ACCOUNT_ADMIN', 'GROUP_ADMIN','NORMAL_USER']
+    assert SignSyncEngine.roles_match(resolved_roles,sign_roles) ==True
 
 
 def test_resolve_new_roles(input_umapi_user):
