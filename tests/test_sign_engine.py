@@ -12,6 +12,7 @@ def example_engine(modify_root_config, sign_config_file):
     args = {'config_filename': sign_config_file}
     args['entitlement_groups'] = 'signgroup'
     args['sign_orgs'] = []
+
     return SignSyncEngine(args)
 
 
@@ -47,10 +48,8 @@ def input_umapi_user():
 
 
 def test__groupify():
-    processed_groups = SignSyncEngine._groupify(['group1','group2'])
+    processed_groups = SignSyncEngine._groupify(['group1', 'group2'])
     assert processed_groups[None] == ['group1', 'group2']
-    assert isinstance(processed_groups[None],list)
-
 
 def test_get_directory_user_key(example_engine, example_user):
     tem_user = example_engine.get_directory_user_key(example_user)
@@ -67,7 +66,7 @@ def sign_user_1():
         'initials': 'DO',
         'channel': 'AdobeAccountsChannel',
         'account': 'test@xyz.com',
-        'group': 'Default Group',
+        'groups': 'Default Group',
         'groupId': 'abcdef',
         'accountType': 'GLOBAL',
         'capabilityFlags': ['CAN_SEND', 'CAN_SIGN', 'CAN_REPLACE_SIGNER'],
@@ -79,16 +78,34 @@ def sign_user_1():
 
 
 def test_should_sync(example_engine, input_umapi_user, sign_user_1):
-    temp_sign_user = example_engine.should_sync(input_umapi_user, sign_user_1, "Org_name")
+
+    signUser = example_engine.should_sync(input_umapi_user, None, None)
+    assert not signUser
+
+    input_umapi_user['type'] = 'federatedID'
+    example_engine.identity_types = ['adobeID']
+    umapiUser = example_engine.should_sync(input_umapi_user, sign_user_1, None)
+    assert not umapiUser
+
+    input_umapi_user['groups'] = {'Default Group'}
+    umapiGroup = example_engine.should_sync(input_umapi_user,sign_user_1,None)
+    assert not umapiGroup
+
+    input_umapi_user['groups'] = {'signgroup'}
+    input_umapi_user['type'] = 'federatedID'
+    example_engine.identity_types = ['adobeID', 'enterpriseID', 'federatedID']
+    valid_umapi_status = example_engine.should_sync(input_umapi_user,sign_user_1,None)
+    assert valid_umapi_status is True
 
 def test_roles_match():
     resolved_roles = ['ACCOUNT_ADMIN', 'GROUP_ADMIN', 'NORMAL_USER']
     sign_roles = ['ACCOUNT_ADMIN', 'GROUP_ADMIN', 'NORMAL_USER']
-    assert SignSyncEngine.roles_match(resolved_roles, sign_roles) == True
+    assert SignSyncEngine.roles_match(resolved_roles, sign_roles) is True
 
-    resolved_roles = ['GROUP_ADMIN','NORMAL_USER','ACCOUNT_ADMIN']
-    sign_roles = ['ACCOUNT_ADMIN', 'GROUP_ADMIN','NORMAL_USER']
-    assert SignSyncEngine.roles_match(resolved_roles,sign_roles) ==True
+    resolved_roles = ['GROUP_ADMIN', 'NORMAL_USER', 'ACCOUNT_ADMIN']
+    sign_roles = ['ACCOUNT_ADMIN', 'GROUP_ADMIN', 'NORMAL_USER']
+    assert SignSyncEngine.roles_match(resolved_roles, sign_roles) is True
+
 
 
 def test_resolve_new_roles(input_umapi_user):
@@ -96,18 +113,26 @@ def test_resolve_new_roles(input_umapi_user):
     roles = SignSyncEngine.resolve_new_roles(input_umapi_user, role_mapping)
     assert roles == ['ACCOUNT_ADMIN']
 
-    role_mapping = {'all apps': {'ACCOUNT_ADMIN', 'GROUP_ADMIN'}}
+    role_mapping = {'all apps': {'GROUP_ADMIN'}}
     roles = SignSyncEngine.resolve_new_roles(input_umapi_user, role_mapping)
-    assert roles == ['ACCOUNT_ADMIN', 'GROUP_ADMIN']
+    assert roles == ['GROUP_ADMIN']
+
+    role_mapping = {'all apps': {'ACCOUNT_ADMIN', 'ACCOUNT_ADMIN'}}
+    roles = SignSyncEngine.resolve_new_roles(input_umapi_user, role_mapping)
+    assert roles == ['ACCOUNT_ADMIN']
 
     role_mapping = {'all apps': {}}
     roles = SignSyncEngine.resolve_new_roles(input_umapi_user, role_mapping)
     assert roles == ['NORMAL_USER']
 
 
+#    role_mapping = {'all apps': {'ACCOUNT_ADMIN', 'GROUP_ADMIN'}}
+#    roles = SignSyncEngine.resolve_new_roles(input_umapi_user, role_mapping)
+#    assert roles == ['GROUP_ADMIN', 'ACCOUNT_ADMIN']
+
 def test_update_sign_users(example_engine, example_user):
     Directory_user = "test@adobe.com"
-    org_name = "Sign test"
+    org_name = "Sign Test Org"
     sc = SignSyncEngine.connectors = {}
     update_user = ""
     for temp in sc:
