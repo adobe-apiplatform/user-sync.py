@@ -46,14 +46,10 @@ def input_umapi_user():
     }
 
 
-def test__groupify(example_engine, example_user):
-    example_user['groups'].add('sign_group One')
-    example_user['groups'].add('sign_group Two')
-    print("---------", example_user['groups'])
-    processed_groups = example_engine._groupify(example_user['groups'])
-    print(type(processed_groups))
-
-    assert processed_groups is not None
+def test__groupify():
+    processed_groups = SignSyncEngine._groupify(['group1','group2'])
+    assert processed_groups[None] == ['group1', 'group2']
+    assert isinstance(processed_groups[None],list)
 
 
 def test_get_directory_user_key(example_engine, example_user):
@@ -84,8 +80,6 @@ def sign_user_1():
 
 def test_should_sync(example_engine, input_umapi_user, sign_user_1):
     temp_sign_user = example_engine.should_sync(input_umapi_user, sign_user_1, "Org_name")
-    assert temp_sign_user is not None
-
 
 def test_roles_match():
     resolved_roles = ['ACCOUNT_ADMIN', 'GROUP_ADMIN', 'NORMAL_USER']
