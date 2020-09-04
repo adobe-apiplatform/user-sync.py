@@ -18,7 +18,6 @@ class SignSyncEngine:
         'directory_group_filter': None,
         'entitlement_groups': [],
         'identity_types': [],
-        'new_account_type': identity_type.FEDERATED_IDENTITY_TYPE,
         'sign_only_limit': 200,
         'sign_orgs': [],
         'test_mode': False,
@@ -66,15 +65,16 @@ class SignSyncEngine:
         if self.test_mode:
             self.logger.info("Sign Sync disabled in test mode")
             return
-        directory_users = self.read_desired_user_groups(directory_groups, directory_connector)
-        if directory_users is None:
-            raise AssertionException("Error retrieving users from directory")
+        # directory_users = self.read_desired_user_groups(directory_groups, directory_connector)
+        self.read_desired_user_groups(directory_groups, directory_connector)
+        # if directory_users is None:
+        #     raise AssertionException("Error retrieving users from directory")
         for org_name, sign_connector in self.connectors.items():
             # create any new Sign groups
             for new_group in set(self.user_groups[org_name]) - set(sign_connector.sign_groups()):
                 self.logger.info("Creating new Sign group: {}".format(new_group))
                 sign_connector.create_group(new_group)
-            self.update_sign_users(directory_users, sign_connector, org_name)
+            self.update_sign_users(self.directory_user_by_user_key, sign_connector, org_name)
 
     def update_sign_users(self, directory_users, sign_connector, org_name):
         sign_users = sign_connector.get_users()
@@ -165,8 +165,6 @@ class SignSyncEngine:
         return mapped_admin_roles
 
     def read_desired_user_groups(self, mappings, directory_connector):
-        # this is only the first part of the same method in engine/umapi
-        # going to make it return the modified directory users list
         self.logger.debug('Building work list...')
 
         options = self.options
@@ -191,20 +189,14 @@ class SignSyncEngine:
                 continue
             directory_user_by_user_key[user_key] = directory_user
 
-            # if not self.is_directory_user_in_groups(directory_user, directory_group_filter):
-            #     continue
-            # if not self.is_selected_user_key(user_key):
-            #     continue
-
-        return directory_user_by_user_key
-
     def get_directory_user_key(self, directory_user):
         """
-        Identity-type aware user key management for directory users
         :type directory_user: dict
         """
-        id_type = self.get_identity_type_from_directory_user(directory_user)
-        return self.get_user_key(id_type, directory_user['username'], directory_user['domain'], directory_user['email'])
+        email = directory_user.get('email')
+        if email:
+            return six.text_type(email)
+        return None
 
     def get_user_key(self, id_type, username, domain, email=None):
         """
