@@ -1,9 +1,13 @@
+from unittest.mock import MagicMock
+
 import pytest
 import six
+from unittest import mock
 
 from user_sync.connector.directory import DirectoryConnector
 from user_sync.engine.sign import SignSyncEngine
-
+from user_sync.connector.connector_sign import SignConnector
+from sign_client.client import SignClient
 
 @pytest.fixture
 def example_engine(modify_root_config, sign_config_file):
@@ -14,7 +18,6 @@ def example_engine(modify_root_config, sign_config_file):
     args['sign_orgs'] = []
 
     return SignSyncEngine(args)
-
 
 def test_load_users_and_groups(example_engine, example_user):
     dc = DirectoryConnector
@@ -46,6 +49,11 @@ def input_umapi_user():
         'country': 'US'
     }
 
+def test_admin_role_mapping():
+    sync_config = MagicMock()
+    sync_config.get_list.return_value = [{'sign_role': 'ACCOUNT_ADMIN', 'adobe_groups': ['sign_group_one']}]
+    returnValue = SignSyncEngine._admin_role_mapping(sync_config)
+    assert returnValue == {None: {'sign_group_one': {'ACCOUNT_ADMIN'}}}
 
 def test__groupify():
     processed_groups = SignSyncEngine._groupify(['group1', 'group2'])
@@ -136,16 +144,49 @@ def test_resolve_new_roles(input_umapi_user):
     roles = SignSyncEngine.resolve_new_roles(input_umapi_user, role_mapping)
     assert roles == ['NORMAL_USER']
 
+    role_mapping = {'all apps': {'ACCOUNT_ADMIN', 'GROUP_ADMIN'}}
+    roles = SignSyncEngine.resolve_new_roles(input_umapi_user, role_mapping)
+    assert set(roles) == {'GROUP_ADMIN', 'ACCOUNT_ADMIN'}
 
-#    role_mapping = {'all apps': {'ACCOUNT_ADMIN', 'GROUP_ADMIN'}}
-#    roles = SignSyncEngine.resolve_new_roles(input_umapi_user, role_mapping)
-#    assert roles == ['GROUP_ADMIN', 'ACCOUNT_ADMIN']
 
-def test_update_sign_users(example_engine, example_user):
-    Directory_user = "test@adobe.com"
-    org_name = "Sign Test Org"
+def test_update_sign_users(example_engine):
     sc = SignSyncEngine.connectors = {}
-    update_user = ""
-    for temp in sc:
-        update_user = example_engine.update_sign_users(Directory_user, temp, org_name)
-    assert update_user is not None
+    client_config = {
+        'console_org': None,
+        'host': 'api.na2.echosignstage.com',
+        'key': 'allsortsofgibberish1234567890',
+        'admin_email': 'brian.nickila@gmail.com'
+    }
+    sign_client = SignClient(client_config)
+    connector_config = {
+        'console_org': 'testorg',
+        'host': 'api.na2.echosignstage.com',
+        'key': 'allsortsofgibberish1234567890',
+        'admin_email': 'brian.nickila@gmail.com',
+        'sign_orgs': [client_config],
+        'entitlement_groups': ['group1']
+    }
+    sc = SignConnector(connector_config)
+    directory_users = {'federatedID,signuser4@dev-sign-02.com,':
+                       {'type': 'federatedID',
+                        'username': 'SignUser4@dev-sign-02.com',
+                        'domain': 'dev-sign-02.com', 'email': 'SignUser4@dev-sign-02.com',
+                        'firstname': 'Sign', 'lastname': 'User 4',
+                        'groups': {'sign_group_one', '_admin_sign_group_one'},
+                        'country': 'US'}}
+
+    user =  {'firstName': 'Sign',
+             'lastName': 'User 4', 'email': 'signuser4@dev-sign-02.com',
+             'company': 'Dev Sign 02', 'initials': 'SU', 'channel': 'AdobeAccountsChannel',
+             'account': 'shasijena09@gmail.com', 'group': 'Default Group',
+             'groupId': '3AAABLZtkPdAH9sz1KbI8GSydrljH2bmhtjOwhNHD9NnnaEZbGyzjGWiiDkEOGzzF5AVZDCXyBwDiebPyEY-OZR8L8ZDql6m5',
+             'accountType': 'GLOBAL', 'capabilityFlags': ['CAN_SEND', 'CAN_SIGN', 'CAN_REPLACE_SIGNER'],
+             'userStatus': 'ACTIVE', 'optIn': 'NO', 'userId': '3AAABLZtkPdC_NRQleh2ISf0LDXotehwP0pdQ9a3zs-igC5JKf8SGaFsauj8LmOSa8OZmpbSeK0TriyDa2LS-t-XCSqDBIuVp',
+             'roles': ['NORMAL_USER']}
+
+    # mock get_users()
+    def dir_user_replace():
+        return user
+
+    sc.get_users = dir_user_replace
+    example_engine.update_sign_users(directory_users,sc,None)
