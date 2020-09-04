@@ -106,6 +106,17 @@ def test_roles_match():
     sign_roles = ['ACCOUNT_ADMIN', 'GROUP_ADMIN', 'NORMAL_USER']
     assert SignSyncEngine.roles_match(resolved_roles, sign_roles) is True
 
+    resolved_roles = []
+    sign_roles = []
+    assert SignSyncEngine.roles_match(resolved_roles, sign_roles) is True
+
+    resolved_roles = ['normal_user']
+    sign_roles = [ 'NORMAL_USER']
+    assert SignSyncEngine.roles_match(resolved_roles, sign_roles) is False
+
+    resolved_roles = ['NORMAL_USER','ACCOUNT_ADMIN']
+    sign_roles = ['GROUP_ADMIN', 'NORMAL_USER']
+    assert SignSyncEngine.roles_match(resolved_roles, sign_roles) is False
 
 
 def test_resolve_new_roles(input_umapi_user):
