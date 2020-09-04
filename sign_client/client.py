@@ -166,3 +166,19 @@ class SignClient:
         :return: list[]
         """
         return ['NORMAL_USER'] if 'roles' not in user else user['roles']
+
+    def insert_user(self, data):
+        """
+        Insert Sign user
+        :param data: dict()
+        """
+        if self.api_url is None or self.groups is None:
+            self._init()
+        
+        res = requests.post(self.api_url + 'users', headers=self.header_json(), data=json.dumps(data))
+        # Response status code 201 is successful insertion
+        if res.status_code != 201:
+                exp_obj = json.loads(res.text)
+                exp_obj['reason'] = res.reason
+                exp_obj['status_code'] = res.status_code
+                raise AssertionException("Failed to insert user '{}' (error response: {})".format(data['email'], exp_obj))
