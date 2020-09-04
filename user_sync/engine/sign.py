@@ -53,6 +53,7 @@ class SignSyncEngine:
 
         sign_orgs = sync_config.get_list('sign_orgs')
         self.connectors = {cfg.get('console_org'): SignConnector(cfg) for cfg in sign_orgs}
+        self.create_new_users = sync_config.get_bool("create_new_users")
 
     def run(self, directory_groups, directory_connector):
         """
@@ -79,7 +80,7 @@ class SignSyncEngine:
         sign_users = sign_connector.get_users()
         for _, directory_user in directory_users.items():
             sign_user = sign_users.get(directory_user['email'])
-            if not self.should_sync(directory_user, sign_user, org_name):
+            if not self.should_sync(directory_user, org_name):
                 continue
 
             assignment_group = None
@@ -95,22 +96,12 @@ class SignSyncEngine:
             group_id = sign_connector.get_group(assignment_group)
             admin_roles = self.admin_roles.get(org_name, {})
             user_roles = self.resolve_new_roles(directory_user, admin_roles)
-            update_data = {
-                "email": sign_user['email'],
-                "firstName": sign_user['firstName'],
-                "groupId": group_id,
-                "lastName": sign_user['lastName'],
-                "roles": user_roles,
-            }
-            if sign_user['group'].lower() == assignment_group and self.roles_match(user_roles, sign_user['roles']):
-                self.logger.debug("skipping Sign update for '{}' -- no updates needed".format(directory_user['email']))
+            if self.create_new_users is True and sign_user is None:
+                self.insert_new_users(sign_connector, directory_user, user_roles, group_id, assignment_group)
+            if sign_user is None: # sign_user may still be None here is flag 'create_new_users' is False and user does not exist
                 continue
-            try:
-                sign_connector.update_user(sign_user['userId'], update_data)
-                self.logger.info("Updated Sign user '{}', Group: '{}', Roles: {}".format(
-                    directory_user['email'], assignment_group, update_data['roles']))
-            except AssertionError as e:
-                self.logger.error("Error updating user {}".format(e))
+            else:
+                self.update_existing_users(sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group)
 
     @staticmethod
     def roles_match(resolved_roles, sign_roles):
@@ -128,18 +119,17 @@ class SignSyncEngine:
             roles.update(sign_roles)
         return list(roles) if roles else ['NORMAL_USER']
 
-    def should_sync(self, umapi_user, sign_user, org_name):
+    def should_sync(self, umapi_user, org_name):
         """
         Initial gatekeeping to determine if user is candidate for Sign sync
         Any checks that don't depend on the Sign record go here
         Sign record must be defined for user, and user must belong to at least one entitlement group
         and user must be accepted identity type
         :param umapi_user:
-        :param sign_user:
         :param org_name:
         :return:
         """
-        return sign_user is not None and set(umapi_user['groups']) & set(self.entitlement_groups[org_name]) and \
+        return set(umapi_user['groups']) & set(self.entitlement_groups[org_name]) and \
                umapi_user['type'] in self.identity_types
 
     @staticmethod
@@ -207,3 +197,82 @@ class SignSyncEngine:
         if email:
             return six.text_type(email)
         return None
+
+    def get_user_key(self, id_type, username, domain, email=None):
+        """
+        Construct the user key for a directory or adobe user.
+        The user key is the stringification of the tuple (id_type, username, domain)
+        but the domain part is left empty if the username is an email address.
+        If the parameters are invalid, None is returned.
+        :param username: (required) username of the user, can be his email
+        :param domain: (optional) domain of the user
+        :param email: (optional) email of the user
+        :param id_type: (required) id_type of the user
+        :return: string "id_type,username,domain" (or None)
+        :rtype: str
+        """
+        id_type = identity_type.parse_identity_type(id_type)
+        email = normalize_string(email) if email else None
+        username = normalize_string(username) or email
+        domain = normalize_string(domain)
+
+        if not id_type:
+            return None
+        if not username:
+            return None
+        if username.find('@') >= 0:
+            domain = ""
+        elif not domain:
+            return None
+        return six.text_type(id_type) + u',' + six.text_type(username) + u',' + six.text_type(domain)
+
+    def get_identity_type_from_directory_user(self, directory_user):
+        identity_type = directory_user.get('identity_type')
+        if identity_type is None:
+            identity_type = self.options['new_account_type']
+            self.logger.warning('Found user with no identity type, using %s: %s', identity_type, directory_user)
+        return identity_type
+
+    def update_existing_users(self, sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group):
+            update_data = {
+                "email": sign_user['email'],
+                "firstName": sign_user['firstName'],
+                "groupId": group_id,
+                "lastName": sign_user['lastName'],
+                "roles": user_roles,
+            }
+            if sign_user['group'].lower() == assignment_group and self.roles_match(user_roles, sign_user['roles']):
+                self.logger.debug("skipping Sign update for '{}' -- no updates needed".format(directory_user['email']))
+                return
+            try:
+                sign_connector.update_user(sign_user['userId'], update_data)
+                self.logger.info("Updated Sign user '{}', Group: '{}', Roles: {}".format(
+                    directory_user['email'], assignment_group, update_data['roles']))
+            except AssertionError as e:
+                self.logger.error("Error updating user {}".format(e))
+
+    def insert_new_users(self, sign_connector, directory_user, user_roles, group_id, assignment_group):
+        """
+        Inserts new user in the Sign Console
+        :param sign_connector:
+        :param directory_user:
+        :param user_roles:
+        :param group_id:
+        :param assignment_group:
+        :return:
+        """
+        insert_data = {
+            "email": directory_user['email'],
+            "firstName": directory_user['firstname'],
+            "groupId": group_id,
+            "lastName": directory_user['lastname'],
+            "roles": user_roles,
+        }
+        try:
+            sign_connector.insert_user(insert_data)
+            self.logger.info("Inserted Sign user '{}', Group: '{}', Roles: {}".format(
+            directory_user['email'], assignment_group, insert_data['roles']))
+        except AssertionException as e:
+            self.logger.error(format(e))
+        return
+
