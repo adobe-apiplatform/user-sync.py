@@ -183,7 +183,7 @@ class SignClient:
                 exp_obj['status_code'] = res.status_code
                 raise AssertionException("Failed to insert user '{}' (error response: {})".format(data['email'], exp_obj))
 
-     def deactivate_user(self, user_id, data):
+    def deactivate_user(self, user_id, data):
         """
         Deactivate Sign user
         :param data: dict()
@@ -198,4 +198,3 @@ class SignClient:
                 exp_obj['reason'] = res.reason
                 exp_obj['status_code'] = res.status_code
                 raise AssertionException(exp_obj)
-            
