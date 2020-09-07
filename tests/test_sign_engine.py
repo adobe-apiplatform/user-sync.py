@@ -67,19 +67,9 @@ def test_get_directory_user_key(example_engine, example_user):
 @pytest.fixture
 def sign_user_1():
     return {
-        'firstName': 'Dev',
-        'lastName': 'One',
         'email': 'test1@dev-sign-02.com',
-        'company': 'Dev Sign 02',
-        'initials': 'DO',
-        'channel': 'AdobeAccountsChannel',
-        'account': 'test@xyz.com',
         'groups': 'Default Group',
-        'groupId': 'abcdef',
-        'accountType': 'GLOBAL',
-        'capabilityFlags': ['CAN_SEND', 'CAN_SIGN', 'CAN_REPLACE_SIGNER'],
         'userStatus': 'ACTIVE',
-        'optIn': 'NO',
         'userId': 'testiddssd',
         'roles': ['NORMAL_USER']
     }
@@ -170,18 +160,20 @@ def test_update_sign_users(example_engine):
     directory_users = {'federatedID,signuser4@dev-sign-02.com,':
                        {'type': 'federatedID',
                         'username': 'SignUser4@dev-sign-02.com',
-                        'domain': 'dev-sign-02.com', 'email': 'SignUser4@dev-sign-02.com',
-                        'firstname': 'Sign', 'lastname': 'User 4',
-                        'groups': {'sign_group_one', '_admin_sign_group_one'},
+                        'domain': 'dev-sign-02.com',
+                        'email': 'SignUser4@dev-sign-02.com',
+                        'firstname': 'Sign',
+                        'lastname': 'User 4',
+                        'groups': {'sign_group_one'},
                         'country': 'US'}}
 
-    user =  {'firstName': 'Sign',
-             'lastName': 'User 4', 'email': 'signuser4@dev-sign-02.com',
-             'company': 'Dev Sign 02', 'initials': 'SU', 'channel': 'AdobeAccountsChannel',
-             'account': 'shasijena09@gmail.com', 'group': 'Default Group',
-             'groupId': '3AAABLZtkPdAH9sz1KbI8GSydrljH2bmhtjOwhNHD9NnnaEZbGyzjGWiiDkEOGzzF5AVZDCXyBwDiebPyEY-OZR8L8ZDql6m5',
-             'accountType': 'GLOBAL', 'capabilityFlags': ['CAN_SEND', 'CAN_SIGN', 'CAN_REPLACE_SIGNER'],
-             'userStatus': 'ACTIVE', 'optIn': 'NO', 'userId': '3AAABLZtkPdC_NRQleh2ISf0LDXotehwP0pdQ9a3zs-igC5JKf8SGaFsauj8LmOSa8OZmpbSeK0TriyDa2LS-t-XCSqDBIuVp',
+    user =  {
+             'email': 'signuser4@dev-sign-02.com',
+             'company': 'Dev Sign 02',
+             'account': 'shasijena09@gmail.com',
+             'group': 'Default Group',
+             'accountType': 'GLOBAL',
+             'userStatus': 'ACTIVE',
              'roles': ['NORMAL_USER']}
 
     # mock get_users()
