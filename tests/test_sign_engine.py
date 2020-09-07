@@ -15,6 +15,7 @@ def example_engine(modify_root_config, sign_config_file):
     args['entitlement_groups'] = 'signgroup'
     args['sign_orgs'] = []
     args['create_new_users'] = True
+    args['deactivate_sign_only_users'] = True
     return SignSyncEngine(args)
 
 
@@ -62,3 +63,22 @@ def test_insert_new_users(example_user):
     sign_engine.insert_new_users(sign_engine, sign_connector, umapi_user, user_roles, group_id, assignment_group)
     assert True
     assert insert_data['email'] == 'user@example.com'
+
+def test_deactivate_sign_users(example_user):
+    sign_engine = SignSyncEngine
+    sign_connector = SignConnector
+    directory_users = {}
+    directory_users['federatedID, example.user@signtest.com'] = {'email': 'example.user@signtest.com'}
+    sign_users = {}
+    sign_users['example.user@signtest.com'] = {'email':'example.user@signtest.com','userId':'somerandomhexstring'}
+    def get_users():
+        return sign_users
+    def deactivate_user(insert_data):
+        pass
+    sign_connector.deactivate_user = deactivate_user
+    sign_connector.get_users = get_users
+    sign_engine.logger = logging.getLogger()
+    sign_engine.deactivate_sign_users(sign_engine, directory_users, sign_connector)
+    assert True
+    assert sign_users['example.user@signtest.com']['email'] == 'example.user@signtest.com'
+    

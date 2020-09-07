@@ -61,3 +61,7 @@ class SignConnector(object):
 
     def insert_user(self, insert_data):
         return self.sign_client.insert_user(insert_data)
+
+    def deactivate_user(self, user_id, deactivation_data):
+        return self.sign_client.deactivate_user(user_id, deactivation_data)
+
