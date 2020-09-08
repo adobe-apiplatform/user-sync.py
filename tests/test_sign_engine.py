@@ -2,12 +2,12 @@ from unittest.mock import MagicMock
 
 import pytest
 import six
-from unittest import mock
 
+from sign_client.client import SignClient
+from user_sync.connector.connector_sign import SignConnector
 from user_sync.connector.directory import DirectoryConnector
 from user_sync.engine.sign import SignSyncEngine
-from user_sync.connector.connector_sign import SignConnector
-from sign_client.client import SignClient
+
 
 @pytest.fixture
 def example_engine(modify_root_config, sign_config_file):
@@ -65,7 +65,7 @@ def test_get_directory_user_key(example_engine, example_user):
 
 
 @pytest.fixture
-def sign_user_1():
+def sign_user():
     return {
         'email': 'test1@dev-sign-02.com',
         'groups': 'Default Group',
@@ -75,24 +75,24 @@ def sign_user_1():
     }
 
 
-def test_should_sync(example_engine, input_umapi_user, sign_user_1):
+def test_should_sync(example_engine, input_umapi_user, sign_user):
 
     signUser = example_engine.should_sync(input_umapi_user, None, None)
     assert not signUser
 
     input_umapi_user['type'] = 'federatedID'
     example_engine.identity_types = ['adobeID']
-    umapiUser = example_engine.should_sync(input_umapi_user, sign_user_1, None)
+    umapiUser = example_engine.should_sync(input_umapi_user, sign_user, None)
     assert not umapiUser
 
     input_umapi_user['groups'] = {'Default Group'}
-    umapiGroup = example_engine.should_sync(input_umapi_user,sign_user_1,None)
+    umapiGroup = example_engine.should_sync(input_umapi_user,sign_user,None)
     assert not umapiGroup
 
     input_umapi_user['groups'] = {'signgroup'}
     input_umapi_user['type'] = 'federatedID'
     example_engine.identity_types = ['adobeID', 'enterpriseID', 'federatedID']
-    valid_umapi_status = example_engine.should_sync(input_umapi_user,sign_user_1,None)
+    valid_umapi_status = example_engine.should_sync(input_umapi_user,sign_user,None)
     assert valid_umapi_status is True
 
 def test_roles_match():
