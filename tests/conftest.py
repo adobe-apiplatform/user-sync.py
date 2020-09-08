@@ -5,7 +5,6 @@ import pytest
 from user_sync import config
 import shutil
 
-
 @pytest.fixture
 def fixture_dir():
     return os.path.abspath(
