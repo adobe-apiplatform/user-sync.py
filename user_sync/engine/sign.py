@@ -279,33 +279,18 @@ class SignSyncEngine:
             self.logger.error(format(e))
         return
         
-    def deactivate_sign_users(self, directory_users, sign_client):
+    def deactivate_sign_users(self, directory_users, sign_connector):
         """
         Searches users to deactivate in the Sign Netpune console
-        :param sign_client:
+        :param sign_connector:
         :param sign_user:
         :return:
         """
-        sign_users = sign_client.get_users()
+        sign_users = sign_connector.get_users()
         director_users_emails = []
         director_users_emails = list(map(lambda directory_user:directory_user['email'].lower(), directory_users.values()))
         for _, sign_user in sign_users.items():
             if sign_user['email'].lower() not in director_users_emails:
-                self.deactivate_user(sign_client, sign_user)
+                sign_connector.deactivate_user(sign_user['userId'])
 
-    def deactivate_user(self, sign_client, sign_user):
-        """
-        Sets the user status as inactive in Sign Neptune console
-        :param sign_client:
-        :param sign_user:
-        :return:
-        """
-        deactivation_data = {
-                "userStatus": 'INACTIVE'
-        }
-        try:
-            sign_client.deactivate_user(sign_user['userId'], deactivation_data)
-        except AssertionException as e:
-            self.logger.error("Error deactivating user {}, {}".format(sign_user['email'], e))
-        return
 
