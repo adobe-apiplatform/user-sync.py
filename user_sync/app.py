@@ -420,7 +420,6 @@ def begin_work_umapi(config_loader):
     """
     :type config_loader: config.UMAPIConfigLoader
     """
-    # directory_groups = config_loader.get_directory_groups()
     rule_config = config_loader.get_rule_options()
     directory_connector, directory_groups = load_root_config(config_loader, rule_config['new_account_type'])
     # make sure that all the adobe groups are from known umapi connector names
@@ -478,7 +477,7 @@ def begin_work_umapi(config_loader):
 
 
 def begin_work_sign(sign_config_loader):
-    rule_config = SignConfigLoader.get_engine_options()
+    rule_config = sign_config_loader.get_engine_options()
     directory_connector, directory_groups = load_root_config(sign_config_loader, rule_config['new_account_type'])
     sign_engine = user_sync.engine.sign.SignSyncEngine(rule_config)
     sign_engine.run(directory_groups, directory_connector)
