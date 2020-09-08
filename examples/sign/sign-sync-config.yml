@@ -1,6 +1,6 @@
 # Sign API Connections
 sign_orgs:
-  - connector: connector-sign.yml
+  primary: connector-sign.yml
   
 # Similar to "directory_users.connectors" in user-sync-config.yml
 identity_source:
@@ -42,3 +42,6 @@ logging:
 # Defaults for options that can be passed as CLI options
 invocation_defaults:
   users: mapped
+
+# Flag to (dis)allow creation of new users in the Sign Console
+create_new_users: False

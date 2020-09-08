@@ -4,8 +4,11 @@ import shutil
 import pytest
 import yaml
 
-from tests.util import update_dict
-from user_sync.config.user_sync import ConfigLoader
+import shutil
+
+from user_sync.config.user_sync import UMAPIConfigLoader
+
+from .util import update_dict
 
 
 @pytest.fixture
@@ -24,7 +27,7 @@ def cli_args():
         """
 
         args_out = {}
-        for k in ConfigLoader.invocation_defaults:
+        for k in UMAPIConfigLoader.invocation_defaults:
             args_out[k] = None
         for k, v in args_in.items():
             args_out[k] = v
@@ -62,11 +65,6 @@ def public_cert(fixture_dir, tmpdir):
 @pytest.fixture
 def root_config_file(fixture_dir):
     return os.path.join(fixture_dir, 'user-sync-config.yml')
-
-
-@pytest.fixture
-def sign_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'sign-sync-config.yml')
 
 
 @pytest.fixture
@@ -121,6 +119,16 @@ def modify_ldap_config(tmp_config_files):
         return ldap_config_file
 
     return _modify_ldap_config
+
+
+@pytest.fixture
+def sign_config_file(fixture_dir):
+    return os.path.join(fixture_dir, 'sign-sync-config.yml')
+
+
+@pytest.fixture
+def sign_connector_config(fixture_dir):
+    return os.path.join(fixture_dir, 'connector-sign.yml')
 
 
 @pytest.fixture
