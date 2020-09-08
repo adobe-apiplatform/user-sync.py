@@ -14,16 +14,15 @@ from user_sync.helper import normalize_string
 class SignSyncEngine:
     default_options = {
         'admin_roles': None,
-        'create_users': False,
+        'create_new_users': False,    
+        'deactivate_sign_only_users': False,
         'directory_group_filter': None,
         'entitlement_groups': [],
         'identity_types': [],
         'sign_only_limit': 200,
         'sign_orgs': [],
         'test_mode': False,
-        'user_groups': [],
-        'create_new_users': False,
-        'deactivate_sign_only_users': False
+        'user_groups': []
     }
     name = 'sign_sync'
     DEFAULT_GROUP_NAME = 'default group'
