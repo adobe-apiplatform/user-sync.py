@@ -50,15 +50,9 @@ import user_sync.rules
 from user_sync.credentials import CredentialManager
 from user_sync.error import AssertionException
 from user_sync.post_sync.manager import PostSyncManager
-<<<<<<< HEAD
 import user_sync.post_sync.connectors.sign_sync
-
-=======
-
-import user_sync.cli
-import user_sync.resource
 from user_sync.dcmanager import DirectoryConnectorManager
->>>>>>> multi-directory-new-checkout
+
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 
