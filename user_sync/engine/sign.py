@@ -21,7 +21,9 @@ class SignSyncEngine:
         'sign_only_limit': 200,
         'sign_orgs': [],
         'test_mode': False,
-        'user_groups': []
+        'user_groups': [],
+        'create_new_users': False,
+        'deactivate_sign_only_users': False
     }
     name = 'sign_sync'
     DEFAULT_GROUP_NAME = 'default group'
