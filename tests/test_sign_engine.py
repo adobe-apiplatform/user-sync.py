@@ -105,22 +105,22 @@ def sign_user():
 
 def test_should_sync(example_engine, input_umapi_user, sign_user):
 
-    signUser = example_engine.should_sync(input_umapi_user, None, None)
+    signUser = example_engine.should_sync(input_umapi_user, None)
     assert not signUser
 
     input_umapi_user['type'] = 'federatedID'
     example_engine.identity_types = ['adobeID']
-    umapiUser = example_engine.should_sync(input_umapi_user, sign_user, None)
+    umapiUser = example_engine.should_sync(input_umapi_user, None)
     assert not umapiUser
 
     input_umapi_user['groups'] = {'Default Group'}
-    umapiGroup = example_engine.should_sync(input_umapi_user,sign_user,None)
+    umapiGroup = example_engine.should_sync(input_umapi_user,None)
     assert not umapiGroup
 
     input_umapi_user['groups'] = {'signgroup'}
     input_umapi_user['type'] = 'federatedID'
     example_engine.identity_types = ['adobeID', 'enterpriseID', 'federatedID']
-    valid_umapi_status = example_engine.should_sync(input_umapi_user,sign_user,None)
+    valid_umapi_status = example_engine.should_sync(input_umapi_user,None)
     assert valid_umapi_status is True
 
 def test_roles_match():
