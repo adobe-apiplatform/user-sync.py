@@ -1,0 +1,6 @@
+username: adservice@seaofcarag.com
+password: P3rficient
+host: ldap://seaofcarag.com:389
+base_dn: OU=ExtensionOU,DC=seaofcarag,DC=com
+search_page_size: 1000
+  

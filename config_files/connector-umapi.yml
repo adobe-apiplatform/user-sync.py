@@ -1,0 +1,11 @@
+server:
+    host: usermanagement-stage.adobe.io
+    ims_host: ims-na1-stg1.adobelogin.com
+enterprise:
+    org_id: 3B8107895E289ECE0A494235@AdobeOrg
+    api_key:
+        secure: C:\Users\sriram.srinivasan\config_files\connector-umapi.yml:enterprise:api_key
+    client_secret:
+        secure: C:\Users\sriram.srinivasan\config_files\connector-umapi.yml:enterprise:client_secret
+    tech_acct: 50CD58C75F1A55DD0A494120@techacct.adobe.com
+    priv_key_path: C:\Program Files\Adobe\Adobe User Sync Tool_Test\private.key

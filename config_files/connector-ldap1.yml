@@ -1,0 +1,6 @@
+username: adservice@seaofcarag.com
+password:
+    secure: C:\Users\sriram.srinivasan\config_files\connector-ldap1.yml:password
+host: ldap://seaofcarag.com:389
+base_dn: DC=seaofcarag,DC=com
+search_page_size: 10000

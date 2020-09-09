@@ -92,13 +92,6 @@ class CredentialManager:
                 u = list(u.values())[0] if isinstance(u, dict) else u
                 self.config_files[u] = UmapiCredentialConfig(u, auto=self.auto)
 
-<<<<<<< HEAD
-        for c, v in root_cfg['directory_users']['connectors'].items():
-            if connector_type in ['all', c]:
-                self.config_files[v] = CredentialConfig.create(c, v, auto=self.auto)
-
-=======
->>>>>>> multi-directory-current
     def store(self):
         return self.modify_credentials('store')
 
@@ -165,7 +158,8 @@ class CredentialConfig:
 
                 if self.auto or click.confirm(
                         "Key: [{}] \nPrivate key storage is not supported on this platform due to character limits."
-                        "\nEncrypt private key and store password instead?".format(self.get_qualified_identifier(k.key_path))):
+                        "\nEncrypt private key and store password instead?".format(
+                            self.get_qualified_identifier(k.key_path))):
                     try:
                         val, label = self.encrypt_key(k)
                     except AssertionException as e:
@@ -389,8 +383,10 @@ class UmapiCredentialConfig(CredentialConfig):
     ]
     priv_key_path = Key(key_path=['enterprise', 'priv_key_path'], is_block=False, linked_key=pass_key, is_filepath=True)
 
+
 class CsvCredentialConfig(CredentialConfig):
     pass
+
 
 class AdobeConsoleCredentialConfig(UmapiCredentialConfig):
     pass_key = Key(key_path=['integration', 'priv_key_pass'])
@@ -402,4 +398,5 @@ class AdobeConsoleCredentialConfig(UmapiCredentialConfig):
             is_block=True,
             linked_key=pass_key)
     ]
-    priv_key_path = Key(key_path=['integration', 'priv_key_path'], is_block=False, linked_key=pass_key, is_filepath=True)
+    priv_key_path = Key(key_path=['integration', 'priv_key_path'], is_block=False, linked_key=pass_key,
+                        is_filepath=True)
