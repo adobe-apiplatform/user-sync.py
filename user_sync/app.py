@@ -17,7 +17,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from sys import platform
+
 import logging
 import os
 import shutil
@@ -31,8 +31,10 @@ from click_default_group import DefaultGroup
 
 import user_sync.certgen
 import user_sync.cli
+import user_sync.cli
 import user_sync.config
 import user_sync.connector.directory
+import user_sync.connector.directory_csv
 import user_sync.connector.directory_ldap
 import user_sync.connector.directory_okta
 import user_sync.connector.directory_csv
@@ -45,6 +47,8 @@ import user_sync.lockfile
 import user_sync.resource
 import user_sync.rules
 
+from user_sync.credentials import CredentialManager
+from user_sync.error import AssertionException
 from user_sync.post_sync.manager import PostSyncManager
 import user_sync.post_sync.connectors.sign_sync
 
@@ -56,6 +60,14 @@ LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 # file logger, defined early so later functions can refer to it.
 logger = logging.getLogger('main')
+
+
+def init_cli_logger():
+    # Removes the LOG_STRING_FORMAT and LOG_DATE_FORMAT from the logger
+    # so that additional tools like credential manager can produce uniform output
+    # along side click I/O. Console log level is INFO by default, but can be overwritten in user_sync_config.yml
+    logging.getLogger().handlers[0].setFormatter(logging.Formatter('', ''))
+    logging.getLogger().setLevel(logging.INFO)
 
 
 def init_console_log():
@@ -170,7 +182,7 @@ def sync(**kwargs):
     run_stats = None
     sign_config_file = kwargs.get('sign_sync_config')
     if 'sign_sync_config' in kwargs:
-        del(kwargs['sign_sync_config'])
+        del (kwargs['sign_sync_config'])
     try:
         # load the config files and start the file logger
         config_loader = user_sync.config.ConfigLoader(kwargs)
@@ -440,6 +452,148 @@ def begin_work(config_loader):
     if post_sync_manager:
         post_sync_manager.run(rule_processor.post_sync_data)
 
+
+@click.group()
+@click.help_option('-h', '--help')
+def credentials():
+    init_cli_logger()
+    click.echo('Using keyring: ' + CredentialManager.keyring_name)
+    pass
+
+
+def log_credentials(credentials, show_values=False):
+    for file, cred in credentials.items():
+        click.echo('\n' + file.split(os.sep)[-1] + ":")
+        for k, v in cred.items():
+            if k == 'enterprise:priv_key_data':
+                click.echo("  " + k + (": " + v[40:80] + ' (partial data)' if show_values else ""))
+            else:
+                click.echo("  " + k + (": " + v if show_values else ""))
+
+
+@credentials.command(
+    help="Stores all sensitive fields and updates configuration files, replacing plaintext values with keys")
+@click.option('-c', '--config-filename',
+              help="path to your main configuration file",
+              type=str,
+              nargs=1,
+              default="user-sync-config.yml",
+              metavar='path-to-file')
+@click.option('-t', '--type',
+              help=" Specify all, ldap, umapi, okta, console. ",
+              type=str,
+              nargs=1,
+              default="all",
+              metavar='all|ldap|umapi|okta|console')
+@click.option('--auto', '-a', help='Override user input (encrypt private key data if storage fails, etc.', is_flag=True)
+def store(config_filename, type, auto):
+    """
+    Stores secure credentials in the configuration file.
+    Use the --type parameter to store for just one file type (ldap, umapi, etc)
+    Use the --auto flag to override user prompts.  If key storage fails, it will be automatically encrypted with a
+    random passphrase, which will be stored in the credential manager instead.
+    """
+    click.echo()
+    stored = CredentialManager(config_filename, connector_type=type, auto=auto).store()
+    if stored:
+        click.echo("The following keys were stored:")
+        log_credentials(stored)
+    else:
+        click.echo("No keys were stored because no valid credentials were found.")
+
+
+@credentials.command(help="Will return configuration file to unsecured state and replace all secure values with "
+                          "plain text values.")
+@click.option('-c', '--config-filename',
+              help="path to your main configuration file",
+              type=str,
+              nargs=1,
+              default="user-sync-config.yml",
+              metavar='path-to-file')
+@click.option('-t', '--type',
+              help=" Specify all, ldap, umapi, okta, console. ",
+              type=str,
+              nargs=1,
+              default="all",
+              metavar='all|ldap|umapi|okta|console')
+def revert(config_filename, type):
+    """
+    Revert updates config files with actual plaintext data. This is an automated process.
+    """
+    reverted = CredentialManager(config_filename, type).revert()
+    if reverted:
+        click.echo("The following keys were reverted to plaintext:")
+        log_credentials(reverted)
+    else:
+        click.echo("No keys were reverted because no valid identifiers were stored.")
+
+
+@credentials.command(help="Will get the stored credentials without altering config files")
+@click.option('-c', '--config-filename',
+              help="path to your main configuration file",
+              type=str,
+              nargs=1,
+              default="user-sync-config.yml",
+              metavar='path-to-file')
+@click.option('-t', '--type',
+              help=" Specify all, ldap, umapi, okta, console. ",
+              type=str,
+              nargs=1,
+              default="all",
+              metavar='all|ldap|umapi|okta|console')
+def retrieve(config_filename, type):
+    """
+    Fetch and display currently stored credentials
+    """
+    retrieved = CredentialManager(config_filename, type).retrieve()
+    if not retrieved:
+        click.echo("No credentials currently stored with valid identifiers.")
+    log_credentials(retrieved, show_values=True)
+
+
+@credentials.command(help="Allows for easy fetch of stored credentials on any platform.", name="get")
+@click.option('-i', '--identifier', prompt='Enter identifier',
+              help="Name of service you want to get a value for.  Username will always be 'user_sync'.")
+def get_credential(identifier):
+    """
+    Gets the specified credentials from keyring
+    """
+    try:
+        credential_manager = CredentialManager()
+        click.echo("Using backend: " + credential_manager.keyring_name)
+        click.echo("Getting '{0}' from keyring".format(identifier))
+        credential = credential_manager.get(identifier)
+        if credential is None:
+            raise AssertionException("Credential not found for identifier '{0}'".format(identifier))
+        click.echo(identifier + ': ' + credential)
+    except AssertionException as e:
+        click.echo(str(e))
+
+
+@credentials.command(help="Allows for easy setting of credentials on any platform.", name="set")
+@click.option('-i', '--identifier', prompt='Enter identifier',
+              help="Name of service you want to store a value for. You will be prompted for this if not specified."
+                   "Username will always be 'user_sync'. ")
+@click.option('-v', '--value', prompt="Enter value", hide_input=True,
+              help="The value to be stored. You will be prompted for this if not specified.  "
+                   "Username will always be 'user_sync'.")
+def set_credential(identifier, value):
+    """
+    Sets the specified credentials in keyring
+    """
+    credential_manager = CredentialManager()
+    click.echo("Using backend: " + credential_manager.keyring_name)
+    click.echo("Setting '{0}' in keyring".format(identifier))
+    credential_manager.set(identifier, value)
+    click.echo("Validating...")
+    result = credential_manager.get(identifier)
+    if result != value:
+        click.echo("Failed to set credential correctly, stored value was " + str(result))
+    else:
+        click.echo("Credentials stored successfully for: " + identifier)
+
+
+main.add_command(credentials)
 
 @main.command(short_help="Encrypt RSA private key")
 @click.help_option('-h', '--help')
