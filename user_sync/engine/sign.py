@@ -292,6 +292,10 @@ class SignSyncEngine:
         director_users_emails = list(map(lambda directory_user:directory_user['email'].lower(), directory_users.values()))
         for _, sign_user in sign_users.items():
             if sign_user['email'].lower() not in director_users_emails:
-                sign_connector.deactivate_user(sign_user['userId'])
+                try:
+                    sign_connector.deactivate_user(sign_user['userId'])
+                except AssertionException as e:
+                    self.logger.error("Error deactivating user {}, {}".format(sign_user['email'], e))
+                return
 
 
