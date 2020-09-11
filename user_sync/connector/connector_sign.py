@@ -38,14 +38,11 @@ class SignConnector(object):
         sign_builder.require_string_value('key')
         sign_builder.require_string_value('admin_email')
         sign_builder.set_string_value('console_org', None)
-        options = sign_builder.get_options()
-        self.console_org = options['console_org']
+        self.options = sign_builder.get_options()
+        self.console_org = self.options['console_org']
         self.name = 'sign_{}'.format(self.console_org)
         self.logger = logging.getLogger(self.name)
-        self.sign_client = SignClient(host=options['host'],
-                                      key=options['key'],
-                                      admin_email=options['admin_email'],
-                                      logger=self.logger)
+        self.sign_client = SignClient(self.options, self.logger)
 
     def sign_groups(self):
         return self.sign_client.get_groups()

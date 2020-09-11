@@ -8,11 +8,13 @@ class SignClient:
     version = 'v5'
     _endpoint_template = 'api/rest/{}/'
 
-    def __init__(self, host, key, admin_email, logger=None):
-
-        self.host = host
-        self.key = key
-        self.admin_email = admin_email
+    def __init__(self, config, logger=None):
+        for k in ['host', 'key', 'admin_email']:
+            if k not in config:
+                raise AssertionException("Key '{}' must be specified for all Sign orgs".format(k))
+        self.host = config['host']
+        self.key = config['key']
+        self.admin_email = config['admin_email']
         self.api_url = None
         self.groups = None
         self.logger = logger or logging.getLogger("sign_client_{}".format(self.key[0:4]))
