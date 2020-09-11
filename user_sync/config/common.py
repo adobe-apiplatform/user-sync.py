@@ -369,7 +369,6 @@ class ConfigFileLoader:
                           does the key have a default value so that must be added to
                           the dictionary if there is not already a value found.
         """
-        print(filepath)
         if filepath.startswith('$(') and filepath.endswith(')'):
             raise AssertionException("Shell execution is no longer supported: {}".format(filepath))
 

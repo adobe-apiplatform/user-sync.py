@@ -72,4 +72,4 @@ class AdobeGroup:
 
     @classmethod
     def iter_groups(cls):
-        return cls.index_map.items()
+        return cls.index_map.values()
