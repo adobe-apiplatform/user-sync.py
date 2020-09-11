@@ -19,7 +19,6 @@
 # SOFTWARE.
 import logging
 import os
-import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -30,29 +29,26 @@ from click_default_group import DefaultGroup
 
 import user_sync.certgen
 import user_sync.cli
+import user_sync.config.sign_sync
+import user_sync.config.user_sync
+import user_sync.connector.connector_umapi
 import user_sync.connector.directory
 import user_sync.connector.directory_adobe_console
 import user_sync.connector.directory_csv
 import user_sync.connector.directory_ldap
 import user_sync.connector.directory_okta
 import user_sync.encryption
+import user_sync.engine.umapi
 import user_sync.helper
 import user_sync.lockfile
-import user_sync.resource
-from user_sync.config import user_sync as config
-from user_sync.config import common as config_common
-from user_sync.config.sign_sync import SignConfigLoader
-from user_sync.connector.connector_umapi import UmapiConnector
-from user_sync.engine import umapi as rules
-from user_sync.engine.common import PRIMARY_TARGET_NAME
-
-from user_sync.post_sync.manager import PostSyncManager
 import user_sync.post_sync.connectors.sign_sync
 import user_sync.resource
-import user_sync.engine.umapi
-import user_sync.config.user_sync
-import user_sync.config.sign_sync
-import user_sync.connector.connector_umapi
+import user_sync.resource
+from user_sync.config import common as config_common
+from user_sync.config import user_sync as config
+from user_sync.connector.connector_umapi import UmapiConnector
+from user_sync.engine.common import PRIMARY_TARGET_NAME
+from user_sync.engine.sign import SignSyncEngine
 from user_sync.error import AssertionException
 from user_sync.post_sync.manager import PostSyncManager
 from user_sync.version import __version__ as app_version
@@ -176,7 +172,7 @@ def sync(**kwargs):
     sign_config_file = kwargs.get('sign_sync_config')
     if 'sign_sync_config' in kwargs:
         del (kwargs['sign_sync_config'])
-    run_sync(config.ConfigLoader(kwargs), begin_work_umapi)
+    run_sync(config.UMAPIConfigLoader(kwargs), begin_work_umapi)
 
 
 @main.command()
@@ -207,12 +203,101 @@ def sign_sync(**kwargs):
     run_sync(sign_sync.SignConfigLoader(kwargs), begin_work_sign)
 
 
+def begin_work_sign(sign_config_loader):
+    sign_engine_config = sign_config_loader.get_engine_options()
+    directory_connector, directory_groups = load_directory_config(sign_config_loader)
+    sign_engine = SignSyncEngine(sign_engine_config)
+    sign_engine.run(directory_groups, directory_connector)
+
+
+def begin_work_umapi(config_loader):
+    """
+    :type config_loader: config.UMAPIConfigLoader
+    """
+
+    umapi_engine_config = config_loader.get_engine_options()
+    directory_connector, directory_groups = load_directory_config(config_loader, umapi_engine_config['new_account_type'])
+
+    # make sure that all the adobe groups are from known umapi connector names
+    primary_umapi_config, secondary_umapi_configs = config_loader.get_target_options()
+    referenced_umapi_names = set()
+    for groups in six.itervalues(directory_groups):
+        for group in groups:
+            umapi_name = group.umapi_name
+            if umapi_name != PRIMARY_TARGET_NAME:
+                referenced_umapi_names.add(umapi_name)
+    referenced_umapi_names.difference_update(six.iterkeys(secondary_umapi_configs))
+    if len(referenced_umapi_names) > 0:
+        raise AssertionException('Adobe groups reference unknown umapi connectors: %s' % referenced_umapi_names)
+
+    #post_sync_manager = None
+    # get post-sync config unconditionally so we don't get an 'unused key' error
+    # post_sync_config = config_loader.get_post_sync_options()
+    # if umapi_engine_config['strategy'] == 'sync':
+    #     if post_sync_config:
+    #         post_sync_manager = PostSyncManager(post_sync_config, umapi_engine_config['test_mode'])
+    #         umapi_engine_config['extended_attributes'] |= post_sync_manager.get_directory_attributes()
+    # else:
+    #     logger.warn('Post-Sync Connectors only support "sync" strategy')
+
+    config_loader.check_unused_config_keys()
+
+    additional_group_filters = None
+    additional_groups = umapi_engine_config.get('additional_groups', None)
+    if additional_groups and isinstance(additional_groups, list):
+        additional_group_filters = [r['source'] for r in additional_groups]
+    if directory_connector is not None:
+        directory_connector.state.additional_group_filters = additional_group_filters
+        # show error dynamic mappings enabled but 'dynamic_group_member_attribute' is not defined
+        if additional_group_filters and directory_connector.state.options['dynamic_group_member_attribute'] is None:
+            raise AssertionException(
+                "Failed to enable dynamic group mappings. 'dynamic_group_member_attribute' is not defined in config")
+
+    primary_name = '.primary' if secondary_umapi_configs else ''
+    umapi_primary_connector = UmapiConnector(primary_name, primary_umapi_config)
+    umapi_other_connectors = {}
+    for secondary_umapi_name, secondary_config in six.iteritems(secondary_umapi_configs):
+        umapi_secondary_conector = UmapiConnector(".secondary.%s" % secondary_umapi_name,
+                                                  secondary_config)
+        umapi_other_connectors[secondary_umapi_name] = umapi_secondary_conector
+    umapi_connectors = user_sync.engine.umapi.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
+
+    rule_processor = user_sync.engine.umapi.RuleProcessor(umapi_engine_config)
+    if len(directory_groups) == 0 and rule_processor.will_process_groups():
+        logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
+    rule_processor.run(directory_groups, directory_connector, umapi_connectors)
+
+    #  Post sync section
+    # if post_sync_manager:
+    #     post_sync_manager.run(rule_processor.post_sync_data)
+
+
+def load_directory_config(config_loader, new_account_type=None):
+
+    # Group mappings from the sign or umapi sync config files
+    directory_groups = config_loader.get_directory_groups()
+
+    directory_connector = None
+    directory_connector_options = None
+    directory_connector_module_name = config_loader.get_directory_connector_module_name()
+    if directory_connector_module_name is not None:
+        directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
+        directory_connector = user_sync.connector.directory.DirectoryConnector(directory_connector_module)
+        directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
+
+    if directory_connector is not None and directory_connector_options is not None:
+        # specify the default user_identity_type if it's not already specified in the options
+        # this has no effect for sign sync, but directory connector
+        if new_account_type and 'user_identity_type' not in directory_connector_options:
+            directory_connector_options['user_identity_type'] = new_account_type
+        directory_connector.initialize(directory_connector_options)
+
+    return directory_connector, directory_groups
+
+
 def run_sync(config_loader, begin_work):
     run_stats = None
     try:
-        # load the config files and start the file logger
-        config_loader = config.UMAPIConfigLoader(kwargs)
-
         init_log(config_loader.get_logging_config())
 
         # add start divider, app version number, and invocation parameters to log
@@ -249,75 +334,6 @@ def run_sync(config_loader, begin_work):
     finally:
         if run_stats is not None:
             run_stats.log_end(logger)
-
-
-def begin_work_sign(sign_config_loader):
-    rule_config = sign_config_loader.get_engine_options()
-    directory_connector, directory_groups = load_root_config(sign_config_loader, rule_config['new_account_type'])
-    sign_engine = user_sync.engine.sign.SignSyncEngine(rule_config)
-    sign_engine.run(directory_groups, directory_connector)
-
-
-def begin_work_umapi(config_loader):
-    """
-    :type config_loader: config.UMAPIConfigLoader
-    """
-
-    rule_config = config_loader.get_rule_options()
-    directory_connector, directory_groups = load_root_config(config_loader, rule_config['new_account_type'])
-
-    # make sure that all the adobe groups are from known umapi connector names
-    primary_umapi_config, secondary_umapi_configs = config_loader.get_target_options()
-    referenced_umapi_names = set()
-    for groups in six.itervalues(directory_groups):
-        for group in groups:
-            umapi_name = group.umapi_name
-            if umapi_name != PRIMARY_TARGET_NAME:
-                referenced_umapi_names.add(umapi_name)
-    referenced_umapi_names.difference_update(six.iterkeys(secondary_umapi_configs))
-    if len(referenced_umapi_names) > 0:
-        raise AssertionException('Adobe groups reference unknown umapi connectors: %s' % referenced_umapi_names)
-
-    post_sync_manager = None
-    # get post-sync config unconditionally so we don't get an 'unused key' error
-    post_sync_config = config_loader.get_post_sync_options()
-    if rule_config['strategy'] == 'sync':
-        if post_sync_config:
-            post_sync_manager = PostSyncManager(post_sync_config, rule_config['test_mode'])
-            rule_config['extended_attributes'] |= post_sync_manager.get_directory_attributes()
-    else:
-        logger.warn('Post-Sync Connectors only support "sync" strategy')
-
-    config_loader.check_unused_config_keys()
-
-    additional_group_filters = None
-    additional_groups = rule_config.get('additional_groups', None)
-    if additional_groups and isinstance(additional_groups, list):
-        additional_group_filters = [r['source'] for r in additional_groups]
-    if directory_connector is not None:
-        directory_connector.state.additional_group_filters = additional_group_filters
-        # show error dynamic mappings enabled but 'dynamic_group_member_attribute' is not defined
-        if additional_group_filters and directory_connector.state.options['dynamic_group_member_attribute'] is None:
-            raise AssertionException(
-                "Failed to enable dynamic group mappings. 'dynamic_group_member_attribute' is not defined in config")
-
-    primary_name = '.primary' if secondary_umapi_configs else ''
-    umapi_primary_connector = UmapiConnector(primary_name, primary_umapi_config)
-    umapi_other_connectors = {}
-    for secondary_umapi_name, secondary_config in six.iteritems(secondary_umapi_configs):
-        umapi_secondary_conector = UmapiConnector(".secondary.%s" % secondary_umapi_name,
-                                                  secondary_config)
-        umapi_other_connectors[secondary_umapi_name] = umapi_secondary_conector
-    umapi_connectors = user_sync.engine.umapi.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
-
-    rule_processor = user_sync.engine.umapi.RuleProcessor(rule_config)
-    if len(directory_groups) == 0 and rule_processor.will_process_groups():
-        logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
-    rule_processor.run(directory_groups, directory_connector, umapi_connectors)
-
-    #  Post sync section
-    if post_sync_manager:
-        post_sync_manager.run(rule_processor.post_sync_data)
 
 
 def init_log(logging_config):
@@ -381,26 +397,6 @@ def log_parameters(argv, config_loader):
     for parameter_name, parameter_value in six.iteritems(config_loader.get_invocation_options()):
         logger.debug('  %s: %s', parameter_name, parameter_value)
     logger.info('-------------------------------------')
-
-
-def load_root_config(config_loader):
-    # will get the directory groups based off of sign_sync config
-    directory_groups = config_loader.get_directory_groups()
-
-    directory_connector = None
-    directory_connector_options = None
-    directory_connector_module_name = config_loader.get_directory_connector_module_name()
-    if directory_connector_module_name is not None:
-        directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
-        directory_connector = user_sync.connector.directory.DirectoryConnector(directory_connector_module)
-        directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
-
-    config_loader.check_unused_config_keys()
-
-    if directory_connector is not None and directory_connector_options is not None:
-        directory_connector.initialize(directory_connector_options)
-
-    return directory_connector, directory_groups
 
 
 # Additional CLI commands #
