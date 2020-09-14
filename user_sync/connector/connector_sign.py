@@ -42,6 +42,7 @@ class SignConnector(object):
         self.console_org = options['console_org']
         self.name = 'sign_{}'.format(self.console_org)
         self.logger = logging.getLogger(self.name)
+        caller_config.report_unused_values(self.logger)
         self.sign_client = SignClient(host=options['host'],
                                       key=options['key'],
                                       admin_email=options['admin_email'],
