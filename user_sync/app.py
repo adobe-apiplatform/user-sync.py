@@ -46,11 +46,12 @@ import user_sync.resource
 import user_sync.resource
 from user_sync.config import common as config_common
 from user_sync.config import user_sync as config
+from user_sync.config import sign_sync as sign_config
 from user_sync.connector.connector_umapi import UmapiConnector
 from user_sync.engine.common import PRIMARY_TARGET_NAME
 from user_sync.engine.sign import SignSyncEngine
 from user_sync.error import AssertionException
-from user_sync.post_sync.manager import PostSyncManager
+# from user_sync.post_sync.manager import PostSyncManager
 from user_sync.version import __version__ as app_version
 
 LOG_STRING_FORMAT = '%(asctime)s %(process)d %(levelname)s %(name)s - %(message)s'
@@ -169,9 +170,9 @@ def main():
               help='user attributes on the Adobe side are updated from the directory.')
 def sync(**kwargs):
     """Run User Sync [default command]"""
-    sign_config_file = kwargs.get('sign_sync_config')
-    if 'sign_sync_config' in kwargs:
-        del (kwargs['sign_sync_config'])
+    # sign_config_file = kwargs.get('sign_sync_config')
+    # if 'sign_sync_config' in kwargs:
+    #     del (kwargs['sign_sync_config'])
     run_sync(config.UMAPIConfigLoader(kwargs), begin_work_umapi)
 
 
@@ -200,7 +201,7 @@ def sync(**kwargs):
 def sign_sync(**kwargs):
     """Run Sign Sync """
     # load the config files (sign-sync-config.yml) and start the file logger
-    run_sync(sign_sync.SignConfigLoader(kwargs), begin_work_sign)
+    run_sync(sign_config.SignConfigLoader(kwargs), begin_work_sign)
 
 
 def begin_work_sign(sign_config_loader):
