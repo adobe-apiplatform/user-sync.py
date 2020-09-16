@@ -83,12 +83,12 @@ connector-umapi.yml
 	
 	enterprise:
 	  org_id: your org id
-	  secure_api_key_key: umapi_api_key
+	  secure_client_id_key: client_id
 	  secure_client_secret_key: umapi_client_secret
-	  tech_acct: your tech account@techacct.adobe.com
+	  tech_acct_id: your tech account@techacct.adobe.com
 	  secure_priv_key_data_key: umapi_private_key_data
 
-Note the change of `api_key`, `client_secret`, and `priv_key_path` to `secure_api_key_key`, `secure_client_secret_key`, and `secure_priv_key_data_key`, respectively.  These alternate configuration values give the key names to be looked up in the user keychain (or the equivalent service on other platforms) to retrieve the actual credential values.  In this example, the credential key names are `umapi_api_key`, `umapi_client_secret`, and `umapi_private_key_data`.
+Note the change of `client_id`, `client_secret`, and `priv_key_path` to `secure_client_id_key`, `secure_client_secret_key`, and `secure_priv_key_data_key`, respectively.  These alternate configuration values give the key names to be looked up in the user keychain (or the equivalent service on other platforms) to retrieve the actual credential values.  In this example, the credential key names are `umapi_client_id`, `umapi_client_secret`, and `umapi_private_key_data`.
 
 The contents of the private key file is used as the value of `umapi_private_key_data` in the credential store.  This can only be done on platforms other than Windows.  See below for how to secure the
 private key file on Windows.
@@ -118,9 +118,9 @@ private key file, respectively:
 	
 	enterprise:
 	  org_id: your org id
-	  secure_api_key_key: umapi_api_key
+	  secure_client_id_key: umapi_client_id
 	  secure_client_secret_key: umapi_client_secret
-	  tech_acct: your tech account@techacct.adobe.com
+	  tech_acct_id: your tech account@techacct.adobe.com
 	  secure_priv_key_pass_key: umapi_private_key_passphrase
 	  priv_key_path: private-encrypted.key
 
