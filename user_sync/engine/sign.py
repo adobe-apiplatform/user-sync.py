@@ -14,7 +14,7 @@ from user_sync.helper import normalize_string
 class SignSyncEngine:
     default_options = {
         'admin_roles': None,
-        'create_new_users': False,
+        'create_users': False,
         'directory_group_filter': None,
         'entitlement_groups': [],
         'identity_types': [],
@@ -45,6 +45,7 @@ class SignSyncEngine:
         self.directory_user_by_user_key = {}
         # dict w/ structure - umapi_name -> adobe_group -> [set of roles]
         self.admin_roles = self._admin_role_mapping(sync_config)
+        self.create_users = sync_config.get_bool("create_users")
 
         # builder = user_sync.config.common.OptionsBuilder(sync_config)
         # builder.set_string_value('logger_name', self.name)
@@ -53,7 +54,6 @@ class SignSyncEngine:
 
         sign_orgs = sync_config.get_list('sign_orgs')
         self.connectors = {cfg.get('console_org'): SignConnector(cfg) for cfg in sign_orgs}
-        self.create_new_users = sync_config.get_bool("create_new_users")
 
     def run(self, directory_groups, directory_connector):
         """
