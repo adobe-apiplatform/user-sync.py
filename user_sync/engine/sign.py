@@ -14,7 +14,7 @@ from user_sync.helper import normalize_string
 class SignSyncEngine:
     default_options = {
         'admin_roles': None,
-        'create_users': False,
+        'create_new_users': False,
         'directory_group_filter': None,
         'entitlement_groups': [],
         'identity_types': [],
