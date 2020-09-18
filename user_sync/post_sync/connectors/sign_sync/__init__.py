@@ -55,7 +55,7 @@ class SignConnector(PostSyncConnector):
     def update_sign_users(self, umapi_users, sign_client, org_name):
         sign_users = sign_client.get_users()
         for _, umapi_user in umapi_users.items():
-            sign_user = sign_users.get(umapi_user['email'])
+            sign_user = sign_users.get(umapi_user['email'].lower())
             if not self.should_sync(umapi_user, sign_user, org_name):
                 continue
 
