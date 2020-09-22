@@ -55,6 +55,9 @@ class SignSyncEngine:
         sign_orgs = sync_config.get_list('sign_orgs')
         self.connectors = {cfg.get('console_org'): SignConnector(cfg) for cfg in sign_orgs}
 
+        #self.create_new_users = sync_config.get_bool("create_new_users")
+
+
     def run(self, directory_groups, directory_connector):
         """
         Run the Sign sync

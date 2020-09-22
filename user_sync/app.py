@@ -19,7 +19,6 @@
 # SOFTWARE.
 import logging
 import os
-import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -30,30 +29,29 @@ from click_default_group import DefaultGroup
 
 import user_sync.certgen
 import user_sync.cli
+import user_sync.config.sign_sync
+import user_sync.config.user_sync
+import user_sync.connector.connector_umapi
 import user_sync.connector.directory
 import user_sync.connector.directory_adobe_console
 import user_sync.connector.directory_csv
 import user_sync.connector.directory_ldap
 import user_sync.connector.directory_okta
 import user_sync.encryption
+import user_sync.engine.umapi
 import user_sync.helper
 import user_sync.lockfile
-import user_sync.resource
-from user_sync.config import user_sync as config
-from user_sync.config import common as config_common
-from user_sync.config.sign_sync import SignConfigLoader
-from user_sync.connector.connector_umapi import UmapiConnector
-from user_sync.engine import umapi as rules
-from user_sync.engine.common import PRIMARY_TARGET_NAME
-
-from user_sync.post_sync.manager import PostSyncManager
 import user_sync.post_sync.connectors.sign_sync
 import user_sync.resource
-import user_sync.engine.umapi
-import user_sync.config.user_sync
-import user_sync.connector.connector_umapi
+import user_sync.resource
+from user_sync.config import common as config_common
+from user_sync.config import user_sync as config
+from user_sync.config import sign_sync as sign_config
+from user_sync.connector.connector_umapi import UmapiConnector
+from user_sync.engine.common import PRIMARY_TARGET_NAME
+from user_sync.engine.sign import SignSyncEngine
 from user_sync.error import AssertionException
-from user_sync.post_sync.manager import PostSyncManager
+# from user_sync.post_sync.manager import PostSyncManager
 from user_sync.version import __version__ as app_version
 
 LOG_STRING_FORMAT = '%(asctime)s %(process)d %(levelname)s %(name)s - %(message)s'
@@ -172,13 +170,135 @@ def main():
               help='user attributes on the Adobe side are updated from the directory.')
 def sync(**kwargs):
     """Run User Sync [default command]"""
+    # sign_config_file = kwargs.get('sign_sync_config')
+    # if 'sign_sync_config' in kwargs:
+    #     del (kwargs['sign_sync_config'])
+    run_sync(config.UMAPIConfigLoader(kwargs), begin_work_umapi)
+
+
+@main.command()
+@click.help_option('-h', '--help')
+@click.option('-c', '--config-filename',
+              help="path to your main configuration file",
+              type=str,
+              nargs=1,
+              metavar='path-to-file')  # default should be sign-sync-config.yml
+@click.option('--users',
+              help="specify the users to be considered for sync. Legal values are 'all' (the default), "
+                   "'group names' (a comma-separated list of groups in the enterprise "
+                   "directory, and only users in those groups are selected), 'mapped' (all groups listed in "
+                   "the configuration file).",
+              cls=user_sync.cli.OptionMulti,
+              type=list,
+              metavar='all|mapped|group [group list or path-to-file.csv]')  # default should mapped
+@click.option('--sign-only-user-action',
+              help="specify what action to take on Sign users that don't match users from the "
+                   "directory.  Options are 'exclude' (from all changes), "
+                   "'delete' (users and their cloud storage), and default perserve (no action taken) ",
+              cls=user_sync.cli.OptionMulti,
+              type=list,
+              metavar='exclude|preserve|delete')
+def sign_sync(**kwargs):
+    """Run Sign Sync """
+    # load the config files (sign-sync-config.yml) and start the file logger
+    run_sync(sign_config.SignConfigLoader(kwargs), begin_work_sign)
+
+
+def begin_work_sign(sign_config_loader):
+    sign_engine_config = sign_config_loader.get_engine_options()
+    directory_connector, directory_groups = load_directory_config(sign_config_loader)
+    sign_engine = SignSyncEngine(sign_engine_config)
+    sign_engine.run(directory_groups, directory_connector)
+
+
+def begin_work_umapi(config_loader):
+    """
+    :type config_loader: config.UMAPIConfigLoader
+    """
+
+    umapi_engine_config = config_loader.get_engine_options()
+    directory_connector, directory_groups = load_directory_config(config_loader, umapi_engine_config['new_account_type'])
+
+    # make sure that all the adobe groups are from known umapi connector names
+    primary_umapi_config, secondary_umapi_configs = config_loader.get_target_options()
+    referenced_umapi_names = set()
+    for groups in six.itervalues(directory_groups):
+        for group in groups:
+            umapi_name = group.umapi_name
+            if umapi_name != PRIMARY_TARGET_NAME:
+                referenced_umapi_names.add(umapi_name)
+    referenced_umapi_names.difference_update(six.iterkeys(secondary_umapi_configs))
+    if len(referenced_umapi_names) > 0:
+        raise AssertionException('Adobe groups reference unknown umapi connectors: %s' % referenced_umapi_names)
+
+    #post_sync_manager = None
+    # get post-sync config unconditionally so we don't get an 'unused key' error
+    # post_sync_config = config_loader.get_post_sync_options()
+    # if umapi_engine_config['strategy'] == 'sync':
+    #     if post_sync_config:
+    #         post_sync_manager = PostSyncManager(post_sync_config, umapi_engine_config['test_mode'])
+    #         umapi_engine_config['extended_attributes'] |= post_sync_manager.get_directory_attributes()
+    # else:
+    #     logger.warn('Post-Sync Connectors only support "sync" strategy')
+
+    config_loader.check_unused_config_keys()
+
+    additional_group_filters = None
+    additional_groups = umapi_engine_config.get('additional_groups', None)
+    if additional_groups and isinstance(additional_groups, list):
+        additional_group_filters = [r['source'] for r in additional_groups]
+    if directory_connector is not None:
+        directory_connector.state.additional_group_filters = additional_group_filters
+        # show error dynamic mappings enabled but 'dynamic_group_member_attribute' is not defined
+        if additional_group_filters and directory_connector.state.options['dynamic_group_member_attribute'] is None:
+            raise AssertionException(
+                "Failed to enable dynamic group mappings. 'dynamic_group_member_attribute' is not defined in config")
+
+    primary_name = '.primary' if secondary_umapi_configs else ''
+    umapi_primary_connector = UmapiConnector(primary_name, primary_umapi_config)
+    umapi_other_connectors = {}
+    for secondary_umapi_name, secondary_config in six.iteritems(secondary_umapi_configs):
+        umapi_secondary_conector = UmapiConnector(".secondary.%s" % secondary_umapi_name,
+                                                  secondary_config)
+        umapi_other_connectors[secondary_umapi_name] = umapi_secondary_conector
+    umapi_connectors = user_sync.engine.umapi.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
+
+    rule_processor = user_sync.engine.umapi.RuleProcessor(umapi_engine_config)
+    if len(directory_groups) == 0 and rule_processor.will_process_groups():
+        logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
+    rule_processor.run(directory_groups, directory_connector, umapi_connectors)
+
+    #  Post sync section
+    # if post_sync_manager:
+    #     post_sync_manager.run(rule_processor.post_sync_data)
+
+
+def load_directory_config(config_loader, new_account_type=None):
+
+    # Group mappings from the sign or umapi sync config files
+    directory_groups = config_loader.get_directory_groups()
+
+    directory_connector = None
+    directory_connector_options = None
+    directory_connector_module_name = config_loader.get_directory_connector_module_name()
+    if directory_connector_module_name is not None:
+        directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
+        directory_connector = user_sync.connector.directory.DirectoryConnector(directory_connector_module)
+        directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
+
+    if directory_connector is not None and directory_connector_options is not None:
+        # specify the default user_identity_type if it's not already specified in the options
+        # this has no effect for sign sync, but directory connector
+        if new_account_type and 'user_identity_type' not in directory_connector_options:
+            directory_connector_options['user_identity_type'] = new_account_type
+        directory_connector.initialize(directory_connector_options)
+
+    return directory_connector, directory_groups
+
+
+def run_sync(config_loader, begin_work):
     run_stats = None
-    sign_config_file = kwargs.get('sign_sync_config')
-    if 'sign_sync_config' in kwargs:
-        del(kwargs['sign_sync_config'])
     try:
-        # load the config files and start the file logger
-        config_loader = config.UMAPIConfigLoader(kwargs)
         init_log(config_loader.get_logging_config())
 
         # add start divider, app version number, and invocation parameters to log
@@ -215,176 +335,6 @@ def sync(**kwargs):
     finally:
         if run_stats is not None:
             run_stats.log_end(logger)
-
-@main.command()
-@click.help_option('-h', '--help')
-@click.option('-c', '--config-filename',
-                help = "path to your main configuration file",
-                type = str,
-                nargs = 1,
-                metavar = 'path-to-file')     #default should be sign-sync-config.yml
-@click.option('--users',
-              help="specify the users to be considered for sync. Legal values are 'all' (the default), "
-                   "'group names' (a comma-separated list of groups in the enterprise "
-                   "directory, and only users in those groups are selected), 'mapped' (all groups listed in "
-                   "the configuration file).",
-              cls=user_sync.cli.OptionMulti,
-              type=list,
-              metavar='all|mapped|group [group list or path-to-file.csv]') #default should mapped
-# Correct Sign only user actions??
-@click.option('--sign-only-user-action',
-              help="specify what action to take on Sign users that don't match users from the "
-                   "directory.  Options are 'exclude' (from all changes), "
-                   "'delete' (users and their cloud storage), and default perserve (no action taken) ",
-              cls=user_sync.cli.OptionMulti,
-              type=list,
-              metavar='exclude|preserve|delete')
-def sign_sync(**kwargs):
-    """Run Sign Sync """
-    run_stats = None
-    try:
-        #load the config files (sign-sync-config.yml) and start the file logger
-        sign_config_loader = SignConfigLoader(kwargs)
-        init_log(sign_config_loader.get_logging_config())
-
-        run_stats = user_sync.helper.JobStats('Run (Sign Sync  version: ' + app_version + ')', divider='=')
-        run_stats.log_start(logger)
-        log_parameters(sys.argv[1:], sign_config_loader)
-        script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
-        lock_path = os.path.join(script_dir, 'lockfile')
-        lock = user_sync.lockfile.ProcessLock(lock_path)
-        if lock.set_lock():
-            try:
-                begin_work_sign(sign_config_loader)
-            finally:
-                lock.unlock()
-        else:
-            logger.critical("A different User Sync process is currently running.")
-
-    except AssertionException as e:
-        if not e.is_reported():
-            logger.critical("%s", e)
-            e.set_reported()
-    except KeyboardInterrupt:
-        try:
-            logger.critical('Keyboard interrupt, exiting immediately.')
-        except:
-            pass
-    except:
-        try:
-            logger.error('Unhandled exception', exc_info=sys.exc_info())
-        except:
-            pass
-
-    finally:
-        if run_stats is not None:
-            run_stats.log_end(logger)
-
-
-@main.command(short_help="Generate conf files, certificates and shell scripts")
-@click.help_option('-h', '--help')
-@click.pass_context
-def init(ctx):
-    """
-    Generates configuration files, an X509 certificate/keypair, and the batch files for running the user-sync tool
-    in test and live mode.
-    """
-    ctx.forward(certgen, randomize=True)
-    ctx.forward(shell_scripts, platform=None)
-
-    sync = 'user-sync-config.yml'
-    umapi = 'connector-umapi.yml'
-    ldap = 'connector-ldap.yml'
-    ctx.forward(example_config, root=sync, umapi=umapi, ldap=ldap)
-
-
-@main.command(short_help="Generate invocation scripts")
-@click.help_option('-h', '--help')
-@click.option('-p', '--platform', help="Platform for which to generate scripts [default: current system platform]",
-              type=click.Choice(['win', 'linux'], case_sensitive=False))
-def shell_scripts(platform):
-    """Generate invocation shell scripts for the given platform."""
-    if platform is None:
-        platform = 'win' if 'win' in sys.platform.lower() else 'linux'
-    shell_scripts = user_sync.resource.get_resource_dir('shell_scripts/{}'.format(platform))
-    for script in shell_scripts:
-        with open(script, 'r') as fh:
-            content = fh.read()
-        target = Path.cwd()/Path(script).parts[-1]
-        if target.exists() and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(target)):
-            continue
-        with open(target, 'w') as fh:
-            fh.write(content)
-        click.echo("Wrote shell script: {}".format(target))
-
-
-@main.command()
-@click.help_option('-h', '--help')
-@click.option('--root', help="Filename of root user sync config file",
-              prompt='Main Config Filename', default='user-sync-config.yml')
-@click.option('--umapi', help="Filename of UMAPI credential config file",
-              prompt='UMAPI Config Filename', default='connector-umapi.yml')
-@click.option('--ldap', help="Filename of LDAP credential config file",
-              prompt='LDAP Config Filename', default='connector-ldap.yml')
-def example_config(**kwargs):
-    """Generate example configuration files"""
-    res_files = {
-        'root': os.path.join('examples', 'user-sync-config.yml'),
-        'umapi': os.path.join('examples', 'connector-umapi.yml'),
-        'ldap': os.path.join('examples', 'connector-ldap.yml'),
-    }
-
-    for k, fname in kwargs.items():
-        target = Path.cwd() / fname
-        assert k in res_files, "Invalid option specified"
-        res_file = user_sync.resource.get_resource(res_files[k])
-        assert res_file is not None, "Resource file '{}' not found".format(res_files[k])
-        if target.exists() and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(target)):
-            continue
-        click.echo("Generating file '{}'".format(fname))
-        with open(res_file, 'r') as file:
-            content = file.read()
-        with open(target, 'w') as file:
-            file.write(content)
-
-@main.command()
-@click.help_option('-h', '--help')
-@click.option('--root', help="Filename of root sign sync config file",
-              prompt='Main Config Filename', default='sign-sync-config.yml')
-@click.option('--sign', help="Filename of Sign Sync config",
-              prompt='Sign Sync Config Filename', default='connector-sign.yml')
-@click.option('--ldap', help="Filename of LDAP credential config file",
-              prompt='LDAP Config Filename', default='connector-ldap.yml')
-def example_config_sign(**kwargs):
-    """Generate Sign Sync Config"""
-    res_files = {
-        'root': os.path.join('examples', 'sign-sync-config.yml'),
-        'sign': os.path.join('examples', 'connector-sign.yml'),
-        'ldap': os.path.join('examples', 'connector-ldap.yml'),
-    }
-
-    for k, fname in kwargs.items():
-        target = Path.cwd() / fname
-        assert k in res_files, "Invalid option specified"
-        res_file = user_sync.resource.get_resource(res_files[k])
-        assert res_file is not None, "Resource file '{}' not found".format(res_files[k])
-        if target.exists() and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(target)):
-            continue
-        click.echo("Generating file '{}'".format(fname))
-        with open(res_file, 'r') as file:
-            content = file.read()
-        with open(target, 'w') as file:
-            file.write(content)
-
-@main.command()
-@click.help_option('-h', '--help')
-def docs():
-    """Open user manual in browser"""
-    res_file = user_sync.resource.get_resource('manual_url')
-    assert res_file is not None, "User Manual URL file not found"
-    with click.open_file(res_file) as f:
-        url = f.read().strip()
-        click.launch(url)
 
 
 def init_log(logging_config):
@@ -450,108 +400,121 @@ def log_parameters(argv, config_loader):
     logger.info('-------------------------------------')
 
 
-def begin_work(config_loader):
+# Additional CLI commands #
+
+@main.command(short_help="Generate conf files, certificates and shell scripts")
+@click.help_option('-h', '--help')
+@click.pass_context
+def init(ctx):
     """
-    :type config_loader: config.UMAPIConfigLoader
+    Generates configuration files, an X509 certificate/keypair, and the batch files for running the user-sync tool
+    in test and live mode.
     """
-    directory_groups = config_loader.get_directory_groups()
-    rule_config = config_loader.get_engine_options()
+    ctx.forward(certgen, randomize=True)
+    ctx.forward(shell_scripts, platform=None)
 
-    # make sure that all the adobe groups are from known umapi connector names
-    primary_umapi_config, secondary_umapi_configs = config_loader.get_target_options()
-    referenced_umapi_names = set()
-    for groups in six.itervalues(directory_groups):
-        for group in groups:
-            umapi_name = group.umapi_name
-            if umapi_name != PRIMARY_TARGET_NAME:
-                referenced_umapi_names.add(umapi_name)
-    referenced_umapi_names.difference_update(six.iterkeys(secondary_umapi_configs))
-    if len(referenced_umapi_names) > 0:
-        raise AssertionException('Adobe groups reference unknown umapi connectors: %s' % referenced_umapi_names)
+    sync = 'user-sync-config.yml'
+    umapi = 'connector-umapi.yml'
+    ldap = 'connector-ldap.yml'
+    ctx.forward(example_config, root=sync, umapi=umapi, ldap=ldap)
 
-    directory_connector = None
-    directory_connector_options = None
-    directory_connector_module_name = config_loader.get_directory_connector_module_name()
-    if directory_connector_module_name is not None:
-        directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
-        directory_connector = user_sync.connector.directory.DirectoryConnector(directory_connector_module)
-        directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
 
-    post_sync_manager = None
-    # get post-sync config unconditionally so we don't get an 'unused key' error
-    post_sync_config = config_loader.get_post_sync_options()
-    if rule_config['strategy'] == 'sync':
-        if post_sync_config:
-            post_sync_manager = PostSyncManager(post_sync_config, rule_config['test_mode'])
-            rule_config['extended_attributes'] |= post_sync_manager.get_directory_attributes()
-    else:
-        logger.warn('Post-Sync Connectors only support "sync" strategy')
+@main.command(short_help="Generate invocation scripts")
+@click.help_option('-h', '--help')
+@click.option('-p', '--platform', help="Platform for which to generate scripts [default: current system platform]",
+              type=click.Choice(['win', 'linux'], case_sensitive=False))
+def shell_scripts(platform):
+    """Generate invocation shell scripts for the given platform."""
+    if platform is None:
+        platform = 'win' if 'win' in sys.platform.lower() else 'linux'
+    shell_scripts = user_sync.resource.get_resource_dir('shell_scripts/{}'.format(platform))
+    for script in shell_scripts:
+        with open(script, 'r') as fh:
+            content = fh.read()
+        target = Path.cwd() / Path(script).parts[-1]
+        if target.exists() and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(target)):
+            continue
+        with open(str(target), 'w') as fh:
+            fh.write(content)
+        click.echo("Wrote shell script: {}".format(target))
 
-    config_loader.check_unused_config_keys()
 
-    if directory_connector is not None and directory_connector_options is not None:
-        # specify the default user_identity_type if it's not already specified in the options
-        #keep
-        if 'user_identity_type' not in directory_connector_options:
-            directory_connector_options['user_identity_type'] = rule_config['new_account_type']
-        directory_connector.initialize(directory_connector_options)
+@main.command()
+@click.help_option('-h', '--help')
+def docs():
+    """Open user manual in browser"""
+    res_file = user_sync.resource.get_resource('manual_url')
+    assert res_file is not None, "User Manual URL file not found"
+    with click.open_file(res_file) as f:
+        url = f.read().strip()
+        click.launch(url)
 
-    additional_group_filters = None
-    additional_groups = rule_config.get('additional_groups', None)
-    if additional_groups and isinstance(additional_groups, list):
-        additional_group_filters = [r['source'] for r in additional_groups]
-    if directory_connector is not None:
-        directory_connector.state.additional_group_filters = additional_group_filters
-        # show error dynamic mappings enabled but 'dynamic_group_member_attribute' is not defined
-        if additional_group_filters and directory_connector.state.options['dynamic_group_member_attribute'] is None:
-            raise AssertionException(
-                "Failed to enable dynamic group mappings. 'dynamic_group_member_attribute' is not defined in config")
-    primary_name = '.primary' if secondary_umapi_configs else ''
-    umapi_primary_connector = UmapiConnector(primary_name, primary_umapi_config)
-    umapi_other_connectors = {}
-    for secondary_umapi_name, secondary_config in six.iteritems(secondary_umapi_configs):
-        umapi_secondary_conector = UmapiConnector(".secondary.%s" % secondary_umapi_name,
-                                                                            secondary_config)
-        umapi_other_connectors[secondary_umapi_name] = umapi_secondary_conector
-    umapi_connectors = user_sync.engine.umapi.UmapiConnectors(umapi_primary_connector, umapi_other_connectors)
 
-    rule_processor = user_sync.engine.umapi.RuleProcessor(rule_config)
-    if len(directory_groups) == 0 and rule_processor.will_process_groups():
-        logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
-    rule_processor.run(directory_groups, directory_connector, umapi_connectors)
+@main.command()
+@click.help_option('-h', '--help')
+@click.option('--root', help="Filename of root user sync config file",
+              prompt='Main Config Filename', default='user-sync-config.yml')
+@click.option('--umapi', help="Filename of UMAPI credential config file",
+              prompt='UMAPI Config Filename', default='connector-umapi.yml')
+@click.option('--ldap', help="Filename of LDAP credential config file",
+              prompt='LDAP Config Filename', default='connector-ldap.yml')
+def example_config(**kwargs):
+    """Generate example configuration files"""
+    res_files = {
+        'root': os.path.join('examples', 'user-sync-config.yml'),
+        'umapi': os.path.join('examples', 'connector-umapi.yml'),
+        'ldap': os.path.join('examples', 'connector-ldap.yml'),
+    }
 
-    #  Post sync section
-    if post_sync_manager:
-        post_sync_manager.run(rule_processor.post_sync_data)
+    for k, fname in kwargs.items():
+        target = Path.cwd() / fname
+        assert k in res_files, "Invalid option specified"
+        res_file = user_sync.resource.get_resource(res_files[k])
+        assert res_file is not None, "Resource file '{}' not found".format(res_files[k])
+        if target.exists() and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(target)):
+            continue
+        click.echo("Generating file '{}'".format(fname))
+        with open(res_file, 'r') as file:
+            content = file.read()
+        with open(target, 'w') as file:
+            file.write(content)
 
-def begin_work_sign (sign_config_loader):
-    directory_connector, directory_groups =load_root_config(sign_config_loader)
-    # initializing the sign engine
 
-def load_root_config(config_loader):
-    # will get the directory groups based off of sign_sync config
-    directory_groups = config_loader.get_directory_groups()
+@main.command()
+@click.help_option('-h', '--help')
+@click.option('--root', help="Filename of root sign sync config file",
+              prompt='Main Config Filename', default='sign-sync-config.yml')
+@click.option('--sign', help="Filename of Sign Sync config",
+              prompt='Sign Sync Config Filename', default='connector-sign.yml')
+@click.option('--ldap', help="Filename of LDAP credential config file",
+              prompt='LDAP Config Filename', default='connector-ldap.yml')
+def example_config_sign(**kwargs):
+    """Generate Sign Sync Config"""
+    res_files = {
+        'root': os.path.join('examples', 'sign-sync-config.yml'),
+        'sign': os.path.join('examples', 'connector-sign.yml'),
+        'ldap': os.path.join('examples', 'connector-ldap.yml'),
+    }
 
-    directory_connector = None
-    directory_connector_options = None
-    directory_connector_module_name = config_loader.get_directory_connector_module_name()
-    if directory_connector_module_name is not None:
-        directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
-        directory_connector = user_sync.connector.directory.DirectoryConnector(directory_connector_module)
-        directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
-
-    config_loader.check_unused_config_keys()
-
-    if directory_connector is not None and directory_connector_options is not None:
-        directory_connector.initialize(directory_connector_options)
-
-    return directory_connector, directory_groups
+    for k, fname in kwargs.items():
+        target = Path.cwd() / fname
+        assert k in res_files, "Invalid option specified"
+        res_file = user_sync.resource.get_resource(res_files[k])
+        assert res_file is not None, "Resource file '{}' not found".format(res_files[k])
+        if target.exists() and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(target)):
+            continue
+        click.echo("Generating file '{}'".format(fname))
+        with open(res_file, 'r') as file:
+            content = file.read()
+        with open(target, 'w') as file:
+            file.write(content)
 
 
 @main.command(short_help="Encrypt RSA private key")
 @click.help_option('-h', '--help')
 @click.argument('key-path', default='private.key', type=click.Path(exists=True))
-@click.option('-o', '--output-file', help="Path of encrypted file [default: key specified by KEY_PATH will be overwritten]",
+@click.option('-o', '--output-file',
+              help="Path of encrypted file [default: key specified by KEY_PATH will be overwritten]",
               default=None)
 @click.option('--password', '-p', prompt='Create password', hide_input=True, confirmation_prompt=True)
 def encrypt(output_file, password, key_path):
@@ -563,7 +526,7 @@ def encrypt(output_file, password, key_path):
     if output_file is None:
         output_file = key_path
     if output_file != key_path and Path(output_file).exists() \
-        and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(output_file)):
+            and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(output_file)):
         return
     try:
         data = user_sync.encryption.encrypt_file(password, key_path)
@@ -577,7 +540,8 @@ def encrypt(output_file, password, key_path):
 @main.command(short_help="Decrypt RSA private key")
 @click.help_option('-h', '--help')
 @click.argument('key-path', default='private.key', type=click.Path(exists=True))
-@click.option('-o', '--output-file', help="Path of decrypted file [default: key specified by KEY_PATH will be overwritten]",
+@click.option('-o', '--output-file',
+              help="Path of decrypted file [default: key specified by KEY_PATH will be overwritten]",
               default=None)
 @click.option('--password', '-p', prompt='Enter password', hide_input=True)
 def decrypt(output_file, password, key_path):
@@ -589,7 +553,7 @@ def decrypt(output_file, password, key_path):
     if output_file is None:
         output_file = key_path
     if output_file != key_path and Path(output_file).exists() \
-        and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(output_file)):
+            and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(output_file)):
         return
     try:
         data = user_sync.encryption.decrypt_file(password, key_path)
