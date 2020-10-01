@@ -339,6 +339,8 @@ class SignSyncEngine:
             self.logger.info("Inserted Sign user '{}', Group: '{}', Roles: {}".format(
                 directory_user['email'], assignment_group, insert_data['roles']))
             self.sign_users_created += 1
+            self.sign_users_assigned_to_groups.add(directory_user)
+            self.sign_users_assigned_to_admin_role.add(directory_user)
         except AssertionException as e:
             self.logger.error(format(e))
         return
