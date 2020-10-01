@@ -48,24 +48,14 @@ class SignSyncEngine:
         sign_orgs = sync_config.get_list('sign_orgs')
         self.connectors = {cfg.get('console_org'): SignConnector(cfg) for cfg in sign_orgs}
         # self.create_new_users = sync_config.get_bool("create_new_users")
-        self.total_sign_user_count = 0
-        self.sign_users_created_count = 0
-        self.sign_users_removed_count = 0
-        self.sign_users_updated_count = 0
-        self.sign_users_with_mapped_groups = set()
+        self.total_sign_user_count = set()
+        self.sign_users_created_count = set()
+        self.sign_users_removed_count = set()
+        self.sign_users_updated_count = set()
+        self.sign_users_with_matched_groups = set()
         self.sign_users_assigned_to_groups = set()
         self.sign_users_assigned_to_admin_role = set()
-        self.action_summary = {
-            'directory_users_read': 0,
-            'sign_admins_mapped': 0,
-            'sign_users_created': 0,
-            'sign_users_read': 0,
-            'sign_users_removed': 0,
-            'sign_users_updated': 0,
-            'sign_users_with_mapped_groups': 0,
-            'sign_users_assigned_to_groups': 0,
-            'sign_users_assigned_admin_role': 0
-        }
+        self.action_summary = {}
 
     def run(self, directory_groups, directory_connector):
         """
@@ -99,14 +89,14 @@ class SignSyncEngine:
         # Number of directory users read
         self.action_summary['directory_users_read'] = len(self.directory_user_by_user_key)
         # Number of Sign Admins mapped
-        self.action_summary['sign_admins_mapped'] = len(self.admin_roles)
+        self.action_summary['sign_admins_matched'] = len(self.admin_roles)
         # Total Number of Sign users
-        self.action_summary['sign_users_read'] = self.total_sign_user_count
+        self.action_summary['sign_users_read'] = len(self.total_sign_user_count)
         # Number of Sign users created/removed/updated
-        self.action_summary['sign_users_created'] = self.sign_users_created_count
-        self.action_summary['sign_users_removed'] = self.sign_users_removed_count
-        self.action_summary['sign_users_updated'] = self.sign_users_updated_count
-        self.action_summary['sign_users_with_mapped_groups'] = len(self.sign_users_with_mapped_groups)
+        self.action_summary['sign_users_created'] = len(self.sign_users_created_count)
+        self.action_summary['sign_users_removed'] = len(self.sign_users_removed_count)
+        self.action_summary['sign_users_updated'] = len(self.sign_users_updated_count)
+        self.action_summary['sign_users_with_matched_groups'] = len(self.sign_users_with_matched_groups)
         self.action_summary['sign_users_assigned_to_groups'] = len(self.sign_users_assigned_to_groups)
         self.action_summary['sign_users_assigned_admin_role'] = len(self.sign_users_assigned_to_admin_role)
 
@@ -116,10 +106,10 @@ class SignSyncEngine:
             ['sign_users_created', 'Number of Sign users created'],
             ['sign_users_removed', 'Number of Sign users removed'],
             ['sign_users_updated', 'Number of Sign users updated'],
-            ['sign_admins_mapped', 'Number of Sign admins mapped'],
-            ['sign_users_with_mapped_groups', 'Number of Sign users with mapped groups'],
-            ['sign_users_assigned_to_groups', 'Number of Sign users assigned to a group'],  # maybe change wording here?
-            ['sign_users_assigned_admin_role', 'Number of Sign users assigned an admin role']
+            ['sign_admins_matched', 'Number of Sign admins matched'],
+            ['sign_users_with_matched_groups', 'Number of Sign users with matched groups'],
+            ['sign_users_assigned_to_groups', 'Number of Sign users with groups updated'],
+            ['sign_users_assigned_admin_role', 'Number of Sign users admin roles updated']
         ]
 
         pad = 0
@@ -147,7 +137,7 @@ class SignSyncEngine:
             for group in self.user_groups[org_name]:
                 if group in directory_user['groups']:
                     assignment_group = group
-                    self.sign_users_with_mapped_groups.add(directory_user)
+                    self.sign_users_with_matched_groups.add(directory_user)
                     break
 
             if assignment_group is None:
@@ -207,7 +197,6 @@ class SignSyncEngine:
         admin_roles = sync_config.get_list('admin_roles', True)
         if admin_roles is None:
             return {}
-        # make this a class level variable so that we can grab the len for the action summary?
         mapped_admin_roles = {}
         for mapping in admin_roles:
             sign_role = mapping.get('sign_role')
@@ -303,14 +292,16 @@ class SignSyncEngine:
                 "lastName": sign_user['lastName'],
                 "roles": user_roles,
             }
-            if sign_user['group'].lower() == assignment_group and self.roles_match(user_roles, sign_user['roles']):
+            groups_match = sign_user['group'].lower() == assignment_group
+            roles_match = self.roles_match(user_roles, sign_user['roles'])
+            if groups_match and roles_match:
                 self.logger.debug("skipping Sign update for '{}' -- no updates needed".format(directory_user['email']))
                 return
-            try:
-                # no need to check if the groups/role assignment is to default/NORMAL since we want to include that anyway
-                # which i guess means these numbers will always be the same?
+            if not groups_match:
                 self.sign_users_assigned_to_groups.add(sign_user)
+            if not roles_match:
                 self.sign_users_assigned_to_admin_role.add(sign_user)
+            try:
                 sign_connector.update_user(sign_user['userId'], update_data)
                 self.logger.info("Updated Sign user '{}', Group: '{}', Roles: {}".format(
                     directory_user['email'], assignment_group, update_data['roles']))
@@ -339,8 +330,6 @@ class SignSyncEngine:
             self.logger.info("Inserted Sign user '{}', Group: '{}', Roles: {}".format(
                 directory_user['email'], assignment_group, insert_data['roles']))
             self.sign_users_created += 1
-            self.sign_users_assigned_to_groups.add(directory_user)
-            self.sign_users_assigned_to_admin_role.add(directory_user)
         except AssertionException as e:
             self.logger.error(format(e))
         return
