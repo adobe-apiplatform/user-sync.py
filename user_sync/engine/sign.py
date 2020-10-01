@@ -53,8 +53,9 @@ class SignSyncEngine:
 
         sign_orgs = sync_config.get_list('sign_orgs')
         self.connectors = {cfg.get('console_org'): SignConnector(cfg) for cfg in sign_orgs}
-        # self.create_new_users = sync_config.get_bool("create_new_users")
+        self.create_new_users = sync_config.get_bool("create_new_users")
         self.total_sign_user_count = 0
+
         self.sign_users_created_count = 0
         self.sign_users_removed_count = 0
         self.sign_users_updated_count = 0
@@ -329,7 +330,7 @@ class SignSyncEngine:
             sign_connector.insert_user(insert_data)
             self.logger.info("Inserted Sign user '{}', Group: '{}', Roles: {}".format(
                 directory_user['email'], assignment_group, insert_data['roles']))
-            self.sign_users_created += 1
+            self.sign_users_created_count += 1
         except AssertionException as e:
             self.logger.error(format(e))
         return

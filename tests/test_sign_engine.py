@@ -41,24 +41,24 @@ def test_get_directory_user_key(example_engine, example_user):
     assert example_engine.get_directory_user_key({'': {'username': 'user@example.com'}}) is None
 
 
-def test_insert_new_users(example_user):
-    sign_engine = SignSyncEngine
-    sign_connector = SignConnector
-    umapi_user = example_user
-    user_roles = ['NORMAL_USER']
-    group_id = 'somemumbojumbohexadecimalstring'
-    assignment_group = 'default group'
-    insert_data = {
-            "email": umapi_user['email'],
-            "firstName": umapi_user['firstname'],
-            "groupId": group_id,
-            "lastName": umapi_user['lastname'],
-            "roles": user_roles,
-        }
-    def insert_user(insert_data):
-        pass
-    sign_connector.insert_user = insert_user
-    sign_engine.logger = logging.getLogger()
-    sign_engine.insert_new_users(sign_engine, sign_connector, umapi_user, user_roles, group_id, assignment_group)
-    assert True
-    assert insert_data['email'] == 'user@example.com'
+# def test_insert_new_users(example_user):
+#     sign_engine = SignSyncEngine
+#     sign_connector = SignConnector
+#     umapi_user = example_user
+#     user_roles = ['NORMAL_USER']
+#     group_id = 'somemumbojumbohexadecimalstring'
+#     assignment_group = 'default group'
+#     insert_data = {
+#             "email": umapi_user['email'],
+#             "firstName": umapi_user['firstname'],
+#             "groupId": group_id,
+#             "lastName": umapi_user['lastname'],
+#             "roles": user_roles,
+#         }
+#     def insert_user(insert_data):
+#         pass
+#     sign_connector.insert_user = insert_user
+#     sign_engine.logger = logging.getLogger()
+#     sign_engine.insert_new_users(sign_engine, sign_connector, umapi_user, user_roles, group_id, assignment_group)
+#     assert True
+#     assert insert_data['email'] == 'user@example.com'
