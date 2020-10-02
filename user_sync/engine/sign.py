@@ -53,7 +53,21 @@ class SignSyncEngine:
 
         sign_orgs = sync_config.get_list('sign_orgs')
         self.connectors = {cfg.get('console_org'): SignConnector(cfg) for cfg in sign_orgs}
-        #self.create_new_users = sync_config.get_bool("create_new_users")
+        self.create_new_users = sync_config.get_bool("create_new_users")
+        self.total_sign_user_count = 0
+
+        self.sign_users_created_count = 0
+        self.sign_users_removed_count = 0
+        self.sign_users_updated_count = 0
+        self.action_summary = {
+            'directory_users_read': 0,
+            'sign_admins_mapped': 0,
+            'sign_users_created': 0,
+            'sign_users_read': 0,
+            'sign_users_removed': 0,
+            'sign_users_updated': 0,
+
+        }
 
     def run(self, directory_groups, directory_connector):
         """
@@ -69,15 +83,56 @@ class SignSyncEngine:
         self.read_desired_user_groups(directory_groups, directory_connector)
         # if directory_users is None:
         #     raise AssertionException("Error retrieving users from directory")
+        # self.log_action_summary()
+
         for org_name, sign_connector in self.connectors.items():
             # create any new Sign groups
             for new_group in set(self.user_groups[org_name]) - set(sign_connector.sign_groups()):
                 self.logger.info("Creating new Sign group: {}".format(new_group))
                 sign_connector.create_group(new_group)
             self.update_sign_users(self.directory_user_by_user_key, sign_connector, org_name)
+        self.log_action_summary()
+
+    def log_action_summary(self):
+        """
+        """
+        logger = self.logger
+        # find the total number of directory users and selected/filtered users
+        # Number of directory users read
+        self.action_summary['directory_users_read'] = len(self.directory_user_by_user_key)
+        # Number of Sign Admins mapped
+        self.action_summary['sign_admins_mapped'] = len(self.admin_roles)
+        # Total Number of Sign users
+        self.action_summary['sign_users_read'] = self.total_sign_user_count
+        # Number of Sign users created/removed/updated
+        self.action_summary['sign_users_created'] = self.sign_users_created_count
+        self.action_summary['sign_users_removed'] = self.sign_users_removed_count
+        self.action_summary['sign_users_updated'] = self.sign_users_updated_count
+
+        action_summary_description = [
+            ['directory_users_read', 'Number of directory users read'],
+            ['sign_users_read', ' Number of Sign users read'],
+            ['sign_users_created', 'Number of Sign users created'],
+            ['sign_users_removed', 'Number of Sign users removed'],
+            ['sign_users_updated', 'Number of Sign users updated'],
+            ['sign_admins_mapped', 'Number of Sign admins mapped'],
+        ]
+
+        pad = 0
+        for action_description in action_summary_description:
+            if len(action_description[1]) > pad:
+                pad = len(action_description[1])
+
+        header = '------- Action Summary -------'
+        logger.info('---------------------------' + header + '---------------------------')
+        for action_description in action_summary_description:
+            description = action_description[1].rjust(pad, ' ')
+            action_count = self.action_summary[action_description[0]]
+            logger.info('  %s: %s', description, action_count)
 
     def update_sign_users(self, directory_users, sign_connector, org_name):
         sign_users = sign_connector.get_users()
+        self.total_sign_user_count = len(directory_users.items)
         for _, directory_user in directory_users.items():
             sign_user = sign_users.get(directory_user['email'])
             if not self.should_sync(directory_user, org_name):
@@ -98,10 +153,12 @@ class SignSyncEngine:
             user_roles = self.resolve_new_roles(directory_user, admin_roles)
             if self.create_new_users is True and sign_user is None:
                 self.insert_new_users(sign_connector, directory_user, user_roles, group_id, assignment_group)
-            if sign_user is None: # sign_user may still be None here is flag 'create_new_users' is False and user does not exist
+            if sign_user is None:  # sign_user may still be None here is flag 'create_new_users' is False and user does not exist
                 continue
             else:
-                self.update_existing_users(sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group)
+                self.update_existing_users(sign_connector, sign_user, directory_user, group_id, user_roles,
+                                           assignment_group)
+
 
     @staticmethod
     def roles_match(resolved_roles, sign_roles):
@@ -234,22 +291,23 @@ class SignSyncEngine:
         return identity_type
 
     def update_existing_users(self, sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group):
-            update_data = {
-                "email": sign_user['email'],
-                "firstName": sign_user['firstName'],
-                "groupId": group_id,
-                "lastName": sign_user['lastName'],
-                "roles": user_roles,
-            }
-            if sign_user['group'].lower() == assignment_group and self.roles_match(user_roles, sign_user['roles']):
-                self.logger.debug("skipping Sign update for '{}' -- no updates needed".format(directory_user['email']))
-                return
-            try:
-                sign_connector.update_user(sign_user['userId'], update_data)
-                self.logger.info("Updated Sign user '{}', Group: '{}', Roles: {}".format(
-                    directory_user['email'], assignment_group, update_data['roles']))
-            except AssertionError as e:
-                self.logger.error("Error updating user {}".format(e))
+        update_data = {
+            "email": sign_user['email'],
+            "firstName": sign_user['firstName'],
+            "groupId": group_id,
+            "lastName": sign_user['lastName'],
+            "roles": user_roles,
+        }
+        if sign_user['group'].lower() == assignment_group and self.roles_match(user_roles, sign_user['roles']):
+            self.logger.debug("skipping Sign update for '{}' -- no updates needed".format(directory_user['email']))
+            return
+        try:
+            sign_connector.update_user(sign_user['userId'], update_data)
+            self.logger.info("Updated Sign user '{}', Group: '{}', Roles: {}".format(
+                directory_user['email'], assignment_group, update_data['roles']))
+            self.sign_users_updated_count += 1
+        except AssertionError as e:
+            self.logger.error("Error updating user {}".format(e))
 
     def insert_new_users(self, sign_connector, directory_user, user_roles, group_id, assignment_group):
         """
@@ -271,8 +329,8 @@ class SignSyncEngine:
         try:
             sign_connector.insert_user(insert_data)
             self.logger.info("Inserted Sign user '{}', Group: '{}', Roles: {}".format(
-            directory_user['email'], assignment_group, insert_data['roles']))
+                directory_user['email'], assignment_group, insert_data['roles']))
+            self.sign_users_created_count += 1
         except AssertionException as e:
             self.logger.error(format(e))
         return
-
