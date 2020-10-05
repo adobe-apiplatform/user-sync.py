@@ -1,41 +1,12 @@
 import logging
+
 import pytest
-import yaml
-import os
-import shutil
-from .util import update_dict
+
 from user_sync.config.sign_sync import SignConfigLoader
 from user_sync.config.user_sync import DictConfig
 from user_sync.engine.common import AdobeGroup
 from user_sync.engine.sign import SignSyncEngine
 from user_sync.error import AssertionException
-
-
-@pytest.fixture
-def tmp_sign_config_file(sign_config_file, tmpdir):
-    basename = os.path.split(sign_config_file)[-1]
-    tmpfile = os.path.join(str(tmpdir), basename)
-    shutil.copy(sign_config_file, tmpfile)
-    return tmpfile
-
-
-@pytest.fixture
-def tmp_sign_connector_config(sign_connector_config, tmpdir):
-    basename = os.path.split(sign_connector_config)[-1]
-    tmpfile = os.path.join(str(tmpdir), basename)
-    shutil.copy(sign_connector_config, tmpfile)
-    return tmpfile
-
-
-@pytest.fixture
-def modify_sign_config(tmp_sign_config_file):
-    def _modify_sign_config(keys, val):
-        conf = yaml.safe_load(open(tmp_sign_config_file))
-        conf = update_dict(conf, keys, val)
-        yaml.dump(conf, open(tmp_sign_config_file, 'w'))
-
-        return tmp_sign_config_file
-    return _modify_sign_config
 
 
 def test_loader_attributes(sign_config_file):

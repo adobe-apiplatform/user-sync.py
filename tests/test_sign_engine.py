@@ -1,6 +1,7 @@
 import pytest
 import six
 
+from user_sync.config.sign_sync import SignConfigLoader
 from user_sync.connector.directory import DirectoryConnector
 from user_sync.engine.sign import SignSyncEngine
 from user_sync.connector.connector_sign import SignConnector
@@ -8,14 +9,11 @@ import logging
 
 
 @pytest.fixture
-def example_engine(modify_root_config, sign_config_file):
-    modify_root_config(['post_sync', 'modules'], 'sign_sync')
-    modify_root_config(['post_sync', 'connectors'], sign_config_file)
+def example_engine(sign_config_file):
     args = {'config_filename': sign_config_file}
-    args['entitlement_groups'] = 'signgroup'
-    args['sign_orgs'] = []
-    args['create_new_users'] = True
-    return SignSyncEngine(args)
+    config = SignConfigLoader(args)
+    rule_config = config.get_engine_options()
+    return SignSyncEngine(rule_config)
 
 
 def test_load_users_and_groups(example_engine, example_user):
