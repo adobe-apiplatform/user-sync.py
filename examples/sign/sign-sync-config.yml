@@ -44,4 +44,8 @@ logging:
 invocation_defaults:
   users: mapped
 
+# Flag to (dis)allow creation of new users in the Sign Console
+create_new_users: False
 
+# Flag to (dis)allow deactivation of users in the Sign Neptune Console
+deactivate_sign_only_users: False

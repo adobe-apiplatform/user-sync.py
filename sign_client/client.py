@@ -179,3 +179,21 @@ class SignClient:
                 exp_obj['reason'] = res.reason
                 exp_obj['status_code'] = res.status_code
                 raise AssertionException("Failed to insert user '{}' (error response: {})".format(data['email'], exp_obj))
+
+    def deactivate_user(self, user_id):
+        """
+        Deactivate Sign user
+        :param data: dict()
+        """
+        if self.api_url is None or self.groups is None:
+            self._init()
+        data = {
+            "userStatus": 'INACTIVE'
+        }
+        res = requests.put(self.api_url + 'users/' + user_id + '/status', headers=self.header_json(), data=json.dumps(data))
+        # Response status code 200 is successful update
+        if res.status_code != 200:
+                exp_obj = json.loads(res.text)
+                exp_obj['reason'] = res.reason
+                exp_obj['status_code'] = res.status_code
+                raise AssertionException(exp_obj)

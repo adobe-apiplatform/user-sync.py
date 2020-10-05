@@ -14,7 +14,8 @@ from user_sync.helper import normalize_string
 class SignSyncEngine:
     default_options = {
         'admin_roles': None,
-        'create_users': False,
+        'create_new_users': False,    
+        'deactivate_sign_only_users': False,
         'directory_group_filter': None,
         'entitlement_groups': [],
         'identity_types': [],
@@ -47,6 +48,8 @@ class SignSyncEngine:
         self.admin_roles = self._admin_role_mapping(sync_config)
         sign_orgs = sync_config.get_list('sign_orgs')
         self.connectors = {cfg.get('console_org'): SignConnector(cfg) for cfg in sign_orgs}
+        self.create_new_users = sync_config.get_bool("create_new_users")
+        self.deactivate_sign_only_users = sync_config.get_bool("deactivate_sign_only_users")
         # self.create_new_users = sync_config.get_bool("create_new_users")
         self.total_sign_user_count = set()
         self.sign_users_created_count = set()
@@ -80,6 +83,8 @@ class SignSyncEngine:
                 self.logger.info("Creating new Sign group: {}".format(new_group))
                 sign_connector.create_group(new_group)
             self.update_sign_users(self.directory_user_by_user_key, sign_connector, org_name)
+            if self.deactivate_sign_only_users:
+                self.deactivate_sign_users(self.directory_user_by_user_key, sign_connector)
         self.log_action_summary()
 
     def log_action_summary(self):
@@ -334,3 +339,23 @@ class SignSyncEngine:
         except AssertionException as e:
             self.logger.error(format(e))
         return
+        
+    def deactivate_sign_users(self, directory_users, sign_connector):
+        """
+        Searches users to deactivate in the Sign Netpune console
+        :param sign_connector:
+        :param sign_user:
+        :return:
+        """
+        sign_users = sign_connector.get_users()
+        director_users_emails = []
+        director_users_emails = list(map(lambda directory_user:directory_user['email'].lower(), directory_users.values()))
+        for _, sign_user in sign_users.items():
+            if sign_user['email'].lower() not in director_users_emails:
+                try:
+                    sign_connector.deactivate_user(sign_user['userId'])
+                except AssertionException as e:
+                    self.logger.error("Error deactivating user {}, {}".format(sign_user['email'], e))
+                return
+
+
