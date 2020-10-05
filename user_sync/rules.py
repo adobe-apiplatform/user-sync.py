@@ -369,7 +369,7 @@ class RuleProcessor(object):
         directory_users = directory_connector.load_users_and_groups(groups=directory_groups,
                                                                     extended_attributes=extended_attributes,
                                                                     all_users=directory_group_filter is None)
-        self.dropped_user_count = 0
+        self.skipped_user_count = 0
         for directory_user in directory_users:
             user_key = self.get_directory_user_key(directory_user)
             if not user_key:
@@ -402,7 +402,7 @@ class RuleProcessor(object):
                     self.get_umapi_info(PRIMARY_UMAPI_NAME).get_desired_groups_by_user_key().pop(user_key)
                     self.directory_user_by_user_key.pop(user_key)
                     self.filtered_directory_user_by_user_key.pop(user_key, None)
-                    self.dropped_user_count += 1
+                    self.skipped_user_count += 1
                 self.after_mapping_hook_scope['source_attributes'] = directory_user['source_attributes'].copy()
 
                 target_attributes = dict()
@@ -451,8 +451,8 @@ class RuleProcessor(object):
                     umapi_info.add_desired_group_for(user_key, rename_group)
 
         self.logger.debug('Total directory users after filtering: %d', len(self.filtered_directory_user_by_user_key))
-        if self.dropped_user_count > 0:
-            self.logger.info('{} users were dropped by extension config rules'.format(self.dropped_user_count))
+        if self.skipped_user_count > 0:
+            self.logger.info('{} users were skipped for sync by extension config rules'.format(self.skipped_user_count))
         if self.logger.isEnabledFor(logging.DEBUG):
             self.logger.debug('Group work list: %s', dict([(umapi_name, umapi_info.get_desired_groups_by_user_key())
                                                            for umapi_name, umapi_info
