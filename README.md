@@ -27,7 +27,7 @@ The [User Sync Documentation](https://adobe-apiplatform.github.io/user-sync.py/)
 
 ## Installation and Use
 
-The connector is packaged as a self-contained executable.  See the [latest release page](https://github.com/adobe-apiplatform/user-sync.py/releases/latest)
+The tool is packaged as a self-contained executable.  See the [latest release page](https://github.com/adobe-apiplatform/user-sync.py/releases/latest)
 to get the latest build for your platform. Releases are distributed as archives (`.zip` or `.tar.gz`). Each release file
 contains the UST executable.
 
