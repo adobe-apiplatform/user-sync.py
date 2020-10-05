@@ -8,6 +8,8 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+venv*
+test-config
 env/
 /build/
 develop-eggs/
@@ -23,6 +25,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -102,6 +105,8 @@ user_sync/resources/*
 !user_sync/resources/__init__.py
 !user_sync/resources/README.md
 !user_sync/resources/manual_url
+!user_sync/resources/shell_scripts
 .DS_Store
 !user_sync/resources/default_flags.cfg
 test_config/
+*.swp

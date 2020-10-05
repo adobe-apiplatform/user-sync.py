@@ -32,7 +32,7 @@ matrix:
     - chmod +x .build/.travis/*.sh
     - docker run -d --name ${IMG} -v $(pwd):/travis -w /travis -e IMG="${IMG}" -e
       TRAVIS_TAG="${TRAVIS_TAG}" -e BUILD_TARGET="standalone" -e BUILD_EDITION=""
-      -e UST_EXTENSION=1 ${OS} tail -f /dev/null
+      -e UST_EXTENSION=1 -e LC_ALL=en_US.utf8 ${OS} tail -f /dev/null
     - docker ps
     install:
     - "$SH .build/.travis/install-centos.sh"
@@ -47,7 +47,7 @@ matrix:
       - chmod +x .build/.travis/*.sh
       - docker run -d --name ${IMG} -v $(pwd):/travis -w /travis -e IMG="${IMG}" -e
         TRAVIS_TAG="${TRAVIS_TAG}" -e BUILD_TARGET="standalone" -e BUILD_EDITION="-noext"
-        -e UST_EXTENSION=0 ${OS} tail -f /dev/null
+        -e UST_EXTENSION=0 -e LC_ALL=en_US.utf8 ${OS} tail -f /dev/null
       - docker ps
     install:
       - "$SH .build/.travis/install-centos.sh"
@@ -57,7 +57,7 @@ matrix:
 deploy:
   provider: releases
   api_key:
-    secure: ADMCpxzAdUcA2P6woAnt4o6EoL6JPwH3885PYVsQIZIfA+IrEMEA8URDh6RDeMoNzdAtVfeYFx3e3QBtKS+JVfysj8GxjX4PkzcythAovTUjkximym4FhdWF76xLdyNvSN5NP5pEu4pnLGItVz16thGoTcvDGmTsEHZ6VoV7YGoVNqcMIbBMXAogyM6rEHcZ0f1yS6oYpJ4drhB4kJy9b1432Vz6Zq8sUwBJniPdec98RO2BhMJaMeWGOmdQlvOpdYmF3fH0P7LFPceE5XKR2RqjvtoeOzF1FQosAtATUlZaUfofqMJ7NtccbGkaFLY2qxpgv+hrQATN7YiZqEqQ+Mj0tCq9w/UOlVfBcKWUeBTZ7Hyk3OGllQ3JzVuGXu/oNCWCCtFjTSLnOuyGkY+8qEVXKdo5M+OYfc8Z5EMPOOUyEH+MNgYdC6Wpi1fo0lkpVYvfJPl/2TNbCF+6sIug7qICXOxnNB5fgHOChQU6jc/Wt2/MOrhrjvTpUwaDhhCENRkqxUMFZxsvqNDs9vneXQj0WVcnUGz3QeTImGJgyqHWxuPWrzQenG5fY5sihl44FAsqQZC46j4mQiIcsW8C0SURbBrPFOpvbq1qhyW/NuzC/qLwfvAwH9SLPvyKI9L5xFFgh3VAAyc05mrbav71qOvK7PKQW9pyoZ5qO51cNu8=
+    secure: p6QQnxJoqILH9jf1yo9HewkV7WxHqEhMac4PRmBjapxg26oi+52TZrpmDClvpO8vYeZ/c1Iagh1g5DHb9nZzb5VihV0wmLVeYm/o/fxuXpx5FyhlzNWOgcRsXDHa3lx3lOasYlSCtj3VCQymnGhnAJDYF3LN8gu9paykEoH0soYALFrFkvgwkzEaS9AXuLtVyiV0ic1H9pF93kvBijO7OIebx7EDObCTqfAQDHOoOM5Lo6A61n9vbuxKGC/Tq6x+LXHM32s4/xodO2Ctcqq5H0ebghR/Jb8ovajpIRup6Tp+WURMLDd6jhy7SOhbF9zofsaejhlmg4HGZacJNME5YRY8xHyVVznygDte2EBcFOftI/Et9wfgVuDe1+ceGWM0ah2sttBGoFWLRgWUUVQDKbYJJoTdPmsaRriKJEuqoK+YGI7y2Z+ZIibAZ9X8vQ3BVV9dYr9zxoaahducsb+8zln/AISKOBhESzLEKtZTPA3qv16N08qLGY6v5g4BJHKA3T+jo8NNNxSet/5kOiL7z9ciSJOrNela7rGrttLeTvWCcWRWSd7UNr9fFetuncDuUZf50j1ndVaG41UwTSbZxVGO+N5yG2GKGRujFP1npEc9jKcWzSiOl+Aw9Y3nGVhLffOGkTwAcoGhr4xQbs1yYNuL2jf84eA2ouBgEyxyQJE=
   file: release/*.*
   file_glob: true
   skip_cleanup: true

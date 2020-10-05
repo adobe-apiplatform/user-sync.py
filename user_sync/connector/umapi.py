@@ -65,12 +65,14 @@ class UmapiConnector(object):
         server_builder.set_string_value('ims_endpoint_jwt', '/ims/exchange/jwt')
         server_builder.set_int_value('timeout', 120)
         server_builder.set_int_value('retries', 3)
+        server_builder.set_bool_value('ssl_verify', True)
         options['server'] = server_options = server_builder.get_options()
 
         enterprise_config = caller_config.get_dict_config('enterprise')
         enterprise_builder = user_sync.config.OptionsBuilder(enterprise_config)
         enterprise_builder.require_string_value('org_id')
-        enterprise_builder.require_string_value('tech_acct')
+        tech_field = 'tech_acct_id' if 'tech_acct_id' in enterprise_config else 'tech_acct'
+        enterprise_builder.require_string_value(tech_field)
         options['enterprise'] = enterprise_options = enterprise_builder.get_options()
         self.options = options
         self.logger = logger = user_sync.connector.helper.create_logger(options)
@@ -80,7 +82,7 @@ class UmapiConnector(object):
 
         ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
-        auth_dict = make_auth_dict(self.name, enterprise_config, org_id, enterprise_options['tech_acct'], logger)
+        auth_dict = make_auth_dict(self.name, enterprise_config, org_id, enterprise_options[tech_field], logger)
         # this check must come after we fetch all the settings
         enterprise_config.report_unused_values(logger)
         # open the connection
@@ -98,6 +100,7 @@ class UmapiConnector(object):
                 logger=self.logger,
                 timeout_seconds=float(server_options['timeout']),
                 retry_max_attempts=server_options['retries'] + 1,
+                ssl_verify=server_options['ssl_verify']
             )
         except Exception as e:
             raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))

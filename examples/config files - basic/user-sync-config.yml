@@ -211,6 +211,19 @@ directory_users:
   # group_sync_options:
   #   auto_create: False
 
+# Post-sync connectors are enabled here
+# `modules` specifies by name the modules to be enabled
+# `connectors` specifies the location of each connector's config file
+#   NOTE: the key of each config file path must be a valid connector name,
+#         and must be represented in the `modules` list
+#  More info: https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/post_sync_connector.html
+#post_sync:
+#  modules:
+#    - sign_sync
+#
+#  connectors:
+#    sign_sync: connector-sign-sync.yml
+
 # The limits section provides processing limits which can help ensure that
 # User Sync jobs do not exceed expected guardrails in their operation
 limits:
