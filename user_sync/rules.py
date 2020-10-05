@@ -398,7 +398,7 @@ class RuleProcessor(object):
 
             # only if there actually is hook code: set up rest of hook scope, invoke hook, update user attributes
             if options['after_mapping_hook'] is not None:
-                def user_drop_callback():
+                def user_skip_callback():
                     self.get_umapi_info(PRIMARY_UMAPI_NAME).get_desired_groups_by_user_key().pop(user_key)
                     self.directory_user_by_user_key.pop(user_key)
                     self.filtered_directory_user_by_user_key.pop(user_key, None)
@@ -415,7 +415,7 @@ class RuleProcessor(object):
                 self.after_mapping_hook_scope['target_attributes'] = target_attributes
 
                 # invoke the customer's hook code
-                self.after_mapping_hook_scope['skip_user'] = user_drop_callback
+                self.after_mapping_hook_scope['skip_user'] = user_skip_callback
                 self.log_after_mapping_hook_scope(before_call=True)
                 exec(options['after_mapping_hook'], self.after_mapping_hook_scope)
                 self.log_after_mapping_hook_scope(after_call=True)
