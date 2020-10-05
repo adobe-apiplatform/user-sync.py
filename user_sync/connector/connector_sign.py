@@ -35,14 +35,18 @@ class SignConnector(object):
         caller_config = user_sync.config.common.DictConfig('sign_configuration', caller_options)
         sign_builder = user_sync.config.common.OptionsBuilder(caller_config)
         sign_builder.require_string_value('host')
-        sign_builder.require_string_value('key')
         sign_builder.require_string_value('admin_email')
         sign_builder.set_string_value('console_org', None)
-        self.options = sign_builder.get_options()
-        self.console_org = self.options['console_org']
+        options = sign_builder.get_options()
+        key = caller_config.get_credential('key', options['admin_email'])
+        self.console_org = options['console_org']
         self.name = 'sign_{}'.format(self.console_org)
         self.logger = logging.getLogger(self.name)
-        self.sign_client = SignClient(self.options, self.logger)
+        caller_config.report_unused_values(self.logger)
+        self.sign_client = SignClient(host=options['host'],
+                                      key=key,
+                                      admin_email=options['admin_email'],
+                                      logger=self.logger)
 
     def sign_groups(self):
         return self.sign_client.get_groups()

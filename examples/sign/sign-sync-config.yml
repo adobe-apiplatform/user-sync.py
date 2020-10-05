@@ -9,6 +9,7 @@ identity_source:
   
 # Options that govern the synchronization of users
 user_sync:
+  # Flag to (dis)allow creation of new users in the Sign Console
   create_users: True
   sign_only_limit: 100
  
@@ -43,7 +44,7 @@ logging:
 invocation_defaults:
   users: mapped
 
-# Flag to (dis)allow creation of new users in the Sign Neptune Console
+# Flag to (dis)allow creation of new users in the Sign Console
 create_new_users: False
 
 # Flag to (dis)allow deactivation of users in the Sign Neptune Console

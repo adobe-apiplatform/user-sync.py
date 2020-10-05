@@ -56,14 +56,11 @@ def test_assertion_exception_sucess(mock_client, mock_get):
     mock_response.status_code = 400
     mock_get.return_value = mock_response
 
-    config = {
-        'console_org': None,
-        'host': 'api.na2.echosignstage.com',
-        'key': 'allsortsofgibberish1234567890',
-        'admin_email': 'admin@admin.com'
-    }
+    host = 'api.na2.echosignstage.com'
+    key = 'allsortsofgibberish1234567890'
+    admin_email = 'admin@admin.com'
 
-    sc = SignClient(config)
+    sc = SignClient(host, key, admin_email, logger=None)
     sc.api_url = "example.com"
 
     with pytest.raises(AssertionException):
