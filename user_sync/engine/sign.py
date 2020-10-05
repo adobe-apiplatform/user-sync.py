@@ -60,6 +60,7 @@ class SignSyncEngine:
         self.sign_users_assigned_to_admin_role = set()
         self.action_summary = {}
 
+
     def run(self, directory_groups, directory_connector):
         """
         Run the Sign sync

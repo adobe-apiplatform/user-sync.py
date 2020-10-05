@@ -3,10 +3,16 @@ from user_sync.encryption import decrypt
 
 
 def make_auth_dict(name, config, org_id, tech_acct, logger):
+    api_field = 'client_id' if 'client_id' in config or 'secure_client_id_key' in config else "api_key"
+    if "api_key" in config and "client_id" in config:
+        #word to be the same thing--take out api key--
+        raise AssertionException('Cannot contain setting for both "api_key" and "client_id"(both fields set the same value). Please use "client_id."')
+    if "api_key" in config and "secure_client_id" in config:
+        raise AssertionException('Cannot contain setting for both "api_key" and "secure_client_id_key"(both fields set the same value). Please use "secure_client_id_key"')
     auth_dict = {
         'org_id': org_id,
         'tech_acct_id': tech_acct,
-        'api_key': config.get_credential('api_key', org_id),
+        'api_key': config.get_credential(api_field, org_id),
         'client_secret': config.get_credential('client_secret', org_id),
     }
     # get the private key

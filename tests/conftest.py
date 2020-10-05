@@ -144,3 +144,30 @@ def resource_file():
         return filepath
 
     return _resource_file
+
+
+@pytest.fixture
+def tmp_sign_config_file(sign_config_file, tmpdir):
+    basename = os.path.split(sign_config_file)[-1]
+    tmpfile = os.path.join(str(tmpdir), basename)
+    shutil.copy(sign_config_file, tmpfile)
+    return tmpfile
+
+
+@pytest.fixture
+def tmp_sign_connector_config(sign_connector_config, tmpdir):
+    basename = os.path.split(sign_connector_config)[-1]
+    tmpfile = os.path.join(str(tmpdir), basename)
+    shutil.copy(sign_connector_config, tmpfile)
+    return tmpfile
+
+
+@pytest.fixture
+def modify_sign_config(tmp_sign_config_file):
+    def _modify_sign_config(keys, val):
+        conf = yaml.safe_load(open(tmp_sign_config_file))
+        conf = update_dict(conf, keys, val)
+        yaml.dump(conf, open(tmp_sign_config_file, 'w'))
+
+        return tmp_sign_config_file
+    return _modify_sign_config
