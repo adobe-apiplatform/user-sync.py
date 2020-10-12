@@ -358,8 +358,6 @@ def begin_work(config_loader):
     """
     directory_groups = config_loader.get_directory_groups()
     rule_config = config_loader.get_rule_options()
-
-    # todo if try error block neeed of if stmt
     ssl_cert_verify = rule_config['ssl_cert_verify']
 
     if not ssl_cert_verify:
