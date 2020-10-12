@@ -42,7 +42,7 @@ except:
 
 
 class UmapiConnector(object):
-    ssl_cert_verify = True
+
 
     def __init__(self, name, caller_options):
         """
@@ -103,8 +103,8 @@ class UmapiConnector(object):
                 user_agent="user-sync/" + app_version,
                 logger=self.logger,
                 timeout_seconds=float(server_options['timeout']),
-                retry_max_attempts=server_options['retries'] + 1,
-                ssl_verify=self.ssl_cert_verify
+                retry_max_attempts=server_options['retries'] + 1
+ #               ssl_verify=self.ssl_cert_verify
             )
         except Exception as e:
             raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))

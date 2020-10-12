@@ -336,7 +336,7 @@ invocation_defaults:
   # If you set this default to True, you can supply the argument
   # --no-process-groups to override the default.
   process_groups: Yes
-  # Allows you to disable the SSL verification used by the requests module.  This can
+  # Allows you to disable SSL verification for connections to Adobe services.  This can
   # come in handy for troubleshooting or working around network / proxy related issues when
   # the following error is encountered:
   #  'connection failed: [SSL: CERTIFICATE_VERIFY_FAILED]'

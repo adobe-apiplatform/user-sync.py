@@ -143,7 +143,7 @@ def main():
                    'the group membership is updated on the Adobe side so that the memberships in mapped '
                    'groups match those on the enterprise directory side.')
 @click.option('--ssl-cert-verify/--no-ssl-cert-verify', default=None,
-              help='enable or disables SSL cert verification.  Can be used when SSL inspection on the firewall interrupts'
+              help='enable or disables SSL cert verification for connections to Adobe services.  Can be used when SSL inspection on the firewall interrupts'
                    'connection.  Default: enabled')
 @click.option('--strategy',
               help="whether to fetch and sync the Adobe directory against the customer directory "
@@ -359,9 +359,8 @@ def begin_work(config_loader):
     directory_groups = config_loader.get_directory_groups()
     rule_config = config_loader.get_rule_options()
 
-    ssl_cert_verify = rule_config.get('ssl_cert_verify', True)
-    user_sync.connector.umapi.UmapiConnector.ssl_cert_verify = ssl_cert_verify
-    user_sync.post_sync.connectors.sign_sync.SignClient.ssl_cert_verify = ssl_cert_verify
+    # todo if try error block neeed of if stmt
+    ssl_cert_verify = rule_config['ssl_cert_verify']
 
     if not ssl_cert_verify:
       logger.warning("SSL certificate verification is bypassed.  Consider disabling this option and using the "
@@ -414,7 +413,6 @@ def begin_work(config_loader):
         additional_group_filters = [r['source'] for r in additional_groups]
     if directory_connector is not None:
         directory_connector.state.additional_group_filters = additional_group_filters
-        directory_connector.state.ssl_cert_verify = ssl_cert_verify
         # show error dynamic mappings enabled but 'dynamic_group_member_attribute' is not defined
         if additional_group_filters and directory_connector.state.options['dynamic_group_member_attribute'] is None:
             raise AssertionException(

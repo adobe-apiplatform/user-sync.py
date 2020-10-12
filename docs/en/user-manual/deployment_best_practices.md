@@ -252,12 +252,12 @@ In environments where SSL inspection is enforced at the firewall, the UMAPI clie
 
 This is because the requests module is not aware of the middle-man certificate required for SSL inspection.  The recommended solution to this problem is to specify a path to the certificate bundle using the  REQUESTS_CA_BUNDLE environment variable (see https://helpx.adobe.com/enterprise/kb/UMAPI-UST.html for details).  However, in some cases following these steps does not solve the problem.  The next logical step is to disable SSL inspection on the firewall.  If, however, this is not permitted, you may work around the issue by disabling SSL verification for user-sync.  
 
-Disabling the verification is unsafe, and leaves the client vulnerable to middle man attacks, so it is recommended to  avoid disabling it if at all possible.  The umapi client and admin console connectors only ever target two URLs - the usermanagement endpoint and the ims endpoint - both of which are secure Adobe URL's.  The sign sync process connects to just one secure sign api URL.  In addition, since this option is only recommended for use in a secure network environment, any potential risk is further mitigated.
+Disabling the verification is unsafe, and leaves the client vulnerable to middle man attacks, so it is recommended to  avoid disabling it if at all possible.  The UMAPI client and Admin console connectors only ever target two URLs - the usermanagement endpoint and the IMS endpoint - both of which are secure Adobe URL's.  The Sign sync process connects to just one secure sign api URL.  In addition, since this option is only recommended for use in a secure network environment, any potential risk is further mitigated.
 
 To bypass the ssl verification for the requests module, update the user-sync-config invocation defaults as follows:
 
 ```yaml
-  # Allows you to disable the SSL verification used by the requests module.  This can
+  # Allows you to disable SSL verification for connections to Adobe services.  This can
   # come in handy for troubleshooting or working around network / proxy related issues when
   # the following error is encountered:
   #  'connection failed: [SSL: CERTIFICATE_VERIFY_FAILED]'
