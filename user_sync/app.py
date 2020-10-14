@@ -313,7 +313,8 @@ def init_log(logging_config):
         if self.show_progress:
             count = int(count)
             total = int(total)
-            message = "{0}/{1} ({2}%) {3}".format(count, total, round(100*count/total,1), message)
+            percent_done = round(100*count/total, 1) if total > 0 else 0
+            message = "{0}/{1} ({2}%) {3}".format(count, total, percent_done, message)
         if message:
             self._log(logging.INFO, message, args, **kws)
     logging.Logger.progress = progress

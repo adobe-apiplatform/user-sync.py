@@ -495,7 +495,8 @@ class RuleProcessor(object):
                 # If user is not part of any group and ignore outcast is enabled. Do not create user.
                 continue
             # We always create every user in the primary umapi, because it's believed to own the directories.
-            self.logger.progress(user_count, total_users, 'Creating user with user key: ' + user_key)
+            if user_count % 10 == 0:
+                self.logger.progress(user_count, total_users, 'actions completed')
             self.primary_users_created.add(user_key)
             self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector)
 
