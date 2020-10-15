@@ -23,12 +23,15 @@ def config_schema() -> Schema:
         },
         'user_sync': {
             'create_users': bool,
+            'deactivate_users': bool,
             'sign_only_limit': Or(int, Regex(r'^\d+%$')),
         },
         'user_management': [{
             'directory_group': Or(None, And(str, len)),
             'sign_group': Or(None, And(str, len)),
-            'admin_role': Or(None, 'GROUP_ADMIN', 'ACCOUNT_ADMIN'), #TODO: single "source of truth" for these options
+            'admin_role': Or(None, [
+                Or(None, 'GROUP_ADMIN', 'ACCOUNT_ADMIN')
+                ]), #TODO: single "source of truth" for these options
         }],
         'logging': {
             'log_to_file': bool,
@@ -39,6 +42,7 @@ def config_schema() -> Schema:
         },
         'invocation_defaults': {
             'users': Or('mapped', 'all'), #TODO: single "source of truth" for these options
+            #'directory_group_filter': Or('mapped', 'all', None)
         }
     })
 
@@ -65,6 +69,8 @@ class SignConfigLoader(ConfigLoader):
     invocation_defaults = {
         'users': ['mapped']
     }
+
+    DEFAULT_ORG_NAME = 'primary'
 
     def __init__(self, args: dict):
         self.logger = logging.getLogger('sign_config')
@@ -107,18 +113,25 @@ class SignConfigLoader(ConfigLoader):
             raise ConfigValidationError(e.code) from e
 
     def get_directory_groups(self) -> Dict[str, AdobeGroup]:
-        group_mapping = defaultdict(list)
+        group_mapping = defaultdict(dict)
         group_config = self.main_config.get_list_config('user_management', True)
         if group_config is None:
             return group_mapping
         for mapping in group_config.iter_dict_configs():
             dir_group = mapping.get_string('directory_group')
+            group_mapping[dir_group]['groups'] = []
+            group_mapping[dir_group]['roles'] = []
             adobe_group = mapping.get_string('sign_group', True)
-            group = AdobeGroup.create(adobe_group)
+            admin_roles = mapping.get_list('admin_role', True)
+            if adobe_group is not None:
+                group = AdobeGroup.create(adobe_group)
+                if group.umapi_name is None:
+                    group.umapi_name = self.DEFAULT_ORG_NAME
             if group is None:
                 raise AssertionException('Bad Sign group: "{}" in directory group: "{}"'.format(adobe_group, dir_group))
             if group not in group_mapping[dir_group]:
-                group_mapping[dir_group].append(group)
+                group_mapping[dir_group]['groups'].append(group)
+                group_mapping[dir_group]['roles'] = admin_roles
         return dict(group_mapping)
 
     def get_directory_connector_module_name(self) -> str:
@@ -151,9 +164,14 @@ class SignConfigLoader(ConfigLoader):
         options = deepcopy(SignSyncEngine.default_options)
         options.update(self.invocation_options)
 
+        sign_orgs = self.main_config.get_dict('sign_orgs')
+        options['sign_orgs'] = sign_orgs
         user_sync = self.main_config.get_dict_config('user_sync')
         options['create_users'] = user_sync.get_bool('create_users')
+        options['deactivate_users'] = user_sync.get_bool('deactivate_users')
         options['sign_only_limit'] = user_sync.get_value('sign_only_limit', (int, str))
+        invocation_defaults = self.main_config.get_dict_config('invocation_defaults')
+        options['users'] = invocation_defaults.get_string('users')
         return options
 
     def check_unused_config_keys(self):

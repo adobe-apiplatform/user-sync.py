@@ -4,7 +4,7 @@ from collections import defaultdict
 import six
 
 from user_sync import error, identity_type
-from user_sync.config.common import DictConfig
+from user_sync.config.common import DictConfig, ConfigFileLoader
 from user_sync.connector.connector_sign import SignConnector
 from user_sync.engine.umapi import AdobeGroup
 from user_sync.error import AssertionException
@@ -13,44 +13,53 @@ from user_sync.helper import normalize_string
 
 class SignSyncEngine:
     default_options = {
-        'admin_roles': None,
-        'create_new_users': False,    
-        'deactivate_sign_only_users': False,
-        'directory_group_filter': None,
-        'entitlement_groups': [],
-        'identity_types': [],
-        'sign_only_limit': 200,
-        'sign_orgs': [],
-        'test_mode': False,
-        'user_groups': []
+        'create_users': False,
+        'deactivate_users': False,
+        'extended_attributes': None,
+        'identity_source': {
+            'type': 'ldap',
+            'connector': 'connector-ldap.yml'
+        },
+        'invocation_defaults': {
+            'users': 'mapped'
+        },
+        'sign_orgs': [
+            {'primary': 'connector-sign.yml'}
+        ],
+        'user_sync': {
+            'create_users': False,
+            'deactivate_users': False,
+            'sign_only_limit': 100
+        }
     }
+
     name = 'sign_sync'
+    encoding = 'utf-8'
     DEFAULT_GROUP_NAME = 'default group'
 
     def __init__(self, caller_options):
+        """
+        Initialize the Sign Sync Engine
+        :param caller_options:
+        :return:
+        """
         super().__init__()
         options = dict(self.default_options)
         options.update(caller_options)
         self.options = options
         self.logger = logging.getLogger(self.name)
         self.test_mode = options.get('test_mode')
-        sync_config = DictConfig('<%s configuration>' % self.name, caller_options)
-        self.user_groups = options['user_groups'] = sync_config.get_list('user_groups', True)
-        if self.user_groups is None:
-            self.user_groups = []
-        self.user_groups = self._groupify(self.user_groups)
-        self.entitlement_groups = self._groupify(sync_config.get_list('entitlement_groups'))
-        self.identity_types = sync_config.get_list('identity_types', True)
-        if self.identity_types is None:
-            self.identity_types = ['adobeID', 'enterpriseID', 'federatedID']
+        sync_config = DictConfig('<%s configuration>' %
+                                 self.name, caller_options)
         self.directory_user_by_user_key = {}
-        # dict w/ structure - umapi_name -> adobe_group -> [set of roles]
-        self.admin_roles = self._admin_role_mapping(sync_config)
-        sign_orgs = sync_config.get_list('sign_orgs')
-        self.connectors = {cfg.get('console_org'): SignConnector(cfg) for cfg in sign_orgs}
-        self.create_new_users = sync_config.get_bool("create_new_users")
-        self.deactivate_sign_only_users = sync_config.get_bool("deactivate_sign_only_users")
-        # self.create_new_users = sync_config.get_bool("create_new_users")
+        sign_orgs = sync_config.get_dict('sign_orgs')
+        self.config_loader = ConfigFileLoader(self.encoding, {}, {})
+        self.connectors = {}
+        # Each of the Sign orgs is captured in a dict with the org name as key
+        # and org specific parameter embedded in Sign Connector as value
+        for org in sign_orgs:
+            self.connectors[org] = SignConnector(
+                self.config_loader.load_root_config(sign_orgs[org]), org)
         self.total_sign_user_count = set()
         self.sign_users_created_count = set()
         self.sign_users_removed_count = set()
@@ -71,21 +80,24 @@ class SignSyncEngine:
         if self.test_mode:
             self.logger.info("Sign Sync disabled in test mode")
             return
-        # directory_users = self.read_desired_user_groups(directory_groups, directory_connector)
         self.read_desired_user_groups(directory_groups, directory_connector)
-        # if directory_users is None:
-        #     raise AssertionException("Error retrieving users from directory")
-        # self.log_action_summary()
 
         for org_name, sign_connector in self.connectors.items():
-            # create any new Sign groups
-            for new_group in set(self.user_groups[org_name]) - set(sign_connector.sign_groups()):
-                self.logger.info("Creating new Sign group: {}".format(new_group))
-                sign_connector.create_group(new_group)
-            self.update_sign_users(self.directory_user_by_user_key, sign_connector, org_name)
-            if self.deactivate_sign_only_users:
+            # Create any new Sign groups
+            org_directory_groups = self._groupify(
+                org_name, directory_groups.values())
+            org_sign_groups = [x.lower() for x in sign_connector.sign_groups()]
+            for directory_group in org_directory_groups:
+                if (directory_group.lower() not in org_sign_groups):
+                    self.logger.info(
+                        "Creating new Sign group: {}".format(directory_group))
+                    sign_connector.create_group(directory_group)
+            # Update user details or insert new user        
+            self.update_sign_users(
+                    self.directory_user_by_user_key, sign_connector, org_name)
+            if self.options['deactivate_users'] is True and sign_connector.neptune_console is True:
                 self.deactivate_sign_users(self.directory_user_by_user_key, sign_connector)
-        self.log_action_summary()
+        #self.log_action_summary()
 
     def log_action_summary(self):
         """
@@ -131,53 +143,72 @@ class SignSyncEngine:
             logger.info('  %s: %s', description, action_count)
 
     def update_sign_users(self, directory_users, sign_connector, org_name):
+        """
+        Updates user details or inserts new user
+        :param directory_groups:
+        :param sign_connector:
+        :param org_name:
+        :return:
+        """
+        # Fetch the list of active Sign users
         sign_users = sign_connector.get_users()
-        self.total_sign_user_count = len(directory_users.items)
         for _, directory_user in directory_users.items():
             sign_user = sign_users.get(directory_user['email'])
             if not self.should_sync(directory_user, org_name):
                 continue
 
-            assignment_group = None
-
-            for group in self.user_groups[org_name]:
-                if group in directory_user['groups']:
-                    assignment_group = group
-                    self.sign_users_with_matched_groups.add(directory_user)
-                    break
+            assignment_group = self.retrieve_assignment_group(directory_user)
 
             if assignment_group is None:
                 assignment_group = self.DEFAULT_GROUP_NAME
 
-            group_id = sign_connector.get_group(assignment_group)
-            admin_roles = self.admin_roles.get(org_name, {})
-            user_roles = self.resolve_new_roles(directory_user, admin_roles)
-            if self.create_new_users is True and sign_user is None:
-                self.insert_new_users(sign_connector, directory_user, user_roles, group_id, assignment_group)
-            if sign_user is None:  # sign_user may still be None here is flag 'create_new_users' is False and user does not exist
-                continue
+            group_id = sign_connector.get_group(assignment_group.lower())
+            admin_roles = self.retrieve_admin_role(directory_user)
+            user_roles = self.resolve_new_roles(
+                directory_user, sign_user, admin_roles)
+            if sign_user is None:
+                # Insert new user if flag is enabled and if Neptune Console
+                if self.options['create_users'] is True and sign_connector.neptune_console is True:
+                    self.insert_new_users(
+                        sign_connector, directory_user, user_roles, group_id, assignment_group)
+                else:
+                    continue
             else:
-                self.update_existing_users(sign_connector, sign_user, directory_user, group_id, user_roles,
-                                           assignment_group)
+                # Update existing users
+                self.update_existing_users(
+                    sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group)
 
 
     @staticmethod
     def roles_match(resolved_roles, sign_roles):
+        """
+        Checks if the existing user role in Sign Console is same as in configuration
+        :param resolved_roles:
+        :param sign_roles:
+        :return:
+        """
         if isinstance(sign_roles, str):
             sign_roles = [sign_roles]
         return sorted(resolved_roles) == sorted(sign_roles)
 
     @staticmethod
-    def resolve_new_roles(umapi_user, role_mapping):
-        roles = set()
-        for group in umapi_user['groups']:
-            sign_roles = role_mapping.get(group.lower())
-            if sign_roles is None:
-                continue
-            roles.update(sign_roles)
-        return list(roles) if roles else ['NORMAL_USER']
+    def resolve_new_roles(directory_user, sign_user, user_roles):
+        """
+        Updates the user role (if applicable) as specified in the configuration
+        :param resolved_roles:
+        :param sign_roles:
+        :param user_roles:
+        :return:
+        """
+        if (user_roles is None or all(x is None for x in user_roles)):
+            if sign_user is None:
+                return ['NORMAL_USER']
+            else:
+                return sign_user['roles']
+        else:
+           return user_roles
 
-    def should_sync(self, umapi_user, org_name):
+    def should_sync(self, directory_user, org_name):
         """
         Initial gatekeeping to determine if user is candidate for Sign sync
         Any checks that don't depend on the Sign record go here
@@ -187,45 +218,41 @@ class SignSyncEngine:
         :param org_name:
         :return:
         """
-        return set(umapi_user['groups']) & set(self.entitlement_groups[org_name]) and \
-               umapi_user['type'] in self.identity_types
+        return directory_user['sign_groups']['groups'][0].umapi_name == org_name
+
+    def retrieve_assignment_group(self, directory_user):
+        return directory_user['sign_groups']['groups'][0].group_name
+
+    def retrieve_admin_role(self, directory_user):
+        return directory_user['sign_groups']['roles']
 
     @staticmethod
-    def _groupify(groups):
-        processed_groups = defaultdict(list)
-        for g in groups:
-            processed_group = AdobeGroup.create(g)
-            processed_groups[processed_group.umapi_name].append(processed_group.group_name.lower())
+    def _groupify(org_name, groups):
+        """
+        Extracts the Sign Group name from the configuration for an org
+        :param org_name:
+        :param groups:
+        :return:
+        """
+        processed_groups = []
+        for group_dict in groups:
+            for group in group_dict['groups']:
+                group_name = group.group_name
+                if (org_name == group.umapi_name):
+                    processed_groups.append(group_name)
         return processed_groups
 
-    @staticmethod
-    def _admin_role_mapping(sync_config):
-        admin_roles = sync_config.get_list('admin_roles', True)
-        if admin_roles is None:
-            return {}
-        mapped_admin_roles = {}
-        for mapping in admin_roles:
-            sign_role = mapping.get('sign_role')
-            if sign_role is None:
-                raise AssertionException("must define a Sign role in admin role mapping")
-            adobe_groups = mapping.get('adobe_groups')
-            if adobe_groups is None or not len(adobe_groups):
-                continue
-            for g in adobe_groups:
-                group = AdobeGroup.create(g)
-                group_name = group.group_name.lower()
-                if group.umapi_name not in mapped_admin_roles:
-                    mapped_admin_roles[group.umapi_name] = {}
-                if group_name not in mapped_admin_roles[group.umapi_name]:
-                    mapped_admin_roles[group.umapi_name][group_name] = set()
-                mapped_admin_roles[group.umapi_name][group_name].add(sign_role)
-        return mapped_admin_roles
-
     def read_desired_user_groups(self, mappings, directory_connector):
+        """
+        Reads and loads the users and group information from the identity source
+        :param mappings:
+        :param directory_connector:
+        :return:
+        """
         self.logger.debug('Building work list...')
 
         options = self.options
-        directory_group_filter = options['directory_group_filter']
+        directory_group_filter = options['users']
         if directory_group_filter is not None:
             directory_group_filter = set(directory_group_filter)
         extended_attributes = options.get('extended_attributes')
@@ -242,8 +269,12 @@ class SignSyncEngine:
         for directory_user in directory_users:
             user_key = self.get_directory_user_key(directory_user)
             if not user_key:
-                self.logger.warning("Ignoring directory user with empty user key: %s", directory_user)
+                self.logger.warning(
+                    "Ignoring directory user with empty user key: %s", directory_user)
                 continue
+            sign_groups = self.extract_mapped_group(
+                directory_user['groups'], mappings)
+            directory_user['sign_groups'] = sign_groups
             directory_user_by_user_key[user_key] = directory_user
 
     def get_directory_user_key(self, directory_user):
@@ -290,33 +321,43 @@ class SignSyncEngine:
             self.logger.warning('Found user with no identity type, using %s: %s', identity_type, directory_user)
         return identity_type
 
+    def extract_mapped_group(self, directory_user_group, group_mapping):
+        for directory_group, sign_group_mapping in group_mapping.items():
+            if (directory_user_group[0] == directory_group):
+                return sign_group_mapping
+
     def update_existing_users(self, sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group):
-            update_data = {
-                "email": sign_user['email'],
-                "firstName": sign_user['firstName'],
-                "groupId": group_id,
-                "lastName": sign_user['lastName'],
-                "roles": user_roles,
-            }
-            groups_match = sign_user['group'].lower() == assignment_group
-            roles_match = self.roles_match(user_roles, sign_user['roles'])
-            if groups_match and roles_match:
-                self.logger.debug("skipping Sign update for '{}' -- no updates needed".format(directory_user['email']))
-                return
-            if not groups_match:
-                self.sign_users_assigned_to_groups.add(sign_user)
-            if not roles_match:
-                self.sign_users_assigned_to_admin_role.add(sign_user)
-            try:
-                sign_connector.update_user(sign_user['userId'], update_data)
-                self.logger.info("Updated Sign user '{}', Group: '{}', Roles: {}".format(
-                    directory_user['email'], assignment_group, update_data['roles']))
-            except AssertionError as e:
-                self.logger.error("Error updating user {}".format(e))
+        """
+        Constructs the data for update and invokes the connector to update the user if applicable
+        :param sign_connector:
+        :param sign_user:
+        :param directory_user:
+        :param group_id:
+        :param user_roles:
+        :param assignment_group:
+        :return:
+        """
+        update_data = {
+            "email": sign_user['email'],
+            "firstName": sign_user['firstName'],
+            "groupId": group_id,
+            "lastName": sign_user['lastName'],
+            "roles": user_roles,
+        }
+        if sign_user['group'].lower() == assignment_group.lower() and self.roles_match(user_roles, sign_user['roles']):
+            self.logger.debug(
+                "skipping Sign update for '{}' -- no updates needed".format(directory_user['email']))
+            return
+        try:
+            sign_connector.update_user(sign_user['userId'], update_data)
+            self.logger.info("Updated Sign user '{}', Group: '{}', Roles: {}".format(
+                directory_user['email'], assignment_group, update_data['roles']))
+        except AssertionError as e:
+            self.logger.error("Error updating user {}".format(e))
 
     def insert_new_users(self, sign_connector, directory_user, user_roles, group_id, assignment_group):
         """
-        Inserts new user in the Sign Console
+        Constructs the data for insertion and inserts new user in the Sign Console
         :param sign_connector:
         :param directory_user:
         :param user_roles:
@@ -335,7 +376,6 @@ class SignSyncEngine:
             sign_connector.insert_user(insert_data)
             self.logger.info("Inserted Sign user '{}', Group: '{}', Roles: {}".format(
                 directory_user['email'], assignment_group, insert_data['roles']))
-            self.sign_users_created_count += 1
         except AssertionException as e:
             self.logger.error(format(e))
         return
@@ -357,5 +397,4 @@ class SignSyncEngine:
                 except AssertionException as e:
                     self.logger.error("Error deactivating user {}, {}".format(sign_user['email'], e))
                 return
-
-
+                
