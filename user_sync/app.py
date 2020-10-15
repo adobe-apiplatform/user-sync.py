@@ -358,11 +358,16 @@ def begin_work(config_loader):
     """
     directory_groups = config_loader.get_directory_groups()
     rule_config = config_loader.get_rule_options()
-    ssl_cert_verify = rule_config['ssl_cert_verify']
+
+    try:
+        ssl_cert_verify = rule_config['ssl_cert_verify']
+    except KeyError:
+        print("Verify ssl_cert_verify value in properties file")
 
     if not ssl_cert_verify:
       logger.warning("SSL certificate verification is bypassed.  Consider disabling this option and using the "
                      "REQUESTS_CA_BUNDLE environment variable to specify the PEM firewall bundle...")
+
       # Suppress only the single warning from urllib3 needed.
       # noinspection PyUnresolvedReferences
       requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)

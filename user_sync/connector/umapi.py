@@ -76,13 +76,13 @@ class UmapiConnector(object):
         options['enterprise'] = enterprise_options = enterprise_builder.get_options()
         self.options = options
         self.logger = logger = user_sync.connector.helper.create_logger(options)
-        if server_config:
-            if caller_options['server'].get('ssl_verify') is not None:
-                raise AssertionException(
-                    "The ssl_verify key has moved to user-sync-config.yml. To use it, please see the "
-                    "documentation in the example user-sync-config.yml in the invocation_defaults section.")
-            server_config.report_unused_values(logger)
-        logger.debug('UMAPI initialized with options: %s', options)
+        # if server_config:
+        #     if caller_options['server'].get('ssl_verify') is not None:
+        #         raise AssertionException(
+        #             "The ssl_verify key has moved to user-sync-config.yml. To use it, please see the "
+        #             "documentation in the example user-sync-config.yml in the invocation_defaults section.")
+        #     server_config.report_unused_values(logger)
+        # logger.debug('UMAPI initialized with options: %s', options)
 
         ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
