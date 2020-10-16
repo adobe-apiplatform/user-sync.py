@@ -53,7 +53,7 @@ def test_group_config(modify_sign_config, tmp_sign_connector_config, tmp_config_
     config = SignConfigLoader(args)
     group_mappings = config.get_directory_groups()
     assert 'Test Group 1' in group_mappings
-    assert group_mappings['Test Group 1'] == [AdobeGroup.create('Sign Group 1')]
+    assert group_mappings['Test Group 1']['groups'] == [AdobeGroup.create('Sign Group 1')]
 
     # complex case
     group_config.append({'directory_group': 'Test Group 2', 'sign_group': 'Sign Group 2', 'admin_role': None})
@@ -65,7 +65,7 @@ def test_group_config(modify_sign_config, tmp_sign_connector_config, tmp_config_
     assert len(group_mappings) == 2
     assert 'Test Group 1' in group_mappings
     assert 'Test Group 2' in group_mappings
-    for mapping in group_mappings['Test Group 2']:
+    for mapping in group_mappings['Test Group 2']['groups']:
         assert mapping in [AdobeGroup.create('Sign Group 2'), AdobeGroup.create('Sign Group 3')]
 
 
@@ -140,7 +140,7 @@ def test_logging_config(sign_config_file):
 
 
 def test_engine_options(sign_config_file, modify_sign_config, tmp_sign_connector_config, tmp_config_files):
-    sign_config_file = modify_sign_config(['user_sync'], {'create_users': False, 'sign_only_limit': 1000})
+    sign_config_file = modify_sign_config(['user_sync'], {'create_users': False, 'deactivate_users': False, 'sign_only_limit': 1000})
     args = {'config_filename': sign_config_file}
     config = SignConfigLoader(args)
     options = config.get_engine_options()

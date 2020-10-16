@@ -60,6 +60,7 @@ class SignSyncEngine:
         for org in sign_orgs:
             self.connectors[org] = SignConnector(
                 self.config_loader.load_root_config(sign_orgs[org]), org)
+        self.sign_users_by_org = {}
         self.total_sign_user_count = set()
         self.sign_users_created_count = set()
         self.sign_users_removed_count = set()
@@ -96,7 +97,7 @@ class SignSyncEngine:
             self.update_sign_users(
                     self.directory_user_by_user_key, sign_connector, org_name)
             if self.options['deactivate_users'] is True and sign_connector.neptune_console is True:
-                self.deactivate_sign_users(self.directory_user_by_user_key, sign_connector)
+                self.deactivate_sign_users(self.directory_user_by_user_key, sign_connector, org_name)
         #self.log_action_summary()
 
     def log_action_summary(self):
@@ -107,7 +108,7 @@ class SignSyncEngine:
         # Number of directory users read
         self.action_summary['directory_users_read'] = len(self.directory_user_by_user_key)
         # Number of Sign Admins mapped
-        self.action_summary['sign_admins_matched'] = len(self.admin_roles)
+        #self.action_summary['sign_admins_matched'] = len(self.admin_roles)
         # Total Number of Sign users
         self.action_summary['sign_users_read'] = len(self.total_sign_user_count)
         # Number of Sign users created/removed/updated
@@ -152,6 +153,7 @@ class SignSyncEngine:
         """
         # Fetch the list of active Sign users
         sign_users = sign_connector.get_users()
+        self.sign_users_by_org[org_name] = sign_users
         for _, directory_user in directory_users.items():
             sign_user = sign_users.get(directory_user['email'])
             if not self.should_sync(directory_user, org_name):
@@ -380,13 +382,15 @@ class SignSyncEngine:
             self.logger.error(format(e))
         return
         
-    def deactivate_sign_users(self, directory_users, sign_connector):
+    def deactivate_sign_users(self, directory_users, sign_connector, org_name):
         """
         Searches users to deactivate in the Sign Netpune console
         :param sign_connector:
         :param sign_user:
         :return:
         """
+        #sign_users = self.sign_users_by_org[org_name]
+        #if sign_users is None:
         sign_users = sign_connector.get_users()
         director_users_emails = []
         director_users_emails = list(map(lambda directory_user:directory_user['email'].lower(), directory_users.values()))
