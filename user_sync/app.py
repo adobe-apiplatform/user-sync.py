@@ -41,7 +41,6 @@ import user_sync.encryption
 import user_sync.engine.umapi
 import user_sync.helper
 import user_sync.lockfile
-import user_sync.post_sync.connectors.sign_sync
 import user_sync.resource
 import user_sync.resource
 from user_sync.config import common as config_common
@@ -51,7 +50,6 @@ from user_sync.connector.connector_umapi import UmapiConnector
 from user_sync.engine.common import PRIMARY_TARGET_NAME
 from user_sync.engine.sign import SignSyncEngine
 from user_sync.error import AssertionException
-# from user_sync.post_sync.manager import PostSyncManager
 from user_sync.version import __version__ as app_version
 
 LOG_STRING_FORMAT = '%(asctime)s %(process)d %(levelname)s %(name)s - %(message)s'
@@ -231,16 +229,6 @@ def begin_work_umapi(config_loader):
     if len(referenced_umapi_names) > 0:
         raise AssertionException('Adobe groups reference unknown umapi connectors: %s' % referenced_umapi_names)
 
-    #post_sync_manager = None
-    # get post-sync config unconditionally so we don't get an 'unused key' error
-    # post_sync_config = config_loader.get_post_sync_options()
-    # if umapi_engine_config['strategy'] == 'sync':
-    #     if post_sync_config:
-    #         post_sync_manager = PostSyncManager(post_sync_config, umapi_engine_config['test_mode'])
-    #         umapi_engine_config['extended_attributes'] |= post_sync_manager.get_directory_attributes()
-    # else:
-    #     logger.warn('Post-Sync Connectors only support "sync" strategy')
-
     config_loader.check_unused_config_keys()
 
     additional_group_filters = None
@@ -267,10 +255,6 @@ def begin_work_umapi(config_loader):
     if len(directory_groups) == 0 and rule_processor.will_process_groups():
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
     rule_processor.run(directory_groups, directory_connector, umapi_connectors)
-
-    #  Post sync section
-    # if post_sync_manager:
-    #     post_sync_manager.run(rule_processor.post_sync_data)
 
 
 def load_directory_config(config_loader, new_account_type=None):

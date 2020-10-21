@@ -26,8 +26,6 @@ def ust_config_root_path_keys():
             '/directory_users/connectors/*': (True, False, None),
             '/directory_users/extension': (True, False, None),
             '/logging/file_log_directory': (False, False, "logs"),
-            '/post_sync/connectors/sign_sync': (False, False, False),
-            '/post_sync/connectors/future_feature': (False, False, False)
             }
 
 
