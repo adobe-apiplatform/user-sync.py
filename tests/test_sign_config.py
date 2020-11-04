@@ -36,10 +36,10 @@ def test_invocation_defaults(modify_sign_config, tmp_sign_connector_config, tmp_
     config = SignConfigLoader(args)
     assert 'users' in config.invocation_options
     assert config.invocation_options['users'] == ['all']
-    args = {'config_filename': sign_config_file, 'users': ['some_option']}
+    args = {'config_filename': sign_config_file, 'users': ['mapped']}
     config = SignConfigLoader(args)
     assert 'users' in config.invocation_options
-    assert config.invocation_options['users'] == ['some_option']
+    assert config.invocation_options['users'] == ['mapped']
 
 
 # NOTE: tmp_sign_connector_config and tmp_config_files are needed to prevent the ConfigFileLoader
