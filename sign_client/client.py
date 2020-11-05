@@ -3,18 +3,18 @@ import requests
 import json
 from user_sync.error import AssertionException
 
-
 class SignClient:
     version = 'v5'
     _endpoint_template = 'api/rest/{}/'
 
-    def __init__(self, host, key, admin_email, logger=None):
+    def __init__(self, host, key, admin_email, logger=None, test_mode=False):
         self.host = host
         self.key = key
         self.admin_email = admin_email
         self.api_url = None
         self.groups = None
         self.logger = logger or logging.getLogger("sign_client_{}".format(self.key[0:4]))
+        self.test_mode = test_mode
 
     def _init(self):
         self.api_url = self.base_uri()
@@ -137,10 +137,11 @@ class SignClient:
         """
         if self.api_url is None or self.groups is None:
             self._init()
-        res = requests.post(self.api_url + 'groups', headers=self.header_json(), data=json.dumps({'groupName': group}))
-        if res.status_code != 201:
-            raise AssertionException("Failed to create Sign group '{}' (reason: {})".format(group, res.reason))
-        self.groups[group] = res.json()['groupId']
+        if not self.test_mode:
+            res = requests.post(self.api_url + 'groups', headers=self.header_json(), data=json.dumps({'groupName': group}))
+            if res.status_code != 201:
+                raise AssertionException("Failed to create Sign group '{}' (reason: {})".format(group, res.reason))
+            self.groups[group] = res.json()['groupId']
 
     def update_user(self, user_id, data):
         """
@@ -151,6 +152,9 @@ class SignClient:
         """
         if self.api_url is None or self.groups is None:
             self._init()
+
+        if self.test_mode:
+            return
 
         res = requests.put(self.api_url + 'users/' + user_id, headers=self.header_json(), data=json.dumps(data))
         if res.status_code != 200:

@@ -54,4 +54,7 @@ logging:
 # Defaults for options that can be passed as CLI options
 invocation_defaults:
   users: mapped
-
+# test_mode presents post_sync output without performing any updates of users or user groups to the Sign Dashboard
+# test_mode possible values are yes or no. (default no)
+# test_mode is independent of user_sync test mode.
+  test_mode: False

@@ -30,7 +30,7 @@ class SignConnector(object):
 
     neptune_console = False
 
-    def __init__(self, caller_options, org_name):
+    def __init__(self, caller_options, org_name, test_mode):
         """
         :type caller_options: dict
         """
@@ -49,7 +49,8 @@ class SignConnector(object):
         self.sign_client = SignClient(host=options['host'],
                                       key=key,
                                       admin_email=options['admin_email'],
-                                      logger=self.logger)
+                                      logger=self.logger,
+                                      test_mode=test_mode)
 
     def sign_groups(self):
         return self.sign_client.get_groups()

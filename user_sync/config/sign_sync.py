@@ -42,6 +42,7 @@ def config_schema() -> Schema:
         },
         'invocation_defaults': {
             'users': Or('mapped', 'all'), #TODO: single "source of truth" for these options
+            'test_mode':  bool,
             #'directory_group_filter': Or('mapped', 'all', None)
         }
     })
@@ -67,7 +68,8 @@ class SignConfigLoader(ConfigLoader):
     }
 
     invocation_defaults = {
-        'users': ['mapped']
+        'users': ['mapped'],
+        'test_mode': False
     }
 
     DEFAULT_ORG_NAME = 'primary'
@@ -172,6 +174,7 @@ class SignConfigLoader(ConfigLoader):
         options['sign_only_limit'] = user_sync.get_value('sign_only_limit', (int, str))
         invocation_defaults = self.main_config.get_dict_config('invocation_defaults')
         options['users'] = invocation_defaults.get_string('users')
+        options['test_mode'] = invocation_defaults.get_bool('test_mode')
         return options
 
     def check_unused_config_keys(self):

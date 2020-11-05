@@ -21,7 +21,8 @@ class SignSyncEngine:
             'connector': 'connector-ldap.yml'
         },
         'invocation_defaults': {
-            'users': 'mapped'
+            'users': 'mapped',
+            'test_mode': False
         },
         'sign_orgs': [
             {'primary': 'connector-sign.yml'}
@@ -47,8 +48,8 @@ class SignSyncEngine:
         options = dict(self.default_options)
         options.update(caller_options)
         self.options = options
-        self.logger = logging.getLogger(self.name)
         self.test_mode = options.get('test_mode')
+        self.logger = logging.getLogger(self.name)
         sync_config = DictConfig('<%s configuration>' %
                                  self.name, caller_options)
         self.directory_user_by_user_key = {}
@@ -59,7 +60,7 @@ class SignSyncEngine:
         # and org specific parameter embedded in Sign Connector as value
         for org in sign_orgs:
             self.connectors[org] = SignConnector(
-                self.config_loader.load_root_config(sign_orgs[org]), org)
+                self.config_loader.load_root_config(sign_orgs[org]), org, self.test_mode)
         self.sign_users_by_org = {}
         self.total_sign_user_count = set()
         self.sign_users_created_count = set()
@@ -78,9 +79,7 @@ class SignSyncEngine:
         :param directory_connector:
         :return:
         """
-        if self.test_mode:
-            self.logger.info("Sign Sync disabled in test mode")
-            return
+
         self.read_desired_user_groups(directory_groups, directory_connector)
 
         for org_name, sign_connector in self.connectors.items():
@@ -98,7 +97,7 @@ class SignSyncEngine:
                     self.directory_user_by_user_key, sign_connector, org_name)
             if self.options['deactivate_users'] is True and sign_connector.neptune_console is True:
                 self.deactivate_sign_users(self.directory_user_by_user_key, sign_connector, org_name)
-        #self.log_action_summary()
+        # self.log_action_summary()
 
     def log_action_summary(self):
         """
@@ -136,7 +135,10 @@ class SignSyncEngine:
             if len(action_description[1]) > pad:
                 pad = len(action_description[1])
 
-        header = '------- Action Summary -------'
+        if self.options['test_mode']:
+            header = '- Action Summary (TEST MODE) -'
+        else:
+            header = '------- Action Summary -------'
         logger.info('---------------------------' + header + '---------------------------')
         for action_description in action_summary_description:
             description = action_description[1].rjust(pad, ' ')
