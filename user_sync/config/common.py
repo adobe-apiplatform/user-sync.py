@@ -566,3 +566,11 @@ def resolve_invocation_options(options: dict, invocation_config: DictConfig, inv
             continue
         options[k] = arg_val
     return options
+
+
+def as_list(value):
+    if value is None:
+        return []
+    elif isinstance(value, user_sync.port.list_type):
+        return value
+    return [value]

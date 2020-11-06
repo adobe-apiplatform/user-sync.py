@@ -34,7 +34,7 @@ from user_sync import flags
 from user_sync.engine import umapi as rules
 from user_sync.engine.common import AdobeGroup, PRIMARY_TARGET_NAME
 from user_sync.error import AssertionException
-from .common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options
+from .common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options, as_list
 
 
 class UMAPIConfigLoader(ConfigLoader):
@@ -284,7 +284,7 @@ class UMAPIConfigLoader(ConfigLoader):
                 primary_config_sources.append(item)
             elif isinstance(item, dict):
                 for key, val in six.iteritems(item):
-                    secondary_config_sources[key] = self.as_list(val)
+                    secondary_config_sources[key] = as_list(val)
         primary_config = self.create_umapi_options(primary_config_sources)
         secondary_configs = {key: self.create_umapi_options(val)
                              for key, val in six.iteritems(secondary_config_sources)}
@@ -383,13 +383,6 @@ class UMAPIConfigLoader(ConfigLoader):
                         raise AssertionError("No after_mapping_hook found in extension configuration")
         return options
 
-    @staticmethod
-    def as_list(value):
-        if value is None:
-            return []
-        elif isinstance(value, user_sync.port.list_type):
-            return value
-        return [value]
 
     def get_dict_from_sources(self, sources):
         """
