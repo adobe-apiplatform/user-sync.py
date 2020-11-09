@@ -41,13 +41,13 @@ class SignConnector(object):
         self.neptune_console = sign_builder.require_value('neptune_console', bool)
         #sign_builder.set_string_value('console_org', None)
         options = sign_builder.get_options()
-        key = caller_config.get_credential('key', options['admin_email'])
+        integration_key = caller_config.get_credential('integration_key', options['admin_email'])
         self.console_org = org_name
         self.name = 'sign_{}'.format(self.console_org)
         self.logger = logging.getLogger(self.name)
         #caller_config.report_unused_values(self.logger)
         self.sign_client = SignClient(host=options['host'],
-                                      key=key,
+                                      integration_key=integration_key,
                                       admin_email=options['admin_email'],
                                       logger=self.logger)
 
