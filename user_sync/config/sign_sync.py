@@ -150,10 +150,6 @@ class SignConfigLoader(ConfigLoader):
                 if group not in group_mapping[dir_group]['groups']:
                     group_mapping[dir_group]['groups'].append(group)
 
-        # Convert to list for now to maintain compatability
-        for g in group_mapping.values():
-            g['roles'] = list(g['roles'])
-
         return dict(group_mapping)
 
     def get_directory_connector_module_name(self) -> str:
