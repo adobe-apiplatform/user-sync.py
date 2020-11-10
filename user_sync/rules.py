@@ -776,6 +776,8 @@ class RuleProcessor(object):
         directory_user = self.directory_user_by_user_key[user_key]
         commands = self.create_umapi_commands_for_directory_user(directory_user, self.will_update_user_info(umapi_info),
                                                                  umapi_connector.trusted)
+        user_key_log_entry = commands.identity_type.join(',').join(
+            commands.email if commands.email is not None else commands.username)
         if not commands:
             return
         if self.will_process_groups():
@@ -784,10 +786,10 @@ class RuleProcessor(object):
                 commands.remove_groups(groups_to_remove)
             commands.add_groups(groups_to_add)
         if umapi_connector.trusted:
-            self.logger.info('Adding user to umapi %s with user key: %s', umapi_connector.name, user_key)
+            self.logger.info('Adding user to umapi %s with user key: %s', umapi_connector.name, user_key_log_entry)
             self.secondary_users_created.add(user_key)
         else:
-            self.logger.info('Creating user with user key: %s', user_key)
+            self.logger.info('Creating user with user key: %s', user_key_log_entry)
             self.primary_users_created.add(user_key)
         post_sync_user = {
             'type': directory_user['identity_type'],
