@@ -172,21 +172,11 @@ class SignSyncEngine:
                     self.insert_new_users(
                         sign_connector, directory_user, user_roles, group_id, assignment_group)
                 else:
-                    self.logger.info("User {} not present in Sign and will be skipped.".format(directory_user['email']))
-                    self.directory_users_excluded.add(directory_user['email'])
                     continue
             else:
                 # Update existing users
                 self.update_existing_users(
                     sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group)
-        self.resolve_sign_only_users(directory_users, sign_users)
-
-    def resolve_sign_only_users(self, directory_users, sign_users):
-
-        for user, data in sign_users.items():
-            if user not in directory_users:
-                self.sign_only_users_by_email[user] = data
-
 
     @staticmethod
     def roles_match(resolved_roles, sign_roles) -> bool:
@@ -356,10 +346,7 @@ class SignSyncEngine:
             "lastName": sign_user['lastName'],
             "roles": user_roles,
         }
-        groups_match = sign_user['group'].lower() == assignment_group.lower()
-        roles_match = self.roles_match(user_roles, sign_user['roles'])
-
-
+        if sign_user['group'].lower() == assignment_group.lower() and self.roles_match(user_roles, sign_user['roles']):
             self.logger.debug(
                 "skipping Sign update for '{}' -- no updates needed".format(directory_user['email']))
             return
