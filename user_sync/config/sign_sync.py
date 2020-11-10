@@ -28,7 +28,7 @@ def config_schema() -> Schema:
         },
         'user_management': [{
             'directory_group': Or(None, And(str, len)),
-            'sign_group': Or(None, And(str, len)),
+            Optional('sign_group', default=None): Or(None, And(str, len)),
             Optional('group_admin', default=False): Or(bool, None),
             Optional('account_admin', default=False): Or(bool, None)
         }],
@@ -150,9 +150,9 @@ class SignConfigLoader(ConfigLoader):
                 if group not in group_mapping[dir_group]['groups']:
                     group_mapping[dir_group]['groups'].append(group)
 
-            # Convert to list for now to maintain compatability
-            for g in group_mapping.values():
-                g['roles'] = list(g['roles'])
+        # Convert to list for now to maintain compatability
+        for g in group_mapping.values():
+            g['roles'] = list(g['roles'])
 
         return dict(group_mapping)
 
