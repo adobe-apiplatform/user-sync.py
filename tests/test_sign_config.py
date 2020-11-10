@@ -45,31 +45,6 @@ def test_invocation_defaults(modify_sign_config, tmp_sign_connector_config, tmp_
 # NOTE: tmp_sign_connector_config and tmp_config_files are needed to prevent the ConfigFileLoader
 # from complaining that there are no temporary sign connector or ldap connector files
 def test_group_config(modify_sign_config, tmp_sign_connector_config, tmp_config_files):
-    """ensure that group mappings are loaded correctly"""
-    # simple case
-    group_config = [{'directory_group': 'Test Group 1', 'sign_group': 'Sign Group 1'}]
-    sign_config_file = modify_sign_config(['user_management'], group_config)
-    args = {'config_filename': sign_config_file}
-    config = SignConfigLoader(args)
-    group_mappings = config.get_directory_groups()
-    assert 'Test Group 1' in group_mappings
-    assert group_mappings['Test Group 1']['groups'] == [AdobeGroup.create('Sign Group 1')]
-
-    # complex case
-    group_config.append({'directory_group': 'Test Group 2', 'sign_group': 'Sign Group 2', 'group_admin': False, 'account_admin': False})
-    group_config.append({'directory_group': 'Test Group 2', 'sign_group': 'Sign Group 3', 'group_admin': True, 'account_admin': None})
-    sign_config_file = modify_sign_config(['user_management'], group_config)
-    args = {'config_filename': sign_config_file}
-    config = SignConfigLoader(args)
-    group_mappings = config.get_directory_groups()
-    assert len(group_mappings) == 2
-    assert 'Test Group 1' in group_mappings
-    assert 'Test Group 2' in group_mappings
-    for mapping in group_mappings['Test Group 2']['groups']:
-        assert mapping in [AdobeGroup.create('Sign Group 2'), AdobeGroup.create('Sign Group 3')]
-
-
-def test_group_config_complex(modify_sign_config, tmp_sign_connector_config, tmp_config_files):
 
     def load_sign_groups(group_config):
         sign_config_file = modify_sign_config(['user_management'], group_config)
@@ -82,9 +57,8 @@ def test_group_config_complex(modify_sign_config, tmp_sign_connector_config, tmp
         assert mappings[name]['priority'] == priority
         for r in roles:
             assert r in mappings[name]['roles']
-        names = [ag.group_name for ag in mappings[name]['groups']]
         for g in sign_groups:
-            assert g in names
+            assert AdobeGroup.create(g) in mappings[name]['groups']
 
     group_config = [
         {'directory_group': 'Test Group 1', 'sign_group': 'Sign Group 1'},
