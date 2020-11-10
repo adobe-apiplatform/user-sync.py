@@ -1,7 +1,11 @@
 host: api.echosign.com
 key: [Sign API Key]
 admin_email: user@example.com
-neptune_console: False
+# Flag to (dis)allow creation of new users in the Sign Neptune Console
+create_users: False
+# Flag to (dis)allow deactivation of users in the Sign Neptune Console
+deactivate_users: False
+
 # (optional) You can store credentials in the operating system credential store
 # (Windows Credential Manager, Mac Keychain, Linux Freedesktop Secret Service
 # or KWallet - these will be built into the Linux distribution).
