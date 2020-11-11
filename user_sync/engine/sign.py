@@ -188,7 +188,8 @@ class SignSyncEngine:
         """
         return sorted(resolved_roles) == sorted(sign_roles)
 
-    def should_sync(self, directory_user, org_name) -> bool:
+    @staticmethod
+    def should_sync(directory_user, org_name) -> bool:
         """
         Check if the user belongs to org.  If user has NO groups specified,
         we assume primary and return True (else we cannot assign roles without
@@ -301,7 +302,8 @@ class SignSyncEngine:
             self.logger.warning('Found user with no identity type, using %s: %s', identity_type, directory_user)
         return identity_type
 
-    def extract_mapped_group(self, directory_user_group, group_mapping) -> dict:
+    @staticmethod
+    def extract_mapped_group(directory_user_group, group_mapping) -> dict:
 
         roles = set()
         matched_group = None
@@ -311,10 +313,13 @@ class SignSyncEngine:
         ordered_mappings.sort(key=lambda x: x['priority'])
 
         if ordered_mappings is not None:
+            groups = []
             for g in ordered_mappings:
                 roles |= g['roles']
-            if ordered_mappings[0]['groups']:
-                matched_group = ordered_mappings[0]['groups'][0]
+                if g['groups']:
+                    groups.extend(g['groups'])
+            if groups:
+                matched_group = groups[0]
 
         # return roles as list instead of set
         sign_group_mapping = {
@@ -322,7 +327,7 @@ class SignSyncEngine:
             'roles': list(roles) if roles else ['NORMAL_USER']
         }
 
-        # For illustration.  Just return line 344 instead.
+        # For illustration.  Just return line 322 instead.
         return sign_group_mapping
 
 
