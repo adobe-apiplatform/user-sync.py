@@ -1,12 +1,10 @@
 import logging
-from collections import defaultdict
 
 import six
 
-from user_sync import error, identity_type
-from user_sync.config.common import DictConfig, ConfigFileLoader
+from user_sync import identity_type
+from user_sync.config.common import DictConfig, ConfigFileLoader, as_set
 from user_sync.connector.connector_sign import SignConnector
-from user_sync.engine.umapi import AdobeGroup
 from user_sync.error import AssertionException
 from user_sync.helper import normalize_string
 
@@ -95,7 +93,7 @@ class SignSyncEngine:
                     sign_connector.create_group(directory_group)
             # Update user details or insert new user        
             self.update_sign_users(
-                    self.directory_user_by_user_key, sign_connector, org_name)
+                self.directory_user_by_user_key, sign_connector, org_name)
             if self.options['deactivate_users'] is True and sign_connector.neptune_console is True:
                 self.deactivate_sign_users(self.directory_user_by_user_key, sign_connector, org_name)
         #self.log_action_summary()
@@ -186,7 +184,7 @@ class SignSyncEngine:
         :param sign_roles:
         :return:
         """
-        return sorted(resolved_roles) == sorted(sign_roles)
+        return as_set(resolved_roles) == as_set(sign_roles)
 
     @staticmethod
     def should_sync(directory_user, org_name) -> bool:

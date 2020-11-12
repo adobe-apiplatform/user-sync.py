@@ -574,3 +574,6 @@ def as_list(value):
     elif isinstance(value, user_sync.port.list_type):
         return value
     return [value]
+
+def as_set(value):
+    return set(as_list(value))
