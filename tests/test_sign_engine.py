@@ -75,6 +75,7 @@ def test_insert_new_users(example_user):
 
     def insert_user(insert_data):
         pass
+
     sign_connector.insert_user = insert_user
     sign_engine.logger = logging.getLogger()
     sign_engine.insert_new_users(
@@ -98,6 +99,7 @@ def test_deactivate_sign_users(example_user):
 
     def deactivate_user(insert_data):
         pass
+
     sign_connector.deactivate_user = deactivate_user
     sign_connector.get_users = get_users
     sign_engine.logger = logging.getLogger()
@@ -116,13 +118,24 @@ def test_roles_match():
 
 
 def test_should_sync():
-    dir_user = {'sign_group':{'group': AdobeGroup.create('test group')}}
+    dir_user = {'sign_group': {'group': AdobeGroup.create('test group')}}
     assert SignSyncEngine.should_sync(dir_user, None)
     assert not SignSyncEngine.should_sync(dir_user, 'secondary')
 
 
-def test_extract_mapped_group():
+def test_retrieve_admin_role():
+    user = {'sign_group': {'roles': ['ACCOUNT_ADMIN', 'GROUP_ADMIN']}}
+    assert SignSyncEngine.retrieve_admin_role(user) == sorted(['ACCOUNT_ADMIN', 'GROUP_ADMIN'])
 
+
+def test_retrieve_assignment_group():
+    user = {'sign_group': {'group': AdobeGroup.create('Test Group')}}
+    assert SignSyncEngine.retrieve_assignment_group(user) == 'Test Group'
+    user['sign_group']['group'] = None
+    assert SignSyncEngine.retrieve_assignment_group(user) is None
+
+
+def test_extract_mapped_group():
     def check_mapping(user_groups, group, roles):
         res = SignSyncEngine.extract_mapped_group(user_groups, mappings)
         if group is None:
@@ -140,7 +153,7 @@ def test_extract_mapped_group():
         'Sign Group 1': {
             'priority': 0,
             'roles': set(),
-            'groups':[g1]
+            'groups': [g1]
         },
         'Test Group Admins 1': {
             'priority': 4,

@@ -201,11 +201,13 @@ class SignSyncEngine:
         group = directory_user['sign_group']['group']
         return group.umapi_name == org_name if group else True
 
-    def retrieve_assignment_group(self, directory_user) -> str:
+    @staticmethod
+    def retrieve_assignment_group(directory_user) -> str:
         group = directory_user['sign_group']['group']
         return group.group_name if group else None
 
-    def retrieve_admin_role(self, directory_user) -> list:
+    @staticmethod
+    def retrieve_admin_role(directory_user) -> list:
         return directory_user['sign_group']['roles']
 
     @staticmethod
