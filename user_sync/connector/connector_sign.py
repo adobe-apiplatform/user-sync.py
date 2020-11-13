@@ -28,8 +28,6 @@ from sign_client.client import SignClient
 
 class SignConnector(object):
 
-    neptune_console = False
-
     def __init__(self, caller_options, org_name):
         """
         :type caller_options: dict

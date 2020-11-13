@@ -27,6 +27,7 @@ class SignSyncEngine:
             {'primary': 'connector-sign.yml'}
         ],
         'user_sync': {
+            #move these two since they're handled in connector now?
             'create_users': False,
             'deactivate_users': False,
             'sign_only_limit': 100
@@ -96,7 +97,7 @@ class SignSyncEngine:
             # Update user details or insert new user        
             self.update_sign_users(
                     self.directory_user_by_user_key, sign_connector, org_name)
-            if self.options['deactivate_users'] is True and sign_connector.neptune_console is True:
+            if sign_connector.deactivate_users is True:
                 self.deactivate_sign_users(self.directory_user_by_user_key, sign_connector, org_name)
         #self.log_action_summary()
 
@@ -170,7 +171,7 @@ class SignSyncEngine:
                 directory_user, sign_user, admin_roles)
             if sign_user is None:
                 # Insert new user if flag is enabled and if Neptune Console
-                if self.options['create_users'] is True and sign_connector.neptune_console is True:
+                if sign_connector.create_users is True:
                     self.insert_new_users(
                         sign_connector, directory_user, user_roles, group_id, assignment_group)
                 else:
