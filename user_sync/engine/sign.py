@@ -167,7 +167,8 @@ class SignSyncEngine:
 
             group_id = sign_connector.get_group(assignment_group.lower())
             admin_roles = self.retrieve_admin_role(directory_user)
-            user_roles = self.resolve_new_roles(directory_user, sign_user, admin_roles)
+            user_roles = self.resolve_new_roles(
+                directory_user, sign_user, admin_roles)
             if sign_user is None:
                 # Insert new user if flag is enabled and if Neptune Console
                 if self.options['create_users'] is True and sign_connector.neptune_console is True:

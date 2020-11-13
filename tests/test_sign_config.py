@@ -154,4 +154,17 @@ def test_engine_options(sign_config_file, modify_sign_config, tmp_sign_connector
     assert not (set(SignSyncEngine.default_options.keys()) | set(config.invocation_options.keys())) - set(options.keys())
     assert options['create_users'] == False
     assert options['sign_only_limit'] == 1000
-    
+
+
+def test_load_invocation_options(sign_config_file, modify_sign_config, tmp_sign_connector_config, tmp_config_files):
+    sign_config_file = modify_sign_config(['invocation_defaults'], {'users': 'mapped'})
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    options = config.load_invocation_options()
+    assert options['directory_group_mapped'] is True
+    # there is nothing to test if the users option is all, it just means nothing is assigned to directory_group_mapped
+    # and the key doesn't exist until it's assigned, so I can't test for None unless I change the logic
+    # else I get a KeyError
+    # using users: group fails the Schema validation
+    # same for if you leave the field blank or set to None
+    # so as things are written, there's nothing left to test
