@@ -27,9 +27,6 @@ class SignSyncEngine:
             {'primary': 'connector-sign.yml'}
         ],
         'user_sync': {
-            #move these two since they're handled in connector now?
-            'create_users': False,
-            'deactivate_users': False,
             'sign_only_limit': 100
         }
     }
