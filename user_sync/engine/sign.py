@@ -15,6 +15,7 @@ class SignSyncEngine:
     default_options = {
         'create_users': False,
         'deactivate_users': False,
+        'directory_group_filter': None,
         'extended_attributes': None,
         'identity_source': {
             'type': 'ldap',
@@ -67,7 +68,6 @@ class SignSyncEngine:
         self.sign_users_assigned_to_groups = set()
         self.sign_users_assigned_to_admin_role = set()
         self.action_summary = {}
-
 
     def run(self, directory_groups, directory_connector):
         """
@@ -218,6 +218,10 @@ class SignSyncEngine:
         :param org_name:
         :return:
         """
+        # if using the --users all option, some directory_user dicts may not have a key for sign_groups
+        # if this is the case, they are not a candidate for Sign sync
+        if directory_user.get('sign_groups') is None:
+            return False
         return directory_user['sign_groups']['groups'][0].umapi_name == org_name
 
     def retrieve_assignment_group(self, directory_user):
@@ -252,7 +256,7 @@ class SignSyncEngine:
         self.logger.debug('Building work list...')
 
         options = self.options
-        directory_group_filter = options['users']
+        directory_group_filter = options['directory_group_filter']
         if directory_group_filter is not None:
             directory_group_filter = set(directory_group_filter)
         extended_attributes = options.get('extended_attributes')
@@ -272,9 +276,9 @@ class SignSyncEngine:
                 self.logger.warning(
                     "Ignoring directory user with empty user key: %s", directory_user)
                 continue
-            sign_groups = self.extract_mapped_group(
-                directory_user['groups'], mappings)
-            directory_user['sign_groups'] = sign_groups
+            if directory_group_filter is not None:
+                sign_groups = self.extract_mapped_group(directory_user['groups'], mappings)
+                directory_user['sign_groups'] = sign_groups
             directory_user_by_user_key[user_key] = directory_user
 
     def get_directory_user_key(self, directory_user):
@@ -285,41 +289,6 @@ class SignSyncEngine:
         if email:
             return six.text_type(email)
         return None
-
-    def get_user_key(self, id_type, username, domain, email=None):
-        """
-        Construct the user key for a directory or adobe user.
-        The user key is the stringification of the tuple (id_type, username, domain)
-        but the domain part is left empty if the username is an email address.
-        If the parameters are invalid, None is returned.
-        :param username: (required) username of the user, can be his email
-        :param domain: (optional) domain of the user
-        :param email: (optional) email of the user
-        :param id_type: (required) id_type of the user
-        :return: string "id_type,username,domain" (or None)
-        :rtype: str
-        """
-        id_type = identity_type.parse_identity_type(id_type)
-        email = normalize_string(email) if email else None
-        username = normalize_string(username) or email
-        domain = normalize_string(domain)
-
-        if not id_type:
-            return None
-        if not username:
-            return None
-        if username.find('@') >= 0:
-            domain = ""
-        elif not domain:
-            return None
-        return six.text_type(id_type) + u',' + six.text_type(username) + u',' + six.text_type(domain)
-
-    def get_identity_type_from_directory_user(self, directory_user):
-        identity_type = directory_user.get('identity_type')
-        if identity_type is None:
-            identity_type = self.options['new_account_type']
-            self.logger.warning('Found user with no identity type, using %s: %s', identity_type, directory_user)
-        return identity_type
 
     def extract_mapped_group(self, directory_user_group, group_mapping):
         for directory_group, sign_group_mapping in group_mapping.items():
@@ -399,4 +368,4 @@ class SignSyncEngine:
                 except AssertionException as e:
                     self.logger.error("Error deactivating user {}, {}".format(sign_user['email'], e))
                 return
-                
+            
