@@ -15,6 +15,7 @@ class SignSyncEngine:
     default_options = {
         'create_users': False,
         'deactivate_users': False,
+        'directory_group_filter': None,
         'extended_attributes': None,
         'identity_source': {
             'type': 'ldap',
@@ -218,6 +219,10 @@ class SignSyncEngine:
         :param org_name:
         :return:
         """
+        # if using the --users all option, some directory_user dicts may not have a key for sign_groups
+        # if this is the case, they are not a candidate for Sign sync
+        if directory_user.get('sign_groups') is None:
+            return False
         return directory_user['sign_groups']['groups'][0].umapi_name == org_name
 
     def retrieve_assignment_group(self, directory_user):
@@ -252,7 +257,7 @@ class SignSyncEngine:
         self.logger.debug('Building work list...')
 
         options = self.options
-        directory_group_filter = options['users']
+        directory_group_filter = options['directory_group_filter']
         if directory_group_filter is not None:
             directory_group_filter = set(directory_group_filter)
         extended_attributes = options.get('extended_attributes')
@@ -272,9 +277,9 @@ class SignSyncEngine:
                 self.logger.warning(
                     "Ignoring directory user with empty user key: %s", directory_user)
                 continue
-            sign_groups = self.extract_mapped_group(
-                directory_user['groups'], mappings)
-            directory_user['sign_groups'] = sign_groups
+            if directory_group_filter is not None:
+                sign_groups = self.extract_mapped_group(directory_user['groups'], mappings)
+                directory_user['sign_groups'] = sign_groups
             directory_user_by_user_key[user_key] = directory_user
 
     def get_directory_user_key(self, directory_user):
