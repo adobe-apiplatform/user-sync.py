@@ -75,7 +75,6 @@ class SignSyncEngine:
         self.directory_users_excluded = set()
         self.sign_only_users_by_email = {}
 
-
     def run(self, directory_groups, directory_connector):
         """
         Run the Sign sync
@@ -291,41 +290,6 @@ class SignSyncEngine:
             return six.text_type(email)
         return None
 
-    def get_user_key(self, id_type, username, domain, email=None):
-        """
-        Construct the user key for a directory or adobe user.
-        The user key is the stringification of the tuple (id_type, username, domain)
-        but the domain part is left empty if the username is an email address.
-        If the parameters are invalid, None is returned.
-        :param username: (required) username of the user, can be his email
-        :param domain: (optional) domain of the user
-        :param email: (optional) email of the user
-        :param id_type: (required) id_type of the user
-        :return: string "id_type,username,domain" (or None)
-        :rtype: str
-        """
-        id_type = identity_type.parse_identity_type(id_type)
-        email = normalize_string(email) if email else None
-        username = normalize_string(username) or email
-        domain = normalize_string(domain)
-
-        if not id_type:
-            return None
-        if not username:
-            return None
-        if username.find('@') >= 0:
-            domain = ""
-        elif not domain:
-            return None
-        return six.text_type(id_type) + u',' + six.text_type(username) + u',' + six.text_type(domain)
-
-    def get_identity_type_from_directory_user(self, directory_user):
-        identity_type = directory_user.get('identity_type')
-        if identity_type is None:
-            identity_type = self.options['new_account_type']
-            self.logger.warning('Found user with no identity type, using %s: %s', identity_type, directory_user)
-        return identity_type
-
     def extract_mapped_group(self, directory_user_group, group_mapping):
         for directory_group, sign_group_mapping in group_mapping.items():
             if (directory_user_group[0] == directory_group):
@@ -420,4 +384,4 @@ class SignSyncEngine:
                 except AssertionException as e:
                     self.logger.error("Error deactivating user {}, {}".format(sign_user['email'], e))
                 return
-                
+            
