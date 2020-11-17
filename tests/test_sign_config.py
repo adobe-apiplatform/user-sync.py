@@ -36,10 +36,10 @@ def test_invocation_defaults(modify_sign_config, tmp_sign_connector_config, tmp_
     config = SignConfigLoader(args)
     assert 'users' in config.invocation_options
     assert config.invocation_options['users'] == ['all']
-    args = {'config_filename': sign_config_file, 'users': ['some_option']}
+    args = {'config_filename': sign_config_file, 'users': ['mapped']}
     config = SignConfigLoader(args)
     assert 'users' in config.invocation_options
-    assert config.invocation_options['users'] == ['some_option']
+    assert config.invocation_options['users'] == ['mapped']
 
 
 # NOTE: tmp_sign_connector_config and tmp_config_files are needed to prevent the ConfigFileLoader
@@ -154,4 +154,12 @@ def test_engine_options(sign_config_file, modify_sign_config, tmp_sign_connector
     assert not (set(SignSyncEngine.default_options.keys()) | set(config.invocation_options.keys())) - set(options.keys())
     assert options['create_users'] == False
     assert options['sign_only_limit'] == 1000
-    
+
+
+def test_load_invocation_options(sign_config_file, modify_sign_config, tmp_sign_connector_config, tmp_config_files):
+    sign_config_file = modify_sign_config(['invocation_defaults'], {'users': 'mapped'})
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    options = config.load_invocation_options()
+    assert options['directory_group_mapped'] is True
+
