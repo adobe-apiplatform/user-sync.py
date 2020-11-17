@@ -197,13 +197,9 @@ class SignSyncEngine:
         :param org_name:
         :return:
         """
-        # if using the --users all option, some directory_user dicts may not have a key for sign_groups
-        # if this is the case, they are not a candidate for Sign sync
-        if directory_user.get('sign_groups') is None:
-            return False
         group = directory_user['sign_group']['group']
         return group.umapi_name == org_name if group else True
-    @staticmethod
+
     @staticmethod
     def retrieve_assignment_group(directory_user) -> str:
         group = directory_user['sign_group']['group']
@@ -259,9 +255,8 @@ class SignSyncEngine:
                 self.logger.warning(
                     "Ignoring directory user with empty user key: %s", directory_user)
                 continue
-            if directory_group_filter is not None:
-                sign_groups = self.extract_mapped_group(directory_user['groups'], mappings)
-                directory_user['sign_group'] = sign_group
+            sign_group = self.extract_mapped_group(directory_user['groups'], mappings)
+            directory_user['sign_group'] = sign_group
             directory_user_by_user_key[user_key] = directory_user
 
     def get_directory_user_key(self, directory_user):
