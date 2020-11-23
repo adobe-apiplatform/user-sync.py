@@ -23,11 +23,12 @@ import six
 import string
 from okta.framework.OktaError import OktaError
 
-import user_sync.config.common
 import user_sync.connector.helper
 import user_sync.helper
 import user_sync.identity_type
 from user_sync.error import AssertionException
+from user_sync.config import user_sync as config
+from user_sync.config import common as config_common
 
 
 def connector_metadata():
@@ -61,8 +62,8 @@ class OktaDirectoryConnector(object):
     name = 'okta'
 
     def __init__(self, caller_options):
-        caller_config = user_sync.config.common.DictConfig('%s configuration' % self.name, caller_options)
-        builder = user_sync.config.common.OptionsBuilder(caller_config)
+        caller_config = config_common.DictConfig('%s configuration' % self.name, caller_options)
+        builder = config_common.OptionsBuilder(caller_config)
         builder.set_string_value('group_filter_format',
                                  '{group}')
         builder.set_string_value('all_users_filter',

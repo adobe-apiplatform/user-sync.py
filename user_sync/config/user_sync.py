@@ -20,22 +20,39 @@
 
 import codecs
 import logging
+import os
 import re
 from copy import deepcopy
 
 import six
+import yaml
 
-import user_sync.engine.umapi_engine
 import user_sync.helper
 import user_sync.identity_type
 import user_sync.port
-import user_sync.post_sync.connectors as post_sync_connectors
 from user_sync import flags
-from user_sync.config.common import DictConfig, ConfigFileLoader
+from user_sync.engine import umapi as rules
+from user_sync.engine.common import AdobeGroup, PRIMARY_TARGET_NAME
 from user_sync.error import AssertionException
+from .common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options
 
 
-class ConfigLoader(object):
+class UMAPIConfigLoader(ConfigLoader):
+    """
+    Loads config files and does pathname expansion on settings that refer to files or directories
+    """
+    # key_paths in the root configuration file that should have filename values
+    # mapped to their value options.  See load_from_yaml for the option meanings.
+    ROOT_CONFIG_PATH_KEYS = {'/adobe_users/connectors/umapi': (True, True, None),
+                             '/directory_users/connectors/*': (True, False, None),
+                             '/directory_users/extension': (True, False, None),
+                             '/logging/file_log_directory': (False, False, "logs"),
+                             }
+
+    # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files
+    SUB_CONFIG_PATH_KEYS = {'/enterprise/priv_key_path': (True, False, None),
+                            '/integration/priv_key_path': (True, False, None)}
+
     # default values for reading configuration files
     # these are in alphabetical order!  Always add new ones that way!
     config_defaults = {
@@ -83,9 +100,9 @@ class ConfigLoader(object):
             codecs.lookup(config_encoding)
         except LookupError:
             raise AssertionException("Unknown encoding '%s' specified for configuration files" % config_encoding)
-        ConfigFileLoader.config_encoding = config_encoding
         self.logger.info("Using main config file: %s (encoding %s)", config_filename, config_encoding)
-        main_config_content = ConfigFileLoader.load_root_config(config_filename)
+        self.config_loader = ConfigFileLoader(config_encoding, self.ROOT_CONFIG_PATH_KEYS, self.SUB_CONFIG_PATH_KEYS)
+        main_config_content = self.config_loader.load_root_config(config_filename)
         return DictConfig("<%s>" % config_filename, main_config_content)
 
     def get_invocation_options(self):
@@ -100,28 +117,8 @@ class ConfigLoader(object):
         # otherwise, setting options also sets invocation_defaults (same memory ref)
         options = deepcopy(self.invocation_defaults)
 
-        # get overrides from the main config
         invocation_config = self.main_config.get_dict_config('invocation_defaults', True)
-        if invocation_config:
-            for k, v in six.iteritems(self.invocation_defaults):
-                if isinstance(v, bool):
-                    val = invocation_config.get_bool(k, True)
-                    if val is not None:
-                        options[k] = val
-                elif isinstance(v, list):
-                    val = invocation_config.get_list(k, True)
-                    if val:
-                        options[k] = val
-                else:
-                    val = invocation_config.get_string(k, True)
-                    if val:
-                        options[k] = val
-
-        # now handle overrides from CLI options
-        for k, arg_val in self.args.items():
-            if arg_val is None:
-                continue
-            options[k] = arg_val
+        options = resolve_invocation_options(options, invocation_config, self.invocation_defaults, self.args)
 
         # now process command line options.  the order of these is important,
         # because options processed later depend on the values of those processed earlier
@@ -245,7 +242,7 @@ class ConfigLoader(object):
                         'You must specify the groups to read when using the adobe-users "group" option')
                 options['adobe_group_filter'] = []
                 for group in adobe_users_spec[1].split(','):
-                    options['adobe_group_filter'].append(user_sync.engine.umapi_engine.AdobeGroup.create(group))
+                    options['adobe_group_filter'].append(AdobeGroup.create(group))
             else:
                 raise AssertionException('Unknown option "%s" for adobe-users' % adobe_users_action)
 
@@ -254,7 +251,7 @@ class ConfigLoader(object):
     def get_logging_config(self):
         return self.main_config.get_dict_config('logging', True)
 
-    def get_umapi_options(self):
+    def get_target_options(self):
         """
         Read and return the primary and secondary umapi connector configs.
         The primary is a singleton, the secondaries are a map from name to config.
@@ -340,7 +337,7 @@ class ConfigLoader(object):
 
     def load_directory_groups(self):
         """
-        :rtype dict(str, list(user_sync.engine.umapi_engine.AdobeGroup))
+        :rtype dict(str, list(AdobeGroup))
         """
         adobe_groups_by_directory_group = {}
         if self.main_config.get_dict_config('directory', True):
@@ -360,7 +357,7 @@ class ConfigLoader(object):
 
             adobe_groups = item.get_list('adobe_groups', True)
             for adobe_group in adobe_groups or []:
-                group = user_sync.engine.umapi_engine.AdobeGroup.create(adobe_group)
+                group = AdobeGroup.create(adobe_group)
                 if group is None:
                     validation_message = ('Bad adobe group: "%s" in directory group: "%s"' %
                                           (adobe_group, directory_group))
@@ -386,39 +383,6 @@ class ConfigLoader(object):
                         raise AssertionError("No after_mapping_hook found in extension configuration")
         return options
 
-    def get_post_sync_options(self):
-        """
-        Read the post_sync options from main_config_file, if there are any modules specified, and return its dictionary of options
-        :return: dict
-        """
-
-        ps_opts = self.main_config.get_dict_config('post_sync', True)
-        if not ps_opts:
-            return
-
-        connectors = ps_opts.get_dict('connectors')
-        module_list = ps_opts.get_list('modules')
-        allowed_modules = post_sync_connectors.valid_connectors()
-        post_sync_modules = {}
-
-        try:
-            for m in module_list:
-                if m in post_sync_modules:
-                    raise AssertionException("Duplicate module specified: " + m)
-                elif m not in allowed_modules:
-                    raise AssertionException(
-                        'Unknown post-sync module: {0} - available are: {1}'.format(m, allowed_modules))
-                post_sync_modules[m] = self.get_dict_from_sources([connectors.pop(m)])
-        except KeyError as e:
-            raise AssertionException("Error! Post-sync module " + str(e) + " specified without a configuration file...")
-
-        if connectors:
-            self.logger.warning("Unused post-sync configuration file: " + str(connectors))
-
-        return {
-            'modules': post_sync_modules,
-        }
-
     @staticmethod
     def as_list(value):
         if value is None:
@@ -438,7 +402,7 @@ class ConfigLoader(object):
             return {}
         options = []
         for source in sources:
-            config = ConfigFileLoader.load_sub_config(source)
+            config = self.config_loader.load_sub_config(source)
             options.append(config)
         return self.combine_dicts(options)
 
@@ -458,7 +422,7 @@ class ConfigLoader(object):
     @staticmethod
     def combine_dicts(dicts):
         """
-        Return a single dict from an iterable of dicts.  Each dict is merged into the resulting dict,
+        Return a single dict from an iterable of dicts.  Each dict is merged into the resulting dict, 
         with a latter dict possibly overwriting the keys from previous dicts.
         :type dicts: list(dict)
         :rtype dict
@@ -474,11 +438,11 @@ class ConfigLoader(object):
                         result[dict_key] = dict_val
         return result
 
-    def get_rule_options(self):
+    def get_engine_options(self):
         """
         Return a dict representing options for RuleProcessor.
         """
-        options = deepcopy(user_sync.engine.umapi_engine.RuleProcessor.default_options)
+        options = deepcopy(rules.RuleProcessor.default_options)
         options.update(self.invocation_options)
 
         # process directory configuration options
@@ -500,7 +464,7 @@ class ConfigLoader(object):
         additional_groups = directory_config.get_list('additional_groups', True) or []
         try:
             additional_groups = [{'source': re.compile(r['source']),
-                                  'target': user_sync.engine.umapi_engine.AdobeGroup.create(r['target'], index=False)}
+                                  'target': AdobeGroup.create(r['target'], index=False)}
                                  for r in additional_groups]
         except Exception as e:
             raise AssertionException("Additional group rule error: {}".format(str(e)))
@@ -539,8 +503,8 @@ class ConfigLoader(object):
         if exclude_group_names:
             exclude_groups = []
             for name in exclude_group_names:
-                group = user_sync.engine.umapi_engine.AdobeGroup.create(name)
-                if not group or group.get_umapi_name() != user_sync.engine.umapi_engine.PRIMARY_UMAPI_NAME:
+                group = AdobeGroup.create(name)
+                if not group or group.get_umapi_name() != PRIMARY_TARGET_NAME:
                     validation_message = 'Illegal value for %s in config file: %s' % ('exclude_groups', name)
                     if not group:
                         validation_message += ' (Not a legal group name)'
@@ -579,7 +543,7 @@ class ConfigLoader(object):
             # 1. it allows validation of group names, and matching them to adobe groups
             # 2. it allows removal of adobe groups not assigned by the hook
             for extended_adobe_group in extension_config.get_list('extended_adobe_groups', True) or []:
-                group = user_sync.engine.umapi_engine.AdobeGroup.create(extended_adobe_group)
+                group = AdobeGroup.create(extended_adobe_group)
                 if group is None:
                     message = 'Extension contains illegal extended_adobe_group spec: ' + str(extended_adobe_group)
                     raise AssertionException(message)
@@ -591,7 +555,7 @@ class ConfigLoader(object):
 
         # set the adobe group filter from the mapping, if requested.
         if options.get('adobe_group_mapped') is True:
-            options['adobe_group_filter'] = set(user_sync.engine.umapi_engine.AdobeGroup.iter_groups())
+            options['adobe_group_filter'] = set(AdobeGroup.iter_groups())
 
         return options
 
@@ -603,4 +567,3 @@ class ConfigLoader(object):
     def check_unused_config_keys(self):
         directory_connectors_config = self.get_directory_connector_configs()
         self.main_config.report_unused_values(self.logger, [directory_connectors_config])
-

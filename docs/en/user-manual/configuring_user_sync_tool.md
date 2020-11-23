@@ -124,9 +124,9 @@ editor, and enter these values in the “enterprise” section:
 ```YAML
 enterprise:
   org_id: "Organization ID goes here"
-  api_key: "API key goes here"
+  client_id: "Client ID goes here"
   client_secret: "Client Secret goes here"
-  tech_acct: "Tech Account ID goes here"
+  tech_acct_id: "Tech Account ID goes here"
   priv_key_path: "Path to Private Certificate goes here"
 ```
 
@@ -506,9 +506,9 @@ server:
 
 enterprise:
   org_id: "Org ID goes here"
-  api_key: "API key goes here"
+  client_id: "Client ID goes here"
   client_secret: "Client secret goes here"
-  tech_acct: "Tech account ID goes here"
+  tech_acct_id: "Tech account ID goes here"
   priv_key_path: "Path to private.key goes here"
   # priv_key_data: "actual key data goes here" # This is an alternative to priv_key_path
 ```

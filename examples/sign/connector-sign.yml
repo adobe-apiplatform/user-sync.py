@@ -1,0 +1,13 @@
+host: api.echosign.com
+key: [Sign API Key]
+admin_email: user@example.com
+neptune_console: False
+# (optional) You can store credentials in the operating system credential store
+# (Windows Credential Manager, Mac Keychain, Linux Freedesktop Secret Service
+# or KWallet - these will be built into the Linux distribution).
+# To use this feature, uncomment the following entry and remove the
+# key entry above.
+# The actual credential value are placed in the credential store with the
+# username as the admin_email field value, and the key name (perhaps called internet
+# or network address) as the value below.
+#secure_key_key: sign_key

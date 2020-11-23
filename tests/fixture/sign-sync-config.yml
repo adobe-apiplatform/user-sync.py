@@ -1,0 +1,56 @@
+# Sign API Connections
+sign_orgs:
+  primary: connector-sign.yml
+  # Additional Sign Connection configuration files
+  #secondary: connector-sign-sec.yml
+  #tertiary: connector-sign-ter.yml
+  
+# Similar to "directory_users.connectors" in user-sync-config.yml
+identity_source:
+  type: ldap
+  connector: connector-ldap.yml
+  
+# Options that govern the synchronization of users
+user_sync:
+  # Flag to (dis)allow creation of new users in the Sign Neptune Console
+  create_users: False
+  # Flag to (dis)allow deactivation of users in the Sign Neptune Console
+  deactivate_users: False
+  sign_only_limit: 100
+ 
+# User management group/role mappings
+user_management:
+  # sign_group format: sign_org_name::Sign Group Name, default is 'primary'
+  # admin_role: NORMAL_USER if empty
+  # Example 1 - group assignment
+  - directory_group: Sign Users 1
+    sign_group: Group 1
+    admin_role:
+  # Example 2 - group admin assignment
+  - directory_group: Sign Group Admins 1
+    sign_group: primary::Group 2
+    admin_role: 
+      - GROUP_ADMIN
+  # Example 3 - account admin assignment
+  # - directory_group: Sign Admins
+  #   sign_group: secondary::Group 3
+  #   admin_role: 
+  #     - ACCOUNT_ADMIN
+  # Example 4 - create user if `create_users` is `True`, otherwise do nothing
+  # - directory_group: Sign Normal Users
+  #   sign_group: tertiary::Group 4
+  #   admin_role:
+  #     - ACCOUNT_ADMIN
+  #     - GROUP_ADMIN
+  
+# Logging options
+logging:
+  log_to_file: True
+  file_log_directory: sign_logs
+  file_log_name_format: '{:%Y-%m-%d}-sign.log'
+  file_log_level: info
+  console_log_level: debug
+  
+# Defaults for options that can be passed as CLI options
+invocation_defaults:
+  users: mapped

@@ -7,19 +7,14 @@ from user_sync.error import AssertionException
 class SignClient:
     version = 'v5'
     _endpoint_template = 'api/rest/{}/'
-    DEFAULT_GROUP_NAME = 'default group'
 
-    def __init__(self, config):
-        for k in ['host', 'key', 'admin_email']:
-            if k not in config:
-                raise AssertionException("Key '{}' must be specified for all Sign orgs".format(k))
-        self.host = config['host']
-        self.key = config['key']
-        self.admin_email = config['admin_email']
-        self.console_org = config['console_org'] if 'console_org' in config else None
+    def __init__(self, host, key, admin_email, logger=None):
+        self.host = host
+        self.key = key
+        self.admin_email = admin_email
         self.api_url = None
         self.groups = None
-        self.logger = logging.getLogger(self.logger_name())
+        self.logger = logger or logging.getLogger("sign_client_{}".format(self.key[0:4]))
 
     def _init(self):
         self.api_url = self.base_uri()
@@ -29,9 +24,6 @@ class SignClient:
         if self.api_url is None or self.groups is None:
             self._init()
         return self.groups
-
-    def logger_name(self):
-        return 'sign_client.{}'.format(self.console_org if self.console_org else 'main')
 
     def header(self):
         """
@@ -171,3 +163,37 @@ class SignClient:
         :return: list[]
         """
         return ['NORMAL_USER'] if 'roles' not in user else user['roles']
+
+    def insert_user(self, data):
+        """
+        Insert Sign user
+        :param data: dict()
+        """
+        if self.api_url is None or self.groups is None:
+            self._init()
+        
+        res = requests.post(self.api_url + 'users', headers=self.header_json(), data=json.dumps(data))
+        # Response status code 201 is successful insertion
+        if res.status_code != 201:
+                exp_obj = json.loads(res.text)
+                exp_obj['reason'] = res.reason
+                exp_obj['status_code'] = res.status_code
+                raise AssertionException("Failed to insert user '{}' (error response: {})".format(data['email'], exp_obj))
+
+    def deactivate_user(self, user_id):
+        """
+        Deactivate Sign user
+        :param data: dict()
+        """
+        if self.api_url is None or self.groups is None:
+            self._init()
+        data = {
+            "userStatus": 'INACTIVE'
+        }
+        res = requests.put(self.api_url + 'users/' + user_id + '/status', headers=self.header_json(), data=json.dumps(data))
+        # Response status code 200 is successful update
+        if res.status_code != 200:
+                exp_obj = json.loads(res.text)
+                exp_obj['reason'] = res.reason
+                exp_obj['status_code'] = res.status_code
+                raise AssertionException(exp_obj)

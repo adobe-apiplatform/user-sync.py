@@ -1,0 +1,4 @@
+host: api.echosignstage.com
+key: "[Sign API Key]"
+admin_email: user@example.com
+neptune_console: False
