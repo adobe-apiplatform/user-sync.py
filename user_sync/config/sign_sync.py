@@ -81,7 +81,10 @@ class SignConfigLoader(ConfigLoader):
         filename, encoding = self._config_file_info()
         self.config_loader = ConfigFileLoader(encoding, self.ROOT_CONFIG_PATH_KEYS, self.SUB_CONFIG_PATH_KEYS)
         self.raw_config = self._load_raw_config(filename, encoding)
-        self._validate(self.raw_config)
+        try:
+            self._validate(self.raw_config)
+        except ConfigValidationError as e:
+            raise AssertionException('Schema validation failed. Detailed message: %s' %e.args)
         self.main_config = self.load_main_config(filename, self.raw_config)
         self.invocation_options = self.load_invocation_options()
         self.directory_groups = self.load_directory_groups()

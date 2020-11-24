@@ -199,7 +199,11 @@ def sync(**kwargs):
 def sign_sync(**kwargs):
     """Run Sign Sync """
     # load the config files (sign-sync-config.yml) and start the file logger
-    run_sync(sign_config.SignConfigLoader(kwargs), begin_work_sign)
+    try:
+        run_sync(sign_config.SignConfigLoader(kwargs), begin_work_sign)
+    except AssertionException as e:
+        #click.echo(str(e))
+        logger.critical("%s", e)
 
 
 def begin_work_sign(sign_config_loader):
