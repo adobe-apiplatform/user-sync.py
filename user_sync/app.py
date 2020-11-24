@@ -202,7 +202,6 @@ def sign_sync(**kwargs):
     try:
         run_sync(sign_config.SignConfigLoader(kwargs), begin_work_sign)
     except AssertionException as e:
-        #click.echo(str(e))
         logger.critical("%s", e)
 
 
