@@ -115,7 +115,7 @@ class LDAPDirectoryConnector(object):
         elif auth_method == 'kerberos':
             if(platform.system() == 'Windows'):
                 from .ldap3_extended.Connection import Connection
-                auth = {'authentication': ldap3.SASL, 'sasl_mechanism': ldap3.GSSAPI}
+                auth = {'sasl_credentials': (True,), 'authentication': ldap3.SASL, 'sasl_mechanism': ldap3.GSSAPI}
                 logger.debug('Connecting to: %s - Authentication Method: Kerberos', options['host'])
             else:
                 raise AssertionException('Kerberos Authentication Method is not supported on this OS. Windows Only')
