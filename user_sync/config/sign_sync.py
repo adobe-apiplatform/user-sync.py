@@ -43,7 +43,7 @@ def config_schema() -> Schema:
             'file_log_level': Or('info', 'debug'), #TODO: what are the valid values here?
             'console_log_level': Or('info', 'debug'), #TODO: what are the valid values here?
         },
-        'invocation_defaults': {
+        Optional('invocation_defaults'): {
             'users': Or('mapped', 'all'), #TODO: single "source of truth" for these options
             #'directory_group_filter': Or('mapped', 'all', None)
         }
@@ -193,8 +193,9 @@ class SignConfigLoader(ConfigLoader):
         options['create_users'] = user_sync.get_bool('create_users')
         options['deactivate_users'] = user_sync.get_bool('deactivate_users')
         options['sign_only_limit'] = user_sync.get_value('sign_only_limit', (int, str))
-        invocation_defaults = self.main_config.get_dict_config('invocation_defaults')
-        options['users'] = invocation_defaults.get_string('users')
+        invocation_defaults = self.main_config.get_dict_config('invocation_defaults', True)
+        if invocation_defaults is not None:
+            options['users'] = invocation_defaults.get_string('users')
         # set the directory group filter from the mapping, if requested.
         # This must come late, after any prior adds to the mapping from other parameters.
         if options.get('directory_group_mapped'):
