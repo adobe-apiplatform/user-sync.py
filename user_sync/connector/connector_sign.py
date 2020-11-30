@@ -28,26 +28,27 @@ from sign_client.client import SignClient
 
 class SignConnector(object):
 
-    neptune_console = False
-
     def __init__(self, caller_options, org_name):
         """
         :type caller_options: dict
         """
+        self.console_org = org_name
+        self.name = 'sign_{}'.format(self.console_org)
+        self.logger = logging.getLogger(self.name)
+
         caller_config = user_sync.config.common.DictConfig('sign_configuration', caller_options)
         sign_builder = user_sync.config.common.OptionsBuilder(caller_config)
         sign_builder.require_string_value('host')
         sign_builder.require_string_value('admin_email')
-        self.neptune_console = sign_builder.require_value('neptune_console', bool)
-        #sign_builder.set_string_value('console_org', None)
+        self.create_users = sign_builder.set_bool_value('create_users', False)
+        self.deactivate_users = sign_builder.set_bool_value('deactivate_users', False)
+
         options = sign_builder.get_options()
-        key = caller_config.get_credential('key', options['admin_email'])
-        self.console_org = org_name
-        self.name = 'sign_{}'.format(self.console_org)
-        self.logger = logging.getLogger(self.name)
-        #caller_config.report_unused_values(self.logger)
+        integration_key = caller_config.get_credential('integration_key', options['admin_email'])
+        caller_config.report_unused_values(self.logger)
+
         self.sign_client = SignClient(host=options['host'],
-                                      key=key,
+                                      integration_key=integration_key,
                                       admin_email=options['admin_email'],
                                       logger=self.logger)
 
