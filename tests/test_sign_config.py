@@ -36,10 +36,10 @@ def test_invocation_defaults(modify_sign_config, tmp_sign_connector_config, tmp_
     config = SignConfigLoader(args)
     assert 'users' in config.invocation_options
     assert config.invocation_options['users'] == ['all']
-    args = {'config_filename': sign_config_file, 'users': ['some_option']}
+    args = {'config_filename': sign_config_file, 'users': ['mapped']}
     config = SignConfigLoader(args)
     assert 'users' in config.invocation_options
-    assert config.invocation_options['users'] == ['some_option']
+    assert config.invocation_options['users'] == ['mapped']
 
 
 # NOTE: tmp_sign_connector_config and tmp_config_files are needed to prevent the ConfigFileLoader
@@ -106,7 +106,7 @@ def test_target_config_options(sign_config_file, modify_sign_config, tmp_sign_co
     config = SignConfigLoader(args)
     primary_options, _ = config.get_target_options()
     assert primary_options['host'] == 'api.echosignstage.com'
-    assert primary_options['key'] == '[Sign API Key]'
+    assert primary_options['integration_key'] == '[Sign API Key]'
     assert primary_options['admin_email'] == 'user@example.com'
 
     # complex case
@@ -116,7 +116,7 @@ def test_target_config_options(sign_config_file, modify_sign_config, tmp_sign_co
     primary_options, secondary_options = config.get_target_options()
     assert 'org2' in secondary_options
     assert secondary_options['org2']['host'] == 'api.echosignstage.com'
-    assert secondary_options['org2']['key'] == '[Sign API Key]'
+    assert secondary_options['org2']['integration_key'] == '[Sign API Key]'
     assert secondary_options['org2']['admin_email'] == 'user@example.com'
 
     # invalid case
@@ -140,7 +140,7 @@ def test_logging_config(sign_config_file):
 
 
 def test_engine_options(sign_config_file, modify_sign_config, tmp_sign_connector_config, tmp_config_files):
-    sign_config_file = modify_sign_config(['user_sync'], {'create_users': False, 'deactivate_users': False, 'sign_only_limit': 1000})
+    sign_config_file = modify_sign_config(['user_sync'], {'sign_only_limit': 1000})
     args = {'config_filename': sign_config_file}
     config = SignConfigLoader(args)
     options = config.get_engine_options()
@@ -154,4 +154,12 @@ def test_engine_options(sign_config_file, modify_sign_config, tmp_sign_connector
     assert not (set(SignSyncEngine.default_options.keys()) | set(config.invocation_options.keys())) - set(options.keys())
     assert options['create_users'] == False
     assert options['sign_only_limit'] == 1000
-    
+
+
+def test_load_invocation_options(sign_config_file, modify_sign_config, tmp_sign_connector_config, tmp_config_files):
+    sign_config_file = modify_sign_config(['invocation_defaults'], {'users': 'mapped'})
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    options = config.load_invocation_options()
+    assert options['directory_group_mapped'] is True
+

@@ -4,6 +4,8 @@ import codecs
 from copy import deepcopy
 from collections import defaultdict
 from typing import Dict
+
+import six
 from schema import Schema
 
 from user_sync.config.common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options
@@ -11,6 +13,7 @@ from user_sync.error import AssertionException
 from user_sync.engine.common import AdobeGroup
 from user_sync.engine.sign import SignSyncEngine
 from .error import ConfigValidationError
+from ..helper import normalize_string
 
 
 def config_schema() -> Schema:
@@ -22,8 +25,6 @@ def config_schema() -> Schema:
             'type': Or('csv', 'okta', 'ldap', 'adobe_console'), #TODO: single "source of truth" for these options
         },
         'user_sync': {
-            'create_users': bool,
-            'deactivate_users': bool,
             'sign_only_limit': Or(int, Regex(r'^\d+%$')),
         },
         'user_management': [{
@@ -40,7 +41,7 @@ def config_schema() -> Schema:
             'file_log_level': Or('info', 'debug'), #TODO: what are the valid values here?
             'console_log_level': Or('info', 'debug'), #TODO: what are the valid values here?
         },
-        'invocation_defaults': {
+        Optional('invocation_defaults'): {
             'users': Or('mapped', 'all'), #TODO: single "source of truth" for these options
             'test_mode':  bool,
             #'directory_group_filter': Or('mapped', 'all', None)
@@ -83,11 +84,28 @@ class SignConfigLoader(ConfigLoader):
         self._validate(self.raw_config)
         self.main_config = self.load_main_config(filename, self.raw_config)
         self.invocation_options = self.load_invocation_options()
+        self.directory_groups = self.load_directory_groups()
     
     def load_invocation_options(self) -> dict:
         options = deepcopy(self.invocation_defaults)
         invocation_config = self.main_config.get_dict_config('invocation_defaults', True)
         options = resolve_invocation_options(options, invocation_config, self.invocation_defaults, self.args)
+        options['directory_connector_type'] = self.main_config.get_dict('identity_source').get('type')
+        # --users
+        users_spec = options.get('users')
+        if users_spec:
+            users_action = normalize_string(users_spec[0])
+            if users_action == 'all':
+                if options['directory_connector_type'] == 'okta':
+                    raise AssertionException('Okta connector module does not support "--users all"')
+            elif users_action == 'mapped':
+                options['directory_group_mapped'] = True
+            elif users_action == 'group':
+                if len(users_spec) != 2:
+                    raise AssertionException('You must specify the groups to read when using the users "group" option')
+                options['directory_group_filter'] = users_spec[1].split(',')
+            else:
+                raise AssertionException('Unknown option "%s" for users' % users_action)
         return options
 
     def load_main_config(self, filename, content) -> DictConfig:
@@ -114,7 +132,10 @@ class SignConfigLoader(ConfigLoader):
         except SchemaError as e:
             raise ConfigValidationError(e.code) from e
 
-    def get_directory_groups(self) -> Dict[str, AdobeGroup]:
+    def get_directory_groups(self):
+        return self.load_directory_groups()
+
+    def load_directory_groups(self) -> Dict[str, AdobeGroup]:
         group_mapping = defaultdict(dict)
         group_config = self.main_config.get_list_config('user_management', True)
         if group_config is None:
@@ -169,11 +190,14 @@ class SignConfigLoader(ConfigLoader):
         sign_orgs = self.main_config.get_dict('sign_orgs')
         options['sign_orgs'] = sign_orgs
         user_sync = self.main_config.get_dict_config('user_sync')
-        options['create_users'] = user_sync.get_bool('create_users')
-        options['deactivate_users'] = user_sync.get_bool('deactivate_users')
         options['sign_only_limit'] = user_sync.get_value('sign_only_limit', (int, str))
-        invocation_defaults = self.main_config.get_dict_config('invocation_defaults')
-        options['users'] = invocation_defaults.get_string('users')
+        invocation_defaults = self.main_config.get_dict_config('invocation_defaults', True)
+        if invocation_defaults is not None:
+            options['users'] = invocation_defaults.get_string('users')
+        # set the directory group filter from the mapping, if requested.
+        # This must come late, after any prior adds to the mapping from other parameters.
+        if options.get('directory_group_mapped'):
+            options['directory_group_filter'] = set(six.iterkeys(self.directory_groups))
         options['test_mode'] = invocation_defaults.get_bool('test_mode')
         return options
 
