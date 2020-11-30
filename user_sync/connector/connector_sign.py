@@ -44,10 +44,11 @@ class SignConnector(object):
         self.deactivate_users = sign_builder.set_bool_value('deactivate_users', False)
 
         options = sign_builder.get_options()
-        key = caller_config.get_credential('key', options['admin_email'])
+        integration_key = caller_config.get_credential('integration_key', options['admin_email'])
         caller_config.report_unused_values(self.logger)
+
         self.sign_client = SignClient(host=options['host'],
-                                      key=key,
+                                      integration_key=integration_key,
                                       admin_email=options['admin_email'],
                                       logger=self.logger)
 
