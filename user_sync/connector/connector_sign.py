@@ -35,7 +35,7 @@ class SignConnector(object):
         self.console_org = org_name
         self.name = 'sign_{}'.format(self.console_org)
         self.logger = logging.getLogger(self.name)
-
+        self.test_mode = test_mode
         caller_config = user_sync.config.common.DictConfig('sign_configuration', caller_options)
         sign_builder = user_sync.config.common.OptionsBuilder(caller_config)
         sign_builder.require_string_value('host')
@@ -50,26 +50,29 @@ class SignConnector(object):
         self.sign_client = SignClient(host=options['host'],
                                       integration_key=integration_key,
                                       admin_email=options['admin_email'],
-                                      logger=self.logger,
-                                      test_mode=test_mode)
+                                      logger=self.logger)
 
     def sign_groups(self):
         return self.sign_client.get_groups()
 
     def create_group(self, new_group):
-        return self.sign_client.create_group(new_group)
+        if not self.test_mode:
+            self.sign_client.create_group(new_group)
 
     def get_users(self):
         return self.sign_client.get_users()
 
     def update_user(self, user_id, update_data):
-        return self.sign_client.update_user(user_id, update_data)
+        if not self.test_mode:
+            self.sign_client.update_user(user_id, update_data)
 
     def get_group(self, assignment_group):
         return self.sign_client.groups.get(assignment_group)
 
     def insert_user(self, insert_data):
-        return self.sign_client.insert_user(insert_data)
+        if not self.test_mode:
+            self.sign_client.insert_user(insert_data)
 
     def deactivate_user(self, user_id):
-        return self.sign_client.deactivate_user(user_id)
+        if not self.test_mode:
+            self.sign_client.deactivate_user(user_id)

@@ -7,13 +7,12 @@ class SignClient:
     version = 'v5'
     _endpoint_template = 'api/rest/{}/'
 
-    def __init__(self, host, integration_key, admin_email, logger=None, test_mode=False):
+    def __init__(self, host, integration_key, admin_email, logger=None):
         self.host = host
         self.integration_key = integration_key
         self.admin_email = admin_email
         self.api_url = None
         self.groups = None
-        self.test_mode = test_mode
         self.logger = logger or logging.getLogger("sign_client_{}".format(self.integration_key[0:4]))
 
     def _init(self):
@@ -137,11 +136,11 @@ class SignClient:
         """
         if self.api_url is None or self.groups is None:
             self._init()
-        if not self.test_mode:
-            res = requests.post(self.api_url + 'groups', headers=self.header_json(), data=json.dumps({'groupName': group}))
-            if res.status_code != 201:
-                raise AssertionException("Failed to create Sign group '{}' (reason: {})".format(group, res.reason))
-            self.groups[group] = res.json()['groupId']
+
+        res = requests.post(self.api_url + 'groups', headers=self.header_json(), data=json.dumps({'groupName': group}))
+        if res.status_code != 201:
+            raise AssertionException("Failed to create Sign group '{}' (reason: {})".format(group, res.reason))
+        self.groups[group] = res.json()['groupId']
 
     def update_user(self, user_id, data):
         """
@@ -152,9 +151,6 @@ class SignClient:
         """
         if self.api_url is None or self.groups is None:
             self._init()
-
-        if self.test_mode:
-            return
 
         res = requests.put(self.api_url + 'users/' + user_id, headers=self.header_json(), data=json.dumps(data))
         if res.status_code != 200:
