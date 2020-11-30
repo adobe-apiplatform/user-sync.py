@@ -1,5 +1,5 @@
 host: api.echosign.com
-key: [Sign API Key]
+integration_key: [Sign API Key]
 admin_email: user@example.com
 neptune_console: False
 # (optional) You can store credentials in the operating system credential store
@@ -10,4 +10,4 @@ neptune_console: False
 # The actual credential value are placed in the credential store with the
 # username as the admin_email field value, and the key name (perhaps called internet
 # or network address) as the value below.
-#secure_key_key: sign_key
+#secure_integration_key_key: sign_key
