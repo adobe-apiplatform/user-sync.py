@@ -157,7 +157,7 @@ def test_engine_options(sign_config_file, modify_sign_config, tmp_sign_connector
 
 
 def test_load_invocation_options(sign_config_file, modify_sign_config, tmp_sign_connector_config, tmp_config_files):
-    sign_config_file = modify_sign_config(['invocation_defaults'], {'users': 'mapped'})
+    sign_config_file = modify_sign_config(['invocation_defaults'], {'users': 'mapped', 'test_mode': False})
     args = {'config_filename': sign_config_file}
     config = SignConfigLoader(args)
     options = config.load_invocation_options()
