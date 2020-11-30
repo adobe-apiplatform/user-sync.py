@@ -25,8 +25,6 @@ def config_schema() -> Schema:
             'type': Or('csv', 'okta', 'ldap', 'adobe_console'), #TODO: single "source of truth" for these options
         },
         'user_sync': {
-            'create_users': bool,
-            'deactivate_users': bool,
             'sign_only_limit': Or(int, Regex(r'^\d+%$')),
         },
         'user_management': [{
@@ -190,8 +188,6 @@ class SignConfigLoader(ConfigLoader):
         sign_orgs = self.main_config.get_dict('sign_orgs')
         options['sign_orgs'] = sign_orgs
         user_sync = self.main_config.get_dict_config('user_sync')
-        options['create_users'] = user_sync.get_bool('create_users')
-        options['deactivate_users'] = user_sync.get_bool('deactivate_users')
         options['sign_only_limit'] = user_sync.get_value('sign_only_limit', (int, str))
         invocation_defaults = self.main_config.get_dict_config('invocation_defaults', True)
         if invocation_defaults is not None:
