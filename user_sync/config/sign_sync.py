@@ -42,8 +42,8 @@ def config_schema() -> Schema:
             'console_log_level': Or('info', 'debug'), #TODO: what are the valid values here?
         },
         Optional('invocation_defaults'): {
-            'users': Or('mapped', 'all'), #TODO: single "source of truth" for these options
             'test_mode':  bool,
+            'users': Or('mapped', 'all', ['group', And(str, len)])
             #'directory_group_filter': Or('mapped', 'all', None)
         }
     })
@@ -100,10 +100,13 @@ class SignConfigLoader(ConfigLoader):
                     raise AssertionException('Okta connector module does not support "--users all"')
             elif users_action == 'mapped':
                 options['directory_group_mapped'] = True
+
+
             elif users_action == 'group':
-                if len(users_spec) != 2:
+                if len(users_spec) < 2:
                     raise AssertionException('You must specify the groups to read when using the users "group" option')
-                options['directory_group_filter'] = users_spec[1].split(',')
+                dgf = users_spec[1].split(',') if len(users_spec) == 2 else users_spec[1:]
+                options['directory_group_filter'] = list({d.strip() for d in dgf})
             else:
                 raise AssertionException('Unknown option "%s" for users' % users_action)
         return options
@@ -193,7 +196,7 @@ class SignConfigLoader(ConfigLoader):
         options['sign_only_limit'] = user_sync.get_value('sign_only_limit', (int, str))
         invocation_defaults = self.main_config.get_dict_config('invocation_defaults', True)
         if invocation_defaults is not None:
-            options['users'] = invocation_defaults.get_string('users')
+            options['users'] = invocation_defaults.get_value('users',(str,list))
         # set the directory group filter from the mapping, if requested.
         # This must come late, after any prior adds to the mapping from other parameters.
         if options.get('directory_group_mapped'):

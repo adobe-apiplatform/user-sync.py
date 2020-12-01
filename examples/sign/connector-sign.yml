@@ -1,3 +1,5 @@
+# To fetch below information do login to Sign console then click on Adobe Sign API tab
+# in API information tab click on Integration Key to 'Create integration key' after selecting appropriate 'scope'
 host: api.echosign.com
 integration_key: [Sign API Key]
 admin_email: user@example.com
