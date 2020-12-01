@@ -196,6 +196,8 @@ def sync(**kwargs):
               cls=user_sync.cli.OptionMulti,
               type=list,
               metavar='exclude|preserve|delete')
+@click.option('-t/-T', '--test-mode/--no-test-mode', default=None,
+              help='enable test mode (API calls do not execute changes).')
 def sign_sync(**kwargs):
     """Run Sign Sync """
     # load the config files (sign-sync-config.yml) and start the file logger

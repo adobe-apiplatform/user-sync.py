@@ -3,7 +3,6 @@ import requests
 import json
 from user_sync.error import AssertionException
 
-
 class SignClient:
     version = 'v5'
     _endpoint_template = 'api/rest/{}/'
@@ -137,6 +136,7 @@ class SignClient:
         """
         if self.api_url is None or self.groups is None:
             self._init()
+
         res = requests.post(self.api_url + 'groups', headers=self.header_json(), data=json.dumps({'groupName': group}))
         if res.status_code != 201:
             raise AssertionException("Failed to create Sign group '{}' (reason: {})".format(group, res.reason))

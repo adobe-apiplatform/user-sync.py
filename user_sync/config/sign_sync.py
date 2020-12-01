@@ -43,6 +43,7 @@ def config_schema() -> Schema:
         },
         Optional('invocation_defaults'): {
             'users': Or('mapped', 'all'), #TODO: single "source of truth" for these options
+            'test_mode':  bool,
             #'directory_group_filter': Or('mapped', 'all', None)
         }
     })
@@ -68,7 +69,8 @@ class SignConfigLoader(ConfigLoader):
     }
 
     invocation_defaults = {
-        'users': ['mapped']
+        'users': ['mapped'],
+        'test_mode': False
     }
 
     DEFAULT_ORG_NAME = 'primary'
@@ -196,6 +198,7 @@ class SignConfigLoader(ConfigLoader):
         # This must come late, after any prior adds to the mapping from other parameters.
         if options.get('directory_group_mapped'):
             options['directory_group_filter'] = set(six.iterkeys(self.directory_groups))
+        options['test_mode'] = invocation_defaults.get_bool('test_mode')
         return options
 
     def check_unused_config_keys(self):

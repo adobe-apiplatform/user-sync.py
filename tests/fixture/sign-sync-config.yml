@@ -50,3 +50,4 @@ logging:
 # Defaults for options that can be passed as CLI options
 invocation_defaults:
   users: mapped
+  test_mode: False
