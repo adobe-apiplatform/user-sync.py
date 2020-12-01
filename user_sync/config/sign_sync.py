@@ -194,14 +194,8 @@ class SignConfigLoader(ConfigLoader):
         options['sign_orgs'] = sign_orgs
         user_sync = self.main_config.get_dict_config('user_sync')
         options['sign_only_limit'] = user_sync.get_value('sign_only_limit', (int, str))
-        invocation_defaults = self.main_config.get_dict_config('invocation_defaults', True)
-        if invocation_defaults is not None:
-            options['users'] = invocation_defaults.get_value('users',(str,list))
-        # set the directory group filter from the mapping, if requested.
-        # This must come late, after any prior adds to the mapping from other parameters.
         if options.get('directory_group_mapped'):
             options['directory_group_filter'] = set(six.iterkeys(self.directory_groups))
-        options['test_mode'] = invocation_defaults.get_bool('test_mode')
         return options
 
     def check_unused_config_keys(self):
