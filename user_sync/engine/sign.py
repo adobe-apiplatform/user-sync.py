@@ -16,7 +16,6 @@ class SignSyncEngine:
         'create_users': False,
         'deactivate_users': False,
         'directory_group_filter': None,
-        'extended_attributes': None,
         'identity_source': {
             'type': 'ldap',
             'connector': 'connector-ldap.yml'
@@ -259,15 +258,13 @@ class SignSyncEngine:
         directory_group_filter = options['directory_group_filter']
         if directory_group_filter is not None:
             directory_group_filter = set(directory_group_filter)
-        extended_attributes = options.get('extended_attributes')
-
         directory_user_by_user_key = self.directory_user_by_user_key
 
         directory_groups = set(six.iterkeys(mappings))
         if directory_group_filter is not None:
             directory_groups.update(directory_group_filter)
         directory_users = directory_connector.load_users_and_groups(groups=directory_groups,
-                                                                    extended_attributes=extended_attributes,
+                                                                    extended_attributes=[],
                                                                     all_users=directory_group_filter is None)
 
         for directory_user in directory_users:
