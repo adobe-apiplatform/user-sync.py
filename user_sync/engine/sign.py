@@ -271,6 +271,9 @@ class SignSyncEngine:
                                                                     all_users=directory_group_filter is None)
 
         for directory_user in directory_users:
+            if not self.is_directory_user_in_groups(directory_user, directory_group_filter):
+                continue
+
             user_key = self.get_directory_user_key(directory_user)
             if not user_key:
                 self.logger.warning(
@@ -280,6 +283,19 @@ class SignSyncEngine:
                 sign_groups = self.extract_mapped_group(directory_user['groups'], mappings)
                 directory_user['sign_groups'] = sign_groups
             directory_user_by_user_key[user_key] = directory_user
+
+    def is_directory_user_in_groups(self, directory_user, groups):
+        """
+        :type directory_user: dict
+        :type groups: set
+        :rtype bool
+        """
+        if groups is None:
+            return True
+        for directory_user_group in directory_user['groups']:
+            if directory_user_group in groups:
+                return True
+        return False
 
     def get_directory_user_key(self, directory_user):
         """

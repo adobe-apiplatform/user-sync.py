@@ -105,12 +105,8 @@ class SignConfigLoader(ConfigLoader):
             elif users_action == 'group':
                 if len(users_spec) < 2:
                     raise AssertionException('You must specify the groups to read when using the users "group" option')
-                options['directory_group_filter'] = users_spec[1:]
-
-                # if len(users_spec) != 2:
-                #    raise AssertionException('You must specify the groups to read when using the users "group" option')
-                # options['directory_group_filter'] = users_spec[1].split(',')
-
+                dgf = users_spec[1].split(',') if len(users_spec) == 2 else users_spec[1:]
+                options['directory_group_filter'] = list({d.strip() for d in dgf})
             else:
                 raise AssertionException('Unknown option "%s" for users' % users_action)
         return options
@@ -200,7 +196,7 @@ class SignConfigLoader(ConfigLoader):
         options['sign_only_limit'] = user_sync.get_value('sign_only_limit', (int, str))
         invocation_defaults = self.main_config.get_dict_config('invocation_defaults', True)
         if invocation_defaults is not None:
-        options['users'] = invocation_defaults.get_value('users',(str,list))
+            options['users'] = invocation_defaults.get_value('users',(str,list))
         # set the directory group filter from the mapping, if requested.
         # This must come late, after any prior adds to the mapping from other parameters.
         if options.get('directory_group_mapped'):
