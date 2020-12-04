@@ -486,11 +486,19 @@ class RuleProcessor(object):
         else:
             primary_adds_by_user_key = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
         # save groups for new users
+
+        total_users = len(primary_adds_by_user_key)
+
+        user_count = 0
         for user_key, groups_to_add in six.iteritems(primary_adds_by_user_key):
+            user_count += 1
             if exclude_unmapped_users and not groups_to_add:
                 # If user is not part of any group and ignore outcast is enabled. Do not create user.
                 continue
             # We always create every user in the primary umapi, because it's believed to own the directories.
+            if user_count % 10 == 0:
+                self.logger.progress(user_count, total_users, 'actions completed')
+            self.primary_users_created.add(user_key)
             self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector)
 
         # then sync the secondary connectors
@@ -503,9 +511,13 @@ class RuleProcessor(object):
                 secondary_adds_by_user_key = umapi_info.get_desired_groups_by_user_key()
             else:
                 secondary_adds_by_user_key = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
+            total_users = len(secondary_adds_by_user_key)
             for user_key, groups_to_add in six.iteritems(secondary_adds_by_user_key):
                 # We only create users who have group mappings in the secondary umapi
                 if groups_to_add:
+                    self.logger.progress(user_count, total_users,
+                                         'Adding user to umapi {0} with user key: {1}'.format(umapi_name, user_key))
+                    self.secondary_users_created.add(user_key)
                     if user_key not in self.primary_users_created:
                         # We pushed an existing user to a secondary in order to update his groups
                         self.updated_user_keys.add(user_key)
@@ -618,7 +630,7 @@ class RuleProcessor(object):
 
         # all our processing is controlled by the strays in the primary organization
         primary_strays = self.get_stray_keys()
-        self.action_summary['primary_strays_processed'] = len(primary_strays)
+        self.action_summary['primary_strays_processed'] = total_strays = len(primary_strays)
 
         # convenience function to get umapi Commands given a user key
         def get_commands(key):
@@ -662,7 +674,8 @@ class RuleProcessor(object):
 
         # finish with the primary umapi
         primary_connector = umapi_connectors.get_primary_connector()
-        for user_key in primary_strays:
+        for i, user_key in enumerate(primary_strays):
+            per = round(100*(float(i)/float(total_strays)),3)
             commands = get_commands(user_key)
             if disentitle_strays:
                 self.logger.info('Removing all adobe groups for Adobe-only user: %s', user_key)
@@ -670,7 +683,7 @@ class RuleProcessor(object):
                 commands.remove_all_groups()
             elif remove_strays or delete_strays:
                 action = "Deleting" if delete_strays else "Removing"
-                self.logger.info('%s Adobe-only user: %s', action, user_key)
+                self.logger.info('(%s/%s)(%s%%) %s Adobe-only user: %s', i, total_strays, per, action, user_key)
                 self.post_sync_data.remove_umapi_user(None, user_key)
                 commands.remove_from_org(True if delete_strays else False)
             elif manage_stray_groups:

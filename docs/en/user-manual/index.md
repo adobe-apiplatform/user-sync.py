@@ -8,7 +8,7 @@ nav_level: 1
 nav_order: 10
 ---
 
-Version 2.6.1, released 2020-09-16
+Version 2.6.2, released 2020-09-16
 
 This document has all the information you need to get up and
 running with User Sync. It presumes familiarity with the use of
