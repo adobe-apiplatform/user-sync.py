@@ -1,16 +1,11 @@
+v2.6.2 - 2020-12-04
+
 # New Features
 
-\#612 Various fixes and enhancements to CLI
+\#598 - Add logging for user actions and umapi progress
+\#596 - Add info about platform and test mode
 
 # Bug Fixes
 
-\#606 Adobe console connector module not found
-\#607 Update UST/doc for api_key and tech_acct
-\#611 Correct key data reference for decrypting
-\#617 Email casing difference between UMAPI and Sign users
-
-# Known Issues
-
-No known issues at this time.
-
-v2.6.1 - 2020-09-14
+\#659 - Support Specifying Domain Name for Kerberos Authentication
+\#663 - Prevent start_tls before Bind on LDAPS Connection
