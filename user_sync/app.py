@@ -19,6 +19,8 @@
 # SOFTWARE.
 import logging
 import os
+import platform
+import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -46,6 +48,7 @@ import user_sync.resource
 from user_sync.config import common as config_common
 from user_sync.config import user_sync as config
 from user_sync.config import sign_sync as sign_config
+from user_sync.config.common import OptionsBuilder
 from user_sync.connector.connector_umapi import UmapiConnector
 from user_sync.engine.common import PRIMARY_TARGET_NAME
 from user_sync.engine.sign import SignSyncEngine
@@ -196,6 +199,8 @@ def sync(**kwargs):
               cls=user_sync.cli.OptionMulti,
               type=list,
               metavar='exclude|preserve|delete')
+@click.option('-t/-T', '--test-mode/--no-test-mode', default=None,
+              help='enable test mode (API calls do not execute changes).')
 def sign_sync(**kwargs):
     """Run Sign Sync """
     # load the config files (sign-sync-config.yml) and start the file logger
@@ -285,8 +290,9 @@ def run_sync(config_loader, begin_work):
     try:
         init_log(config_loader.get_logging_config())
 
+        test_mode = " (TEST MODE)" if config_loader.get_invocation_options()['test_mode'] else ''
         # add start divider, app version number, and invocation parameters to log
-        run_stats = user_sync.helper.JobStats('Run (User Sync version: ' + app_version + ')', divider='=')
+        run_stats = user_sync.helper.JobStats('Run (User Sync version: ' + app_version + ')' + test_mode, divider='=')
         run_stats.log_start(logger)
         log_parameters(sys.argv[1:], config_loader)
 
@@ -319,69 +325,6 @@ def run_sync(config_loader, begin_work):
     finally:
         if run_stats is not None:
             run_stats.log_end(logger)
-
-
-def init_log(logging_config):
-    """
-    :type logging_config: config.DictConfig
-    """
-    builder = config_common.OptionsBuilder(logging_config)
-    builder.set_bool_value('log_to_file', False)
-    builder.set_string_value('file_log_directory', 'logs')
-    builder.set_string_value('file_log_name_format', '{:%Y-%m-%d}.log')
-    builder.set_string_value('file_log_level', 'info')
-    builder.set_string_value('console_log_level', 'info')
-    options = builder.get_options()
-
-    level_lookup = {
-        'debug': logging.DEBUG,
-        'info': logging.INFO,
-        'warning': logging.WARNING,
-        'error': logging.ERROR,
-        'critical': logging.CRITICAL
-    }
-
-    console_log_level = level_lookup.get(options['console_log_level'])
-    if console_log_level is None:
-        console_log_level = logging.INFO
-        logger.log(logging.WARNING, 'Unknown console log level: %s setting to info' % options['console_log_level'])
-    console_log_handler.setLevel(console_log_level)
-
-    if options['log_to_file']:
-        unknown_file_log_level = False
-        file_log_level = level_lookup.get(options['file_log_level'])
-        if file_log_level is None:
-            file_log_level = logging.INFO
-            unknown_file_log_level = True
-        file_log_directory = options['file_log_directory']
-        if not os.path.exists(file_log_directory):
-            os.makedirs(file_log_directory)
-
-        file_path = os.path.join(file_log_directory, options['file_log_name_format'].format(datetime.now()))
-        file_handler = logging.FileHandler(file_path)
-        file_handler.setLevel(file_log_level)
-        file_handler.setFormatter(logging.Formatter(LOG_STRING_FORMAT, LOG_DATE_FORMAT))
-        logging.getLogger().addHandler(file_handler)
-        if unknown_file_log_level:
-            logger.log(logging.WARNING, 'Unknown file log level: %s setting to info' % options['file_log_level'])
-
-
-def log_parameters(argv, config_loader):
-    """
-    Log the invocation parameters to make it easier to diagnose problem with customers
-    :param argv: command line arguments (a la sys.argv)
-    :type argv: list(str)
-    :param config_loader: the main configuration loader
-    :type config_loader: config.UMAPIConfigLoader
-    :return: None
-    """
-    logger.info('Python version: %s.%s.%s on %s' % (sys.version_info[:3] + (sys.platform,)))
-    logger.info('------- Command line arguments -------')
-    logger.info(' '.join(argv))
-    logger.debug('-------- Resulting invocation options --------')
-    for parameter_name, parameter_value in six.iteritems(config_loader.get_invocation_options()):
-        logger.debug('  %s: %s', parameter_name, parameter_value)
-    logger.info('-------------------------------------')
 
 
 # Additional CLI commands #
@@ -479,7 +422,7 @@ def example_config_sign(**kwargs):
         'sign': os.path.join('examples', 'connector-sign.yml'),
         'ldap': os.path.join('examples', 'connector-ldap.yml'),
     }
-
+        
     for k, fname in kwargs.items():
         target = Path.cwd() / fname
         assert k in res_files, "Invalid option specified"
@@ -492,14 +435,82 @@ def example_config_sign(**kwargs):
             content = file.read()
         with open(target, 'w') as file:
             file.write(content)
+            
+def init_log(logging_config):
+    """
+    :type logging_config: user_sync.config.DictConfig
+    """
 
+    def progress(self, count, total, message="", *args, **kws):
+        if self.show_progress:
+            count = int(count)
+            total = int(total)
+            percent_done = round(100*count/total, 1) if total > 0 else 0
+            message = "{0}/{1} ({2}%) {3}".format(count, total, percent_done, message)
+        if message:
+            self._log(logging.INFO, message, args, **kws)
+    logging.Logger.progress = progress
 
-@main.command(short_help="Encrypt RSA private key")
-@click.help_option('-h', '--help')
-@click.argument('key-path', default='private.key', type=click.Path(exists=True))
-@click.option('-o', '--output-file',
-              help="Path of encrypted file [default: key specified by KEY_PATH will be overwritten]",
-              default=None)
+    builder = OptionsBuilder(logging_config)
+    builder.set_bool_value('log_to_file', False)
+    builder.set_string_value('file_log_directory', 'logs')
+    builder.set_string_value('file_log_name_format', '{:%Y-%m-%d}.log')
+    builder.set_string_value('file_log_level', 'info')
+    builder.set_string_value('console_log_level', 'info')
+    builder.set_bool_value('log_progress', True)
+    options = builder.get_options()
+
+    level_lookup = {
+        'debug': logging.DEBUG,
+        'info': logging.INFO,
+        'warning': logging.WARNING,
+        'error': logging.ERROR,
+        'critical': logging.CRITICAL
+    }
+
+    logging.Logger.show_progress = bool(options['log_progress'])
+    console_log_level = level_lookup.get(options['console_log_level'])
+    if console_log_level is None:
+        console_log_level = logging.INFO
+        logger.log(logging.WARNING, 'Unknown console log level: %s setting to info' % options['console_log_level'])
+    console_log_handler.setLevel(console_log_level)
+
+    if options['log_to_file']:
+        unknown_file_log_level = False
+        file_log_level = level_lookup.get(options['file_log_level'])
+        if file_log_level is None:
+            file_log_level = logging.INFO
+            unknown_file_log_level = True
+        file_log_directory = options['file_log_directory']
+        if not os.path.exists(file_log_directory):
+            os.makedirs(file_log_directory)
+
+        file_path = os.path.join(file_log_directory, options['file_log_name_format'].format(datetime.now()))
+        file_handler = logging.FileHandler(file_path)
+        file_handler.setLevel(file_log_level)
+        file_handler.setFormatter(logging.Formatter(LOG_STRING_FORMAT, LOG_DATE_FORMAT))
+        logging.getLogger().addHandler(file_handler)
+        if unknown_file_log_level:
+            logger.log(logging.WARNING, 'Unknown file log level: %s setting to info' % options['file_log_level'])
+
+def log_parameters(argv, config_loader):
+    """
+    Log the invocation parameters to make it easier to diagnose problem with customers
+    :param argv: command line arguments (a la sys.argv)
+    :type argv: list(str)
+    :param config_loader: the main configuration loader
+    :type config_loader: user_sync.config.ConfigLoader
+    :return: None
+    """
+    logger.info('User Sync {0} - Python {1} - {2} {3}'
+                .format(app_version, platform.python_version(), platform.system(), platform.version()))
+    logger.info('------- Command line arguments -------')
+    logger.info(' '.join(argv))
+    logger.debug('-------- Resulting invocation options --------')
+    for parameter_name, parameter_value in six.iteritems(config_loader.get_invocation_options()):
+        logger.debug('  %s: %s', parameter_name, parameter_value)
+    logger.info('-------------------------------------')
+
 @click.option('--password', '-p', prompt='Create password', hide_input=True, confirmation_prompt=True)
 def encrypt(output_file, password, key_path):
     """Encrypt RSA private key specified by KEY_PATH.
