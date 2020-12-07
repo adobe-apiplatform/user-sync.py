@@ -106,7 +106,7 @@ def test_target_config_options(sign_config_file, modify_sign_config, tmp_sign_co
     config = SignConfigLoader(args)
     primary_options, _ = config.get_target_options()
     assert primary_options['host'] == 'api.echosignstage.com'
-    assert primary_options['key'] == '[Sign API Key]'
+    assert primary_options['integration_key'] == '[Sign API Key]'
     assert primary_options['admin_email'] == 'user@example.com'
 
     # complex case
@@ -116,7 +116,7 @@ def test_target_config_options(sign_config_file, modify_sign_config, tmp_sign_co
     primary_options, secondary_options = config.get_target_options()
     assert 'org2' in secondary_options
     assert secondary_options['org2']['host'] == 'api.echosignstage.com'
-    assert secondary_options['org2']['key'] == '[Sign API Key]'
+    assert secondary_options['org2']['integration_key'] == '[Sign API Key]'
     assert secondary_options['org2']['admin_email'] == 'user@example.com'
 
     # invalid case
@@ -140,7 +140,7 @@ def test_logging_config(sign_config_file):
 
 
 def test_engine_options(sign_config_file, modify_sign_config, tmp_sign_connector_config, tmp_config_files):
-    sign_config_file = modify_sign_config(['user_sync'], {'create_users': False, 'deactivate_users': False, 'sign_only_limit': 1000})
+    sign_config_file = modify_sign_config(['user_sync'], {'sign_only_limit': 1000})
     args = {'config_filename': sign_config_file}
     config = SignConfigLoader(args)
     options = config.get_engine_options()
@@ -157,7 +157,7 @@ def test_engine_options(sign_config_file, modify_sign_config, tmp_sign_connector
 
 
 def test_load_invocation_options(sign_config_file, modify_sign_config, tmp_sign_connector_config, tmp_config_files):
-    sign_config_file = modify_sign_config(['invocation_defaults'], {'users': 'mapped'})
+    sign_config_file = modify_sign_config(['invocation_defaults'], {'users': 'mapped', 'test_mode': False})
     args = {'config_filename': sign_config_file}
     config = SignConfigLoader(args)
     options = config.load_invocation_options()

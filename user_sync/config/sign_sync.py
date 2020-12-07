@@ -25,8 +25,6 @@ def config_schema() -> Schema:
             'type': Or('csv', 'okta', 'ldap', 'adobe_console'), #TODO: single "source of truth" for these options
         },
         'user_sync': {
-            'create_users': bool,
-            'deactivate_users': bool,
             'sign_only_limit': Or(int, Regex(r'^\d+%$')),
         },
         'user_management': [{
@@ -43,8 +41,9 @@ def config_schema() -> Schema:
             'file_log_level': Or('info', 'debug'), #TODO: what are the valid values here?
             'console_log_level': Or('info', 'debug'), #TODO: what are the valid values here?
         },
-        'invocation_defaults': {
-            'users': Or('mapped', 'all'), #TODO: single "source of truth" for these options
+        Optional('invocation_defaults'): {
+            'test_mode':  bool,
+            'users': Or('mapped', 'all', ['group', And(str, len)])
             #'directory_group_filter': Or('mapped', 'all', None)
         }
     })
@@ -70,7 +69,8 @@ class SignConfigLoader(ConfigLoader):
     }
 
     invocation_defaults = {
-        'users': ['mapped']
+        'users': ['mapped'],
+        'test_mode': False
     }
 
     DEFAULT_ORG_NAME = 'primary'
@@ -100,10 +100,13 @@ class SignConfigLoader(ConfigLoader):
                     raise AssertionException('Okta connector module does not support "--users all"')
             elif users_action == 'mapped':
                 options['directory_group_mapped'] = True
+
+
             elif users_action == 'group':
-                if len(users_spec) != 2:
+                if len(users_spec) < 2:
                     raise AssertionException('You must specify the groups to read when using the users "group" option')
-                options['directory_group_filter'] = users_spec[1].split(',')
+                dgf = users_spec[1].split(',') if len(users_spec) == 2 else users_spec[1:]
+                options['directory_group_filter'] = list({d.strip() for d in dgf})
             else:
                 raise AssertionException('Unknown option "%s" for users' % users_action)
         return options
@@ -190,13 +193,7 @@ class SignConfigLoader(ConfigLoader):
         sign_orgs = self.main_config.get_dict('sign_orgs')
         options['sign_orgs'] = sign_orgs
         user_sync = self.main_config.get_dict_config('user_sync')
-        options['create_users'] = user_sync.get_bool('create_users')
-        options['deactivate_users'] = user_sync.get_bool('deactivate_users')
         options['sign_only_limit'] = user_sync.get_value('sign_only_limit', (int, str))
-        invocation_defaults = self.main_config.get_dict_config('invocation_defaults')
-        options['users'] = invocation_defaults.get_string('users')
-        # set the directory group filter from the mapping, if requested.
-        # This must come late, after any prior adds to the mapping from other parameters.
         if options.get('directory_group_mapped'):
             options['directory_group_filter'] = set(six.iterkeys(self.directory_groups))
         return options

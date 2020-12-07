@@ -1,13 +1,13 @@
+import logging
+
 import pytest
 import six
+from mock import MagicMock
 
 from user_sync.config.sign_sync import SignConfigLoader
-from user_sync.connector.directory import DirectoryConnector
-from user_sync.engine.sign import SignSyncEngine
 from user_sync.connector.connector_sign import SignConnector
+from user_sync.engine.sign import SignSyncEngine
 from user_sync.engine.umapi import AdobeGroup
-from mock import patch
-import logging
 
 
 @pytest.fixture
@@ -31,21 +31,20 @@ def directory_user():
                                 'country': 'US'}}}
 
 def test_load_users_and_groups(example_engine, example_user, directory_user):
-    dc = DirectoryConnector
 
-    user = {'directory_user': {'user@example.com': example_user}}
+    dc = MagicMock()
+    example_user['groups'] = ["Sign Users 1"]
+    user =  {'user@example.com': example_user}
 
     def dir_user_replacement(groups, extended_attributes, all_users):
-        return six.itervalues(user)
+        return user.values()
 
     dc.load_users_and_groups = dir_user_replacement
     mapping = {}
-    adobeGroup = AdobeGroup('Group 1', 'primary')
-    adobeGroups = []
-    adobeGroups.append(adobeGroup)
+    adobeGroups = [AdobeGroup('Group 1', 'primary')]
     mapping['Sign Users'] = {'groups': adobeGroups}
     example_engine.read_desired_user_groups(mapping, dc)
-    assert directory_user == user
+    assert example_engine.directory_user_by_user_key == user
 
 
 def test_get_directory_user_key(example_engine, example_user):

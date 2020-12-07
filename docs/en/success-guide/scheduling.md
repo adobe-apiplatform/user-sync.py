@@ -33,6 +33,8 @@ Check the documentation on the windows task scheduler (help schtasks) for more d
 
 Note that often when setting up scheduled tasks, commands that work from the command line do not work in the scheduled task because the current directory or user id is different.  It is a good idea to run one of the test mode commands (described in the "Make a Test Run" section) the first time you try the scheduled task.
 
+When scheduling your task please limit your sync to once a day and consider a time that works best for you, taking into consideration other timezones and clients.  
+
 
 ## Setting Up Scheduled Run on Unix-Based Systems
 
@@ -45,14 +47,15 @@ First, create a shell script with the invocation of user-sync piped to a scan to
 
 You need to fill in your specific User Sync command line options and the email address to which the report should be sent.
 
-This entry in  the Unix crontab will run the User Sync tool at 4 AM each day: 
+This entry in the Unix crontab will run the User Sync tool at 1 AM each day: 
 
-	0 4 * * *  path_to_Sync_shell_command/run_sync.sh 
+	0 1 * * *  path_to_Sync_shell_command/run_sync.sh 
 
-Cron can also be setup to email results to a specified user or mailing list.  Check the documentation on cron for you Unix system for more details.
+Cron can also be setup to email results to a specified user or mailing list.  Check the documentation on cron for your Unix system for more details.
 
 Note that often when setting up scheduled tasks, commands that work from the command line do not work in the scheduled task because the current directory or user id is different.  It is a good idea to run one of the test mode commands (described in the "Make a Test Run" section) the first time you try the scheduled task.
 
+When scheduling your cron job please limit your sync to once a day and consider a time that works best for you, taking into consideration other timezones and clients.  
 
 [Previous Section](command_line_options.md) \| [Back to Contents](index.md) 
 

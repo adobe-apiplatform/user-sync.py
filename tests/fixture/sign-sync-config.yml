@@ -12,10 +12,6 @@ identity_source:
   
 # Options that govern the synchronization of users
 user_sync:
-  # Flag to (dis)allow creation of new users in the Sign Neptune Console
-  create_users: False
-  # Flag to (dis)allow deactivation of users in the Sign Neptune Console
-  deactivate_users: False
   sign_only_limit: 100
  
 # User management group/role mappings
@@ -54,3 +50,4 @@ logging:
 # Defaults for options that can be passed as CLI options
 invocation_defaults:
   users: mapped
+  test_mode: False
