@@ -26,10 +26,10 @@ jobs:
         python-version: '3.x'
     - name: Install dependencies
       run: |
-		pip install external\okta-0.0.3.1-py2.py3-none-any.whl
-		pip install -e .
-		pip install -e .[test]
-		pip install -e .[setup]
+	pip install external\okta-0.0.3.1-py2.py3-none-any.whl
+	pip install -e .
+	pip install -e .[test]
+	pip install -e .[setup]
 
     - name: Test with pytest
       run: |
