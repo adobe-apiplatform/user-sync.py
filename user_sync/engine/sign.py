@@ -167,7 +167,7 @@ class SignSyncEngine:
                 directory_user, sign_user, admin_roles)
             if sign_user is None:
                 # Insert new user if flag is enabled and if Neptune Console
-                if sign_connector.create_users is True:
+                if sign_connector.create_users:
                     self.insert_new_users(
                         sign_connector, directory_user, user_roles, group_id, assignment_group)
                 else:
@@ -319,13 +319,7 @@ class SignSyncEngine:
         :param assignment_group:
         :return:
         """
-        update_data = {
-            "email": sign_user['email'],
-            "firstName": sign_user['firstName'],
-            "groupId": group_id,
-            "lastName": sign_user['lastName'],
-            "roles": user_roles,
-        }
+        update_data = self.construct_sign_user(sign_user, group_id, user_roles)
         if sign_user['group'].lower() == assignment_group.lower() and self.roles_match(user_roles, sign_user['roles']):
             self.logger.debug(
                 "skipping Sign update for '{}' -- no updates needed".format(directory_user['email']))
@@ -347,13 +341,7 @@ class SignSyncEngine:
         :param assignment_group:
         :return:
         """
-        insert_data = {
-            "email": directory_user['email'],
-            "firstName": directory_user['firstname'],
-            "groupId": group_id,
-            "lastName": directory_user['lastname'],
-            "roles": user_roles,
-        }
+        insert_data = self.construct_sign_user(directory_user, group_id, user_roles)
         try:
             sign_connector.insert_user(insert_data)
             self.logger.info("Inserted sign user '{}', group: '{}', roles: {}".format(
@@ -380,3 +368,12 @@ class SignSyncEngine:
                     self.logger.error("Error deactivating user {}, {}".format(sign_user['email'], e))
                 return
             
+    def construct_sign_user(self, user, group_id, user_roles):
+        user_data = {
+            "email": user['email'],
+            "firstName": user['firstname'],
+            "groupId": group_id,
+            "lastName": user['lastname'],
+            "roles": user_roles,
+        }
+        return user_data

@@ -40,8 +40,10 @@ class SignConnector(object):
         sign_builder = user_sync.config.common.OptionsBuilder(caller_config)
         sign_builder.require_string_value('host')
         sign_builder.require_string_value('admin_email')
-        self.create_users = sign_builder.set_bool_value('create_users', False)
-        self.deactivate_users = sign_builder.set_bool_value('deactivate_users', False)
+        #self.create_users = sign_builder.set_bool_value('create_users', False)
+        #self.deactivate_users = sign_builder.set_bool_value('deactivate_users', False)
+        self.create_users = caller_config.get_bool('create_users', False)
+        self.deactivate_users = caller_config.get_bool('deactivate_users', False)
 
         options = sign_builder.get_options()
         integration_key = caller_config.get_credential('integration_key', options['admin_email'])
