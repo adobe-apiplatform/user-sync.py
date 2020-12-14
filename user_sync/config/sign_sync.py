@@ -69,7 +69,7 @@ class SignConfigLoader(ConfigLoader):
     }
 
     invocation_defaults = {
-        'users': ['mapped'],
+        'users': 'mapped',
         'test_mode': False
     }
 
