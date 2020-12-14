@@ -42,8 +42,8 @@ def config_schema() -> Schema:
             'console_log_level': Or('info', 'debug'), #TODO: what are the valid values here?
         },
         Optional('invocation_defaults'): {
-            'test_mode':  bool,
-            'users': Or('mapped', 'all', ['group', And(str, len)])
+            Optional('test_mode'):  bool,
+            Optional('users'): Or('mapped', 'all', ['group', And(str, len)])
             #'directory_group_filter': Or('mapped', 'all', None)
         }
     })
