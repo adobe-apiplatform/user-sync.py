@@ -34,12 +34,12 @@ def config_schema() -> Schema:
                 Or(None, 'GROUP_ADMIN', 'ACCOUNT_ADMIN')
                 ]), #TODO: single "source of truth" for these options
         }],
-        'logging': {
-            'log_to_file': bool,
-            'file_log_directory': And(str, len),
-            'file_log_name_format': And(str, len),
-            'file_log_level': Or('info', 'debug'), #TODO: what are the valid values here?
-            'console_log_level': Or('info', 'debug'), #TODO: what are the valid values here?
+        Optional('logging'): {
+            Optional('log_to_file'): bool,
+            Optional('file_log_directory'): And(str, len),
+            Optional('file_log_name_format'): And(str, len),
+            Optional('file_log_level'): Or('info', 'debug'), #TODO: what are the valid values here?
+            Optional('console_log_level'): Or('info', 'debug'), #TODO: what are the valid values here?
         },
         Optional('invocation_defaults'): {
             Optional('test_mode'):  bool,
