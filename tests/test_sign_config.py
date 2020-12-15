@@ -45,28 +45,63 @@ def test_invocation_defaults(modify_sign_config, tmp_sign_connector_config, tmp_
 # NOTE: tmp_sign_connector_config and tmp_config_files are needed to prevent the ConfigFileLoader
 # from complaining that there are no temporary sign connector or ldap connector files
 def test_group_config(modify_sign_config, tmp_sign_connector_config, tmp_config_files):
-    """ensure that group mappings are loaded correctly"""
-    # simple case
-    group_config = [{'directory_group': 'Test Group 1', 'sign_group': 'Sign Group 1', 'admin_role': None}]
-    sign_config_file = modify_sign_config(['user_management'], group_config)
-    args = {'config_filename': sign_config_file}
-    config = SignConfigLoader(args)
-    group_mappings = config.get_directory_groups()
-    assert 'Test Group 1' in group_mappings
-    assert group_mappings['Test Group 1']['groups'] == [AdobeGroup.create('Sign Group 1')]
 
-    # complex case
-    group_config.append({'directory_group': 'Test Group 2', 'sign_group': 'Sign Group 2', 'admin_role': None})
-    group_config.append({'directory_group': 'Test Group 2', 'sign_group': 'Sign Group 3', 'admin_role': None})
-    sign_config_file = modify_sign_config(['user_management'], group_config)
-    args = {'config_filename': sign_config_file}
-    config = SignConfigLoader(args)
-    group_mappings = config.get_directory_groups()
-    assert len(group_mappings) == 2
-    assert 'Test Group 1' in group_mappings
-    assert 'Test Group 2' in group_mappings
-    for mapping in group_mappings['Test Group 2']['groups']:
-        assert mapping in [AdobeGroup.create('Sign Group 2'), AdobeGroup.create('Sign Group 3')]
+    def load_sign_groups(group_config):
+        sign_config_file = modify_sign_config(['user_management'], group_config)
+        args = {'config_filename': sign_config_file}
+        config = SignConfigLoader(args)
+        return config.get_directory_groups()
+
+    def check_mapping(mappings, name, priority, roles, sign_groups):
+        assert name in mappings
+        assert mappings[name]['priority'] == priority
+        for r in roles:
+            assert r in mappings[name]['roles']
+        for g in sign_groups:
+            assert AdobeGroup.create(g) in mappings[name]['groups']
+
+    group_config = [
+        {'directory_group': 'Test Group 1', 'sign_group': 'Sign Group 1'},
+        {'directory_group': 'Test Group Admins 1', 'sign_group': None, 'group_admin': True, 'account_admin': False}
+    ]
+    group_mappings = load_sign_groups(group_config)
+    check_mapping(group_mappings, 'Test Group 1', 0, [], ['Sign Group 1'])
+    check_mapping(group_mappings, 'Test Group Admins 1', 1, ['GROUP_ADMIN'], [])
+
+    group_config = [
+        {'directory_group': 'Test Group Admins 1', 'sign_group': None, 'group_admin': True},
+    ]
+    group_mappings = load_sign_groups(group_config)
+    check_mapping(group_mappings, 'Test Group Admins 1', 0, ['GROUP_ADMIN'], [])
+
+    group_config = [
+        {'directory_group': 'Test Group 1', 'sign_group': 'Sign Group 1', 'group_admin': True},
+        {'directory_group': 'Test Group 1', 'sign_group': 'Sign Group 1', 'account_admin': True}
+    ]
+    group_mappings = load_sign_groups(group_config)
+    check_mapping(group_mappings, 'Test Group 1', 0, ['GROUP_ADMIN', 'ACCOUNT_ADMIN'], ['Sign Group 1'])
+
+    group_config = [
+        {'directory_group': 'Test Group 1', 'sign_group': 'Sign Group 1'},
+        {'directory_group': 'Test Group 2', 'sign_group': 'Sign Group 1'},
+        {'directory_group': 'Test Group 2', 'sign_group': None, 'group_admin': True},
+        {'directory_group': 'Test Group 2', 'sign_group': None, 'account_admin': True},
+        {'directory_group': 'Test Group Admins 2', 'sign_group': None, 'account_admin': True}
+    ]
+    group_mappings = load_sign_groups(group_config)
+    check_mapping(group_mappings, 'Test Group 1', 0, [], ['Sign Group 1'])
+    check_mapping(group_mappings, 'Test Group 2', 1, ['GROUP_ADMIN', 'ACCOUNT_ADMIN'], ['Sign Group 1'])
+    check_mapping(group_mappings, 'Test Group Admins 2', 4, ['ACCOUNT_ADMIN'], [])
+
+    group_config = [
+        {'directory_group': 'Test Group 1'},
+        {'directory_group': 'Test Group 2', 'sign_group': 'Sign Group 1'},
+        {'directory_group': 'Test Group 1', 'sign_group': 'Sign Group 2'},
+        {'directory_group': 'Test Group 2', 'sign_group': 'Sign Group 2'},
+    ]
+    group_mappings = load_sign_groups(group_config)
+    check_mapping(group_mappings, 'Test Group 1', 0, [], ['Sign Group 2'])
+    check_mapping(group_mappings, 'Test Group 2', 1, [], ['Sign Group 1', 'Sign Group 2'])
 
 
 # NOTE: tmp_sign_connector_config and tmp_config_files are needed to prevent the ConfigFileLoader

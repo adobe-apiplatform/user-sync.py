@@ -1,12 +1,10 @@
 import logging
-from collections import defaultdict
 
 import six
 
-from user_sync import error, identity_type
-from user_sync.config.common import DictConfig, ConfigFileLoader
+from user_sync import identity_type
+from user_sync.config.common import DictConfig, ConfigFileLoader, as_set
 from user_sync.connector.connector_sign import SignConnector
-from user_sync.engine.umapi import AdobeGroup
 from user_sync.error import AssertionException
 from user_sync.helper import normalize_string
 
@@ -148,9 +146,7 @@ class SignSyncEngine:
                 assignment_group = self.DEFAULT_GROUP_NAME
 
             group_id = sign_connector.get_group(assignment_group.lower())
-            admin_roles = self.retrieve_admin_role(directory_user)
-            user_roles = self.resolve_new_roles(
-                directory_user, sign_user, admin_roles)
+            user_roles = self.retrieve_admin_role(directory_user)
             if sign_user is None:
                 # Insert new user if flag is enabled and if Neptune Console
                 if sign_connector.create_users is True:
@@ -172,57 +168,37 @@ class SignSyncEngine:
             if user not in directory_users:
                 self.sign_only_users_by_email[user] = data
 
-
     @staticmethod
-    def roles_match(resolved_roles, sign_roles):
+    def roles_match(resolved_roles, sign_roles) -> bool:
         """
         Checks if the existing user role in Sign Console is same as in configuration
         :param resolved_roles:
         :param sign_roles:
         :return:
         """
-        if isinstance(sign_roles, str):
-            sign_roles = [sign_roles]
-        return sorted(resolved_roles) == sorted(sign_roles)
+        return as_set(resolved_roles) == as_set(sign_roles)
 
     @staticmethod
-    def resolve_new_roles(directory_user, sign_user, user_roles):
+    def should_sync(directory_user, org_name) -> bool:
         """
-        Updates the user role (if applicable) as specified in the configuration
-        :param resolved_roles:
-        :param sign_roles:
-        :param user_roles:
-        :return:
-        """
-        if (user_roles is None or all(x is None for x in user_roles)):
-            if sign_user is None:
-                return ['NORMAL_USER']
-            else:
-                return sign_user['roles']
-        else:
-           return user_roles
-
-    def should_sync(self, directory_user, org_name):
-        """
-        Initial gatekeeping to determine if user is candidate for Sign sync
-        Any checks that don't depend on the Sign record go here
-        Sign record must be defined for user, and user must belong to at least one entitlement group
-        and user must be accepted identity type
+        Check if the user belongs to org.  If user has NO groups specified,
+        we assume primary and return True (else we cannot assign roles without
+        groups)
         :param umapi_user:
         :param org_name:
         :return:
         """
-        # if using the --users all option, some directory_user dicts may not have a key for sign_groups
-        # if this is the case, they are not a candidate for Sign sync
-        if directory_user.get('sign_groups') is None:
-            return False
-        return directory_user['sign_groups']['groups'][0].umapi_name == org_name
+        group = directory_user['sign_group']['group']
+        return group.umapi_name == org_name if group else True
 
-    def retrieve_assignment_group(self, directory_user):
-        return directory_user['sign_groups']['groups'][0].group_name
+    @staticmethod
+    def retrieve_assignment_group(directory_user) -> str:
+        group = directory_user['sign_group']['group']
+        return group.group_name if group else None
 
-    def retrieve_admin_role(self, directory_user):
-        return directory_user['sign_groups']['roles']
+    @staticmethod
+    def retrieve_admin_role(directory_user) -> list:
+        return directory_user['sign_group']['roles']
 
     @staticmethod
     def _groupify(org_name, groups):
@@ -271,9 +247,8 @@ class SignSyncEngine:
                 self.logger.warning(
                     "Ignoring directory user with empty user key: %s", directory_user)
                 continue
-            if directory_group_filter is not None:
-                sign_groups = self.extract_mapped_group(directory_user['groups'], mappings)
-                directory_user['sign_groups'] = sign_groups
+            sign_group = self.extract_mapped_group(directory_user['groups'], mappings)
+            directory_user['sign_group'] = sign_group
             directory_user_by_user_key[user_key] = directory_user
 
     def is_directory_user_in_groups(self, directory_user, groups):
@@ -298,10 +273,36 @@ class SignSyncEngine:
             return six.text_type(email)
         return None
 
-    def extract_mapped_group(self, directory_user_group, group_mapping):
-        for directory_group, sign_group_mapping in group_mapping.items():
-            if (directory_user_group[0] == directory_group):
-                return sign_group_mapping
+    @staticmethod
+    def extract_mapped_group(directory_user_group, group_mapping) -> dict:
+
+        roles = set()
+        matched_group = None
+
+        matched_mappings = {g: m for g, m in group_mapping.items() if g in directory_user_group}
+        ordered_mappings = list(matched_mappings.values())
+        ordered_mappings.sort(key=lambda x: x['priority'])
+
+        if ordered_mappings is not None:
+            groups = []
+            for g in ordered_mappings:
+                roles |= g['roles']
+                if g['groups']:
+                    groups.extend(g['groups'])
+            if groups:
+                matched_group = groups[0]
+
+        # return roles as list instead of set
+        sign_group_mapping = {
+            'group': matched_group,
+            'roles': list(roles) if roles else ['NORMAL_USER']
+        }
+
+        # For illustration.  Just return line 322 instead.
+        return sign_group_mapping
+
+
+
 
     def update_existing_users(self, sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group):
         """
