@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-   
+        extension_support: [0, 1]
    
     steps:
     - uses: actions/checkout@v2
@@ -38,7 +38,9 @@ jobs:
         pip install -e .
         pip install -e .[test]
         pip install -e .[setup]
-    - run: |
-       make standalone
+    - name: Create build
+      env:
+        UST_EXTENSION: ${{ matrix.extension_support }}
+      run: make
     - name: Test with pytest
       run: pytest
