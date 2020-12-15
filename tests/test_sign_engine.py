@@ -57,8 +57,8 @@ def test_get_directory_user_key(example_engine, example_user):
         {'': {'username': 'user@example.com'}}) is None
 
 
-def test_insert_new_users(example_user):
-    sign_engine = SignSyncEngine
+def test_insert_new_users(example_engine, example_user):
+    sign_engine = example_engine
     sign_connector = SignConnector
     umapi_user = example_user
     user_roles = ['NORMAL_USER']
@@ -76,14 +76,13 @@ def test_insert_new_users(example_user):
         pass
     sign_connector.insert_user = insert_user
     sign_engine.logger = logging.getLogger()
-    sign_engine.insert_new_users(
-        sign_engine, sign_connector, umapi_user, user_roles, group_id, assignment_group)
+    sign_engine.insert_new_users(sign_connector, umapi_user, user_roles, group_id, assignment_group)
     assert True
     assert insert_data['email'] == 'user@example.com'
 
 
-def test_deactivate_sign_users(example_user):
-    sign_engine = SignSyncEngine
+def test_deactivate_sign_users(example_engine, example_user):
+    sign_engine = example_engine
     sign_connector = SignConnector
     directory_users = {}
     directory_users['federatedID, example.user@signtest.com'] = {
@@ -101,8 +100,7 @@ def test_deactivate_sign_users(example_user):
     sign_connector.get_users = get_users
     sign_engine.logger = logging.getLogger()
     org_name = 'primary'
-    sign_engine.deactivate_sign_users(
-        sign_engine, directory_users, sign_connector, org_name)
+    sign_engine.deactivate_sign_users(directory_users, sign_connector, org_name)
     assert True
     assert sign_users['example.user@signtest.com']['email'] == 'example.user@signtest.com'
 
