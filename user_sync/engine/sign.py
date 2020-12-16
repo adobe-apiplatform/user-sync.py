@@ -316,13 +316,6 @@ class SignSyncEngine:
         :return:
         """
         update_data = self.construct_sign_user(sign_user, group_id, user_roles)
-        update_data = {
-            "email": sign_user['email'],
-            "firstName": sign_user['firstName'],
-            "groupId": group_id,
-            "lastName": sign_user['lastName'],
-            "roles": user_roles,
-        }
         groups_match = sign_user['group'].lower() == assignment_group.lower()
         roles_match = self.roles_match(user_roles, sign_user['roles'])
 
