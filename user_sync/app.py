@@ -31,6 +31,7 @@ from click_default_group import DefaultGroup
 
 import user_sync.certgen
 import user_sync.cli
+from user_sync.config.error import ConfigValidationError
 import user_sync.config.sign_sync
 import user_sync.config.user_sync
 import user_sync.connector.connector_umapi
@@ -204,7 +205,10 @@ def sync(**kwargs):
 def sign_sync(**kwargs):
     """Run Sign Sync """
     # load the config files (sign-sync-config.yml) and start the file logger
-    run_sync(sign_config.SignConfigLoader(kwargs), begin_work_sign)
+    try:
+        run_sync(sign_config.SignConfigLoader(kwargs), begin_work_sign)
+    except ConfigValidationError as e:
+        logger.critical('Schema validation failed. Detailed message: {}'.format(e))
 
 
 def begin_work_sign(sign_config_loader):
