@@ -20,6 +20,7 @@
 from sys import platform
 import logging
 import os
+import platform
 import shutil
 import sys
 from datetime import datetime
@@ -176,8 +177,9 @@ def sync(**kwargs):
         config_loader = user_sync.config.ConfigLoader(kwargs)
         init_log(config_loader.get_logging_config())
 
+        test_mode = " (TEST MODE)" if config_loader.get_invocation_options()['test_mode'] else ''
         # add start divider, app version number, and invocation parameters to log
-        run_stats = user_sync.helper.JobStats('Run (User Sync version: ' + app_version + ')', divider='=')
+        run_stats = user_sync.helper.JobStats('Run (User Sync version: ' + app_version + ')' + test_mode, divider='=')
         run_stats.log_start(logger)
         log_parameters(sys.argv[1:], config_loader)
 
@@ -308,12 +310,24 @@ def init_log(logging_config):
     """
     :type logging_config: user_sync.config.DictConfig
     """
+
+    def progress(self, count, total, message="", *args, **kws):
+        if self.show_progress:
+            count = int(count)
+            total = int(total)
+            percent_done = round(100*count/total, 1) if total > 0 else 0
+            message = "{0}/{1} ({2}%) {3}".format(count, total, percent_done, message)
+        if message:
+            self._log(logging.INFO, message, args, **kws)
+    logging.Logger.progress = progress
+
     builder = user_sync.config.OptionsBuilder(logging_config)
     builder.set_bool_value('log_to_file', False)
     builder.set_string_value('file_log_directory', 'logs')
     builder.set_string_value('file_log_name_format', '{:%Y-%m-%d}.log')
     builder.set_string_value('file_log_level', 'info')
     builder.set_string_value('console_log_level', 'info')
+    builder.set_bool_value('log_progress', True)
     options = builder.get_options()
 
     level_lookup = {
@@ -324,6 +338,7 @@ def init_log(logging_config):
         'critical': logging.CRITICAL
     }
 
+    logging.Logger.show_progress = bool(options['log_progress'])
     console_log_level = level_lookup.get(options['console_log_level'])
     if console_log_level is None:
         console_log_level = logging.INFO
@@ -358,7 +373,8 @@ def log_parameters(argv, config_loader):
     :type config_loader: user_sync.config.ConfigLoader
     :return: None
     """
-    logger.info('Python version: %s.%s.%s on %s' % (sys.version_info[:3] + (sys.platform,)))
+    logger.info('User Sync {0} - Python {1} - {2} {3}'
+                .format(app_version, platform.python_version(), platform.system(), platform.version()))
     logger.info('------- Command line arguments -------')
     logger.info(' '.join(argv))
     logger.debug('-------- Resulting invocation options --------')
