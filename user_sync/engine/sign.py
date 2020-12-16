@@ -377,12 +377,7 @@ class SignSyncEngine:
 
     def construct_sign_user(self, user, group_id, user_roles):
 
-        if 'firstName' in user:
-            user['firstname'] = user.pop('firstName')
-        if 'lastName' in user:
-            user['lastname'] = user.pop('lastName')
-        if 'Email' in user:
-            user['email'] = user.pop('Email')
+        user = {k.lower():u for k,u in user.items()}
 
         user_data = {
             "email": user['email'],
