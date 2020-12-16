@@ -33,16 +33,16 @@ def config_schema() -> Schema:
             Optional('group_admin', default=False): Or(bool, None),
             Optional('account_admin', default=False): Or(bool, None)
         }],
-        'logging': {
-            'log_to_file': bool,
-            'file_log_directory': And(str, len),
-            'file_log_name_format': And(str, len),
-            'file_log_level': Or('info', 'debug'), #TODO: what are the valid values here?
-            'console_log_level': Or('info', 'debug'), #TODO: what are the valid values here?
+        Optional('logging'): {
+            Optional('log_to_file'): bool,
+            Optional('file_log_directory'): And(str, len),
+            Optional('file_log_name_format'): And(str, len),
+            Optional('file_log_level'): Or('info', 'debug'), #TODO: what are the valid values here?
+            Optional('console_log_level'): Or('info', 'debug'), #TODO: what are the valid values here?
         },
         Optional('invocation_defaults'): {
-            'test_mode':  bool,
-            'users': Or('mapped', 'all', ['group', And(str, len)])
+            Optional('test_mode'):  bool,
+            Optional('users'): Or('mapped', 'all', ['group', And(str, len)])
             #'directory_group_filter': Or('mapped', 'all', None)
         }
     })
