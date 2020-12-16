@@ -208,7 +208,7 @@ def sign_sync(**kwargs):
     try:
         run_sync(sign_config.SignConfigLoader(kwargs), begin_work_sign)
     except ConfigValidationError as e:
-        logger.critical('Schema validation failed. Detailed message: %s' %e.args)
+        logger.critical('Schema validation failed. Detailed message: {}'.format(e))
 
 
 def begin_work_sign(sign_config_loader):
