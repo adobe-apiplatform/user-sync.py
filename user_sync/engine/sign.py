@@ -2,11 +2,9 @@ import logging
 
 import six
 
-from user_sync import identity_type
 from user_sync.config.common import DictConfig, ConfigFileLoader, as_set
 from user_sync.connector.connector_sign import SignConnector
 from user_sync.error import AssertionException
-from user_sync.helper import normalize_string
 
 
 class SignSyncEngine:
@@ -56,7 +54,7 @@ class SignSyncEngine:
         for org in sign_orgs:
             self.connectors[org] = SignConnector(
                 self.config_loader.load_root_config(sign_orgs[org]), org, options['test_mode'])
-                
+
         self.action_summary = {}
         self.sign_users_by_org = {}
         self.total_sign_user_count = 0
@@ -91,7 +89,7 @@ class SignSyncEngine:
                     sign_connector.create_group(directory_group)
             # Update user details or insert new user        
             self.update_sign_users(
-                    self.directory_user_by_user_key, sign_connector, org_name)
+                self.directory_user_by_user_key, sign_connector, org_name)
             if sign_connector.deactivate_users is True:
                 self.deactivate_sign_users(self.directory_user_by_user_key, sign_connector, org_name)
         self.log_action_summary()
@@ -301,9 +299,6 @@ class SignSyncEngine:
         # For illustration.  Just return line 322 instead.
         return sign_group_mapping
 
-
-
-
     def update_existing_users(self, sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group):
         """
         Constructs the data for update and invokes the connector to update the user if applicable
@@ -360,7 +355,7 @@ class SignSyncEngine:
         except AssertionException as e:
             self.logger.error(format(e))
         return
-        
+
     def deactivate_sign_users(self, directory_users, sign_connector, org_name):
         """
         Searches users to deactivate in the Sign Netpune console
@@ -379,8 +374,16 @@ class SignSyncEngine:
                 except AssertionException as e:
                     self.logger.error("Error deactivating user {}, {}".format(sign_user['email'], e))
                 return
-            
+
     def construct_sign_user(self, user, group_id, user_roles):
+
+        if 'firstName' in user:
+            user['firstname'] = user.pop('firstName')
+        if 'lastName' in user:
+            user['lastname'] = user.pop('lastName')
+        if 'Email' in user:
+            user['email'] = user.pop('Email')
+
         user_data = {
             "email": user['email'],
             "firstName": user['firstname'],
