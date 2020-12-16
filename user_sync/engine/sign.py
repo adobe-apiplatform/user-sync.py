@@ -1,12 +1,10 @@
 import logging
-from collections import defaultdict
 
 import six
 
-from user_sync import error, identity_type
-from user_sync.config.common import DictConfig, ConfigFileLoader
+from user_sync import identity_type
+from user_sync.config.common import DictConfig, ConfigFileLoader, as_set
 from user_sync.connector.connector_sign import SignConnector
-from user_sync.engine.umapi import AdobeGroup
 from user_sync.error import AssertionException
 from user_sync.helper import normalize_string
 
@@ -16,20 +14,18 @@ class SignSyncEngine:
         'create_users': False,
         'deactivate_users': False,
         'directory_group_filter': None,
-        'extended_attributes': None,
         'identity_source': {
             'type': 'ldap',
             'connector': 'connector-ldap.yml'
         },
         'invocation_defaults': {
-            'users': 'mapped'
+            'users': 'mapped',
+            'test_mode': False
         },
         'sign_orgs': [
             {'primary': 'connector-sign.yml'}
         ],
         'user_sync': {
-            'create_users': False,
-            'deactivate_users': False,
             'sign_only_limit': 100
         }
     }
@@ -49,7 +45,6 @@ class SignSyncEngine:
         options.update(caller_options)
         self.options = options
         self.logger = logging.getLogger(self.name)
-        self.test_mode = options.get('test_mode')
         sync_config = DictConfig('<%s configuration>' %
                                  self.name, caller_options)
         self.directory_user_by_user_key = {}
@@ -60,16 +55,20 @@ class SignSyncEngine:
         # and org specific parameter embedded in Sign Connector as value
         for org in sign_orgs:
             self.connectors[org] = SignConnector(
-                self.config_loader.load_root_config(sign_orgs[org]), org)
-        self.sign_users_by_org = {}
-        self.total_sign_user_count = set()
-        self.sign_users_created_count = set()
-        self.sign_users_removed_count = set()
-        self.sign_users_updated_count = set()
-        self.sign_users_with_matched_groups = set()
-        self.sign_users_assigned_to_groups = set()
-        self.sign_users_assigned_to_admin_role = set()
+                self.config_loader.load_root_config(sign_orgs[org]), org, options['test_mode'])
+                
         self.action_summary = {}
+        self.sign_users_by_org = {}
+        self.total_sign_user_count = 0
+        self.sign_users_created = set()
+        self.sign_users_deactivated = set()
+        self.sign_admins_matched = set()
+        self.sign_users_matched_groups = set()
+        self.sign_users_group_updates = set()
+        self.sign_users_role_updates = set()
+        self.sign_users_matched_no_updates = set()
+        self.directory_users_excluded = set()
+        self.sign_only_users_by_email = {}
 
     def run(self, directory_groups, directory_connector):
         """
@@ -78,9 +77,7 @@ class SignSyncEngine:
         :param directory_connector:
         :return:
         """
-        if self.test_mode:
-            self.logger.info("Sign Sync disabled in test mode")
-            return
+
         self.read_desired_user_groups(directory_groups, directory_connector)
 
         for org_name, sign_connector in self.connectors.items():
@@ -90,58 +87,41 @@ class SignSyncEngine:
             org_sign_groups = [x.lower() for x in sign_connector.sign_groups()]
             for directory_group in org_directory_groups:
                 if (directory_group.lower() not in org_sign_groups):
-                    self.logger.info(
-                        "Creating new Sign group: {}".format(directory_group))
+                    self.logger.info("Creating new Sign group: {}".format(directory_group))
                     sign_connector.create_group(directory_group)
             # Update user details or insert new user        
             self.update_sign_users(
                     self.directory_user_by_user_key, sign_connector, org_name)
-            if self.options['deactivate_users'] is True and sign_connector.neptune_console is True:
+            if sign_connector.deactivate_users is True:
                 self.deactivate_sign_users(self.directory_user_by_user_key, sign_connector, org_name)
-        #self.log_action_summary()
+        self.log_action_summary()
 
     def log_action_summary(self):
-        """
-        """
-        logger = self.logger
-        # find the total number of directory users and selected/filtered users
-        # Number of directory users read
-        self.action_summary['directory_users_read'] = len(self.directory_user_by_user_key)
-        # Number of Sign Admins mapped
-        #self.action_summary['sign_admins_matched'] = len(self.admin_roles)
-        # Total Number of Sign users
-        self.action_summary['sign_users_read'] = len(self.total_sign_user_count)
-        # Number of Sign users created/removed/updated
-        self.action_summary['sign_users_created'] = len(self.sign_users_created_count)
-        self.action_summary['sign_users_removed'] = len(self.sign_users_removed_count)
-        self.action_summary['sign_users_updated'] = len(self.sign_users_updated_count)
-        self.action_summary['sign_users_with_matched_groups'] = len(self.sign_users_with_matched_groups)
-        self.action_summary['sign_users_assigned_to_groups'] = len(self.sign_users_assigned_to_groups)
-        self.action_summary['sign_users_assigned_admin_role'] = len(self.sign_users_assigned_to_admin_role)
 
-        action_summary_description = [
-            ['directory_users_read', 'Number of directory users read'],
-            ['sign_users_read', ' Number of Sign users read'],
-            ['sign_users_created', 'Number of Sign users created'],
-            ['sign_users_removed', 'Number of Sign users removed'],
-            ['sign_users_updated', 'Number of Sign users updated'],
-            ['sign_admins_matched', 'Number of Sign admins matched'],
-            ['sign_users_with_matched_groups', 'Number of Sign users with matched groups'],
-            ['sign_users_assigned_to_groups', 'Number of Sign users with groups updated'],
-            ['sign_users_assigned_admin_role', 'Number of Sign users admin roles updated']
-        ]
+        self.action_summary = {
+            'Number of directory users read': len(self.directory_user_by_user_key),
+            'Number of directory selected for input': len(self.directory_user_by_user_key) - len(self.directory_users_excluded),
+            'Number of directory users excluded': len(self.directory_users_excluded),
+            'Number of Sign users read': self.total_sign_user_count,
+            'Number of Sign users not in directory (sign-only)': len(self.sign_only_users_by_email),
+            'Number of Sign users updated': len(self.sign_users_group_updates | self.sign_users_role_updates),
+            'Number of users with matched groups unchanged': len(self.sign_users_matched_groups),
+            'Number of users with admin roles unchanged': len(self.sign_admins_matched),
+            'Number of users with groups updated': len(self.sign_users_group_updates),
+            'Number of users admin roles updated': len(self.sign_users_role_updates),
+            'Number of users matched with no updates': len(self.sign_users_matched_no_updates),
+        }
 
-        pad = 0
-        for action_description in action_summary_description:
-            if len(action_description[1]) > pad:
-                pad = len(action_description[1])
+        if self.options['create_users']:
+            self.action_summary['Number of Sign users created'] = len(self.sign_users_created)
+        if self.options['deactivate_users']:
+            self.action_summary['Number of Sign users deactivated'] = len(self.sign_users_deactivated)
 
+        pad = max(len(k) for k in self.action_summary)
         header = '------- Action Summary -------'
-        logger.info('---------------------------' + header + '---------------------------')
-        for action_description in action_summary_description:
-            description = action_description[1].rjust(pad, ' ')
-            action_count = self.action_summary[action_description[0]]
-            logger.info('  %s: %s', description, action_count)
+        self.logger.info('---------------------------' + header + '---------------------------')
+        for description, count in self.action_summary.items():
+            self.logger.info('  {}: {}'.format(description.rjust(pad, ' '), count))
 
     def update_sign_users(self, directory_users, sign_connector, org_name):
         """
@@ -153,6 +133,7 @@ class SignSyncEngine:
         """
         # Fetch the list of active Sign users
         sign_users = sign_connector.get_users()
+        self.total_sign_user_count = len(sign_users)
         self.sign_users_by_org[org_name] = sign_users
         for _, directory_user in directory_users.items():
             sign_user = sign_users.get(directory_user['email'])
@@ -165,72 +146,59 @@ class SignSyncEngine:
                 assignment_group = self.DEFAULT_GROUP_NAME
 
             group_id = sign_connector.get_group(assignment_group.lower())
-            admin_roles = self.retrieve_admin_role(directory_user)
-            user_roles = self.resolve_new_roles(
-                directory_user, sign_user, admin_roles)
+            user_roles = self.retrieve_admin_role(directory_user)
             if sign_user is None:
                 # Insert new user if flag is enabled and if Neptune Console
-                if self.options['create_users'] is True and sign_connector.neptune_console is True:
+                if sign_connector.create_users is True:
                     self.insert_new_users(
                         sign_connector, directory_user, user_roles, group_id, assignment_group)
                 else:
+                    self.logger.info("User {} not present in Sign and will be skipped.".format(directory_user['email']))
+                    self.directory_users_excluded.add(directory_user['email'])
                     continue
             else:
                 # Update existing users
                 self.update_existing_users(
                     sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group)
+        self.resolve_sign_only_users(directory_users, sign_users)
 
+    def resolve_sign_only_users(self, directory_users, sign_users):
+
+        for user, data in sign_users.items():
+            if user not in directory_users:
+                self.sign_only_users_by_email[user] = data
 
     @staticmethod
-    def roles_match(resolved_roles, sign_roles):
+    def roles_match(resolved_roles, sign_roles) -> bool:
         """
         Checks if the existing user role in Sign Console is same as in configuration
         :param resolved_roles:
         :param sign_roles:
         :return:
         """
-        if isinstance(sign_roles, str):
-            sign_roles = [sign_roles]
-        return sorted(resolved_roles) == sorted(sign_roles)
+        return as_set(resolved_roles) == as_set(sign_roles)
 
     @staticmethod
-    def resolve_new_roles(directory_user, sign_user, user_roles):
+    def should_sync(directory_user, org_name) -> bool:
         """
-        Updates the user role (if applicable) as specified in the configuration
-        :param resolved_roles:
-        :param sign_roles:
-        :param user_roles:
-        :return:
-        """
-        if (user_roles is None or all(x is None for x in user_roles)):
-            if sign_user is None:
-                return ['NORMAL_USER']
-            else:
-                return sign_user['roles']
-        else:
-           return user_roles
-
-    def should_sync(self, directory_user, org_name):
-        """
-        Initial gatekeeping to determine if user is candidate for Sign sync
-        Any checks that don't depend on the Sign record go here
-        Sign record must be defined for user, and user must belong to at least one entitlement group
-        and user must be accepted identity type
+        Check if the user belongs to org.  If user has NO groups specified,
+        we assume primary and return True (else we cannot assign roles without
+        groups)
         :param umapi_user:
         :param org_name:
         :return:
         """
-        # if using the --users all option, some directory_user dicts may not have a key for sign_groups
-        # if this is the case, they are not a candidate for Sign sync
-        if directory_user.get('sign_groups') is None:
-            return False
-        return directory_user['sign_groups']['groups'][0].umapi_name == org_name
+        group = directory_user['sign_group']['group']
+        return group.umapi_name == org_name if group else True
 
-    def retrieve_assignment_group(self, directory_user):
-        return directory_user['sign_groups']['groups'][0].group_name
+    @staticmethod
+    def retrieve_assignment_group(directory_user) -> str:
+        group = directory_user['sign_group']['group']
+        return group.group_name if group else None
 
-    def retrieve_admin_role(self, directory_user):
-        return directory_user['sign_groups']['roles']
+    @staticmethod
+    def retrieve_admin_role(directory_user) -> list:
+        return directory_user['sign_group']['roles']
 
     @staticmethod
     def _groupify(org_name, groups):
@@ -261,27 +229,40 @@ class SignSyncEngine:
         directory_group_filter = options['directory_group_filter']
         if directory_group_filter is not None:
             directory_group_filter = set(directory_group_filter)
-        extended_attributes = options.get('extended_attributes')
-
         directory_user_by_user_key = self.directory_user_by_user_key
 
         directory_groups = set(six.iterkeys(mappings))
         if directory_group_filter is not None:
             directory_groups.update(directory_group_filter)
         directory_users = directory_connector.load_users_and_groups(groups=directory_groups,
-                                                                    extended_attributes=extended_attributes,
+                                                                    extended_attributes=[],
                                                                     all_users=directory_group_filter is None)
 
         for directory_user in directory_users:
+            if not self.is_directory_user_in_groups(directory_user, directory_group_filter):
+                continue
+
             user_key = self.get_directory_user_key(directory_user)
             if not user_key:
                 self.logger.warning(
                     "Ignoring directory user with empty user key: %s", directory_user)
                 continue
-            if directory_group_filter is not None:
-                sign_groups = self.extract_mapped_group(directory_user['groups'], mappings)
-                directory_user['sign_groups'] = sign_groups
+            sign_group = self.extract_mapped_group(directory_user['groups'], mappings)
+            directory_user['sign_group'] = sign_group
             directory_user_by_user_key[user_key] = directory_user
+
+    def is_directory_user_in_groups(self, directory_user, groups):
+        """
+        :type directory_user: dict
+        :type groups: set
+        :rtype bool
+        """
+        if groups is None:
+            return True
+        for directory_user_group in directory_user['groups']:
+            if directory_user_group in groups:
+                return True
+        return False
 
     def get_directory_user_key(self, directory_user):
         """
@@ -292,10 +273,36 @@ class SignSyncEngine:
             return six.text_type(email)
         return None
 
-    def extract_mapped_group(self, directory_user_group, group_mapping):
-        for directory_group, sign_group_mapping in group_mapping.items():
-            if (directory_user_group[0] == directory_group):
-                return sign_group_mapping
+    @staticmethod
+    def extract_mapped_group(directory_user_group, group_mapping) -> dict:
+
+        roles = set()
+        matched_group = None
+
+        matched_mappings = {g: m for g, m in group_mapping.items() if g in directory_user_group}
+        ordered_mappings = list(matched_mappings.values())
+        ordered_mappings.sort(key=lambda x: x['priority'])
+
+        if ordered_mappings is not None:
+            groups = []
+            for g in ordered_mappings:
+                roles |= g['roles']
+                if g['groups']:
+                    groups.extend(g['groups'])
+            if groups:
+                matched_group = groups[0]
+
+        # return roles as list instead of set
+        sign_group_mapping = {
+            'group': matched_group,
+            'roles': list(roles) if roles else ['NORMAL_USER']
+        }
+
+        # For illustration.  Just return line 322 instead.
+        return sign_group_mapping
+
+
+
 
     def update_existing_users(self, sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group):
         """
@@ -315,14 +322,28 @@ class SignSyncEngine:
             "lastName": sign_user['lastName'],
             "roles": user_roles,
         }
-        if sign_user['group'].lower() == assignment_group.lower() and self.roles_match(user_roles, sign_user['roles']):
+        groups_match = sign_user['group'].lower() == assignment_group.lower()
+        roles_match = self.roles_match(user_roles, sign_user['roles'])
+
+        if not roles_match:
+            self.sign_users_role_updates.add(sign_user['email'])
+        elif user_roles != ['NORMAL_USER']:
+            self.sign_admins_matched.add(sign_user['email'])
+        if not groups_match:
+            self.sign_users_group_updates.add(sign_user['email'])
+        else:
+            self.sign_users_matched_groups.add(sign_user['email'])
+
+        if groups_match and roles_match:
             self.logger.debug(
                 "skipping Sign update for '{}' -- no updates needed".format(directory_user['email']))
+            self.sign_users_matched_no_updates.add(sign_user['email'])
             return
         try:
             sign_connector.update_user(sign_user['userId'], update_data)
-            self.logger.info("Updated Sign user '{}', Group: '{}', Roles: {}".format(
-                directory_user['email'], assignment_group, update_data['roles']))
+            self.logger.info("Updated Sign user '{}', Group ({}): '{}', Roles ({}): {}".format(
+                directory_user['email'], 'unchanged' if groups_match else 'new', assignment_group,
+                'unchanged' if roles_match else 'new', update_data['roles']))
         except AssertionError as e:
             self.logger.error("Error updating user {}".format(e))
 
@@ -345,7 +366,8 @@ class SignSyncEngine:
         }
         try:
             sign_connector.insert_user(insert_data)
-            self.logger.info("Inserted Sign user '{}', Group: '{}', Roles: {}".format(
+            self.sign_users_created.add(directory_user['email'])
+            self.logger.info("Inserted sign user '{}', group: '{}', roles: {}".format(
                 directory_user['email'], assignment_group, insert_data['roles']))
         except AssertionException as e:
             self.logger.error(format(e))
@@ -358,15 +380,14 @@ class SignSyncEngine:
         :param sign_user:
         :return:
         """
-        #sign_users = self.sign_users_by_org[org_name]
-        #if sign_users is None:
         sign_users = sign_connector.get_users()
-        director_users_emails = []
-        director_users_emails = list(map(lambda directory_user:directory_user['email'].lower(), directory_users.values()))
+        directory_users_emails = list(map(lambda directory_user:directory_user['email'].lower(), directory_users.values()))
         for _, sign_user in sign_users.items():
-            if sign_user['email'].lower() not in director_users_emails:
+            if sign_user['email'].lower() not in directory_users_emails:
                 try:
                     sign_connector.deactivate_user(sign_user['userId'])
+                    self.sign_users_deactivated.add(sign_user['userId'])
+                    self.logger.info("Deactivated sign user '{}'".format(sign_user['email']))
                 except AssertionException as e:
                     self.logger.error("Error deactivating user {}, {}".format(sign_user['email'], e))
                 return
