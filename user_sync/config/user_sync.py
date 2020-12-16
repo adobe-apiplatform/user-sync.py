@@ -34,8 +34,7 @@ from user_sync import flags
 from user_sync.engine import umapi as rules
 from user_sync.engine.common import AdobeGroup, PRIMARY_TARGET_NAME
 from user_sync.error import AssertionException
-import user_sync.post_sync.connectors as post_sync_connectors
-from .common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options
+from .common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options, as_list
 
 
 class UMAPIConfigLoader(ConfigLoader):
@@ -48,8 +47,6 @@ class UMAPIConfigLoader(ConfigLoader):
                              '/directory_users/connectors/*': (True, False, None),
                              '/directory_users/extension': (True, False, None),
                              '/logging/file_log_directory': (False, False, "logs"),
-                             '/post_sync/connectors/sign_sync': (False, False, False),
-                             '/post_sync/connectors/future_feature': (False, False, False)
                              }
 
     # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files
@@ -287,7 +284,7 @@ class UMAPIConfigLoader(ConfigLoader):
                 primary_config_sources.append(item)
             elif isinstance(item, dict):
                 for key, val in six.iteritems(item):
-                    secondary_config_sources[key] = self.as_list(val)
+                    secondary_config_sources[key] = as_list(val)
         primary_config = self.create_umapi_options(primary_config_sources)
         secondary_configs = {key: self.create_umapi_options(val)
                              for key, val in six.iteritems(secondary_config_sources)}
@@ -324,7 +321,8 @@ class UMAPIConfigLoader(ConfigLoader):
         """
         options = {}
         connectors_config = self.get_directory_connector_configs()
-
+        if connectors_config is None:
+            raise AssertionException("Missing key 'connectors' in directory_users")
         if connector_name != 'csv' and connector_name not in connectors_config.value:
             raise AssertionException("Config file must be specified for connector type :: '{}'".format(connector_name))
 
@@ -386,46 +384,6 @@ class UMAPIConfigLoader(ConfigLoader):
                         raise AssertionError("No after_mapping_hook found in extension configuration")
         return options
 
-    def get_post_sync_options(self):
-        """
-        Read the post_sync options from main_config_file, if there are any modules specified, and return its dictionary of options
-        :return: dict
-        """
-
-        ps_opts = self.main_config.get_dict_config('post_sync', True)
-        if not ps_opts:
-            return
-
-        connectors = ps_opts.get_dict('connectors')
-        module_list = ps_opts.get_list('modules')
-        allowed_modules = post_sync_connectors.valid_connectors()
-        post_sync_modules = {}
-
-        try:
-            for m in module_list:
-                if m in post_sync_modules:
-                    raise AssertionException("Duplicate module specified: " + m)
-                elif m not in allowed_modules:
-                    raise AssertionException(
-                        'Unknown post-sync module: {0} - available are: {1}'.format(m, allowed_modules))
-                post_sync_modules[m] = self.get_dict_from_sources([connectors.pop(m)])
-        except KeyError as e:
-            raise AssertionException("Error! Post-sync module " + str(e) + " specified without a configuration file...")
-
-        if connectors:
-            self.logger.warning("Unused post-sync configuration file: " + str(connectors))
-
-        return {
-            'modules': post_sync_modules,
-        }
-
-    @staticmethod
-    def as_list(value):
-        if value is None:
-            return []
-        elif isinstance(value, user_sync.port.list_type):
-            return value
-        return [value]
 
     def get_dict_from_sources(self, sources):
         """

@@ -369,7 +369,6 @@ class ConfigFileLoader:
                           does the key have a default value so that must be added to
                           the dictionary if there is not already a value found.
         """
-        print(filepath)
         if filepath.startswith('$(') and filepath.endswith(')'):
             raise AssertionException("Shell execution is no longer supported: {}".format(filepath))
 
@@ -567,3 +566,14 @@ def resolve_invocation_options(options: dict, invocation_config: DictConfig, inv
             continue
         options[k] = arg_val
     return options
+
+
+def as_list(value):
+    if value is None:
+        return []
+    elif isinstance(value, user_sync.port.list_type):
+        return value
+    return [value]
+
+def as_set(value):
+    return set(as_list(value))

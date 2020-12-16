@@ -1,10 +1,8 @@
 import pytest
-import yaml
-import shutil
-from .util import update_dict
-from user_sync.config.user_sync import UMAPIConfigLoader
-from user_sync.config.common import ConfigFileLoader, DictConfig
+
 from user_sync import flags
+from user_sync.config.common import ConfigFileLoader, DictConfig
+from user_sync.config.user_sync import UMAPIConfigLoader
 from user_sync.error import AssertionException
 
 
@@ -26,8 +24,6 @@ def ust_config_root_path_keys():
             '/directory_users/connectors/*': (True, False, None),
             '/directory_users/extension': (True, False, None),
             '/logging/file_log_directory': (False, False, "logs"),
-            '/post_sync/connectors/sign_sync': (False, False, False),
-            '/post_sync/connectors/future_feature': (False, False, False)
             }
 
 
@@ -77,6 +73,18 @@ def test_additional_groups_config(modify_root_config, cli_args, ust_config_root_
     options = UMAPIConfigLoader(args).get_engine_options()
     assert addl_groups[0]['source'] in options['additional_groups'][0]['source'].pattern
     assert addl_groups[1]['source'] in options['additional_groups'][1]['source'].pattern
+
+
+def test_directory_users_config(tmp_config_files, modify_root_config, cli_args):
+
+    # test that if connectors is not present or misspelled, an assertion exception is thrown
+    directory_users = {'not_connectors': {'ldap': 'connector-ldap.yml'}}
+    root_config_file = modify_root_config(['directory_users'], directory_users)
+    args = cli_args({'config_filename': root_config_file})
+    config_loader = UMAPIConfigLoader(args)
+    connector_name = 'ldap'
+    with pytest.raises(AssertionException):
+        config_loader.get_directory_connector_options(connector_name)
 
 
 def test_twostep_config(tmp_config_files, modify_ldap_config, cli_args):

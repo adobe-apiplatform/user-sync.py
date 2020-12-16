@@ -21,6 +21,7 @@
 import json
 import logging
 # import helper
+import math
 
 import jwt
 import six
@@ -72,7 +73,8 @@ class UmapiConnector(object):
         enterprise_config = caller_config.get_dict_config('enterprise')
         enterprise_builder = config_common.OptionsBuilder(enterprise_config)
         enterprise_builder.require_string_value('org_id')
-        enterprise_builder.require_string_value('tech_acct')
+        tech_field = 'tech_acct_id' if 'tech_acct_id' in enterprise_config else 'tech_acct'
+        enterprise_builder.require_string_value(tech_field)
         options['enterprise'] = enterprise_options = enterprise_builder.get_options()
         self.options = options
         self.logger = logger = user_sync.connector.helper.create_logger(options)
@@ -82,7 +84,7 @@ class UmapiConnector(object):
 
         ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
-        auth_dict = make_auth_dict(self.name, enterprise_config, org_id, enterprise_options['tech_acct'], logger)
+        auth_dict = make_auth_dict(self.name, enterprise_config, org_id, enterprise_options[tech_field], logger)
         # this check must come after we fetch all the settings
         enterprise_config.report_unused_values(logger)
         # open the connection
@@ -113,16 +115,23 @@ class UmapiConnector(object):
 
     def iter_users(self, in_group=None):
         users = {}
+        total_count = 0
+        page_count = 0
+        page_size = 0
+        page_number = 0
         try:
-            if in_group:
-                u_query = umapi_client.UsersQuery(self.connection, in_group=in_group)
-            else:
-                u_query = umapi_client.UsersQuery(self.connection)
-            for u in u_query:
+            u_query = umapi_client.UsersQuery(self.connection, in_group=in_group)
+            for i, u in enumerate(u_query):
+                total_count, page_count, page_size, page_number = u_query.stats()
                 email = u['email']
                 if not (email in users):
                     users[email] = u
                     yield u
+
+                if (i + 1) % page_size == 0:
+                    self.logger.progress(len(users), total_count)
+            self.logger.progress(total_count, total_count)
+
         except umapi_client.UnavailableError as e:
             raise AssertionException("Error contacting UMAPI server: %s" % e)
 

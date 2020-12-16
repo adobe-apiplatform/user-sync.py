@@ -46,9 +46,9 @@ server:
 # if relative, it is interpreted relative to this configuration file.]
 enterprise:
   org_id: "Org ID goes here"
-  api_key: "API key goes here"
+  client_id: "Client ID goes here"
   client_secret: "Client secret goes here"
-  tech_acct: "Tech account ID goes here"
+  tech_acct_id: "Tech account ID goes here"
   priv_key_path: "private.key"
 
   # (optional) As an alternative to priv_key_path, you can place the private key 
@@ -65,11 +65,11 @@ enterprise:
   # (Windows Credential Manager, Mac Keychain, Linux Freedesktop Secret Service
   # or KWallet - these will be built into the Linux distribution).
   # To use this feature, uncomment the following entries and remove the
-  # api_key, client_secret, and priv_key_data above.
+  # client_id, client_secret, and priv_key_data above.
   # The actual credential values are placed in the credential store with the
   # username as the org_id value, and the key name (perhaps called internet 
   # or network address) as one of the values below.
-  #secure_api_key_key: umapi_api_key
+  #secure_client_id_key: umapi_client_id
   #secure_client_secret_key: umapi_client_secret
   #secure_priv_key_data_key: umapi_private_key_data
   # Note: the Windows credential store generally can't store data as large as a private

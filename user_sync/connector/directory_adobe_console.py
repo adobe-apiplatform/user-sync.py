@@ -91,7 +91,8 @@ class AdobeConsoleConnector(object):
         enterprise_config = caller_config.get_dict_config('integration')
         integration_builder = config_common.OptionsBuilder(enterprise_config)
         integration_builder.require_string_value('org_id')
-        integration_builder.require_string_value('tech_acct')
+        tech_field = 'tech_acct_id' if 'tech_acct_id' in enterprise_config else 'tech_acct'
+        integration_builder.require_string_value(tech_field)
         options['integration'] = integration_options = integration_builder.get_options()
 
         self.logger = logger = user_sync.connector.helper.create_logger(options)
@@ -101,7 +102,7 @@ class AdobeConsoleConnector(object):
 
         ims_host = server_options['ims_host']
         self.org_id = org_id = integration_options['org_id']
-        auth_dict = make_auth_dict(self.name, enterprise_config, org_id, integration_options['tech_acct'], logger)
+        auth_dict = make_auth_dict(self.name, enterprise_config, org_id, integration_options[tech_field], logger)
 
         # this check must come after we fetch all the settings
         caller_config.report_unused_values(logger)

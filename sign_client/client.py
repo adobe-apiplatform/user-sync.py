@@ -3,21 +3,17 @@ import requests
 import json
 from user_sync.error import AssertionException
 
-
 class SignClient:
     version = 'v5'
     _endpoint_template = 'api/rest/{}/'
 
-    def __init__(self, config, logger=None):
-        for k in ['host', 'key', 'admin_email']:
-            if k not in config:
-                raise AssertionException("Key '{}' must be specified for all Sign orgs".format(k))
-        self.host = config['host']
-        self.key = config['key']
-        self.admin_email = config['admin_email']
+    def __init__(self, host, integration_key, admin_email, logger=None):
+        self.host = host
+        self.integration_key = integration_key
+        self.admin_email = admin_email
         self.api_url = None
         self.groups = None
-        self.logger = logger or logging.getLogger("sign_client_{}".format(self.key[0:4]))
+        self.logger = logger or logging.getLogger("sign_client_{}".format(self.integration_key[0:4]))
 
     def _init(self):
         self.api_url = self.base_uri()
@@ -35,10 +31,10 @@ class SignClient:
         """
         if self.version == 'v6':
             return {
-                "Authorization": "Bearer {}".format(self.key)
+                "Authorization": "Bearer {}".format(self.integration_key)
             }
         return {
-            "Access-Token": self.key
+            "Access-Token": self.integration_key
         }
 
     def header_json(self):
@@ -140,6 +136,7 @@ class SignClient:
         """
         if self.api_url is None or self.groups is None:
             self._init()
+
         res = requests.post(self.api_url + 'groups', headers=self.header_json(), data=json.dumps({'groupName': group}))
         if res.status_code != 201:
             raise AssertionException("Failed to create Sign group '{}' (reason: {})".format(group, res.reason))
@@ -182,3 +179,21 @@ class SignClient:
                 exp_obj['reason'] = res.reason
                 exp_obj['status_code'] = res.status_code
                 raise AssertionException("Failed to insert user '{}' (error response: {})".format(data['email'], exp_obj))
+
+    def deactivate_user(self, user_id):
+        """
+        Deactivate Sign user
+        :param data: dict()
+        """
+        if self.api_url is None or self.groups is None:
+            self._init()
+        data = {
+            "userStatus": 'INACTIVE'
+        }
+        res = requests.put(self.api_url + 'users/' + user_id + '/status', headers=self.header_json(), data=json.dumps(data))
+        # Response status code 200 is successful update
+        if res.status_code != 200:
+                exp_obj = json.loads(res.text)
+                exp_obj['reason'] = res.reason
+                exp_obj['status_code'] = res.status_code
+                raise AssertionException(exp_obj)
