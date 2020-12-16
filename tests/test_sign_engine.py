@@ -60,24 +60,26 @@ def test_get_directory_user_key(example_engine, example_user):
 def test_insert_new_users(example_engine, example_user):
     sign_engine = example_engine
     sign_connector = SignConnector
-    umapi_user = example_user
+    directory_user = example_user
     user_roles = ['NORMAL_USER']
     group_id = 'somemumbojumbohexadecimalstring'
     assignment_group = 'default group'
     insert_data = {
-        "email": umapi_user['email'],
-        "firstName": umapi_user['firstname'],
+        "email": directory_user['email'],
+        "firstName": directory_user['firstname'],
         "groupId": group_id,
-        "lastName": umapi_user['lastname'],
+        "lastName": directory_user['lastname'],
         "roles": user_roles,
     }
 
     def insert_user(insert_data):
         pass
-
+    def construct_sign_user(directory_user, group_id, user_roles):
+        return insert_data
+    sign_engine.construct_sign_user = construct_sign_user
     sign_connector.insert_user = insert_user
     sign_engine.logger = logging.getLogger()
-    sign_engine.insert_new_users(sign_connector, umapi_user, user_roles, group_id, assignment_group)
+    sign_engine.insert_new_users(sign_connector, directory_user, user_roles, group_id, assignment_group)
     assert True
     assert insert_data['email'] == 'user@example.com'
 
