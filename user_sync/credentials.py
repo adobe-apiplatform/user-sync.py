@@ -7,7 +7,7 @@ import click
 import keyrings.cryptfile.cryptfile
 import six
 from keyring.errors import KeyringError
-from ruamel.yaml import YAML
+from ruamel.yaml.main import YAML
 from ruamel.yaml.scalarstring import PreservedScalarString as pss
 
 from user_sync import encryption

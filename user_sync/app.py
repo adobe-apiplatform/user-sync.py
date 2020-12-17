@@ -569,8 +569,10 @@ def retrieve(config_filename, type):
 
 @credentials.command(help="Allows for easy fetch of stored credentials on any platform.", name="get")
 @click.option('-i', '--identifier', prompt='Enter identifier',
-              help="Name of service you want to get a value for.  Username will always be 'user_sync'.")
-def get_credential(identifier):
+              help="Name of service you want to get a value for.  Username will always be 'user_sync' unless you specify --username..")
+@click.option('-u', '--username', type=str,
+              help="Alternative username setting, for backwards compatibility only. ")
+def get_credential(identifier, username):
     """
     Gets the specified credentials from keyring
     """
@@ -578,7 +580,7 @@ def get_credential(identifier):
         credential_manager = CredentialManager()
         click.echo("Using backend: " + credential_manager.keyring_name)
         click.echo("Getting '{0}' from keyring".format(identifier))
-        credential = credential_manager.get(identifier)
+        credential = credential_manager.get(identifier, username)
         if credential is None:
             raise AssertionException("Credential not found for identifier '{0}'".format(identifier))
         click.echo(identifier + ': ' + credential)
@@ -592,17 +594,19 @@ def get_credential(identifier):
                    "Username will always be 'user_sync'. ")
 @click.option('-v', '--value', prompt="Enter value", hide_input=True,
               help="The value to be stored. You will be prompted for this if not specified.  "
-                   "Username will always be 'user_sync'.")
-def set_credential(identifier, value):
+                   "Username will always be 'user_sync' unless you specify --username.")
+@click.option('-u', '--username', type=str,
+              help="Alternative username setting, for backwards compatibility only. ")
+def set_credential(identifier, value, username):
     """
     Sets the specified credentials in keyring
     """
     credential_manager = CredentialManager()
     click.echo("Using backend: " + credential_manager.keyring_name)
     click.echo("Setting '{0}' in keyring".format(identifier))
-    credential_manager.set(identifier, value)
+    credential_manager.set(identifier, value, username)
     click.echo("Validating...")
-    result = credential_manager.get(identifier)
+    result = credential_manager.get(identifier, username)
     if result != value:
         click.echo("Failed to set credential correctly, stored value was " + str(result))
     else:
