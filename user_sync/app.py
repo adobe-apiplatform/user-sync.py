@@ -588,7 +588,7 @@ def get_credential(identifier):
 
 @credentials.command(help="Allows for easy setting of credentials on any platform.", name="set")
 @click.option('-i', '--identifier', prompt='Enter identifier',
-              help="Name of service you want to store a value for. You will be prompted for this if not specified."
+              help="Name of service you want to store a value for. You will be prompted for this if not specified. "
                    "Username will always be 'user_sync'. ")
 @click.option('-v', '--value', prompt="Enter value", hide_input=True,
               help="The value to be stored. You will be prompted for this if not specified.  "
