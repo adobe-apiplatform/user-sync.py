@@ -1,13 +1,13 @@
+import logging
+from unittest.mock import MagicMock
+
 import pytest
-import six
+from mock import MagicMock
 
 from user_sync.config.sign_sync import SignConfigLoader
-from user_sync.connector.directory import DirectoryConnector
-from user_sync.engine.sign import SignSyncEngine
 from user_sync.connector.connector_sign import SignConnector
+from user_sync.engine.sign import SignSyncEngine
 from user_sync.engine.umapi import AdobeGroup
-from mock import patch
-import logging
 
 
 @pytest.fixture
@@ -18,34 +18,21 @@ def example_engine(sign_config_file):
     return SignSyncEngine(rule_config)
 
 
-@pytest.fixture
-def directory_user():
-    return {'directory_user': {'user@example.com':
-                               {'type': 'federatedID',
-                                'username': 'user@example.com',
-                                'domain': 'example.com', 'email':
-                                'user@example.com', 'firstname':
-                                'Example', 'lastname':
-                                'User',
-                                'groups': set(),
-                                'country': 'US'}}}
+def test_load_users_and_groups(example_engine, example_user):
+    dc = MagicMock()
+    example_user['groups'] = ["Sign Users 1"]
+    user = {'user@example.com': example_user}
 
-def test_load_users_and_groups(example_engine, example_user, directory_user):
-    dc = DirectoryConnector
-
-    user = {'directory_user': {'user@example.com': example_user}}
-
-    def dir_user_replacement(groups, extended_attributes, all_users):
-        return six.itervalues(user)
+    def dir_user_replacement(*args, **kwargs):
+        return user.values()
 
     dc.load_users_and_groups = dir_user_replacement
     mapping = {}
-    adobeGroup = AdobeGroup('Group 1', 'primary')
-    adobeGroups = []
-    adobeGroups.append(adobeGroup)
-    mapping['Sign Users'] = {'groups': adobeGroups}
+    AdobeGroup.index_map = {}
+    adobe_groups = [AdobeGroup('Group 1', 'primary')]
+    mapping['Sign Users'] = {'groups': adobe_groups}
     example_engine.read_desired_user_groups(mapping, dc)
-    assert directory_user == user
+    assert example_engine.directory_user_by_user_key == user
 
 
 def test_get_directory_user_key(example_engine, example_user):
@@ -58,33 +45,37 @@ def test_get_directory_user_key(example_engine, example_user):
         {'': {'username': 'user@example.com'}}) is None
 
 
-def test_insert_new_users(example_user):
-    sign_engine = SignSyncEngine
+def test_insert_new_users(example_engine, example_user):
+    sign_engine = example_engine
     sign_connector = SignConnector
-    umapi_user = example_user
+    directory_user = example_user
     user_roles = ['NORMAL_USER']
     group_id = 'somemumbojumbohexadecimalstring'
     assignment_group = 'default group'
     insert_data = {
-        "email": umapi_user['email'],
-        "firstName": umapi_user['firstname'],
+        "email": directory_user['email'],
+        "firstName": directory_user['firstname'],
         "groupId": group_id,
-        "lastName": umapi_user['lastname'],
+        "lastName": directory_user['lastname'],
         "roles": user_roles,
     }
 
-    def insert_user(insert_data):
+    def insert_user(*args, **kwargs):
         pass
+
+    def construct_sign_user(*args, **kwargs):
+        return insert_data
+
+    sign_engine.construct_sign_user = construct_sign_user
     sign_connector.insert_user = insert_user
     sign_engine.logger = logging.getLogger()
-    sign_engine.insert_new_users(
-        sign_engine, sign_connector, umapi_user, user_roles, group_id, assignment_group)
+    sign_engine.insert_new_users(sign_connector, directory_user, user_roles, group_id, assignment_group)
     assert True
     assert insert_data['email'] == 'user@example.com'
 
 
-def test_deactivate_sign_users(example_user):
-    sign_engine = SignSyncEngine
+def test_deactivate_sign_users(example_engine, example_user):
+    sign_engine = example_engine
     sign_connector = SignConnector
     directory_users = {}
     directory_users['federatedID, example.user@signtest.com'] = {
@@ -96,14 +87,133 @@ def test_deactivate_sign_users(example_user):
     def get_users():
         return sign_users
 
-    def deactivate_user(insert_data):
+    def deactivate_user(*args, **kwargs):
         pass
+
     sign_connector.deactivate_user = deactivate_user
     sign_connector.get_users = get_users
     sign_engine.logger = logging.getLogger()
     org_name = 'primary'
-    sign_engine.deactivate_sign_users(
-        sign_engine, directory_users, sign_connector, org_name)
+    sign_engine.deactivate_sign_users(directory_users, sign_connector, org_name)
     assert True
     assert sign_users['example.user@signtest.com']['email'] == 'example.user@signtest.com'
 
+
+def test_roles_match():
+    resolved_role = ['GROUP_ADMIN', 'ACCOUNT_ADMIN']
+    sign_role = ['ACCOUNT_ADMIN', 'GROUP_ADMIN']
+    assert SignSyncEngine.roles_match(resolved_role, sign_role)
+    assert not SignSyncEngine.roles_match(resolved_role, [])
+
+    resolved_roles = ['ACCOUNT_ADMIN', 'GROUP_ADMIN', 'NORMAL_USER']
+    sign_roles = ['ACCOUNT_ADMIN', 'GROUP_ADMIN', 'NORMAL_USER']
+    assert SignSyncEngine.roles_match(resolved_roles, sign_roles) is True
+
+    resolved_roles = ['GROUP_ADMIN', 'NORMAL_USER', 'ACCOUNT_ADMIN']
+    sign_roles = ['ACCOUNT_ADMIN', 'GROUP_ADMIN', 'NORMAL_USER']
+    assert SignSyncEngine.roles_match(resolved_roles, sign_roles) is True
+
+    resolved_roles = []
+    sign_roles = []
+    assert SignSyncEngine.roles_match(resolved_roles, sign_roles) is True
+
+    resolved_roles = ['normal_user']
+    sign_roles = ['NORMAL_USER']
+    assert SignSyncEngine.roles_match(resolved_roles, sign_roles) is False
+
+    resolved_roles = ['NORMAL_USER', 'ACCOUNT_ADMIN']
+    sign_roles = ['GROUP_ADMIN', 'NORMAL_USER']
+    assert SignSyncEngine.roles_match(resolved_roles, sign_roles) is False
+
+
+def test_should_sync():
+    AdobeGroup.index_map = {}
+    dir_user = {'sign_group': {'group': AdobeGroup.create('test group')}}
+    assert SignSyncEngine.should_sync(dir_user, None)
+    assert not SignSyncEngine.should_sync(dir_user, 'secondary')
+
+
+def test_retrieve_admin_role():
+    user = {'sign_group': {'roles': ['ACCOUNT_ADMIN', 'GROUP_ADMIN']}}
+    assert SignSyncEngine.retrieve_admin_role(user) == sorted(['ACCOUNT_ADMIN', 'GROUP_ADMIN'])
+
+
+def test_retrieve_assignment_group():
+    AdobeGroup.index_map = {}
+    user = {'sign_group': {'group': AdobeGroup.create('Test Group')}}
+    assert SignSyncEngine.retrieve_assignment_group(user) == 'Test Group'
+    user['sign_group']['group'] = None
+    assert SignSyncEngine.retrieve_assignment_group(user) is None
+
+
+def test_extract_mapped_group():
+    AdobeGroup.index_map = {}
+
+    def check_mapping(user_groups, group, roles):
+        res = SignSyncEngine.extract_mapped_group(user_groups, mappings)
+        if group is None:
+            assert res['group'] is None
+        else:
+            assert AdobeGroup.create(group) == res['group']
+        for r in roles:
+            assert r in res['roles']
+
+    g1 = AdobeGroup.create('Sign Group 1')
+    g2 = AdobeGroup.create('Sign Group 2')
+    g3 = AdobeGroup.create('Sign Group 3')
+
+    mappings = {
+        'Sign Group 1': {
+            'priority': 0,
+            'roles': set(),
+            'groups': [g1]
+        },
+        'Test Group Admins 1': {
+            'priority': 4,
+            'roles': {'GROUP_ADMIN'},
+            'groups': []
+        },
+        'Sign Group 2': {
+            'priority': 2,
+            'roles': set(),
+            'groups': [g2, g1, g3]
+        },
+        'Test Group Admins 2': {
+            'priority': 1,
+            'roles': {'ACCOUNT_ADMIN'},
+            'groups': []
+        },
+        'Sign Group 3': {
+            'priority': 3,
+            'roles': set(),
+            'groups': [g3]
+        },
+        'Test Group Admins 3': {
+            'priority': 5,
+            'roles': {'ACCOUNT_ADMIN', 'GROUP_ADMIN'},
+            'groups': [g2]
+        },
+    }
+
+    check_mapping([], None, ['NORMAL_USER'])
+    check_mapping(['Not A Group'], None, ['NORMAL_USER'])
+    check_mapping(['Sign Group 1'], 'Sign Group 1', ['NORMAL_USER'])
+    check_mapping(['Test Group Admins 1'], None, ['GROUP_ADMIN'])
+    check_mapping(['Test Group Admins 3'], 'Sign Group 2', ['ACCOUNT_ADMIN', 'GROUP_ADMIN'])
+    check_mapping(['Sign Group 1', 'Test Group Admins 1'], 'Sign Group 1', ['GROUP_ADMIN'])
+    check_mapping(['Sign Group 1', 'Sign Group 2'], 'Sign Group 1', ['NORMAL_USER'])
+    check_mapping(['Sign Group 3', 'Sign Group 2'], 'Sign Group 2', ['NORMAL_USER'])
+    check_mapping(['Sign Group 3', 'Test Group Admins 1', 'Test Group Admins 2'],
+                  'Sign Group 3', ['ACCOUNT_ADMIN', 'GROUP_ADMIN'])
+
+
+def test__groupify():
+    AdobeGroup.index_map = {}
+    g1 = AdobeGroup.create('Sign Group 1')
+    g2 = AdobeGroup.create('Sign Group 2')
+    g3 = AdobeGroup.create('sec::Sign Group 3')
+
+    processed_groups = SignSyncEngine._groupify(None, [{'groups': [g1, g2, g3]}])
+    assert processed_groups == ['Sign Group 1', 'Sign Group 2']
+    processed_groups = SignSyncEngine._groupify("sec", [{'groups': [g1, g2, g3]}])
+    assert processed_groups == ['Sign Group 3']

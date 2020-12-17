@@ -116,7 +116,7 @@ class LDAPDirectoryConnector(object):
         elif auth_method == 'kerberos':
             if(platform.system() == 'Windows'):
                 from .ldap3_extended.Connection import Connection
-                auth = {'authentication': ldap3.SASL, 'sasl_mechanism': ldap3.GSSAPI}
+                auth = {'sasl_credentials': (True,), 'authentication': ldap3.SASL, 'sasl_mechanism': ldap3.GSSAPI}
                 logger.debug('Connecting to: %s - Authentication Method: Kerberos', options['host'])
             else:
                 raise AssertionException('Kerberos Authentication Method is not supported on this OS. Windows Only')
@@ -127,9 +127,10 @@ class LDAPDirectoryConnector(object):
         auto_bind = ldap3.AUTO_BIND_NO_TLS
         if options['require_tls_cert']:
             tls = ldap3.Tls(validate=ssl.CERT_REQUIRED, version=ssl.PROTOCOL_TLSv1_2)
-            auto_bind = ldap3.AUTO_BIND_TLS_BEFORE_BIND
         try:
             server = ldap3.Server(host=options['host'], allowed_referral_hosts=True, tls=tls)
+            if server.ssl is False and tls is not None:
+                auto_bind = ldap3.AUTO_BIND_TLS_BEFORE_BIND
             connection = Connection(server, auto_bind=auto_bind, read_only=True, **auth)
         except Exception as e:
             raise AssertionException('LDAP connection failure: %s' % e)
