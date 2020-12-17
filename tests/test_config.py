@@ -95,6 +95,18 @@ def test_additional_groups_config(modify_root_config, cli_args):
     assert addl_groups[1]['source'] in options['additional_groups'][1]['source'].pattern
 
 
+def test_directory_users_config(tmp_config_files, modify_root_config, cli_args):
+
+    # test that if connectors is not present or misspelled, an assertion exception is thrown
+    directory_users = {'not_connectors': {'ldap': 'connector-ldap.yml'}}
+    root_config_file = modify_root_config(['directory_users'], directory_users)
+    args = cli_args({'config_filename': root_config_file})
+    config_loader = ConfigLoader(args)
+    connector_name = 'ldap'
+    with pytest.raises(AssertionException):
+        config_loader.get_directory_connector_options(connector_name)
+
+
 def test_twostep_config(tmp_config_files, modify_ldap_config, cli_args):
     (root_config_file, ldap_config_file, _) = tmp_config_files
     modify_ldap_config(['two_steps_lookup'], {})

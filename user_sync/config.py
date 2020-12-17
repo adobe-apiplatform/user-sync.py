@@ -325,7 +325,8 @@ class ConfigLoader(object):
         """
         options = {}
         connectors_config = self.get_directory_connector_configs()
-
+        if connectors_config is None:
+            raise AssertionException("Missing key 'connectors' in directory_users")
         if connector_name != 'csv' and connector_name not in connectors_config.value:
             raise AssertionException("Config file must be specified for connector type :: '{}'".format(connector_name))
 
