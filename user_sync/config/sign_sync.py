@@ -8,7 +8,7 @@ from typing import Dict
 import six
 from schema import Schema
 
-from user_sync.config.common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options
+from user_sync.config.common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options, validate_max_limit_config
 from user_sync.error import AssertionException
 from user_sync.engine.common import AdobeGroup
 from user_sync.engine.sign import SignSyncEngine
