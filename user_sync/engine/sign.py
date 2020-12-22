@@ -2,7 +2,7 @@ import logging
 
 import six
 
-from user_sync.config.common import DictConfig, ConfigFileLoader, as_set
+from user_sync.config.common import DictConfig, ConfigFileLoader, as_set, check_max_limit
 from user_sync.connector.connector_sign import SignConnector
 from user_sync.error import AssertionException
 
@@ -82,16 +82,19 @@ class SignSyncEngine:
             # Create any new Sign groups
             org_directory_groups = self._groupify(
                 org_name, directory_groups.values())
-            org_sign_groups = [x.lower() for x in sign_connector.sign_groups()]
+            sign_groups = sign_connector.sign_groups()
+            org_sign_groups = [x.lower() for x in sign_groups]
             for directory_group in org_directory_groups:
                 if (directory_group.lower() not in org_sign_groups):
-                    self.logger.info("Creating new Sign group: {}".format(directory_group))
+                    self.logger.info(
+                        "Creating new Sign group: {}".format(directory_group))
                     sign_connector.create_group(directory_group)
-            # Update user details or insert new user        
+            # Update user details or insert new user
             self.update_sign_users(
                 self.directory_user_by_user_key, sign_connector, org_name)
-            if sign_connector.deactivate_users is True:
-                self.deactivate_sign_users(self.directory_user_by_user_key, sign_connector, org_name)
+            default_group = dict(filter(lambda group: group[0] == self.DEFAULT_GROUP_NAME, sign_groups.items()))
+            self.handle_sign_only_users(
+                self.directory_user_by_user_key, sign_connector, org_name, default_group)
         self.log_action_summary()
 
     def log_action_summary(self):
@@ -356,25 +359,6 @@ class SignSyncEngine:
             self.logger.error(format(e))
         return
 
-    def deactivate_sign_users(self, directory_users, sign_connector, org_name):
-        """
-        Searches users to deactivate in the Sign Netpune console
-        :param sign_connector:
-        :param sign_user:
-        :return:
-        """
-        sign_users = sign_connector.get_users()
-        directory_users_emails = list(map(lambda directory_user:directory_user['email'].lower(), directory_users.values()))
-        for _, sign_user in sign_users.items():
-            if sign_user['email'].lower() not in directory_users_emails:
-                try:
-                    sign_connector.deactivate_user(sign_user['userId'])
-                    self.sign_users_deactivated.add(sign_user['userId'])
-                    self.logger.info("Deactivated sign user '{}'".format(sign_user['email']))
-                except AssertionException as e:
-                    self.logger.error("Error deactivating user {}, {}".format(sign_user['email'], e))
-                return
-
     def construct_sign_user(self, user, group_id, user_roles):
 
         user = {k.lower():u for k,u in user.items()}
@@ -387,3 +371,55 @@ class SignSyncEngine:
             "roles": user_roles,
         }
         return user_data
+
+    def handle_sign_only_users(self, directory_users, sign_connector, org_name, default_group):
+        """
+        Searches users to set to default group in GPS and deactivate in the Sign Neptune console
+        :param directory_users:
+        :param sign_connector:
+        :param sign_user:
+        :param org_name:
+        :param default_group:
+        :return:
+        """
+        sign_users = self.sign_users_by_org[org_name]
+        directory_users_emails = list(map(lambda directory_user: directory_user['email'].lower(),
+                                          filter(lambda directory_user: directory_user['sign_groups']['groups'][0].umapi_name == org_name, directory_users.values())))
+               
+        sign_users_emails = list(
+            map(lambda sign_user: sign_user['email'].lower(), sign_users.values()))
+
+        if not self.check_sign_max_limit(sign_users_emails, directory_users_emails):
+            return
+
+        for _, sign_user in sign_users.items():
+            if sign_user['email'].lower() not in directory_users_emails:
+                try:
+                    if sign_connector.deactivate_users:
+                        sign_connector.deactivate_user(sign_user['userId'])
+                        self.logger.info(
+                            "Deactivated sign user '{}'".format(sign_user['email']))
+                    else:
+                        reset_data = {
+                            "email": sign_user['email'],
+                            "firstName": sign_user['firstName'],
+                            "groupId": default_group[self.DEFAULT_GROUP_NAME],
+                            "lastName": sign_user['lastName'],
+                            "roles": ['NORMAL_USER']
+                        }
+                        sign_connector.update_user(
+                            sign_user['userId'], reset_data)
+                        self.logger.info("Reset Sign user '{}', to default group and normal user role".format(
+                            sign_user['email']))
+                except AssertionException as e:
+                    self.logger.error(
+                        "Error deactivating user {}, {}".format(sign_user['email'], e))
+
+    def check_sign_max_limit(self, sign_users_emails, directory_users_emails):
+        stray_count = 0
+        for sign_users_email in sign_users_emails:
+            if sign_users_email not in directory_users_emails:
+                stray_count += 1
+
+        sign_only_limit = self.options['user_sync']['sign_only_limit']
+        return check_max_limit(stray_count, sign_only_limit, len(sign_users_emails), 0, 'Sign', self.logger)

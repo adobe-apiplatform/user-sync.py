@@ -28,6 +28,7 @@ import user_sync.connector.connector_umapi
 import user_sync.error
 import user_sync.identity_type
 from user_sync.helper import normalize_string, CSVAdapter, JobStats
+from user_sync.config.common import check_max_limit
 
 from .common import AdobeGroup, PRIMARY_TARGET_NAME
 
@@ -579,14 +580,8 @@ class RuleProcessor(object):
             self.write_stray_key_map()
         if self.will_manage_strays:
             max_missing_option = self.options['max_adobe_only_users']
-            if isinstance(max_missing_option, str) and '%' in max_missing_option:
-                percent = float(max_missing_option.strip('%')) / 100
-                max_missing = int((self.primary_user_count - self.excluded_user_count) * percent)
-            else:
-                max_missing = max_missing_option
-            if stray_count > max_missing:
-                self.logger.critical('Unable to process Adobe-only users, as their count (%s) is larger '
-                                     'than the max_adobe_only_users setting (%s)', stray_count, max_missing_option)
+            if not check_max_limit(stray_count, max_missing_option, 
+                        self.primary_user_count, self.excluded_user_count, 'Adobe', self.logger):
                 self.action_summary['primary_strays_processed'] = 0
                 return
             self.logger.debug("Processing Adobe-only users...")

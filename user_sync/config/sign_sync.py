@@ -211,7 +211,8 @@ class SignConfigLoader(ConfigLoader):
         sign_orgs = self.main_config.get_dict('sign_orgs')
         options['sign_orgs'] = sign_orgs
         user_sync = self.main_config.get_dict_config('user_sync')
-        options['sign_only_limit'] = user_sync.get_value('sign_only_limit', (int, str))
+        max_missing = user_sync.get_value('sign_only_limit', (int, str))
+        options['user_sync']['sign_only_limit'] = validate_max_limit_config(max_missing)
         if options.get('directory_group_mapped'):
             options['directory_group_filter'] = set(six.iterkeys(self.directory_groups))
         return options

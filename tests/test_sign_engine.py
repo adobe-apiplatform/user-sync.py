@@ -74,12 +74,15 @@ def test_insert_new_users(example_engine, example_user):
     assert insert_data['email'] == 'user@example.com'
 
 
-def test_deactivate_sign_users(example_engine, example_user):
-    sign_engine = example_engine
+def test_handle_sign_only_users(example_user):
+    sign_engine = SignSyncEngine
     sign_connector = SignConnector
     directory_users = {}
+    adobeGroup = AdobeGroup('Group 1', 'primary')
     directory_users['federatedID, example.user@signtest.com'] = {
-        'email': 'example.user@signtest.com'}
+        'email': 'example.user@signtest.com', 
+        'sign_groups': {'groups': [adobeGroup]}
+        }
     sign_users = {}
     sign_users['example.user@signtest.com'] = {
         'email': 'example.user@signtest.com', 'userId': 'somerandomhexstring'}
@@ -87,14 +90,21 @@ def test_deactivate_sign_users(example_engine, example_user):
     def get_users():
         return sign_users
 
-    def deactivate_user(*args, **kwargs):
+    def handle_sign_only_users(insert_data):
         pass
 
-    sign_connector.deactivate_user = deactivate_user
+    def check_sign_max_limit(sign_users_emails, directory_users_emails):
+        pass
+    sign_connector.deactivate_user = handle_sign_only_users
     sign_connector.get_users = get_users
     sign_engine.logger = logging.getLogger()
+    sign_engine.sign_users_by_org = {'primary': sign_users}
+    sign_engine.check_sign_max_limit = check_sign_max_limit
     org_name = 'primary'
-    sign_engine.deactivate_sign_users(directory_users, sign_connector, org_name)
+    default_group = {}
+    default_group['default group'] = 'somerandomGROUPID'
+    sign_engine.handle_sign_only_users(
+        sign_engine, directory_users, sign_connector, org_name, default_group)
     assert True
     assert sign_users['example.user@signtest.com']['email'] == 'example.user@signtest.com'
 
