@@ -384,7 +384,7 @@ class SignSyncEngine:
         """
         sign_users = self.sign_users_by_org[org_name]
         directory_users_emails = list(map(lambda directory_user: directory_user['email'].lower(),
-                                          filter(lambda directory_user: directory_user['sign_groups']['groups'][0].umapi_name == org_name, directory_users.values())))
+                                          filter(lambda directory_user: directory_user['sign_group']['group'].umapi_name == org_name, directory_users.values())))
                
         sign_users_emails = list(
             map(lambda sign_user: sign_user['email'].lower(), sign_users.values()))
