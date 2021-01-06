@@ -17,6 +17,12 @@ def make_dict(keylist, value):
         }
     return tree_dict
 
+def compare_iter(a, b):
+    return (len(a) == len(b) and
+            {x in b for x in a} ==
+            {x in b for x in a} ==
+            {True})
+
 
 def merge_dict(d1, d2, immutable=False):
     """
