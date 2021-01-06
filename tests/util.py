@@ -9,3 +9,9 @@ def update_dict(d, ks, u):
     else:
         d[k] = u
     return d
+
+def compare_iter(a, b):
+    return (len(a) == len(b) and
+            {x in b for x in a} ==
+            {x in b for x in a} ==
+            {True})
