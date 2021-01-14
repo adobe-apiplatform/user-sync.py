@@ -95,8 +95,9 @@ class SignSyncEngine:
                 self.directory_user_by_user_key, sign_connector, org_name)
             #default_group = dict(filter(lambda group: group[0] == self.DEFAULT_GROUP_NAME, sign_groups.items()))
             default_group_id = sign_groups[self.DEFAULT_GROUP_NAME]
-            self.handle_sign_only_users(
-                self.directory_user_by_user_key, sign_connector, org_name, default_group_id)
+            if org_name in self.sign_only_users_by_email:
+                self.handle_sign_only_users(
+                    self.directory_user_by_user_key, sign_connector, org_name, default_group_id)
         self.log_action_summary()
 
     def log_action_summary(self):
@@ -163,14 +164,17 @@ class SignSyncEngine:
                 # Update existing users
                 self.update_existing_users(
                     sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group)
-        self.resolve_sign_only_users(directory_users, sign_users)
+        self.resolve_sign_only_users(directory_users, sign_users, org_name)
 
-    def resolve_sign_only_users(self, directory_users, sign_users):
-
+    def resolve_sign_only_users(self, directory_users, sign_users, org_name):
+        directory_users_by_org = []        
+        for email, data in directory_users.items():
+            if self.should_sync(data, org_name):
+                directory_users_by_org.append(email)
         for user, data in sign_users.items():
-            if user not in directory_users:
+            if user not in directory_users_by_org:
                 self.total_sign_only_user_count += 1
-                self.sign_only_users_by_email[user] = data
+                self.sign_only_users_by_email[org_name] = {user: data}
 
     @staticmethod
     def roles_match(resolved_roles, sign_roles) -> bool:
@@ -385,10 +389,10 @@ class SignSyncEngine:
         :param default_group:
         :return:
         """
-        if not self.check_sign_max_limit():
+        if not self.check_sign_max_limit(org_name):
             return
 
-        for _, sign_user in self.sign_only_users_by_email.items():
+        for _, sign_user in self.sign_only_users_by_email[org_name].items():
             try:
                 if sign_connector.deactivate_users:
                     sign_connector.deactivate_user(sign_user['userId'])
@@ -410,7 +414,7 @@ class SignSyncEngine:
                 self.logger.error(
                     "Error deactivating user {}, {}".format(sign_user['email'], e))
 
-    def check_sign_max_limit(self):
+    def check_sign_max_limit(self, org_name):
         stray_count = len(self.sign_only_users_by_email)
         sign_only_limit = self.options['user_sync']['sign_only_limit']
         return check_max_limit(stray_count, sign_only_limit, self.total_sign_user_count, 0, 'Sign', self.logger)
