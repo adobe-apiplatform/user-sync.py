@@ -188,7 +188,7 @@ def test_engine_options(sign_config_file, modify_sign_config, tmp_sign_connector
     # ensure that we didn't accidentally introduce any new keys in get_engine_options()
     assert not (set(SignSyncEngine.default_options.keys()) | set(config.invocation_options.keys())) - set(options.keys())
     assert options['create_users'] == False
-    assert options['sign_only_limit'] == 1000
+    assert options['user_sync']['sign_only_limit'] == 1000
 
 
 def test_load_invocation_options(sign_config_file, modify_sign_config, tmp_sign_connector_config, tmp_config_files):
