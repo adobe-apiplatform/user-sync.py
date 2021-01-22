@@ -103,7 +103,8 @@ class SignClient:
             if users_res.status_code != 200:
                 raise AssertionException("Error retrieving details for Sign user '{}'".format(user_id))
             user = user_res.json()
-            if user['userStatus'] != 'ACTIVE':
+            user_status = user.get('userStatus')
+            if user_status and user_status != 'ACTIVE':
                 continue
             if user['email'] == self.admin_email:
                 continue
@@ -111,6 +112,7 @@ class SignClient:
             user['roles'] = self.user_roles(user)
             users[user['email']] = user
             self.logger.debug('retrieved user details for Sign user {}'.format(user['email']))
+            self.logger.trace(str(user))
 
         return users
 
@@ -137,6 +139,7 @@ class SignClient:
         :param group: str
         :return:
         """
+        self.logger.debug("Creating {}".format(group))
         if self.api_url is None or self.groups is None:
             self._init()
         res = requests.post(self.api_url + 'groups', headers=self.header_json(), data=json.dumps({'groupName': group}))

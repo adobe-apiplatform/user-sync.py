@@ -1,4 +1,5 @@
 import logging
+import re
 from collections import defaultdict
 from user_sync.post_sync import PostSyncConnector
 from user_sync.config import DictConfig, OptionsBuilder
@@ -7,12 +8,15 @@ from .client import SignClient
 from user_sync.error import AssertionException
 
 
+# noinspection PyUnresolvedReferences
 class SignConnector(PostSyncConnector):
     name = 'sign_sync'
 
     def __init__(self, config_options, test_mode=False):
         super().__init__()
         self.logger = logging.getLogger(self.name)
+        if not hasattr(self.logger, 'trace'):
+            self.logger.trace = lambda x: ()
         sync_config = DictConfig('<%s configuration>' % self.name, config_options)
         self.user_groups = sync_config.get_list('user_groups', True)
         if self.user_groups is None:
@@ -51,12 +55,21 @@ class SignConnector(PostSyncConnector):
             if umapi_users is None:
                 raise AssertionException("Error getting umapi users from post_sync_data")
             self.update_sign_users(umapi_users, sign_client, org_name)
+            self.logger.debug("---------------------------------")
 
     def update_sign_users(self, umapi_users, sign_client, org_name):
         sign_users = sign_client.get_users()
+        self.logger.debug("---------------------------------")
+        self.logger.debug("Total sign users: " + str(len(sign_users)))
+        self.logger.debug("Total umapi users: " + str(len(umapi_users)))
+
+
+
         for _, umapi_user in umapi_users.items():
+            self.logger.trace("---------------------------------")
             sign_user = sign_users.get(umapi_user['email'].lower())
             if not self.should_sync(umapi_user, sign_user, org_name):
+                self.logger.trace("Skipping user due to should_sync == False: " + umapi_user['email'])
                 continue
 
             assignment_group = None
@@ -79,6 +92,10 @@ class SignConnector(PostSyncConnector):
                 "lastName": sign_user['lastName'],
                 "roles": user_roles,
             }
+
+            self.logger.trace("Matched group '{0}' and roles {1} to {2}"
+                              .format(assignment_group, user_roles, umapi_user['email']))
+
             if sign_user['group'].lower() == assignment_group and self.roles_match(user_roles, sign_user['roles']):
                 self.logger.debug("skipping Sign update for '{}' -- no updates needed".format(umapi_user['email']))
                 continue
@@ -88,6 +105,7 @@ class SignConnector(PostSyncConnector):
                     umapi_user['email'], assignment_group, update_data['roles']))
             except AssertionError as e:
                 self.logger.error("Error updating user {}".format(e))
+
 
     @staticmethod
     def roles_match(resolved_roles, sign_roles):
@@ -116,8 +134,24 @@ class SignConnector(PostSyncConnector):
         :param org_name:
         :return:
         """
-        return sign_user is not None and set(umapi_user['groups']) & set(self.entitlement_groups[org_name]) and \
-            umapi_user['type'] in self.identity_types
+        # UMAPI will often return a product profile with extra characters appended. This re.sub will remove that.
+        # eg. 'Example Product Profile' will come through as 'Example Product Profile_EC79122-provisioning'
+        umapi_groups = []
+        for group in umapi_user['groups']:
+            fixed_group = re.sub("_[A-Za-z0-9]+(?i)-provisioning$", '', group)
+            umapi_groups.append(fixed_group)
+        intersecting_groups = set(umapi_groups) & set(self.entitlement_groups[org_name])
+
+        info = {
+            'User is not none': sign_user is not None,
+            'Umapi groups': umapi_user['groups'],
+            'Entitlement groups': self.entitlement_groups[org_name],
+            'Umapi + Entitlement intersect': intersecting_groups
+        }
+
+        self.logger.trace("Trace info for {0} {1}: {2}".format(umapi_user['type'], umapi_user['email'], info))
+
+        return sign_user is not None and intersecting_groups and umapi_user['type'] in self.identity_types
 
     @staticmethod
     def _groupify(groups):
