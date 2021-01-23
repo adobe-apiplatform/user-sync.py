@@ -338,12 +338,14 @@ def init_log(logging_config):
     options = builder.get_options()
 
     level_lookup = {
+        'trace': logging.TRACE_NUM,
         'debug': logging.DEBUG,
         'info': logging.INFO,
         'warning': logging.WARNING,
         'error': logging.ERROR,
         'critical': logging.CRITICAL
     }
+
 
     logging.Logger.show_progress = bool(options['log_progress'])
     console_log_level = level_lookup.get(options['console_log_level'])
