@@ -98,7 +98,7 @@ class SignClient:
         """
         retry_nb = 1
         waiting_time = 20
-        while retry_nb < 6:
+        while retry_nb < 5:
             try:
                 waiting_time *= 3
                 self.logger.debug('Attempt {} to call: {}'.format(retry_nb, url))
@@ -112,7 +112,7 @@ class SignClient:
                     raise AssertionException('')
             except Exception as exp:
                 self.logger.warning('Failed: {}'.format(exp))
-                if retry_nb == 5:
+                if retry_nb == 4:
                     raise AssertionException('Quitting after 3 failed retry attempts')
                 self.logger.warning('Waiting for {} seconds'.format(waiting_time))
                 time.sleep(waiting_time)
