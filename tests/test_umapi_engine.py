@@ -1,7 +1,7 @@
 import pytest
 from mock import MagicMock
 
-from user_sync.rules import UmapiTargetInfo, UmapiConnectors, RuleProcessor
+from user_sync.engine.umapi import UmapiTargetInfo, UmapiConnectors, RuleProcessor
 
 
 @pytest.fixture

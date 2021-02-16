@@ -94,6 +94,7 @@ def test_handle_sign_only_users(example_engine, example_user):
 
     def check_sign_max_limit(org_name):
         pass
+
     sign_connector.deactivate_user = deactivate_user
     sign_connector.get_users = get_users
     example_engine.logger = logging.getLogger()
@@ -102,8 +103,7 @@ def test_handle_sign_only_users(example_engine, example_user):
     org_name = 'primary'
 
     default_group_id = 'somerandomGROUPID'
-    example_engine.handle_sign_only_users(
-        directory_users, sign_connector, org_name, default_group_id)
+    example_engine.handle_sign_only_users(sign_connector, org_name, default_group_id)
     assert True
     assert sign_users['example.user@signtest.com']['email'] == 'example.user@signtest.com'
 
