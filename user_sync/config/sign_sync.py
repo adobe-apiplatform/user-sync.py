@@ -22,7 +22,7 @@ def config_schema() -> Schema:
         'sign_orgs': { str: str },
         'identity_source': {
             'connector': And(str, len),
-            'type': Or('csv', 'okta', 'ldap', 'adobe_console'), #TODO: single "source of truth" for these options
+            'type': Or('csv', 'okta', 'ldap', 'adobe_console'),
         },
         'user_sync': {
             'sign_only_limit': Or(int, Regex(r'^\d+%$')),
@@ -37,8 +37,8 @@ def config_schema() -> Schema:
             Optional('log_to_file'): bool,
             Optional('file_log_directory'): And(str, len),
             Optional('file_log_name_format'): And(str, len),
-            Optional('file_log_level'): Or('info', 'debug'), #TODO: what are the valid values here?
-            Optional('console_log_level'): Or('info', 'debug'), #TODO: what are the valid values here?
+            Optional('file_log_level'): Or('info', 'debug'),
+            Optional('console_log_level'): Or('info', 'debug'),
         },
         Optional('invocation_defaults'): {
             Optional('test_mode'):  bool,
