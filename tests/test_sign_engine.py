@@ -45,34 +45,6 @@ def test_get_directory_user_key(example_engine, example_user):
         {'': {'username': 'user@example.com'}}) is None
 
 
-def test_insert_new_users(example_engine, example_user):
-    sign_engine = example_engine
-    sign_connector = SignConnector
-    directory_user = example_user
-    user_roles = ['NORMAL_USER']
-    group_id = 'somemumbojumbohexadecimalstring'
-    assignment_group = 'default group'
-    insert_data = {
-        "email": directory_user['email'],
-        "firstName": directory_user['firstname'],
-        "groupId": group_id,
-        "lastName": directory_user['lastname'],
-        "roles": user_roles,
-    }
-
-    def insert_user(*args, **kwargs):
-        pass
-
-    def construct_sign_user(*args, **kwargs):
-        return insert_data
-
-    sign_engine.construct_sign_user = construct_sign_user
-    sign_connector.insert_user = insert_user
-    sign_engine.logger = logging.getLogger()
-    sign_engine.insert_new_users(sign_connector, directory_user, user_roles, group_id, assignment_group)
-    assert True
-    assert insert_data['email'] == 'user@example.com'
-
 
 def test_handle_sign_only_users(example_engine, example_user):
     sign_connector = MagicMock()
