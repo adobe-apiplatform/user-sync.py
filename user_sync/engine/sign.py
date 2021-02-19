@@ -19,7 +19,9 @@ class SignSyncEngine:
             'test_mode': False
         },
         'sign_orgs': [
-            {'primary': 'connector-sign.yml'}
+            {
+                'primary': 'connector-sign.yml'
+            }
         ],
         'user_sync': {
             'sign_only_limit': 100
@@ -136,7 +138,6 @@ class SignSyncEngine:
         self.sign_users_by_org[org_name] = sign_users
         for _, directory_user in directory_users.items():
 
-
             if not self.should_sync(directory_user, org_name):
                 continue
 
@@ -155,7 +156,8 @@ class SignSyncEngine:
                     self.insert_new_users(
                         sign_connector, directory_user, user_roles, group_id, assignment_group)
                 else:
-                    self.logger.info("User {0} not present in Sign org '{1}' and will be skipped.".format(directory_user['email'], org_name))
+                    self.logger.info("{0}User {1} not present in  and will be skipped."
+                                     .format(self.org_string(org_name), directory_user['email']))
                     self.directory_users_excluded.add(directory_user['email'])
                     continue
             else:
@@ -328,14 +330,15 @@ class SignSyncEngine:
 
         if groups_match and roles_match:
             self.logger.debug(
-                "Org: {} - skipping Sign update for '{}' -- no updates needed".format(sign_connector.console_org, directory_user['email']))
+                "{}Skipping Sign update for '{}' -- no updates needed"
+                    .format(self.org_string(sign_connector.console_org), directory_user['email']))
             self.sign_users_matched_no_updates.add(sign_user['email'])
             return
         try:
             sign_connector.update_user(sign_user['userId'], update_data)
-            self.logger.info("Org: {} - updated Sign user '{}', Group ({}): '{}', Roles ({}): {}".format(
-                sign_connector.console_org, directory_user['email'], 'unchanged' if groups_match else 'new', assignment_group,
-                'unchanged' if roles_match else 'new', update_data['roles']))
+            self.logger.info("{}Updated Sign user '{}', Group ({}): '{}', Roles ({}): {}".format(
+                self.org_string(sign_connector.console_org), directory_user['email'], 'unchanged' if groups_match else 'new',
+                assignment_group,'unchanged' if roles_match else 'new', update_data['roles']))
         except AssertionError as e:
             self.logger.error("Error updating user {}".format(e))
 
@@ -353,8 +356,8 @@ class SignSyncEngine:
         try:
             sign_connector.insert_user(insert_data)
             self.sign_users_created.add(directory_user['email'])
-            self.logger.info("Org: {} - Inserted sign user '{}', group: '{}', roles: {}".format(
-                sign_connector.console_org, directory_user['email'], assignment_group, insert_data['roles']))
+            self.logger.info("{}Inserted sign user '{}', group: '{}', roles: {}".format(
+                self.org_string(sign_connector.console_org), directory_user['email'], assignment_group, insert_data['roles']))
         except AssertionException as e:
             self.logger.error(format(e))
         return
@@ -390,7 +393,7 @@ class SignSyncEngine:
                 if sign_connector.deactivate_users:
                     sign_connector.deactivate_user(sign_user['userId'])
                     self.logger.info(
-                        "Org: {} - Deactivated sign user '{}'".format(org_name,sign_user['email']))
+                        "{}Deactivated sign user '{}'".format(self.org_string(org_name), sign_user['email']))
                 else:
                     # Only update if needed
                     if (sign_user['group'].lower() == self.DEFAULT_GROUP_NAME.lower()
@@ -405,8 +408,8 @@ class SignSyncEngine:
                     }
                     sign_connector.update_user(
                         sign_user['userId'], reset_data)
-                    self.logger.info("Org: {} - Reset Sign user '{}', to default group and normal user role".format(
-                        org_name,sign_user['email']))
+                    self.logger.info("{}Reset Sign user '{}', to default group and normal user role".format(
+                        self.org_string(org_name), sign_user['email']))
             except AssertionException as e:
                 self.logger.error(
                     "Error deactivating user {}, {}".format(sign_user['email'], e))
@@ -414,4 +417,8 @@ class SignSyncEngine:
     def check_sign_max_limit(self, org_name):
         stray_count = len(self.sign_only_users_by_org[org_name])
         sign_only_limit = self.options['user_sync']['sign_only_limit']
-        return check_max_limit(stray_count, sign_only_limit, self.total_sign_user_count, 0, 'Sign', self.logger)
+        return check_max_limit(stray_count, sign_only_limit, self.total_sign_user_count, 0, 'Sign', self.logger, self.org_string(org_name))
+
+
+    def org_string(self, org):
+        return "Org: {} - ".format(org.capitalize()) if len(self.connectors) > 1 else ""
