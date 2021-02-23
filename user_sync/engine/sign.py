@@ -1,4 +1,5 @@
 import logging
+import time
 
 import six
 
@@ -88,7 +89,7 @@ class SignSyncEngine:
             for directory_group in org_directory_groups:
                 if (directory_group.lower() not in org_sign_groups):
                     self.logger.info(
-                        "Creating new Sign group: {}".format(directory_group))
+                        "{}Creating new Sign group: {}".format(self.org_string(org_name), directory_group))
                     sign_connector.create_group(directory_group)
             # Update user details or insert new user
             self.update_sign_users(
