@@ -8,7 +8,7 @@ from typing import Dict
 import six
 from schema import Schema
 
-from user_sync.config.common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options
+from user_sync.config.common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options, validate_max_limit_config
 from user_sync.error import AssertionException
 from user_sync.engine.common import AdobeGroup
 from user_sync.engine.sign import SignSyncEngine
@@ -22,7 +22,7 @@ def config_schema() -> Schema:
         'sign_orgs': { str: str },
         'identity_source': {
             'connector': And(str, len),
-            'type': Or('csv', 'okta', 'ldap', 'adobe_console'), #TODO: single "source of truth" for these options
+            'type': Or('csv', 'okta', 'ldap', 'adobe_console'),
         },
         'user_sync': {
             'sign_only_limit': Or(int, Regex(r'^\d+%$')),
@@ -37,8 +37,8 @@ def config_schema() -> Schema:
             Optional('log_to_file'): bool,
             Optional('file_log_directory'): And(str, len),
             Optional('file_log_name_format'): And(str, len),
-            Optional('file_log_level'): Or('info', 'debug'), #TODO: what are the valid values here?
-            Optional('console_log_level'): Or('info', 'debug'), #TODO: what are the valid values here?
+            Optional('file_log_level'): Or('info', 'debug'),
+            Optional('console_log_level'): Or('info', 'debug'),
         },
         Optional('invocation_defaults'): {
             Optional('test_mode'):  bool,
@@ -211,7 +211,8 @@ class SignConfigLoader(ConfigLoader):
         sign_orgs = self.main_config.get_dict('sign_orgs')
         options['sign_orgs'] = sign_orgs
         user_sync = self.main_config.get_dict_config('user_sync')
-        options['sign_only_limit'] = user_sync.get_value('sign_only_limit', (int, str))
+        max_missing = user_sync.get_value('sign_only_limit', (int, str))
+        options['user_sync']['sign_only_limit'] = validate_max_limit_config(max_missing)
         if options.get('directory_group_mapped'):
             options['directory_group_filter'] = set(six.iterkeys(self.directory_groups))
         return options

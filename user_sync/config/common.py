@@ -1,6 +1,7 @@
 import logging
 import os
 
+import re
 import six
 import yaml
 from abc import ABC, abstractmethod
@@ -577,3 +578,31 @@ def as_list(value):
 
 def as_set(value):
     return set(as_list(value))
+
+def validate_max_limit_config(max_missing):
+    percent_pattern = re.compile(r"(\d*(\.\d+)?%)")
+    if isinstance(max_missing, str) and percent_pattern.match(max_missing):
+        max_missing_percent = float(max_missing.strip('%'))
+        if 0.0 <= max_missing_percent <= 100.0:
+            options_param = max_missing
+        else:
+            raise AssertionException("max_adobe_only_users value must be less or equal than 100%")
+    else:
+        try:
+            options_param = int(max_missing)
+        except ValueError:
+            raise AssertionException("Unable to parse max_adobe_only_users value. Value must be a percentage or an integer.")
+    return options_param
+
+def check_max_limit(stray_count, max_missing_option, primary_user_count, secondary_user_count, console, logger, org_string=""):
+    if isinstance(max_missing_option, str) and '%' in max_missing_option:
+        percent = float(max_missing_option.strip('%')) / 100
+        max_missing = int(primary_user_count - secondary_user_count) * percent
+    else:
+        max_missing = max_missing_option
+    if stray_count > max_missing:
+        logger.critical('%sUnable to process %s-only users, as their count (%s) is larger '
+                                'than the max_adobe_only_users setting (%s)', org_string, console, stray_count, max_missing_option)
+        return False
+    else:
+        return True

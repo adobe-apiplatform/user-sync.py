@@ -34,7 +34,7 @@ from user_sync import flags
 from user_sync.engine import umapi as rules
 from user_sync.engine.common import AdobeGroup, PRIMARY_TARGET_NAME
 from user_sync.error import AssertionException
-from .common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options, as_list
+from .common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options, as_list, resolve_invocation_options, validate_max_limit_config
 
 
 class UMAPIConfigLoader(ConfigLoader):
@@ -511,19 +511,8 @@ class UMAPIConfigLoader(ConfigLoader):
         # get the limits
         limits_config = self.main_config.get_dict_config('limits')
         max_missing = limits_config.get_value('max_adobe_only_users', (int, str), False)
-        percent_pattern = re.compile(r"(\d*(\.\d+)?%)")
-        if isinstance(max_missing, str) and percent_pattern.match(max_missing):
-            max_missing_percent = float(max_missing.strip('%'))
-            if 0.0 <= max_missing_percent <= 100.0:
-                options['max_adobe_only_users'] = max_missing
-            else:
-                raise AssertionException("max_adobe_only_users value must be less or equal than 100%")
-        else:
-            try:
-                options['max_adobe_only_users'] = int(max_missing)
-            except ValueError:
-                raise AssertionException("Unable to parse max_adobe_only_users value. Value must be a percentage or an integer.")
-
+        options['max_adobe_only_users'] = validate_max_limit_config(max_missing)
+        
         # now get the directory extension, if any
         extension_config = self.get_directory_extension_options()
         options['extension_enabled'] = flags.get_flag('UST_EXTENSION')
