@@ -97,7 +97,7 @@ class SignClient:
 
         return result.json()[access_point_key] + endpoint
 
-    async def call_with_async(self, method, url, header, data={}):
+    async def call_with_async(self, method, url, header, data=None):
         """
         Call manager with exponential retry
         :return: Response <Response> object
@@ -109,8 +109,7 @@ class SignClient:
                 waiting_time *= 3
                 self.logger.debug('Attempt {} to call: {}'.format(retry_nb, url))
                 async with aiohttp.ClientSession(headers=header) as session:
-                    async with session.request(method=method, url=url, data=data) as r:
-
+                    async with session.request(method=method, url=url, data=data or {}) as r:
                         if r.status >= 500:
                             raise Exception('{}, Headers: {}'.format(r.status, r.headers))
                         elif r.status == 429:
@@ -173,7 +172,8 @@ class SignClient:
         loop.run_until_complete(asyncio.wait(calls))
 
         # return so as to comply with existing code calling this function
-        # *prefer instance var to awaiting coroutine results as we cannot guarantee they will be user obj
+        # *prefer instance var to awaiting coroutine results as we cannot
+        # guarantee they will be user obj
         return self.users
 
     # Note the async def - this function can only be executed in asyncio context
@@ -192,10 +192,6 @@ class SignClient:
         user['roles'] = self.user_roles(user)
         self.users[user['email']] = user
         self.logger.debug('retrieved user details for Sign user {}'.format(user['email']))
-
-        # Here for now to make apparent the batches of calls.  Remove for full speed.
-        # self.logger.info("Artificial asyncio sleep pause for 5s")
-        # await asyncio.sleep(5)
 
         # Release the worker back to pool
         semaphore.release()
