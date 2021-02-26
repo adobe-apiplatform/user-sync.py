@@ -168,9 +168,8 @@ class SignClient:
         # at the end when it is finished
         calls = []
         self.users = {}
-        for i in range(100):
-            for user_id in map(lambda u: u['userId'], users_res.json()['userInfoList']):
-                calls.append(self.get_sign_user(sem, user_id, header))
+        for user_id in map(lambda u: u['userId'], users_res.json()['userInfoList']):
+            calls.append(self.get_sign_user(sem, user_id, header))
 
         # wait for all calls to finish
         loop.run_until_complete(asyncio.wait(calls))
