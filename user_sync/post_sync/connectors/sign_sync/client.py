@@ -1,6 +1,10 @@
 import logging
 import json
+import random
 import time
+import asyncio
+
+import aiohttp
 
 from user_sync.error import AssertionException
 
@@ -24,6 +28,7 @@ class SignClient:
         self.groups = None
         self.max_sign_retries = 3
         self.sign_timeout = 120
+        self.concurrency_limit = 5
         self.logger = logging.getLogger(self.logger_name())
         logging.getLogger("urllib3").setLevel(logging.WARNING)
 
@@ -51,7 +56,7 @@ class SignClient:
             }
         return {
             'Access-Token': self.key,
-            'Connection': 'close',
+            # 'Connection': 'close',
         }
 
     def header_json(self):
@@ -107,48 +112,112 @@ class SignClient:
                 self.logger.debug('Attempt {} to call: {}'.format(retry_nb, url))
                 with requests.Session() as s:
                     r = s.request(method=method, url=url, headers=header, data=data, timeout=self.sign_timeout)
-                if r.status_code >= 500:
-                    raise Exception('{}, Headers: {}'.format(r.status_code, r.headers))
-                elif r.status_code == 429:
-                    raise Exception('{} - too many calls. Headers: {}'.format(r.status_code, r.headers))
-                elif r.status_code > 400 and r.status_code < 500:
-                    self.logger.critical(' {} - {}. Headers: {}'.format(r.status_code, r.reason, r.headers))
-                    raise AssertionException('')
-            except Exception as exp:
-                self.logger.warning('Failed: {}'.format(exp))
-                if retry_nb == (self.max_sign_retries + 1):
-                    raise AssertionException('Quitting after {} retries'.format(self.max_sign_retries))
-                self.logger.warning('Waiting for {} seconds'.format(waiting_time))
+                    self.check_result(r)
+            except Exception as exc:
+                self.handle_retry_exc(retry_nb, waiting_time, exc)
                 time.sleep(waiting_time)
                 retry_nb += 1
             else:
                 return r
+
+    def handle_retry_exc(self, retry_nb, wait_time, exc):
+        self.logger.warning('Failed: {}'.format(exc))
+        if retry_nb == (self.max_sign_retries + 1):
+            raise AssertionException('Quitting after {} retries'.format(self.max_sign_retries))
+        self.logger.warning('Waiting for {} seconds'.format(wait_time))
+
+
+    def check_result(self, response):
+        if response.status_code >= 500:
+            raise Exception('{}, Headers: {}'.format(response.status_code, response.headers))
+        elif response.status_code == 429:
+            raise Exception('{} - too many calls. Headers: {}'.format(response.status_code, response.headers))
+        elif response.status_code > 400 and response.status_code < 500:
+            self.logger.critical(' {} - {}. Headers: {}'.format(response.status_code, response.reason, response.headers))
+            raise AssertionException('')
 
     def get_users(self):
         """
         Get list of all users from Sign (indexed by email address)
         :return: dict()
         """
+
         if self.api_url is None or self.groups is None:
             self._init()
-        users = {}
+
         header = self.header()
         users_url = self.api_url + 'users'
         self.logger.info('getting list of all Sign users')
+
+        # Synchronus call to get user list, which will be distributed to asyncio
         users_res = self.call_with_retry('GET', users_url, header)
 
-        for user_id in map(lambda u: u['userId'], users_res.json()['userInfoList']):
-            user_url = self.api_url + 'users/' + user_id
-            response = self.call_with_retry('GET', user_url, header)
-            user = response.json()
-            if user['userStatus'] != 'ACTIVE':
-                continue
-            if user['email'] == self.admin_email:
-                continue
-            user['userId'] = user_id
-            user['roles'] = self.user_roles(user)
-            users[user['email']] = user
-        return users
+        # loop will execute the tasks
+        loop = asyncio.get_event_loop()
+
+        # Semaphore specifies number of allowed calls at one time
+        sem = asyncio.Semaphore(value=self.concurrency_limit)
+
+        # prepare a list of calls to make * Note: calls are prepared by using call
+        # syntax (eg, func() and not func), but they will not be run until executed
+        # by the loop
+
+        # Also define self.users = {} to use as receptical for users.  Important to
+        # use self context because we cannot easily return values from our get calls
+        # Instead, they concurrently add to the users dict, and we will return it
+        # at the end when it is finished
+        calls = []
+        self.users = {}
+        for i in range(100):
+            for user_id in map(lambda u: u['userId'], users_res.json()['userInfoList']):
+                calls.append(self.get_sign_user(sem, user_id, header))
+
+        # wait for all calls to finish
+        loop.run_until_complete(asyncio.wait(calls))
+
+        # close loop
+        loop.close()
+
+        # return so as to comply with existing code calling this function
+        return self.users
+
+    # Note the async def - this function can only be executed in asyncio context
+    async def get_sign_user(self, semaphore, user_id, header):
+
+        # This will block the method from executing until a position opens
+        await semaphore.acquire()
+
+        user_url = self.api_url + 'users/' + user_id
+
+        async with aiohttp.ClientSession(headers=header) as session:
+            async with session.get(url=user_url) as response:
+
+                # This is where we want to implement any retry logic and handling
+                # we are limited in refactoring because async def and normal def
+                # cannot be shared.
+
+                # Possibly refactor the retry code into smaller functions, eg:
+                # response.status_code = response.status
+                # self.check_result(response)
+
+                # await is proper usage to get the response content
+                user = await response.json()
+                if user['userStatus'] != 'ACTIVE':
+                    return
+                if user['email'] == self.admin_email:
+                    return
+                user['userId'] = user_id
+                user['roles'] = self.user_roles(user)
+                self.users[user['email']] = user
+                self.logger.debug('retrieved user details for Sign user {}'.format(user['email']))
+
+        # Here for now to make apparent the batches of calls.  Remove for full speed.
+        self.logger.info("Artificial asyncio sleep pause for 5s")
+        await asyncio.sleep(5)
+
+
+        # Release the worker back to pool
+        semaphore.release()
 
     def get_groups(self):
         """
