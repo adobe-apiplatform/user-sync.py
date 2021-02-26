@@ -225,7 +225,7 @@ class SignClient:
         data = json.dumps({'groupName': group})
         self.logger.info('Creating Sign group {} '.format(group))
         res = self.call_with_retry_sync('POST', url, header, data)
-        self.groups[group] = res.json()['groupId']
+        self.groups[group] = res['groupId']
 
     def update_user(self, user_id, data):
         """
