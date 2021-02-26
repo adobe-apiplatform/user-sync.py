@@ -1,14 +1,12 @@
-import logging
-import json
-import random
-import time
 import asyncio
+import json
+import logging
+import time
 
 import aiohttp
+import requests
 
 from user_sync.error import AssertionException
-
-import requests
 
 
 class SignClient:
@@ -132,7 +130,7 @@ class SignClient:
 
     def call_with_retry_sync(self, method, url, header, data=None):
 
-        # loop will execute a single synchronus call, but sharing code with the async retry method
+        # loop will execute a single synchronous call, but sharing code with the async retry method
         loop = asyncio.get_event_loop()
         res = loop.run_until_complete(self.call_with_async(method, url, header, data=data or {}))
         return res
@@ -150,10 +148,10 @@ class SignClient:
         users_url = self.api_url + 'users'
         self.logger.info('getting list of all Sign users')
 
-        # Synchronus call to get user list, which will be distributed to asyncio
+        # Synchronous call to get user list, which will be distributed to asyncio
         users_res = self.call_with_retry_sync('GET', users_url, header)
 
-        # Also define self.users = {} to use as receptical for users.  Important to
+        # Also define self.users = {} to use as receptacle for users.  Important to
         # use self context because we cannot easily return values from our get calls
         # Instead, they concurrently add to the users dict, and we will return it
         # at the end when it is finished
