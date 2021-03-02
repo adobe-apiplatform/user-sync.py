@@ -25,7 +25,7 @@ class SignClient:
         self.groups = None
         self.max_sign_retries = 3
         self.sign_timeout = 120
-        self.concurrency_limit = config['request_concurrency']
+        self.concurrency_limit = config.get('request_concurrency') or 1
         self.logger = logging.getLogger(self.logger_name())
         logging.getLogger("urllib3").setLevel(logging.WARNING)
         self.loop = asyncio.get_event_loop()
@@ -169,7 +169,6 @@ class SignClient:
             # prepare a list of calls to make * Note: calls are prepared by using call
             # syntax (eg, func() and not func), but they will not be run until executed by the wait
             calls = [self._get_user(sem, u['userId'], headers, session) for u in user_list['userInfoList']]
-
             await asyncio.wait(calls)
 
     async def update_users_async(self, users):
