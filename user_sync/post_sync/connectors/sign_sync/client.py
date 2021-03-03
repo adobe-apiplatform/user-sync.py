@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import time
+from math import ceil
 
 import aiohttp
 import requests
@@ -142,13 +143,15 @@ class SignClient:
         if self.api_url is None or self.groups is None:
             self._init()
         t0 = time.perf_counter()
-        self.logger.info("Update time: {}".format(time.perf_counter() - t0))
 
         if not users:
             return
 
+        nbat = ceil(len(users) / self.batch_size)
         for i in range(0, len(users), self.batch_size):
+            self.logger.info("Batch # {}/{}".format(i + 1, nbat))
             self.loop.run_until_complete(self.update_users_async(users[i:i + self.batch_size]))
+        self.logger.info("Update time: {}".format(time.perf_counter() - t0))
 
     def get_users(self):
         """
@@ -158,7 +161,7 @@ class SignClient:
         guarantee they will be user obj
         """
         t0 = time.perf_counter()
-        self.logger.info("Get time: {}".format(time.perf_counter() - t0))
+
         if self.api_url is None or self.groups is None:
             self._init()
 
@@ -169,8 +172,11 @@ class SignClient:
         user_list, code = self.call_with_retry_sync('GET', users_url, headers)
         user_list = user_list['userInfoList']
 
+        nbat = ceil(len(user_list) / self.batch_size)
         for i in range(0, len(user_list), self.batch_size):
+            self.logger.info("Batch # {}/{}".format(i + 1, nbat))
             self.loop.run_until_complete(self.get_users_async(user_list[i:i + self.batch_size]))
+        self.logger.info("Get time: {}".format(time.perf_counter() - t0))
         return self.users
 
     async def get_users_async(self, users):
@@ -183,14 +189,12 @@ class SignClient:
 
         # We must use only 1 session, else will hang
         async with aiohttp.ClientSession() as session:
-
             # prepare a list of calls to make * Note: calls are prepared by using call
             # syntax (eg, func() and not func), but they will not be run until executed by the wait
             # split into batches of self.bach_size to avoid taking too much memory
             headers = self.header()
             calls = [self._get_user(sem, u['userId'], headers, session) for u in users]
             await asyncio.wait(calls)
-
 
     async def update_users_async(self, users):
         """
