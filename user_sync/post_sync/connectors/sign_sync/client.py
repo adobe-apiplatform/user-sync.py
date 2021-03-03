@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import time
 
 import aiohttp
 import requests
@@ -30,6 +31,8 @@ class SignClient:
         logging.getLogger("urllib3").setLevel(logging.WARNING)
         self.loop = asyncio.get_event_loop()
         self.users = {}
+        self.fetched_count = 0
+        self.updated_count = 0
 
     def _init(self):
         self.api_url = self.base_uri()
@@ -135,7 +138,12 @@ class SignClient:
         *prefer instance var to awaiting coroutine results as we cannot
         guarantee they will be user obj
         """
+        if not users:
+            return
+
+        t0 = time.perf_counter()
         self.loop.run_until_complete(self.update_users_async(users))
+        self.logger.info("Update time: {}".format(time.perf_counter() - t0))
 
     def get_users(self):
         """
@@ -144,7 +152,9 @@ class SignClient:
         *prefer instance var to awaiting coroutine results as we cannot
         guarantee they will be user obj
         """
+        t0 = time.perf_counter()
         self.loop.run_until_complete(self.get_users_async())
+        self.logger.info("Get time: {}".format(time.perf_counter() - t0))
         return self.users
 
     async def get_users_async(self):
@@ -178,15 +188,11 @@ class SignClient:
         if self.api_url is None or self.groups is None:
             self._init()
 
-        if not users:
-            return
-
         # Semaphore specifies number of allowed calls at one time
         sem = asyncio.Semaphore(value=self.concurrency_limit)
 
         # We must use only 1 session, else will hang
         async with aiohttp.ClientSession() as session:
-
             # prepare a list of calls to make * Note: calls are prepared by using call
             # syntax (eg, func() and not func), but they will not be run until executed by the wait
 
@@ -199,6 +205,8 @@ class SignClient:
         async with semaphore:
             user_url = self.api_url + 'users/' + user_id
             user, code = await self.call_with_retry_async('GET', user_url, header, session=session)
+            self.fetched_count += 1
+            self.logger.info("Total retrieved: {}".format(self.fetched_count))
             if code != 200:
                 self.logger.error("Error fetching user '{}' with response: {}".format(user_id, user))
                 return
@@ -218,11 +226,14 @@ class SignClient:
         :param data: dict()
         :return: dict()
         """
+
         async with semaphore:
             url = self.api_url + 'users/' + user_id
             header = self.header_json()
             group = self.reverse_groups[data['groupId']]
             body, code = await self.call_with_retry_async('PUT', url, header, data=json.dumps(data), session=session)
+            self.updated_count += 1
+            self.logger.info("Total updated: {}".format(self.updated_count))
             self.logger.info(
                 "Updated Sign user '{}', Group: '{}', Roles: {}".format(data['email'], group, data['roles']))
             if code != 200:
@@ -249,7 +260,7 @@ class SignClient:
         :return: Response <Response> object
         """
         retry_nb = 1
-        waiting_time = 20
+        waiting_time = 10
         close = session is None
         session = session or aiohttp.ClientSession()
         session.headers.update(header)
@@ -268,11 +279,12 @@ class SignClient:
                     body = await r.json()
                     return body, r.status
             except Exception as exp:
-                self.logger.warning('Failed: {}'.format(exp))
+                self.logger.warning('Failed: {} - {}'.format(type(exp), exp.args))
                 if retry_nb == (self.max_sign_retries + 1):
                     raise AssertionException('Quitting after {} retries'.format(self.max_sign_retries))
                 self.logger.warning('Waiting for {} seconds'.format(waiting_time))
                 await asyncio.sleep(waiting_time)
+                self.logger.warning("Retrying...")
                 retry_nb += 1
             finally:
                 if close:
