@@ -26,6 +26,7 @@ class SignClient:
         self.groups = None
         self.max_sign_retries = 3
         self.sign_timeout = 120
+        self.batch_size = 100
         self.concurrency_limit = config.get('request_concurrency') or 1
         self.logger = logging.getLogger(self.logger_name())
         logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -175,11 +176,14 @@ class SignClient:
         async with aiohttp.ClientSession() as session:
             # Get the user list
             user_list, code = await self.call_with_retry_async('GET', users_url, headers, session=session)
+            user_list = user_list['userInfoList']
 
             # prepare a list of calls to make * Note: calls are prepared by using call
             # syntax (eg, func() and not func), but they will not be run until executed by the wait
-            calls = [self._get_user(sem, u['userId'], headers, session) for u in user_list['userInfoList']]
-            await asyncio.wait(calls)
+            # split into batches of self.bach_size to avoid taking too much memory
+            for i in range(0, len(user_list), self.batch_size):
+                calls = [self._get_user(sem, u['userId'], headers, session) for u in user_list[i:i + self.batch_size]]
+                await asyncio.wait(calls)
 
     async def update_users_async(self, users):
         """
@@ -195,9 +199,11 @@ class SignClient:
         async with aiohttp.ClientSession() as session:
             # prepare a list of calls to make * Note: calls are prepared by using call
             # syntax (eg, func() and not func), but they will not be run until executed by the wait
-
-            calls = [self._update_user(sem, id, data, session) for id, data in users.items()]
-            await asyncio.wait(calls)
+            # split into batches of self.batch_size to avoid taking too much memory
+            keys = list(users.keys())
+            for i in range(0, len(users), self.batch_size):
+                calls = [self._update_user(sem, u, users[u], session) for u in keys[i:i + self.batch_size]]
+                await asyncio.wait(calls)
 
     async def _get_user(self, semaphore, user_id, header, session):
 
