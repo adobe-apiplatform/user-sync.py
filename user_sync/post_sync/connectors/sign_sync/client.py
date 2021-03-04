@@ -138,13 +138,7 @@ class SignClient:
         *prefer instance var to awaiting coroutine results as we cannot
         guarantee they will be user obj
         """
-        if self.api_url is None or self.groups is None:
-            self._init()
-
-        batch_count = ceil(len(users) / self.batch_size)
-        for i in range(0, len(users), self.batch_size):
-            self.logger.info("Batch # {}/{}".format(i + 1, batch_count))
-            self.loop.run_until_complete(self.update_users_async(users[i:i + self.batch_size]))
+        self._handle_calls(self._update_user, self.header_json(), users)
 
     def get_users(self):
         """
@@ -153,25 +147,36 @@ class SignClient:
         *prefer instance var to awaiting coroutine results as we cannot
         guarantee they will be user obj
         """
+        self.logger.info('Getting list of all Sign users')
+        user_list, _ = self.call_with_retry_sync('GET', self.api_url + 'users', self.header())
+
+        user_ids = [u['userId'] for u in user_list['userInfoList']]
+        self._handle_calls(self._get_user, self.header(), user_ids)
+        return self.users
+
+    def _handle_calls(self, handle, headers, objects):
+        """
+        Batches and executes handle for each of o in objects
+        handle: reference to function which will be called
+        headers: api headers (common to all requests)
+        objects: list of objects, which will be iterated through - and handle called on each
+        """
+
         if self.api_url is None or self.groups is None:
             self._init()
 
-        headers = self.header()
-        users_url = self.api_url + 'users'
-        self.logger.info('Getting list of all Sign users')
+        # Execute calls by batches.  This reduces the memory stack, since we do not need to create all
+        # coroutines before starting execution.  We call run_until_complete for each set until all sets have run
+        set_number = 1
+        batch_count = ceil(len(objects) / self.batch_size)
+        for i in range(0, len(objects), self.batch_size):
+            self.logger.info("{}s - batch {}/{}".format(handle.__name__, set_number, batch_count))
+            self.loop.run_until_complete(self._await_calls(handle, headers, objects[i:i + self.batch_size]))
+            set_number += 1
 
-        user_list, code = self.call_with_retry_sync('GET', users_url, headers)
-        user_list = user_list['userInfoList']
-
-        batch_count = ceil(len(user_list) / self.batch_size)
-        for i in range(0, len(user_list), self.batch_size):
-            self.logger.info("Batch # {}/{}".format(i + 1, batch_count))
-            self.loop.run_until_complete(self.get_users_async(user_list[i:i + self.batch_size]))
-        return self.users
-
-    async def get_users_async(self, users):
+    async def _await_calls(self, handle, headers, objects):
         """
-        Get list of all users from Sign (indexed by email address)
+        Where we actually await the coroutines. Must be own method, in order to be handled by loop
         """
 
         # Semaphore specifies number of allowed calls at one time
@@ -182,20 +187,7 @@ class SignClient:
             # prepare a list of calls to make * Note: calls are prepared by using call
             # syntax (eg, func() and not func), but they will not be run until executed by the wait
             # split into batches of self.bach_size to avoid taking too much memory
-            headers = self.header()     # share headers to save on memory
-            calls = [self._get_user(sem, u['userId'], headers, session) for u in users]
-            await asyncio.wait(calls)
-
-    async def update_users_async(self, users):
-        """
-        Get list of all users from Sign (indexed by email address)
-        See get_users_async for comments
-        """
-
-        sem = asyncio.Semaphore(value=self.concurrency_limit)
-        async with aiohttp.ClientSession(trust_env=True) as session:
-            headers = self.header_json()
-            calls = [self._update_user(sem, u, headers, session) for u in users]
+            calls = [handle(sem, o, headers, session) for o in objects]
             await asyncio.wait(calls)
 
     async def _get_user(self, semaphore, user_id, header, session):

@@ -10,6 +10,10 @@ sign_orgs:
     key: "Sign API key"
     # Sign account associated with admin_email value will be skipped
     admin_email: "Admin user associated with key e.g. user@example.com"
+    # Number of allowed concurrent requests (higher is faster, but consumes more bandwidth and memory)
+    request_concurrency: 5
+    # Number of requests to queue at one time.  Reduce if memory usage is too high.
+    batch_size: 10000
 
 # User groups to sync to Adobe Sign
 # Secondary orgs (as defined in user-sync-config.yml) can optionally be targeted
