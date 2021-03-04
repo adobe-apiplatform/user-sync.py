@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import time
 from math import ceil
 
 import aiohttp
@@ -33,8 +32,6 @@ class SignClient:
         logging.getLogger("urllib3").setLevel(logging.WARNING)
         self.loop = asyncio.get_event_loop()
         self.users = {}
-        self.fetched_count = 0
-        self.updated_count = 0
 
     def _init(self):
         self.api_url = self.base_uri()
@@ -126,6 +123,7 @@ class SignClient:
         """
         if self.api_url is None or self.groups is None:
             self._init()
+
         url = self.api_url + 'groups'
         header = self.header_json()
         data = json.dumps({'groupName': group})
@@ -142,16 +140,11 @@ class SignClient:
         """
         if self.api_url is None or self.groups is None:
             self._init()
-        t0 = time.perf_counter()
 
-        if not users:
-            return
-
-        nbat = ceil(len(users) / self.batch_size)
+        batch_count = ceil(len(users) / self.batch_size)
         for i in range(0, len(users), self.batch_size):
-            self.logger.info("Batch # {}/{}".format(i + 1, nbat))
+            self.logger.info("Batch # {}/{}".format(i + 1, batch_count))
             self.loop.run_until_complete(self.update_users_async(users[i:i + self.batch_size]))
-        self.logger.info("Update time: {}".format(time.perf_counter() - t0))
 
     def get_users(self):
         """
@@ -160,23 +153,20 @@ class SignClient:
         *prefer instance var to awaiting coroutine results as we cannot
         guarantee they will be user obj
         """
-        t0 = time.perf_counter()
-
         if self.api_url is None or self.groups is None:
             self._init()
 
         headers = self.header()
         users_url = self.api_url + 'users'
-        self.logger.info('getting list of all Sign users')
+        self.logger.info('Getting list of all Sign users')
 
         user_list, code = self.call_with_retry_sync('GET', users_url, headers)
         user_list = user_list['userInfoList']
 
-        nbat = ceil(len(user_list) / self.batch_size)
+        batch_count = ceil(len(user_list) / self.batch_size)
         for i in range(0, len(user_list), self.batch_size):
-            self.logger.info("Batch # {}/{}".format(i + 1, nbat))
+            self.logger.info("Batch # {}/{}".format(i + 1, batch_count))
             self.loop.run_until_complete(self.get_users_async(user_list[i:i + self.batch_size]))
-        self.logger.info("Get time: {}".format(time.perf_counter() - t0))
         return self.users
 
     async def get_users_async(self, users):
@@ -192,22 +182,18 @@ class SignClient:
             # prepare a list of calls to make * Note: calls are prepared by using call
             # syntax (eg, func() and not func), but they will not be run until executed by the wait
             # split into batches of self.bach_size to avoid taking too much memory
-            headers = self.header()
+            headers = self.header()     # share headers to save on memory
             calls = [self._get_user(sem, u['userId'], headers, session) for u in users]
             await asyncio.wait(calls)
 
     async def update_users_async(self, users):
         """
         Get list of all users from Sign (indexed by email address)
+        See get_users_async for comments
         """
 
-        # Semaphore specifies number of allowed calls at one time
         sem = asyncio.Semaphore(value=self.concurrency_limit)
-
-        # We must use only 1 session, else will hang
         async with aiohttp.ClientSession(trust_env=True) as session:
-            # prepare a list of calls to make * Note: calls are prepared by using call
-            # syntax (eg, func() and not func), but they will not be run until executed by the wait
             headers = self.header_json()
             calls = [self._update_user(sem, u, headers, session) for u in users]
             await asyncio.wait(calls)
@@ -218,8 +204,6 @@ class SignClient:
         async with semaphore:
             user_url = self.api_url + 'users/' + user_id
             user, code = await self.call_with_retry_async('GET', user_url, header, session=session)
-            self.fetched_count += 1
-            self.logger.info("Total retrieved: {}".format(self.fetched_count))
             if code != 200:
                 self.logger.error("Error fetching user '{}' with response: {}".format(user_id, user))
                 return
@@ -235,17 +219,12 @@ class SignClient:
     async def _update_user(self, semaphore, user, headers, session):
         """
         Update Sign user
-        :param user_id: str
-        :param data: dict()
-        :return: dict()
         """
 
         async with semaphore:
             url = self.api_url + 'users/' + user['userId']
             group = self.reverse_groups[user['groupId']]
             body, code = await self.call_with_retry_async('PUT', url, headers, data=json.dumps(user), session=session)
-            self.updated_count += 1
-            self.logger.info("Total updated: {}".format(self.updated_count))
             self.logger.info(
                 "Updated Sign user '{}', Group: '{}', Roles: {}".format(user['email'], group, user['roles']))
             if code != 200:
