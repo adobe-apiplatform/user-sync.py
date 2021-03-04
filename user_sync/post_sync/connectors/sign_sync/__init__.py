@@ -55,7 +55,7 @@ class SignConnector(PostSyncConnector):
 
     def update_sign_users(self, umapi_users, sign_client, org_name):
         sign_users = sign_client.get_users()
-        users_update_dict = {}
+        users_update_list = []
         for _, umapi_user in umapi_users.items():
             sign_user = sign_users.get(umapi_user['email'].lower())
             if not self.should_sync(umapi_user, sign_user, org_name):
@@ -74,7 +74,8 @@ class SignConnector(PostSyncConnector):
             group_id = sign_client.groups.get(assignment_group)
             admin_roles = self.admin_roles.get(org_name, {})
             user_roles = self.resolve_new_roles(umapi_user, admin_roles)
-            update_data = {
+            user_data = {
+                "userId": sign_user['userId'],
                 "email": sign_user['email'],
                 "firstName": sign_user['firstName'],
                 "groupId": group_id,
@@ -84,10 +85,10 @@ class SignConnector(PostSyncConnector):
             if sign_user['group'].lower() == assignment_group and self.roles_match(user_roles, sign_user['roles']):
                 self.logger.debug("skipping Sign update for '{}' -- no updates needed".format(umapi_user['email']))
                 continue
-            users_update_dict[sign_user['userId']] = update_data
+            users_update_list.append(user_data)
 
         # Update in a batch so as to utilize asyncio
-        sign_client.update_users(users_update_dict)
+        sign_client.update_users(users_update_list)
 
     @staticmethod
     def roles_match(resolved_roles, sign_roles):
