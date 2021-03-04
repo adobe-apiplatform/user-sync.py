@@ -133,19 +133,15 @@ class SignClient:
 
     def update_users(self, users):
         """
-        Need to define this method, so that it can be called outside async context
-        return dict so as to comply with existing code calling this function
-        *prefer instance var to awaiting coroutine results as we cannot
-        guarantee they will be user obj
+        Passthrough for call handling
         """
         self._handle_calls(self._update_user, self.header_json(), users)
 
     def get_users(self):
         """
-        Need to define this method, so that it can be called outside async context
-        return dict so as to comply with existing code calling this function
-        *prefer instance var to awaiting coroutine results as we cannot
-        guarantee they will be user obj
+        Gets the full user list, and then extracts the user ID's for making calls
+        We return self.users because it will be filled by the _get_user method.  This is
+        necessary to avoid returning futures of calls which we cannot predict.
         """
         self.logger.info('Getting list of all Sign users')
         user_list, _ = self.call_with_retry_sync('GET', self.api_url + 'users', self.header())
