@@ -55,7 +55,8 @@ setup(name='user-sync',
           'umapi-client>=2.14',
           'click',
           'click-default-group',
-          'configparser==3.7.4'
+          'configparser==3.7.4',
+          'aiohttp'
       ],
       extras_require={
           ':sys_platform=="linux" or sys_platform=="linux2"': [
