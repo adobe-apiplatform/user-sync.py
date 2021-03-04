@@ -27,8 +27,8 @@ class SignClient:
         self.groups = None
         self.max_sign_retries = 3
         self.sign_timeout = 120
-        self.batch_size = 10000
         self.concurrency_limit = config.get('request_concurrency') or 1
+        self.batch_size = config.get('batch_size') or 10000
         self.logger = logging.getLogger(self.logger_name())
         logging.getLogger("urllib3").setLevel(logging.WARNING)
         self.loop = asyncio.get_event_loop()
@@ -188,7 +188,7 @@ class SignClient:
         sem = asyncio.Semaphore(value=self.concurrency_limit)
 
         # We must use only 1 session, else will hang
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(trust_env=True) as session:
             # prepare a list of calls to make * Note: calls are prepared by using call
             # syntax (eg, func() and not func), but they will not be run until executed by the wait
             # split into batches of self.bach_size to avoid taking too much memory
@@ -205,10 +205,11 @@ class SignClient:
         sem = asyncio.Semaphore(value=self.concurrency_limit)
 
         # We must use only 1 session, else will hang
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(trust_env=True) as session:
             # prepare a list of calls to make * Note: calls are prepared by using call
             # syntax (eg, func() and not func), but they will not be run until executed by the wait
-            calls = [self._update_user(sem, id, data, session) for id, data in users.items()]
+            headers = self.header_json()
+            calls = [self._update_user(sem, u, headers, session) for u in users]
             await asyncio.wait(calls)
 
     async def _get_user(self, semaphore, user_id, header, session):
@@ -231,7 +232,7 @@ class SignClient:
             self.users[user['email']] = user
             self.logger.debug('retrieved user details for Sign user {}'.format(user['email']))
 
-    async def _update_user(self, semaphore, user_id, data, session):
+    async def _update_user(self, semaphore, user, headers, session):
         """
         Update Sign user
         :param user_id: str
@@ -240,16 +241,15 @@ class SignClient:
         """
 
         async with semaphore:
-            url = self.api_url + 'users/' + user_id
-            header = self.header_json()
-            group = self.reverse_groups[data['groupId']]
-            body, code = await self.call_with_retry_async('PUT', url, header, data=json.dumps(data), session=session)
+            url = self.api_url + 'users/' + user['userId']
+            group = self.reverse_groups[user['groupId']]
+            body, code = await self.call_with_retry_async('PUT', url, headers, data=json.dumps(user), session=session)
             self.updated_count += 1
             self.logger.info("Total updated: {}".format(self.updated_count))
             self.logger.info(
-                "Updated Sign user '{}', Group: '{}', Roles: {}".format(data['email'], group, data['roles']))
+                "Updated Sign user '{}', Group: '{}', Roles: {}".format(user['email'], group, user['roles']))
             if code != 200:
-                self.logger.error("Error updating user '{}' with response: {}".format(data['email'], body))
+                self.logger.error("Error updating user '{}' with response: {}".format(user['email'], body))
 
     @staticmethod
     def user_roles(user):
@@ -274,7 +274,7 @@ class SignClient:
         retry_nb = 1
         waiting_time = 10
         close = session is None
-        session = session or aiohttp.ClientSession()
+        session = session or aiohttp.ClientSession(trust_env=True)
         session.headers.update(header)
         while True:
             try:
