@@ -30,6 +30,7 @@ class SignConnector(PostSyncConnector):
         sign_orgs = sync_config.get_list('sign_orgs')
         self.clients = {}
         for sign_org_config in sign_orgs:
+            sign_org_config['connection'] = config_options.get('connection') or {}
             sign_client = SignClient(sign_org_config)
             self.clients[sign_client.console_org] = sign_client
         self.test_mode = test_mode

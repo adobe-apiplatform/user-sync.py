@@ -24,10 +24,10 @@ class SignClient:
         self.console_org = config['console_org'] if 'console_org' in config else None
         self.api_url = None
         self.groups = None
-        self.max_sign_retries = 3
-        self.sign_timeout = 120
-        self.concurrency_limit = config.get('request_concurrency') or 1
-        self.batch_size = config.get('batch_size') or 10000
+        connection_cfg = config.get('connection') or {}
+        self.max_sign_retries = connection_cfg.get('retry_count') or 5
+        self.concurrency_limit = connection_cfg.get('request_concurrency') or 1
+        self.batch_size = connection_cfg.get('batch_size') or 10000
         self.logger = logging.getLogger(self.logger_name())
         logging.getLogger("urllib3").setLevel(logging.WARNING)
         self.loop = asyncio.get_event_loop()
@@ -208,7 +208,7 @@ class SignClient:
         """
         Update Sign user
         """
-
+        # This will block the method from executing until a position opens
         async with semaphore:
             url = self.api_url + 'users/' + user['userId']
             group = self.reverse_groups[user['groupId']]
@@ -238,7 +238,7 @@ class SignClient:
         Call manager with exponential retry
         :return: Response <Response> object
         """
-        retry_nb = 1
+        retry_nb = 0
         waiting_time = 10
         close = session is None
         session = session or aiohttp.ClientSession(trust_env=True)
@@ -258,13 +258,12 @@ class SignClient:
                     body = await r.json()
                     return body, r.status
             except Exception as exp:
+                retry_nb += 1
                 self.logger.warning('Failed: {} - {}'.format(type(exp), exp.args))
                 if retry_nb == (self.max_sign_retries + 1):
                     raise AssertionException('Quitting after {} retries'.format(self.max_sign_retries))
                 self.logger.warning('Waiting for {} seconds'.format(waiting_time))
                 await asyncio.sleep(waiting_time)
-                self.logger.warning("Retrying...")
-                retry_nb += 1
             finally:
                 if close:
                     await session.close()
