@@ -175,6 +175,9 @@ class SignClient:
         Where we actually await the coroutines. Must be own method, in order to be handled by loop
         """
 
+        if not objects:
+            return 
+
         # Semaphore specifies number of allowed calls at one time
         sem = asyncio.Semaphore(value=self.concurrency_limit)
 
