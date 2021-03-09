@@ -140,7 +140,7 @@ class SignClient:
         res = requests.post(self.api_url + 'groups', headers=self.header_json(), data=json.dumps({'groupName': group}))
         if res.status_code != 201:
             raise AssertionException("Failed to create Sign group '{}' (reason: {})".format(group, res.reason))
-        self.groups[group] = res.json()['groupId']
+        self.groups[group] = res.json()['groupId'].lower()
 
     def update_user(self, user_id, data):
         """
