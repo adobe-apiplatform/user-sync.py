@@ -27,9 +27,11 @@ class SignClient:
         connection_cfg = config.get('connection') or {}
         self.max_sign_retries = connection_cfg.get('retry_count') or 5
         self.concurrency_limit = connection_cfg.get('request_concurrency') or 1
+        timeout = connection_cfg.get('timeout') or 120
         self.batch_size = connection_cfg.get('batch_size') or 10000
         self.logger = logging.getLogger(self.logger_name())
         logging.getLogger("urllib3").setLevel(logging.WARNING)
+        self.timeout = aiohttp.ClientTimeout(total=None, sock_connect=timeout, sock_read=timeout)
         self.loop = asyncio.get_event_loop()
         self.users = {}
 
@@ -182,7 +184,7 @@ class SignClient:
         sem = asyncio.Semaphore(value=self.concurrency_limit)
 
         # We must use only 1 session, else will hang
-        async with aiohttp.ClientSession(trust_env=True) as session:
+        async with aiohttp.ClientSession(trust_env=True, timeout=self.timeout) as session:
             # prepare a list of calls to make * Note: calls are prepared by using call
             # syntax (eg, func() and not func), but they will not be run until executed by the wait
             # split into batches of self.bach_size to avoid taking too much memory
@@ -244,7 +246,7 @@ class SignClient:
         retry_nb = 0
         waiting_time = 10
         close = session is None
-        session = session or aiohttp.ClientSession(trust_env=True)
+        session = session or aiohttp.ClientSession(trust_env=True, timeout=self.timeout)
         session.headers.update(header)
         while True:
             try:

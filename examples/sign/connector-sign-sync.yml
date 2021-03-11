@@ -18,7 +18,9 @@ connection:
   batch_size: 10000
   # Number of times to retry failed requests
   retry_count: 5
-
+  # Timeout for requests in seconds
+  timeout: 120
+  
 # User groups to sync to Adobe Sign
 # Secondary orgs (as defined in user-sync-config.yml) can optionally be targeted
 # NOTE: if targeting a group on a secondary org here, there MUST be at least one entitlement_group
