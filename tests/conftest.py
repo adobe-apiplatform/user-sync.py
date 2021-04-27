@@ -1,9 +1,13 @@
 import os
+import logging
 
 import pytest
 
 from user_sync import config
 import shutil
+
+from tests.util import ClearableStringIO, blank_user_full
+from user_sync.rules import RuleProcessor
 
 
 @pytest.fixture
@@ -81,3 +85,13 @@ def resource_file():
         open(filepath, 'a').close()
         return filepath
     return _resource_file
+
+@pytest.fixture
+def log_stream():
+    stream = ClearableStringIO()
+    handler = logging.StreamHandler(stream)
+    logger = logging.getLogger('test_logger')
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+    yield stream, logger
+    handler.close()
