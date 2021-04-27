@@ -19,13 +19,14 @@ from ..helper import normalize_string
 def config_schema() -> Schema:
     from schema import And, Optional, Or, Regex
     return Schema({
-        'sign_orgs': { str: str },
+        'sign_orgs': {str: str},
         'identity_source': {
             'connector': And(str, len),
             'type': Or('csv', 'okta', 'ldap', 'adobe_console'),
         },
         'user_sync': {
             'sign_only_limit': Or(int, Regex(r'^\d+%$')),
+            'sign_only_user_action': And(str, len),
         },
         'user_management': [{
             'directory_group': Or(None, And(str, len)),

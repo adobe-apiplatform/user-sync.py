@@ -25,7 +25,8 @@ class SignSyncEngine:
             }
         ],
         'user_sync': {
-            'sign_only_limit': 100
+            'sign_only_limit': 100,
+            'sign_only_user_action': 'reset'
         }
     }
 
@@ -390,36 +391,42 @@ class SignSyncEngine:
             return
 
         for _, sign_user in self.sign_only_users_by_org[org_name].items():
-            try:
-                if sign_connector.deactivate_users:
+            sign_only_user_action = self.options['user_sync']['sign_only_user_action']
+            print(sign_only_user_action)
+            if sign_only_user_action == 'exclude':
+                self.logger.debug(
+                    "Sign user '{}' was excluded from".format(sign_user['email']))
+                continue
+            if sign_connector.deactivate_users and sign_only_user_action == 'deactivate':
+                try:
                     sign_connector.deactivate_user(sign_user['userId'])
                     self.logger.info(
                         "{}Deactivated sign user '{}'".format(self.org_string(org_name), sign_user['email']))
-                else:
-                    # Only update if needed
-                    if (sign_user['group'].lower() == self.DEFAULT_GROUP_NAME.lower()
-                            and sign_user['roles'] == ['NORMAL_USER']):
-                        continue
-                    reset_data = {
-                        "email": sign_user['email'],
-                        "firstName": sign_user['firstName'],
-                        "groupId": default_group_id,
-                        "lastName": sign_user['lastName'],
-                        "roles": ['NORMAL_USER']
-                    }
-                    sign_connector.update_user(
-                        sign_user['userId'], reset_data)
-                    self.logger.info("{}Reset Sign user '{}', to default group and normal user role".format(
-                        self.org_string(org_name), sign_user['email']))
-            except AssertionException as e:
-                self.logger.error(
-                    "Error deactivating user {}, {}".format(sign_user['email'], e))
+                    continue
+                except AssertionException as e:
+                    self.logger.error("Error deactivating user {}, {}".format(sign_user['email'], e))
+                    continue
+            if sign_only_user_action == 'reset':
+                if (sign_user['group'].lower() == self.DEFAULT_GROUP_NAME.lower()
+                        and sign_user['roles'] == ['NORMAL_USER']):
+                    continue
+                reset_data = {
+                    "email": sign_user['email'],
+                    "firstName": sign_user['firstName'],
+                    "groupId": default_group_id,
+                    "lastName": sign_user['lastName'],
+                    "roles": ['NORMAL_USER']
+                }
+                sign_connector.update_user(
+                    sign_user['userId'], reset_data)
+                self.logger.info("{}Reset Sign user '{}', to default group and normal user role".format(
+                    self.org_string(org_name), sign_user['email']))
 
     def check_sign_max_limit(self, org_name):
         stray_count = len(self.sign_only_users_by_org[org_name])
         sign_only_limit = self.options['user_sync']['sign_only_limit']
-        return check_max_limit(stray_count, sign_only_limit, self.total_sign_user_count, 0, 'Sign', self.logger, self.org_string(org_name))
-
+        return check_max_limit(stray_count, sign_only_limit, self.total_sign_user_count, 0, 'Sign', self.logger,
+                               self.org_string(org_name))
 
     def org_string(self, org):
         return "Org: {} - ".format(org.capitalize()) if len(self.connectors) > 1 else ""
