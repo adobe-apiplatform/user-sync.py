@@ -392,10 +392,10 @@ class SignSyncEngine:
 
         for _, sign_user in self.sign_only_users_by_org[org_name].items():
             sign_only_user_action = self.options['user_sync']['sign_only_user_action']
-            print(sign_only_user_action)
             if sign_only_user_action == 'exclude':
                 self.logger.debug(
-                    "Sign user '{}' was excluded from".format(sign_user['email']))
+                    "Sign user '{}' was excluded from sync. sign_only_user_action: set to '{}'"
+                        .format(sign_user['email'], sign_only_user_action))
                 continue
             if sign_connector.deactivate_users and sign_only_user_action == 'deactivate':
                 try:
