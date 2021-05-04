@@ -339,8 +339,9 @@ class SignSyncEngine:
         try:
             sign_connector.update_user(sign_user['userId'], update_data)
             self.logger.info("{}Updated Sign user '{}', Group ({}): '{}', Roles ({}): {}".format(
-                self.org_string(sign_connector.console_org), directory_user['email'], 'unchanged' if groups_match else 'new',
-                assignment_group,'unchanged' if roles_match else 'new', update_data['roles']))
+                self.org_string(sign_connector.console_org), directory_user['email'],
+                'unchanged' if groups_match else 'new',
+                assignment_group, 'unchanged' if roles_match else 'new', update_data['roles']))
         except AssertionError as e:
             self.logger.error("Error updating user {}".format(e))
 
