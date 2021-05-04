@@ -28,7 +28,7 @@ from sign_client.client import SignClient
 
 class SignConnector(object):
 
-    def __init__(self, caller_options, org_name, test_mode):
+    def __init__(self, caller_options, org_name, test_mode, connection):
         """
         :type caller_options: dict
         """
@@ -47,7 +47,8 @@ class SignConnector(object):
         integration_key = caller_config.get_credential('integration_key', options['admin_email'])
         caller_config.report_unused_values(self.logger)
 
-        self.sign_client = SignClient(host=options['host'],
+        self.sign_client = SignClient(connection,
+                                      host=options['host'],
                                       integration_key=integration_key,
                                       admin_email=options['admin_email'],
                                       logger=self.logger)

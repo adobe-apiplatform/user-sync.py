@@ -48,13 +48,14 @@ class SignSyncEngine:
                                  self.name, caller_options)
         self.directory_user_by_user_key = {}
         sign_orgs = sync_config.get_dict('sign_orgs')
+        connection = sync_config.get_dict('connection')
         self.config_loader = ConfigFileLoader(self.encoding, {}, {})
         self.connectors = {}
         # Each of the Sign orgs is captured in a dict with the org name as key
         # and org specific parameter embedded in Sign Connector as value
         for org in sign_orgs:
             self.connectors[org] = SignConnector(
-                self.config_loader.load_root_config(sign_orgs[org]), org, options['test_mode'])
+                self.config_loader.load_root_config(sign_orgs[org]), org, options['test_mode'], connection)
 
         self.action_summary = {}
         self.sign_users_by_org = {}
@@ -419,7 +420,6 @@ class SignSyncEngine:
         stray_count = len(self.sign_only_users_by_org[org_name])
         sign_only_limit = self.options['user_sync']['sign_only_limit']
         return check_max_limit(stray_count, sign_only_limit, self.total_sign_user_count, 0, 'Sign', self.logger, self.org_string(org_name))
-
 
     def org_string(self, org):
         return "Org: {} - ".format(org.capitalize()) if len(self.connectors) > 1 else ""

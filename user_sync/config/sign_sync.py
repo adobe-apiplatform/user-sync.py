@@ -25,7 +25,13 @@ def config_schema() -> Schema:
             'type': Or('csv', 'okta', 'ldap', 'adobe_console'),
         },
         'user_sync': {
-            'sign_only_limit': Or(int, Regex(r'^\d+%$')),
+            'sign_only_limit': Or(int, Regex(r'^\d+%$'))
+        },
+        'connection': {
+            'request_concurrency': int,
+            'batch_size': int,
+            'retry_count': int,
+            'timeout': int
         },
         'user_management': [{
             'directory_group': Or(None, And(str, len)),
@@ -213,6 +219,7 @@ class SignConfigLoader(ConfigLoader):
         user_sync = self.main_config.get_dict_config('user_sync')
         max_missing = user_sync.get_value('sign_only_limit', (int, str))
         options['user_sync']['sign_only_limit'] = validate_max_limit_config(max_missing)
+        options['connection'] = self.main_config.get_dict('connection')
         if options.get('directory_group_mapped'):
             options['directory_group_filter'] = set(six.iterkeys(self.directory_groups))
         return options
