@@ -155,6 +155,42 @@ def test_read_desired_user_groups(example_engine, example_user):
     example_engine.read_desired_user_groups(mapping, dc)
     assert example_engine.directory_user_by_user_key == user
 
+def test_update_sign_users(example_engine):
+
+    sign_connector = MagicMock()
+    directory_users = {}
+    adobeGroup = AdobeGroup('Group 1', 'primary')
+    directory_users['federatedID, example.user@signtest.com'] = {
+        'email': 'example.user@signtest.com',
+        'sign_group': {'group': [adobeGroup]}
+        }
+    sign_users = {}
+    sign_users['example.user@signtest.com'] = {
+        'email': 'example.user@signtest.com', 'userId': 'somerandomhexstring'}
+
+    def get_users():
+        return sign_users
+
+    # def should_sync():
+    #     return False
+
+    org_name = 'primary'
+    sign_connector.get_users = get_users
+    sc = example_engine
+#    sc.should_sync = should_sync
+    sc.update_sign_users(directory_users,sign_connector,org_name)
+
+
+
+
+
+# def test_update_existing_users(example_engine):
+#
+#     sign_connector = MagicMock()
+#
+#     example_engine.update_existing_users(sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group)
+
+
 
 def test_extract_mapped_group():
     AdobeGroup.index_map = {}
@@ -215,3 +251,5 @@ def test_extract_mapped_group():
     check_mapping(['Sign Group 3', 'Sign Group 2'], 'Sign Group 2', ['NORMAL_USER'])
     check_mapping(['Sign Group 3', 'Test Group Admins 1', 'Test Group Admins 2'],
                   'Sign Group 3', ['ACCOUNT_ADMIN', 'GROUP_ADMIN'])
+
+
