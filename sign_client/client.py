@@ -94,39 +94,25 @@ class SignClient:
 
     def get_users(self):
         """
-        Get list of all users from Sign (indexed by email address)
-        :return: dict()
+        Gets the full user list, and then extracts the user ID's for making calls
+        We return self.users because it will be filled by the _get_user method.  This is
+        necessary to avoid returning futures of calls which we cannot predict.
         """
         if self.api_url is None or self.groups is None:
             self._init()
 
-        users = {}
-        self.logger.debug('getting list of all Sign users')
-        user_list, users_res = self.call_with_retry_sync('GET', self.api_url + 'users', self.header())
+        self.logger.info('Getting list of all Sign users')
+        user_list, _ = self.call_with_retry_sync('GET', self.api_url + 'users', self.header())
+
         user_ids = [u['userId'] for u in user_list['userInfoList']]
         self._handle_calls(self._get_user, self.header(), user_ids)
-        if users_res != 200:
-            raise AssertionException(
-                "Error retrieving Sign user list, (error: {}, reason: {}, {})".format(
-                    users_res.status_code, users_res.reason, users_res.content))
-        # fix line above
-        for user_id in map(lambda u: u['userId'], user_list['userInfoList']):
-            user_res = requests.get(self.api_url + 'users/' + user_id, headers=self.header())
-            if users_res != 200:
-                raise AssertionException("Error retrieving details for Sign user '{}'(error: {}, reason: {}, {})".format
-                                         (user_id, users_res.status_code, users_res.reason, users_res.content))
-            user = user_res.json()
-            if user['userStatus'] != 'ACTIVE':
-                continue
-            if user['email'] == self.admin_email:
-                continue
-            user['userId'] = user_id
-            user['roles'] = self.user_roles(user)
-            users[user['email']] = user
-            self.logger.debug('retrieved user details for Sign user {}'.format(user['email']))
-
-        # return users
         return self.users
+
+    def update_users(self, users):
+        """
+        Passthrough for call handling
+        """
+        self._handle_calls(self._update_user, self.header_json(), users)
 
     def get_groups(self):
         """
@@ -136,12 +122,11 @@ class SignClient:
         if self.api_url is None:
             self.api_url = self.base_uri()
 
-        res = requests.get(self.api_url + 'groups', headers=self.header())
-        if res.status_code != 200:
-            raise AssertionException("Error retrieving Sign group list(error: {}, reason: {}, {})".format(
-                res.status_code, res.reason, res.content))
+        url = self.api_url + 'groups'
+        header = self.header()
+        sign_groups, code = self.call_with_retry_sync('GET', url, header)
+        self.logger.info('getting Sign user groups')
         groups = {}
-        sign_groups = res.json()
         for group in sign_groups['groupInfoList']:
             groups[group['groupName'].lower()] = group['groupId']
         return groups
@@ -154,25 +139,12 @@ class SignClient:
         """
         if self.api_url is None or self.groups is None:
             self._init()
-
-        res, code = self.call_with_retry_sync('POST', self.api_url + 'groups', self.header_json(), data=json.dumps({'groupName': group}))
-        if code != 201:
-            raise AssertionException("Failed to create Sign group '{}' (reason: {})".format(group, res.reason))
+        url = self.api_url + 'groups'
+        header = self.header_json()
+        data = json.dumps({'groupName': group})
+        self.logger.info('Creating Sign group {} '.format(group))
+        res, code = self.call_with_retry_sync('POST', url, header, data)
         self.groups[group] = res['groupId']
-
-    def update_user(self, user_id, data):
-        """
-        Update Sign user
-        :param user_id: str
-        :param data: dict()
-        :return: dict()
-        """
-        if self.api_url is None or self.groups is None:
-            self._init()
-
-        res = requests.put(self.api_url + 'users/' + user_id, headers=self.header_json(), data=json.dumps(data))
-        if res.status_code != 200:
-            raise AssertionException("Failed to update user '{}' (reason: {})".format(user_id, res.reason))
 
     @staticmethod
     def user_roles(user):
