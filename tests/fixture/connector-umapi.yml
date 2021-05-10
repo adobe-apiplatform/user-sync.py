@@ -3,7 +3,7 @@ server:
   ims_host: ims-na1.adobelogin.com
 enterprise:
   org_id: "org_id"
-  api_key: "api_key"
+  client_id: "client_id"
   client_secret: "client_secret"
-  tech_acct: "tech_acct"
+  tech_acct_id: "tech_acct_id"
   priv_key_path: private.key
