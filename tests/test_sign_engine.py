@@ -51,7 +51,7 @@ def test_handle_sign_only_users(example_engine, example_user):
     directory_users = {}
     adobeGroup = AdobeGroup('Group 1', 'primary')
     directory_users['federatedID, example.user@signtest.com'] = {
-        'email': 'example.user@signtest.com', 
+        'email': 'example.user@signtest.com',
         'sign_groups': {'groups': [adobeGroup]}
         }
     sign_users = {}
@@ -155,6 +155,26 @@ def test_read_desired_user_groups(example_engine, example_user):
     example_engine.read_desired_user_groups(mapping, dc)
     assert example_engine.directory_user_by_user_key == user
 
+def test_update_sign_users(example_engine):
+
+    sign_connector = MagicMock()
+    directory_users = {}
+    adobeGroup = AdobeGroup('Group 1', 'primary1')
+    directory_users['federatedID, example.user@signtest.com'] = {
+                                                                'email': 'example.user@signtest.com',
+                                                                'sign_group': {'group': adobeGroup}
+    }
+    sign_users = {}
+    sign_users['example.user@signtest.com'] = {'email': 'example.user@signtest.com'}
+
+    def get_users():
+        return sign_users
+
+    org_name = 'primary'
+    sign_connector.get_users = get_users
+    sc = example_engine
+    result = sc.update_sign_users(directory_users,sign_connector,org_name)
+    assert result is None
 
 def test_extract_mapped_group():
     AdobeGroup.index_map = {}
