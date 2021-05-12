@@ -150,8 +150,7 @@ class SignSyncEngine:
 
             if assignment_group is None:
                 assignment_group = self.DEFAULT_GROUP_NAME
-
-            group_id = sign_connector.get_group(assignment_group)
+            group_id = sign_connector.get_group(assignment_group.lower())
             user_roles = self.retrieve_admin_role(directory_user)
             if sign_user is None:
                 # Insert new user if flag is enabled and if Neptune Console
@@ -169,7 +168,7 @@ class SignSyncEngine:
                     "userId": sign_user['userId'],
                     "email": sign_user['email'],
                     "firstName": sign_user['firstName'],
-                    "groupID": group_id,
+                    "groupId": group_id,
                     "lastName": sign_user['lastName'],
                     "roles": user_roles
                 }

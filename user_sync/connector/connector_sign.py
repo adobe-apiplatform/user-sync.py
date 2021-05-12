@@ -54,7 +54,7 @@ class SignConnector(object):
                                       logger=self.logger)
 
     def sign_groups(self):
-        return self.sign_client.get_groups()
+        return self.sign_client.sign_groups()
 
     def create_group(self, new_group):
         if not self.test_mode:
