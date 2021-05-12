@@ -92,6 +92,7 @@ class SignSyncEngine:
                     self.logger.info(
                         "{}Creating new Sign group: {}".format(self.org_string(org_name), directory_group))
                     sign_connector.create_group(directory_group)
+            # need a way to update sign_connector object to contain the created group
             # Update user details or insert new user
             self.update_sign_users(
                 self.directory_user_by_user_key, sign_connector, org_name)
