@@ -63,9 +63,9 @@ class SignConnector(object):
     def get_users(self):
         return self.sign_client.get_users()
 
-    def update_user(self, user_id, update_data):
+    def update_users(self, update_data):
         if not self.test_mode:
-            self.sign_client.update_user(user_id, update_data)
+            self.sign_client.update_users(update_data)
 
     def get_group(self, assignment_group):
         return self.sign_client.groups.get(assignment_group)

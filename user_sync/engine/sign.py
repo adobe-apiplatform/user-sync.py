@@ -135,6 +135,7 @@ class SignSyncEngine:
         """
         # Fetch the list of active Sign users
         sign_users = sign_connector.get_users()
+        users_update_list = []
         dir_users_for_org = {}
         self.total_sign_user_count += len(sign_users)
         self.sign_users_by_org[org_name] = sign_users
@@ -150,7 +151,7 @@ class SignSyncEngine:
             if assignment_group is None:
                 assignment_group = self.DEFAULT_GROUP_NAME
 
-            group_id = sign_connector.get_group(assignment_group.lower())
+            group_id = sign_connector.get_group(assignment_group)
             user_roles = self.retrieve_admin_role(directory_user)
             if sign_user is None:
                 # Insert new user if flag is enabled and if Neptune Console
@@ -164,9 +165,19 @@ class SignSyncEngine:
                     continue
             else:
                 # Update existing users
-                self.update_existing_users(
-                    sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group)
-
+                user_data = {
+                    "userId": sign_user['userId'],
+                    "email": sign_user['email'],
+                    "firstName": sign_user['firstName'],
+                    "groupID": group_id,
+                    "lastName": sign_user['lastName'],
+                    "roles": user_roles
+                }
+                # check if group update needed?
+                users_update_list.append(user_data)
+                # self.update_existing_users(
+                #     sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group)
+        sign_connector.update_users(users_update_list)
         self.sign_only_users_by_org[org_name] = {}
         for user, data in sign_users.items():
             if user not in dir_users_for_org:
@@ -389,7 +400,7 @@ class SignSyncEngine:
         """
         if not self.check_sign_max_limit(org_name):
             return
-
+        sign_only_users_update_list = []
         for _, sign_user in self.sign_only_users_by_org[org_name].items():
             try:
                 if sign_connector.deactivate_users:
@@ -408,13 +419,15 @@ class SignSyncEngine:
                         "lastName": sign_user['lastName'],
                         "roles": ['NORMAL_USER']
                     }
-                    sign_connector.update_user(
-                        sign_user['userId'], reset_data)
-                    self.logger.info("{}Reset Sign user '{}', to default group and normal user role".format(
-                        self.org_string(org_name), sign_user['email']))
+                    sign_only_users_update_list.append(reset_data)
+                    # sign_connector.update_user(
+                    #     sign_user['userId'], reset_data)
+            #         self.logger.info("{}Reset Sign user '{}', to default group and normal user role".format(
+            #             self.org_string(org_name), sign_user['email']))
             except AssertionException as e:
                 self.logger.error(
                     "Error deactivating user {}, {}".format(sign_user['email'], e))
+        sign_connector.update_users(sign_only_users_update_list)
 
     def check_sign_max_limit(self, org_name):
         stray_count = len(self.sign_only_users_by_org[org_name])
