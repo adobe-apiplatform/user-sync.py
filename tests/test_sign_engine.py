@@ -174,7 +174,32 @@ def test_update_sign_users(example_engine):
     sign_connector.get_users = get_users
     sc = example_engine
     result = sc.update_sign_users(directory_users,sign_connector,org_name)
-    assert result is None
+    assert True
+
+def test_update_existing_users(example_engine):
+    sign_connector = MagicMock()
+    directory_users = {}
+    adobeGroup = AdobeGroup('Group 1', 'primary1')
+    directory_user = {
+        'email': 'example.user@signtest.com',
+        'sign_group': {'group': adobeGroup}
+    }
+    sign_user = {
+                'email': 'example.user@signtest.com',
+                'firstname':'user',
+                'lastname' : '',
+                'group':'Group 1',
+                'roles':['GROUP_ADMIN'],
+                'userId':'erewcwererc',
+                'sign_group': {'group': adobeGroup}
+    }
+
+    group_id="adxefrdes"
+    user_roles = ['GROUP_ADMIN']
+    assignment_group = "sign_group"
+    example_engine.update_existing_users(sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group)
+    assert True
+    assert directory_user['email'] == 'example.user@signtest.com'
 
 def test_extract_mapped_group():
     AdobeGroup.index_map = {}
