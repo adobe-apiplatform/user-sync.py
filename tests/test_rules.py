@@ -175,6 +175,7 @@ def test_sync_umapi_users(update_umapi, rule_processor, mock_umapi_connectors, g
     # Use a mock object here to collect the calls made for validation
     rule_processor.create_umapi_user = mock.MagicMock()
     update_umapi.side_effect = [primary_users, secondary_users, tertiary_users]
+    rule_processor.logger.progress = mock.MagicMock()
     rule_processor.sync_umapi_users(umapi_connectors)
 
     # Combine the secondary users
