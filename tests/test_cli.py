@@ -26,8 +26,7 @@ import shutil
 from pathlib import Path
 from user_sync import resource
 
-
-def test_example_config_line_endings(tmpdir, monkeypatch, tmp_config_files):
+def test_example_config_line_endings(tmpdir, monkeypatch, test_resources):
     # Set up temp directories
     res_path = tmpdir / 'resource'
     res_path.mkdir()
@@ -35,7 +34,9 @@ def test_example_config_line_endings(tmpdir, monkeypatch, tmp_config_files):
     example_path.mkdir()
 
     # Copy temp example config to temp resource dir
-    (root_tmp_file, ldap_tmp_file, umapi_tmp_file) = tmp_config_files
+    root_tmp_file = test_resources['root_config']
+    ldap_tmp_file = test_resources['ldap']
+    umapi_tmp_file = test_resources['umapi']
 
     shutil.copyfile(ldap_tmp_file, res_path / Path(ldap_tmp_file).parts[-1])
     shutil.copyfile(root_tmp_file, res_path / Path(root_tmp_file).parts[-1])
