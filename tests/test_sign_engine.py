@@ -45,7 +45,6 @@ def test_get_directory_user_key(example_engine, example_user):
         {'': {'username': 'user@example.com'}}) is None
 
 
-
 def test_handle_sign_only_users(example_engine, example_user):
     sign_connector = MagicMock()
     directory_users = {}
@@ -53,7 +52,7 @@ def test_handle_sign_only_users(example_engine, example_user):
     directory_users['federatedID, example.user@signtest.com'] = {
         'email': 'example.user@signtest.com',
         'sign_groups': {'groups': [adobeGroup]}
-        }
+    }
     sign_users = {}
     sign_users['example.user@signtest.com'] = {
         'email': 'example.user@signtest.com', 'userId': 'somerandomhexstring'}
@@ -155,14 +154,14 @@ def test_read_desired_user_groups(example_engine, example_user):
     example_engine.read_desired_user_groups(mapping, dc)
     assert example_engine.directory_user_by_user_key == user
 
-def test_update_sign_users(example_engine):
 
+def test_update_sign_users(example_engine):
     sign_connector = MagicMock()
     directory_users = {}
     adobeGroup = AdobeGroup('Group 1', 'primary1')
     directory_users['federatedID, example.user@signtest.com'] = {
-                                                                'email': 'example.user@signtest.com',
-                                                                'sign_group': {'group': adobeGroup}
+        'email': 'example.user@signtest.com',
+        'sign_group': {'group': adobeGroup}
     }
     sign_users = {}
     sign_users['example.user@signtest.com'] = {'email': 'example.user@signtest.com'}
@@ -173,8 +172,9 @@ def test_update_sign_users(example_engine):
     org_name = 'primary'
     sign_connector.get_users = get_users
     sc = example_engine
-    result = sc.update_sign_users(directory_users,sign_connector,org_name)
+    sc.update_sign_users(directory_users, sign_connector, org_name)
     assert True
+
 
 def test_update_existing_users(example_engine):
     sign_connector = MagicMock()
@@ -185,21 +185,63 @@ def test_update_existing_users(example_engine):
         'sign_group': {'group': adobeGroup}
     }
     sign_user = {
-                'email': 'example.user@signtest.com',
-                'firstname':'user',
-                'lastname' : '',
-                'group':'Group 1',
-                'roles':['GROUP_ADMIN'],
-                'userId':'erewcwererc',
-                'sign_group': {'group': adobeGroup}
+        'email': 'example.user@signtest.com',
+        'firstname': 'user',
+        'lastname': '',
+        'group': 'Group 1',
+        'roles': ['GROUP_ADMIN'],
+        'userId': 'erewcwererc',
+        'sign_group': {'group': adobeGroup}
     }
-
-    group_id="adxefrdes"
+    group_id = "adxefrdes"
     user_roles = ['GROUP_ADMIN']
     assignment_group = "sign_group"
-    example_engine.update_existing_users(sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group)
+    example_engine.update_existing_users(sign_connector, sign_user, directory_user, group_id, user_roles,
+                                         assignment_group)
     assert True
     assert directory_user['email'] == 'example.user@signtest.com'
+
+
+def test_read_desired_user_groups(example_engine):
+    directory_connector = MagicMock()
+    g1 = AdobeGroup.create('Sign Group 1')
+    g2 = AdobeGroup.create('Sign Group 2')
+    g3 = AdobeGroup.create('Sign Group 3')
+
+    mappings = {
+        'Sign Group 1': {
+            'priority': 0,
+            'roles': set(),
+            'groups': [g1]
+        },
+        'Test Group Admins 1': {
+            'priority': 4,
+            'roles': {'GROUP_ADMIN'},
+            'groups': []
+        },
+        'Sign Group 2': {
+            'priority': 2,
+            'roles': set(),
+            'groups': [g2, g1, g3]
+        },
+        'Test Group Admins 2': {
+            'priority': 1,
+            'roles': {'ACCOUNT_ADMIN'},
+            'groups': []
+        },
+        'Sign Group 3': {
+            'priority': 3,
+            'roles': set(),
+            'groups': [g3]
+        },
+        'Test Group Admins 3': {
+            'priority': 5,
+            'roles': {'ACCOUNT_ADMIN', 'GROUP_ADMIN'},
+            'groups': [g2]
+        },
+    }
+    example_engine.read_desired_user_groups(mappings, directory_connector)
+
 
 def test_extract_mapped_group():
     AdobeGroup.index_map = {}
