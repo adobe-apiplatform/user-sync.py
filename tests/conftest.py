@@ -4,7 +4,8 @@ import shutil
 import pytest
 import yaml
 
-import shutil
+from user_sync import config
+from util import merge_dict, make_dict
 
 from user_sync.config.user_sync import UMAPIConfigLoader
 
@@ -36,61 +37,56 @@ def cli_args():
     return _cli_args
 
 
+
 @pytest.fixture
-def example_user():
-    return {
-        'type': 'federatedID',
-        'username': 'user@example.com',
-        'domain': 'example.com',
-        'email': 'user@example.com',
-        'firstname': 'Example',
-        'lastname': 'User',
-        'groups': set(),
-        'country': 'US',
+def test_resources(fixture_dir, tmpdir):
+    resources = {
+        'ldap': 'connector-ldap.yml',
+        'umapi': 'connector-umapi.yml',
+        'root_config': 'user-sync-config.yml',
+        'extension': 'extension-config.yml',
+        'certificate': 'test_cert.crt',
+        'priv_key': 'test_private.key',
+        'priv_key_enc': 'encrypted.key'
+
     }
 
-
-@pytest.fixture
-def private_key(fixture_dir, tmpdir):
-    shutil.copy(os.path.join(fixture_dir, 'test_private.key'), tmpdir.dirname)
-    return os.path.join(tmpdir.dirname, 'test_private.key')
-
-
-@pytest.fixture
-def public_cert(fixture_dir, tmpdir):
-    shutil.copy(os.path.join(fixture_dir, 'test_cert.crt'), tmpdir.dirname)
-    return os.path.join(tmpdir.dirname, 'test_cert.crt')
+    for k, n in resources.items():
+        shutil.copy(os.path.join(fixture_dir, n), tmpdir.dirname)
+        resources[k] = os.path.join(tmpdir.dirname, n)
+    return resources
 
 
 @pytest.fixture
-def root_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'user-sync-config.yml')
+def modify_config(test_resources):
+    def _modify_config(name, key, value, merge=True):
+        path = test_resources[name]
+        conf = yaml.safe_load(open(path))
+        d = make_dict(key, value)
+        if not merge:
+            conf.update(d)
+        else:
+            merge_dict(conf, make_dict(key, value))
+        yaml.dump(conf, open(path, 'w'))
+        return path
+
+    return _modify_config
 
 
+# A shortcut for root since it is used a lot
 @pytest.fixture
-def ldap_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'connector-ldap.yml')
+def modify_root_config(modify_config):
+    def _modify_root_config(key, value, merge=True):
+        return modify_config('root_config', key, value, merge)
+
+    return _modify_root_config
 
 
+# A shortcut for loading the config file
 @pytest.fixture
-def umapi_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'connector-umapi.yml')
+def default_args(cli_args, test_resources):
+    return cli_args({'config_filename': test_resources['root_config']})
 
-
-@pytest.fixture
-def extension_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'extension-config.yml')
-
-
-@pytest.fixture
-def tmp_config_files(root_config_file, ldap_config_file, umapi_config_file, tmpdir):
-    tmpfiles = []
-    for fname in [root_config_file, ldap_config_file, umapi_config_file]:
-        basename = os.path.split(fname)[-1]
-        tmpfile = os.path.join(str(tmpdir), basename)
-        shutil.copy(fname, tmpfile)
-        tmpfiles.append(tmpfile)
-    return tuple(tmpfiles)
 
 
 @pytest.fixture
@@ -144,30 +140,3 @@ def resource_file():
         return filepath
 
     return _resource_file
-
-
-@pytest.fixture
-def tmp_sign_config_file(sign_config_file, tmpdir):
-    basename = os.path.split(sign_config_file)[-1]
-    tmpfile = os.path.join(str(tmpdir), basename)
-    shutil.copy(sign_config_file, tmpfile)
-    return tmpfile
-
-
-@pytest.fixture
-def tmp_sign_connector_config(sign_connector_config, tmpdir):
-    basename = os.path.split(sign_connector_config)[-1]
-    tmpfile = os.path.join(str(tmpdir), basename)
-    shutil.copy(sign_connector_config, tmpfile)
-    return tmpfile
-
-
-@pytest.fixture
-def modify_sign_config(tmp_sign_config_file):
-    def _modify_sign_config(keys, val):
-        conf = yaml.safe_load(open(tmp_sign_config_file))
-        conf = update_dict(conf, keys, val)
-        yaml.dump(conf, open(tmp_sign_config_file, 'w'))
-
-        return tmp_sign_config_file
-    return _modify_sign_config

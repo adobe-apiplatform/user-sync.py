@@ -155,6 +155,13 @@ On Linux, the secure storage application would have been installed and configure
 
 The credentials are added to the OS secure storage and given the username and credential id that you will use to specify the credential.  For umapi credentials, the username is the organization id.  For the LDAP password credential, the username is the LDAP username.  You can pick any identifier you wish for the specific credentials; they must match between what is in the credential store and the name used in the configuration file.  Suggested values for the key names are shown in the examples above.
 
+## Scheduling Recommendations
+
+The User Sync Tool is designed to run with limited to no human interaction and can leverage a scheduler feature to run the tool.  Our recommendation is to run the tool no more than once every 2 hours.  
+
+To further prevent customers from experiencing degraded performance, Adobe will add sync controls to the scheduling feature in February 2021.  The new controls will prevent the start of a new session if the system is still running a previous sync from a User Sync Tool integration, resulting in a delayed start time of the subsequent sync call.
+
+To learn more, please visit our [User Management API Documentation](https://adobe-apiplatform.github.io/umapi-documentation/en/).
 
 ## Scheduled task examples
 
