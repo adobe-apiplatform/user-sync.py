@@ -19,7 +19,7 @@
 # These access credentials are sensitive and must be protected.
 username: "LDAP or Credential Manager username goes here"
 password: "LDAP password goes here"
-host: "ldap://ldap.example.com"
+host: "ldaps://ldap.example.com"
 base_dn: "DC=example,DC=com"
 
 # (optional) You can specify what Authentication method to bind LDAP

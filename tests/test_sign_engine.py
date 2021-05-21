@@ -5,15 +5,13 @@ import pytest
 from mock import MagicMock
 
 from user_sync.config.sign_sync import SignConfigLoader
-from user_sync.connector.connector_sign import SignConnector
 from user_sync.engine.sign import SignSyncEngine
 from user_sync.engine.umapi import AdobeGroup
 
 
 @pytest.fixture
-def example_engine(sign_config_file):
-    args = {'config_filename': sign_config_file}
-    config = SignConfigLoader(args)
+def example_engine(default_sign_args):
+    config = SignConfigLoader(default_sign_args)
     rule_config = config.get_engine_options()
     return SignSyncEngine(rule_config)
 

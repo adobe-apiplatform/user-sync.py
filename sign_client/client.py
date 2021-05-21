@@ -3,6 +3,7 @@ import requests
 import json
 from user_sync.error import AssertionException
 
+
 class SignClient:
     version = 'v5'
     _endpoint_template = 'api/rest/{}/'
@@ -140,7 +141,7 @@ class SignClient:
         res = requests.post(self.api_url + 'groups', headers=self.header_json(), data=json.dumps({'groupName': group}))
         if res.status_code != 201:
             raise AssertionException("Failed to create Sign group '{}' (reason: {})".format(group, res.reason))
-        self.groups[group] = res.json()['groupId']
+        self.groups[group] = res.json()['groupId'].lower()
 
     def update_user(self, user_id, data):
         """
@@ -154,7 +155,8 @@ class SignClient:
 
         res = requests.put(self.api_url + 'users/' + user_id, headers=self.header_json(), data=json.dumps(data))
         if res.status_code != 200:
-            raise AssertionException("Failed to update user '{}' (reason: {})".format(user_id, res.reason))
+            raise AssertionException("Failed to update user '{}' (code: {} reason: {})"
+                                     .format(user_id, res.status_code, res.reason))
 
     @staticmethod
     def user_roles(user):
@@ -171,14 +173,12 @@ class SignClient:
         """
         if self.api_url is None or self.groups is None:
             self._init()
-        
+
         res = requests.post(self.api_url + 'users', headers=self.header_json(), data=json.dumps(data))
         # Response status code 201 is successful insertion
         if res.status_code != 201:
-                exp_obj = json.loads(res.text)
-                exp_obj['reason'] = res.reason
-                exp_obj['status_code'] = res.status_code
-                raise AssertionException("Failed to insert user '{}' (error response: {})".format(data['email'], exp_obj))
+            raise AssertionException("Failed to insert user '{}' (code: {} reason: {})"
+                                     .format(data['email'], res.status_code, res.reason))
 
     def deactivate_user(self, user_id):
         """
@@ -190,10 +190,9 @@ class SignClient:
         data = {
             "userStatus": 'INACTIVE'
         }
-        res = requests.put(self.api_url + 'users/' + user_id + '/status', headers=self.header_json(), data=json.dumps(data))
+        res = requests.put(self.api_url + 'users/' + user_id + '/status', headers=self.header_json(),
+                           data=json.dumps(data))
         # Response status code 200 is successful update
         if res.status_code != 200:
-                exp_obj = json.loads(res.text)
-                exp_obj['reason'] = res.reason
-                exp_obj['status_code'] = res.status_code
-                raise AssertionException(exp_obj)
+            raise AssertionException("Failed to deactivate user '{}' (code: {} reason: {})"
+                                     .format(user_id, res.status_code, res.reason))
