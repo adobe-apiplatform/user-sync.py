@@ -4,12 +4,8 @@ import shutil
 import pytest
 import yaml
 
-from user_sync import config
-from util import merge_dict, make_dict
-
 from user_sync.config.user_sync import UMAPIConfigLoader
-
-from .util import update_dict
+from .util import merge_dict, make_dict
 
 
 @pytest.fixture
@@ -37,13 +33,14 @@ def cli_args():
     return _cli_args
 
 
-
 @pytest.fixture
 def test_resources(fixture_dir, tmpdir):
     resources = {
         'ldap': 'connector-ldap.yml',
         'umapi': 'connector-umapi.yml',
-        'root_config': 'user-sync-config.yml',
+        'sign': 'connector-sign.yml',
+        'umapi_root_config': 'user-sync-config.yml',
+        'sign_root_config': 'sign-sync-config.yml',
         'extension': 'extension-config.yml',
         'certificate': 'test_cert.crt',
         'priv_key': 'test_private.key',
@@ -77,7 +74,7 @@ def modify_config(test_resources):
 @pytest.fixture
 def modify_root_config(modify_config):
     def _modify_root_config(key, value, merge=True):
-        return modify_config('root_config', key, value, merge)
+        return modify_config('umapi_root_config', key, value, merge)
 
     return _modify_root_config
 
@@ -85,47 +82,12 @@ def modify_root_config(modify_config):
 # A shortcut for loading the config file
 @pytest.fixture
 def default_args(cli_args, test_resources):
-    return cli_args({'config_filename': test_resources['root_config']})
+    return cli_args({'config_filename': test_resources['umapi_root_config']})
 
-
-
+# A shortcut for loading the config file
 @pytest.fixture
-def modify_root_config(tmp_config_files):
-    (root_config_file, _, _) = tmp_config_files
-
-    def _modify_root_config(keys, val):
-        conf = yaml.safe_load(open(root_config_file))
-        conf = update_dict(conf, keys, val)
-        yaml.dump(conf, open(root_config_file, 'w'))
-
-        return root_config_file
-
-    return _modify_root_config
-
-
-@pytest.fixture
-def modify_ldap_config(tmp_config_files):
-    (_, ldap_config_file, _) = tmp_config_files
-
-    def _modify_ldap_config(keys, val):
-        conf = yaml.safe_load(open(ldap_config_file))
-        conf = update_dict(conf, keys, val)
-        yaml.dump(conf, open(ldap_config_file, 'w'))
-
-        return ldap_config_file
-
-    return _modify_ldap_config
-
-
-@pytest.fixture
-def sign_config_file(fixture_dir):
-    return os.path.join(fixture_dir, 'sign-sync-config.yml')
-
-
-@pytest.fixture
-def sign_connector_config(fixture_dir):
-    return os.path.join(fixture_dir, 'connector-sign.yml')
-
+def default_sign_args(cli_args, test_resources):
+    return cli_args({'config_filename': test_resources['sign_root_config']})
 
 @pytest.fixture
 def resource_file():
@@ -140,3 +102,16 @@ def resource_file():
         return filepath
 
     return _resource_file
+
+@pytest.fixture
+def example_user():
+    return {
+        'type': 'federatedID',
+        'username': 'user@example.com',
+        'domain': 'example.com',
+        'email': 'user@example.com',
+        'firstname': 'Example',
+        'lastname': 'User',
+        'groups': set(),
+        'country': 'US',
+    }

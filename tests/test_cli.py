@@ -34,7 +34,7 @@ def test_example_config_line_endings(tmpdir, monkeypatch, test_resources):
     example_path.mkdir()
 
     # Copy temp example config to temp resource dir
-    root_tmp_file = test_resources['root_config']
+    root_tmp_file = test_resources['umapi_root_config']
     ldap_tmp_file = test_resources['ldap']
     umapi_tmp_file = test_resources['umapi']
 
