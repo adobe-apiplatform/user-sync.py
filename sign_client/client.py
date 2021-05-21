@@ -1,6 +1,6 @@
 import asyncio
-import logging
 import json
+import logging
 from math import ceil
 
 import aiohttp
@@ -144,7 +144,9 @@ class SignClient:
         data = json.dumps({'groupName': group})
         self.logger.info('Creating Sign group {} '.format(group))
         res, code = self.call_with_retry_sync('POST', url, header, data)
-        self.groups[group] = res['groupId']
+        if code != 201:
+            raise AssertionException("Failed to create Sign group '{}' (reason: {})".format(group, res.reason))
+        self.groups[group] = res['groupId'].lower()
 
     @staticmethod
     def user_roles(user):
@@ -161,14 +163,12 @@ class SignClient:
         """
         if self.api_url is None or self.groups is None:
             self._init()
-        
+
         res = requests.post(self.api_url + 'users', headers=self.header_json(), data=json.dumps(data))
         # Response status code 201 is successful insertion
         if res.status_code != 201:
-                exp_obj = json.loads(res.text)
-                exp_obj['reason'] = res.reason
-                exp_obj['status_code'] = res.status_code
-                raise AssertionException("Failed to insert user '{}' (error response: {})".format(data['email'], exp_obj))
+            raise AssertionException("Failed to insert user '{}' (code: {} reason: {})"
+                                     .format(data['email'], res.status_code, res.reason))
 
     def deactivate_user(self, user_id):
         """
@@ -180,13 +180,12 @@ class SignClient:
         data = {
             "userStatus": 'INACTIVE'
         }
-        res = requests.put(self.api_url + 'users/' + user_id + '/status', headers=self.header_json(), data=json.dumps(data))
+        res = requests.put(self.api_url + 'users/' + user_id + '/status', headers=self.header_json(),
+                           data=json.dumps(data))
         # Response status code 200 is successful update
         if res.status_code != 200:
-                exp_obj = json.loads(res.text)
-                exp_obj['reason'] = res.reason
-                exp_obj['status_code'] = res.status_code
-                raise AssertionException(exp_obj)
+            raise AssertionException("Failed to deactivate user '{}' (code: {} reason: {})"
+                                     .format(user_id, res.status_code, res.reason))
 
     def _handle_calls(self, handle, headers, objects):
         """
@@ -214,9 +213,9 @@ class SignClient:
         """
 
         if not objects:
-            return 
+            return
 
-        # Semaphore specifies number of allowed calls at one time
+            # Semaphore specifies number of allowed calls at one time
         sem = asyncio.Semaphore(value=self.concurrency_limit)
 
         # We must use only 1 session, else will hang
