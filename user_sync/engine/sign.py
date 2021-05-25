@@ -388,11 +388,13 @@ class SignSyncEngine:
         :param default_group:
         :return:
         """
+
+        # This will check the limit settings and log a message if the limit is exceeded
         if not self.check_sign_max_limit(org_name):
             return
 
+        sign_only_user_action = self.options['user_sync']['sign_only_user_action']
         for _, sign_user in self.sign_only_users_by_org[org_name].items():
-            sign_only_user_action = self.options['user_sync']['sign_only_user_action']
             if sign_only_user_action == 'exclude':
                 self.logger.debug(
                     "Sign user '{}' was excluded from sync. sign_only_user_action: set to '{}'"
