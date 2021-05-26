@@ -13,6 +13,10 @@ identity_source:
 # Options that govern the synchronization of users
 user_sync:
   sign_only_limit: 100
+  # sign_only_user_action -action to take for Sign only user (user that is ONLY on the Sign Dashboard)
+  # Default action is to reset (user admin_role removed, user_group set to default group)
+  # options: reset, exclude, remove_groups, remove_roles, deactivate
+  sign_only_user_action: reset
 
 connection:
   # Number of allowed concurrent requests (higher is faster, but consumes more bandwidth and memory)

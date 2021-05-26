@@ -19,13 +19,14 @@ from ..helper import normalize_string
 def config_schema() -> Schema:
     from schema import And, Optional, Or, Regex
     return Schema({
-        'sign_orgs': { str: str },
+        'sign_orgs': {str: str},
         'identity_source': {
             'connector': And(str, len),
             'type': Or('csv', 'okta', 'ldap', 'adobe_console'),
         },
         'user_sync': {
-            'sign_only_limit': Or(int, Regex(r'^\d+%$'))
+            'sign_only_limit': Or(int, Regex(r'^\d+%$')),
+            'sign_only_user_action': Or('exclude', 'reset', 'deactivate', 'remove_roles', 'remove_groups'),
         },
         'connection': {
             'request_concurrency': int,
@@ -220,6 +221,8 @@ class SignConfigLoader(ConfigLoader):
         max_missing = user_sync.get_value('sign_only_limit', (int, str))
         options['user_sync']['sign_only_limit'] = validate_max_limit_config(max_missing)
         options['connection'] = self.main_config.get_dict('connection')
+        sign_only_user_action = user_sync.get_value('sign_only_user_action', (str, int))
+        options['user_sync']['sign_only_user_action'] = sign_only_user_action
         if options.get('directory_group_mapped'):
             options['directory_group_filter'] = set(six.iterkeys(self.directory_groups))
         return options
