@@ -174,10 +174,7 @@ class SignSyncEngine:
                     "lastName": sign_user['lastName'],
                     "roles": user_roles
                 }
-                # check if group update needed?
                 users_update_list.append(user_data)
-                # self.update_existing_users(
-                #     sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group)
         sign_connector.update_users(users_update_list)
         self.sign_only_users_by_org[org_name] = {}
         for user, data in sign_users.items():
@@ -318,45 +315,6 @@ class SignSyncEngine:
         # For illustration.  Just return line 322 instead.
         return sign_group_mapping
 
-    def update_existing_users(self, sign_connector, sign_user, directory_user, group_id, user_roles, assignment_group):
-        """
-        Constructs the data for update and invokes the connector to update the user if applicable
-        :param sign_connector:
-        :param sign_user:
-        :param directory_user:
-        :param group_id:
-        :param user_roles:
-        :param assignment_group:
-        :return:
-        """
-        update_data = self.construct_sign_user(sign_user, group_id, user_roles)
-        groups_match = sign_user['group'].lower() == assignment_group.lower()
-        roles_match = self.roles_match(user_roles, sign_user['roles'])
-
-        if not roles_match:
-            self.sign_users_role_updates.add(sign_user['email'])
-        elif user_roles != ['NORMAL_USER']:
-            self.sign_admins_matched.add(sign_user['email'])
-        if not groups_match:
-            self.sign_users_group_updates.add(sign_user['email'])
-        else:
-            self.sign_users_matched_groups.add(sign_user['email'])
-
-        if groups_match and roles_match:
-            self.logger.debug(
-                "{}Skipping Sign update for '{}' -- no updates needed"
-                    .format(self.org_string(sign_connector.console_org), directory_user['email']))
-            self.sign_users_matched_no_updates.add(sign_user['email'])
-            return
-        try:
-            sign_connector.update_user(sign_user['userId'], update_data)
-            self.logger.info("{}Updated Sign user '{}', Group ({}): '{}', Roles ({}): {}".format(
-                self.org_string(sign_connector.console_org), directory_user['email'],
-                'unchanged' if groups_match else 'new',
-                assignment_group, 'unchanged' if roles_match else 'new', update_data['roles']))
-        except AssertionError as e:
-            self.logger.error("Error updating user {}".format(e))
-
     def insert_new_users(self, sign_connector, directory_user, user_roles, group_id, assignment_group):
         """
         Constructs the data for insertion and inserts new user in the Sign Console
@@ -372,7 +330,8 @@ class SignSyncEngine:
             sign_connector.insert_user(insert_data)
             self.sign_users_created.add(directory_user['email'])
             self.logger.info("{}Inserted sign user '{}', group: '{}', roles: {}".format(
-                self.org_string(sign_connector.console_org), directory_user['email'], assignment_group, insert_data['roles']))
+                self.org_string(sign_connector.console_org), directory_user['email'], assignment_group,
+                insert_data['roles']))
         except AssertionException as e:
             self.logger.error(format(e))
         return
@@ -432,14 +391,14 @@ class SignSyncEngine:
                     "firstName": sign_user['firstName'],
                     "groupId": default_group_id,
                     "lastName": sign_user['lastName'],
-                    "roles": ['NORMAL_USER']
+                    "roles": ['NORMAL_USER'],
+                    'userId': sign_user['userId']
                 }
                 sign_only_users_update_list.append(reset_data)
                 self.logger.info("{}Reset Sign user '{}', to default group and normal user role".format(
                     self.org_string(org_name), sign_user['email']))
 
         sign_connector.update_users(sign_only_users_update_list)
-
 
     def check_sign_max_limit(self, org_name):
         stray_count = len(self.sign_only_users_by_org[org_name])
