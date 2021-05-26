@@ -292,6 +292,7 @@ def test_manage_strays(commands, rule_processor):
             'federatedID,example@email.com,': {'user_group'}}}
 
     rule_processor.options['disentitle_strays'] = True
+    rule_processor.post_sync_data.remove_umapi_user_groups = mock.MagicMock()
     rule_processor.manage_strays(umapi_connector)
     called = [c[0] for c in commands.mock_calls]
     assert '().remove_all_groups' in called
