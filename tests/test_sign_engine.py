@@ -172,6 +172,7 @@ def test_update_sign_users(example_engine):
     sc = example_engine
     sc.update_sign_users(directory_users, sign_connector, org_name)
     assert True
+    assert directory_users['federatedID, example.user@signtest.com']['email'] == 'example.user@signtest.com'
 
 
 def test_update_existing_users(example_engine):
@@ -198,6 +199,7 @@ def test_update_existing_users(example_engine):
                                          assignment_group)
     assert True
     assert directory_user['email'] == 'example.user@signtest.com'
+    assert sign_user['roles'] == ['GROUP_ADMIN']
 
 
 def test_read_desired_user_groups(example_engine):
@@ -239,6 +241,9 @@ def test_read_desired_user_groups(example_engine):
         },
     }
     example_engine.read_desired_user_groups(mappings, directory_connector)
+    assert True
+    assert mappings['Sign Group 1']['priority'] == 0
+    assert mappings['Test Group Admins 3']['roles'] == {'ACCOUNT_ADMIN', 'GROUP_ADMIN'}
 
 
 def test_extract_mapped_group():
