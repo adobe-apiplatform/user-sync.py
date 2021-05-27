@@ -34,7 +34,6 @@ def test_load_users_and_groups(example_engine, example_user):
 
 
 def test_get_directory_user_key(example_engine, example_user):
-    # user = {'user@example.com': example_user}
     # if the method is passed a dict with an email, it should return the email key
     assert example_engine.get_directory_user_key(
         example_user) == example_user['email']
@@ -73,7 +72,6 @@ def test_handle_sign_only_users(example_engine, example_user):
 
     default_group_id = 'somerandomGROUPID'
     example_engine.handle_sign_only_users(sign_connector, org_name, default_group_id)
-    assert True
     assert sign_users['example.user@signtest.com']['email'] == 'example.user@signtest.com'
 
 
@@ -136,48 +134,8 @@ def test__groupify():
     assert processed_groups == ['Sign Group 3']
 
 
-def test_read_desired_user_groups(example_engine, example_user):
-    dc = MagicMock()
-    example_user['groups'] = ["Sign Users 1"]
-    user = {'user@example.com': example_user}
-
-    def dir_user_replacement(*args, **kwargs):
-        return user.values()
-
-    dc.load_users_and_groups = dir_user_replacement
-    mapping = {}
-    AdobeGroup.index_map = {}
-    adobe_groups = [AdobeGroup('Group 1', 'primary')]
-    mapping['Sign Users'] = {'groups': adobe_groups}
-    example_engine.read_desired_user_groups(mapping, dc)
-    assert example_engine.directory_user_by_user_key == user
-
-
-def test_update_sign_users(example_engine):
-    sign_connector = MagicMock()
-    directory_users = {}
-    adobeGroup = AdobeGroup('Group 1', 'primary1')
-    directory_users['federatedID, example.user@signtest.com'] = {
-        'email': 'example.user@signtest.com',
-        'sign_group': {'group': adobeGroup}
-    }
-    sign_users = {}
-    sign_users['example.user@signtest.com'] = {'email': 'example.user@signtest.com'}
-
-    def get_users():
-        return sign_users
-
-    org_name = 'primary'
-    sign_connector.get_users = get_users
-    sc = example_engine
-    sc.update_sign_users(directory_users, sign_connector, org_name)
-    assert True
-    assert directory_users['federatedID, example.user@signtest.com']['email'] == 'example.user@signtest.com'
-
-
 def test_update_existing_users(example_engine):
     sign_connector = MagicMock()
-    directory_users = {}
     adobeGroup = AdobeGroup('Group 1', 'primary1')
     directory_user = {
         'email': 'example.user@signtest.com',
@@ -197,7 +155,7 @@ def test_update_existing_users(example_engine):
     assignment_group = "sign_group"
     example_engine.update_existing_users(sign_connector, sign_user, directory_user, group_id, user_roles,
                                          assignment_group)
-    assert True
+
     assert directory_user['email'] == 'example.user@signtest.com'
     assert sign_user['roles'] == ['GROUP_ADMIN']
 
@@ -241,9 +199,26 @@ def test_read_desired_user_groups(example_engine):
         },
     }
     example_engine.read_desired_user_groups(mappings, directory_connector)
-    assert True
+
     assert mappings['Sign Group 1']['priority'] == 0
     assert mappings['Test Group Admins 3']['roles'] == {'ACCOUNT_ADMIN', 'GROUP_ADMIN'}
+
+
+def test_read_desired_user_groups_simple(example_engine, example_user):
+    dc = MagicMock()
+    example_user['groups'] = ["Sign Users 1"]
+    user = {'user@example.com': example_user}
+
+    def dir_user_replacement(*args, **kwargs):
+        return user.values()
+
+    dc.load_users_and_groups = dir_user_replacement
+    mapping = {}
+    AdobeGroup.index_map = {}
+    adobe_groups = [AdobeGroup('Group 1', 'primary')]
+    mapping['Sign Users'] = {'groups': adobe_groups}
+    example_engine.read_desired_user_groups(mapping, dc)
+    assert example_engine.directory_user_by_user_key == user
 
 
 def test_extract_mapped_group():
@@ -305,3 +280,24 @@ def test_extract_mapped_group():
     check_mapping(['Sign Group 3', 'Sign Group 2'], 'Sign Group 2', ['NORMAL_USER'])
     check_mapping(['Sign Group 3', 'Test Group Admins 1', 'Test Group Admins 2'],
                   'Sign Group 3', ['ACCOUNT_ADMIN', 'GROUP_ADMIN'])
+
+
+def test_update_sign_users(example_engine):
+    sign_connector = MagicMock()
+    directory_users = {}
+    adobeGroup = AdobeGroup('Group 1', 'primary1')
+    directory_users['federatedID, example.user@signtest.com'] = {
+        'email': 'example.user@signtest.com',
+        'sign_group': {'group': adobeGroup}
+    }
+    sign_users = {}
+    sign_users['example.user@signtest.com'] = {'email': 'example.user@signtest.com'}
+
+    def get_users():
+        return sign_users
+
+    org_name = 'primary'
+    sign_connector.get_users = get_users
+    sc = example_engine
+    sc.update_sign_users(directory_users, sign_connector, org_name)
+    assert directory_users['federatedID, example.user@signtest.com']['email'] == 'example.user@signtest.com'
