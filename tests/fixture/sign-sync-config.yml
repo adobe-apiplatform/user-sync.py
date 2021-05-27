@@ -13,7 +13,11 @@ identity_source:
 # Options that govern the synchronization of users
 user_sync:
   sign_only_limit: 100
- 
+  # sign_only_user_action -action to take for Sign only user (user that is ONLY on the Sign Dashboard)
+  # Default action is to reset (user admin_role removed, user_group set to default group)
+  # options: reset, exclude, remove_groups, remove_roles, deactivate
+  sign_only_user_action: reset
+
 # User management group/role mappings
 user_management:
   # sign_group format: sign_org_name::Sign Group Name, default is 'primary'
