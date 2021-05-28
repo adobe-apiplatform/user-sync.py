@@ -129,32 +129,6 @@ def test__groupify():
     assert processed_groups == ['Sign Group 3']
 
 
-def test_update_existing_users(example_engine):
-    sign_connector = MagicMock()
-    adobeGroup = AdobeGroup('Group 1', 'primary1')
-    directory_user = {
-        'email': 'example.user@signtest.com',
-        'sign_group': {'group': adobeGroup}
-    }
-    sign_user = {
-        'email': 'example.user@signtest.com',
-        'firstname': 'user',
-        'lastname': '',
-        'group': 'Group 1',
-        'roles': ['GROUP_ADMIN'],
-        'userId': 'erewcwererc',
-        'sign_group': {'group': adobeGroup}
-    }
-    group_id = "adxefrdes"
-    user_roles = ['GROUP_ADMIN']
-    assignment_group = "sign_group"
-    example_engine.update_existing_users(sign_connector, sign_user, directory_user, group_id, user_roles,
-                                         assignment_group)
-
-    assert directory_user['email'] == 'example.user@signtest.com'
-    assert sign_user['roles'] == ['GROUP_ADMIN']
-
-
 def test_read_desired_user_groups(example_engine):
     directory_connector = MagicMock()
     g1 = AdobeGroup.create('Sign Group 1')
