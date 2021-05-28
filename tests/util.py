@@ -47,3 +47,14 @@ def merge_dict(d1, d2, immutable=False):
         else:
             d1[k] = d2[k]
     return d1
+
+class MockResponse:
+
+    def __init__(self, status=200, body=None, headers=None, text=None):
+        self.status_code = status
+        self.body = body if body is not None else {}
+        self.headers = headers if headers else {}
+        self.text = text if text else ""
+
+    def json(self):
+        return self.body
