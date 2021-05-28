@@ -42,37 +42,32 @@ def test_get_directory_user_key(example_engine, example_user):
         {'': {'username': 'user@example.com'}}) is None
 
 
-def test_handle_sign_only_users(example_engine, example_user):
-    sign_connector = MagicMock()
-    directory_users = {}
-    adobeGroup = AdobeGroup('Group 1', 'primary')
-    directory_users['federatedID, example.user@signtest.com'] = {
+def test_handle_sign_only_users(example_engine):
+    ex_sign_user = {
         'email': 'example.user@signtest.com',
-        'sign_groups': {'groups': [adobeGroup]}
+        'firstName': 'User',
+        'lastName': 'Last',
+        'group': 'Group 1',
+        'roles': ['GROUP_ADMIN'],
+        'userId': 'erewcwererc',
     }
-    sign_users = {}
-    sign_users['example.user@signtest.com'] = {
-        'email': 'example.user@signtest.com', 'userId': 'somerandomhexstring'}
 
-    def get_users():
-        return sign_users
+    sign_connector = MagicMock()
+    example_engine.sign_only_users_by_org['primary'] = {'example.user@signtest.com': ex_sign_user}
 
-    def deactivate_user(insert_data):
-        pass
+    # Check exclude action
+    example_engine.options['user_sync']['sign_only_user_action'] = 'exclude'
+    example_engine.handle_sign_only_users(sign_connector, 'primary', 'somerandomGROUPID')
+    assert sign_connector.deactivate_user.call_args is None
+    assert sign_connector.update_user.call_args is None
 
-    def check_sign_max_limit(org_name):
-        pass
-
-    sign_connector.deactivate_user = deactivate_user
-    sign_connector.get_users = get_users
-    example_engine.logger = logging.getLogger()
-    example_engine.sign_users_by_org = {'primary': sign_users}
-    example_engine.check_sign_max_limit = check_sign_max_limit
-    org_name = 'primary'
-
-    default_group_id = 'somerandomGROUPID'
-    example_engine.handle_sign_only_users(sign_connector, org_name, default_group_id)
-    assert sign_users['example.user@signtest.com']['email'] == 'example.user@signtest.com'
+    # Check reset (groups and roles)
+    example_engine.options['user_sync']['sign_only_user_action'] = 'reset'
+    example_engine.handle_sign_only_users(sign_connector, 'primary', 'somerandomGROUPID')
+    assert sign_connector.update_user.call_args[0] == ('erewcwererc',
+                                                       {'email': 'example.user@signtest.com', 'firstName': 'User',
+                                                        'groupId': 'somerandomGROUPID', 'lastName': 'Last',
+                                                        'roles': ['NORMAL_USER']})
 
 
 def test_roles_match():
