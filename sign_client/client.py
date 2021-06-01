@@ -285,9 +285,6 @@ class SignClient:
                         raise Exception('{}, Headers: {}'.format(r.status, r.headers))
                     elif r.status == 429:
                         raise Exception('{} - too many calls. Headers: {}'.format(r.status, r.headers))
-                    # elif r.status > 400 and r.status < 500:
-                    #     self.logger.critical(' {} - {}. Headers: {}'.format(r.status, r.reason, r.headers))
-                    #     raise AssertionException('')
                     body = await r.json()
                     return body, r.status
             except Exception as exp:
@@ -296,6 +293,7 @@ class SignClient:
                 if retry_nb == (self.max_sign_retries + 1):
                     raise AssertionException('Quitting after {} retries'.format(self.max_sign_retries))
                 self.logger.warning('Waiting for {} seconds'.format(waiting_time))
+
                 await asyncio.sleep(waiting_time)
             finally:
                 if close:
