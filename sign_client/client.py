@@ -147,6 +147,7 @@ class SignClient:
         if code != 201:
             raise AssertionException("Failed to create Sign group '{}' (reason: {})".format(group, res.reason))
         self.groups[group] = res['groupId'].lower()
+        self._init()
 
     @staticmethod
     def user_roles(user):
