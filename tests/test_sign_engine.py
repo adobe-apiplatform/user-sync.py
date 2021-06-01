@@ -59,15 +59,14 @@ def test_handle_sign_only_users(example_engine):
     example_engine.options['user_sync']['sign_only_user_action'] = 'exclude'
     example_engine.handle_sign_only_users(sign_connector, 'primary', 'somerandomGROUPID')
     assert sign_connector.deactivate_user.call_args is None
-    assert sign_connector.update_user.call_args is None
+    assert sign_connector.update_users.call_args is None
 
     # Check reset (groups and roles)
     example_engine.options['user_sync']['sign_only_user_action'] = 'reset'
     example_engine.handle_sign_only_users(sign_connector, 'primary', 'somerandomGROUPID')
-    assert sign_connector.update_user.call_args[0] == ('erewcwererc',
-                                                       {'email': 'example.user@signtest.com', 'firstName': 'User',
-                                                        'groupId': 'somerandomGROUPID', 'lastName': 'Last',
-                                                        'roles': ['NORMAL_USER']})
+    assert sign_connector.update_users.call_args[0][0] == [
+        {'email': 'example.user@signtest.com', 'firstName': 'User', 'groupId': 'somerandomGROUPID', 'lastName': 'Last',
+         'roles': ['NORMAL_USER'], 'userId': 'erewcwererc'}]
 
 
 def test_roles_match():

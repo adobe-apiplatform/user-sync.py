@@ -10,7 +10,8 @@ from tests.util import MockResponse
 def example_client():
     return SignClient(host='api.echosign.com',
                       integration_key='3AAABLZtkPdD5io',
-                      admin_email='user@example.com'
+                      admin_email='user@example.com',
+                      connection={},
                       )
 
 
