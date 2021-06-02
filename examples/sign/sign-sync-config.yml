@@ -20,6 +20,7 @@ user_sync:
 
 connection:
   # Number of allowed concurrent requests (higher is faster, but consumes more bandwidth and memory)
+  # If you see the message "Message: 429 - too many calls.", please reduce this setting
   request_concurrency: 5
   # Number of requests to queue at one time.  Reduce if memory usage is too high.
   batch_size: 10000

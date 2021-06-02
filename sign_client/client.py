@@ -282,17 +282,17 @@ class SignClient:
                 self.logger.debug('Attempt {} to call: {}'.format(retry_nb, url))
                 async with session.request(method=method, url=url, data=data or {}) as r:
                     if r.status >= 500:
-                        raise Exception('{}, Headers: {}'.format(r.status, r.headers))
+                        raise AssertionException('{}, Headers: {}'.format(r.status, r.headers))
                     elif r.status == 429:
-                        raise Exception('{} - too many calls. Headers: {}'.format(r.status, r.headers))
+                        raise AssertionException('{} - too many calls. Headers: {}'.format(r.status, r.headers))
                     body = await r.json()
                     return body, r.status
-            except Exception as exp:
+            except Exception as exc:
                 retry_nb += 1
-                self.logger.warning('Failed: {} - {}'.format(type(exp), exp.args))
+                self.logger.warning('Call failed: Type: {} - Message: {}'.format(type(exc), exc))
                 if retry_nb == (self.max_sign_retries + 1):
                     raise AssertionException('Quitting after {} retries'.format(self.max_sign_retries))
-                self.logger.warning('Waiting for {} seconds'.format(waiting_time))
+                self.logger.warning('Waiting for {} seconds before retry'.format(waiting_time))
 
                 await asyncio.sleep(waiting_time)
             finally:
