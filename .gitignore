@@ -112,3 +112,4 @@ test_config/
 *.swp
 .config
 .vscode
+lockfile
