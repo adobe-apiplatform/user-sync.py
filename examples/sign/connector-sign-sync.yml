@@ -11,16 +11,6 @@ sign_orgs:
     # Sign account associated with admin_email value will be skipped
     admin_email: "Admin user associated with key e.g. user@example.com"
 
-connection:
-  # Number of allowed concurrent requests (higher is faster, but consumes more bandwidth and memory)
-  request_concurrency: 5
-  # Number of requests to queue at one time.  Reduce if memory usage is too high.
-  batch_size: 10000
-  # Number of times to retry failed requests
-  retry_count: 5
-  # Timeout for requests in seconds
-  timeout: 120
-  
 # User groups to sync to Adobe Sign
 # Secondary orgs (as defined in user-sync-config.yml) can optionally be targeted
 # NOTE: if targeting a group on a secondary org here, there MUST be at least one entitlement_group
