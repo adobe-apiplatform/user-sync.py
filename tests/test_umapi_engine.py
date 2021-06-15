@@ -232,7 +232,7 @@ class MockUmapiConnector(MagicMock):
             'type': 'federatedID'
         }
         actual_result = rule_processor.get_directory_user_key(mock_directory_user_dict)
-        assert actual_result == 'federatedID,7of9@example.com,'
+        assert actual_result == 'federatedID,exampledirectory@example.com,'
 
     def test_get_umapi_user_key(rule_processor):
         mock_umapi_user_dict = {
