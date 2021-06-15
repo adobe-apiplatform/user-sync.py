@@ -1,3 +1,4 @@
+import mock
 import pytest
 from mock import MagicMock
 
@@ -222,3 +223,68 @@ class MockUmapiConnector(MagicMock):
         # test with no change
         assert rule_processor.get_user_attribute_difference(
             umapi_users_mock_data, umapi_users_mock_data) == {}
+
+    def test_get_directory_user_key(rule_processor):
+        mock_directory_user_dict = {
+            'email': 'exampledirectory@exmaple.com',
+            'username': 'exampledirectory@example.com',
+            'domain': 'example.com',
+            'type': 'federatedID'
+        }
+        actual_result = rule_processor.get_directory_user_key(mock_directory_user_dict)
+        assert actual_result == 'federatedID,7of9@example.com,'
+
+    def test_get_umapi_user_key(rule_processor):
+        mock_umapi_user_dict = {
+            'email': '7of9@exmaple.com',
+            'username': '7of9@example.com',
+            'domain': 'example.com',
+            'type': 'federatedID'
+        }
+
+        actual_result = rule_processor.get_umapi_user_key(mock_umapi_user_dict)
+        assert actual_result == 'federatedID,7of9@example.com,'
+
+    def test_get_user_key(rule_processor):
+        key = rule_processor.get_user_key("federatedID", "wriker@example.com", "wriker@example.com", "example.com")
+        assert key == 'federatedID,wriker@example.com,'
+
+        key = rule_processor.get_user_key("federatedID", "wriker", "example.com")
+        assert key == 'federatedID,wriker,example.com'
+
+        assert not rule_processor.get_user_key(None, "wriker@example.com", "wriker@example.com", "example.com")
+        assert not rule_processor.get_user_key("federatedID", None, "wriker@example.com")
+
+    def test_parse_user_key(rule_processor):
+        parsed_user_key = rule_processor.parse_user_key("federatedID,test_user@email.com,")
+        assert parsed_user_key == ['federatedID', 'test_user@email.com', '']
+
+        domain_parsed_key = rule_processor.parse_user_key("federatedID,test_user,email.com")
+        assert domain_parsed_key == ['federatedID', 'test_user', 'email.com']
+
+    def test_get_username_from_user_key(rule_processor):
+        with mock.patch('user_sync.rules.RuleProcessor.parse_user_key') as parse:
+            parse.return_value = ['federatedID', 'test_user@email.com', '']
+            username = rule_processor.get_username_from_user_key("federatedID,test_user@email.com,")
+            assert username == 'test_user@email.com'
+
+
+    class TestUmapiTargetInfo():
+        def test_add_mapped_group(self):
+            umapi_target_info = UmapiTargetInfo("")
+            umapi_target_info.add_mapped_group("All Students")
+            assert "all students" in umapi_target_info.mapped_groups
+            assert "All Students" in umapi_target_info.non_normalize_mapped_groups
+
+        def test_add_additional_group(self):
+            umapi_target_info = UmapiTargetInfo("")
+            umapi_target_info.add_additional_group('old_name', 'new_name')
+            assert umapi_target_info.additional_group_map['old_name'][0] == 'new_name'
+
+        def test_add_desired_group_for(self):
+            umapi_target_info = UmapiTargetInfo("")
+            with mock.patch("user_sync.rules.UmapiTargetInfo.get_desired_groups") as mock_desired_groups:
+                mock_desired_groups.return_valu
+                e = None
+                umapi_target_info.add_desired_group_for('user_key', 'group_name')
+                assert umapi_target_info.desired_groups_by_user_key['user_key'] == {'group_name'}
