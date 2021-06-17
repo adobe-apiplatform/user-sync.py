@@ -1,11 +1,8 @@
-import json
-from unittest import mock
+from unittest.mock import Mock
 
 import pytest
-from requests import Response
 
-from user_sync.post_sync import PostSyncConnector
-from user_sync.post_sync.connectors.sign_sync import SignClient, SignConnector
+from user_sync.post_sync.connectors.sign_sync import SignConnector
 from user_sync.post_sync.manager import PostSyncData
 
 
@@ -60,39 +57,33 @@ def test_add_remove_groups(example_user):
     assert post_sync_data.umapi_data[None][email_id]['groups'] == delta_groups
 
 
-@mock.patch('requests.get')
-@mock.patch('user_sync.post_sync.connectors.sign_sync.client.SignClient._init')
-def test_update_sign_users(mock_client, mock_get, example_user):
-    def mock_response(data):
-        r = Response()
-        r.status_code = 200
-        r._content = json.dumps(data).encode()
-        return r
-    user_list = mock_response({'userInfoList': [{"userId": "123"}]})
-    user_one = mock_response({'userStatus': 'ACTIVE', 'email': 'user@example.com'})
-    mock_get.side_effect = [user_list, user_one]
-    client_config = {
-                'console_org': None,
-                'host': 'api.na2.echosignstage.com',
-                'key': 'allsortsofgibberish1234567890',
-                'admin_email': 'brian.nickila@gmail.com'
-            }
-    sign_client = SignClient(client_config)
-    sign_client.api_url = "whatever"
+def test_update_sign_users(example_user):
+    sign_client = Mock()
+    sign_client.get_users.return_value = {
+        'user@example.com': {
+            'firstName': 'Example',
+            'lastName': 'User',
+            'email': 'user@example.com',
+            'group': 'Example Group',
+            'groupId': '3AAABLZtkP',
+            'userStatus': 'ACTIVE',
+            'userId': '3AAABL'
+        }
+    }
+
     connector_config = {
-        'sign_orgs': [client_config],
-        'entitlement_groups': ['group1']
+        'sign_orgs': [],
+        'entitlement_groups': ['group1'],
+        'user_groups': ['group1']
     }
     sign_connector = SignConnector(connector_config)
     # set the email from the fixture example user to use an uppercase letter
     example_user['email'] = 'User@example.com'
+    example_user['groups'] = ['group1']
     # make a new dict indexed by the uppercase email to pass in to the update method from the sign connector
     umapi_users = {example_user['email']: example_user}
 
-    def should_sync_replacement(umapi_user, sign_user, org_name):
-        assert sign_user is not None
-    # going to exit the update method early because this bug fix is only concerned with the email mismatch
-    # looking up the sign user from the umapi_users dict should return a sign user even if there is a casing mismatch
-    sign_connector.should_sync = should_sync_replacement
-    sign_connector.update_sign_users(umapi_users, sign_client, 'testOrg')
-    
+    sign_connector.update_sign_users(umapi_users, sign_client, None)
+
+    # user meets criteria and is updated
+    assert sign_client.mock_calls[2][0] == 'update_users'
