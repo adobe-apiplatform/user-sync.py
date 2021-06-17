@@ -413,7 +413,7 @@ def begin_work(config_loader):
     post_sync_manager = None
     # get post-sync config unconditionally so we don't get an 'unused key' error
     post_sync_config = config_loader.get_post_sync_options()
-    if rule_config['strategy'] == 'sync':
+    if rule_config['strategy'] == 'sync' and directory_connector_module_name is not None:
         if post_sync_config:
             post_sync_manager = PostSyncManager(post_sync_config, rule_config['test_mode'])
             rule_config['extended_attributes'] |= post_sync_manager.get_directory_attributes()
