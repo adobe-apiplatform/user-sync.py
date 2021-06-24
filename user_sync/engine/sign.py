@@ -409,20 +409,25 @@ class SignSyncEngine:
                 except AssertionException as e:
                     self.logger.error("Error deactivating user {}, {}".format(sign_user['email'], e))
                     continue
+            reset_data = {
+                "email": sign_user['email'],
+                "firstName": sign_user['firstName'],
+                "groupId": default_group_id,
+                "lastName": sign_user['lastName'],
+                "roles": ['NORMAL_USER']
+            }
             if sign_only_user_action == 'reset':
                 if (sign_user['group'].lower() == self.DEFAULT_GROUP_NAME.lower()
                         and sign_user['roles'] == ['NORMAL_USER']):
                     continue
-                reset_data = {
-                    "email": sign_user['email'],
-                    "firstName": sign_user['firstName'],
-                    "groupId": default_group_id,
-                    "lastName": sign_user['lastName'],
-                    "roles": ['NORMAL_USER']
-                }
                 sign_connector.update_user(
                     sign_user['userId'], reset_data)
                 self.logger.info("{}Reset Sign user '{}', to default group and normal user role".format(
+                    self.org_string(org_name), sign_user['email']))
+            if sign_only_user_action == 'remove_roles':
+                reset_data['groupId'] = sign_user['groupId']
+                sign_connector.update_user(sign_user['userId'], reset_data)
+                self.logger.info("{}Reset Sign user '{}', to normal user role".format(
                     self.org_string(org_name), sign_user['email']))
 
     def check_sign_max_limit(self, org_name):
