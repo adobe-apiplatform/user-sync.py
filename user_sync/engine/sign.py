@@ -429,6 +429,11 @@ class SignSyncEngine:
                 sign_connector.update_user(sign_user['userId'], reset_data)
                 self.logger.info("{}Reset Sign user '{}', to normal user role".format(
                     self.org_string(org_name), sign_user['email']))
+            if sign_only_user_action == 'remove_groups':
+                reset_data['roles'] = sign_user['roles']
+                sign_connector.update_user(sign_user['userId'], reset_data)
+                self.logger.info("{}Reset Sign user '{}', to default group".format(
+                    self.org_string(org_name), sign_user['email']))
 
     def check_sign_max_limit(self, org_name):
         stray_count = len(self.sign_only_users_by_org[org_name])
