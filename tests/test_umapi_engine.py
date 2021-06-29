@@ -1,9 +1,12 @@
+import csv
 import re
 
 import mock
 import pytest
+import yaml
 from mock import MagicMock
 
+from tests.util import compare_iter
 from user_sync.engine.umapi import UmapiTargetInfo, UmapiConnectors, RuleProcessor
 from user_sync.connector.connector_umapi import Commands
 
