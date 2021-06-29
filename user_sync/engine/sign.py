@@ -377,24 +377,33 @@ class SignSyncEngine:
                     self.logger.info(
                         "{}Deactivated sign user '{}'".format(self.org_string(org_name), sign_user['email']))
                 except AssertionException as e:
-                    self.logger.error(
-                        "Error deactivating user {}, {}".format(sign_user['email'], e))
-            elif sign_only_user_action == 'reset':
-                # Only update if needed - could be combined in the if above but kept
-                # this way for clarity
-                if (sign_user['group'].lower() == self.DEFAULT_GROUP_NAME.lower()
-                        and sign_user['roles'] == ['NORMAL_USER']):
+                    self.logger.error("Error deactivating user {}, {}".format(sign_user['email'], e))
                     continue
-                reset_data = {
-                    "email": sign_user['email'],
-                    "firstName": sign_user['firstName'],
-                    "groupId": default_group_id,
-                    "lastName": sign_user['lastName'],
-                    "roles": ['NORMAL_USER'],
-                    'userId': sign_user['userId']
-                }
+            reset_data = {
+                "email": sign_user['email'],
+                "firstName": sign_user['firstName'],
+                "groupId": default_group_id,
+                "lastName": sign_user['lastName'],
+                "roles": ['NORMAL_USER'],
+                'userId': sign_user['userId']
+            }
+            user_in_default_group = sign_user['group'].lower() == self.DEFAULT_GROUP_NAME.lower()
+            is_normal_user = sign_user['roles'] == ['NORMAL_USER']
+            if user_in_default_group and is_normal_user:
+                continue
+            if sign_only_user_action == 'reset':
                 sign_only_users_update_list.append(reset_data)
                 self.logger.info("{}Reset Sign user '{}', to default group and normal user role".format(
+                    self.org_string(org_name), sign_user['email']))
+            if sign_only_user_action == 'remove_roles' and not is_normal_user:
+                reset_data['groupId'] = sign_user['groupId']
+                sign_only_users_update_list.append(reset_data)
+                self.logger.info("{}Reset Sign user '{}', to normal user role".format(
+                    self.org_string(org_name), sign_user['email']))
+            if sign_only_user_action == 'remove_groups' and not user_in_default_group:
+                reset_data['roles'] = sign_user['roles']
+                sign_only_users_update_list.append(reset_data)
+                self.logger.info("{}Reset Sign user '{}', to default group".format(
                     self.org_string(org_name), sign_user['email']))
 
         if sign_only_users_update_list:

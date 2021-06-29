@@ -48,6 +48,7 @@ def test_handle_sign_only_users(example_engine):
         'firstName': 'User',
         'lastName': 'Last',
         'group': 'Group 1',
+        'groupId': 'group1Id',
         'roles': ['GROUP_ADMIN'],
         'userId': 'erewcwererc',
     }
@@ -68,6 +69,19 @@ def test_handle_sign_only_users(example_engine):
         {'email': 'example.user@signtest.com', 'firstName': 'User', 'groupId': 'somerandomGROUPID', 'lastName': 'Last',
          'roles': ['NORMAL_USER'], 'userId': 'erewcwererc'}]
 
+    # Check remove_roles (group should remain the same as it is for ex_sign_user)
+    example_engine.options['user_sync']['sign_only_user_action'] = 'remove_roles'
+    example_engine.handle_sign_only_users(sign_connector, 'primary', 'somerandomGROUPID')
+    assert sign_connector.update_users.call_args[0][0] == [
+        {'email': 'example.user@signtest.com', 'firstName': 'User', 'groupId': 'group1Id', 'lastName': 'Last',
+         'roles': ['NORMAL_USER'], 'userId': 'erewcwererc'}]
+
+    # Check remove_groups (role should remain the same as it is for ex_sign_user)
+    example_engine.options['user_sync']['sign_only_user_action'] = 'remove_groups'
+    example_engine.handle_sign_only_users(sign_connector, 'primary', 'somerandomGROUPID')
+    assert sign_connector.update_users.call_args[0][0] == [
+        {'email': 'example.user@signtest.com', 'firstName': 'User', 'groupId': 'somerandomGROUPID', 'lastName': 'Last',
+         'roles': ['GROUP_ADMIN'], 'userId': 'erewcwererc'}]
 
 def test_roles_match():
     resolved_role = ['GROUP_ADMIN', 'ACCOUNT_ADMIN']
