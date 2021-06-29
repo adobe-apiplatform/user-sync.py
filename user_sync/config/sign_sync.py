@@ -28,6 +28,12 @@ def config_schema() -> Schema:
             'sign_only_limit': Or(int, Regex(r'^\d+%$')),
             'sign_only_user_action': Or('exclude', 'reset', 'deactivate', 'remove_roles', 'remove_groups'),
         },
+        Optional('connection'): {
+            Optional('request_concurrency'): int,
+            Optional('batch_size'): int,
+            Optional('retry_count'): int,
+            Optional('timeout'): int
+        },
         'user_management': [{
             'directory_group': Or(None, And(str, len)),
             Optional('sign_group', default=None): Or(None, And(str, len)),
@@ -214,6 +220,7 @@ class SignConfigLoader(ConfigLoader):
         user_sync = self.main_config.get_dict_config('user_sync')
         max_missing = user_sync.get_value('sign_only_limit', (int, str))
         options['user_sync']['sign_only_limit'] = validate_max_limit_config(max_missing)
+        options['connection'] = self.main_config.get_dict('connection', True) or {}
         sign_only_user_action = user_sync.get_value('sign_only_user_action', (str, int))
         options['user_sync']['sign_only_user_action'] = sign_only_user_action
         if options.get('directory_group_mapped'):

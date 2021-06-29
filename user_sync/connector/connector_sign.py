@@ -28,7 +28,7 @@ from sign_client.client import SignClient
 
 class SignConnector(object):
 
-    def __init__(self, caller_options, org_name, test_mode):
+    def __init__(self, caller_options, org_name, test_mode, connection):
         """
         :type caller_options: dict
         """
@@ -47,13 +47,14 @@ class SignConnector(object):
         integration_key = caller_config.get_credential('integration_key', options['admin_email'])
         caller_config.report_unused_values(self.logger)
 
-        self.sign_client = SignClient(host=options['host'],
+        self.sign_client = SignClient(connection,
+                                      host=options['host'],
                                       integration_key=integration_key,
                                       admin_email=options['admin_email'],
                                       logger=self.logger)
 
     def sign_groups(self):
-        return self.sign_client.get_groups()
+        return self.sign_client.sign_groups()
 
     def create_group(self, new_group):
         if not self.test_mode:
@@ -62,9 +63,9 @@ class SignConnector(object):
     def get_users(self):
         return self.sign_client.get_users()
 
-    def update_user(self, user_id, update_data):
+    def update_users(self, update_data):
         if not self.test_mode:
-            self.sign_client.update_user(user_id, update_data)
+            self.sign_client.update_users(update_data)
 
     def get_group(self, assignment_group):
         return self.sign_client.groups.get(assignment_group)

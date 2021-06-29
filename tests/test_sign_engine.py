@@ -60,31 +60,28 @@ def test_handle_sign_only_users(example_engine):
     example_engine.options['user_sync']['sign_only_user_action'] = 'exclude'
     example_engine.handle_sign_only_users(sign_connector, 'primary', 'somerandomGROUPID')
     assert sign_connector.deactivate_user.call_args is None
-    assert sign_connector.update_user.call_args is None
+    assert sign_connector.update_users.call_args is None
 
     # Check reset (groups and roles)
     example_engine.options['user_sync']['sign_only_user_action'] = 'reset'
     example_engine.handle_sign_only_users(sign_connector, 'primary', 'somerandomGROUPID')
-    assert sign_connector.update_user.call_args[0] == ('erewcwererc',
-                                                       {'email': 'example.user@signtest.com', 'firstName': 'User',
-                                                        'groupId': 'somerandomGROUPID', 'lastName': 'Last',
-                                                        'roles': ['NORMAL_USER']})
+    assert sign_connector.update_users.call_args[0][0] == [
+        {'email': 'example.user@signtest.com', 'firstName': 'User', 'groupId': 'somerandomGROUPID', 'lastName': 'Last',
+         'roles': ['NORMAL_USER'], 'userId': 'erewcwererc'}]
 
     # Check remove_roles (group should remain the same as it is for ex_sign_user)
     example_engine.options['user_sync']['sign_only_user_action'] = 'remove_roles'
     example_engine.handle_sign_only_users(sign_connector, 'primary', 'somerandomGROUPID')
-    assert sign_connector.update_user.call_args[0] == ('erewcwererc',
-                                                       {'email': 'example.user@signtest.com', 'firstName': 'User',
-                                                        'groupId': 'group1Id', 'lastName': 'Last',
-                                                        'roles': ['NORMAL_USER']})
+    assert sign_connector.update_users.call_args[0][0] == [
+        {'email': 'example.user@signtest.com', 'firstName': 'User', 'groupId': 'group1Id', 'lastName': 'Last',
+         'roles': ['NORMAL_USER'], 'userId': 'erewcwererc'}]
 
     # Check remove_groups (role should remain the same as it is for ex_sign_user)
     example_engine.options['user_sync']['sign_only_user_action'] = 'remove_groups'
     example_engine.handle_sign_only_users(sign_connector, 'primary', 'somerandomGROUPID')
-    assert sign_connector.update_user.call_args[0] == ('erewcwererc',
-                                                       {'email': 'example.user@signtest.com', 'firstName': 'User',
-                                                        'groupId': 'somerandomGROUPID', 'lastName': 'Last',
-                                                        'roles': ['GROUP_ADMIN']})
+    assert sign_connector.update_users.call_args[0][0] == [
+        {'email': 'example.user@signtest.com', 'firstName': 'User', 'groupId': 'somerandomGROUPID', 'lastName': 'Last',
+         'roles': ['GROUP_ADMIN'], 'userId': 'erewcwererc'}]
 
 def test_roles_match():
     resolved_role = ['GROUP_ADMIN', 'ACCOUNT_ADMIN']
@@ -143,32 +140,6 @@ def test__groupify():
     assert processed_groups == ['Sign Group 1', 'Sign Group 2']
     processed_groups = SignSyncEngine._groupify("sec", [{'groups': [g1, g2, g3]}])
     assert processed_groups == ['Sign Group 3']
-
-
-def test_update_existing_users(example_engine):
-    sign_connector = MagicMock()
-    adobeGroup = AdobeGroup('Group 1', 'primary1')
-    directory_user = {
-        'email': 'example.user@signtest.com',
-        'sign_group': {'group': adobeGroup}
-    }
-    sign_user = {
-        'email': 'example.user@signtest.com',
-        'firstname': 'user',
-        'lastname': '',
-        'group': 'Group 1',
-        'roles': ['GROUP_ADMIN'],
-        'userId': 'erewcwererc',
-        'sign_group': {'group': adobeGroup}
-    }
-    group_id = "adxefrdes"
-    user_roles = ['GROUP_ADMIN']
-    assignment_group = "sign_group"
-    example_engine.update_existing_users(sign_connector, sign_user, directory_user, group_id, user_roles,
-                                         assignment_group)
-
-    assert directory_user['email'] == 'example.user@signtest.com'
-    assert sign_user['roles'] == ['GROUP_ADMIN']
 
 
 def test_read_desired_user_groups(example_engine):
