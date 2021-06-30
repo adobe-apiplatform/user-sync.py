@@ -253,24 +253,24 @@ logging:
 
 ### Disabling SSL Verification
 
-In environments where SSL inspection is enforced at the firewall, the UMAPI client can encounter the following error:
+In environments where SSL inspection is enforced at the firewall, the https requests can encounter an error similar to the following:
 
 `CRITICAL main - UMAPI connection to org id 'someUUIDvalue@AdobeOrg' failed: [SSL: CERTIFICATE_VERIFY_FAILED] `
 
-This is because the requests module is not aware of the middle-man certificate required for SSL inspection.  The recommended solution to this problem is to specify a path to the certificate bundle using the  REQUESTS_CA_BUNDLE environment variable (see https://helpx.adobe.com/enterprise/kb/UMAPI-UST.html for details).  However, in some cases following these steps does not solve the problem.  The next logical step is to disable SSL inspection on the firewall for the UMAPI traffic.  If, however, this is not permitted, you may work around the issue by disabling SSL verification for user-sync.  
+This is because the requests module is not aware of the middle-man certificate required for SSL inspection.  The recommended solution to this problem is to specify a path to the certificate bundle using the  REQUESTS_CA_BUNDLE environment variable (see https://helpx.adobe.com/enterprise/kb/UMAPI-UST.html for details).  However, in some cases following these steps does not solve the problem.  The next logical step is to disable SSL inspection on the firewall.  If, however, this is not permitted, you may work around the issue by disabling SSL verification for user-sync.  
 
-Disabling the verification is unsafe, and leaves the umapi client vulnerable to middle man attacks, so it is recommended to  avoid disabling it if at all possible.  The umapi client only ever targets two URLs - the usermanagement endpoint and the ims endpoint - both of which are secure Adobe URL's.  In addition, since this option is only recommended for use in a secure network environment, any potential risk is further mitigated.
+Disabling the verification is unsafe, and leaves requests vulnerable to middle man attacks, so it is recommended to  avoid disabling it if at all possible.  The umapi client only ever targets secure Adobe URL's.  In addition, since this option is only recommended for use in a secure network environment, any potential risk is further mitigated.
 
-To bypass the ssl verification, update the umapi config as follows:
+To bypass the ssl verification, update the user-sync-config.yml as follows:
 
 ```yaml
-server:
+invocation_defaults:
   ssl_verify: False
 ```
 
-During the calls, you will also see  a warning from requests:
+During the calls, you may also see a warning from requests:
 
-"InsecureRequestWarning: Unverified HTTPS request is being made to host 'usermanagement-stage.adobe.io'. Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
+"InsecureRequestWarning: Unverified HTTPS request is being made to host 'usermanagement.adobe.io'. Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
   InsecureRequestWarning"
 
 

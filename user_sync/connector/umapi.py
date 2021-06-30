@@ -67,7 +67,7 @@ class UmapiConnector(object):
         server_builder.set_string_value('ims_endpoint_jwt', '/ims/exchange/jwt')
         server_builder.set_int_value('timeout', 120)
         server_builder.set_int_value('retries', 3)
-        server_builder.set_value('ssl_verify', [None, bool], None)
+        server_builder.set_value('ssl_verify', bool, None)
         options['server'] = server_options = server_builder.get_options()
 
         enterprise_config = caller_config.get_dict_config('enterprise')
@@ -79,7 +79,7 @@ class UmapiConnector(object):
 
         # Override with old umapi entry if present
         if options['server']['ssl_verify'] is not None:
-            options['ssl_cert_verify'] = options['server']['ssl_cert_verify']
+            options['ssl_cert_verify'] = options['server']['ssl_verify']
 
         self.options = options
         self.logger = logger = user_sync.connector.helper.create_logger(options)

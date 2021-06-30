@@ -29,7 +29,8 @@ class SignClient:
         self.concurrency_limit = connection_cfg.get('request_concurrency') or 1
         timeout = connection_cfg.get('timeout') or 120
         self.batch_size = connection_cfg.get('batch_size') or 10000
-        self.ssl_cert_verify = connection_cfg.get('ssl_cert_verify') or True
+        verify = connection_cfg.get('ssl_cert_verify')
+        self.ssl_cert_verify = False if verify is False else True
         self.logger = logging.getLogger(self.logger_name())
         logging.getLogger("urllib3").setLevel(logging.WARNING)
         self.timeout = aiohttp.ClientTimeout(total=None, sock_connect=timeout, sock_read=timeout)
