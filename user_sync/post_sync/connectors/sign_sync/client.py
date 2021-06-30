@@ -92,7 +92,7 @@ class SignClient:
             url_path = 'base_uris'
             access_point_key = 'api_access_point'
 
-        result = requests.get(url + url_path, headers=self.header())
+        result = requests.get(url + url_path, headers=self.header(), verify=self.ssl_cert_verify)
         if result.status_code != 200:
             raise AssertionException('Error getting base URI from Sign API, is API key valid?')
 
@@ -253,7 +253,7 @@ class SignClient:
             try:
                 waiting_time *= 3
                 self.logger.debug('Attempt {} to call: {}'.format(retry_nb, url))
-                async with session.request(method=method, url=url, data=data or {}) as r:
+                async with session.request(method=method, url=url, data=data or {}, ssl=self.ssl_cert_verify) as r:
                     if r.status >= 500:
                         raise Exception('{}, Headers: {}'.format(r.status, r.headers))
                     elif r.status == 429:
