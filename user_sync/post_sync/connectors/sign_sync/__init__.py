@@ -24,7 +24,7 @@ class SignConnector(PostSyncConnector):
         if self.identity_types is None:
             self.identity_types = ['adobeID', 'enterpriseID', 'federatedID']
         connection_config = config_options.get('connection') or {}
-        connection_config['ssl_cert_verify'] = config_options['ssl_cert_verify']
+        connection_config['ssl_cert_verify'] = config_options.get('ssl_cert_verify')
 
         # dict w/ structure - umapi_name -> adobe_group -> [set of roles]
         self.admin_roles = self._admin_role_mapping(sync_config)
