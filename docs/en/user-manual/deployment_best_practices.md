@@ -265,7 +265,7 @@ To bypass the ssl verification, update the user-sync-config.yml as follows:
 
 ```yaml
 invocation_defaults:
-  ssl_verify: False
+  ssl_cert_verify: False
 ```
 
 During the calls, you may also see a warning from requests:
