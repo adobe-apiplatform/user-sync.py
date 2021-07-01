@@ -55,6 +55,7 @@ class ConfigLoader(object):
         'encoding_name': 'utf8',
         'exclude_unmapped_users': False,
         'process_groups': False,
+        'ssl_cert_verify': True,
         'strategy': 'sync',
         'test_mode': False,
         'update_user_info': False,
@@ -333,8 +334,11 @@ class ConfigLoader(object):
         if connectors_config is not None:
             connector_item = connectors_config.get_list(connector_name, True)
             options = self.get_dict_from_sources(connector_item)
+            if connector_name == "adobe_console":
+                options['ssl_cert_verify'] = self.invocation_options['ssl_cert_verify']
         options = self.combine_dicts(
             [options, self.invocation_options.get('directory_connector_overridden_options', {})])
+
         return options
 
     def get_directory_groups(self):
@@ -411,6 +415,8 @@ class ConfigLoader(object):
                     raise AssertionException(
                         'Unknown post-sync module: {0} - available are: {1}'.format(m, allowed_modules))
                 post_sync_modules[m] = self.get_dict_from_sources([connectors.pop(m)])
+                post_sync_modules[m]['ssl_cert_verify'] = self.invocation_options['ssl_cert_verify']
+
         except KeyError as e:
             raise AssertionException("Error! Post-sync module " + str(e) + " specified without a configuration file...")
 
@@ -600,6 +606,7 @@ class ConfigLoader(object):
     def create_umapi_options(self, connector_config_sources):
         options = self.get_dict_from_sources(connector_config_sources)
         options['test_mode'] = self.invocation_options['test_mode']
+        options['ssl_cert_verify'] = self.invocation_options['ssl_cert_verify']
         return options
 
     def check_unused_config_keys(self):

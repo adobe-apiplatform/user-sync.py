@@ -29,6 +29,8 @@ from pathlib import Path
 import click
 import six
 from click_default_group import DefaultGroup
+from urllib3.exceptions import InsecureRequestWarning
+import requests
 
 import user_sync.certgen
 import user_sync.cli
@@ -389,6 +391,13 @@ def begin_work(config_loader):
     """
     directory_groups = config_loader.get_directory_groups()
     rule_config = config_loader.get_rule_options()
+
+    if not rule_config['ssl_cert_verify']:
+      logger.warning("SSL certificate verification is bypassed.  Consider disabling this option and using the "
+                     "REQUESTS_CA_BUNDLE environment variable to specify the PEM firewall bundle...")
+      # Suppress only the single warning from urllib3 needed.
+      # noinspection PyUnresolvedReferences
+      requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 
     # make sure that all the adobe groups are from known umapi connector names
     primary_umapi_config, secondary_umapi_configs = config_loader.get_umapi_options()

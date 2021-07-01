@@ -29,6 +29,8 @@ class SignClient:
         self.concurrency_limit = connection_cfg.get('request_concurrency') or 1
         timeout = connection_cfg.get('timeout') or 120
         self.batch_size = connection_cfg.get('batch_size') or 10000
+        verify = connection_cfg.get('ssl_cert_verify')
+        self.ssl_cert_verify = False if verify is False else True
         self.logger = logging.getLogger(self.logger_name())
         logging.getLogger("urllib3").setLevel(logging.WARNING)
         self.timeout = aiohttp.ClientTimeout(total=None, sock_connect=timeout, sock_read=timeout)
@@ -91,7 +93,7 @@ class SignClient:
             url_path = 'base_uris'
             access_point_key = 'api_access_point'
 
-        result = requests.get(url + url_path, headers=self.header())
+        result = requests.get(url + url_path, headers=self.header(), verify=self.ssl_cert_verify)
         if result.status_code != 200:
             raise AssertionException('Error getting base URI from Sign API, is API key valid?')
 
@@ -252,7 +254,7 @@ class SignClient:
             try:
                 waiting_time *= 3
                 self.logger.debug('Attempt {} to call: {}'.format(retry_nb, url))
-                async with session.request(method=method, url=url, data=data or {}) as r:
+                async with session.request(method=method, url=url, data=data or {}, ssl=self.ssl_cert_verify) as r:
                     if r.status >= 500:
                         raise Exception('{}, Headers: {}'.format(r.status, r.headers))
                     elif r.status == 429:
