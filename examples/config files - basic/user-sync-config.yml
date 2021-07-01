@@ -208,8 +208,8 @@ directory_users:
   #         and the additional_groups functionality.
   #   The --process-groups command argument or equivalent invocation setting must
   #   be enabled for groups to be auto-created
-  # group_sync_options:
-  #   auto_create: False
+  #group_sync_options:
+  #  auto_create: False
 
 # Post-sync connectors are enabled here
 # `modules` specifies by name the modules to be enabled
