@@ -866,9 +866,8 @@ Some LDAP systems may not support a `memberOf` overlay the way other systems lik
 impossible for the LDAP connector to use its group-based queries to get members for particular groups in an LDAP system.
 
 The `two_steps_lookup` option in `connector-ldap.yml` can be used to overcome this limitation. With two-step lookup
-enabled and configured, the sync tool will query all users (with respect to `all_users_filter`) and look for a specific
-user attribute to get group membership information. Users queried in this manner will be synced according to the `--users`
-command-line option.
+enabled and configured, the sync tool will retrieve group membership from the specified `group_member_attribute_name`
+attribute. User metadata from these queries is then verified to be part of the `base_dn` and the full user record is retrieved.
 
 Example:
 
