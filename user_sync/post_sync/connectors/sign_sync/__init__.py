@@ -1,10 +1,11 @@
 import logging
 from collections import defaultdict
+
+from user_sync.config import DictConfig
+from user_sync.error import AssertionException
 from user_sync.post_sync import PostSyncConnector
-from user_sync.config import DictConfig, OptionsBuilder
 from user_sync.rules import AdobeGroup
 from .client import SignClient
-from user_sync.error import AssertionException
 
 
 class SignConnector(PostSyncConnector):
@@ -22,6 +23,8 @@ class SignConnector(PostSyncConnector):
         self.identity_types = sync_config.get_list('identity_types', True)
         if self.identity_types is None:
             self.identity_types = ['adobeID', 'enterpriseID', 'federatedID']
+        connection_config = config_options.get('connection') or {}
+        connection_config['ssl_cert_verify'] = config_options.get('ssl_cert_verify')
 
         # dict w/ structure - umapi_name -> adobe_group -> [set of roles]
         self.admin_roles = self._admin_role_mapping(sync_config)
@@ -29,6 +32,7 @@ class SignConnector(PostSyncConnector):
         sign_orgs = sync_config.get_list('sign_orgs')
         self.clients = {}
         for sign_org_config in sign_orgs:
+            sign_org_config['connection'] = connection_config
             sign_client = SignClient(sign_org_config)
             self.clients[sign_client.console_org] = sign_client
         self.test_mode = test_mode
@@ -54,6 +58,7 @@ class SignConnector(PostSyncConnector):
 
     def update_sign_users(self, umapi_users, sign_client, org_name):
         sign_users = sign_client.get_users()
+        users_update_list = []
         for _, umapi_user in umapi_users.items():
             sign_user = sign_users.get(umapi_user['email'].lower())
             if not self.should_sync(umapi_user, sign_user, org_name):
@@ -72,7 +77,8 @@ class SignConnector(PostSyncConnector):
             group_id = sign_client.groups.get(assignment_group)
             admin_roles = self.admin_roles.get(org_name, {})
             user_roles = self.resolve_new_roles(umapi_user, admin_roles)
-            update_data = {
+            user_data = {
+                "userId": sign_user['userId'],
                 "email": sign_user['email'],
                 "firstName": sign_user['firstName'],
                 "groupId": group_id,
@@ -82,12 +88,10 @@ class SignConnector(PostSyncConnector):
             if sign_user['group'].lower() == assignment_group and self.roles_match(user_roles, sign_user['roles']):
                 self.logger.debug("skipping Sign update for '{}' -- no updates needed".format(umapi_user['email']))
                 continue
-            try:
-                sign_client.update_user(sign_user['userId'], update_data)
-                self.logger.info("Updated Sign user '{}', Group: '{}', Roles: {}".format(
-                    umapi_user['email'], assignment_group, update_data['roles']))
-            except AssertionError as e:
-                self.logger.error("Error updating user {}".format(e))
+            users_update_list.append(user_data)
+
+        # Update in a batch so as to utilize asyncio
+        sign_client.update_users(users_update_list)
 
     @staticmethod
     def roles_match(resolved_roles, sign_roles):
@@ -117,7 +121,7 @@ class SignConnector(PostSyncConnector):
         :return:
         """
         return sign_user is not None and set(umapi_user['groups']) & set(self.entitlement_groups[org_name]) and \
-            umapi_user['type'] in self.identity_types
+               umapi_user['type'] in self.identity_types
 
     @staticmethod
     def _groupify(groups):
