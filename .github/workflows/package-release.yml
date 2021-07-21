@@ -90,7 +90,7 @@ jobs:
     - name: zip 
       run: |
          cd dist
-         7z a user-sync-${UST_VERSION}${UST_VARIANT_TAG}-win64.zip user-sync.exe
+         7za a user-sync-${UST_VERSION}${UST_VARIANT_TAG}-win64.zip user-sync.exe
       env:
          UST_VARIANT_TAG: ${{matrix.variant_tag}}
          UST_VERSION: ${{ steps.get_version.outputs.version }}
