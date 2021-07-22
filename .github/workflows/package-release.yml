@@ -47,7 +47,7 @@ jobs:
     - name: Get build
       run: |
         cd dist
-        tar czf "user-sync-${UST_VERSION}${UST_VARIANT_TAG}-ubuntu.tar.gz" user-sync
+        tar czf "user-sync-$UST_VERSION $UST_VARIANT_TAG-ubuntu.tar.gz" user-sync
       env:  
         UST_VARIANT_TAG: ${{matrix.variant_tag}}
         UST_VERSION: ${{ steps.get_version.outputs.version }}
