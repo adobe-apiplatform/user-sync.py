@@ -95,6 +95,9 @@ jobs:
          UST_VARIANT_TAG: ${{matrix.variant_tag}}
          UST_VERSION: ${{ steps.get_version.outputs.version }}
     - name: Make artifact
+      env:
+         UST_VARIANT_TAG: ${{matrix.variant_tag}}
+         UST_VERSION: ${{ steps.get_version.outputs.version }}
       uses: actions/upload-artifact@v2
       with:
         name: user-sync-artifact
