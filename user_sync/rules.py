@@ -832,7 +832,7 @@ class RuleProcessor(object):
                 commands.remove_groups(groups_to_remove)
             commands.add_groups(groups_to_add)
         if trusted:
-            self.logger.info('Queuing new user for umapi %s with user key: %s', umapi_connector.name, user_key)
+            self.logger.info('Queuing new user for umapi %s with user key: %s', umapi_info.name, user_key)
             self.secondary_users_created.add(user_key)
         else:
             self.logger.info('Queuing new user with user key: %s', user_key)
