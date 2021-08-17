@@ -485,9 +485,9 @@ class RuleProcessor(object):
         exclude_unmapped_users = self.will_exclude_unmapped_users()
         # first sync the primary connector, so the users get created in the primary
         if umapi_connectors.get_secondary_connectors():
-            self.logger.debug('%sing users to primary umapi...', verb)
+            self.logger.debug('Processing %s users for primary umapi...', verb)
         else:
-            self.logger.debug('%sing users to umapi...', verb)
+            self.logger.debug('Processing %s users for umapi...', verb)
         umapi_info, umapi_connector = self.get_umapi_info(PRIMARY_UMAPI_NAME), umapi_connectors.get_primary_connector()
         if self.push_umapi:
             primary_adds_by_user_key = umapi_info.get_desired_groups_by_user_key()
@@ -505,9 +505,6 @@ class RuleProcessor(object):
                 # If user is not part of any group and ignore outcast is enabled. Do not create user.
                 continue
             # We always create every user in the primary umapi, because it's believed to own the directories.
-            # TODO move this
-            if user_count % 10 == 0:
-                self.logger.progress(user_count, total_users, 'actions completed')
             self.primary_users_created.add(user_key)
             primary_commands.append(self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector.trusted))
 
@@ -516,7 +513,7 @@ class RuleProcessor(object):
             umapi_info = self.get_umapi_info(umapi_name)
             if len(umapi_info.get_mapped_groups()) == 0:
                 continue
-            self.logger.debug('%sing users to secondary umapi %s...', verb, umapi_name)
+            self.logger.debug('Processing %s users for secondary umapi %s...', verb, umapi_name)
             if self.push_umapi:
                 secondary_adds_by_user_key = umapi_info.get_desired_groups_by_user_key()
             else:
@@ -526,8 +523,6 @@ class RuleProcessor(object):
             for user_key, groups_to_add in six.iteritems(secondary_adds_by_user_key):
                 # We only create users who have group mappings in the secondary umapi
                 if groups_to_add:
-                    self.logger.progress(user_count, total_users,
-                                         'Adding user to umapi {0} with user key: {1}'.format(umapi_name, user_key))
                     self.secondary_users_created.add(user_key)
                     if user_key not in self.primary_users_created:
                         # We pushed an existing user to a secondary in order to update his groups
@@ -535,11 +530,12 @@ class RuleProcessor(object):
                     secondary_command_lists[umapi_name].append(self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector.trusted))
         return primary_commands, secondary_command_lists
 
-    @staticmethod
-    def execute_commands(command_list, connector):
+    def execute_commands(self, command_list, connector):
         # do nothing if we have no commands for this connector
         if not command_list:
             return
+
+        total_users = len(command_list)
 
         if len(command_list) > 10:
             command_list, last_command = command_list[0:-1], command_list[-1]
@@ -547,12 +543,19 @@ class RuleProcessor(object):
         else:
             last_command = None
 
+        count = 0
         for commands in command_list:
             connector.send_commands(commands)
+            count += 1
+            if count % 10 == 0:
+                self.logger.progress(count, total_users, 'actions completed')
 
         if last_command is not None:
             connector.end_sync()
             connector.send_commands(last_command)
+            count += 1
+
+        self.logger.progress(count, total_users, 'actions completed')
 
     def create_umapi_groups(self, umapi_connectors):
         """
@@ -829,12 +832,10 @@ class RuleProcessor(object):
                 commands.remove_groups(groups_to_remove)
             commands.add_groups(groups_to_add)
         if trusted:
-            # TODO move this
-            # self.logger.info('Adding user to umapi %s with user key: %s', umapi_connector.name, user_key)
+            self.logger.info('Queuing new user for umapi %s with user key: %s', umapi_connector.name, user_key)
             self.secondary_users_created.add(user_key)
         else:
-            # TODO move this
-            self.logger.info('Creating user with user key: %s', user_key)
+            self.logger.info('Queuing new user with user key: %s', user_key)
             self.primary_users_created.add(user_key)
         post_sync_user = {
             'type': directory_user['identity_type'],
