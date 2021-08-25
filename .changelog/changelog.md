@@ -1,5 +1,21 @@
 | tag | date | title |
 |---|---|---|
+| v2.6.3 | 2021-07-15 | User Sync Tool v2.6.3 |
+
+# Bug Fixes
+
+\#700 - Fix some issues with SSL verification
+\#623 - Fix Adobe-only list with post-sync
+
+# Misc
+
+\#591 - Document Two-Step Lookup
+\#676 - Introduce Changelog
+
+---
+
+| tag | date | title |
+|---|---|---|
 | v2.6.2 | 2020-12-04 | User Sync Tool v2.6.2 |
 
 v2.6.2 - 2020-12-04

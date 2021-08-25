@@ -68,6 +68,7 @@ class AdobeConsoleConnector(object):
         # Let just ignore this
         builder.set_string_value('user_identity_type', None)
         builder.set_string_value('identity_type_filter', 'all')
+        builder.set_bool_value('ssl_cert_verify', True)
         options = builder.get_options()
 
         if not options['identity_type_filter'] == 'all':
@@ -121,6 +122,7 @@ class AdobeConsoleConnector(object):
                 logger=self.logger,
                 timeout_seconds=float(server_options['timeout']),
                 retry_max_attempts=server_options['retries'] + 1,
+                ssl_verify=options['ssl_cert_verify']
             )
         except Exception as e:
             raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))

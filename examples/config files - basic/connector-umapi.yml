@@ -36,7 +36,6 @@ server:
   #ims_endpoint_jwt: /ims/exchange/jwt
   #timeout: 120
   #retries: 3
-  #ssl_verify: True
 
 # (required) enterprise organization settings
 # You must specify all five of these settings.  Consult the
