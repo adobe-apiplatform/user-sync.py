@@ -16,10 +16,10 @@ def example_engine(default_sign_args):
     return SignSyncEngine(rule_config)
 
 
-def test_load_users_and_groups(example_engine, example_user):
+def test_load_users_and_groups(example_engine, mock_dir_user):
     dc = MagicMock()
-    example_user['groups'] = ["Sign Users 1"]
-    user = {'user@example.com': example_user}
+    mock_dir_user['groups'] = ["Sign Users 1"]
+    user = {'user1@example.com': mock_dir_user}
 
     def dir_user_replacement(*args, **kwargs):
         return user.values()
@@ -33,13 +33,13 @@ def test_load_users_and_groups(example_engine, example_user):
     assert example_engine.directory_user_by_user_key == user
 
 
-def test_get_directory_user_key(example_engine, example_user):
+def test_get_directory_user_key(example_engine, mock_dir_user):
     # if the method is passed a dict with an email, it should return the email key
     assert example_engine.get_directory_user_key(
-        example_user) == example_user['email']
+        mock_dir_user) == mock_dir_user['email']
     # if the user object passed in has no email value, it should return None
     assert example_engine.get_directory_user_key(
-        {'': {'username': 'user@example.com'}}) is None
+        {'': {'username': 'user1@example.com'}}) is None
 
 
 def test_handle_sign_only_users(example_engine):
@@ -186,10 +186,10 @@ def test_read_desired_user_groups(example_engine):
     assert mappings['Test Group Admins 3']['roles'] == {'ACCOUNT_ADMIN', 'GROUP_ADMIN'}
 
 
-def test_read_desired_user_groups_simple(example_engine, example_user):
+def test_read_desired_user_groups_simple(example_engine, mock_dir_user):
     dc = MagicMock()
-    example_user['groups'] = ["Sign Users 1"]
-    user = {'user@example.com': example_user}
+    mock_dir_user['groups'] = ["Sign Users 1"]
+    user = {'user1@example.com': mock_dir_user}
 
     def dir_user_replacement(*args, **kwargs):
         return user.values()
