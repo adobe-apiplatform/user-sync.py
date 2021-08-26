@@ -8,6 +8,7 @@ from mock import MagicMock
 
 from tests.util import compare_iter
 from user_sync.connector.connector_umapi import Commands
+from user_sync.engine.common import AdobeGroup
 from user_sync.engine.umapi import UmapiTargetInfo, UmapiConnectors, RuleProcessor
 
 
@@ -304,6 +305,24 @@ def test_get_username_from_user_key(rule_processor):
         username = rule_processor.get_username_from_user_key("federatedID,test_user@email.com,")
         assert username == 'test_user@email.com'
 
+def test_read_desired_user_groups_basic(rule_processor, mock_dir_user):
+    rp = rule_processor
+    mock_dir_user['groups'] = ['Group A', 'Group B']
+
+    directory_connector = mock.MagicMock()
+    directory_connector.load_users_and_groups.return_value = [mock_dir_user]
+    mappings = {
+        'Group A': [AdobeGroup.create('Console Group')]}
+    rp.read_desired_user_groups(mappings, directory_connector)
+
+    # Assert the security group and adobe group end up in the correct scope
+    assert "Group A" in rp.after_mapping_hook_scope['source_groups']
+    assert "Console Group" in rp.after_mapping_hook_scope['target_groups']
+
+    # Assert the user group updated in umapi info
+    user_key = rp.get_directory_user_key(mock_dir_user)
+    assert ('console group' in rp.umapi_info_by_name[None].desired_groups_by_user_key[user_key])
+    assert user_key in rp.filtered_directory_user_by_user_key
 
 @mock.patch('user_sync.helper.CSVAdapter.read_csv_rows')
 def test_read_stray_key_map(csv_reader, rule_processor):
