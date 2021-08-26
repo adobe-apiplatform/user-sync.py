@@ -1,6 +1,5 @@
 import csv
 import re
-from copy import deepcopy
 
 import mock
 import pytest
@@ -10,48 +9,6 @@ from mock import MagicMock
 from tests.util import compare_iter
 from user_sync.connector.connector_umapi import Commands
 from user_sync.engine.umapi import UmapiTargetInfo, UmapiConnectors, RuleProcessor
-
-
-# Serves as a base user for either umapi or directory user tests
-def blank_user_full(
-        identifier,
-        firstname=None,
-        lastname=None,
-        groups=None,
-        country="US",
-        identity_type="federatedID",
-        domain="example.com",
-        username=None
-):
-    if '@' not in identifier:
-        identifier = identifier + "@" + domain
-    user_id = identifier.split("@")[0]
-    firstname = firstname or user_id + " First"
-    lastname = lastname or user_id + " Last"
-    domain = domain or identifier.split("@")[-1]
-
-    return deepcopy({
-        'identity_type': identity_type,
-        'type': identity_type,
-        'username': username or identifier,
-        'domain': domain,
-        'firstname': firstname,
-        'lastname': lastname,
-        'email': identifier,
-        'groups': groups or [],
-        'member_groups': [],
-        'adminRoles': [],
-        'status': 'active',
-        'country': country,
-        'source_attributes': {
-            'email': identifier,
-            'identity_type': None,
-            'username': user_id,
-            'domain': domain,
-            'givenName': firstname,
-            'sn': lastname,
-            'c': country}
-    })
 
 
 @pytest.fixture
@@ -80,56 +37,7 @@ def mock_umapi_info():
     return _mock_umapi_info
 
 
-@pytest.fixture()
-def get_mock_user():
-    def _get_mock_user(
-            identifier="user1",
-            is_umapi_user=False,
-            firstname=None,
-            lastname=None,
-            groups=None,
-            country="US",
-            identity_type="federatedID",
-            domain="example.com",
-            username=None
-    ):
-        u = blank_user_full(identifier, firstname, lastname, groups,
-                            country, identity_type, domain, username)
-        if is_umapi_user:
-            u.pop('identity_type')
-            u.pop('member_groups')
-            u.pop('source_attributes')
-        else:
-            u.pop('adminRoles')
-            u.pop('status')
-            u.pop('type')
-        return u
 
-    return _get_mock_user
-
-
-@pytest.fixture()
-def mock_dir_user(get_mock_user):
-    return get_mock_user()
-
-
-@pytest.fixture()
-def mock_umapi_user(get_mock_user):
-    return get_mock_user(is_umapi_user=True)
-
-
-@pytest.fixture()
-def get_mock_user_list(get_mock_user):
-    def _get_mock_user_list(count=5, start=0, umapi_users=False, groups=[]):
-        users = {}
-        rp = RuleProcessor({})
-        get_key = rp.get_umapi_user_key if umapi_users else rp.get_directory_user_key
-        for i in range(start, start + count):
-            u = get_mock_user("user" + str(i), umapi_users, groups=groups)
-            users[get_key(u)] = u
-        return users
-
-    return _get_mock_user_list
 
 
 class MockUmapiConnector(MagicMock):
@@ -201,7 +109,7 @@ def test_create_umapi_user(rule_processor, mock_dir_user, mock_umapi_info):
         'groups': {'Group C', 'Group A'}})
 
 
-def test_update_umapi_user(rule_processor, mock_dir_user, mock_umapi_user, get_mock_user_list):
+def test_update_umapi_user(rule_processor, mock_dir_user, mock_umapi_user):
     rp = rule_processor
     user = mock_dir_user
     mock_umapi_user['email'] = user['email']
