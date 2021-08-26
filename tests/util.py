@@ -1,6 +1,6 @@
 from collections import Mapping
 from copy import deepcopy
-
+from io import StringIO
 
 def make_dict(keylist, value):
     """
@@ -58,3 +58,16 @@ class MockResponse:
 
     def json(self):
         return self.body
+
+class ClearableStringIO(StringIO, object):
+
+    def __init__(self):
+        super(ClearableStringIO, self).__init__()
+
+    def clear(self):
+        self.truncate(0)
+        self.seek(0)
+
+    def getvalue(self, *args, **kwargs):
+        self.flush()
+        return super(ClearableStringIO, self).getvalue()

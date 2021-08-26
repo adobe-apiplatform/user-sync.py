@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 
@@ -5,7 +6,7 @@ import pytest
 import yaml
 
 from user_sync.config.user_sync import UMAPIConfigLoader
-from .util import merge_dict, make_dict
+from .util import merge_dict, make_dict, ClearableStringIO
 
 
 @pytest.fixture
@@ -115,3 +116,14 @@ def example_user():
         'groups': set(),
         'country': 'US',
     }
+
+
+@pytest.fixture
+def log_stream(*args, **kwargs):
+    stream = ClearableStringIO()
+    handler = logging.StreamHandler(stream)
+    logger = logging.getLogger('test_logger')
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+    yield stream, logger
+    handler.close()
