@@ -635,8 +635,8 @@ class RuleProcessor(object):
         def get_commands(key):
             """Given a user key, returns the umapi commands targeting that user"""
             id_type, username, domain = self.parse_user_key(key)
-            if '@' in username and username in self.email_override:
-                username = self.email_override[username]
+            if '@' in username and username.lower() in self.email_override:
+                username = self.email_override[username.lower()]
             return user_sync.connector.umapi.Commands(identity_type=id_type, username=username, domain=domain)
 
         # do the secondary umapis first, in case we are deleting user accounts from the primary umapi at the end
@@ -981,8 +981,8 @@ class RuleProcessor(object):
         :return:
         """
         email = umapi_user.get('email', '')
-        username = umapi_user.get('username', '')
-        if '@' in username and username != email:
+        username = umapi_user.get('username', '').lower()
+        if '@' in username and username != email.lower():
             self.email_override[username] = email
 
     @staticmethod
