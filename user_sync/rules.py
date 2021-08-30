@@ -190,14 +190,21 @@ class RuleProcessor(object):
 
         umapi_stats = JobStats('Push to UMAPI' if self.push_umapi else 'Sync with UMAPI', divider="-")
         umapi_stats.log_start(logger)
+        primary_commands = list()
+        secondary_command_lists = defaultdict(list)
         if directory_connector is not None:
             # note: push mode is not supported because if it is, we won't have a list of groups
             # that exist in the console.  we don't want to attempt to create groups that already exist
             if self.options.get('process_groups') and not self.push_umapi and self.options.get('auto_create'):
                 self.create_umapi_groups(umapi_connectors)
-            self.sync_umapi_users(umapi_connectors)
+            primary_commands, secondary_command_lists = self.sync_umapi_users(umapi_connectors)
         if self.will_process_strays:
-            self.process_strays(umapi_connectors)
+            primary_commands, secondary_command_lists = self.process_strays(primary_commands,
+                                                                            secondary_command_lists, umapi_connectors)
+        # execute secondary commands first so we can safely handle user deletions (if applicable)
+        for umapi_name, command_list in secondary_command_lists.items():
+            self.execute_commands(command_list, umapi_connectors.get_secondary_connectors()[umapi_name])
+        self.execute_commands(primary_commands, umapi_connectors.get_primary_connector())
         umapi_connectors.execute_actions()
         umapi_stats.log_end(logger)
         self.log_action_summary(umapi_connectors)
@@ -469,6 +476,8 @@ class RuleProcessor(object):
         unmatched directory users which we then create on the Adobe side.
         :type umapi_connectors: UmapiConnectors
         """
+        primary_commands = list()
+        secondary_command_lists = defaultdict(list)
         if self.push_umapi:
             verb = "Push"
         else:
@@ -476,51 +485,77 @@ class RuleProcessor(object):
         exclude_unmapped_users = self.will_exclude_unmapped_users()
         # first sync the primary connector, so the users get created in the primary
         if umapi_connectors.get_secondary_connectors():
-            self.logger.debug('%sing users to primary umapi...', verb)
+            self.logger.debug('Processing %s users for primary umapi...', verb)
         else:
-            self.logger.debug('%sing users to umapi...', verb)
+            self.logger.debug('Processing %s users for umapi...', verb)
         umapi_info, umapi_connector = self.get_umapi_info(PRIMARY_UMAPI_NAME), umapi_connectors.get_primary_connector()
         if self.push_umapi:
             primary_adds_by_user_key = umapi_info.get_desired_groups_by_user_key()
         else:
-            primary_adds_by_user_key = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
+            primary_adds_by_user_key, update_commands = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
+            primary_commands.extend(update_commands)
         # save groups for new users
 
         total_users = len(primary_adds_by_user_key)
 
         user_count = 0
-        for user_key, groups_to_add in six.iteritems(primary_adds_by_user_key):
+        for user_key, groups_to_add in primary_adds_by_user_key.items():
             user_count += 1
             if exclude_unmapped_users and not groups_to_add:
                 # If user is not part of any group and ignore outcast is enabled. Do not create user.
                 continue
             # We always create every user in the primary umapi, because it's believed to own the directories.
-            if user_count % 10 == 0:
-                self.logger.progress(user_count, total_users, 'actions completed')
             self.primary_users_created.add(user_key)
-            self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector)
+            primary_commands.append(self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector.trusted))
 
         # then sync the secondary connectors
-        for umapi_name, umapi_connector in six.iteritems(umapi_connectors.get_secondary_connectors()):
+        for umapi_name, umapi_connector in umapi_connectors.get_secondary_connectors().items():
             umapi_info = self.get_umapi_info(umapi_name)
             if len(umapi_info.get_mapped_groups()) == 0:
                 continue
-            self.logger.debug('%sing users to secondary umapi %s...', verb, umapi_name)
+            self.logger.debug('Processing %s users for secondary umapi %s...', verb, umapi_name)
             if self.push_umapi:
                 secondary_adds_by_user_key = umapi_info.get_desired_groups_by_user_key()
             else:
-                secondary_adds_by_user_key = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
+                secondary_adds_by_user_key, update_commands = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
+                secondary_command_lists[umapi_name].extend(update_commands)
             total_users = len(secondary_adds_by_user_key)
             for user_key, groups_to_add in six.iteritems(secondary_adds_by_user_key):
                 # We only create users who have group mappings in the secondary umapi
                 if groups_to_add:
-                    self.logger.progress(user_count, total_users,
-                                         'Adding user to umapi {0} with user key: {1}'.format(umapi_name, user_key))
                     self.secondary_users_created.add(user_key)
                     if user_key not in self.primary_users_created:
                         # We pushed an existing user to a secondary in order to update his groups
                         self.updated_user_keys.add(user_key)
-                    self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector)
+                    secondary_command_lists[umapi_name].append(self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector.trusted))
+        return primary_commands, secondary_command_lists
+
+    def execute_commands(self, command_list, connector):
+        # do nothing if we have no commands for this connector
+        if not command_list:
+            return
+
+        total_users = len(command_list)
+
+        if len(command_list) > 10:
+            command_list, last_command = command_list[0:-1], command_list[-1]
+            connector.start_sync()
+        else:
+            last_command = None
+
+        count = 0
+        for commands in command_list:
+            connector.send_commands(commands)
+            count += 1
+            if count % 10 == 0:
+                self.logger.progress(count, total_users, 'actions completed')
+
+        if last_command is not None:
+            connector.end_sync()
+            connector.send_commands(last_command)
+            count += 1
+
+        self.logger.progress(count, total_users, 'actions completed')
 
     def create_umapi_groups(self, umapi_connectors):
         """
@@ -585,7 +620,7 @@ class RuleProcessor(object):
         else:
             self.stray_key_map[umapi_name][user_key] = removed_groups
 
-    def process_strays(self, umapi_connectors):
+    def process_strays(self, primary_commands, secondary_command_lists, umapi_connectors):
         """
         Do the top-level logic for stray processing (output to file or clean them up), enforce limits, etc.
         The actual work is done in sub-functions that we call.
@@ -608,9 +643,9 @@ class RuleProcessor(object):
                 self.action_summary['primary_strays_processed'] = 0
                 return
             self.logger.debug("Processing Adobe-only users...")
-            self.manage_strays(umapi_connectors)
+            return self.manage_strays(primary_commands, secondary_command_lists, umapi_connectors)
 
-    def manage_strays(self, umapi_connectors):
+    def manage_strays(self, primary_commands, secondary_command_lists, umapi_connectors):
         """
         Manage strays.  This doesn't require having loaded users from the umapi.
         Management of groups, removal of entitlements and removal from umapi are
@@ -629,7 +664,7 @@ class RuleProcessor(object):
 
         # all our processing is controlled by the strays in the primary organization
         primary_strays = self.get_stray_keys()
-        self.action_summary['primary_strays_processed'] = total_strays = len(primary_strays)
+        self.action_summary['primary_strays_processed'] = len(primary_strays)
 
         # convenience function to get umapi Commands given a user key
         def get_commands(key):
@@ -640,7 +675,7 @@ class RuleProcessor(object):
             return user_sync.connector.umapi.Commands(identity_type=id_type, username=username, domain=domain)
 
         # do the secondary umapis first, in case we are deleting user accounts from the primary umapi at the end
-        for umapi_name, umapi_connector in six.iteritems(umapi_connectors.get_secondary_connectors()):
+        for umapi_name, umapi_connector in umapi_connectors.get_secondary_connectors().items():
             secondary_strays = self.get_stray_keys(umapi_name)
             for user_key in primary_strays:
                 if user_key in secondary_strays:
@@ -650,11 +685,13 @@ class RuleProcessor(object):
                                          umapi_name, user_key)
                         self.post_sync_data.remove_umapi_user_groups(umapi_name, user_key)
                         commands.remove_all_groups()
+                        secondary_command_lists[umapi_name].append(commands)
                     elif remove_strays or delete_strays:
                         self.logger.info('Removing Adobe-only user from %s: %s',
                                          umapi_name, user_key)
                         self.post_sync_data.remove_umapi_user(umapi_name, user_key)
                         commands.remove_from_org(False)
+                        secondary_command_lists[umapi_name].append(commands)
                     elif manage_stray_groups:
                         groups_to_remove = secondary_strays[user_key]
                         if groups_to_remove:
@@ -662,43 +699,41 @@ class RuleProcessor(object):
                                              umapi_name, user_key)
                             self.post_sync_data.update_umapi_data(umapi_name, user_key, [], groups_to_remove)
                             commands.remove_groups(groups_to_remove)
+                            secondary_command_lists[umapi_name].append(commands)
                         else:
                             continue
                     else:
                         # haven't done anything, don't send commands
                         continue
-                    umapi_connector.send_commands(commands)
-            # make sure the commands for each umapi are executed before moving to the next
-            umapi_connector.get_action_manager().flush()
 
         # finish with the primary umapi
         primary_connector = umapi_connectors.get_primary_connector()
-        for i, user_key in enumerate(primary_strays):
-            per = round(100*(float(i)/float(total_strays)),3)
+        for user_key in primary_strays:
             commands = get_commands(user_key)
             if disentitle_strays:
                 self.logger.info('Removing all adobe groups for Adobe-only user: %s', user_key)
                 self.post_sync_data.remove_umapi_user_groups(None, user_key)
                 commands.remove_all_groups()
+                primary_commands.append(commands)
             elif remove_strays or delete_strays:
                 action = "Deleting" if delete_strays else "Removing"
-                self.logger.info('(%s/%s)(%s%%) %s Adobe-only user: %s', i, total_strays, per, action, user_key)
+                self.logger.info('%s Adobe-only user: %s', action, user_key)
                 self.post_sync_data.remove_umapi_user(None, user_key)
                 commands.remove_from_org(True if delete_strays else False)
+                primary_commands.append(commands)
             elif manage_stray_groups:
                 groups_to_remove = primary_strays[user_key]
                 if groups_to_remove:
                     self.logger.info('Removing mapped groups from Adobe-only user: %s', user_key)
                     self.post_sync_data.update_umapi_data(None, user_key, [], groups_to_remove)
                     commands.remove_groups(groups_to_remove)
+                    primary_commands.append(commands)
                 else:
                     continue
             else:
                 # haven't done anything, don't send commands
                 continue
-            primary_connector.send_commands(commands)
-        # make sure the actions get sent
-        primary_connector.get_action_manager().flush()
+        return primary_commands, secondary_command_lists
 
     @staticmethod
     def get_user_attributes(directory_user):
@@ -772,7 +807,7 @@ class RuleProcessor(object):
             commands.update_user({"email": directory_user['email'], "username": update_username})
         return commands
 
-    def create_umapi_user(self, user_key, groups_to_add, umapi_info, umapi_connector):
+    def create_umapi_user(self, user_key, groups_to_add, umapi_info, trusted):
         """
         Add the user to the org on the receiving end of the given umapi connector.
         If the connector is the primary connector, we ask to update the user's attributes because
@@ -784,11 +819,10 @@ class RuleProcessor(object):
         :type user_key: str
         :type groups_to_add: set
         :type umapi_info: UmapiTargetInfo
-        :type umapi_connector: user_sync.connector.umapi.UmapiConnector
+        :type trusted: bool
         """
         directory_user = self.directory_user_by_user_key[user_key]
-        commands = self.create_umapi_commands_for_directory_user(directory_user, self.will_update_user_info(umapi_info),
-                                                                 umapi_connector.trusted)
+        commands = self.create_umapi_commands_for_directory_user(directory_user, self.will_update_user_info(umapi_info), trusted)
         if not commands:
             return
         if self.will_process_groups():
@@ -796,11 +830,11 @@ class RuleProcessor(object):
                 groups_to_remove = umapi_info.get_mapped_groups() - groups_to_add
                 commands.remove_groups(groups_to_remove)
             commands.add_groups(groups_to_add)
-        if umapi_connector.trusted:
-            self.logger.info('Adding user to umapi %s with user key: %s', umapi_connector.name, user_key)
+        if trusted:
+            self.logger.info('Queuing new user for umapi %s with user key: %s', umapi_info.name, user_key)
             self.secondary_users_created.add(user_key)
         else:
-            self.logger.info('Creating user with user key: %s', user_key)
+            self.logger.info('Queuing new user with user key: %s', user_key)
             self.primary_users_created.add(user_key)
         post_sync_user = {
             'type': directory_user['identity_type'],
@@ -813,11 +847,10 @@ class RuleProcessor(object):
         }
         self.post_sync_data.update_umapi_data(umapi_info.name, user_key,
                                               groups_to_add if self.will_process_groups() else [], [], **post_sync_user)
-        umapi_connector.send_commands(commands)
+        return commands
 
-    def update_umapi_user(self, umapi_info, user_key, umapi_connector,
-                          attributes_to_update=None, groups_to_add=None, groups_to_remove=None,
-                          umapi_user=None):
+    def update_umapi_user(self, umapi_info, user_key, attributes_to_update=None, groups_to_add=None,
+                          groups_to_remove=None, umapi_user=None):
         # Note that the user may exist only in the directory, only in the umapi, or both at this point.
         # When we are updating an Adobe user who has been removed from the directory, we have to be careful to use
         # data from the umapi_user parameter and not try to get information from the directory.
@@ -825,7 +858,6 @@ class RuleProcessor(object):
         Send the action to update aspects of an adobe user, like info and groups
         :type umapi_info: UmapiTargetInfo
         :type user_key: str
-        :type umapi_connector: user_sync.connector.umapi.UmapiConnector
         :type attributes_to_update: dict
         :type groups_to_add: set(str)
         :type groups_to_remove: set(str)
@@ -874,7 +906,7 @@ class RuleProcessor(object):
         commands.update_user(attributes_to_update)
         commands.remove_groups(groups_to_remove)
         commands.add_groups(groups_to_add)
-        umapi_connector.send_commands(commands)
+        return commands
 
     def update_umapi_users_for_connector(self, umapi_info, umapi_connector):
         """
@@ -888,6 +920,8 @@ class RuleProcessor(object):
         :type umapi_connector: user_sync.connector.umapi.UmapiConnector
         :rtype: map(string, set)
         """
+        command_list = []
+
         filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
 
         # the way we construct the return value is to start with a map from all directory users
@@ -966,12 +1000,14 @@ class RuleProcessor(object):
                     groups_to_remove = (current_groups - desired_groups) & umapi_info.get_mapped_groups()
 
             # Finally, execute the attribute and group adjustments
-            self.update_umapi_user(umapi_info, user_key, umapi_connector,
-                                   attribute_differences, groups_to_add, groups_to_remove, umapi_user)
-
+            # if we have nothing to update, omit this user
+            if not attribute_differences and not groups_to_add and not groups_to_remove:
+                continue
+            command_list.append(self.update_umapi_user(umapi_info, user_key, attribute_differences,
+                                groups_to_add, groups_to_remove, umapi_user))
         # mark the umapi's adobe users as processed and return the remaining ones in the map
         umapi_info.set_umapi_users_loaded()
-        return user_to_group_map
+        return (user_to_group_map, command_list)
 
     def map_email_override(self, umapi_user):
         """
