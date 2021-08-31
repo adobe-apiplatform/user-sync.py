@@ -180,6 +180,14 @@ class UmapiConnector(object):
             if action is not None:
                 action_manager.add_action(action, callback)
 
+    def start_sync(self):
+        """Send the start sync signal to the connector"""
+        self.connection.start_sync()
+
+    def end_sync(self):
+        """Send the end sync signal to the connector"""
+        self.connection.end_sync()
+
 
 class Commands(object):
     def __init__(self, identity_type=None, email=None, username=None, domain=None):
@@ -194,6 +202,12 @@ class Commands(object):
         self.username = username
         self.domain = domain
         self.do_list = []
+
+    def __str__(self):
+        return "Command "+str(self.__dict__)
+
+    def __repr__(self):
+        return "Command "+str(self.__dict__)
 
     def update_user(self, attributes):
         """
