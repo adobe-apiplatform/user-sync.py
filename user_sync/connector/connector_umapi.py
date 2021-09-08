@@ -57,6 +57,7 @@ class UmapiConnector(object):
         builder = config_common.OptionsBuilder(caller_config)
         builder.set_string_value('logger_name', self.name)
         builder.set_bool_value('test_mode', False)
+        builder.set_bool_value('ssl_cert_verify', True)
         options = builder.get_options()
 
         server_config = caller_config.get_dict_config('server', True)
@@ -67,7 +68,7 @@ class UmapiConnector(object):
         server_builder.set_string_value('ims_endpoint_jwt', '/ims/exchange/jwt')
         server_builder.set_int_value('timeout', 120)
         server_builder.set_int_value('retries', 3)
-        server_builder.set_bool_value('ssl_verify', True)
+        server_builder.set_value('ssl_verify', bool, None)
         options['server'] = server_options = server_builder.get_options()
 
         enterprise_config = caller_config.get_dict_config('enterprise')
@@ -76,6 +77,11 @@ class UmapiConnector(object):
         tech_field = 'tech_acct_id' if 'tech_acct_id' in enterprise_config else 'tech_acct'
         enterprise_builder.require_string_value(tech_field)
         options['enterprise'] = enterprise_options = enterprise_builder.get_options()
+
+        # Override with old umapi entry if present
+        if options['server']['ssl_verify'] is not None:
+            options['ssl_cert_verify'] = options['server']['ssl_verify']
+
         self.options = options
         self.logger = logger = user_sync.connector.helper.create_logger(options)
         if server_config:
@@ -102,7 +108,7 @@ class UmapiConnector(object):
                 logger=self.logger,
                 timeout_seconds=float(server_options['timeout']),
                 retry_max_attempts=server_options['retries'] + 1,
-                ssl_verify=server_options['ssl_verify']
+                ssl_verify=options['ssl_cert_verify']
             )
         except Exception as e:
             raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))
@@ -175,6 +181,14 @@ class UmapiConnector(object):
             if action is not None:
                 action_manager.add_action(action, callback)
 
+    def start_sync(self):
+        """Send the start sync signal to the connector"""
+        self.connection.start_sync()
+
+    def end_sync(self):
+        """Send the end sync signal to the connector"""
+        self.connection.end_sync()
+
 
 class Commands(object):
     def __init__(self, identity_type=None, email=None, username=None, domain=None):
@@ -189,6 +203,12 @@ class Commands(object):
         self.username = username
         self.domain = domain
         self.do_list = []
+
+    def __str__(self):
+        return "Command "+str(self.__dict__)
+
+    def __repr__(self):
+        return "Command "+str(self.__dict__)
 
     def update_user(self, attributes):
         """

@@ -28,6 +28,8 @@ from pathlib import Path
 import click
 import six
 from click_default_group import DefaultGroup
+from urllib3.exceptions import InsecureRequestWarning
+import requests
 
 import user_sync.certgen
 import user_sync.cli
@@ -515,6 +517,12 @@ def log_parameters(argv, config_loader):
         logger.debug('  %s: %s', parameter_name, parameter_value)
     logger.info('-------------------------------------')
 
+
+@main.command(short_help="Encrypt RSA private key")
+@click.help_option('-h', '--help')
+@click.argument('key-path', default='private.key', type=click.Path(exists=True))
+@click.option('-o', '--output-file', help="Path of encrypted file [default: key specified by KEY_PATH will be overwritten]",
+              default=None)
 @click.option('--password', '-p', prompt='Create password', hide_input=True, confirmation_prompt=True)
 def encrypt(output_file, password, key_path):
     """Encrypt RSA private key specified by KEY_PATH.

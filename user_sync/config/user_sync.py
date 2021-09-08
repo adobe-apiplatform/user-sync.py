@@ -71,6 +71,7 @@ class UMAPIConfigLoader(ConfigLoader):
         'encoding_name': 'utf8',
         'exclude_unmapped_users': False,
         'process_groups': False,
+        'ssl_cert_verify': True,
         'strategy': 'sync',
         'test_mode': False,
         'update_user_info': False,
@@ -329,8 +330,11 @@ class UMAPIConfigLoader(ConfigLoader):
         if connectors_config is not None:
             connector_item = connectors_config.get_list(connector_name, True)
             options = self.get_dict_from_sources(connector_item)
+            if connector_name == "adobe_console":
+                options['ssl_cert_verify'] = self.invocation_options['ssl_cert_verify']
         options = self.combine_dicts(
             [options, self.invocation_options.get('directory_connector_overridden_options', {})])
+
         return options
 
     def get_directory_groups(self):
@@ -384,6 +388,13 @@ class UMAPIConfigLoader(ConfigLoader):
                         raise AssertionError("No after_mapping_hook found in extension configuration")
         return options
 
+    @staticmethod
+    def as_list(value):
+        if value is None:
+            return []
+        elif isinstance(value, user_sync.port.list_type):
+            return value
+        return [value]
 
     def get_dict_from_sources(self, sources):
         """
@@ -545,6 +556,7 @@ class UMAPIConfigLoader(ConfigLoader):
     def create_umapi_options(self, connector_config_sources):
         options = self.get_dict_from_sources(connector_config_sources)
         options['test_mode'] = self.invocation_options['test_mode']
+        options['ssl_cert_verify'] = self.invocation_options['ssl_cert_verify']
         return options
 
     def check_unused_config_keys(self):

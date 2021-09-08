@@ -214,6 +214,17 @@ For more information, see the [tutorial on managing role assignments](../success
 
 ### Config Spec
 
+### `connection` Spec (this section is optional and omitted by default):
+
+| key | type | required? | notes |
+|---|---|---|---|
+| `request_concurrency` | `int` | N | Number of allowed concurrent requests (higher is faster, but consumes more bandwidth and memory)|
+| `batch_size` | `int` | N | Number of requests to queue at one time.  Reduce if memory usage is too high. |
+| `retry_count` | `int` | N | Number of times to retry failed requests |
+| `timeout` | `int` | N | Timeout for requests in seconds |
+{: .bordertablestyle }
+
+
 | key | type | required? | notes |
 |---|---|---|---|
 | `sign_orgs` | `list(dict)` | Y | List of objects defining which Sign orgs to sync. If targeting a "secondary" org, it must be defined in `user-sync-config.yml` (see [docs](advanced_configuration.html#accessing-users-in-other-organizations)) |
