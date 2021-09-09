@@ -29,7 +29,7 @@ import yaml
 
 import user_sync.helper
 import user_sync.identity_type
-import user_sync.port
+import user_sync.rules
 from user_sync import flags
 from user_sync.engine import umapi as rules
 from user_sync.engine.common import AdobeGroup, PRIMARY_TARGET_NAME
@@ -278,7 +278,7 @@ class UMAPIConfigLoader(ConfigLoader):
         secondary_config_sources = {}
         primary_config_sources = []
         for item in umapi_config:
-            if isinstance(item, six.string_types):
+            if isinstance(item, str):
                 if secondary_config_sources:
                     # if we see a string after a dict, the user has done something wrong, and we fail.
                     raise AssertionException("Secondary umapi configuration found with no prefix: " + item)
@@ -392,7 +392,7 @@ class UMAPIConfigLoader(ConfigLoader):
     def as_list(value):
         if value is None:
             return []
-        elif isinstance(value, user_sync.port.list_type):
+        elif isinstance(value, list):
             return value
         return [value]
 
