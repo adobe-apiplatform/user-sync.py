@@ -87,6 +87,11 @@ def test_create_umapi_user(rule_processor, mock_dir_user, mock_umapi_info):
     user = mock_dir_user
     rp = rule_processor
 
+    def progress_func(*_):
+        pass
+
+    rp.logger.progress = progress_func
+
     key = rp.get_user_key(user['identity_type'], user['username'], user['domain'])
     rp.directory_user_by_user_key[key] = user
     rp.options['process_groups'] = True
@@ -95,7 +100,8 @@ def test_create_umapi_user(rule_processor, mock_dir_user, mock_umapi_info):
     groups_to_add = {'Group A', 'Group C'}
     info = mock_umapi_info(None, {'Group A', 'Group B'})
     conn = MockUmapiConnector()
-    rp.create_umapi_user(key, groups_to_add, info, conn)
+    commands = [rp.create_umapi_user(key, groups_to_add, info, True)]
+    rp.execute_commands(commands, conn)
 
     result = vars(conn.commands_sent)['do_list']
     result[0][1].pop('on_conflict')
@@ -118,6 +124,11 @@ def test_update_umapi_user(rule_processor, mock_dir_user, mock_umapi_user):
     mock_umapi_user['domain'] = user['domain']
     mock_umapi_user['type'] = user['identity_type']
 
+    def progress_func(*_):
+        pass
+
+    rp.logger.progress = progress_func
+
     def update(up_user, up_attrs):
         group_add = set()
         group_rem = set()
@@ -125,7 +136,8 @@ def test_update_umapi_user(rule_processor, mock_dir_user, mock_umapi_user):
         info = UmapiTargetInfo(None)
         user_key = rp.get_user_key(up_user['identity_type'], up_user['username'], up_user['domain'])
         rp.directory_user_by_user_key[user_key] = up_user
-        rp.update_umapi_user(info, user_key, conn, up_attrs, group_add, group_rem, mock_umapi_user)
+        commands = [rp.update_umapi_user(info, user_key, up_attrs, group_add, group_rem, mock_umapi_user)]
+        rp.execute_commands(commands, conn)
         assert user_key in rp.updated_user_keys
         return vars(conn.commands_sent)
 
