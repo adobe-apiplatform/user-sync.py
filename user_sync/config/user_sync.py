@@ -29,7 +29,6 @@ import yaml
 
 import user_sync.helper
 import user_sync.identity_type
-import user_sync.rules
 from user_sync import flags
 from user_sync.engine import umapi as rules
 from user_sync.engine.common import AdobeGroup, PRIMARY_TARGET_NAME

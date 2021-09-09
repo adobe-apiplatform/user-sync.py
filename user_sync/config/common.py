@@ -8,7 +8,6 @@ from abc import ABC, abstractmethod
 
 import user_sync.helper
 import user_sync.identity_type
-import user_sync.port
 from user_sync.error import AssertionException
 
 
@@ -90,7 +89,7 @@ class ObjectConfig:
 
     def describe_types(self, types_to_describe):
         if types_to_describe == six.string_types:
-            result = self.describe_types(user_sync.port.string_type)
+            result = self.describe_types(str)
         elif isinstance(types_to_describe, tuple):
             result = []
             for type_to_describe in types_to_describe:
@@ -203,13 +202,13 @@ class DictConfig(ObjectConfig):
         """
         :rtype: int
         """
-        return self.get_value(key, user_sync.port.integer_type, none_allowed)
+        return self.get_value(key, int, none_allowed)
 
     def get_bool(self, key, none_allowed=False):
         """
         :rtype: bool
         """
-        return self.get_value(key, user_sync.port.boolean_type, none_allowed)
+        return self.get_value(key, bool, none_allowed)
 
     def get_list(self, key, none_allowed=False):
         """
@@ -503,14 +502,14 @@ class OptionsBuilder:
         :type key: str
         :type default_value: bool
         """
-        self.set_value(key, user_sync.port.boolean_type, default_value)
+        self.set_value(key, bool, default_value)
 
     def set_int_value(self, key, default_value):
         """
         :type key: str
         :type default_value: int
         """
-        self.set_value(key, user_sync.port.integer_type, default_value)
+        self.set_value(key, int, default_value)
 
     def set_string_value(self, key, default_value):
         """
@@ -572,7 +571,7 @@ def resolve_invocation_options(options: dict, invocation_config: DictConfig, inv
 def as_list(value):
     if value is None:
         return []
-    elif isinstance(value, user_sync.port.list_type):
+    elif isinstance(value, list):
         return value
     return [value]
 
