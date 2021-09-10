@@ -880,11 +880,18 @@ class DictConfig(ObjectConfig):
         keyrings.cryptfile.cryptfile.CryptFileKeyring.keyring_key = "none"
 
         import keyring
-        if (isinstance(keyring.get_keyring(), keyring.backends.fail.Keyring) or
-                isinstance(keyring.get_keyring(), keyring.backends.chainer.ChainerBackend)):
+        k = keyring.get_keyring()
+
+        # If the keyring cannot connect to a backend, replace it with cryptfile
+        if isinstance(k, keyring.backends.fail.Keyring):
             keyring.set_keyring(keyrings.cryptfile.cryptfile.CryptFileKeyring())
 
-        logging.getLogger("keyring").info("Using keyring '" + keyring.get_keyring().name + "' to retrieve: " + secure_value_key)
+        try:
+            name = k.backends[0].name
+        except:
+            name = k.name
+
+        logging.getLogger("keyring").info("Using keyring '{}' to retrieve: {}".format(name, secure_value_key))
         return keyring.get_password(service_name=secure_value_key, username=user_name)
 
 
