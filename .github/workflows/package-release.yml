@@ -20,7 +20,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.6'
+        python-version: '3.9'
     - name: Get version tag
       id: get_version
       uses: battila7/get-version-action@v2
@@ -70,7 +70,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
       with:
-        python-version: '3.6'
+        python-version: '3.9'
     - name: Get version tag
       id: get_version
       uses: battila7/get-version-action@v2
@@ -117,12 +117,14 @@ jobs:
         uses: battila7/get-version-action@v2
       - name: Centos-Install dependencies
         run: |
-          yum install -y epel-release
-          yum install -y https://repo.ius.io/ius-release-el7.rpm
-          yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-          yum install -y gcc make python36u-devel python36u-pip python36u-virtualenv
-          yum install -y python-devel python-pip python-virtualenv
           yum install -y pkgconfig openssl-devel dbus-glib-devel dbus-python libffi-devel
+          mkdir tmp && cd tmp
+          wget https://www.python.org/ftp/python/3.9.7/Python-3.9.7.tgz
+          tar xzf Python-3.9.7.tgz
+          cd Python-3.9.6
+          sudo ./configure --enable-optimizations
+          make altinstall
+          cd ..
           rm -f /usr/bin/python && ln -s /usr/bin/python3 /usr/bin/python
       - name: Make Standalone
         run: |
@@ -130,7 +132,7 @@ jobs:
           pip3 install -e .
           pip3 install -e .[test]
           pip3 install -e .[setup]
-          make standalone
+          make
         env:
           UST_EXTENSION: ${{matrix.extension_support}}
       - name: Test with pytest
