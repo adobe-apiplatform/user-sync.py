@@ -230,16 +230,7 @@ def init(ctx):
     sync = 'user-sync-config.yml'
     umapi = 'connector-umapi.yml'
     ldap = 'connector-ldap.yml'
-    okta = 'connector-okta.yml'
-    csv = 'connector-csv.yml'
-    console = 'connector-adobe-console.yml'
-    extension = 'extension-config.yml'
-    remove_list = 'remove-list.csv'
-    users_file_custom = 'users-file-with-custom-attributes-and-mappings.csv'
-    users_file = 'users-file.csv'
-    ctx.forward(example_config, root=sync, umapi=umapi, ldap=ldap,
-                okta=okta, csv=csv, console=console, extension=extension, 
-                remove_list=remove_list, users_file_custom=users_file_custom, users_file=users_file)
+    ctx.forward(example_config, extras=True, root=sync, umapi=umapi, ldap=ldap)
 
 
 @main.command(short_help="Generate invocation scripts")
