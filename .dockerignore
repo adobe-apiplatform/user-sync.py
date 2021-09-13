@@ -1,0 +1,10 @@
+dist
+docs
+.git
+.vscode
+venv
+.coverage
+.pytest_cache
+.idea
+.eggs
+.config
