@@ -26,18 +26,18 @@ jobs:
       uses: battila7/get-version-action@v2
     - name: Ubuntu-Install dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y software-properties-common
-        sudo apt-get install -y build-essential
-        sudo apt-get install -y python3-dev python3-pip python3-virtualenv
-        sudo apt-get install -y pkg-config libssl-dev libdbus-1-dev libdbus-glib-1-dev python-dbus libffi-dev libkrb5-dev
+        sudo apt-get update && \
+             apt-get install -y software-properties-common && \
+             apt-get install -y build-essential && \
+             apt-get install -y python3-dev python3-pip python3-virtualenv && \
+             apt-get install -y pkg-config libssl-dev libdbus-1-dev libdbus-glib-1-dev python-dbus libffi-dev libkrb5-dev
     - run: |
         pip install external/okta-0.0.3.1-py2.py3-none-any.whl
         pip install -e .
         pip install -e .[test]
         pip install -e .[setup]
-    - name: Make standalone
-      run: make standalone
+    - name: Build executable
+      run: make
       env:
         UST_EXTENSION: ${{matrix.extension_support}}
     - name: Test with pytest
@@ -79,7 +79,7 @@ jobs:
         pip install -e .
         pip install -e .[test]
         pip install -e .[setup]
-    - run: make standalone
+    - run: make
       env:
         UST_EXTENSION: ${{matrix.extension_support}}
     - name: Test with pytest
