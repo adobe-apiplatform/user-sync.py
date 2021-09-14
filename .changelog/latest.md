@@ -1,10 +1,7 @@
 # Bug Fixes
 
-\#723 - Start/end sync signals
-\#700 - Fix some issues with SSL verification
-\#623 - Fix Adobe-only list with post-sync
+\#728 - Fix keyring misidentification issue
 
-# Misc
+# Build Information
 
-\#591 - Document Two-Step Lookup
-\#676 - Introduce Changelog
+Builds are now made with Python 3.9 on all platforms
