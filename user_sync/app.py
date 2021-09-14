@@ -270,13 +270,13 @@ def example_config(extras, **kwargs):
         'ldap': Path('examples', 'connector-ldap.yml'),
     }
     extra_res = {
-        'okta': Path('examples', 'config files - basic', 'connector-okta.yml'),
-        'csv': Path('examples', 'config files - basic', 'connector-csv.yml'),
-        'console': Path('examples', 'config files - basic', 'connector-adobe-console.yml'),
-        'extension': Path('examples', 'config files - custom attributes and mappings', 'extension-config.yml'),
-        'remove_list': Path('examples', 'csv inputs - user and remove lists', 'remove-list.csv'),
-        'users_file_custom': Path('examples', 'csv inputs - user and remove lists', 'users-file-with-custom-attributes-and-mappings.csv'),
-        'users_file': Path('examples', 'csv inputs - user and remove lists', 'users-file.csv')
+        'okta': Path('examples', 'config-files-basic', 'connector-okta.yml'),
+        'csv': Path('examples', 'config-files-basic', 'connector-csv.yml'),
+        'console': Path('examples', 'config-files-basic', 'connector-adobe-console.yml'),
+        'extension': Path('examples', 'config-files-custom-attributes-and-mappings', 'extension-config.yml'),
+        'remove_list': Path('examples', 'csv-inputs-user-and-remove-lists', 'remove-list.csv'),
+        'users_file_custom': Path('examples', 'csv-inputs-user-and-remove-lists', 'users-file-with-custom-attributes-and-mappings.csv'),
+        'users_file': Path('examples', 'csv-inputs-user-and-remove-lists', 'users-file.csv')
     }
 
     files_to_copy = []

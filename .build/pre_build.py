@@ -38,7 +38,7 @@ def bundle_example_config(subdir):
         shutil.copy(f, bundle_dir)
 
 def bundle_basic_examples():
-    examples_dir = Path('examples') / 'config files - basic'
+    examples_dir = Path('examples') / 'config-files-basic'
     for f in ['user-sync-config.yml', 'connector-ldap.yml', 'connector-umapi.yml']:
         filename = examples_dir / f
         shutil.copy(filename, Path('user_sync', 'resources', 'examples'))
@@ -68,7 +68,7 @@ def bundle_feature_flag_config():
 if __name__ == '__main__':
     cd()
     bundle_basic_examples()
-    bundle_example_config('config files - basic')
-    bundle_example_config('config files - custom attributes and mappings')
+    bundle_example_config('config-files-basic')
+    bundle_example_config('config-files-custom-attributes-and-mappings')
     bundle_example_config('sign')
-    bundle_example_config('csv inputs - user and remove lists')
+    bundle_example_config('csv-inputs-user-and-remove-lists')
