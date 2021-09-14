@@ -22,7 +22,6 @@ from pathlib import Path
 import os
 import shutil
 from backports import configparser
-from distutils.dir_util import copy_tree
 
 
 def cd():
@@ -32,7 +31,7 @@ def cd():
 def bundle_example_config(subdir):
     examples_dir = os.path.join('examples', subdir)
     bundle_dir = os.path.join('user_sync', 'resources', 'examples', subdir)
-    copy_tree(examples_dir, bundle_dir)
+    shutil.copytree(examples_dir, bundle_dir)
 
 def bundle_basic_examples():
     examples_dir = Path('examples') / 'config files - basic'
