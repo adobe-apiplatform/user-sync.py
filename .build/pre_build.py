@@ -33,7 +33,7 @@ def bundle_example_config(subdir):
     bundle_dir = Path('user_sync', 'resources', 'examples', subdir)
     if bundle_dir.exists():
         shutil.rmtree(bundle_dir)
-    bundle_dir.mkdir()
+    bundle_dir.mkdir(parents=True)
     for f in examples_dir.glob('*'):
         shutil.copy(f, bundle_dir)
 
