@@ -29,9 +29,13 @@ def cd():
 
 
 def bundle_example_config(subdir):
-    examples_dir = os.path.join('examples', subdir)
-    bundle_dir = os.path.join('user_sync', 'resources', 'examples', subdir)
-    shutil.copytree(examples_dir, bundle_dir)
+    examples_dir = Path('examples', subdir)
+    bundle_dir = Path('user_sync', 'resources', 'examples', subdir)
+    if bundle_dir.exists():
+        shutil.rmtree(bundle_dir)
+    bundle_dir.mkdir()
+    for f in examples_dir.glob('*'):
+        shutil.copy(f, bundle_dir)
 
 def bundle_basic_examples():
     examples_dir = Path('examples') / 'config files - basic'
