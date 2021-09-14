@@ -1,5 +1,19 @@
 | tag | date | title |
 |---|---|---|
+| v2.6.5 | 2021-09-14 | User Sync Tool v2.6.5 |
+
+# Bug Fixes
+
+\#728 - Fix keyring misidentification issue
+
+# Build Information
+
+Builds are now made with Python 3.9 on all platforms
+
+---
+
+| tag | date | title |
+|---|---|---|
 | v2.6.4 | 2021-08-31 | User Sync Tool v2.6.4 |
 
 # Bug Fixes
