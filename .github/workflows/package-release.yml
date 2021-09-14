@@ -117,7 +117,7 @@ jobs:
         uses: battila7/get-version-action@v2
       - name: Centos-Install dependencies
         run: |
-          yum install -y pkgconfig gcc openssl-devel dbus-glib-devel dbus-python libffi-devel wget
+          yum install -y pkgconfig gcc openssl-devel dbus-glib-devel dbus-python libffi-devel wget make
           mkdir tmp && cd tmp
           wget https://www.python.org/ftp/python/3.9.7/Python-3.9.7.tgz
           tar xzf Python-3.9.7.tgz
