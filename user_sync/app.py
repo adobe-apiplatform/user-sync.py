@@ -23,6 +23,7 @@ import os
 import platform
 import shutil
 import sys
+import pkg_resources
 from datetime import datetime
 from pathlib import Path
 
@@ -93,6 +94,18 @@ def main():
     user-sync [COMMAND] -h/--help
     """
     pass
+
+
+@main.command()
+@click.help_option('-h', '--help')
+def info():
+    """Get a dump of environmental information"""
+    click.echo(f"Python: {platform.python_version()}")
+    click.echo(f"Platform: {platform.platform()}")
+    click.echo("Packages:")
+    pkgs = {p.project_name: p.version for p in pkg_resources.working_set}
+    for p in sorted(pkgs):
+        click.echo(f"  {p}: {pkgs[p]}")
 
 
 @main.command()
