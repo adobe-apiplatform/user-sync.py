@@ -23,7 +23,7 @@ import os
 import platform
 import shutil
 import sys
-import pkg_resources
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -48,6 +48,7 @@ import user_sync.helper
 import user_sync.lockfile
 import user_sync.resource
 import user_sync.rules
+from user_sync import resource
 
 from user_sync.post_sync.manager import PostSyncManager
 import user_sync.post_sync.connectors.sign_sync
@@ -103,9 +104,11 @@ def info():
     click.echo(f"Python: {platform.python_version()}")
     click.echo(f"Platform: {platform.platform()}")
     click.echo("Packages:")
-    pkgs = {p.project_name: p.version for p in pkg_resources.working_set}
-    for p in sorted(pkgs):
-        click.echo(f"  {p}: {pkgs[p]}")
+    pkg_meta_file = resource.get_resource('pkg_meta.json')
+    with open(pkg_meta_file) as f:
+        pkg_meta = json.load(f) 
+        for p in sorted(pkg_meta):
+            click.echo(f"  {p}: {pkg_meta[p]}")
 
 
 @main.command()
