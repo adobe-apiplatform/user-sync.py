@@ -22,7 +22,7 @@ The [User Sync Documentation](https://adobe-apiplatform.github.io/user-sync.py/)
 
 * Windows, Ubuntu or CentOS server/VM (if using a [pre-built release](https://github.com/adobe-apiplatform/user-sync.py/releases/latest))
 * At least 4GB of available RAM
-* Service account for the User Management API (see the [official docs](https://www.adobe.io/apis/experienceplatform/console/docs.html#!AdobeDocs/adobeio-console/master/integrations.md))
+* Service account for the User Management API (see the [official docs](https://www.adobe.io/authentication/auth-methods.html#!AdobeDocs/adobeio-auth/master/AuthenticationOverview/ServiceAccountIntegration.md))
 * Public/private keys for service account (see the [official docs](https://www.adobe.io/authentication/auth-methods.html#!AdobeDocs/adobeio-auth/master/JWT/JWTCertificate.md))
 
 ## Installation and Use
