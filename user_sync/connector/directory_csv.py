@@ -24,39 +24,15 @@ import user_sync.config
 import user_sync.connector.helper
 import user_sync.error
 import user_sync.identity_type
+from user_sync.connector.directory import DirectoryConnector
 from user_sync.helper import CSVAdapter
 
-def connector_metadata():
-    metadata = {
-        'name': CSVDirectoryConnector.name
-    }
-    return metadata
 
-
-def connector_initialize(options):
-    """
-    :type options: dict
-    """
-    state = CSVDirectoryConnector(options)
-    return state
-
-
-def connector_load_users_and_groups(state, groups=None, extended_attributes=None, all_users=True):
-    """
-    :type state: CSVDirectoryConnector
-    :type groups: Optional(list(str))
-    :type extended_attributes: Optional(list(str))
-    :type all_users: bool
-    :rtype (bool, iterable(dict))
-    """
-    # CSV always reads all users, so we don't bother passing the all_users parameter into the implementation
-    return state.load_users_and_groups(groups or [], extended_attributes or [])
-
-
-class CSVDirectoryConnector(object):
+class CSVDirectoryConnector(DirectoryConnector):
     name = 'csv'
 
-    def __init__(self, caller_options):
+    def __init__(self, caller_options, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('delimiter', None)
