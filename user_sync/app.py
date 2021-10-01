@@ -108,7 +108,7 @@ def info():
         click.echo("OS Release Info:")
         with open('/etc/os-release') as f:
             for l in f:
-                click.echo(f"  {l}")
+                click.echo(f"  {l.strip()}")
     click.echo("Packages:")
     pkg_meta_file = resource.get_resource('pkg_meta.json')
     with open(pkg_meta_file) as f:
