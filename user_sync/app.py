@@ -36,10 +36,6 @@ import user_sync.certgen
 import user_sync.cli
 import user_sync.config
 import user_sync.connector.directory
-import user_sync.connector.directory_ldap
-import user_sync.connector.directory_okta
-import user_sync.connector.directory_csv
-import user_sync.connector.directory_adobe_console
 import user_sync.connector.umapi
 import user_sync.connector.umapi
 import user_sync.encryption
@@ -47,6 +43,10 @@ import user_sync.helper
 import user_sync.lockfile
 import user_sync.resource
 import user_sync.rules
+from user_sync.connector.directory_adobe_console import AdobeConsoleConnector
+from user_sync.connector.directory_csv import CSVDirectoryConnector
+from user_sync.connector.directory_ldap import LDAPDirectoryConnector
+from user_sync.connector.directory_okta import OktaDirectoryConnector
 
 from user_sync.post_sync.manager import PostSyncManager
 import user_sync.post_sync.connectors.sign_sync
@@ -415,17 +415,17 @@ def begin_work(config_loader):
     directory_connector_options = None
     directory_connector_module_name = config_loader.get_directory_connector_module_name()
     if directory_connector_module_name is not None:
-        directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
-        if 'ldap' in directory_connector_module_name:
-            directory_connector = getattr(directory_connector_module, 'LDAPDirectoryConnector')
-        elif 'okta' in directory_connector_module_name:
-            directory_connector = getattr(directory_connector_module, 'OktaDirectoryConnector')
-        elif 'csv' in directory_connector_module_name:
-            directory_connector = getattr(directory_connector_module, 'CSVDirectoryConnector')
-        elif 'adobe_console' in directory_connector_module_name:
-            directory_connector = getattr(directory_connector_module, 'AdobeConsoleConnector')
+        if directory_connector_module_name == 'ldap':
+            directory_connector = LDAPDirectoryConnector
+        elif directory_connector_module_name == 'okta':
+            directory_connector = OktaDirectoryConnector
+        elif directory_connector_module_name == 'csv':
+            directory_connector = CSVDirectoryConnector
+        elif directory_connector_module_name == 'adobe_console':
+            directory_connector = AdobeConsoleConnector
         else:
             raise AssertionException('Directory connector not found.')
+
         directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
 
     post_sync_manager = None
