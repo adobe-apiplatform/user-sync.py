@@ -35,7 +35,7 @@ class OktaDirectoryConnector(DirectoryConnector):
     name = 'okta'
 
     def __init__(self, caller_options, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(OktaDirectoryConnector, self).__init__(*args, **kwargs)
         caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('group_filter_format',

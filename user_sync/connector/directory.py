@@ -18,8 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import user_sync.error
-
 
 class DirectoryConnector(object):
     name = 'directory_connector'

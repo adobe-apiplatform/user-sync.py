@@ -38,7 +38,7 @@ class LDAPDirectoryConnector(DirectoryConnector):
     name = 'ldap'
 
     def __init__(self, caller_options, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(LDAPDirectoryConnector, self).__init__(*args, **kwargs)
         caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
 
         options = self.get_options(caller_config)

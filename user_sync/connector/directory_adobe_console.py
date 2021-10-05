@@ -37,7 +37,7 @@ class AdobeConsoleConnector(DirectoryConnector):
 
     def __init__(self, caller_options, *args, **kwargs):
 
-        super().__init__(*args, **kwargs)
+        super(AdobeConsoleConnector, self).__init__(*args, **kwargs)
         caller_config = user_sync.config.DictConfig('<%s configuration>' % self.name, caller_options)
         builder = user_sync.config.OptionsBuilder(caller_config)
         # Let just ignore this
