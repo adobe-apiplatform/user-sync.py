@@ -529,9 +529,14 @@ class RuleProcessor(object):
         # do nothing if we have no commands for this connector
         if not command_list:
             return
+        
+        # Instead of a Commands object, some items in the list might be None
+        # this can happen if country code is invalid, for instance
+        command_list = [c for c in command_list if c is not None]
 
         total_users = len(command_list)
 
+        # split off the last command if we have more than 10, so we can send the signals
         if len(command_list) > 10:
             command_list, last_command = command_list[0:-1], command_list[-1]
             connector.start_sync()
@@ -630,7 +635,7 @@ class RuleProcessor(object):
             if not check_max_limit(stray_count, max_missing_option, 
                         self.primary_user_count, self.excluded_user_count, 'Adobe', self.logger):
                 self.action_summary['primary_strays_processed'] = 0
-                return
+                return [], {}
             self.logger.debug("Processing Adobe-only users...")
             return self.manage_strays(primary_commands, secondary_command_lists, umapi_connectors)
 
@@ -664,7 +669,7 @@ class RuleProcessor(object):
             return user_sync.connector.umapi.Commands(identity_type=id_type, username=username, domain=domain)
 
         # do the secondary umapis first, in case we are deleting user accounts from the primary umapi at the end
-        for umapi_name, umapi_connector in umapi_connectors.get_secondary_connectors().items():
+        for umapi_name in umapi_connectors.get_secondary_connectors():
             secondary_strays = self.get_stray_keys(umapi_name)
             for user_key in primary_strays:
                 if user_key in secondary_strays:
@@ -693,7 +698,6 @@ class RuleProcessor(object):
                         continue
 
         # finish with the primary umapi
-        primary_connector = umapi_connectors.get_primary_connector()
         for user_key in primary_strays:
             commands = get_commands(user_key)
             if disentitle_strays:

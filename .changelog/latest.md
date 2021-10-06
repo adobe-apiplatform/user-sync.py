@@ -1,10 +1,10 @@
 # Bug Fixes
 
-\#723 - Start/end sync signals
-\#700 - Fix some issues with SSL verification
-\#623 - Fix Adobe-only list with post-sync
+\#728 - Fix keyring misidentification issue
+\#731 - None-type issue with user commands
+\#732 - Executable fails on Ubuntu 18.04 (bionic)
 
-# Misc
+# Build Information
 
-\#591 - Document Two-Step Lookup
-\#676 - Introduce Changelog
+* Builds are now made with Python 3.9 on all platforms
+* Separate build for Ubuntu Bionic (18.04)
