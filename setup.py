@@ -49,14 +49,15 @@ setup(name='user-sync',
           'ruamel.yaml',
           'okta==0.0.3.1',
           'psutil',
-          'pycryptodome==3.7.3',
+          'pycryptodome==3.9.7',
           'ldap3',
           'PyYAML',
           'six',
-          'umapi-client>=2.14',
+          'umapi-client==2.18',
           'click',
           'click-default-group',
-          'configparser==3.7.4'
+          'configparser==3.7.4',
+          'aiohttp'
       ],
       extras_require={
           ':sys_platform=="linux" or sys_platform=="linux2"': [

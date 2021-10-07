@@ -18,8 +18,8 @@
 # enterprise directory administrators to get suitable values.
 # These access credentials are sensitive and must be protected.
 username: "LDAP or Credential Manager username goes here"
-password:  "LDAP Password goes here"    
-host: "ldap://ldap.example.com"
+password: "LDAP password goes here"
+host: "ldaps://ldap.example.com"
 base_dn: "DC=example,DC=com"
 # Test Commit
 

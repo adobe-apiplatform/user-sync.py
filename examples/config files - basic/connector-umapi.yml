@@ -36,7 +36,6 @@ server:
   #ims_endpoint_jwt: /ims/exchange/jwt
   #timeout: 120
   #retries: 3
-  #ssl_verify: True
 
 # (required) enterprise organization settings
 # You must specify all five of these settings.  Consult the
@@ -46,9 +45,9 @@ server:
 # if relative, it is interpreted relative to this configuration file.]
 enterprise:
   org_id: "Org ID goes here"
-  api_key: "API key goes here"
+  client_id: "Client ID goes here"
   client_secret: "Client secret goes here"
-  tech_acct: "Tech account ID goes here"
+  tech_acct_id: "Tech account ID goes here"
   priv_key_path: "private.key"
 
   # (optional) As an alternative to priv_key_path, you can place the private key 
@@ -64,10 +63,14 @@ enterprise:
   # (optional) You can store credentials in the operating system credential store
   # (Windows Credential Manager, Mac Keychain, Linux Freedesktop Secret Service
   # or KWallet - these will be built into the Linux distribution).
-  # To use this feature, You can secure the credentials by using the credentials store commands in the command line
-
-  # Refer to the (URL to Additional Tools) 
-  # secure_priv_key_data_key: umapi_private_key_data
+  # To use this feature, uncomment the following entries and remove the
+  # client_id, client_secret, and priv_key_data above.
+  # The actual credential values are placed in the credential store with the
+  # username as the org_id value, and the key name (perhaps called internet 
+  # or network address) as one of the values below.
+  #secure_client_id_key: umapi_client_id
+  #secure_client_secret_key: umapi_client_secret
+  #secure_priv_key_data_key: umapi_private_key_data
   # Note: the Windows credential store generally can't store data as large as a private
   # key, so the recommended path for securing your private key on windows is given next.
 

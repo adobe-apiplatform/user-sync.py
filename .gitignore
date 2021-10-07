@@ -105,7 +105,10 @@ user_sync/resources/*
 !user_sync/resources/__init__.py
 !user_sync/resources/README.md
 !user_sync/resources/manual_url
+!user_sync/resources/shell_scripts
 .DS_Store
 !user_sync/resources/default_flags.cfg
 test_config/
 *.swp
+.config
+.vscode

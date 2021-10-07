@@ -130,38 +130,42 @@ def test_additional_groups_config(modify_root_config, cli_args):
     assert addl_groups[0]['source'] in options['additional_groups'][0]['source'].pattern
     assert addl_groups[1]['source'] in options['additional_groups'][1]['source'].pattern
 
-#
-# def test_twostep_config(cli_args, config_files, modify_config):
-#     def load_ldap_config_options(args):
-#         config_loader = ConfigLoader(args)
-#         dc_mod_name = config_loader.get_directory_connector_module_name()
-#         dc_mod = __import__(dc_mod_name, fromlist=[''])
-#         dc = DirectoryConnector(dc_mod)
-#         dc_config_options = config_loader.get_directory_connector_options(dc.name)
-#         caller_config = DictConfig('%s configuration' % dc.name, dc_config_options)
-#         return LDAPDirectoryConnector.get_options(caller_config)
-#
-#     modify_config('ldap', ['two_steps_lookup'], {})
-#     args = cli_args({
-#         'config_filename': config_files['root_config']})
-#
-#     # test invalid "two_steps_lookup" config
-#     with pytest.raises(AssertionException):
-#         load_ldap_config_options(args)
-#
-#     # test valid "two_steps_lookup" config with "group_member_filter_format" still set
-#     modify_config('ldap', ['two_steps_lookup', 'group_member_attribute_name'], 'member')
-#     with pytest.raises(AssertionException):
-#         load_ldap_config_options(args)
-#
-#     # test valid "two_steps_lookup" setup
-#     modify_config('ldap', ['two_steps_lookup', 'group_member_attribute_name'], 'member')
-#     modify_config('ldap', ['group_member_filter_format'], "")
-#     options = load_ldap_config_options(args)
-#     assert 'two_steps_enabled' in options
-#     assert 'two_steps_lookup' in options
-#     assert 'group_member_attribute_name' in options['two_steps_lookup']
-#     assert options['two_steps_lookup']['group_member_attribute_name'] == 'member'
+
+def test_directory_users_config(tmp_config_files, modify_root_config, cli_args):
+
+    # test that if connectors is not present or misspelled, an assertion exception is thrown
+    directory_users = {'not_connectors': {'ldap': 'connector-ldap.yml'}}
+    root_config_file = modify_root_config(['directory_users'], directory_users)
+    args = cli_args({'config_filename': root_config_file})
+    config_loader = ConfigLoader(args)
+    connector_name = 'ldap'
+    with pytest.raises(AssertionException):
+        config_loader.get_directory_connector_options(connector_name)
+
+
+def test_twostep_config(tmp_config_files, modify_ldap_config, cli_args):
+    (root_config_file, ldap_config_file, _) = tmp_config_files
+    modify_ldap_config(['two_steps_lookup'], {})
+
+    args = cli_args({'config_filename': root_config_file})
+
+    # test invalid "two_steps_lookup" config
+    with pytest.raises(AssertionException):
+        load_ldap_config_options(args)
+
+    # test valid "two_steps_lookup" config with "group_member_filter_format" still set
+    modify_ldap_config(['two_steps_lookup', 'group_member_attribute_name'], 'member')
+    with pytest.raises(AssertionException):
+        load_ldap_config_options(args)
+
+    # test valid "two_steps_lookup" setup
+    modify_ldap_config(['two_steps_lookup', 'group_member_attribute_name'], 'member')
+    modify_ldap_config(['group_member_filter_format'], "")
+    options = load_ldap_config_options(args)
+    assert 'two_steps_enabled' in options
+    assert 'two_steps_lookup' in options
+    assert 'group_member_attribute_name' in options['two_steps_lookup']
+    assert options['two_steps_lookup']['group_member_attribute_name'] == 'member'
 
 
 def test_adobe_users_config(tmp_config_files, modify_root_config, cli_args):

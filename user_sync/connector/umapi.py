@@ -21,6 +21,7 @@
 import json
 import logging
 # import helper
+import math
 
 import jwt
 import six
@@ -55,6 +56,7 @@ class UmapiConnector(object):
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('logger_name', self.name)
         builder.set_bool_value('test_mode', False)
+        builder.set_bool_value('ssl_cert_verify', True)
         options = builder.get_options()
 
         server_config = caller_config.get_dict_config('server', True)
@@ -65,14 +67,20 @@ class UmapiConnector(object):
         server_builder.set_string_value('ims_endpoint_jwt', '/ims/exchange/jwt')
         server_builder.set_int_value('timeout', 120)
         server_builder.set_int_value('retries', 3)
-        server_builder.set_bool_value('ssl_verify', True)
+        server_builder.set_value('ssl_verify', bool, None)
         options['server'] = server_options = server_builder.get_options()
 
         enterprise_config = caller_config.get_dict_config('enterprise')
         enterprise_builder = user_sync.config.OptionsBuilder(enterprise_config)
         enterprise_builder.require_string_value('org_id')
-        enterprise_builder.require_string_value('tech_acct')
+        tech_field = 'tech_acct_id' if 'tech_acct_id' in enterprise_config else 'tech_acct'
+        enterprise_builder.require_string_value(tech_field)
         options['enterprise'] = enterprise_options = enterprise_builder.get_options()
+
+        # Override with old umapi entry if present
+        if options['server']['ssl_verify'] is not None:
+            options['ssl_cert_verify'] = options['server']['ssl_verify']
+
         self.options = options
         self.logger = logger = user_sync.connector.helper.create_logger(options)
         if server_config:
@@ -81,7 +89,7 @@ class UmapiConnector(object):
 
         ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
-        auth_dict = make_auth_dict(self.name, enterprise_config, org_id, enterprise_options['tech_acct'], logger)
+        auth_dict = make_auth_dict(self.name, enterprise_config, org_id, enterprise_options[tech_field], logger)
         # this check must come after we fetch all the settings
         enterprise_config.report_unused_values(logger)
         # open the connection
@@ -99,7 +107,7 @@ class UmapiConnector(object):
                 logger=self.logger,
                 timeout_seconds=float(server_options['timeout']),
                 retry_max_attempts=server_options['retries'] + 1,
-                ssl_verify=server_options['ssl_verify']
+                ssl_verify=options['ssl_cert_verify']
             )
         except Exception as e:
             raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))
@@ -112,16 +120,23 @@ class UmapiConnector(object):
 
     def iter_users(self, in_group=None):
         users = {}
+        total_count = 0
+        page_count = 0
+        page_size = 0
+        page_number = 0
         try:
-            if in_group:
-                u_query = umapi_client.UsersQuery(self.connection, in_group=in_group)
-            else:
-                u_query = umapi_client.UsersQuery(self.connection)
-            for u in u_query:
+            u_query = umapi_client.UsersQuery(self.connection, in_group=in_group)
+            for i, u in enumerate(u_query):
+                total_count, page_count, page_size, page_number = u_query.stats()
                 email = u['email']
                 if not (email in users):
                     users[email] = u
                     yield u
+
+                if (i + 1) % page_size == 0:
+                    self.logger.progress(len(users), total_count)
+            self.logger.progress(total_count, total_count)
+
         except umapi_client.UnavailableError as e:
             raise AssertionException("Error contacting UMAPI server: %s" % e)
 
@@ -165,6 +180,14 @@ class UmapiConnector(object):
             if action is not None:
                 action_manager.add_action(action, callback)
 
+    def start_sync(self):
+        """Send the start sync signal to the connector"""
+        self.connection.start_sync()
+
+    def end_sync(self):
+        """Send the end sync signal to the connector"""
+        self.connection.end_sync()
+
 
 class Commands(object):
     def __init__(self, identity_type=None, email=None, username=None, domain=None):
@@ -179,6 +202,12 @@ class Commands(object):
         self.username = username
         self.domain = domain
         self.do_list = []
+
+    def __str__(self):
+        return "Command "+str(self.__dict__)
+
+    def __repr__(self):
+        return "Command "+str(self.__dict__)
 
     def update_user(self, attributes):
         """

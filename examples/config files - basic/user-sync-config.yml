@@ -208,8 +208,8 @@ directory_users:
   #         and the additional_groups functionality.
   #   The --process-groups command argument or equivalent invocation setting must
   #   be enabled for groups to be auto-created
-  # group_sync_options:
-  #   auto_create: False
+  #group_sync_options:
+  #  auto_create: False
 
 # Post-sync connectors are enabled here
 # `modules` specifies by name the modules to be enabled
@@ -285,6 +285,13 @@ logging:
   # See the description of file_log_level for details of the allowed values.
   console_log_level: info
 
+  # (optional) log_progress (default value True)
+  # Includes an indication of progress for user actions on the umapi
+  # Useful for tracking sync progress for pulling down, creating,
+  # or updating large numbers of users
+  # eg: 71/100 (71.0%) match output from console
+  log_progress: True
+
 # The invocation_defaults section controls the default values used
 # for command-line arguments.  (Of course, these cannot be used to
 # change defaults for how the configuration files are read.)  This
@@ -338,6 +345,8 @@ invocation_defaults:
   process_groups: Yes
   # For argument --strategy, the default is 'sync'.
   strategy: sync
+  # Disables SSL certificate verification.  NOT recommended except for special use cases (see docs).
+  #ssl_cert_verify: Yes
   # For argument --test-mode (or -t), the default is False (live run).
   # if you set this default to True, you can supply the argument
   # --no-test-mode (or -T) to override the default.

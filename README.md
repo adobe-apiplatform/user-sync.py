@@ -22,12 +22,12 @@ The [User Sync Documentation](https://adobe-apiplatform.github.io/user-sync.py/)
 
 * Windows, Ubuntu or CentOS server/VM (if using a [pre-built release](https://github.com/adobe-apiplatform/user-sync.py/releases/latest))
 * At least 4GB of available RAM
-* Service account for the User Management API (see the [official docs](https://www.adobe.io/apis/experienceplatform/console/docs.html#!AdobeDocs/adobeio-console/master/integrations.md))
+* Service account for the User Management API (see the [official docs](https://www.adobe.io/authentication/auth-methods.html#!AdobeDocs/adobeio-auth/master/AuthenticationOverview/ServiceAccountIntegration.md))
 * Public/private keys for service account (see the [official docs](https://www.adobe.io/authentication/auth-methods.html#!AdobeDocs/adobeio-auth/master/JWT/JWTCertificate.md))
 
 ## Installation and Use
 
-The connector is packaged as a self-contained executable.  See the [latest release page](https://github.com/adobe-apiplatform/user-sync.py/releases/latest)
+The tool is packaged as a self-contained executable.  See the [latest release page](https://github.com/adobe-apiplatform/user-sync.py/releases/latest)
 to get the latest build for your platform. Releases are distributed as archives (`.zip` or `.tar.gz`). Each release file
 contains the UST executable.
 
@@ -83,7 +83,7 @@ sudo apt-get update
 sudo apt-get install -y software-properties-common
 sudo apt-get install -y build-essential
 sudo apt-get install -y python-dev python-pip python-virtualenv
-sudo apt-get install -y pkg-config libssl-dev libdbus-1-dev libdbus-glib-1-dev python-dbus libffi-dev
+sudo apt-get install -y pkg-config libssl-dev libdbus-1-dev libdbus-glib-1-dev python-dbus libffi-dev libkrb5-dev
 sudo apt-get install -y python3-dev python3-venv
 ```
 
