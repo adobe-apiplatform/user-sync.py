@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "sign-client"
+version = "0.2.0"
+description = "Client for the Adobe Sign API"
+authors = ["Andrew Dorton <adorton@adobe.com>"]
+maintainers = ["Andrew Dorton <adorton@adobe.com>"]
+classifiers = [
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+]
+license = "MIT"
+packages = [
+    { include = "umapi_client" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+requests = "^2.25.1"
+cryptography = "3.3.2"
+PyJWT = "2.0.1"
+
+[tool.poetry.dev-dependencies]
+mock = "^4.0.3"
+pytest = "^6.2.3"
+PyYAML = "^5.4.1"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

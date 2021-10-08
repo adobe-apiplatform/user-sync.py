@@ -165,12 +165,15 @@ class SignSyncEngine:
                     continue
             else:
                 # Update existing users
+                print(sign_user)
+                print(group_id)
+                import sys; sys.exit()
                 user_data = {
-                    "userId": sign_user['userId'],
-                    "email": sign_user['email'],
-                    "firstName": sign_user['firstName'],
+                    "userId": sign_user.id,
+                    "email": sign_user.email,
+                    "firstName": sign_user.firstName,
                     "groupId": group_id,
-                    "lastName": sign_user['lastName'],
+                    "lastName": sign_user.lastName,
                     "roles": user_roles
                 }
                 users_update_list.append(user_data)

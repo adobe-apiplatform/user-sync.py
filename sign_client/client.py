@@ -6,12 +6,15 @@ from math import ceil
 import aiohttp
 import requests
 
-from user_sync.error import AssertionException
+from .error import AssertionException
+
+from .model import UsersInfo, DetailedUserInfo, GroupsInfo
 
 
 class SignClient:
-    version = 'v5'
-    _endpoint_template = 'api/rest/{}/'
+    _endpoint = 'api/rest/v6/'
+    USER_PAGE_SIZE = 1000
+    GROUP_PAGE_SIZE = 1000
 
     def __init__(self, connection, host, integration_key, admin_email, logger=None):
         self.host = host
@@ -44,12 +47,8 @@ class SignClient:
         Return Sign API auth header
         :return: dict()
         """
-        if self.version == 'v6':
-            return {
-                "Authorization": "Bearer {}".format(self.integration_key)
-            }
         return {
-            "Access-Token": self.integration_key
+            "Authorization": "Bearer {}".format(self.integration_key)
         }
 
     def header_json(self):
@@ -71,15 +70,10 @@ class SignClient:
         :return: dict()
         """
 
-        endpoint = self._endpoint_template.format(self.version)
-        url = 'https://' + self.host + '/' + endpoint
+        url = 'https://' + self.host + '/' + self._endpoint
 
-        if self.version == "v6":
-            url_path = 'baseUris'
-            access_point_key = 'apiAccessPoint'
-        else:
-            url_path = 'base_uris'
-            access_point_key = 'api_access_point'
+        url_path = 'baseUris'
+        access_point_key = 'apiAccessPoint'
 
         result = requests.get(url + url_path, headers=self.header())
         if result.status_code != 200:
@@ -90,7 +84,23 @@ class SignClient:
         if access_point_key not in result.json():
             raise AssertionException("Error getting base URI for Sign API, result invalid")
 
-        return result.json()[access_point_key] + endpoint
+        return result.json()[access_point_key] + self._endpoint
+
+    def _paginate_get(self, base_url, list_attr, constructor, page_size) -> list:
+        all_results = []
+        cursor = None
+        while True:
+            if cursor is not None:
+                cursor_str = f"&cursor={cursor}"
+            else:
+                cursor_str = ""
+            result, _ = self.call_with_retry_sync('GET', f"{base_url}?pageSize={str(page_size)}{cursor_str}", self.header())
+            result = constructor(result)
+            all_results.extend(getattr(result, list_attr))
+            cursor = result.page.nextCursor
+            if cursor is None:
+                break
+        return all_results
 
     def get_users(self):
         """
@@ -102,9 +112,9 @@ class SignClient:
             self._init()
 
         self.logger.info('Getting list of all Sign users')
-        user_list, _ = self.call_with_retry_sync('GET', self.api_url + 'users', self.header())
-
-        user_ids = [u['userId'] for u in user_list['userInfoList']]
+        user_list = self._paginate_get(f"{self.api_url}users", 'userInfoList', UsersInfo.from_dict, self.USER_PAGE_SIZE)
+        # TODO remove slice
+        user_ids = [u.id for u in user_list][:10]
         self._handle_calls(self._get_user, self.header(), user_ids)
         return self.users
 
@@ -122,13 +132,11 @@ class SignClient:
         if self.api_url is None:
             self.api_url = self.base_uri()
 
-        url = self.api_url + 'groups'
-        header = self.header()
-        sign_groups, code = self.call_with_retry_sync('GET', url, header)
         self.logger.info('getting Sign user groups')
+        group_list = self._paginate_get(f"{self.api_url}groups", 'groupInfoList', GroupsInfo.from_dict, self.GROUP_PAGE_SIZE)
         groups = {}
-        for group in sign_groups['groupInfoList']:
-            groups[group['groupName'].lower()] = group['groupId']
+        for group in group_list:
+            groups[group.groupName.lower()] = group.groupId
         return groups
 
     def create_group(self, group):
@@ -233,17 +241,16 @@ class SignClient:
         async with semaphore:
             user_url = self.api_url + 'users/' + user_id
             user, code = await self.call_with_retry_async('GET', user_url, header, session=session)
+            user = DetailedUserInfo.from_dict(user)
             if code != 200:
-                self.logger.error("Error fetching user '{}' with response: {}".format(user_id, user))
+                self.logger.error(f"Error fetching user '{user_id}' with response: {user}")
                 return
-            if user['userStatus'] != 'ACTIVE':
+            if user.status != 'ACTIVE':
                 return
-            if user['email'] == self.admin_email:
+            if user.email == self.admin_email:
                 return
-            user['userId'] = user_id
-            user['roles'] = self.user_roles(user)
-            self.users[user['email']] = user
-            self.logger.debug('retrieved user details for Sign user {}'.format(user['email']))
+            self.users[user.email] = user
+            self.logger.debug(f'retrieved user details for Sign user {user.email}')
 
     async def _update_user(self, semaphore, user, headers, session):
         """
