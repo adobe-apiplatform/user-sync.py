@@ -113,8 +113,7 @@ class SignClient:
 
         self.logger.info('Getting list of all Sign users')
         user_list = self._paginate_get(f"{self.api_url}users", 'userInfoList', UsersInfo.from_dict, self.USER_PAGE_SIZE)
-        # TODO remove slice
-        user_ids = [u.id for u in user_list][:10]
+        user_ids = [u.id for u in user_list]
         self._handle_calls(self._get_user, self.header(), user_ids)
         return self.users
 
@@ -244,8 +243,6 @@ class SignClient:
             user = DetailedUserInfo.from_dict(user)
             if code != 200:
                 self.logger.error(f"Error fetching user '{user_id}' with response: {user}")
-                return
-            if user.status != 'ACTIVE':
                 return
             if user.email == self.admin_email:
                 return
