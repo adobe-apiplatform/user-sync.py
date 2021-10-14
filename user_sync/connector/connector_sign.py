@@ -61,7 +61,10 @@ class SignConnector(object):
             self.sign_client.create_group(new_group)
 
     def get_users(self):
-        return self.sign_client.get_users()
+        return {k: v for k, v in self.sign_client.get_users().items() if v.status == 'ACTIVE'}
+
+    def get_user_groups(self, user_ids):
+        return self.sign_client.get_user_groups(user_ids)
 
     def update_users(self, update_data):
         if not self.test_mode:

@@ -7,6 +7,8 @@ from user_sync.config.common import DictConfig, ConfigFileLoader, as_set, check_
 from user_sync.connector.connector_sign import SignConnector
 from user_sync.error import AssertionException
 
+from sign_client.model import DetailedUserInfo
+
 
 class SignSyncEngine:
     default_options = {
@@ -136,6 +138,8 @@ class SignSyncEngine:
         """
         # Fetch the list of active Sign users
         sign_users = sign_connector.get_users()
+        sign_user_groups = sign_connector.get_user_groups([u.id for u in sign_users.values()])
+        sign_user_primary_groups = {id: [g for g in groups.groupInfoList if g.isPrimaryGroup][0] for id, groups in sign_user_groups.items()}
         users_update_list = []
         dir_users_for_org = {}
         self.total_sign_user_count += len(sign_users)
@@ -165,14 +169,17 @@ class SignSyncEngine:
                     continue
             else:
                 # Update existing users
-                user_data = {
-                    "userId": sign_user.id,
-                    "email": sign_user.email,
-                    "firstName": sign_user.firstName,
-                    "groupId": group_id,
-                    "lastName": sign_user.lastName,
-                    "roles": user_roles
-                }
+                user_data = DetailedUserInfo(
+                    id=sign_user.id,
+                    email=sign_user.email,
+                    # firstName=sign_user.firstName,
+                    # groupId=group_id,
+                    # lastName=sign_user.lastName,
+                    # roles=user_roles
+                    accountType=sign_user.accountType,
+                    isAccountAdmin='ACCOUNT_ADMIN' in user_roles,
+                    status=sign_user.status
+                )
                 users_update_list.append(user_data)
         sign_connector.update_users(users_update_list)
         self.sign_only_users_by_org[org_name] = {}
@@ -380,12 +387,12 @@ class SignSyncEngine:
                     self.logger.error("Error deactivating user {}, {}".format(sign_user['email'], e))
                     continue
             reset_data = {
-                "email": sign_user['email'],
-                "firstName": sign_user['firstName'],
+                "email": sign_user.email,
+                "firstName": sign_user.firstName,
                 "groupId": default_group_id,
-                "lastName": sign_user['lastName'],
+                "lastName": sign_user.lastName,
                 "roles": ['NORMAL_USER'],
-                'userId': sign_user['userId']
+                'userId': sign_user.id
             }
             user_in_default_group = sign_user['group'].lower() == self.DEFAULT_GROUP_NAME.lower()
             is_normal_user = sign_user['roles'] == ['NORMAL_USER']

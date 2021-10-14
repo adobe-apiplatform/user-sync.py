@@ -8,7 +8,7 @@ import requests
 
 from .error import AssertionException
 
-from .model import UsersInfo, DetailedUserInfo, GroupsInfo
+from .model import UsersInfo, DetailedUserInfo, GroupsInfo, UserGroupsInfo, JSONEncoder
 
 
 class SignClient:
@@ -31,6 +31,7 @@ class SignClient:
         self.timeout = aiohttp.ClientTimeout(total=None, sock_connect=timeout, sock_read=timeout)
         self.loop = asyncio.get_event_loop()
         self.users = {}
+        self.user_groups = {}
 
     def _init(self):
         self.api_url = self.base_uri()
@@ -116,6 +117,15 @@ class SignClient:
         user_ids = [u.id for u in user_list]
         self._handle_calls(self._get_user, self.header(), user_ids)
         return self.users
+
+
+    def get_user_groups(self, user_ids):
+        if self.api_url is None or self.groups is None:
+            self._init()
+        self.logger.info(f'Getting groups for {len(user_ids)} Sign users')
+        self._handle_calls(self._get_user_groups, self.header(), user_ids)
+        return self.user_groups
+
 
     def update_users(self, users):
         """
@@ -240,14 +250,27 @@ class SignClient:
         async with semaphore:
             user_url = self.api_url + 'users/' + user_id
             user, code = await self.call_with_retry_async('GET', user_url, header, session=session)
-            user = DetailedUserInfo.from_dict(user)
             if code != 200:
                 self.logger.error(f"Error fetching user '{user_id}' with response: {user}")
                 return
+            user = DetailedUserInfo.from_dict(user)
             if user.email == self.admin_email:
                 return
             self.users[user.email] = user
             self.logger.debug(f'retrieved user details for Sign user {user.email}')
+
+
+    async def _get_user_groups(self, semaphore, user_id, header, session):
+        async with semaphore:
+            url = f"{self.api_url}users/{user_id}/groups"
+            groups, code = await self.call_with_retry_async('GET', url, header, session=session)
+            if code != 200:
+                self.logger.error(f"Error fetching groups for user '{user_id}' with response: {groups}")
+                return
+            groups = UserGroupsInfo.from_dict(groups)
+            self.user_groups[user_id] = groups
+            self.logger.debug(f'retrieved user group details for Sign user {user_id}')
+
 
     async def _update_user(self, semaphore, user, headers, session):
         """
@@ -255,13 +278,12 @@ class SignClient:
         """
         # This will block the method from executing until a position opens
         async with semaphore:
-            url = self.api_url + 'users/' + user['userId']
-            group = self.reverse_groups[user['groupId']]
-            body, code = await self.call_with_retry_async('PUT', url, headers, data=json.dumps(user), session=session)
-            self.logger.info(
-                "Updated Sign user '{}', Group: '{}', Roles: {}".format(user['email'], group, user['roles']))
+            url = f"{self.api_url}users/{user.id}"
+            print(json.dumps(user, cls=JSONEncoder))
+            body, code = await self.call_with_retry_async('PUT', url, headers, data=json.dumps(user, cls=JSONEncoder), session=session)
+            self.logger.info(f"Updated Sign User: {user.email}")
             if code != 200:
-                self.logger.error("Error updating user '{}' with response: {}".format(user['email'], body))
+                self.logger.error("Error updating user '{}' with response: {}".format(user.email, body))
 
     def call_with_retry_sync(self, method, url, header, data=None):
         """

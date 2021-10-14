@@ -17,7 +17,16 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import dataclasses
 from dataclasses import dataclass
+import json
+
+
+class JSONEncoder(json.JSONEncoder):
+        def default(self, o):
+            if dataclasses.is_dataclass(o):
+                return {k: v for k, v in dataclasses.asdict(o).items() if v is not None}
+            return super().default(o)
 
 
 @dataclass
@@ -99,3 +108,55 @@ class GroupsInfo:
     def from_dict(cls, dct):
         groupInfoList = [GroupInfo(**u) for u in dct['groupInfoList']]
         return cls(page=PageInfo(**dct['page']), groupInfoList=groupInfoList)
+
+
+@dataclass
+class BooleanSettingsInfo:
+    value: bool
+    inherited: bool
+
+    @classmethod
+    def from_dict(cls, dct):
+        return cls(**dct)
+
+
+@dataclass
+class SettingsInfo:
+    libaryDocumentCreationVisible: BooleanSettingsInfo = None
+    sendRestrictedToWorkflows: BooleanSettingsInfo = None
+    userCanSend: BooleanSettingsInfo = None
+
+    @classmethod
+    def from_dict(cls, dct):
+        new_dct = {k: BooleanSettingsInfo.from_dict(v) for k, v in dct.items()}
+        return cls(**new_dct)
+
+
+@dataclass
+class UserGroupInfo:
+    id: str
+    isGroupAdmin: bool
+    isPrimaryGroup: bool
+    status: str
+    createdDate: str = None
+    name: str = None
+    settings: SettingsInfo = None
+
+    @classmethod
+    def from_dict(cls, dct):
+        new_dct = {}
+        for k, v in dct.items():
+            if k == 'settings':
+                new_dct[k] = SettingsInfo.from_dict(v)
+            else:
+                new_dct[k] = v
+        return cls(**new_dct)
+
+
+@dataclass
+class UserGroupsInfo:
+    groupInfoList: list[UserGroupInfo]
+
+    @classmethod
+    def from_dict(cls, dct):
+        return cls([UserGroupInfo.from_dict(v) for v in dct['groupInfoList']])
