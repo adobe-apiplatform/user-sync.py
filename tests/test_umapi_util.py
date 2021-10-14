@@ -13,8 +13,8 @@ def test_make_auth_dict(umapi_config_file, private_key):
     # note that the private_key fixture is actually just the absolute path to test_private.key in the fixture dir
     umapi_dict_config = DictConfig('enterprise', umapi_config['enterprise'])
     org_id_from_file = umapi_config['enterprise']['org_id']
-    tech_acct_from_file = umapi_config['enterprise']['tech_acct']
-    api_key_from_file = umapi_config['enterprise']['api_key']
+    tech_acct_from_file = umapi_config['enterprise']['tech_acct_id']
+    api_key_from_file = umapi_config['enterprise']['client_id']
     client_secret_from_file = umapi_config['enterprise']['client_secret']
     logger = user_sync.connector.helper.create_logger({})
     name = 'umapi'

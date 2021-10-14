@@ -1,5 +1,5 @@
 import logging
-from collections import Mapping
+from collections.abc import Mapping
 
 import keyrings.cryptfile.cryptfile
 import six
@@ -257,7 +257,7 @@ class OktaCredentialConfig(CredentialConfig):
 
 class UmapiCredentialConfig(CredentialConfig):
     secured_keys = [
-        ['enterprise', 'api_key'],
+        ['enterprise', 'client_id'],
         ['enterprise', 'client_secret'],
         ['enterprise', 'priv_key_pass']
     ]
@@ -265,7 +265,7 @@ class UmapiCredentialConfig(CredentialConfig):
 
 class ConsoleCredentialConfig(CredentialConfig):
     secured_keys = [
-        ['integration', 'api_key'],
+        ['integration', 'client_id'],
         ['integration', 'client_secret'],
         ['integration', 'priv_key_pass']
     ]

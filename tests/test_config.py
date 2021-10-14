@@ -19,7 +19,8 @@ def load_ldap_config_options(args):
     dc_mod_name = config_loader.get_directory_connector_module_name()
     dc_mod = __import__(dc_mod_name, fromlist=[''])
     dc = DirectoryConnector(dc_mod)
-    dc_config_options = config_loader.get_directory_connector_options(dc.name)
+    path = config_loader.get_directory_connector_configs()[0]['path']
+    dc_config_options = config_loader.get_directory_connector_options(path)
     caller_config = DictConfig('%s configuration' % dc.name, dc_config_options)
     return LDAPDirectoryConnector.get_options(caller_config)
 
