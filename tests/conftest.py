@@ -33,14 +33,14 @@ def cli_args():
 
 @pytest.fixture
 def private_key(fixture_dir, tmpdir):
-    shutil.copy(os.path.join(fixture_dir, 'test_private.key'), tmpdir.dirname)
-    return os.path.join(tmpdir.dirname, 'test_private.key')
+    shutil.copy(os.path.join(fixture_dir, 'test_private.key'), tmpdir)
+    return os.path.join(tmpdir, 'test_private.key')
 
 
 @pytest.fixture
 def public_cert(fixture_dir, tmpdir):
-    shutil.copy(os.path.join(fixture_dir, 'test_cert.crt'), tmpdir.dirname)
-    return os.path.join(tmpdir.dirname, 'test_cert.crt')
+    shutil.copy(os.path.join(fixture_dir, 'test_cert.crt'), tmpdir)
+    return os.path.join(tmpdir, 'test_cert.crt')
 
 @pytest.fixture
 def root_config_file(fixture_dir):
