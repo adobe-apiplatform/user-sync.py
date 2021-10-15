@@ -94,8 +94,8 @@ def config_files(fixture_dir, tmpdir):
     }
 
     for k, n in config_files.items():
-        shutil.copy(os.path.join(fixture_dir, n), tmpdir.dirname)
-        config_files[k] = os.path.join(tmpdir.dirname, n)
+        shutil.copy(os.path.join(fixture_dir, n), tmpdir)
+        config_files[k] = os.path.join(tmpdir, n)
     return config_files
 
 
