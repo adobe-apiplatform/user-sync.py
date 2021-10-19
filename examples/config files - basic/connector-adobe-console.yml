@@ -44,7 +44,7 @@ integration:
   # data directly in this file.  To do this, remove the priv_key_path entry above
   # and uncomment the following entry.  Replace the sample data with the data
   # from your private key file (which will be much longer).
-  #priv_key_data: |
+  # priv_key_data: |
   #   -----BEGIN RSA PRIVATE KEY-----
   #   MIIf74jfd84oAgEA6brj4uZ2f1Nkf84j843jfjjJGHYJ8756GHHGGz7jLyZWSscH
   #   CoifurKJY763GHKL98mJGYxWSBvhlWskdjdatagoeshere986fKFUNGd74kdfuEH
@@ -70,7 +70,6 @@ integration:
   # Having done this, you can use the setting priv_key_pass to specify the passphrase needed
   # by User Sync to decrypt the private key file (or private key data), as in:
   # priv_key_pass: "my passphrase for my private key"
-  
   # Private key pass can also be stored using credentials store command
 
 # (optional) identity_type_filter (default value is all)
