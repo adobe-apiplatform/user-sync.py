@@ -666,7 +666,7 @@ class RuleProcessor(object):
             id_type, username, domain = self.parse_user_key(key)
             if '@' in username and username.lower() in self.email_override:
                 username = self.email_override[username.lower()]
-            return user_sync.connector.umapi.Commands(identity_type=id_type, username=username, domain=domain)
+            return user_sync.connector.connector_umapi.Commands(identity_type=id_type, username=username, domain=domain)
 
         # do the secondary umapis first, in case we are deleting user accounts from the primary umapi at the end
         for umapi_name in umapi_connectors.get_secondary_connectors():
