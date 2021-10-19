@@ -83,13 +83,13 @@ def test_retrieve_revert_ldap_valid(tmp_config_files):
     unsecured_key = ldap.get_nested_key(['password'])
     ldap.store()
     with open(ldap_config_file) as f:
-        data = yaml.load(f)
+        data = yaml.safe_load(f)
         assert ldap.parse_secure_key(data['password'])
     retrieved_key_dict = ldap.retrieve()
     assert retrieved_key_dict['password'] == unsecured_key
     ldap.revert()
     with open(ldap_config_file) as f:
-        data = yaml.load(f)
+        data = yaml.safe_load(f)
         assert data['password'] == unsecured_key
 
 
@@ -112,13 +112,13 @@ def test_retrieve_revert_umapi_valid(private_key, modify_umapi_config):
     unsecured_api_key = umapi.get_nested_key(['enterprise', 'client_id'])
     umapi.store()
     with open(umapi_config_file, 'r') as f:
-        data = yaml.load(f)
+        data = yaml.safe_load(f)
         assert umapi.parse_secure_key(data['enterprise']['client_id'])
     retrieved_key_dict = umapi.retrieve()
     assert retrieved_key_dict['enterprise:client_id'] == unsecured_api_key
     umapi.revert()
     with open(umapi_config_file) as f:
-        data = yaml.load(f)
+        data = yaml.safe_load(f)
         assert data['enterprise']['client_id'] == unsecured_api_key
 
 
@@ -127,10 +127,10 @@ def test_credman_retrieve_revert_valid(tmp_config_files, private_key, modify_uma
     umapi_config_file = modify_umapi_config(['enterprise', 'priv_key_path'], private_key)
     credman = CredentialManager(root_config_file, auto=True)
     with open(ldap_config_file) as f:
-        data = yaml.load(f)
+        data = yaml.safe_load(f)
         plaintext_ldap_password = data['password']
     with open(umapi_config_file) as f:
-        data = yaml.load(f)
+        data = yaml.safe_load(f)
         plaintext_umapi_api_key = data['enterprise']['client_id']
     credman.store()
     retrieved_creds = credman.retrieve()
@@ -138,17 +138,17 @@ def test_credman_retrieve_revert_valid(tmp_config_files, private_key, modify_uma
     assert retrieved_creds[umapi_config_file]['enterprise:client_id'] == plaintext_umapi_api_key
     # make sure the config files are still in secure format
     with open(ldap_config_file) as f:
-        data = yaml.load(f)
+        data = yaml.safe_load(f)
         assert data['password'] != plaintext_ldap_password
     with open(umapi_config_file) as f:
-        data = yaml.load(f)
+        data = yaml.safe_load(f)
         assert data['enterprise']['client_id'] != plaintext_umapi_api_key
     credman.revert()
     with open(ldap_config_file) as f:
-        data = yaml.load(f)
+        data = yaml.safe_load(f)
         assert data['password'] == plaintext_ldap_password
     with open(umapi_config_file) as f:
-        data = yaml.load(f)
+        data = yaml.safe_load(f)
         assert data['enterprise']['client_id'] == plaintext_umapi_api_key
 
 
@@ -208,7 +208,7 @@ def test_config_store(tmp_config_files):
     assert not ldap.parse_secure_key(ldap.get_nested_key(key.key_path))
     ldap.store()
     with open(ldap_config_file) as f:
-        data = yaml.load(f)
+        data = yaml.safe_load(f)
         assert ldap.parse_secure_key(data['password'])
 
 
@@ -254,13 +254,13 @@ def test_credman_encrypt_decrypt_key_data(tmp_config_files, private_key, modify_
         umapi_config_file = modify_umapi_config(['enterprise', 'priv_key_data'], key_data)
     credman = CredentialManager(root_config_file, auto=True)
     with open(umapi_config_file) as f:
-        umapi_dict = yaml.load(f)
+        umapi_dict = yaml.safe_load(f)
         assert encryption.is_encryptable(umapi_dict['enterprise']['priv_key_data'])
     credman.store()
     with open(umapi_config_file) as f:
-        umapi_dict = yaml.load(f)
+        umapi_dict = yaml.safe_load(f)
         assert not encryption.is_encryptable(umapi_dict['enterprise']['priv_key_data'])
     credman.revert()
     with open(umapi_config_file) as f:
-        umapi_dict = yaml.load(f)
+        umapi_dict = yaml.safe_load(f)
         assert encryption.is_encryptable(umapi_dict['enterprise']['priv_key_data'])
