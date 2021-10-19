@@ -75,9 +75,6 @@ detailed in the next two sections.
 
 ### Storing Credentials in OS Level Storage
 
-<<<<<<< HEAD
-Refer to the (URL to Additional Tools)
-=======
 To set up User Sync to pull credentials from the OS keyring (e.g. Windows Credential Manager), set the connector-umapi.yml and connector-ldap.yml files as follows:
 
 connector-umapi.yml
@@ -97,7 +94,6 @@ The contents of the private key file is used as the value of `umapi_private_key_
 private key file on Windows.
 
 The credential values will be looked up in the secure store using org_id as the username value and the key names in the config file as the key name.
->>>>>>> v2
 
 A slight variant on this approach is available (in User Sync version 2.1.1 or later) to encrypt the
 private key file using the standard RSA encrypted representation for private keys (known as the
