@@ -161,7 +161,7 @@ class SignClient:
         data = json.dumps({'groupName': group})
         self.logger.info('Creating Sign group {} '.format(group))
         res, code = self.call_with_retry_sync('POST', url, header, data)
-        if code != 201:
+        if code > 299:
             raise AssertionException("Failed to create Sign group '{}' (reason: {})".format(group, res.reason))
         self.groups[group] = res['groupId'].lower()
         self._init()
@@ -250,7 +250,7 @@ class SignClient:
         async with semaphore:
             user_url = self.api_url + 'users/' + user_id
             user, code = await self.call_with_retry_async('GET', user_url, header, session=session)
-            if code != 200:
+            if code > 299:
                 self.logger.error(f"Error fetching user '{user_id}' with response: {user}")
                 return
             user = DetailedUserInfo.from_dict(user)
@@ -264,7 +264,7 @@ class SignClient:
         async with semaphore:
             url = f"{self.api_url}users/{user_id}/groups"
             groups, code = await self.call_with_retry_async('GET', url, header, session=session)
-            if code != 200:
+            if code > 299:
                 self.logger.error(f"Error fetching groups for user '{user_id}' with response: {groups}")
                 return
             groups = UserGroupsInfo.from_dict(groups)
@@ -279,11 +279,10 @@ class SignClient:
         # This will block the method from executing until a position opens
         async with semaphore:
             url = f"{self.api_url}users/{user.id}"
-            print(json.dumps(user, cls=JSONEncoder))
             body, code = await self.call_with_retry_async('PUT', url, headers, data=json.dumps(user, cls=JSONEncoder), session=session)
             self.logger.info(f"Updated Sign User: {user.email}")
-            if code != 200:
-                self.logger.error("Error updating user '{}' with response: {}".format(user.email, body))
+            if code > 299:
+                self.logger.error(f"Error updating user '{user.email}' (code {code}) with response: {body}")
 
     def call_with_retry_sync(self, method, url, header, data=None):
         """
@@ -311,8 +310,12 @@ class SignClient:
                         raise AssertionException('{}, Headers: {}'.format(r.status, r.headers))
                     elif r.status == 429:
                         raise AssertionException('{} - too many calls. Headers: {}'.format(r.status, r.headers))
-                    body = await r.json()
-                    return body, r.status
+                    body = await r.text()
+                    if method != 'PUT':
+                        return json.loads(body), r.status
+                    else:
+                        # PUT calls respond with an empty body
+                        return body, r.status
             except Exception as exc:
                 retry_nb += 1
                 self.logger.warning('Call failed: Type: {} - Message: {}'.format(type(exc), exc))

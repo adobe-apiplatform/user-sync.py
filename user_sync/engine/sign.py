@@ -170,15 +170,21 @@ class SignSyncEngine:
             else:
                 # Update existing users
                 user_data = DetailedUserInfo(
-                    id=sign_user.id,
-                    email=sign_user.email,
-                    # firstName=sign_user.firstName,
-                    # groupId=group_id,
-                    # lastName=sign_user.lastName,
-                    # roles=user_roles
                     accountType=sign_user.accountType,
+                    email=sign_user.email,
+                    id=sign_user.id,
                     isAccountAdmin='ACCOUNT_ADMIN' in user_roles,
-                    status=sign_user.status
+                    status=sign_user.status,
+                    accountId=sign_user.accountId,
+                    company=sign_user.company,
+                    createdDate=sign_user.createdDate,
+                    firstName=sign_user.firstName,
+                    initials=sign_user.initials,
+                    lastName=sign_user.lastName,
+                    locale=sign_user.locale,
+                    phone=sign_user.phone,
+                    primaryGroupId=sign_user.primaryGroupId,
+                    title=sign_user.title
                 )
                 users_update_list.append(user_data)
         sign_connector.update_users(users_update_list)
