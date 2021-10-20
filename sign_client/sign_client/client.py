@@ -167,14 +167,6 @@ class SignClient:
         self.groups[group] = res['groupId'].lower()
         self._init()
 
-    @staticmethod
-    def user_roles(user):
-        """
-        Resolve user roles
-        :return: list[]
-        """
-        return ['NORMAL_USER'] if 'roles' not in user else user['roles']
-
     def insert_user(self, data):
         """
         Insert Sign user
