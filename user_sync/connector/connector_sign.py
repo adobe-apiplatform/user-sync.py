@@ -54,7 +54,7 @@ class SignConnector(object):
                                       logger=self.logger)
 
     def sign_groups(self):
-        return self.sign_client.sign_groups()
+        return {g.groupName.lower(): g for g in self.sign_client.sign_groups()}
 
     def create_group(self, new_group):
         if not self.test_mode:
@@ -70,8 +70,12 @@ class SignConnector(object):
         if not self.test_mode:
             self.sign_client.update_users(update_data)
 
+    def update_user_groups(self, update_data):
+        if not self.test_mode:
+            self.sign_client.update_user_groups(update_data)
+
     def get_group(self, assignment_group):
-        return self.sign_client.groups.get(assignment_group)
+        return [g.groupId for g in self.sign_client.groups if g.groupName.lower() == assignment_group.lower()][0]
 
     def insert_user(self, insert_data):
         if not self.test_mode:

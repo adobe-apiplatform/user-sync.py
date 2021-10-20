@@ -24,10 +24,21 @@ import json
 
 class JSONEncoder(json.JSONEncoder):
         def default(self, o):
+            new_dct = {}
             if dataclasses.is_dataclass(o):
-                return {k: v for k, v in dataclasses.asdict(o).items() if v is not None}
-            return super().default(o)
-
+                dct = dataclasses.asdict(o)
+            else:
+                dct = o
+            for k, v in dct.items():
+                if v is None:
+                    continue
+                if isinstance(v, dict):
+                    new_dct[k] = self.default(v)
+                elif isinstance(v, list):
+                    new_dct[k] = [self.default(i) for i in v]
+                else:
+                    new_dct[k] = v
+            return new_dct
 
 @dataclass
 class PageInfo:

@@ -7,7 +7,7 @@ from user_sync.config.common import DictConfig, ConfigFileLoader, as_set, check_
 from user_sync.connector.connector_sign import SignConnector
 from user_sync.error import AssertionException
 
-from sign_client.model import DetailedUserInfo
+from sign_client.model import DetailedUserInfo, UserGroupsInfo, UserGroupInfo
 
 
 class SignSyncEngine:
@@ -34,7 +34,6 @@ class SignSyncEngine:
 
     name = 'sign_sync'
     encoding = 'utf-8'
-    DEFAULT_GROUP_NAME = 'default group'
 
     def __init__(self, caller_options):
         """
@@ -54,11 +53,15 @@ class SignSyncEngine:
         connection = sync_config.get_dict('connection')
         self.config_loader = ConfigFileLoader(self.encoding, {}, {})
         self.connectors = {}
+        self.default_groups = {}
+        self.sign_groups = {}
         # Each of the Sign orgs is captured in a dict with the org name as key
         # and org specific parameter embedded in Sign Connector as value
         for org in sign_orgs:
             self.connectors[org] = SignConnector(
                 self.config_loader.load_root_config(sign_orgs[org]), org, options['test_mode'], connection)
+            self.sign_groups[org] = self.get_groups(org)
+            self.default_groups[org] = self.get_default_group(org)
 
         self.action_summary = {}
         self.sign_users_by_org = {}
@@ -74,6 +77,12 @@ class SignSyncEngine:
         self.sign_only_users_by_org = {}
         self.total_sign_only_user_count = 0
 
+    def get_groups(self, org):
+        return self.connectors[org].sign_groups()
+
+    def get_default_group(self, org):
+        return [g for g in self.connectors[org].sign_groups().values() if g.isDefaultGroup][0]
+
     def run(self, directory_groups, directory_connector):
         """
         Run the Sign sync
@@ -88,17 +97,15 @@ class SignSyncEngine:
             # Create any new Sign groups
             org_directory_groups = self._groupify(
                 org_name, directory_groups.values())
-            sign_groups = sign_connector.sign_groups()
-            org_sign_groups = [x.lower() for x in sign_groups]
             for directory_group in org_directory_groups:
-                if (directory_group.lower() not in org_sign_groups):
+                if (directory_group.lower() not in self.sign_groups[org_name]):
                     self.logger.info(
                         "{}Creating new Sign group: {}".format(self.org_string(org_name), directory_group))
                     sign_connector.create_group(directory_group)
             # Update user details or insert new user
             self.update_sign_users(
                 self.directory_user_by_user_key, sign_connector, org_name)
-            default_group_id = sign_groups[self.DEFAULT_GROUP_NAME]
+            default_group_id = self.default_groups[org_name].groupId
             if org_name in self.sign_only_users_by_org:
                 self.handle_sign_only_users(sign_connector, org_name, default_group_id)
         self.log_action_summary()
@@ -141,6 +148,7 @@ class SignSyncEngine:
         sign_user_groups = sign_connector.get_user_groups([u.id for u in sign_users.values()])
         sign_user_primary_groups = {id: [g for g in groups.groupInfoList if g.isPrimaryGroup][0] for id, groups in sign_user_groups.items()}
         users_update_list = []
+        user_groups_update_list = []
         dir_users_for_org = {}
         self.total_sign_user_count += len(sign_users)
         self.sign_users_by_org[org_name] = sign_users
@@ -154,8 +162,8 @@ class SignSyncEngine:
             assignment_group = self.retrieve_assignment_group(directory_user)
 
             if assignment_group is None:
-                assignment_group = self.DEFAULT_GROUP_NAME
-            group_id = sign_connector.get_group(assignment_group.lower())
+                assignment_group = self.default_groups[org_name].groupName
+            group_id = self.sign_groups[org_name][assignment_group.lower()].groupId
             user_roles = self.retrieve_admin_role(directory_user)
             if sign_user is None:
                 # Insert new user if flag is enabled and if Neptune Console
@@ -168,26 +176,50 @@ class SignSyncEngine:
                     self.directory_users_excluded.add(directory_user['email'])
                     continue
             else:
-                # Update existing users
-                user_data = DetailedUserInfo(
-                    accountType=sign_user.accountType,
-                    email=sign_user.email,
-                    id=sign_user.id,
-                    isAccountAdmin='ACCOUNT_ADMIN' in user_roles,
-                    status=sign_user.status,
-                    accountId=sign_user.accountId,
-                    company=sign_user.company,
-                    createdDate=sign_user.createdDate,
-                    firstName=sign_user.firstName,
-                    initials=sign_user.initials,
-                    lastName=sign_user.lastName,
-                    locale=sign_user.locale,
-                    phone=sign_user.phone,
-                    primaryGroupId=sign_user.primaryGroupId,
-                    title=sign_user.title
-                )
-                users_update_list.append(user_data)
+                is_admin = 'ACCOUNT_ADMIN' in user_roles
+                # do not update if admin status should not change
+                if sign_user.isAccountAdmin != is_admin:
+                    # Update existing users
+                    if is_admin:
+                        self.logger.info(f"Assigning account admin status to {sign_user.email}")
+                    else:
+                        self.logger.info(f"Removing account admin status from f{sign_user.email}")
+                    user_data = DetailedUserInfo(
+                        accountType=sign_user.accountType,
+                        email=sign_user.email,
+                        id=sign_user.id,
+                        isAccountAdmin=is_admin,
+                        status=sign_user.status,
+                        accountId=sign_user.accountId,
+                        company=sign_user.company,
+                        createdDate=sign_user.createdDate,
+                        firstName=sign_user.firstName,
+                        initials=sign_user.initials,
+                        lastName=sign_user.lastName,
+                        locale=sign_user.locale,
+                        phone=sign_user.phone,
+                        primaryGroupId=sign_user.primaryGroupId,
+                        title=sign_user.title
+                    )
+                    users_update_list.append(user_data)
+                # manage primary group asssignment
+                current_group = sign_user_primary_groups[sign_user.id]
+                if current_group.name.lower() != assignment_group.lower():
+                    assignment_group_info = self.sign_groups[org_name][assignment_group.lower()]
+                    self.logger.info(f"Assigning primary group '{assignment_group}' to user {sign_user.email}")
+                    group_admin = 'GROUP_ADMIN' in user_roles
+                    if group_admin:
+                        self.logger.info(f"Assigning Group Admin role to {sign_user.email}")
+                    group_update_data = UserGroupsInfo(groupInfoList=[UserGroupInfo(
+                        id=assignment_group_info.groupId,
+                        isGroupAdmin=group_admin,
+                        isPrimaryGroup=True,
+                        status='ACTIVE',
+                    )])
+                    user_groups_update_list.append((sign_user.id, group_update_data))
+                
         sign_connector.update_users(users_update_list)
+        sign_connector.update_user_groups(user_groups_update_list)
         self.sign_only_users_by_org[org_name] = {}
         for user, data in sign_users.items():
             if user not in dir_users_for_org:

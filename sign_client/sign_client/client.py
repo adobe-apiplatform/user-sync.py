@@ -21,7 +21,7 @@ class SignClient:
         self.integration_key = integration_key
         self.admin_email = admin_email
         self.api_url = None
-        self.groups = None
+        self.groups = []
         self.max_sign_retries = connection.get('retry_count') or 5
         self.concurrency_limit = connection.get('request_concurrency') or 1
         timeout = connection.get('timeout') or 120
@@ -36,7 +36,6 @@ class SignClient:
     def _init(self):
         self.api_url = self.base_uri()
         self.groups = self.get_groups()
-        self.reverse_groups = {v: k for k, v in self.groups.items()}
 
     def sign_groups(self):
         if self.api_url is None or self.groups is None:
@@ -126,12 +125,17 @@ class SignClient:
         self._handle_calls(self._get_user_groups, self.header(), user_ids)
         return self.user_groups
 
-
     def update_users(self, users):
         """
         Passthrough for call handling
         """
         self._handle_calls(self._update_user, self.header_json(), users)
+
+    def update_user_groups(self, user_groups):
+        """
+        Passthrough for call handling
+        """
+        self._handle_calls(self._update_user_groups, self.header_json(), user_groups)
 
     def get_groups(self):
         """
@@ -142,10 +146,7 @@ class SignClient:
             self.api_url = self.base_uri()
 
         self.logger.info('getting Sign user groups')
-        group_list = self._paginate_get(f"{self.api_url}groups", 'groupInfoList', GroupsInfo.from_dict, self.GROUP_PAGE_SIZE)
-        groups = {}
-        for group in group_list:
-            groups[group.groupName.lower()] = group.groupId
+        groups = self._paginate_get(f"{self.api_url}groups", 'groupInfoList', GroupsInfo.from_dict, self.GROUP_PAGE_SIZE)
         return groups
 
     def create_group(self, group):
@@ -271,7 +272,6 @@ class SignClient:
             self.user_groups[user_id] = groups
             self.logger.debug(f'retrieved user group details for Sign user {user_id}')
 
-
     async def _update_user(self, semaphore, user, headers, session):
         """
         Update Sign user
@@ -283,6 +283,19 @@ class SignClient:
             self.logger.info(f"Updated Sign User: {user.email}")
             if code > 299:
                 self.logger.error(f"Error updating user '{user.email}' (code {code}) with response: {body}")
+
+    async def _update_user_groups(self, semaphore, user_group_data, headers, session):
+        """
+        Update Sign user
+        """
+        # This will block the method from executing until a position opens
+        user_id, group_data = user_group_data
+        async with semaphore:
+            url = f"{self.api_url}users/{user_id}/groups"
+            body, code = await self.call_with_retry_async('PUT', url, headers, data=json.dumps(group_data, cls=JSONEncoder), session=session)
+            self.logger.info(f"Updated Sign User: {user_id}")
+            if code > 299:
+                self.logger.error(f"Error updating user '{user_id}' (code {code}) with response: {body}")
 
     def call_with_retry_sync(self, method, url, header, data=None):
         """
