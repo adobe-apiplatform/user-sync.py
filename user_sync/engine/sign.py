@@ -60,8 +60,6 @@ class SignSyncEngine:
         for org in sign_orgs:
             self.connectors[org] = SignConnector(
                 self.config_loader.load_root_config(sign_orgs[org]), org, options['test_mode'], connection)
-            self.sign_groups[org] = self.get_groups(org)
-            self.default_groups[org] = self.get_default_group(org)
 
         self.action_summary = {}
         self.sign_users_by_org = {}
@@ -92,6 +90,10 @@ class SignSyncEngine:
         :return:
         """
 
+        for org_name in self.connectors:
+            self.sign_groups[org_name] = self.get_groups(org_name)
+            self.default_groups[org_name] = self.get_default_group(org_name)
+
         self.read_desired_user_groups(directory_groups, directory_connector)
 
         for org_name, sign_connector in self.connectors.items():
@@ -106,9 +108,8 @@ class SignSyncEngine:
             # Update user details or insert new user
             self.update_sign_users(
                 self.directory_user_by_user_key, sign_connector, org_name)
-            default_group_id = self.default_groups[org_name].groupId
             if org_name in self.sign_only_users_by_org:
-                self.handle_sign_only_users(sign_connector, org_name, default_group_id)
+                self.handle_sign_only_users(sign_connector, org_name)
         self.log_action_summary()
 
     def log_action_summary(self):
@@ -379,7 +380,7 @@ class SignSyncEngine:
         }
         return user_data
 
-    def handle_sign_only_users(self, sign_connector, org_name, default_group_id):
+    def handle_sign_only_users(self, sign_connector, org_name):
         """
         Searches users to set to default group in GPS and deactivate in the Sign Neptune console
         :param directory_users:
@@ -432,7 +433,7 @@ class SignSyncEngine:
                 new_user_group.isGroupAdmin = False
                 self.logger.info(f"{self.org_string(org_name)}Removing group admin status for user '{user.email}'")
                 groups_update_list.append((user.id, UserGroupsInfo(groupInfoList=[new_user_group])))
-            if sign_only_user_action == 'remove_groups' and in_default_group:
+            if sign_only_user_action == 'remove_groups' and not in_default_group:
                 new_user_group.id = self.default_groups[org_name].groupId
                 self.logger.info(f"{self.org_string(org_name)}Resetting '{user.email}' to Default Group")
                 groups_update_list.append((user.id, UserGroupsInfo(groupInfoList=[new_user_group])))

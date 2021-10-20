@@ -2,7 +2,7 @@ import logging
 from unittest.mock import MagicMock
 
 import pytest
-from mock import MagicMock
+from mock import MagicMock, call
 
 from user_sync.config.sign_sync import SignConfigLoader
 from user_sync.engine.sign import SignSyncEngine
@@ -43,45 +43,59 @@ def test_get_directory_user_key(example_engine, mock_dir_user):
 
 
 def test_handle_sign_only_users(example_engine):
-    ex_sign_user = {
-        'email': 'example.user@signtest.com',
-        'firstName': 'User',
-        'lastName': 'Last',
-        'group': 'Group 1',
-        'groupId': 'group1Id',
-        'roles': ['GROUP_ADMIN'],
-        'userId': 'erewcwererc',
-    }
+    from sign_client.model import DetailedUserInfo, GroupInfo, UserGroupInfo
+    ex_sign_user = DetailedUserInfo(
+        accountType='GLOBAL',
+        email='user@example.com',
+        id='12345',
+        isAccountAdmin=True,
+        firstName='Test',
+        lastName='User',
+        initials='TU',
+        locale='en_us',
+        accountId='9876',
+        status='ACTIVE',
+    )
 
     sign_connector = MagicMock()
     example_engine.sign_only_users_by_org['primary'] = {'example.user@signtest.com': ex_sign_user}
+    example_engine.default_groups['primary'] = GroupInfo(
+        groupId='abc12345',
+        groupName='Default Group',
+        createdDate="6 o'clock",
+        isDefaultGroup=True,
+    )
+    example_engine.sign_user_primary_groups['primary'] = {ex_sign_user.id: UserGroupInfo(
+        id='xyz98765',
+        isGroupAdmin=True,
+        isPrimaryGroup=True,
+        status='ACTIVE',
+    )}
 
     # Check exclude action
     example_engine.options['user_sync']['sign_only_user_action'] = 'exclude'
-    example_engine.handle_sign_only_users(sign_connector, 'primary', 'somerandomGROUPID')
+    example_engine.handle_sign_only_users(sign_connector, 'primary')
     assert sign_connector.deactivate_user.call_args is None
-    assert sign_connector.update_users.call_args is None
+    assert sign_connector.update_users.call_args == call([])
 
     # Check reset (groups and roles)
     example_engine.options['user_sync']['sign_only_user_action'] = 'reset'
-    example_engine.handle_sign_only_users(sign_connector, 'primary', 'somerandomGROUPID')
-    assert sign_connector.update_users.call_args[0][0] == [
-        {'email': 'example.user@signtest.com', 'firstName': 'User', 'groupId': 'somerandomGROUPID', 'lastName': 'Last',
-         'roles': ['NORMAL_USER'], 'userId': 'erewcwererc'}]
+    example_engine.handle_sign_only_users(sign_connector, 'primary')
+    assert sign_connector.update_users.call_args[0][0][0].isAccountAdmin is False
+    assert sign_connector.update_user_groups.call_args[0][0][0][1].groupInfoList[0].id == 'abc12345'
+    assert sign_connector.update_user_groups.call_args[0][0][0][1].groupInfoList[0].isGroupAdmin is False
 
     # Check remove_roles (group should remain the same as it is for ex_sign_user)
     example_engine.options['user_sync']['sign_only_user_action'] = 'remove_roles'
-    example_engine.handle_sign_only_users(sign_connector, 'primary', 'somerandomGROUPID')
-    assert sign_connector.update_users.call_args[0][0] == [
-        {'email': 'example.user@signtest.com', 'firstName': 'User', 'groupId': 'group1Id', 'lastName': 'Last',
-         'roles': ['NORMAL_USER'], 'userId': 'erewcwererc'}]
+    example_engine.handle_sign_only_users(sign_connector, 'primary')
+    assert sign_connector.update_users.call_args[0][0][0].isAccountAdmin is False
+    assert sign_connector.update_user_groups.call_args[0][0][0][1].groupInfoList[0].id == 'xyz98765'
+    assert sign_connector.update_user_groups.call_args[0][0][0][1].groupInfoList[0].isGroupAdmin is False
 
     # Check remove_groups (role should remain the same as it is for ex_sign_user)
     example_engine.options['user_sync']['sign_only_user_action'] = 'remove_groups'
-    example_engine.handle_sign_only_users(sign_connector, 'primary', 'somerandomGROUPID')
-    assert sign_connector.update_users.call_args[0][0] == [
-        {'email': 'example.user@signtest.com', 'firstName': 'User', 'groupId': 'somerandomGROUPID', 'lastName': 'Last',
-         'roles': ['GROUP_ADMIN'], 'userId': 'erewcwererc'}]
+    example_engine.handle_sign_only_users(sign_connector, 'primary')
+    assert sign_connector.update_user_groups.call_args[0][0][0][1].groupInfoList[0].id == 'abc12345'
 
 def test_roles_match():
     resolved_role = ['GROUP_ADMIN', 'ACCOUNT_ADMIN']
@@ -262,24 +276,3 @@ def test_extract_mapped_group():
     check_mapping(['Sign Group 3', 'Sign Group 2'], 'Sign Group 2', ['NORMAL_USER'])
     check_mapping(['Sign Group 3', 'Test Group Admins 1', 'Test Group Admins 2'],
                   'Sign Group 3', ['ACCOUNT_ADMIN', 'GROUP_ADMIN'])
-
-
-def test_update_sign_users(example_engine):
-    sign_connector = MagicMock()
-    directory_users = {}
-    adobeGroup = AdobeGroup('Group 1', 'primary1')
-    directory_users['federatedID, example.user@signtest.com'] = {
-        'email': 'example.user@signtest.com',
-        'sign_group': {'group': adobeGroup}
-    }
-    sign_users = {}
-    sign_users['example.user@signtest.com'] = {'email': 'example.user@signtest.com'}
-
-    def get_users():
-        return sign_users
-
-    org_name = 'primary'
-    sign_connector.get_users = get_users
-    sc = example_engine
-    sc.update_sign_users(directory_users, sign_connector, org_name)
-    assert directory_users['federatedID, example.user@signtest.com']['email'] == 'example.user@signtest.com'
