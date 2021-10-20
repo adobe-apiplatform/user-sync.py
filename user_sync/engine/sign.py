@@ -75,6 +75,7 @@ class SignSyncEngine:
         self.sign_users_matched_no_updates = set()
         self.directory_users_excluded = set()
         self.sign_only_users_by_org = {}
+        self.sign_user_primary_groups = {}
         self.total_sign_only_user_count = 0
 
     def get_groups(self, org):
@@ -146,7 +147,7 @@ class SignSyncEngine:
         # Fetch the list of active Sign users
         sign_users = sign_connector.get_users()
         sign_user_groups = sign_connector.get_user_groups([u.id for u in sign_users.values()])
-        sign_user_primary_groups = {id: [g for g in groups.groupInfoList if g.isPrimaryGroup][0] for id, groups in sign_user_groups.items()}
+        self.sign_user_primary_groups[org_name] = {id: [g for g in groups.groupInfoList if g.isPrimaryGroup][0] for id, groups in sign_user_groups.items()}
         users_update_list = []
         user_groups_update_list = []
         dir_users_for_org = {}
@@ -184,26 +185,11 @@ class SignSyncEngine:
                         self.logger.info(f"Assigning account admin status to {sign_user.email}")
                     else:
                         self.logger.info(f"Removing account admin status from f{sign_user.email}")
-                    user_data = DetailedUserInfo(
-                        accountType=sign_user.accountType,
-                        email=sign_user.email,
-                        id=sign_user.id,
-                        isAccountAdmin=is_admin,
-                        status=sign_user.status,
-                        accountId=sign_user.accountId,
-                        company=sign_user.company,
-                        createdDate=sign_user.createdDate,
-                        firstName=sign_user.firstName,
-                        initials=sign_user.initials,
-                        lastName=sign_user.lastName,
-                        locale=sign_user.locale,
-                        phone=sign_user.phone,
-                        primaryGroupId=sign_user.primaryGroupId,
-                        title=sign_user.title
-                    )
+                    user_data = DetailedUserInfo(**sign_user.__dict__)
+                    user_data.isAccountAdmin = is_admin
                     users_update_list.append(user_data)
                 # manage primary group asssignment
-                current_group = sign_user_primary_groups[sign_user.id]
+                current_group = self.sign_user_primary_groups[org_name][sign_user.id]
                 if current_group.name.lower() != assignment_group.lower():
                     assignment_group_info = self.sign_groups[org_name][assignment_group.lower()]
                     self.logger.info(f"Assigning primary group '{assignment_group}' to user {sign_user.email}")
@@ -409,50 +395,57 @@ class SignSyncEngine:
             return
 
         sign_only_user_action = self.options['user_sync']['sign_only_user_action']
-        sign_only_users_update_list = []
-        for _, sign_user in self.sign_only_users_by_org[org_name].items():
+        users_update_list = []
+        groups_update_list = []
+        for user in self.sign_only_users_by_org[org_name].values():
             if sign_only_user_action == 'exclude':
                 self.logger.debug(
-                    "Sign user '{}' was excluded from sync. sign_only_user_action: set to '{}'"
-                        .format(sign_user['email'], sign_only_user_action))
+                    f"Sign user '{user.email}' was excluded from sync. sign_only_user_action: set to '{sign_only_user_action}'")
                 continue
             elif sign_connector.deactivate_users and sign_only_user_action == 'deactivate':
                 try:
-                    sign_connector.deactivate_user(sign_user['userId'])
-                    self.logger.info(
-                        "{}Deactivated sign user '{}'".format(self.org_string(org_name), sign_user['email']))
+                    sign_connector.deactivate_user(user.id)
+                    self.logger.info(f"{self.org_string(org_name)}Deactivated sign user '{user.email}'")
                 except AssertionException as e:
-                    self.logger.error("Error deactivating user {}, {}".format(sign_user['email'], e))
+                    self.logger.error("Error deactivating user {}, {}".format(user['email'], e))
                     continue
-            reset_data = {
-                "email": sign_user.email,
-                "firstName": sign_user.firstName,
-                "groupId": default_group_id,
-                "lastName": sign_user.lastName,
-                "roles": ['NORMAL_USER'],
-                'userId': sign_user.id
-            }
-            user_in_default_group = sign_user['group'].lower() == self.DEFAULT_GROUP_NAME.lower()
-            is_normal_user = sign_user['roles'] == ['NORMAL_USER']
-            if user_in_default_group and is_normal_user:
-                continue
-            if sign_only_user_action == 'reset':
-                sign_only_users_update_list.append(reset_data)
-                self.logger.info("{}Reset Sign user '{}', to default group and normal user role".format(
-                    self.org_string(org_name), sign_user['email']))
-            if sign_only_user_action == 'remove_roles' and not is_normal_user:
-                reset_data['groupId'] = sign_user['groupId']
-                sign_only_users_update_list.append(reset_data)
-                self.logger.info("{}Reset Sign user '{}', to normal user role".format(
-                    self.org_string(org_name), sign_user['email']))
-            if sign_only_user_action == 'remove_groups' and not user_in_default_group:
-                reset_data['roles'] = sign_user['roles']
-                sign_only_users_update_list.append(reset_data)
-                self.logger.info("{}Reset Sign user '{}', to default group".format(
-                    self.org_string(org_name), sign_user['email']))
 
-        if sign_only_users_update_list:
-            sign_connector.update_users(sign_only_users_update_list)
+            in_default_group = self.sign_user_primary_groups[org_name][user.id].id == self.default_groups[org_name].groupId
+            is_group_admin = self.sign_user_primary_groups[org_name][user.id].isGroupAdmin
+
+            if in_default_group and not is_group_admin and not user.isAccountAdmin:
+                continue
+
+            # set up group update in case we end up making one
+            new_user_group = UserGroupInfo(
+                id=self.sign_user_primary_groups[org_name][user.id].id,
+                isGroupAdmin=self.sign_user_primary_groups[org_name][user.id].isGroupAdmin,
+                isPrimaryGroup=True,
+                status='ACTIVE',
+            )
+            if sign_only_user_action == 'reset':
+                new_user_group.id = self.default_groups[org_name].groupId
+                new_user_group.isGroupAdmin = False
+                self.logger.info(f"{self.org_string(org_name)}Resetting '{user.email}' to Default Group and removing group admin status")
+                groups_update_list.append((user.id, UserGroupsInfo(groupInfoList=[new_user_group])))
+            if sign_only_user_action == 'remove_roles' and is_group_admin:
+                new_user_group.isGroupAdmin = False
+                self.logger.info(f"{self.org_string(org_name)}Removing group admin status for user '{user.email}'")
+                groups_update_list.append((user.id, UserGroupsInfo(groupInfoList=[new_user_group])))
+            if sign_only_user_action == 'remove_groups' and in_default_group:
+                new_user_group.id = self.default_groups[org_name].groupId
+                self.logger.info(f"{self.org_string(org_name)}Resetting '{user.email}' to Default Group")
+                groups_update_list.append((user.id, UserGroupsInfo(groupInfoList=[new_user_group])))
+
+            # remove admin status if needed
+            if sign_only_user_action in ['remove_roles', 'reset'] and user.isAccountAdmin:
+                    user_update = DetailedUserInfo(**user.__dict__)
+                    user_update.isAccountAdmin = False
+                    self.logger.info(f"{self.org_string(org_name)}Removing account admin status for user '{user.email}'")
+                    users_update_list.append(user_update)
+
+        sign_connector.update_users(users_update_list)
+        sign_connector.update_user_groups(groups_update_list)
 
     def check_sign_max_limit(self, org_name):
         stray_count = len(self.sign_only_users_by_org[org_name])
