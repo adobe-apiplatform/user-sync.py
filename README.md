@@ -54,7 +54,7 @@ The general procedure to build the User Sync Tool is the same across platforms. 
 prerequisites that must be met before following these instructions. Refer to the notes for your platform and return here
 to learn how to build the Sync Tool from source.
 
-**NOTE:** Python 3.6 is required on all platforms.
+**NOTE:** Python 3.9 is required on all platforms.
 
 1. Clone this repository `git clone https://github.com/adobe-apiplatform/user-sync.py.git`
 2. Create a new Python 3.6 virtual environment `python -m venv /path/to/venv` (note: your system may prompt you to install
@@ -79,12 +79,12 @@ On Linux, many of the Sync Tool's dependencies are built from source and contain
 languages. For this reason, it is necessary to install some system packages and libraries.
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y software-properties-common
-sudo apt-get install -y build-essential
-sudo apt-get install -y python-dev python-pip python-virtualenv
-sudo apt-get install -y pkg-config libssl-dev libdbus-1-dev libdbus-glib-1-dev python-dbus libffi-dev libkrb5-dev
-sudo apt-get install -y python3-dev python3-venv
+sudo apt-get update && \
+sudo apt-get install -y \
+        software-properties-common build-essential \
+        pkg-config libssl-dev libdbus-1-dev \
+        libdbus-glib-1-dev python-dbus \
+        libffi-dev libkrb5-dev python3.9-dev python3-venv
 ```
 
 ### CentOS and other RedHat variants
