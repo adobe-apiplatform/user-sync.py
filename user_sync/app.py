@@ -48,6 +48,7 @@ import user_sync.helper
 import user_sync.lockfile
 import user_sync.resource
 import user_sync.resource
+from .config.user_sync import UMAPIConfigLoader
 from user_sync.config import common as config_common
 from user_sync.config import user_sync as config
 from user_sync.config import sign_sync as sign_config
@@ -213,14 +214,14 @@ def sign_sync(**kwargs):
         logger.critical('Schema validation failed. Detailed message: {}'.format(e))
 
 
-def begin_work_sign(sign_config_loader):
+def begin_work_sign(sign_config_loader: UMAPIConfigLoader):
     sign_engine_config = sign_config_loader.get_engine_options()
     directory_connector, directory_groups = load_directory_config(sign_config_loader)
     sign_engine = SignSyncEngine(sign_engine_config)
     sign_engine.run(directory_groups, directory_connector)
 
 
-def begin_work_umapi(config_loader):
+def begin_work_umapi(config_loader: UMAPIConfigLoader):
     """
     :type config_loader: config.UMAPIConfigLoader
     """

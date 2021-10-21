@@ -120,7 +120,7 @@ class SignConfigLoader(ConfigLoader):
     def load_main_config(self, filename, content) -> DictConfig:
         return DictConfig("<%s>" % filename, content)
     
-    def _config_file_info(self) -> (str, str):
+    def _config_file_info(self) -> tuple[str, str]:
         filename = self.args.get('config_filename') or self.config_defaults['config_filename']
         encoding = self.args.get('encoding_name') or self.config_defaults['config_encoding']
         try:
@@ -199,7 +199,7 @@ class SignConfigLoader(ConfigLoader):
         source_config_path = identity_config['connector']
         return self.config_loader.load_sub_config(source_config_path)
 
-    def get_target_options(self) -> (dict, dict):
+    def get_target_options(self) -> tuple[dict, dict]:
         target_configs = self.main_config.get_dict('sign_orgs')
         if 'primary' not in target_configs:
             raise AssertionException("'sign_orgs' config must specify a connector with 'primary' key")

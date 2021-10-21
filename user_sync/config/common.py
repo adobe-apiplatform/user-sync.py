@@ -33,7 +33,7 @@ class ConfigLoader(ABC):
         pass
 
     @abstractmethod
-    def get_target_options(self) -> (dict, dict):
+    def get_target_options(self) -> tuple[dict, dict]:
         pass
 
     @abstractmethod
