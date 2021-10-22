@@ -27,4 +27,4 @@ Notes:
 - User multi-group (UMG) is not supported at this time
 - The Sign client uses Sign API v5
 
-Documentation is forthcoming.
+Documentation here - https://github.com/adobe-apiplatform/user-sync.py/blob/v2-sign-phase-2/docs/en/user-manual/sign_sync.md
