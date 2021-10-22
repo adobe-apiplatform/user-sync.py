@@ -195,7 +195,7 @@ def sync(**kwargs):
                    "the configuration file).",
               cls=user_sync.cli.OptionMulti,
               type=list,
-              metavar='all|mapped|group [group list or path-to-file.csv]')  # default should mapped
+              metavar='all|mapped|group [group list]')  # default should mapped
 @click.option('-t/-T', '--test-mode/--no-test-mode', default=None,
               help='enable test mode (API calls do not execute changes).')
 def sign_sync(**kwargs):
