@@ -221,9 +221,72 @@ logging:
 
 **`invocation_defaults`**
 
+Invocation defaults in Sign Sync work the way they do in Admin Console Sync. Each option provides a default value for a corresponding command-line
+option. When Sign Sync is run, it will use the defaults defined in `invocation_defaults` so the tool can be run without additional command-line
+options.
+
+* `test_mode` - if `True`, Sign Sync will run in test mode by default
+* `users` - define scope of users to query from identity source
+
+  | Option | Description |
+  | --- | --- |
+  | `all` | Query all users from identity source |
+  | `group` | Query users for given comma-delimited group list |
+  | `mapped` | Query users for directory groups specified in `user_management` rules |
+  {: .bordertablestyle}
+
 ## Sign Connector Config
 
+Details around the Sign API connection are defined in `connector-sign.yml`.
+
+```yaml
+host: api.echosign.com
+integration_key: xzy12345
+admin_email: user@example.com
+create_users: False
+deactivate_users: False
+```
+
+* `host`: Hostname of Sign API
+* `integration_key`: Required for API authentication. [See below](#api-key-setup) for information on creating a key.
+* `admin_email`: Email address of admin user that owns the integration key. Prevents Sign Sync from operating on that user.
+* `create_users`: If `True`, Sign Sync will create new users. This should be set to `False` for Sign Enterprise accounts because
+  users linked to an Admin Console are automatically provisioned by the platform when they are added to a Sign Enterprise profile.
+* `deactivate`: If `True` and `sign_only_user_action` is `deactivate`, then Sign-only users are deactivated. This should be set
+  to `False` for Sign Enterprise accounts because users removed from a Sign Enterprise profile in the Admin Console are automatically
+  deactivated in Sign.
+
+### Securing the API Key
+
+The `integration_key` can be stored in an OS keychain or other secret storage backend. Instead of storing the key itself, the
+connector config can be set up to contain a reference to the key in the keychain.
+
+See [this documentation](deployment_best_practices.md#storing-credentials-in-os-level-storage) for more information.
+
+For the Sign connector, the user or account in the OS keychain should be the admin email as specified in the connector config.
+The `integration_key` config key should not be specified. The reference to the OS keychain credential is specified in
+`secure_integration_key_key`.
+
 # API Key Setup
+
+Any Sign connection defined in `connector-sign.yml` must specify an integration key for authenticating Sign API calls. New keys
+can be created by an Admin user for a given Sign account.
+
+1. Log into Adobe Sign
+2. Click "Accout" on the top navigation bar
+3. On the left-hand menu, click "Adobe Sign API"
+4. On the "API Information" page, find the "Integration Key" link
+
+   ![](media/sign/sign_api_info.png)
+
+   If you don't see this link, please contact Sign support
+5. On the "Create Integration Key" page, give the integration a name and select the `user_read` and `user_write` scopes
+6. Save the integration
+7. On the "Access Tokens" list, select the integration you just created
+8. Click "Integration Key" to display the integration key.  This is used in the Sign Sync connector config file.
+
+   ![](media/sign/sign_key_display.png)
+
 # Native Sign to Admin Console Connection
 
 The Adobe Sign Sync connector is not required to provision users to Adobe Sign. Users assigned to Sign Enterprise plans
