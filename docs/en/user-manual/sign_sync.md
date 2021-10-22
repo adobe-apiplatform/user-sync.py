@@ -202,7 +202,7 @@ user_management:
 
 **`logging`**
 
-The logging options in `sync-sync-config.yml` are identical to the logging options in `user-sync-config.yml`.
+The logging options in `sign-sync-config.yml` are identical to the logging options in `user-sync-config.yml`.
 
 ```yaml
 logging:
@@ -267,6 +267,71 @@ For the Sign connector, the user or account in the OS keychain should be the adm
 The `integration_key` config key should not be specified. The reference to the OS keychain credential is specified in
 `secure_integration_key_key`.
 
+# Use Cases
+
+## Sign Enterprise
+
+Admin Consoles with a Sign Enterprise plan do not need to use the Sync Tool for basic Sign user provisioning. Users
+assigned to a Sign Enterprise product profile will be automatically provisioned to the Default Group with
+normal user privileges.
+
+The Admin Console UI can manage account admin status, but cannot manage Sign groups or group admin status. However,
+the User Management API does not allow management of admin account status via the Admin Console. The Sign Sync Connector
+can manage group assignments, group admin status and account admin status directly in Sign.
+
+### Upstream User Sync
+
+The Sign Sync Connector will not sync users to the Admin Console. Users can be provisioned to the Admin Console in a
+variety of ways.
+
+* Manually in the Admin Console UI
+* User Sync Tool in Admin Console Sync mode (`./user-sync` or `./user-sync sync`)
+* Azure AD Sync
+* Google Sync
+* CSV Bulk Upload
+* Using the User Management API directly
+
+In any case, to manage Sign Enterprise users, you should use the `adobe_console` [identity connector](advanced_configuration.md#the-admin-console-connector).
+
+### Using Sign Sync with Admin Console Sync
+
+If you already use the User Sync Tool to synchronize users to the Adobe Admin Console, all you need to do is ensure
+that you have a group mapping to entitle Sign Enterprise users. Then, when your Sign Sync config is set up, just invoke
+Sign Sync after the main Admin Console Sync completes. We recommend using a batch file or shell script to run
+the two sync processes in sequence.
+
+Windows batch example:
+
+```
+mode 155,50
+cd /D "%~dp0"
+
+REM Run main sync to Admin Console
+user-sync.exe
+
+REM Run Sign Sync
+user-sync.exe sign-sync
+```
+
+Bash example:
+
+```sh
+#!/bin/sh
+
+# Run main sync to Admin Console
+./user-sync
+
+# Run Sign Sync
+./user-sync sign-sync
+```
+
+## Standalone Sign
+
+To manage Sign users for standalone Sign accounts, it is generally recommended to enable the `create_users` and `deactivate_users`
+options in `connector-sign.yml`. This ensures the sync tool can manage the full user lifecycle.
+
+And while any Sign-only-user option is valid, `deactivate` is generally the best choice for standalone Sign user management.
+
 # API Key Setup
 
 Any Sign connection defined in `connector-sign.yml` must specify an integration key for authenticating Sign API calls. New keys
@@ -286,24 +351,3 @@ can be created by an Admin user for a given Sign account.
 8. Click "Integration Key" to display the integration key.  This is used in the Sign Sync connector config file.
 
    ![](media/sign/sign_key_display.png)
-
-# Native Sign to Admin Console Connection
-
-The Adobe Sign Sync connector is not required to provision users to Adobe Sign. Users assigned to Sign Enterprise plans
-are automatically granted basic Sign accounts when they are first provisioned to a Sign product profile in the
-Admin Console. When Sign users are created in this manner, they are assigned to the **Default Group** in Sign
-and are assigned **Normal User** privileges.
-
-Taking advantage of this native sync functionality with the User Sync Tool is easy - just target an Adobe Sign
-product profile in your group mapping in `user-sync-config.yml`.
-
-```yaml
-directory_users:
-  groups:
-    - directory_group: adobe-sign-enterprise
-      adobe_groups:
-        - Adobe Sign
-```
-
-Updates to user information (First Name, Last Name, and email address) are automatically synced to Sign
-the next time the user logs into Sign.
