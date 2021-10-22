@@ -196,13 +196,6 @@ def sync(**kwargs):
               cls=user_sync.cli.OptionMulti,
               type=list,
               metavar='all|mapped|group [group list or path-to-file.csv]')  # default should mapped
-@click.option('--sign-only-user-action',
-              help="specify what action to take on Sign users that don't match users from the "
-                   "directory.  Options are 'exclude' (from all changes), "
-                   "'delete' (users and their cloud storage), and default perserve (no action taken) ",
-              cls=user_sync.cli.OptionMulti,
-              type=list,
-              metavar='exclude|preserve|delete')
 @click.option('-t/-T', '--test-mode/--no-test-mode', default=None,
               help='enable test mode (API calls do not execute changes).')
 def sign_sync(**kwargs):
