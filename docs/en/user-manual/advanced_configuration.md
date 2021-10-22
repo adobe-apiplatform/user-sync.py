@@ -685,6 +685,44 @@ side, and removed users to be removed from the Adobe side.
 - Once the job has run, clear out the files (because their changes have been pushed) to prepare for
 the next batch.
 
+## The Admin Console Connector
+
+The User Sync Tool can use the Admin Console as an identity connector. This can be used to manage users
+for a trustee directory when the parent directory uses Azure AD sync or Google Sync, or to manage
+[Sign Enerprise Users](sign_sync.md#sign-enterprise).
+
+The connector can be enabled by adding `adobe_console` to `directory_users.connectors` in `user-sync-config.yml`.
+
+```yaml
+directory_users:
+  connectors:
+    adobe_console: connector-adobe-console.yml
+```
+
+A template `connector-adobe-console.yml` file can be found [here](https://raw.githubusercontent.com/adobe-apiplatform/user-sync.py/v2/examples/config%20files%20-%20basic/connector-adobe-console.yml).
+
+```yaml
+server:
+
+integration:
+  org_id: "Org ID goes here"
+  client_id: "Client ID goes here"
+  client_secret: "Client secret goes here"
+  tech_acct_id: "Tech account ID goes here"
+  priv_key_path: "private.key"
+
+identity_type_filter: all
+```
+
+The layout is very similar to `connector-umapi.yml` with two exceptions
+
+* Integration credentials are configured under the `integration` key and not `enterprise`.
+* Users can be filtered by identity type using `identity_type_filter`. Specify `adobeID`, `federatedID`, or `enterpriseID` to get only users of that type.
+
+Like the UMAPI connector, the Admin Console Connector requires a [service account integration on adobe.io](setup_and_installation.md##set-up-a-user-management-api-integration-on-adobe-io)
+
+Credentials in `connector-adobe-console.yml` can also be secured using the same procedure as `connector-umapi.yml`.
+
 ## The Okta Connector
 
 In addition to LDAP and CSV, the User Sync tool supports [Okta](https://www.okta.com) as a source for user identity and product entitlement sync.  Since Okta always uses email addresses as the unique ID for users, the Okta connector does not support username-based federation.
