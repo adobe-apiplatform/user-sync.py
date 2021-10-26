@@ -8,13 +8,13 @@ create table if not exists users (
 sign_groups = """
 create table if not exists groups (
     id text not null unique,
-    user group_info
+    group_info group_info
 );
 """
 
 sign_user_groups = """
 create table if not exists user_groups (
     user_id text not null unique,
-    user user_group_info
+    user_group user_group_info
 );
 """
