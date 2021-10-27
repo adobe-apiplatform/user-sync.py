@@ -2,10 +2,11 @@ from ..base import CacheBase
 from .schema import sign_groups as sign_groups_schema
 from .schema import sign_users as sign_users_schema
 from .schema import sign_user_groups as sign_user_groups_schema
-from sign_client.model import DetailedUserInfo, GroupInfo, UserGroupInfo
+from sign_client.model import DetailedUserInfo, GroupInfo, UserGroupInfo, JSONEncoder
 from pathlib import Path
 import json
 import sqlite3
+from collections import defaultdict
 
 class SignCache(CacheBase):
     def __init__(self, store_path: Path, org_name: str) -> None:
@@ -49,10 +50,13 @@ class SignCache(CacheBase):
         self.db_conn.execute("insert into user_groups(user_id, user_group) values (?,?)", (user_id, user_group))
         self.db_conn.commit()
     
-    def get_user_groups(self, user_id: str) -> list[UserGroupInfo]:
+    def get_user_groups(self) -> list[tuple[str, list[UserGroupInfo]]]:
+        groups_by_user = defaultdict(list)
         cur = self.db_conn.cursor()
-        cur.execute("select user_group from user_groups where user_id = ?", (user_id, ))
-        return [r[0] for r in cur.fetchall()]
+        cur.execute("select user_id, user_group from user_groups")
+        for user_id, user_group in cur.fetchall():
+            groups_by_user[user_id].append(user_group)
+        return list(groups_by_user.items())
 
 def adapt_user(user: DetailedUserInfo) -> str:
     return json.dumps(user.__dict__).encode('ascii')
@@ -67,7 +71,7 @@ def convert_group(s: str) -> GroupInfo:
     return GroupInfo(**json.loads(s))
 
 def adapt_user_group(user_group: UserGroupInfo) -> str:
-    return json.dumps(user_group.__dict__).encode('ascii')
+    return json.dumps(user_group.__dict__, cls=JSONEncoder).encode('ascii')
 
 def convert_user_group(s: str) -> UserGroupInfo:
-    return UserGroupInfo(**json.loads(s))
+    return UserGroupInfo.from_dict(json.loads(s))

@@ -14,7 +14,7 @@ create table if not exists groups (
 
 sign_user_groups = """
 create table if not exists user_groups (
-    user_id text not null unique,
+    user_id text not null,
     user_group user_group_info
 );
 """

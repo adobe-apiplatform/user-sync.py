@@ -110,4 +110,6 @@ def test_cache_user_group(tmp_path):
         isPrimaryGroup=True,
         status='ACTIVE',
     ))
-    assert cache.get_user_groups('12345abc')[0].id == 'abc123'
+    user_id, user_groups = cache.get_user_groups()[0]
+    assert user_groups[0].id == 'abc123'
+    assert user_id == '12345abc'

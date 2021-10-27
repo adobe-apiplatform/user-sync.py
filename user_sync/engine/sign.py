@@ -137,7 +137,7 @@ class SignSyncEngine:
         for description, count in self.action_summary.items():
             self.logger.info('  {}: {}'.format(description.rjust(pad, ' '), count))
 
-    def update_sign_users(self, directory_users, sign_connector, org_name):
+    def update_sign_users(self, directory_users, sign_connector: SignConnector, org_name):
         """
         Updates user details or inserts new user
         :param directory_groups:
@@ -147,8 +147,8 @@ class SignSyncEngine:
         """
         # Fetch the list of active Sign users
         sign_users = sign_connector.get_users()
-        sign_user_groups = sign_connector.get_user_groups([u.id for u in sign_users.values()])
-        self.sign_user_primary_groups[org_name] = {id: [g for g in groups.groupInfoList if g.isPrimaryGroup][0] for id, groups in sign_user_groups.items()}
+        sign_user_groups = sign_connector.get_user_groups()
+        self.sign_user_primary_groups[org_name] = {id: [g for g in groups if g.isPrimaryGroup][0] for id, groups in sign_user_groups.items()}
         users_update_list = []
         user_groups_update_list = []
         dir_users_for_org = {}
