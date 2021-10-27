@@ -17,3 +17,8 @@ deactivate_users: False
 # username as the admin_email field value, and the key name (perhaps called internet
 # or network address) as the value below.
 #secure_integration_key_key: sign_key
+
+# Storage location of Sign data cache. This contains cached users, groups and user assignent info
+# The cache will refresh after 24 hours
+cache:
+  path: cache/sign
