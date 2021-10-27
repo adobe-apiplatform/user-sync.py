@@ -31,6 +31,14 @@ class SignCache(CacheBase):
     def cache_user(self, user: DetailedUserInfo):
         self.db_conn.execute("insert into users(id, user) values (?,?)", (user.id, user))
         self.db_conn.commit()
+
+    def update_user(self, user: DetailedUserInfo):
+        self.db_conn.execute("update users set user = ? where id = ?", (user, user.id))
+        self.db_conn.commit()
+
+    def delete_user(self, user: DetailedUserInfo):
+        self.db_conn.execute("delete from users where id = ?", (user.id, ))
+        self.db_conn.commit()
     
     def get_users(self) -> list[DetailedUserInfo]:
         cur = self.db_conn.cursor()
@@ -39,6 +47,10 @@ class SignCache(CacheBase):
 
     def cache_group(self, group: GroupInfo):
         self.db_conn.execute("insert into groups(id, group_info) values (?,?)", (group.groupId, group))
+        self.db_conn.commit()
+
+    def delete_group(self, group: GroupInfo):
+        self.db_conn.execute("delete from groups where id = ?", (group.groupId, ))
         self.db_conn.commit()
     
     def get_groups(self) -> list[GroupInfo]:
@@ -58,17 +70,23 @@ class SignCache(CacheBase):
             groups_by_user[user_id].append(user_group)
         return list(groups_by_user.items())
 
+    def update_user_groups(self, user_id: str, user_groups: list[UserGroupInfo]):
+        self.db_conn.execute("delete from user_groups where user_id = ?", (user_id, ))
+        self.db_conn.commit()
+        for user_group in user_groups:
+            self.cache_user_group(user_id, user_group)
+
 def adapt_user(user: DetailedUserInfo) -> str:
-    return json.dumps(user.__dict__).encode('ascii')
+    return json.dumps(user.__dict__, cls=JSONEncoder).encode('ascii')
 
 def convert_user(s: str) -> DetailedUserInfo:
-    return DetailedUserInfo(**json.loads(s))
+    return DetailedUserInfo.from_dict(json.loads(s))
 
 def adapt_group(group: GroupInfo) -> str:
-    return json.dumps(group.__dict__).encode('ascii')
+    return json.dumps(group.__dict__, cls=JSONEncoder).encode('ascii')
 
 def convert_group(s: str) -> GroupInfo:
-    return GroupInfo(**json.loads(s))
+    return GroupInfo.from_dict(json.loads(s))
 
 def adapt_user_group(user_group: UserGroupInfo) -> str:
     return json.dumps(user_group.__dict__, cls=JSONEncoder).encode('ascii')

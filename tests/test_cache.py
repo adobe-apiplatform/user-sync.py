@@ -2,7 +2,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from user_sync.cache.base import CacheBase
 from user_sync.cache.sign import SignCache
-from sign_client.model import DetailedUserInfo, GroupInfo, UserGroupInfo
+from sign_client.model import DetailedUserInfo, GroupInfo, UserGroupInfo, SettingsInfo
 
 
 def test_init_no_store(tmp_path):
@@ -109,7 +109,87 @@ def test_cache_user_group(tmp_path):
         isGroupAdmin=False,
         isPrimaryGroup=True,
         status='ACTIVE',
+        settings=SettingsInfo()
     ))
     user_id, user_groups = cache.get_user_groups()[0]
     assert user_groups[0].id == 'abc123'
     assert user_id == '12345abc'
+
+def test_user_update(tmp_path):
+    """Test a user update"""
+    store_path: Path = tmp_path / 'cache' / 'sign'
+    org_name = 'primary'
+    cache = SignCache(store_path, org_name)
+    user = DetailedUserInfo(
+        accountType='GLOBAL',
+        email='user@example.com',
+        id='12345abc',
+        isAccountAdmin=False,
+        status='ACTIVE',
+    )
+    cache.cache_user(user)
+    user.isAccountAdmin = True
+    cache.update_user(user)
+    assert cache.get_users()[0].isAccountAdmin
+
+def test_user_delete(tmp_path):
+    """Test a user deletion"""
+    store_path: Path = tmp_path / 'cache' / 'sign'
+    org_name = 'primary'
+    cache = SignCache(store_path, org_name)
+    user = DetailedUserInfo(
+        accountType='GLOBAL',
+        email='user@example.com',
+        id='12345abc',
+        isAccountAdmin=False,
+        status='ACTIVE',
+    )
+    cache.cache_user(user)
+    assert cache.get_users()[0].email == 'user@example.com'
+    cache.delete_user(user)
+    assert cache.get_users() == []
+
+def test_group_delete(tmp_path):
+    """Test a group deletion"""
+    store_path: Path = tmp_path / 'cache' / 'sign'
+    org_name = 'primary'
+    cache = SignCache(store_path, org_name)
+    group = GroupInfo(
+        groupId='abc123',
+        groupName='Test Group',
+        createdDate='right about now',
+        isDefaultGroup=False,
+    )
+    cache.cache_group(group)
+    assert cache.get_groups()[0].groupId == 'abc123'
+    cache.delete_group(group)
+    assert cache.get_groups() == []
+
+def test_user_groups_update(tmp_path):
+    """Test user groups update"""
+    store_path: Path = tmp_path / 'cache' / 'sign'
+    org_name = 'primary'
+    cache = SignCache(store_path, org_name)
+    user_id = '12345abc'
+    user_group1 = UserGroupInfo(
+        id='abc123',
+        isGroupAdmin=False,
+        isPrimaryGroup=True,
+        status='ACTIVE',
+        settings=SettingsInfo()
+    )
+    cache.cache_user_group(user_id, user_group1)
+    user_id, user_groups = cache.get_user_groups()[0]
+    assert user_groups[0].id == 'abc123'
+    assert user_id == '12345abc'
+    user_group2 = UserGroupInfo(
+        id='xyz987',
+        isGroupAdmin=False,
+        isPrimaryGroup=True,
+        status='ACTIVE',
+        settings=SettingsInfo()
+    )
+    cache.update_user_groups(user_id, [user_group1, user_group2])
+    user_id, user_groups = cache.get_user_groups()[0]
+    assert user_id == '12345abc'
+    assert len(user_groups) == 2
