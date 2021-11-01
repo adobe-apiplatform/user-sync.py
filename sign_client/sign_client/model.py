@@ -54,10 +54,10 @@ class UserInfo:
     email: str
     id: str
     isAccountAdmin: bool
-    accountId: str
-    company: str
-    firstName: str
-    lastName: str
+    accountId: str = None
+    company: str = None
+    firstName: str = None
+    lastName: str = None
 
     @classmethod
     def from_dict(cls, dct):
