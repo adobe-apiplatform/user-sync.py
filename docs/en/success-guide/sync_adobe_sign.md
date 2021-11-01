@@ -17,7 +17,7 @@ nav_order: 330
 
 ---
 
-[Previous Section](scheduling.md) \| [Back to Contents](index.md) \|  [Next Section](upgrading.md)
+[Previous Section](scheduling.md) \| [Back to Contents](index.md)
 
 ---
 

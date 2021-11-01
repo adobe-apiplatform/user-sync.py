@@ -9,7 +9,7 @@ nav_order: 320
 # Setup Scheduled Ongoing Execution of User Sync
 
 
-[Previous Section](command_line_options.md) \| [Back to Contents](index.md) \| [Next Section](sync_adobe_sign.md)
+[Previous Section](command_line_options.md) \| [Back to Contents](index.md) 
 
 ## Setting Up Scheduled Run on Windows
 
