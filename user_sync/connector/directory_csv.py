@@ -59,7 +59,7 @@ class CSVDirectoryConnector(DirectoryConnector):
         # identity type for new users if not specified in column
         self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
 
-    def load_users_and_groups(self, groups, extended_attributes):
+    def load_users_and_groups(self, groups, extended_attributes, all_users):
         """
         :type groups: list(str)
         :type extended_attributes: list
