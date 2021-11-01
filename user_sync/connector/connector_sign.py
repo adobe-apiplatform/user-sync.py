@@ -98,6 +98,7 @@ class SignConnector(object):
             self.sign_client.deactivate_user(user_id)
     
     def refresh_all(self):
+        self.cache.clear_all()
         self.refresh_users()
         self.refresh_groups()
         self.refresh_user_groups()

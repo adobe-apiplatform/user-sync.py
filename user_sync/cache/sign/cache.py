@@ -27,6 +27,12 @@ class SignCache(CacheBase):
         else:
             self.db_conn = self.get_db_conn(db_path)
         super().__init__()
+    
+    def clear_all(self):
+        self.db_conn.execute("delete from users")
+        self.db_conn.execute("delete from groups")
+        self.db_conn.execute("delete from user_groups")
+        self.db_conn.commit()
 
     def cache_user(self, user: DetailedUserInfo):
         self.db_conn.execute("insert into users(id, user) values (?,?)", (user.id, user))
