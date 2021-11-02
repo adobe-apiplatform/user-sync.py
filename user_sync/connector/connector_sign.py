@@ -19,7 +19,7 @@
 # SOFTWARE.
 import logging
 
-from sign_client.model import DetailedGroupInfo, GroupInfo
+from sign_client.model import DetailedGroupInfo, GroupInfo, DetailedUserInfo, UserGroupsInfo
 
 from ..config.common import DictConfig, OptionsBuilder
 from ..cache.sign import SignCache
@@ -84,13 +84,17 @@ class SignConnector(object):
             self.refresh_all()
         return dict(self.cache.get_user_groups())
 
-    def update_users(self, update_data):
+    def update_users(self, update_data: list[DetailedUserInfo]):
         if not self.test_mode:
             self.sign_client.update_users(update_data)
+            for user in update_data:
+                self.cache.update_user(user)
 
-    def update_user_groups(self, update_data):
+    def update_user_groups(self, update_data: list[tuple[str, UserGroupsInfo]]):
         if not self.test_mode:
             self.sign_client.update_user_groups(update_data)
+            for user_id, user_groups in update_data:
+                self.cache.update_user_groups(user_id, user_groups.groupInfoList)
 
     def get_group(self, assignment_group):
         return [g.groupId for g in self.sign_client.groups if g.groupName.lower() == assignment_group.lower()][0]

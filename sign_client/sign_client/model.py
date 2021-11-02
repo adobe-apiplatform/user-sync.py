@@ -151,6 +151,8 @@ class SettingsInfo:
 
     @classmethod
     def from_dict(cls, dct):
+        if dct is None:
+            return None
         new_dct = {k: BooleanSettingsInfo.from_dict(v) for k, v in dct.items()}
         return cls(**new_dct)
 

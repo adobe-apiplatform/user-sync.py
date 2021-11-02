@@ -147,7 +147,7 @@ class SignSyncEngine:
         :return:
         """
         # Fetch the list of active Sign users
-        sign_users = sign_connector.get_users()
+        sign_users = {user.email: user for user in sign_connector.get_users().values()}
         sign_user_groups = sign_connector.get_user_groups()
         self.sign_user_primary_groups[org_name] = {id: [g for g in groups if g.isPrimaryGroup][0] for id, groups in sign_user_groups.items()}
         users_update_list = []
@@ -174,7 +174,7 @@ class SignSyncEngine:
                     self.insert_new_users(
                         sign_connector, directory_user, user_roles, group_id, assignment_group)
                 else:
-                    self.logger.info("{0}User {1} not present in  and will be skipped."
+                    self.logger.info("{0}User {1} not present and will be skipped."
                                      .format(self.org_string(org_name), directory_user['email']))
                     self.directory_users_excluded.add(directory_user['email'])
                     continue
@@ -200,6 +200,7 @@ class SignSyncEngine:
                         self.logger.info(f"Assigning Group Admin role to {sign_user.email}")
                     group_update_data = UserGroupsInfo(groupInfoList=[UserGroupInfo(
                         id=assignment_group_info.groupId,
+                        name=assignment_group_info.groupName,
                         isGroupAdmin=group_admin,
                         isPrimaryGroup=True,
                         status='ACTIVE',
