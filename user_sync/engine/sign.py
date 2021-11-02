@@ -190,20 +190,35 @@ class SignSyncEngine:
                     user_data.isAccountAdmin = is_admin
                     users_update_list.append(user_data)
                 # manage primary group asssignment
-                current_group = self.sign_user_primary_groups[org_name][sign_user.id]
+                current_group: UserGroupInfo = self.sign_user_primary_groups[org_name][sign_user.id]
+                should_be_group_admin = 'GROUP_ADMIN' in user_roles
+                is_group_admin = current_group.isGroupAdmin
+
+                updated_group_info = False
+                group_to_assign = UserGroupInfo(
+                    id=current_group.id,
+                    name=current_group.name,
+                    isGroupAdmin=is_group_admin,
+                    isPrimaryGroup=current_group.isPrimaryGroup,
+                    status=current_group.status,
+                    createdDate=current_group.createdDate,
+                    settings=current_group.settings,
+                )
+
                 if current_group.name.lower() != assignment_group.lower():
-                    assignment_group_info = self.sign_groups[org_name][assignment_group.lower()]
+                    assignment_group_info: GroupInfo = self.sign_groups[org_name][assignment_group.lower()]
                     self.logger.info(f"Assigning primary group '{assignment_group}' to user {sign_user.email}")
-                    group_admin = 'GROUP_ADMIN' in user_roles
-                    if group_admin:
-                        self.logger.info(f"Assigning Group Admin role to {sign_user.email}")
-                    group_update_data = UserGroupsInfo(groupInfoList=[UserGroupInfo(
-                        id=assignment_group_info.groupId,
-                        name=assignment_group_info.groupName,
-                        isGroupAdmin=group_admin,
-                        isPrimaryGroup=True,
-                        status='ACTIVE',
-                    )])
+                    group_to_assign.id=assignment_group_info.groupId
+                    group_to_assign.name=assignment_group_info.groupName
+                    updated_group_info=True
+
+                if is_group_admin != should_be_group_admin:
+                    self.logger.info(f"Changing group Admin role for user '{sign_user.email}', status? {should_be_group_admin}")
+                    group_to_assign.isGroupAdmin = should_be_group_admin
+                    updated_group_info=True
+
+                if updated_group_info:
+                    group_update_data = UserGroupsInfo(groupInfoList=[group_to_assign])
                     user_groups_update_list.append((sign_user.id, group_update_data))
                 
         sign_connector.update_users(users_update_list)
