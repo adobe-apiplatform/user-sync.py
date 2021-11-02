@@ -19,6 +19,8 @@
 # SOFTWARE.
 import logging
 
+from sign_client.model import DetailedGroupInfo, GroupInfo
+
 from ..config.common import DictConfig, OptionsBuilder
 from ..cache.sign import SignCache
 from ..error import AssertionException
@@ -64,9 +66,13 @@ class SignConnector(object):
             self.refresh_all()
         return {g.groupName.lower(): g for g in self.cache.get_groups()}
 
-    def create_group(self, new_group):
+    def create_group(self, new_group: DetailedGroupInfo):
         if not self.test_mode:
-            self.sign_client.create_group(new_group)
+            group_id = self.sign_client.create_group(new_group)
+            self.cache.cache_group(GroupInfo(
+                groupId=group_id,
+                groupName=new_group.name,
+            ))
 
     def get_users(self):
         if self.cache.should_refresh:

@@ -102,8 +102,20 @@ class DetailedUserInfo:
 class GroupInfo:
     groupId: str
     groupName: str
-    createdDate: str
-    isDefaultGroup: bool
+    createdDate: str = None
+    isDefaultGroup: bool = None
+
+    @classmethod
+    def from_dict(cls, dct):
+        return cls(**dct)
+
+
+@dataclass
+class DetailedGroupInfo:
+    name: str
+    id: str = None
+    createdDate: str = None
+    isDefaultGroup: bool = False
 
     @classmethod
     def from_dict(cls, dct):

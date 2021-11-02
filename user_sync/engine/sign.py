@@ -7,7 +7,7 @@ from user_sync.config.common import DictConfig, ConfigFileLoader, as_set, check_
 from user_sync.connector.connector_sign import SignConnector
 from user_sync.error import AssertionException
 
-from sign_client.model import DetailedUserInfo, UserGroupsInfo, UserGroupInfo
+from sign_client.model import DetailedUserInfo, UserGroupsInfo, UserGroupInfo, DetailedGroupInfo
 
 
 class SignSyncEngine:
@@ -52,7 +52,7 @@ class SignSyncEngine:
         sign_orgs = sync_config.get_dict('sign_orgs')
         connection = sync_config.get_dict('connection')
         self.config_loader = ConfigFileLoader(self.encoding, {}, {})
-        self.connectors = {}
+        self.connectors: dict[str, SignConnector] = {}
         self.default_groups = {}
         self.sign_groups = {}
         # Each of the Sign orgs is captured in a dict with the org name as key
@@ -104,7 +104,8 @@ class SignSyncEngine:
                 if (directory_group.lower() not in self.sign_groups[org_name]):
                     self.logger.info(
                         "{}Creating new Sign group: {}".format(self.org_string(org_name), directory_group))
-                    sign_connector.create_group(directory_group)
+                    sign_connector.create_group(DetailedGroupInfo(name=directory_group))
+            self.sign_groups[org_name] = self.get_groups(org_name)
             # Update user details or insert new user
             self.update_sign_users(
                 self.directory_user_by_user_key, sign_connector, org_name)

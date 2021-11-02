@@ -8,7 +8,7 @@ import requests
 
 from .error import AssertionException
 
-from .model import UsersInfo, DetailedUserInfo, GroupsInfo, UserGroupsInfo, JSONEncoder
+from .model import GroupInfo, UsersInfo, DetailedUserInfo, GroupsInfo, UserGroupsInfo, JSONEncoder, DetailedGroupInfo
 
 
 class SignClient:
@@ -149,7 +149,7 @@ class SignClient:
         groups = self._paginate_get(f"{self.api_url}groups", 'groupInfoList', GroupsInfo.from_dict, self.GROUP_PAGE_SIZE)
         return groups
 
-    def create_group(self, group):
+    def create_group(self, group: DetailedGroupInfo):
         """
         Create a new group in Sign
         :param group: str
@@ -157,15 +157,20 @@ class SignClient:
         """
         if self.api_url is None or self.groups is None:
             self._init()
-        url = self.api_url + 'groups'
+        url = f"{self.api_url}groups"
         header = self.header_json()
-        data = json.dumps({'groupName': group})
-        self.logger.info('Creating Sign group {} '.format(group))
+        data = json.dumps(group, cls=JSONEncoder)
+        self.logger.info(f'Creating Sign group {group.name}')
         res, code = self.call_with_retry_sync('POST', url, header, data)
         if code > 299:
-            raise AssertionException("Failed to create Sign group '{}' (reason: {})".format(group, res.reason))
-        self.groups[group] = res['groupId'].lower()
-        self._init()
+            raise AssertionException(f"Failed to create Sign group '{group.name}' (reason: {res.reason})")
+        self.groups.append(GroupInfo(
+            groupName=group.name,
+            groupId=group.id,
+            createdDate=group.createdDate,
+            isDefaultGroup=group.isDefaultGroup,
+        ))
+        return res['id']
 
     def insert_user(self, data):
         """
