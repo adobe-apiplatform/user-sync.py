@@ -77,7 +77,7 @@ class SignConnector(object):
     def get_users(self):
         if self.cache.should_refresh:
             self.refresh_all()
-        return {user.id: user for user in self.cache.get_users() if user.status == 'ACTIVE'}
+        return {user.id: user for user in self.cache.get_users() if user.status in ['ACTIVE', 'CREATED']}
 
     def get_user_groups(self):
         if self.cache.should_refresh:
@@ -96,12 +96,20 @@ class SignConnector(object):
             for user_id, user_groups in update_data:
                 self.cache.update_user_groups(user_id, user_groups.groupInfoList)
 
+    def update_user_group_single(self, user_id: str, update_data: UserGroupsInfo):
+        if not self.test_mode:
+            self.sign_client.update_user_groups_single(user_id, update_data)
+            self.cache.update_user_groups(user_id, update_data.groupInfoList)
+
     def get_group(self, assignment_group):
         return [g.groupId for g in self.sign_client.groups if g.groupName.lower() == assignment_group.lower()][0]
 
-    def insert_user(self, insert_data):
+    def insert_user(self, new_user: DetailedUserInfo)-> str:
         if not self.test_mode:
-            self.sign_client.insert_user(insert_data)
+            user_id = self.sign_client.insert_user(new_user)
+            new_user.id = user_id
+            self.cache.cache_user(new_user)
+            return user_id
 
     def deactivate_user(self, user_id):
         if not self.test_mode:

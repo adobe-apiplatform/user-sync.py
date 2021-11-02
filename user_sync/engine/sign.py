@@ -7,7 +7,7 @@ from user_sync.config.common import DictConfig, ConfigFileLoader, as_set, check_
 from user_sync.connector.connector_sign import SignConnector
 from user_sync.error import AssertionException
 
-from sign_client.model import DetailedUserInfo, UserGroupsInfo, UserGroupInfo, DetailedGroupInfo
+from sign_client.model import DetailedUserInfo, GroupInfo, UserGroupsInfo, UserGroupInfo, DetailedGroupInfo
 
 
 class SignSyncEngine:
@@ -166,13 +166,12 @@ class SignSyncEngine:
 
             if assignment_group is None:
                 assignment_group = self.default_groups[org_name].groupName
-            group_id = self.sign_groups[org_name][assignment_group.lower()].groupId
             user_roles = self.retrieve_admin_role(directory_user)
             if sign_user is None:
                 # Insert new user if flag is enabled and if Neptune Console
                 if sign_connector.create_users:
                     self.insert_new_users(
-                        sign_connector, directory_user, user_roles, group_id, assignment_group)
+                        org_name, sign_connector, directory_user, user_roles, assignment_group)
                 else:
                     self.logger.info("{0}User {1} not present and will be skipped."
                                      .format(self.org_string(org_name), directory_user['email']))
@@ -348,7 +347,7 @@ class SignSyncEngine:
         # For illustration.  Just return line 322 instead.
         return sign_group_mapping
 
-    def insert_new_users(self, sign_connector, directory_user, user_roles, group_id, assignment_group):
+    def insert_new_users(self, org_name: str, sign_connector: SignConnector, directory_user: dict, user_roles, assignment_group):
         """
         Constructs the data for insertion and inserts new user in the Sign Console
         :param sign_connector:
@@ -358,29 +357,35 @@ class SignSyncEngine:
         :param assignment_group:
         :return:
         """
-        insert_data = self.construct_sign_user(directory_user, group_id, user_roles)
+        new_user = DetailedUserInfo(
+            accountType='GLOBAL', # ignored on POST
+            email=directory_user['email'],
+            id='', # required, but not set by the user
+            isAccountAdmin='ACCOUNT_ADMIN' in user_roles,
+            status='ACTIVE',
+            firstName=directory_user['firstname'],
+            lastName=directory_user['lastname'],
+        )
         try:
-            sign_connector.insert_user(insert_data)
+            user_id = sign_connector.insert_user(new_user)
             self.sign_users_created.add(directory_user['email'])
-            self.logger.info("{}Inserted sign user '{}', group: '{}', roles: {}".format(
-                self.org_string(sign_connector.console_org), directory_user['email'], assignment_group,
-                insert_data['roles']))
+            self.logger.info(f"{self.org_string(sign_connector.console_org)}Inserted sign user '{new_user.email}', admin?: {new_user.isAccountAdmin}")
+
+            group_to_assign: GroupInfo = self.sign_groups[org_name][assignment_group.lower()]
+
+            is_group_admin = 'GROUP_ADMIN' in user_roles
+            group_update_data = UserGroupsInfo(groupInfoList=[UserGroupInfo(
+                id=group_to_assign.groupId,
+                name=group_to_assign.groupName,
+                isGroupAdmin=is_group_admin,
+                isPrimaryGroup=True,
+                status='ACTIVE',
+            )])
+
+            sign_connector.update_user_group_single(user_id, group_update_data)
+            self.logger.info(f"{self.org_string(sign_connector.console_org)}Assigned '{new_user.email}' to group '{group_to_assign.groupName}', group admin?: {is_group_admin}")
         except AssertionException as e:
             self.logger.error(format(e))
-        return
-
-    def construct_sign_user(self, user, group_id, user_roles):
-
-        user = {k.lower(): u for k, u in user.items()}
-
-        user_data = {
-            "email": user['email'],
-            "firstName": user['firstname'],
-            "groupId": group_id,
-            "lastName": user['lastname'],
-            "roles": user_roles,
-        }
-        return user_data
 
     def handle_sign_only_users(self, sign_connector, org_name):
         """

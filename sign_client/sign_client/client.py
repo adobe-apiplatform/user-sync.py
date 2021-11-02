@@ -131,11 +131,24 @@ class SignClient:
         """
         self._handle_calls(self._update_user, self.header_json(), users)
 
-    def update_user_groups(self, user_groups):
+    def update_user_groups(self, user_groups: list[tuple[str, UserGroupsInfo]]):
         """
-        Passthrough for call handling
+        Process assignment of groups for a list of users
         """
         self._handle_calls(self._update_user_groups, self.header_json(), user_groups)
+
+    def update_user_groups_single(self, user_id: str, user_groups: UserGroupsInfo):
+        """
+        Assign user groups to a single user
+        :param data: dict()
+        """
+        if self.api_url is None or self.groups is None:
+            self._init()
+
+        res = requests.put(f"{self.api_url}users/{user_id}/groups", headers=self.header_json(), data=json.dumps(user_groups, cls=JSONEncoder))
+
+        if res.status_code < 200 or res.status_code > 299:
+            raise AssertionException(f"Failed to assign groups to user '{user_id}' (code: {res.status_code} reason: {res.reason})")
 
     def get_groups(self):
         """
@@ -172,19 +185,18 @@ class SignClient:
         ))
         return res['id']
 
-    def insert_user(self, data):
+    def insert_user(self, user: DetailedUserInfo) -> str:
         """
         Insert Sign user
-        :param data: dict()
         """
         if self.api_url is None or self.groups is None:
             self._init()
 
-        res = requests.post(self.api_url + 'users', headers=self.header_json(), data=json.dumps(data))
+        res = requests.post(f"{self.api_url}users", headers=self.header_json(), data=json.dumps(user, cls=JSONEncoder))
         # Response status code 201 is successful insertion
-        if res.status_code != 201:
-            raise AssertionException("Failed to insert user '{}' (code: {} reason: {})"
-                                     .format(data['email'], res.status_code, res.reason))
+        if res.status_code < 200 or res.status_code > 299:
+            raise AssertionException(f"Failed to insert user '{user.email}' (code: {res.status_code} reason: {res.reason})")
+        return res.json()['userId']
 
     def deactivate_user(self, user_id):
         """
@@ -281,7 +293,7 @@ class SignClient:
             if code > 299:
                 self.logger.error(f"Error updating user '{user.email}' (code {code}) with response: {body}")
 
-    async def _update_user_groups(self, semaphore, user_group_data, headers, session):
+    async def _update_user_groups(self, semaphore, user_group_data: tuple[str, UserGroupsInfo], headers, session):
         """
         Update Sign user
         """
