@@ -48,7 +48,7 @@ import user_sync.helper
 import user_sync.lockfile
 import user_sync.resource
 import user_sync.resource
-from .config.user_sync import UMAPIConfigLoader
+from user_sync.config.user_sync import UMAPIConfigLoader
 from user_sync.config import common as config_common
 from user_sync.config import user_sync as config
 from user_sync.config import sign_sync as sign_config
