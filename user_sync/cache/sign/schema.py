@@ -1,6 +1,7 @@
 sign_users = """
 create table if not exists users (
     id text not null unique,
+    needs_refresh int default 0,
     user detailed_user_info
 );
 """

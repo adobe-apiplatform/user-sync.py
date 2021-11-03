@@ -52,6 +52,15 @@ class SignCache(CacheBase):
         cur.execute("select user from users where id = ?", (user_id, ))
         return cur.fetchone()[0]
 
+    def update_user_refresh_status(self, user_id: str, needs_refresh: bool):
+        self.db_conn.execute("update users set needs_refresh = ? where id = ?", (int(needs_refresh), user_id))
+        self.db_conn.commit()
+
+    def get_users_to_refresh(self) -> list[DetailedUserInfo]:
+        cur = self.db_conn.cursor()
+        cur.execute("select user from users where needs_refresh=1")
+        return [r[0] for r in cur.fetchall()]
+
     def cache_group(self, group: GroupInfo):
         self.db_conn.execute("insert into groups(id, group_info) values (?,?)", (group.groupId, group))
         self.db_conn.commit()

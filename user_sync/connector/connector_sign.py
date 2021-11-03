@@ -20,6 +20,7 @@
 import logging
 
 from sign_client.model import DetailedGroupInfo, GroupInfo, DetailedUserInfo, UserGroupsInfo, UserStateInfo
+from sign_client.error import AssertionException as ClientException
 
 from ..config.common import DictConfig, OptionsBuilder
 from ..cache.sign import SignCache
@@ -77,7 +78,15 @@ class SignConnector(object):
     def get_users(self):
         if self.cache.should_refresh:
             self.refresh_all()
-        return {user.id: user for user in self.cache.get_users() if user.status in ['ACTIVE', 'CREATED', 'UNVERIFIED']}
+
+        # always refresh individual users that may need it
+        users_to_refresh = self.cache.get_users_to_refresh()
+        if users_to_refresh:
+            for user in self.sign_client.get_users([u.id for u in users_to_refresh]).values():
+                self.cache.update_user(user)
+                self.cache.update_user_refresh_status(user.id, needs_refresh=False)
+
+        return {user.id: user for user in self.cache.get_users()}
 
     def get_user_groups(self):
         if self.cache.should_refresh:
@@ -111,9 +120,16 @@ class SignConnector(object):
             self.cache.cache_user(new_user)
             return user_id
 
-    def deactivate_user(self, user_id, state: UserStateInfo):
+    def update_user_state(self, user_id, state: UserStateInfo):
         if not self.test_mode:
-            self.sign_client.deactivate_user(user_id, state)
+            try:
+                self.sign_client.update_user_state(user_id, state)
+            except ClientException:
+                # The API won't let us manage all user states, so we need to flag the record
+                # for refresh if we get any errors. That way state can be rechecked next time in case
+                # it changed in the application
+                self.cache.update_user_refresh_status(user_id, needs_refresh=True)
+                raise
             user = self.cache.get_user(user_id)
             user.status = state.state
             self.cache.update_user(user)

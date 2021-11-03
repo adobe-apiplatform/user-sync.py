@@ -8,7 +8,7 @@ import requests
 
 from .error import AssertionException
 
-from .model import GroupInfo, UsersInfo, DetailedUserInfo, GroupsInfo, UserGroupsInfo, JSONEncoder, DetailedGroupInfo
+from .model import GroupInfo, UsersInfo, DetailedUserInfo, GroupsInfo, UserGroupsInfo, JSONEncoder, DetailedGroupInfo, UserStateInfo
 
 
 class SignClient:
@@ -102,7 +102,7 @@ class SignClient:
                 break
         return all_results
 
-    def get_users(self):
+    def get_users(self, user_ids=None):
         """
         Gets the full user list, and then extracts the user ID's for making calls
         We return self.users because it will be filled by the _get_user method.  This is
@@ -111,9 +111,13 @@ class SignClient:
         if self.api_url is None or self.groups is None:
             self._init()
 
-        self.logger.info('Getting list of all Sign users')
-        user_list = self._paginate_get(f"{self.api_url}users", 'userInfoList', UsersInfo.from_dict, self.USER_PAGE_SIZE)
-        user_ids = [u.id for u in user_list]
+        if user_ids is None or len(user_ids) == 0:
+            self.logger.info('Getting list of all Sign users')
+            user_list = self._paginate_get(f"{self.api_url}users", 'userInfoList', UsersInfo.from_dict, self.USER_PAGE_SIZE)
+            user_ids = [u.id for u in user_list]
+        else:
+            self.logger.info(f'Getting details for {len(user_ids)} Sign user(s)')
+
         self._handle_calls(self._get_user, self.header(), user_ids)
         return self.users
 
@@ -198,7 +202,7 @@ class SignClient:
             raise AssertionException(f"Failed to insert user '{user.email}' (code: {res.status_code} reason: {res.reason})")
         return res.json()['userId']
 
-    def deactivate_user(self, user_id, state):
+    def update_user_state(self, user_id: str, state: UserStateInfo):
         """
         Deactivate Sign user
         :param data: dict()
@@ -210,7 +214,8 @@ class SignClient:
                            data=json.dumps(state, cls=JSONEncoder))
 
         if res.status_code < 200 or res.status_code > 299:
-            raise AssertionException(f"Failed to deactivate user '{user_id}' (code: {res.status_code} reason: {res.reason})")
+            error = res.json()
+            raise AssertionException(f"Failed to change state of user '{user_id}' to '{state.state}' (code: {res.status_code} reason: {error['message']})")
 
     def _handle_calls(self, handle, headers, objects):
         """

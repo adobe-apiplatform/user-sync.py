@@ -63,7 +63,7 @@ class SignSyncEngine:
                 self.config_loader.load_root_config(sign_orgs[org]), org, options['test_mode'], connection)
 
         self.action_summary = {}
-        self.sign_users_by_org = {}
+        self.sign_users_by_org: dict[str, dict[str, DetailedUserInfo]] = {}
         self.total_sign_user_count = 0
         self.sign_users_created = set()
         self.sign_users_deactivated = set()
@@ -148,7 +148,8 @@ class SignSyncEngine:
         :return:
         """
         # Fetch the list of active Sign users
-        sign_users = {user.email: user for user in sign_connector.get_users().values()}
+        sign_users = {user.email: user for user in sign_connector.get_users().values() if user.status != 'INACTIVE'}
+        inactive_sign_users = {user.email: user for user in sign_connector.get_users().values() if user.status == 'INACTIVE'}
         sign_user_groups = sign_connector.get_user_groups()
         self.sign_user_primary_groups[org_name] = {id: [g for g in groups if g.isPrimaryGroup][0] for id, groups in sign_user_groups.items()}
         users_update_list = []
@@ -169,10 +170,23 @@ class SignSyncEngine:
                 assignment_group = self.default_groups[org_name].groupName
             user_roles = self.retrieve_admin_role(directory_user)
             if sign_user is None:
-                # Insert new user if flag is enabled and if Neptune Console
                 if sign_connector.create_users:
-                    self.insert_new_users(
-                        org_name, sign_connector, directory_user, user_roles, assignment_group)
+                    inactive_user = inactive_sign_users.get(directory_user['email'])
+                    # if Standalone user is inactive, we need to reactivate instead of trying to create new account
+                    if inactive_user is not None:
+                        try:
+                            state = UserStateInfo(
+                                state='ACTIVE',
+                                comment='Activated by User Sync Tool'
+                            )
+                            sign_connector.update_user_state(inactive_user.id, state)
+                            self.logger.info(f"Reactivated user '{inactive_user.email}")
+                        except ClientException as e:
+                            self.logger.error(f"Reactivation error for '{inactive_user.email}: "+format(e))
+                    else:
+                        # if user is totally new then create it
+                        self.insert_new_users(
+                            org_name, sign_connector, directory_user, user_roles, assignment_group)
                 else:
                     self.logger.info("{0}User {1} not present and will be skipped."
                                      .format(self.org_string(org_name), directory_user['email']))
@@ -432,10 +446,10 @@ class SignSyncEngine:
                         state='INACTIVE',
                         comment='Deactivated by User Sync Tool'
                     )
-                    sign_connector.deactivate_user(user.id, state)
+                    sign_connector.update_user_state(user.id, state)
                     self.logger.info(f"{self.org_string(org_name)}Deactivated sign user '{user.email}'")
                 except ClientException as e:
-                    self.logger.error("Error deactivating user {}, {}".format(user['email'], e))
+                    self.logger.error(format(e))
                     continue
 
             in_default_group = self.sign_user_primary_groups[org_name][user.id].id == self.default_groups[org_name].groupId
