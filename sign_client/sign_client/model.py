@@ -76,6 +76,16 @@ class UsersInfo:
 
 
 @dataclass
+class UserStateInfo:
+    state: str
+    comment: str = None
+
+    @classmethod
+    def from_dict(cls, dct):
+        return cls(**dct)
+
+
+@dataclass
 class DetailedUserInfo:
     accountType: str
     email: str

@@ -47,6 +47,11 @@ class SignCache(CacheBase):
         cur.execute("select user from users")
         return [r[0] for r in cur.fetchall()]
 
+    def get_user(self, user_id) -> DetailedUserInfo:
+        cur = self.db_conn.cursor()
+        cur.execute("select user from users where id = ?", (user_id, ))
+        return cur.fetchone()[0]
+
     def cache_group(self, group: GroupInfo):
         self.db_conn.execute("insert into groups(id, group_info) values (?,?)", (group.groupId, group))
         self.db_conn.commit()

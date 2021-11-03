@@ -6,8 +6,9 @@ import six
 from user_sync.config.common import DictConfig, ConfigFileLoader, as_set, check_max_limit
 from user_sync.connector.connector_sign import SignConnector
 from user_sync.error import AssertionException
+from sign_client.error import AssertionException as ClientException
 
-from sign_client.model import DetailedUserInfo, GroupInfo, UserGroupsInfo, UserGroupInfo, DetailedGroupInfo
+from sign_client.model import DetailedUserInfo, GroupInfo, UserGroupsInfo, UserGroupInfo, DetailedGroupInfo, UserStateInfo
 
 
 class SignSyncEngine:
@@ -72,7 +73,7 @@ class SignSyncEngine:
         self.sign_users_role_updates = set()
         self.sign_users_matched_no_updates = set()
         self.directory_users_excluded = set()
-        self.sign_only_users_by_org = {}
+        self.sign_only_users_by_org: dict[str, dict[str, DetailedUserInfo]] = {}
         self.sign_user_primary_groups = {}
         self.total_sign_only_user_count = 0
 
@@ -399,10 +400,10 @@ class SignSyncEngine:
 
             sign_connector.update_user_group_single(user_id, group_update_data)
             self.logger.info(f"{self.org_string(sign_connector.console_org)}Assigned '{new_user.email}' to group '{group_to_assign.groupName}', group admin?: {is_group_admin}")
-        except AssertionException as e:
+        except ClientException as e:
             self.logger.error(format(e))
 
-    def handle_sign_only_users(self, sign_connector, org_name):
+    def handle_sign_only_users(self, sign_connector: SignConnector, org_name: str):
         """
         Searches users to set to default group in GPS and deactivate in the Sign Neptune console
         :param directory_users:
@@ -427,9 +428,13 @@ class SignSyncEngine:
                 continue
             elif sign_connector.deactivate_users and sign_only_user_action == 'deactivate':
                 try:
-                    sign_connector.deactivate_user(user.id)
+                    state = UserStateInfo(
+                        state='INACTIVE',
+                        comment='Deactivated by User Sync Tool'
+                    )
+                    sign_connector.deactivate_user(user.id, state)
                     self.logger.info(f"{self.org_string(org_name)}Deactivated sign user '{user.email}'")
-                except AssertionException as e:
+                except ClientException as e:
                     self.logger.error("Error deactivating user {}, {}".format(user['email'], e))
                     continue
 

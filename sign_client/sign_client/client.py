@@ -198,22 +198,19 @@ class SignClient:
             raise AssertionException(f"Failed to insert user '{user.email}' (code: {res.status_code} reason: {res.reason})")
         return res.json()['userId']
 
-    def deactivate_user(self, user_id):
+    def deactivate_user(self, user_id, state):
         """
         Deactivate Sign user
         :param data: dict()
         """
         if self.api_url is None or self.groups is None:
             self._init()
-        data = {
-            "userStatus": 'INACTIVE'
-        }
-        res = requests.put(self.api_url + 'users/' + user_id + '/status', headers=self.header_json(),
-                           data=json.dumps(data))
-        # Response status code 200 is successful update
-        if res.status_code != 200:
-            raise AssertionException("Failed to deactivate user '{}' (code: {} reason: {})"
-                                     .format(user_id, res.status_code, res.reason))
+
+        res = requests.put(f"{self.api_url}users/{user_id}/state", headers=self.header_json(),
+                           data=json.dumps(state, cls=JSONEncoder))
+
+        if res.status_code < 200 or res.status_code > 299:
+            raise AssertionException(f"Failed to deactivate user '{user_id}' (code: {res.status_code} reason: {res.reason})")
 
     def _handle_calls(self, handle, headers, objects):
         """

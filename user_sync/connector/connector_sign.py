@@ -19,7 +19,7 @@
 # SOFTWARE.
 import logging
 
-from sign_client.model import DetailedGroupInfo, GroupInfo, DetailedUserInfo, UserGroupsInfo
+from sign_client.model import DetailedGroupInfo, GroupInfo, DetailedUserInfo, UserGroupsInfo, UserStateInfo
 
 from ..config.common import DictConfig, OptionsBuilder
 from ..cache.sign import SignCache
@@ -77,7 +77,7 @@ class SignConnector(object):
     def get_users(self):
         if self.cache.should_refresh:
             self.refresh_all()
-        return {user.id: user for user in self.cache.get_users() if user.status in ['ACTIVE', 'CREATED']}
+        return {user.id: user for user in self.cache.get_users() if user.status in ['ACTIVE', 'CREATED', 'UNVERIFIED']}
 
     def get_user_groups(self):
         if self.cache.should_refresh:
@@ -111,9 +111,12 @@ class SignConnector(object):
             self.cache.cache_user(new_user)
             return user_id
 
-    def deactivate_user(self, user_id):
+    def deactivate_user(self, user_id, state: UserStateInfo):
         if not self.test_mode:
-            self.sign_client.deactivate_user(user_id)
+            self.sign_client.deactivate_user(user_id, state)
+            user = self.cache.get_user(user_id)
+            user.status = state.state
+            self.cache.update_user(user)
     
     def refresh_all(self):
         self.cache.clear_all()
