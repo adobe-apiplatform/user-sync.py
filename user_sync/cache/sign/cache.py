@@ -41,10 +41,6 @@ class SignCache(CacheBase):
     def update_user(self, user: DetailedUserInfo):
         self.db_conn.execute("update users set user = ? where id = ?", (user, user.id))
         self.db_conn.commit()
-
-    def delete_user(self, user: DetailedUserInfo):
-        self.db_conn.execute("delete from users where id = ?", (user.id, ))
-        self.db_conn.commit()
     
     def get_users(self) -> list[DetailedUserInfo]:
         cur = self.db_conn.cursor()
