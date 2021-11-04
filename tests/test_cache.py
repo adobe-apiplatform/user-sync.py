@@ -189,3 +189,12 @@ def test_version_number_child(tmp_path):
     store_path: Path = tmp_path / 'cache' / 'sign'
     cache = SignCache(store_path, 'primary')
     assert cache.get_version() == SignCache.VERSION
+
+def test_update_version(tmp_path):
+    """test version update"""
+    store_path: Path = tmp_path / 'cache' / 'sign'
+    cb = CacheBase()
+    cb.init(store_path)
+    cb.VERSION = 10
+    cb.update_version()
+    assert cb.get_version() == 10

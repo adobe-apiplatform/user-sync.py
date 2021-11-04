@@ -41,6 +41,10 @@ class CacheBase:
         version, = cur.fetchone()
         return version
     
+    def update_version(self):
+        self.cache_meta_conn.execute('UPDATE cache_meta SET version = ?', (self.VERSION, ))
+        self.cache_meta_conn.commit()
+    
     def update_next_refresh(self):
         self.cache_meta_conn.execute('UPDATE cache_meta SET next_refresh = ?', (datetime.now()+timedelta(seconds=self.refresh_interval), ))
         self.cache_meta_conn.commit()
