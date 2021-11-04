@@ -1,4 +1,4 @@
-name: Package and Release
+name: Package
 
 on:
   push:
@@ -179,6 +179,10 @@ jobs:
           export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/
           /usr/local/bin/python3.9 -m venv venv
           source venv/bin/activate
+          # for some reason, pycryptodome won't install when
+          # setuptools is installed/upgraded, so install it before
+          # install/upgrade setuptools
+          pip install pycryptodome==3.9.7
           python -m pip install --upgrade pip pyinstaller setuptools
           pip install external/okta-0.0.3.1-py2.py3-none-any.whl
           pip install -e .
