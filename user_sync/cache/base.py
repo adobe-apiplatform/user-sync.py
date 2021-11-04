@@ -31,6 +31,7 @@ class CacheBase:
         self.cache_meta_conn.close()
 
     def init_meta(self):
+        self.cache_meta_conn.execute("drop table if exists cache_meta")
         self.cache_meta_conn.execute(cache_meta_schema)
         self.cache_meta_conn.execute("insert into cache_meta (next_refresh, version) values (?, ?)", (datetime.now(), self.VERSION))
         self.cache_meta_conn.commit()
