@@ -183,3 +183,9 @@ def test_version_number(tmp_path):
     cb = CacheBase()
     cb.init(store_path)
     assert cb.get_version() == CacheBase.VERSION
+
+def test_version_number_child(tmp_path):
+    """Make sure version number is stored properly in child class"""
+    store_path: Path = tmp_path / 'cache' / 'sign'
+    cache = SignCache(store_path, 'primary')
+    assert cache.get_version() == SignCache.VERSION
