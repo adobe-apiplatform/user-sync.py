@@ -198,3 +198,15 @@ def test_update_version(tmp_path):
     cb.VERSION = 10
     cb.update_version()
     assert cb.get_version() == 10
+
+def test_table_rebuild(tmp_path):
+    """Test cache table rebuild"""
+    store_path: Path = tmp_path / 'cache' / 'sign'
+    cache = SignCache(store_path, 'primary')
+    assert cache.should_refresh
+    cache = SignCache(store_path, 'primary')
+    assert not cache.should_refresh
+    SignCache.VERSION += 1
+    cache = SignCache(store_path, 'primary')
+    assert cache.should_refresh
+    assert cache.get_version() == SignCache.VERSION

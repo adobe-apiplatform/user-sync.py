@@ -9,6 +9,8 @@ import sqlite3
 from collections import defaultdict
 
 class SignCache(CacheBase):
+    # increment this every time there are changes to table schema or data model
+    VERSION: int = 1
     def __init__(self, store_path: Path, org_name: str) -> None:
         sqlite3.register_adapter(DetailedUserInfo, adapt_user)
         sqlite3.register_converter("detailed_user_info", convert_user)
@@ -26,7 +28,19 @@ class SignCache(CacheBase):
             self.db_conn.commit()
         else:
             self.db_conn = self.get_db_conn(db_path)
+        if self.get_version() != self.VERSION:
+            self.rebuild_tables()
+            self.init_meta()
+            self.should_refresh = True
         super().__init__()
+    
+    def rebuild_tables(self):
+        self.db_conn.execute("drop table users")
+        self.db_conn.execute("drop table groups")
+        self.db_conn.execute("drop table user_groups")
+        for s in [sign_users_schema, sign_groups_schema, sign_user_groups_schema]:
+            self.db_conn.execute(s)
+        self.db_conn.commit()
     
     def clear_all(self):
         self.db_conn.execute("delete from users")
