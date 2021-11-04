@@ -635,7 +635,7 @@ class RuleProcessor(object):
             if not check_max_limit(stray_count, max_missing_option, 
                         self.primary_user_count, self.excluded_user_count, 'Adobe', self.logger):
                 self.action_summary['primary_strays_processed'] = 0
-                return [], {}
+                return primary_commands, secondary_command_lists
             self.logger.debug("Processing Adobe-only users...")
             return self.manage_strays(primary_commands, secondary_command_lists, umapi_connectors)
 
