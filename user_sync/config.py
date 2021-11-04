@@ -978,7 +978,7 @@ class ConfigFileLoader:
         cls.filename = os.path.split(cls.filepath)[1]
         cls.dirpath = os.path.dirname(cls.filepath)
         try:
-            with open(filename, 'rb', 1) as input_file:
+            with open(filename, 'rb', 0) as input_file:
                 byte_string = input_file.read()
                 yml = yaml.safe_load(byte_string.decode(cls.config_encoding, 'strict'))
         except IOError as e:
