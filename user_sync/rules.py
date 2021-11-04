@@ -646,7 +646,7 @@ class RuleProcessor(object):
                 self.logger.critical('Unable to process Adobe-only users, as their count (%s) is larger '
                                      'than the max_adobe_only_users setting (%s)', stray_count, max_missing_option)
                 self.action_summary['primary_strays_processed'] = 0
-                return [], {}
+                return primary_commands, secondary_command_lists
             self.logger.debug("Processing Adobe-only users...")
             return self.manage_strays(primary_commands, secondary_command_lists, umapi_connectors)
 
