@@ -74,6 +74,16 @@ Documentation is forthcoming.
 
 | tag | date | title |
 |---|---|---|
+| v2.6.6 | 2021-11-04 | User Sync Tool v2.6.6 |
+
+# Bug Fixes
+
+\#745 - Management actions halted when max Adobe-only limit exceeded
+
+---
+
+| tag | date | title |
+|---|---|---|
 | v2.6.5 | 2021-09-16 | User Sync Tool v2.6.5 |
 
 \#728 - Fix keyring misidentification issue
