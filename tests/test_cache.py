@@ -31,7 +31,7 @@ def test_init_expired_cache(tmp_path):
     cur = conn.cursor()
     cur.execute("DELETE FROM cache_meta")
     expired_ts = datetime.now() - timedelta(seconds=CacheBase.refresh_interval+60)
-    cur.execute('INSERT INTO cache_meta VALUES (?)', (expired_ts, ))
+    cur.execute('INSERT INTO cache_meta VALUES (?, ?)', (expired_ts, 1))
     conn.commit()
     cb = CacheBase()
     cb.init(store_path)
@@ -193,3 +193,10 @@ def test_user_groups_update(tmp_path):
     user_id, user_groups = cache.get_user_groups()[0]
     assert user_id == '12345abc'
     assert len(user_groups) == 2
+
+def test_version_number(tmp_path):
+    """Make sure version number is stored properly"""
+    store_path: Path = tmp_path / 'cache' / 'sign'
+    cb = CacheBase()
+    cb.init(store_path)
+    assert cb.get_version() == CacheBase.VERSION
