@@ -132,23 +132,6 @@ def test_user_update(tmp_path):
     cache.update_user(user)
     assert cache.get_users()[0].isAccountAdmin
 
-def test_user_delete(tmp_path):
-    """Test a user deletion"""
-    store_path: Path = tmp_path / 'cache' / 'sign'
-    org_name = 'primary'
-    cache = SignCache(store_path, org_name)
-    user = DetailedUserInfo(
-        accountType='GLOBAL',
-        email='user@example.com',
-        id='12345abc',
-        isAccountAdmin=False,
-        status='ACTIVE',
-    )
-    cache.cache_user(user)
-    assert cache.get_users()[0].email == 'user@example.com'
-    cache.delete_user(user)
-    assert cache.get_users() == []
-
 def test_group_delete(tmp_path):
     """Test a group deletion"""
     store_path: Path = tmp_path / 'cache' / 'sign'
