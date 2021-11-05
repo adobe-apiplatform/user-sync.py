@@ -136,20 +136,21 @@ def test_target_config_options(default_sign_args, modify_sign_config):
     """ensure directory module name is correct"""
     # simple case
     config = SignConfigLoader(default_sign_args)
-    primary_options, _ = config.get_target_options()
-    assert primary_options['host'] == 'api.echosignstage.com'
-    assert primary_options['integration_key'] == '[Sign API Key]'
-    assert primary_options['admin_email'] == 'user@example.com'
+    target_options = config.get_target_options()
+    print(target_options)
+    assert target_options[SignConfigLoader.DEFAULT_ORG_NAME]['host'] == 'api.echosignstage.com'
+    assert target_options[SignConfigLoader.DEFAULT_ORG_NAME]['integration_key'] == '[Sign API Key]'
+    assert target_options[SignConfigLoader.DEFAULT_ORG_NAME]['admin_email'] == 'user@example.com'
 
     # complex case
     sign_config_file = modify_sign_config(['sign_orgs'], {'primary': 'connector-sign.yml', 'org2': 'connector-sign.yml'}, False)
     args = {'config_filename': sign_config_file}
     config = SignConfigLoader(args)
-    primary_options, secondary_options = config.get_target_options()
-    assert 'org2' in secondary_options
-    assert secondary_options['org2']['host'] == 'api.echosignstage.com'
-    assert secondary_options['org2']['integration_key'] == '[Sign API Key]'
-    assert secondary_options['org2']['admin_email'] == 'user@example.com'
+    target_options = config.get_target_options()
+    assert 'org2' in target_options
+    assert target_options['org2']['host'] == 'api.echosignstage.com'
+    assert target_options['org2']['integration_key'] == '[Sign API Key]'
+    assert target_options['org2']['admin_email'] == 'user@example.com'
 
     # invalid case
     sign_config_file = modify_sign_config(['sign_orgs'], {'org1': 'connector-sign.yml'}, False)

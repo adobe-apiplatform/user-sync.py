@@ -13,10 +13,11 @@ from user_sync.engine.umapi import AdobeGroup
 def example_engine(default_sign_args):
     config = SignConfigLoader(default_sign_args)
     rule_config = config.get_engine_options()
-    return SignSyncEngine(rule_config)
+    target_options = config.get_target_options()
+    return SignSyncEngine(rule_config, target_options)
 
 
-def test_load_users_and_groups(example_engine, mock_dir_user):
+def test_load_users_and_groups(example_engine: SignSyncEngine, mock_dir_user):
     dc = MagicMock()
     mock_dir_user['groups'] = ["Sign Users 1"]
     user = {'user1@example.com': mock_dir_user}
