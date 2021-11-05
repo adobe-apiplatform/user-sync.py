@@ -6,7 +6,7 @@ from math import ceil
 import aiohttp
 import requests
 
-from .error import AssertionException
+from .error import AssertionException, TimeoutException
 
 from .model import GroupInfo, UsersInfo, DetailedUserInfo, GroupsInfo, UserGroupsInfo, JSONEncoder, DetailedGroupInfo, UserStateInfo
 
@@ -94,7 +94,7 @@ class SignClient:
                 cursor_str = f"&cursor={cursor}"
             else:
                 cursor_str = ""
-            result, _ = self.call_with_retry_sync('GET', f"{base_url}?pageSize={str(page_size)}{cursor_str}", self.header())
+            result, _ = self.call_with_retry_sync('GET', f"{base_url}?pageSize={str(page_size)}{cursor_str}", self.header_json())
             result = constructor(result)
             all_results.extend(getattr(result, list_attr))
             cursor = result.page.nextCursor
@@ -118,7 +118,7 @@ class SignClient:
         else:
             self.logger.info(f'Getting details for {len(user_ids)} Sign user(s)')
 
-        self._handle_calls(self._get_user, self.header(), user_ids)
+        self._handle_calls(self._get_user, self.header_json(), user_ids)
         return self.users
 
 
@@ -126,7 +126,7 @@ class SignClient:
         if self.api_url is None or self.groups is None:
             self._init()
         self.logger.info(f'Getting groups for {len(user_ids)} Sign users')
-        self._handle_calls(self._get_user_groups, self.header(), user_ids)
+        self._handle_calls(self._get_user_groups, self.header_json(), user_ids)
         return self.user_groups
 
     def update_users(self, users):
@@ -328,21 +328,24 @@ class SignClient:
         while True:
             try:
                 waiting_time *= 3
-                self.logger.debug('Attempt {} to call: {}'.format(retry_nb, url))
+                self.logger.debug(f'Attempt {retry_nb+1} to call: {url}')
                 async with session.request(method=method, url=url, data=data or {}) as r:
                     if r.status >= 500:
-                        raise AssertionException('{}, Headers: {}'.format(r.status, r.headers))
+                        raise TimeoutException('{}, Headers: {}'.format(r.status, r.headers))
                     elif r.status == 429:
-                        raise AssertionException('{} - too many calls. Headers: {}'.format(r.status, r.headers))
+                        raise TimeoutException('{} - too many calls. Headers: {}'.format(r.status, r.headers))
+                    elif r.status < 200 or r.status > 299:
+                        err = await r.json()
+                        raise AssertionException(f"Error calling '{method} {url}': {r.status} {err['code']} {err['message']}")
                     body = await r.text()
                     if method != 'PUT':
                         return json.loads(body), r.status
                     else:
                         # PUT calls respond with an empty body
                         return body, r.status
-            except Exception as exc:
+            except TimeoutException as err:
                 retry_nb += 1
-                self.logger.warning('Call failed: Type: {} - Message: {}'.format(type(exc), exc))
+                self.logger.warning('Call failed: Type: {} - Message: {}'.format(type(err), err))
                 if retry_nb == (self.max_sign_retries + 1):
                     raise AssertionException('Quitting after {} retries'.format(self.max_sign_retries))
                 self.logger.warning('Waiting for {} seconds before retry'.format(waiting_time))
