@@ -36,7 +36,7 @@ class SignSyncEngine:
     name = 'sign_sync'
     encoding = 'utf-8'
 
-    def __init__(self, caller_options):
+    def __init__(self, caller_options, target_options: dict[str, dict]):
         """
         Initialize the Sign Sync Engine
         :param caller_options:
@@ -47,20 +47,14 @@ class SignSyncEngine:
         options.update(caller_options)
         self.options = options
         self.logger = logging.getLogger(self.name)
-        sync_config = DictConfig('<%s configuration>' %
-                                 self.name, caller_options)
         self.directory_user_by_user_key = {}
-        sign_orgs = sync_config.get_dict('sign_orgs')
-        connection = sync_config.get_dict('connection')
-        self.config_loader = ConfigFileLoader(self.encoding, {}, {})
         self.connectors: dict[str, SignConnector] = {}
         self.default_groups = {}
         self.sign_groups = {}
         # Each of the Sign orgs is captured in a dict with the org name as key
         # and org specific parameter embedded in Sign Connector as value
-        for org in sign_orgs:
-            self.connectors[org] = SignConnector(
-                self.config_loader.load_root_config(sign_orgs[org]), org, options['test_mode'], connection)
+        for org_name, target_dict in target_options.items():
+            self.connectors[org_name] = SignConnector(target_dict, org_name, options['test_mode'], caller_options['connection'])
 
         self.action_summary = {}
         self.sign_users_by_org: dict[str, dict[str, DetailedUserInfo]] = {}

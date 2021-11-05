@@ -67,7 +67,10 @@ class SignConfigLoader(ConfigLoader):
                              }
 
     # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files
-    SUB_CONFIG_PATH_KEYS = {'/integration/priv_key_path': (True, False, None)}
+    SUB_CONFIG_PATH_KEYS = {
+        '/integration/priv_key_path': (True, False, None),
+        '/cache/path': (False, False, None),
+    }
 
     config_defaults = {
         'config_encoding': 'utf8',
@@ -199,17 +202,18 @@ class SignConfigLoader(ConfigLoader):
         source_config_path = identity_config['connector']
         return self.config_loader.load_sub_config(source_config_path)
 
-    def get_target_options(self) -> tuple[dict, dict]:
+    def get_target_options(self) -> dict[str, dict]:
         target_configs = self.main_config.get_dict('sign_orgs')
-        if 'primary' not in target_configs:
-            raise AssertionException("'sign_orgs' config must specify a connector with 'primary' key")
-        primary_options = self.config_loader.load_sub_config(target_configs['primary'])
-        secondary_options = {}
+        if self.DEFAULT_ORG_NAME not in target_configs:
+            raise AssertionException(f"'sign_orgs' config must specify a connector with '{self.DEFAULT_ORG_NAME}' key")
+        primary_options = self.config_loader.load_sub_config(target_configs[self.DEFAULT_ORG_NAME])
+        all_options = {}
         for target_id, config_file in target_configs.items():
-            if target_id == 'primary':
+            if target_id == self.DEFAULT_ORG_NAME:
                 continue
-            secondary_options[target_id] = self.config_loader.load_sub_config(config_file)
-        return primary_options, secondary_options
+            all_options[target_id] = self.config_loader.load_sub_config(config_file)
+        all_options[self.DEFAULT_ORG_NAME] = primary_options
+        return all_options
 
     def get_engine_options(self) -> dict:
         options = deepcopy(SignSyncEngine.default_options)

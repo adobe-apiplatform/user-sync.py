@@ -49,9 +49,9 @@ import user_sync.lockfile
 import user_sync.resource
 import user_sync.resource
 from user_sync.config.user_sync import UMAPIConfigLoader
+from user_sync.config.sign_sync import SignConfigLoader
 from user_sync.config import common as config_common
 from user_sync.config import user_sync as config
-from user_sync.config import sign_sync as sign_config
 from user_sync.config.common import OptionsBuilder
 from user_sync.connector.connector_umapi import UmapiConnector
 from user_sync.engine.common import PRIMARY_TARGET_NAME
@@ -202,15 +202,16 @@ def sign_sync(**kwargs):
     """Run Sign Sync """
     # load the config files (sign-sync-config.yml) and start the file logger
     try:
-        run_sync(sign_config.SignConfigLoader(kwargs), begin_work_sign)
+        run_sync(SignConfigLoader(kwargs), begin_work_sign)
     except ConfigValidationError as e:
         logger.critical('Schema validation failed. Detailed message: {}'.format(e))
 
 
-def begin_work_sign(sign_config_loader: UMAPIConfigLoader):
+def begin_work_sign(sign_config_loader: SignConfigLoader):
     sign_engine_config = sign_config_loader.get_engine_options()
     directory_connector, directory_groups = load_directory_config(sign_config_loader)
-    sign_engine = SignSyncEngine(sign_engine_config)
+    target_options = sign_config_loader.get_target_options()
+    sign_engine = SignSyncEngine(sign_engine_config, target_options)
     sign_engine.run(directory_groups, directory_connector)
 
 
