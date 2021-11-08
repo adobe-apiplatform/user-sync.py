@@ -13,6 +13,7 @@ Feature summary
 - Full user lifecycle management for standalone Sign environments
 - Mapping structure to manage Sign group assignments and admin privileges
 - Same logging options as UMAPI sync
+- Sign API data is cached
 
 Architecture changes
 
