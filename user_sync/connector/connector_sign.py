@@ -31,7 +31,7 @@ from pathlib import Path
 
 class SignConnector(object):
 
-    def __init__(self, caller_options, org_name, test_mode, connection):
+    def __init__(self, caller_options, org_name, test_mode, connection, cache_config):
         """
         :type caller_options: dict
         """
@@ -45,7 +45,7 @@ class SignConnector(object):
         sign_builder.require_string_value('admin_email')
         self.create_users = sign_builder.require_value('create_users', bool)
         self.deactivate_users = sign_builder.require_value('deactivate_users', bool)
-        store_path = Path(sign_builder.require_value('cache', dict).get('path'))
+        store_path = Path(cache_config['path'])
 
         options = sign_builder.get_options()
         integration_key = caller_config.get_credential('integration_key', options['admin_email'])

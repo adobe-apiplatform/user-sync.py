@@ -17,6 +17,11 @@ user_sync:
   # Default action is to reset (user admin_role removed, user_group set to default group)
   # options: reset, exclude, remove_groups, remove_roles, deactivate
   sign_only_user_action: reset
+
+# Storage location of Sign data cache. This contains cached users, groups and user assignent info
+# The cache will refresh after 24 hours
+cache:
+  path: cache/sign
  
 # User management group/role mappings
 user_management:

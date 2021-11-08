@@ -22,6 +22,9 @@ class SignSyncEngine:
             'users': 'mapped',
             'test_mode': False
         },
+        'cache': {
+            'path': 'cache/sign',
+        },
         'sign_orgs': [
             {
                 'primary': 'connector-sign.yml'
@@ -54,7 +57,7 @@ class SignSyncEngine:
         # Each of the Sign orgs is captured in a dict with the org name as key
         # and org specific parameter embedded in Sign Connector as value
         for org_name, target_dict in target_options.items():
-            self.connectors[org_name] = SignConnector(target_dict, org_name, options['test_mode'], caller_options['connection'])
+            self.connectors[org_name] = SignConnector(target_dict, org_name, options['test_mode'], caller_options['connection'], caller_options['cache'])
 
         self.action_summary = {}
         self.sign_users_by_org: dict[str, dict[str, DetailedUserInfo]] = {}

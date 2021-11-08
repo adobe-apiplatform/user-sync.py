@@ -40,6 +40,9 @@ def config_schema() -> Schema:
             Optional('group_admin', default=False): Or(bool, None),
             Optional('account_admin', default=False): Or(bool, None)
         }],
+        'cache': {
+            'path': And(str, len),
+        },
         Optional('logging'): {
             Optional('log_to_file'): bool,
             Optional('file_log_directory'): And(str, len),
@@ -61,15 +64,16 @@ class SignConfigLoader(ConfigLoader):
     """
     # key_paths in the root configuration file that should have filename values
     # mapped to their value options.  See load_from_yaml for the option meanings.
-    ROOT_CONFIG_PATH_KEYS = {'/sign_orgs/*': (True, False, None),
-                             '/identity_source/connector': (True, False, None),
-                             '/logging/file_log_directory': (False, False, "sign_logs"),
-                             }
+    ROOT_CONFIG_PATH_KEYS = {
+        '/sign_orgs/*': (True, False, None),
+        '/identity_source/connector': (True, False, None),
+        '/logging/file_log_directory': (False, False, "sign_logs"),
+        '/cache/path': (False, False, None),
+    }
 
     # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files
     SUB_CONFIG_PATH_KEYS = {
         '/integration/priv_key_path': (True, False, None),
-        '/cache/path': (False, False, None),
     }
 
     config_defaults = {
@@ -81,6 +85,8 @@ class SignConfigLoader(ConfigLoader):
         'users': ['mapped'],
         'test_mode': False
     }
+
+    default_cache_path = "cache/sign"
 
     DEFAULT_ORG_NAME = 'primary'
 
@@ -229,6 +235,7 @@ class SignConfigLoader(ConfigLoader):
         options['user_sync']['sign_only_user_action'] = sign_only_user_action
         if options.get('directory_group_mapped'):
             options['directory_group_filter'] = set(six.iterkeys(self.directory_groups))
+        options['cache'] = self.main_config.get_dict('cache')
         return options
 
     def check_unused_config_keys(self):
