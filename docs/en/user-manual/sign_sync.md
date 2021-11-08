@@ -55,6 +55,9 @@ It uses a different main config file (`sign-sync-config.yml`) and Sign connector
 
 ## Sign Sync Configuration File
 
+The Sight Sync process depends on a primary config file, which defines Sign sync behavior. Like the User Sync config, it defines
+API connections, sync behavior and logging options.
+
 `sign-sync-config.yml` serves as the main configuration file for Sign Sync. If the User Sync Tool is invoked with the `sign-sync` command,
 it will look for `sign-sync-config.yml` in the current working directory. If the config file exists in a different directory, use the `-c/--config-filename`
 option to specify the path to the config file.
@@ -79,6 +82,11 @@ identity_source:
 user_sync:
   sign_only_limit: 100
   sign_only_user_action: reset
+
+# Storage location of Sign data cache. This contains cached users, groups and user assignent info
+# The cache will refresh after 24 hours
+cache:
+  path: cache/sign
  
 # User management group/role mappings
 user_management:
@@ -168,6 +176,24 @@ user_sync:
   | `remove_groups` | Reset user to Default Group, but do not modify admin roles |
   | `remove_roles` | Remove admin roles, but do not change group membership |
   {: .bordertablestyle}
+
+**`cache`**
+
+User, Group and Group Assignment data retrieved from the Sign API is cached locally on the filesystem. This ensures the sync tool can manage
+users and groups more quickly while the cache is fresh.
+
+The cache will refresh after 24 hours. In some cases, individual users may be refreshed more often than once every 24 hours.
+
+Example:
+
+```yaml
+cache:
+  path: cache/sign
+```
+
+The cache path is defined by `cache.path`. The path will be checked relative to the directory of `sign-sync-config.yml`. If `cache.path` does not
+exist, the sync tool will create the directory and initialize the cache. The sync tool will also initialize a new cache if the directory exists,
+but the cache database files do not The cache will refresh if more than 24 hours have elapsed since the last time it was refreshed.
 
 **`user_management`**
 
