@@ -18,6 +18,8 @@ user_sync:
   # options: reset, exclude, remove_groups, remove_roles, deactivate
   sign_only_user_action: reset
 
+cache:
+  path: cache/sign
 
 connection:
   # Number of allowed concurrent requests (higher is faster, but consumes more bandwidth and memory)
