@@ -36,10 +36,6 @@ import user_sync.certgen
 import user_sync.cli
 import user_sync.config
 import user_sync.connector.directory
-import user_sync.connector.directory_ldap
-import user_sync.connector.directory_okta
-import user_sync.connector.directory_csv
-import user_sync.connector.directory_adobe_console
 import user_sync.connector.umapi
 import user_sync.connector.umapi
 import user_sync.encryption
@@ -47,6 +43,10 @@ import user_sync.helper
 import user_sync.lockfile
 import user_sync.resource
 import user_sync.rules
+from user_sync.connector.directory_adobe_console import AdobeConsoleConnector
+from user_sync.connector.directory_csv import CSVDirectoryConnector
+from user_sync.connector.directory_ldap import LDAPDirectoryConnector
+from user_sync.connector.directory_okta import OktaDirectoryConnector
 
 from user_sync.post_sync.manager import PostSyncManager
 import user_sync.post_sync.connectors.sign_sync
@@ -415,8 +415,17 @@ def begin_work(config_loader):
     directory_connector_options = None
     directory_connector_module_name = config_loader.get_directory_connector_module_name()
     if directory_connector_module_name is not None:
-        directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
-        directory_connector = user_sync.connector.directory.DirectoryConnector(directory_connector_module)
+        if directory_connector_module_name == 'ldap':
+            directory_connector = LDAPDirectoryConnector
+        elif directory_connector_module_name == 'okta':
+            directory_connector = OktaDirectoryConnector
+        elif directory_connector_module_name == 'csv':
+            directory_connector = CSVDirectoryConnector
+        elif directory_connector_module_name == 'adobe_console':
+            directory_connector = AdobeConsoleConnector
+        else:
+            raise AssertionException('Directory connector not found.')
+
         directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
 
     post_sync_manager = None
@@ -435,16 +444,16 @@ def begin_work(config_loader):
         # specify the default user_identity_type if it's not already specified in the options
         if 'user_identity_type' not in directory_connector_options:
             directory_connector_options['user_identity_type'] = rule_config['new_account_type']
-        directory_connector.initialize(directory_connector_options)
+        directory_connector = directory_connector(directory_connector_options)
 
     additional_group_filters = None
     additional_groups = rule_config.get('additional_groups', None)
     if additional_groups and isinstance(additional_groups, list):
         additional_group_filters = [r['source'] for r in additional_groups]
     if directory_connector is not None:
-        directory_connector.state.additional_group_filters = additional_group_filters
+        directory_connector.additional_group_filters = additional_group_filters
         # show error dynamic mappings enabled but 'dynamic_group_member_attribute' is not defined
-        if additional_group_filters and directory_connector.state.options['dynamic_group_member_attribute'] is None:
+        if additional_group_filters and directory_connector.options['dynamic_group_member_attribute'] is None:
             raise AssertionException(
                 "Failed to enable dynamic group mappings. 'dynamic_group_member_attribute' is not defined in config")
     primary_name = '.primary' if secondary_umapi_configs else ''

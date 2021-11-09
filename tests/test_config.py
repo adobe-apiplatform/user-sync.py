@@ -14,9 +14,8 @@ def load_ldap_config_options(args):
 
     config_loader = ConfigLoader(args)
     dc_mod_name = config_loader.get_directory_connector_module_name()
-    dc_mod = __import__(dc_mod_name, fromlist=[''])
-    dc = DirectoryConnector(dc_mod)
-    dc_config_options = config_loader.get_directory_connector_options(dc.name)
+    dc_config_options = config_loader.get_directory_connector_options(dc_mod_name)
+    dc = LDAPDirectoryConnector
     caller_config = DictConfig('%s configuration' % dc.name, dc_config_options)
     return LDAPDirectoryConnector.get_options(caller_config)
 
@@ -230,7 +229,6 @@ def test_shell_exec_flag(tmp_config_files, modify_root_config, cli_args, monkeyp
 
         directory_connector_module_name = config_loader.get_directory_connector_module_name()
         if directory_connector_module_name is not None:
-            directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
-            directory_connector = DirectoryConnector(directory_connector_module)
+            directory_connector = DirectoryConnector()
             with pytest.raises(AssertionException):
                 config_loader.get_directory_connector_options(directory_connector.name)
