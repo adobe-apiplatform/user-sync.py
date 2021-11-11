@@ -74,6 +74,7 @@ class SignConfigLoader(ConfigLoader):
     # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files
     SUB_CONFIG_PATH_KEYS = {
         '/integration/priv_key_path': (True, False, None),
+        '/file_path': (True, False, None),
     }
 
     config_defaults = {
@@ -196,9 +197,7 @@ class SignConfigLoader(ConfigLoader):
 
     def get_directory_connector_module_name(self) -> str:
         # these .get()s can be safely chained because we've already validated the config schema
-        connector_type = self.main_config.get_dict('identity_source').get('type')
-        # we can also assume connector_type is valid, no need to check it
-        return 'user_sync.connector.directory_' + connector_type
+        return self.main_config.get_dict('identity_source').get('type')
 
     def get_directory_connector_options(self, name: str) -> dict:
         identity_config = self.main_config.get_dict('identity_source')
