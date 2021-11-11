@@ -38,10 +38,6 @@ import user_sync.config.sign_sync
 import user_sync.config.user_sync
 import user_sync.connector.connector_umapi
 import user_sync.connector.directory
-import user_sync.connector.directory_adobe_console
-import user_sync.connector.directory_csv
-import user_sync.connector.directory_ldap
-import user_sync.connector.directory_okta
 import user_sync.encryption
 import user_sync.engine.umapi
 import user_sync.helper
@@ -52,10 +48,16 @@ from user_sync.config.user_sync import UMAPIConfigLoader
 from user_sync.config.sign_sync import SignConfigLoader
 from user_sync.config import common as config_common
 from user_sync.config import user_sync as config
-from user_sync.config.common import OptionsBuilder
+from user_sync.config.common import ConfigLoader, OptionsBuilder
 from user_sync.connector.connector_umapi import UmapiConnector
 from user_sync.engine.common import PRIMARY_TARGET_NAME
 from user_sync.engine.sign import SignSyncEngine
+from user_sync.connector.directory import DirectoryConnector
+from user_sync.connector.directory_adobe_console import AdobeConsoleConnector
+from user_sync.connector.directory_csv import CSVDirectoryConnector
+from user_sync.connector.directory_ldap import LDAPDirectoryConnector
+from user_sync.connector.directory_okta import OktaDirectoryConnector
+
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 
@@ -223,6 +225,13 @@ def begin_work_umapi(config_loader: UMAPIConfigLoader):
     umapi_engine_config = config_loader.get_engine_options()
     directory_connector, directory_groups = load_directory_config(config_loader, umapi_engine_config['new_account_type'])
 
+    if not umapi_engine_config['ssl_cert_verify']:
+      logger.warning("SSL certificate verification is bypassed.  Consider disabling this option and using the "
+                     "REQUESTS_CA_BUNDLE environment variable to specify the PEM firewall bundle...")
+      # Suppress only the single warning from urllib3 needed.
+      # noinspection PyUnresolvedReferences
+      requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+
     # make sure that all the adobe groups are from known umapi connector names
     primary_umapi_config, secondary_umapi_configs = config_loader.get_target_options()
     referenced_umapi_names = set()
@@ -242,9 +251,9 @@ def begin_work_umapi(config_loader: UMAPIConfigLoader):
     if additional_groups and isinstance(additional_groups, list):
         additional_group_filters = [r['source'] for r in additional_groups]
     if directory_connector is not None:
-        directory_connector.state.additional_group_filters = additional_group_filters
+        directory_connector.additional_group_filters = additional_group_filters
         # show error dynamic mappings enabled but 'dynamic_group_member_attribute' is not defined
-        if additional_group_filters and directory_connector.state.options['dynamic_group_member_attribute'] is None:
+        if additional_group_filters and directory_connector.options['dynamic_group_member_attribute'] is None:
             raise AssertionException(
                 "Failed to enable dynamic group mappings. 'dynamic_group_member_attribute' is not defined in config")
 
@@ -263,7 +272,7 @@ def begin_work_umapi(config_loader: UMAPIConfigLoader):
     rule_processor.run(directory_groups, directory_connector, umapi_connectors)
 
 
-def load_directory_config(config_loader, new_account_type=None):
+def load_directory_config(config_loader: ConfigLoader, new_account_type=None) -> tuple[DirectoryConnector, dict]:
 
     # Group mappings from the sign or umapi sync config files
     directory_groups = config_loader.get_directory_groups()
@@ -272,8 +281,17 @@ def load_directory_config(config_loader, new_account_type=None):
     directory_connector_options = None
     directory_connector_module_name = config_loader.get_directory_connector_module_name()
     if directory_connector_module_name is not None:
-        directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
-        directory_connector = user_sync.connector.directory.DirectoryConnector(directory_connector_module)
+        if directory_connector_module_name == 'ldap':
+            directory_connector = LDAPDirectoryConnector
+        elif directory_connector_module_name == 'okta':
+            directory_connector = OktaDirectoryConnector
+        elif directory_connector_module_name == 'csv':
+            directory_connector = CSVDirectoryConnector
+        elif directory_connector_module_name == 'adobe_console':
+            directory_connector = AdobeConsoleConnector
+        else:
+            raise AssertionException('Directory connector not found.')
+
         directory_connector_options = config_loader.get_directory_connector_options(directory_connector.name)
 
     if directory_connector is not None and directory_connector_options is not None:
@@ -281,7 +299,7 @@ def load_directory_config(config_loader, new_account_type=None):
         # this has no effect for sign sync, but directory connector
         if new_account_type and 'user_identity_type' not in directory_connector_options:
             directory_connector_options['user_identity_type'] = new_account_type
-        directory_connector.initialize(directory_connector_options)
+        directory_connector = directory_connector(directory_connector_options)
 
     return directory_connector, directory_groups
 

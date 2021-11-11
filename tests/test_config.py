@@ -10,7 +10,6 @@ from user_sync.error import AssertionException
 
 engine_defaults = user_sync.engine.umapi.RuleProcessor.default_options.copy()
 
-
 def reset_rule_options():
     # Reset the ruleprocessor options since get_engine_options is a destructive method
     # because it changes class variables in memory between tests
@@ -143,11 +142,8 @@ def test_shell_exec_disabled(modify_root_config, default_args):
 def test_twostep_config(default_args, test_resources, modify_config):
     def load_ldap_config_options(args):
         config_loader = UMAPIConfigLoader(args)
-        dc_mod_name = config_loader.get_directory_connector_module_name()
-        dc_mod = __import__(dc_mod_name, fromlist=[''])
-        dc = DirectoryConnector(dc_mod)
-        dc_config_options = config_loader.get_directory_connector_options(dc.name)
-        caller_config = DictConfig('%s configuration' % dc.name, dc_config_options)
+        dc_config_options = config_loader.get_directory_connector_options(LDAPDirectoryConnector.name)
+        caller_config = DictConfig('%s configuration' % DirectoryConnector.name, dc_config_options)
         return LDAPDirectoryConnector.get_options(caller_config)
 
     modify_config('ldap', ['two_steps_lookup'], {})
@@ -168,3 +164,15 @@ def test_twostep_config(default_args, test_resources, modify_config):
     assert 'two_steps_lookup' in options
     assert 'group_member_attribute_name' in options['two_steps_lookup']
     assert options['two_steps_lookup']['group_member_attribute_name'] == 'member'
+
+
+def test_shell_exec_flag(test_resources, modify_root_config, cli_args, monkeypatch):
+    """Test that shell exec flag will raise an error if command is specified to get connector config"""
+    with monkeypatch.context() as m:
+        m.setattr(flags, 'get_flag', lambda *a: False)
+        root_config_file = test_resources['umapi_root_config']
+
+        args = cli_args({'config_filename': root_config_file})
+        modify_root_config(['directory_users', 'connectors', 'ldap'], "$(some command)")
+        with pytest.raises(AssertionException):
+            UMAPIConfigLoader(args)

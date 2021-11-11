@@ -50,8 +50,8 @@ def test_resources(fixture_dir, tmpdir):
     }
 
     for k, n in resources.items():
-        shutil.copy(os.path.join(fixture_dir, n), tmpdir.dirname)
-        resources[k] = os.path.join(tmpdir.dirname, n)
+        shutil.copy(os.path.join(fixture_dir, n), tmpdir)
+        resources[k] = os.path.join(tmpdir, n)
     return resources
 
 

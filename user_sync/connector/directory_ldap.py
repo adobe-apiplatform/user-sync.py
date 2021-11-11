@@ -26,6 +26,8 @@ import ldap3
 import user_sync.connector.helper
 import user_sync.error
 import user_sync.identity_type
+from user_sync.connector.directory import DirectoryConnector
+from user_sync.config.common import DictConfig
 from user_sync.error import AssertionException
 from user_sync.config import user_sync as config
 from user_sync.config import common as config_common
@@ -33,37 +35,13 @@ from user_sync.config import common as config_common
 import platform
 import ssl
 
-def connector_metadata():
-    metadata = {
-        'name': LDAPDirectoryConnector.name
-    }
-    return metadata
 
-
-def connector_initialize(options):
-    """
-    :type options: dict
-    """
-    connector = LDAPDirectoryConnector(options)
-    return connector
-
-
-def connector_load_users_and_groups(state, groups=None, extended_attributes=None, all_users=True):
-    """
-    :type state: LDAPDirectoryConnector
-    :type groups: Optional(list(str))
-    :type extended_attributes: Optional(list(str))
-    :type all_users: bool
-    :rtype (bool, iterable(dict))
-    """
-    return state.load_users_and_groups(groups or [], extended_attributes or [], all_users)
-
-
-class LDAPDirectoryConnector(object):
+class LDAPDirectoryConnector(DirectoryConnector):
     name = 'ldap'
 
-    def __init__(self, caller_options):
-        caller_config = config_common.DictConfig('%s configuration' % self.name, caller_options)
+    def __init__(self, caller_options, *args, **kwargs):
+        super(LDAPDirectoryConnector, self).__init__(*args, **kwargs)
+        caller_config = DictConfig('%s configuration' % self.name, caller_options)
 
         options = self.get_options(caller_config)
         self.options = options
