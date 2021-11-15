@@ -209,6 +209,119 @@ def sign_sync(**kwargs):
         logger.critical('Schema validation failed. Detailed message: {}'.format(e))
 
 
+@main.command()
+@click.help_option('-h', '--help')
+@click.option('--config-filename', help="Filename of post-sync config file",
+              prompt='Post-Sync Config File', default='connector-sign-sync.yml')
+@click.option('--connector-type', help="Type of identity connector",
+              prompt='Connector Type', default='ldap')
+@click.option('--connector-filename', help="Filename of connector file",
+              prompt='Connector Filename', default='connector-ldap.yml')
+def migrate_post_sync(config_filename, connector_type, connector_filename):
+    """Migrate post-sync config (connector-sign-sync.yml) to new Sign Sync config files"""
+    import yaml
+
+    click.echo(f"Using '{config_filename}'")
+    config_path = Path(config_filename)
+    if not config_path.is_file() or not config_path.exists():
+        raise AssertionException(f"Post-sync config file '{config_path}' not found")
+    post_sync_config: dict = yaml.safe_load(config_path.open())
+
+    sign_sync_data = {
+        'sign_orgs': [],
+        'identity_source': {
+            'type': connector_type,
+            'connector': connector_filename,
+        },
+        'user_sync': {
+            'sign_only_limit': 100,
+            'sign_only_user_action': 'reset',
+        },
+        'cache': {
+            'path': 'cache/sign',
+        },
+        'logging': {
+            'log_to_file': True,
+            'file_log_directory': 'sign_logs',
+            'file_log_name_format': '{:%Y-%m-%d}-sign.log',
+            'file_log_level': 'info',
+            'console_log_level': 'debug',
+        },
+        'invocation_defaults': {
+            'users': 'mapped',
+            'test_mode': False,
+        },
+        'user_management': [],
+    }
+
+    # first, generate connector config files
+    # derive base path for new files based on post-sync config path
+    base_path = config_path.parent
+
+    sign_orgs: list[dict] = post_sync_config.get('sign_orgs', [])
+    for sign_org in sign_orgs:
+        console_org = sign_org.get('console_org')
+        if console_org is None:
+            connector_filename = base_path / 'connector-sign.yml'
+            target_id = 'primary'
+        else:
+            connector_filename = base_path / f'connector-sign-{console_org}.yml'
+            target_id = console_org
+        connector_data = {
+            'host': sign_org.get('host'),
+            'integration_key': sign_org.get('key'),
+            'admin_email': sign_org.get('admin_email'),
+            # since post-sync is always GPS, we can default these to False
+            'create_users': False,
+            'deactivate_users': False,
+        }
+        with connector_filename.open('w') as fp:
+            yaml.dump(connector_data, fp)
+        click.echo(f"Created connector file '{connector_filename}'")
+        sign_sync_data['sign_orgs'].append({target_id: str(connector_filename.name)})
+
+    # second, create group mapping definitions
+    # define pure group mappings first
+    user_groups: list[str] = post_sync_config.get('user_groups', [])
+    for user_group in user_groups:
+        group_parts = user_group.split('::')
+        if len(group_parts) > 1:
+            source_group = group_parts[1]
+        else:
+            source_group = user_group
+        mapping = {
+            'directory_group': source_group,
+            'sign_group': user_group,
+            'group_admin': False,
+            'account_admin': False,
+        }
+        sign_sync_data['user_management'].append(mapping)
+    
+    # now define admin role mappings
+    admin_roles: list[dict] = post_sync_config.get('admin_roles', [])
+    for admin_role in admin_roles:
+        is_acct_admin = admin_role['sign_role'] == 'ACCOUNT_ADMIN'
+        is_group_admin = admin_role['sign_role'] == 'GROUP_ADMIN'
+        adobe_groups: list[str] = admin_role.get('adobe_groups', [])
+        for adobe_group in adobe_groups:
+            mapping = {
+                'directory_group': adobe_group,
+                'sign_group': None,
+                'group_admin': is_group_admin,
+                'account_admin': is_acct_admin,
+            }
+            sign_sync_data['user_management'].append(mapping)
+
+    sign_sync_filename = base_path / 'sign-sync-config.yml'
+    yaml.dump(sign_sync_data, sign_sync_filename.open('w'))
+    click.echo(f"Created Sign Sync config file '{sign_sync_filename}'")
+    click.echo(f"Migration complete. You can now safely delete '{config_path}'")
+    click.echo("Your 'post_sync' config should be removed from user-sync-config.yml")
+    click.echo("\nIMPORTANT - please review 'sign-sync-config.yml' for accuracy. Some settings,")
+    click.echo("  such as group mapping, may need to be manually adjusted.")
+    click.echo("\nYou can test your Sign sync by running `./user-sync sign-sync -t`")
+
+
 def begin_work_sign(sign_config_loader: SignConfigLoader):
     sign_engine_config = sign_config_loader.get_engine_options()
     directory_connector, directory_groups = load_directory_config(sign_config_loader)
