@@ -53,6 +53,44 @@ $ ./user-sync sign-sync
 When the User Sync Tool is run with the `sign-sync` command, it uses a different sync engine than a sync with the Admin Console.
 It uses a different main config file (`sign-sync-config.yml`) and Sign connector config file `connector-sign.yml`.
 
+## Moving From Post-Sync
+
+The post-sync connector is no longer implemented or supported. Any attempt to run the Sync Tool with `post_sync` configured in
+`user-sync-config.yml` will produce an error.
+
+This impacts Sign Sync because in prior UST releases, Sign Sync was facilitated with the post-sync connector.
+
+You can use the `migrate-post-sync` command to migrate your post-sync config. This will create a `sign-sync-config.yml` file
+and one or more connector config files (e.g. `connector-sign.yml`).
+
+Usage example:
+
+```
+$ ./user-sync migrate-post-sync
+```
+
+After you provide required input, the command will perform migration actions, generate new config files, and provide a summary
+of actions taken and new files generated.
+
+The command takes three optional parameters. You will be prompted to provide input if any option is omitted.
+
+* `--config-filename` path to post-sync config file (e.g. `connector-sign-sync.yml`)
+* `--connector-type` type of identity connector to use (`ldap`, `csv`, `okta`, or `adobe_console`)
+* `--connector-filename` path to identity connector filename (e.g. `connector-ldap.yml`)
+
+**IMPORTANT** - after the new config is generated, be sure to review `sign-sync-config.yml` and make any necessary manual adjustments
+to ensure accuracy. Take a close look at the group mappings defined in `user_management` as they may not be optimally defined
+by the migration tool.
+
+One the new config files are created, be sure to remove the `post_sync` definition from `user-sync-config.yml`. You 
+can also delete `connector-sign-sync.yml` (the Sign post-sync config file) if desired.
+
+Finally, run the Sign Sync process in test mode to ensure that the new config works as desired.
+
+```
+$ ./user-sync sign-sync-config -t
+```
+
 ## Sign Sync Configuration File
 
 The Sight Sync process depends on a primary config file, which defines Sign sync behavior. Like the User Sync config, it defines
