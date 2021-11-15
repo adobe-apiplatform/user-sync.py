@@ -753,14 +753,14 @@ class RuleProcessor(object):
         update_username = None
 
         # check to see if AdobeID exist for FederatedID/EnterpriseID user. Skip user if same email exist.
-        if ((identity_type == user_sync.identity_type.FEDERATED_IDENTITY_TYPE or
-             identity_type == user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE) and
+        if ((identity_type.lower() == user_sync.identity_type.FEDERATED_IDENTITY_TYPE.lower() or
+             identity_type.lower() == user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE.lower()) and
                 self.is_adobeID_email_exist(directory_user['email'])):
             self.logger.warning("Skipping user creation for: %s - AdobeID already exists with %s",
                                 self.get_directory_user_key(directory_user), directory_user['email'])
             return None
 
-        if (identity_type == user_sync.identity_type.FEDERATED_IDENTITY_TYPE and directory_user['username'] and
+        if (identity_type.lower() == user_sync.identity_type.FEDERATED_IDENTITY_TYPE.lower() and directory_user['username'] and
                 '@' in directory_user['username'] and
                 normalize_string(directory_user['email']) != normalize_string(directory_user['username'])):
             update_username = directory_user['username']
@@ -774,7 +774,7 @@ class RuleProcessor(object):
         if not country:
             country = self.options['default_country_code']
         if not country:
-            if identity_type == user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE:
+            if identity_type.lower() == user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE.lower():
                 # Enterprise users are allowed to have undefined country
                 country = 'UD'
             else:
@@ -1029,7 +1029,7 @@ class RuleProcessor(object):
 
     def filter_adobeID_user(self, umapi_user):
         id_type = self.get_identity_type_from_umapi_user(umapi_user)
-        if id_type == user_sync.identity_type.ADOBEID_IDENTITY_TYPE:
+        if id_type.lower() == user_sync.identity_type.ADOBEID_IDENTITY_TYPE.lower():
             self.adobeid_user_by_email[normalize_string(umapi_user['email'])] = umapi_user
 
     def is_adobeID_email_exist(self, email):
@@ -1076,7 +1076,7 @@ class RuleProcessor(object):
         :type umapi_user: dict
         """
         id_type = self.get_identity_type_from_umapi_user(umapi_user)
-        if id_type == user_sync.identity_type.ADOBEID_IDENTITY_TYPE:
+        if id_type.lower() == user_sync.identity_type.ADOBEID_IDENTITY_TYPE.lower():
             return self.get_user_key(id_type, '', '', umapi_user['email'])
         else:
             return self.get_user_key(id_type, umapi_user['username'], umapi_user['domain'], umapi_user['email'])
