@@ -180,8 +180,12 @@ def sync(**kwargs):
     # sign_config_file = kwargs.get('sign_sync_config')
     # if 'sign_sync_config' in kwargs:
     #     del (kwargs['sign_sync_config'])
-    run_sync(config.UMAPIConfigLoader(kwargs), begin_work_umapi)
-
+    try:
+        run_sync(config.UMAPIConfigLoader(kwargs), begin_work_umapi)
+    except AssertionException as e:
+        if not e.is_reported():
+            logger.critical("%s", e)
+            e.set_reported()
 
 @main.command()
 @click.help_option('-h', '--help')
@@ -207,7 +211,10 @@ def sign_sync(**kwargs):
         run_sync(SignConfigLoader(kwargs), begin_work_sign)
     except ConfigValidationError as e:
         logger.critical('Schema validation failed. Detailed message: {}'.format(e))
-
+    except AssertionException as e:
+        if not e.is_reported():
+            logger.critical("%s", e)
+            e.set_reported()
 
 @main.command()
 @click.help_option('-h', '--help')
