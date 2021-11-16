@@ -207,10 +207,11 @@ class SignConfigLoader(ConfigLoader):
         source_config_path = identity_config['connector']
         return self.config_loader.load_sub_config(source_config_path)
 
-    def get_target_options(self) -> dict[str, dict]:
+    def get_target_options(self) -> tuple[dict, dict]:
         target_configs = self.main_config.get_dict('sign_orgs')
         if self.DEFAULT_ORG_NAME not in target_configs:
-            raise AssertionException(f"'sign_orgs' config must specify a connector with '{self.DEFAULT_ORG_NAME}' key")
+            raise AssertionException(
+                f"'sign_orgs' config must specify a connector with '{self.DEFAULT_ORG_NAME}' key")
         primary_options = self.config_loader.load_sub_config(target_configs[self.DEFAULT_ORG_NAME])
         all_options = {}
         for target_id, config_file in target_configs.items():
@@ -226,6 +227,7 @@ class SignConfigLoader(ConfigLoader):
 
         sign_orgs = self.main_config.get_dict('sign_orgs')
         options['sign_orgs'] = sign_orgs
+        self.get_target_options()
         user_sync = self.main_config.get_dict_config('user_sync')
         max_missing = user_sync.get_value('sign_only_limit', (int, str))
         options['user_sync']['sign_only_limit'] = validate_max_limit_config(max_missing)
