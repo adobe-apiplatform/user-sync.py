@@ -111,12 +111,12 @@ def test_identity_module(test_resources, modify_sign_config):
 
     args = {'config_filename': test_resources['sign_root_config']}
     config = SignConfigLoader(args)
-    assert config.get_directory_connector_module_name() == 'user_sync.connector.directory_ldap'
+    assert config.get_directory_connector_module_name() == 'ldap'
 
     sign_config_file = modify_sign_config(['identity_source', 'type'], 'okta')
     args = {'config_filename': sign_config_file}
     config = SignConfigLoader(args)
-    assert config.get_directory_connector_module_name() == 'user_sync.connector.directory_okta'
+    assert config.get_directory_connector_module_name() == 'okta'
 
 
 def test_identity_connector_options(default_sign_args):
