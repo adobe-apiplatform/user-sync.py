@@ -446,6 +446,10 @@ class UMAPIConfigLoader(ConfigLoader):
         options = deepcopy(rules.RuleProcessor.default_options)
         options.update(self.invocation_options)
 
+        post_sync_config = self.main_config.get_dict_config('post_sync', True)
+        if post_sync_config is not None:
+            raise AssertionException("'post_sync' is no longer implemented. Please run `./user-sync migrate-post-sync` to migrate your post-sync config to the new Sign sync format")
+
         # process directory configuration options
         directory_config = self.main_config.get_dict_config('directory_users', True)
         if not directory_config:
