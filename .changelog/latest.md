@@ -14,6 +14,7 @@ Feature summary
 - Mapping structure to manage Sign group assignments and admin privileges
 - Same logging options as UMAPI sync
 - Sign API data is cached
+- Tool to migrate post-sync config
 
 Architecture changes
 
