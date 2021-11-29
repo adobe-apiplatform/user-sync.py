@@ -119,7 +119,8 @@ class CredentialConfig:
         self.filename = filename
         self.auto = auto
         self.logger = logging.getLogger('credman')
-
+        if self.__class__.__name__ == 'UmapiCredentialConfig':
+            self.handle_umapi_config_compatibility()
         # The dictionary including comments that will be updated and re-saved
         self.load()
 
@@ -139,6 +140,16 @@ class CredentialConfig:
 
         # name = subclass.capitalize().replace("_","") + "CredentialConfig"
         # return globals()[name](filename, auto)
+
+    def handle_umapi_config_compatibility(self):
+        with open(self.filename) as f:
+            keys = yaml.load(f)
+            api_key = self.get_nested_key(['enterprise', 'api_key'], d=keys)
+        if api_key is not None:
+            keys['enterprise']['client_id'] = api_key
+            del keys['enterprise']['api_key']
+            with open(self.filename, 'w') as g:
+                yaml.dump(keys, g)
 
     def modify_credentials(self, action):
         credentials = {}
@@ -378,6 +389,7 @@ class UmapiCredentialConfig(CredentialConfig):
     pass_key = Key(key_path=['enterprise', 'priv_key_pass'])
     secured_keys = [
         Key(key_path=['enterprise', 'client_id']),
+        Key(key_path=['enterprise', 'api_key']),
         Key(key_path=['enterprise', 'client_secret']),
         pass_key,
         Key(key_path=['enterprise', 'priv_key_data'],
