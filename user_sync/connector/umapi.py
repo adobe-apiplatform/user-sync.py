@@ -56,12 +56,7 @@ class UmapiConnector(object):
         self.trusted = caller_config.get_bool('trusted', True)
         if self.trusted is None:
             self.trusted = False
-        uses_business_id = caller_config.get_bool('uses_business_id', True)
-        self.ignore_identity_type = False
-        self.remove_trustee_users = False
-        if uses_business_id is True:
-                self.ignore_identity_type = True
-                self.remove_trustee_users = True
+        self.uses_business_id = caller_config.get_bool('uses_business_id', True)
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('logger_name', self.name)
         builder.set_bool_value('test_mode', False)

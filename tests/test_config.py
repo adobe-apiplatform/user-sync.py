@@ -257,8 +257,7 @@ def test_uses_business_id_true(tmp_config_files, modify_umapi_config, cli_args, 
     connector_options, _ = config_loader.get_umapi_options()
     UmapiConnector.create_conn = False
     umapi_connector = UmapiConnector('.primary', connector_options)
-    assert umapi_connector.ignore_identity_type
-    assert umapi_connector.remove_trustee_users
+    assert umapi_connector.uses_business_id
 
 
 def test_uses_business_id_false(tmp_config_files, modify_umapi_config, cli_args, private_key):
@@ -270,8 +269,7 @@ def test_uses_business_id_false(tmp_config_files, modify_umapi_config, cli_args,
     connector_options, _ = config_loader.get_umapi_options()
     UmapiConnector.create_conn = False
     umapi_connector = UmapiConnector('.primary', connector_options)
-    assert not umapi_connector.ignore_identity_type
-    assert not umapi_connector.remove_trustee_users
+    assert not umapi_connector.uses_business_id
 
 
 def test_uses_business_id_unspecified(tmp_config_files, modify_umapi_config, cli_args, private_key):
@@ -282,5 +280,4 @@ def test_uses_business_id_unspecified(tmp_config_files, modify_umapi_config, cli
     connector_options, _ = config_loader.get_umapi_options()
     UmapiConnector.create_conn = False
     umapi_connector = UmapiConnector('.primary', connector_options)
-    assert not umapi_connector.ignore_identity_type
-    assert not umapi_connector.remove_trustee_users
+    assert not umapi_connector.uses_business_id
