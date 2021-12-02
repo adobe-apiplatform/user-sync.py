@@ -169,6 +169,44 @@ group name. Join them with "::". For example:
     - "d37::Special Ops Group"
 ```
 
+### ESM Secondary Targets
+
+Organizations with Enterprise Storage Model (ESM) enabled handle users differently from traditional User Storage Model (USM) organizations.
+ESM organizations use Business IDs instead of Adobe IDs. Business IDs are special accounts that govern a user's profile for a specific
+organization. Business IDs do not directly provide authentication capabilities for users. Instead, each is linked to an Adobe ID,
+Enterprise ID or Federated ID that handles authentication.
+
+The nature of Business IDs creates unique behavior in ESM organizations that have a trust with an existing user directory. Users
+with a domain belonging to the directory will always be created as Business ID instead of the actual user type (Federated or Enterprise,
+depending on directory settings).
+
+For example, if we have a Federated directory with a claim on `example.com`, and we create a new user in the ESM trustee
+(e.g. `user@example.com`), then that user will be a Business ID in the trustee console and not Federate. The user will
+still use the configured Identity Provider to authenticate.
+
+When syncing to secondary ESM targets, this feature prevents the UST from fully managing Business ID users on trustee consoles.
+When performing user sync on secondary targets, the UST expects the identity types between users on parent and child to match.
+
+To manage Business IDs as their linked identity type, enable the `uses_business_id` option in the secondary target's UMAPI
+connector config file.
+
+```yaml
+# connector-umapi-org2.yml
+server:
+  host: usermanagement.adobe.io
+  ims_host: ims-na1.adobelogin.com
+enterprise:
+  org_id: xxx@AdobeOrg
+  client_secret: xxx
+  priv_key_path: private-org2.key
+  client_id: xxx
+  tech_acct_id: xxx@techacct.adobe.com
+uses_business_id: True
+```
+
+This essentially overrides the Business ID user type to the type of the user from the primary target, ensuring that
+the full user lifecycle of the user on the secondary target is managed.
+
 ## Custom Attributes and Mappings
 
 It is possible to define custom mappings of directory attribute
