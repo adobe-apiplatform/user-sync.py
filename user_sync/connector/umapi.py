@@ -46,7 +46,7 @@ class UmapiConnector(object):
     # class-level flag that determines if we are creating a UMAPI connection
     # set to False if using in a unit test
     create_conn = True
-    def __init__(self, name, caller_options):
+    def __init__(self, name, caller_options, is_primary=False):
         """
         :type name: str
         :type caller_options: dict
@@ -57,6 +57,7 @@ class UmapiConnector(object):
         if self.trusted is None:
             self.trusted = False
         self.uses_business_id = caller_config.get_bool('uses_business_id', True)
+        self.is_primary = is_primary
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('logger_name', self.name)
         builder.set_bool_value('test_mode', False)

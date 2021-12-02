@@ -27,6 +27,7 @@ from collections import defaultdict
 import user_sync.connector.umapi
 import user_sync.error
 import user_sync.identity_type
+from user_sync.connector.umapi import UmapiConnector
 from user_sync.post_sync.manager import PostSyncData
 from user_sync.helper import normalize_string, CSVAdapter, JobStats
 
@@ -113,6 +114,7 @@ class RuleProcessor(object):
         self.primary_users_created = set()
         self.secondary_users_created = set()
         self.updated_user_keys = set()
+        self.primary_users_by_email: dict[str, dict] = {}
 
         # stray key input path comes in, stray_list_output_path goes out
         self.stray_key_map = {}
@@ -912,7 +914,7 @@ class RuleProcessor(object):
         commands.add_groups(groups_to_add)
         return commands
 
-    def update_umapi_users_for_connector(self, umapi_info, umapi_connector):
+    def update_umapi_users_for_connector(self, umapi_info, umapi_connector: UmapiConnector):
         """
         This is the main function that goes over adobe users and looks for and processes differences.
         It is called with a particular organization that it should manage groups against.
@@ -950,6 +952,9 @@ class RuleProcessor(object):
         # Walk all the adobe users, getting their group data, matching them with directory users,
         # and adjusting their attribute and group data accordingly.
         for umapi_user in umapi_users:
+            # if target is ESM, then treat existing AdobeID (i.e. businessID) as linked identity type
+            if umapi_connector.uses_business_id and umapi_user['email'] in self.primary_users_by_email:
+                umapi_user['type'] = self.primary_users_by_email[umapi_user['email']]['type']
             # let save adobeID users to a seperate list
             self.filter_adobeID_user(umapi_user)
             # get the basic data about this user; initialize change markers to "no change"
@@ -978,6 +983,9 @@ class RuleProcessor(object):
                 continue
 
             self.map_email_override(umapi_user)
+
+            if umapi_connector.is_primary:
+                self.primary_users_by_email[umapi_user['email']] = umapi_user
 
             directory_user = filtered_directory_user_by_user_key.get(user_key)
             if directory_user is None:
