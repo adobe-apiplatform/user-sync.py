@@ -378,7 +378,7 @@ def begin_work_umapi(config_loader: UMAPIConfigLoader):
                 "Failed to enable dynamic group mappings. 'dynamic_group_member_attribute' is not defined in config")
 
     primary_name = '.primary' if secondary_umapi_configs else ''
-    umapi_primary_connector = UmapiConnector(primary_name, primary_umapi_config)
+    umapi_primary_connector = UmapiConnector(primary_name, primary_umapi_config, True)
     umapi_other_connectors = {}
     for secondary_umapi_name, secondary_config in six.iteritems(secondary_umapi_configs):
         umapi_secondary_conector = UmapiConnector(".secondary.%s" % secondary_umapi_name,
