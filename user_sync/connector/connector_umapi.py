@@ -44,7 +44,10 @@ except:
 
 
 class UmapiConnector(object):
-    def __init__(self, name, caller_options):
+    # class-level flag that determines if we are creating a UMAPI connection
+    # set to False if using in a unit test
+    create_conn = True
+    def __init__(self, name, caller_options, is_primary=False):
         """
         :type name: str
         :type caller_options: dict
@@ -54,6 +57,8 @@ class UmapiConnector(object):
         self.trusted = caller_config.get_bool('trusted', True)
         if self.trusted is None:
             self.trusted = False
+        self.uses_business_id = caller_config.get_bool('uses_business_id', True)
+        self.is_primary = is_primary
         builder = config_common.OptionsBuilder(caller_config)
         builder.set_string_value('logger_name', self.name)
         builder.set_bool_value('test_mode', False)
@@ -95,26 +100,27 @@ class UmapiConnector(object):
         enterprise_config.report_unused_values(logger)
         # open the connection
         um_endpoint = "https://" + server_options['host'] + server_options['endpoint']
-        logger.debug('%s: creating connection for org %s at endpoint %s', self.name, org_id, um_endpoint)
-        try:
-            self.connection = connection = umapi_client.Connection(
-                org_id=org_id,
-                auth_dict=auth_dict,
-                ims_host=ims_host,
-                ims_endpoint_jwt=server_options['ims_endpoint_jwt'],
-                user_management_endpoint=um_endpoint,
-                test_mode=options['test_mode'],
-                user_agent="user-sync/" + app_version,
-                logger=self.logger,
-                timeout_seconds=float(server_options['timeout']),
-                retry_max_attempts=server_options['retries'] + 1,
-                ssl_verify=options['ssl_cert_verify']
-            )
-        except Exception as e:
-            raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))
-        logger.debug('%s: connection established', self.name)
-        # wrap the connection in an action manager
-        self.action_manager = ActionManager(connection, org_id, logger)
+        if self.create_conn:
+            logger.debug('%s: creating connection for org %s at endpoint %s', self.name, org_id, um_endpoint)
+            try:
+                self.connection = connection = umapi_client.Connection(
+                    org_id=org_id,
+                    auth_dict=auth_dict,
+                    ims_host=ims_host,
+                    ims_endpoint_jwt=server_options['ims_endpoint_jwt'],
+                    user_management_endpoint=um_endpoint,
+                    test_mode=options['test_mode'],
+                    user_agent="user-sync/" + app_version,
+                    logger=self.logger,
+                    timeout_seconds=float(server_options['timeout']),
+                    retry_max_attempts=server_options['retries'] + 1,
+                    ssl_verify=options['ssl_cert_verify']
+                )
+            except Exception as e:
+                raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))
+            logger.debug('%s: connection established', self.name)
+            # wrap the connection in an action manager
+            self.action_manager = ActionManager(connection, org_id, logger)
 
     def get_users(self):
         return list(self.iter_users())
