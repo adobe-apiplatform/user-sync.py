@@ -29,4 +29,12 @@ Notes:
 - User multi-group (UMG) is not supported at this time
 - The Sign client uses Sign API v6
 
-Documentation here - https://github.com/adobe-apiplatform/user-sync.py/blob/v2-sign-phase-2/docs/en/user-manual/sign_sync.md
+Documentation here - https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/sign_sync.html
+
+**Enhanced ESM Support**
+
+Fixed an issue when syncing to trustee consoles that use Enterprise Storage Model (ESM).
+New config option `uses_business_id` in UMAPI connector config ensures that users are
+handled correctly.
+
+See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/advanced_configuration.html#esm-secondary-targets
