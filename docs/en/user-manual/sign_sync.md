@@ -88,7 +88,7 @@ can also delete `connector-sign-sync.yml` (the Sign post-sync config file) if de
 Finally, run the Sign Sync process in test mode to ensure that the new config works as desired.
 
 ```
-$ ./user-sync sign-sync-config -t
+$ ./user-sync sign-sync -t
 ```
 
 ## Sign Sync Configuration File
