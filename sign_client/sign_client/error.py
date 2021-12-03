@@ -18,4 +18,26 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-__version__ = '2.7.0rc4'
+
+class AssertionException(Exception):
+    def __init__(self, message):
+        super(AssertionException, self).__init__(message)
+        self.reported = False
+
+    def set_reported(self):        
+        self.reported = True
+
+    def is_reported(self):
+        return self.reported
+
+
+class TimeoutException(Exception):
+    def __init__(self, message):
+        super(AssertionException, self).__init__(message)
+        self.reported = False
+
+    def set_reported(self):        
+        self.reported = True
+
+    def is_reported(self):
+        return self.reported

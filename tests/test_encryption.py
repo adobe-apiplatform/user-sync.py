@@ -7,13 +7,10 @@ from user_sync.encryption import encrypt_file, decrypt_file
 from user_sync.error import AssertionException
 
 
-@pytest.fixture
-def encrypted_key(fixture_dir, tmpdir):
-    shutil.copy(os.path.join(fixture_dir, 'encrypted.key'), tmpdir)
-    return os.path.join(tmpdir, 'encrypted.key')
 
-
-def test_encrypt_file(private_key, encrypted_key):
+def test_encrypt_file(test_resources):
+    private_key = test_resources['priv_key']
+    encrypted_key = test_resources['priv_key_enc']
     passphrase = 'password'
     data = encrypt_file(passphrase, private_key)
     assert 'DEK-Info: DES-EDE3-CBC,' in data
@@ -29,7 +26,9 @@ def test_encrypt_file(private_key, encrypted_key):
         encrypt_file(passphrase, private_key)
 
 
-def test_decrypt_file(private_key, encrypted_key):
+def test_decrypt_file(test_resources):
+    private_key = test_resources['priv_key']
+    encrypted_key = test_resources['priv_key_enc']
     passphrase = 'password'
     with open(private_key, 'r') as f:
         original = f.read()
@@ -44,7 +43,8 @@ def test_decrypt_file(private_key, encrypted_key):
         decrypt_file(passphrase, encrypted_key)
 
 
-def test_encrypt_and_decrypt_file(private_key):
+def test_encrypt_and_decrypt_file(test_resources):
+    private_key = test_resources['priv_key']
     with open(private_key, 'r') as f:
         original = f.read()
     passphrase = 'password'
