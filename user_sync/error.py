@@ -29,3 +29,8 @@ class AssertionException(Exception):
 
     def is_reported(self):
         return self.reported
+
+
+class DeprecationWarning(Exception):
+    def __init__(self, message):
+        self.message = message
