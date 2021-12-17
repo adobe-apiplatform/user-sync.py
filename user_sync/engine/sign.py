@@ -160,7 +160,7 @@ class SignSyncEngine:
                 continue
 
             sign_user = sign_users.get(directory_user['email'].lower())
-            dir_users_for_org[directory_user['email']] = directory_user
+            dir_users_for_org[directory_user['email'].lower()] = directory_user
             assignment_group = self.retrieve_assignment_group(directory_user)
 
             if assignment_group is None:
@@ -236,9 +236,8 @@ class SignSyncEngine:
         sign_connector.update_users(users_update_list)
         sign_connector.update_user_groups(user_groups_update_list)
         self.sign_only_users_by_org[org_name] = {}
-        dir_users_in_org = map(lambda x: x.lower(), dir_users_for_org.keys())
         for user, data in sign_users.items():
-            if user not in dir_users_in_org:
+            if user not in dir_users_for_org:
                 self.total_sign_only_user_count += 1
                 self.sign_only_users_by_org[org_name][user] = data
 
