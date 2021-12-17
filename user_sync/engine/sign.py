@@ -237,7 +237,7 @@ class SignSyncEngine:
         sign_connector.update_user_groups(user_groups_update_list)
         self.sign_only_users_by_org[org_name] = {}
         for user, data in sign_users.items():
-            if user not in dir_users_for_org:
+            if user not in map(lambda x: x.lower(), dir_users_for_org.keys()):
                 self.total_sign_only_user_count += 1
                 self.sign_only_users_by_org[org_name][user] = data
 
