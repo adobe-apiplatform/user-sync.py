@@ -159,7 +159,7 @@ class SignSyncEngine:
             if not self.should_sync(directory_user, org_name):
                 continue
 
-            sign_user = sign_users.get(directory_user['email'])
+            sign_user = sign_users.get(directory_user['email'].lower())
             dir_users_for_org[directory_user['email']] = directory_user
             assignment_group = self.retrieve_assignment_group(directory_user)
 
@@ -168,7 +168,7 @@ class SignSyncEngine:
             user_roles = self.retrieve_admin_role(directory_user)
             if sign_user is None:
                 if sign_connector.create_users:
-                    inactive_user = inactive_sign_users.get(directory_user['email'])
+                    inactive_user = inactive_sign_users.get(directory_user['email'].lower())
                     # if Standalone user is inactive, we need to reactivate instead of trying to create new account
                     if inactive_user is not None:
                         try:
