@@ -341,9 +341,9 @@ class SignSyncEngine:
         """
         :type directory_user: dict
         """
-        email = directory_user.get('email').lower()
+        email = directory_user.get('email')
         if email:
-            return six.text_type(email)
+            return six.text_type(email).lower()
         return None
 
     @staticmethod
