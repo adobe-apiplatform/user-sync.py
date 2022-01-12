@@ -304,7 +304,7 @@ class SignSyncEngine:
             directory_group_filter = set(directory_group_filter)
         directory_user_by_user_key = self.directory_user_by_user_key
 
-        directory_groups = set(six.iterkeys(mappings))
+        directory_groups = set(mappings.keys())
         if directory_group_filter is not None:
             directory_groups.update(directory_group_filter)
         directory_users = directory_connector.load_users_and_groups(groups=directory_groups,
@@ -343,7 +343,7 @@ class SignSyncEngine:
         """
         email = directory_user.get('email')
         if email:
-            return six.text_type(email)
+            return str(email)
         return None
 
     @staticmethod

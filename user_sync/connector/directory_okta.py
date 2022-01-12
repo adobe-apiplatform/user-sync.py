@@ -46,12 +46,12 @@ class OktaDirectoryConnector(DirectoryConnector):
                                  'user.status == "ACTIVE"')
         builder.set_string_value('string_encoding', 'utf8')
         builder.set_string_value('user_identity_type_format', None)
-        builder.set_string_value('user_email_format', six.text_type('{email}'))
+        builder.set_string_value('user_email_format', str('{email}'))
         builder.set_string_value('user_username_format', None)
         builder.set_string_value('user_domain_format', None)
-        builder.set_string_value('user_given_name_format', six.text_type('{firstName}'))
-        builder.set_string_value('user_surname_format', six.text_type('{lastName}'))
-        builder.set_string_value('user_country_code_format', six.text_type('{countryCode}'))
+        builder.set_string_value('user_given_name_format', str('{firstName}'))
+        builder.set_string_value('user_surname_format', str('{lastName}'))
+        builder.set_string_value('user_country_code_format', str('{countryCode}'))
         builder.set_string_value('user_identity_type', None)
         builder.set_string_value('logger_name', self.name)
         host = builder.require_string_value('host')
@@ -128,7 +128,7 @@ class OktaDirectoryConnector(DirectoryConnector):
 
             self.logger.debug('Group %s members: %d users: %d', group, total_group_members, total_group_users)
 
-        return six.itervalues(user_by_uid)
+        return user_by_uid.values()
 
     def find_group(self, group):
         """
@@ -311,9 +311,9 @@ class OKTAValueFormatter(object):
         if string_format is None:
             attribute_names = []
         else:
-            string_format = six.text_type(string_format)  # force unicode so attribute values are unicode
+            string_format = str(string_format)  # force unicode so attribute values are unicode
             formatter = string.Formatter()
-            attribute_names = [six.text_type(item[1]) for item in formatter.parse(string_format) if item[1]]
+            attribute_names = [str(item[1]) for item in formatter.parse(string_format) if item[1]]
         self.string_format = string_format
         self.attribute_names = attribute_names
 
