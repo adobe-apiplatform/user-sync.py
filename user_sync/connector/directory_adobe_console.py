@@ -153,9 +153,10 @@ class AdobeConsoleConnector(DirectoryConnector):
         user = user_sync.connector.helper.create_blank_user()
         user['uid'] = record['username']
         source_attributes['email'] = user['email'] = email = record['email']
-        user_identity_type = record['type']
+        # user_identity_type = record['type']
+        user_identity_type = self.options['user_identity_type']
         try:
-            source_attributes['type'] = user['identity_type'] = user_sync.identity_type.parse_identity_type(
+            user['identity_type'] = user_sync.identity_type.parse_identity_type(
                 user_identity_type)
         except AssertionException as e:
             self.logger.warning('Skipping user %s: %s', email, e)
