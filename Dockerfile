@@ -5,7 +5,7 @@ WORKDIR /src/user-sync.py
 COPY . .
 
 RUN apt-get update && \
-    apt-get install software-properties-common && \
+    apt-get install -y software-properties-common && \
     build-essential && \
     python3-dev && \
     python3-pip && \
