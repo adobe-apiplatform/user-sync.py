@@ -168,9 +168,6 @@ class RuleProcessor(object):
                                                                          username_filter_regex.pattern)
             logger.debug('Initialized with options: %s', options_to_report)
 
-        # initialize cache type for umapi
-        self.cache = {}
-
     def run(self, directory_groups, directory_connector, umapi_connectors):
         """
         :type directory_groups: dict(str, list(AdobeGroup)

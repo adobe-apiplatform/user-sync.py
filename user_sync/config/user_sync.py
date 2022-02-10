@@ -88,9 +88,6 @@ class UMAPIConfigLoader(ConfigLoader):
         """
         self.logger = logging.getLogger('config')
         self.args = args
-
-
-
         self.main_config = self.load_main_config()
         self.invocation_options = self.load_invocation_options()
         self.directory_groups = self.load_directory_groups()
