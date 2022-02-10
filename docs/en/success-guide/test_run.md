@@ -27,7 +27,7 @@ These commands ought to produce an output similar to the following:
 
 ```
 >  .\user-sync.exe -v
-user-sync.exe 2.6.4
+user-sync.exe 2.7.0rc1
 ```
 
 ```

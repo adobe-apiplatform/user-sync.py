@@ -1,5 +1,228 @@
 | tag | date | title |
 |---|---|---|
+| v2.7.0 | 2021-12-02 | User Sync Tool v2.7.0 |
+
+# New Features
+
+**Revamped Sign Sync**
+
+Sign Sync has been overhauled. It is now implemented as a separate workflow with an alternate entrypoint command (`sign-sync`).
+
+Feature summary
+
+- Primary config for Sign Sync is `sign-sync-config.yml`
+- Sign connector config - `connector-sign.yml`
+- All identity sources are supported
+- Sync supports multiple Sign targets
+- Full user lifecycle management for standalone Sign environments
+- Mapping structure to manage Sign group assignments and admin privileges
+- Same logging options as UMAPI sync
+- Sign API data is cached
+- Tool to migrate post-sync config
+
+Architecture changes
+
+- New `engine` module
+- `rules.py` refactored to `engine.umapi`
+- `config.py` refctored to multi-file module
+- Sign API client is top-level (parallel to `user_sync` module)
+- `post_sync` has been removed
+
+Notes:
+
+- User multi-group (UMG) is not supported at this time
+- The Sign client uses Sign API v6
+
+Documentation here - https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/sign_sync.html
+
+**Enhanced ESM Support**
+
+Fixed an issue when syncing to trustee consoles that use Enterprise Storage Model (ESM).
+New config option `uses_business_id` in UMAPI connector config ensures that users are
+handled correctly.
+
+See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/advanced_configuration.html#esm-secondary-targets
+
+---
+
+| tag | date | title |
+|---|---|---|
+| v2.7.0rc4 | 2021-11-18 | User Sync Tool v2.7.0rc4 |
+
+# New Features
+
+**Revamped Sign Sync**
+
+Sign Sync has been overhauled. It is now implemented as a separate workflow with an alternate entrypoint command (`sign-sync`).
+
+Feature summary
+
+- Primary config for Sign Sync is `sign-sync-config.yml`
+- Sign connector config - `connector-sign.yml`
+- All identity sources are supported
+- Sync supports multiple Sign targets
+- Full user lifecycle management for standalone Sign environments
+- Mapping structure to manage Sign group assignments and admin privileges
+- Same logging options as UMAPI sync
+- Sign API data is cached
+- Tool to migrate post-sync config
+
+Architecture changes
+
+- New `engine` module
+- `rules.py` refactored to `engine.umapi`
+- `config.py` refctored to multi-file module
+- Sign API client is top-level (parallel to `user_sync` module)
+- `post_sync` has been removed
+
+Notes:
+
+- User multi-group (UMG) is not supported at this time
+- The Sign client uses Sign API v6
+
+Documentation here - https://github.com/adobe-apiplatform/user-sync.py/blob/v2-sign-phase-2/docs/en/user-manual/sign_sync.md
+
+---
+
+| tag | date | title |
+|---|---|---|
+| v2.7.0rc3 | 2021-11-08 | User Sync Tool v2.7.0rc3 |
+
+# New Features
+
+**Revamped Sign Sync**
+
+Sign Sync has been overhauled. It is now implemented as a separate workflow with an alternate entrypoint command (`sign-sync`).
+
+Feature summary
+
+- Primary config for Sign Sync is `sign-sync-config.yml`
+- Sign connector config - `connector-sign.yml`
+- All identity sources are supported
+- Sync supports multiple Sign targets
+- Full user lifecycle management for standalone Sign environments
+- Mapping structure to manage Sign group assignments and admin privileges
+- Same logging options as UMAPI sync
+- Sign API data is cached
+
+Architecture changes
+
+- New `engine` module
+- `rules.py` refactored to `engine.umapi`
+- `config.py` refctored to multi-file module
+- Sign API client is top-level (parallel to `user_sync` module)
+- `post_sync` has been removed
+
+Notes:
+
+- User multi-group (UMG) is not supported at this time
+- The Sign client uses Sign API v6
+
+Documentation here - https://github.com/adobe-apiplatform/user-sync.py/blob/v2-sign-phase-2/docs/en/user-manual/sign_sync.md
+
+---
+
+| tag | date | title |
+|---|---|---|
+| v2.7.0rc2 | 2021-10-22 | User Sync Tool v2.7.0rc2 |
+
+# New Features
+
+**Revamped Sign Sync**
+
+Sign Sync has been overhauled. It is now implemented as a separate workflow with an alternate entrypoint command (`sign-sync`).
+
+Feature summary
+
+- Primary config for Sign Sync is `sign-sync-config.yml`
+- Sign connector config - `connector-sign.yml`
+- All identity sources are supported
+- Sync supports multiple Sign targets
+- Full user lifecycle management for standalone Sign environments
+- Mapping structure to manage Sign group assignments and admin privileges
+- Same logging options as UMAPI sync
+
+Architecture changes
+
+- New `engine` module
+- `rules.py` refactored to `engine.umapi`
+- `config.py` refctored to multi-file module
+- Sign API client is top-level (parallel to `user_sync` module)
+- `post_sync` has been removed
+
+Notes:
+
+- User multi-group (UMG) is not supported at this time
+- The Sign client uses Sign API v5
+
+Documentation here - https://github.com/adobe-apiplatform/user-sync.py/blob/v2-sign-phase-2/docs/en/user-manual/sign_sync.md
+
+---
+
+| tag | date | title |
+|---|---|---|
+| v2.7.0rc1 | 2021-10-07 | User Sync Tool v2.7.0rc1 |
+
+# New Features
+
+**Revamped Sign Sync**
+
+Sign Sync has been overhauled. It is now implemented as a separate workflow with an alternate entrypoint command (`sign-sync`).
+
+Feature summary
+
+- Primary config for Sign Sync is `sign-sync-config.yml`
+- Sign connector config - `connector-sign.yml`
+- All identity sources are supported
+- Sync supports multiple Sign targets
+- Full user lifecycle management for standalone Sign environments
+- Mapping structure to manage Sign group assignments and admin privileges
+- Same logging options as UMAPI sync
+
+Architecture changes
+
+- New `engine` module
+- `rules.py` refactored to `engine.umapi`
+- `config.py` refctored to multi-file module
+- Sign API client is top-level (parallel to `user_sync` module)
+- `post_sync` has been removed
+
+Notes:
+
+- User multi-group (UMG) is not supported at this time
+- The Sign client uses Sign API v5
+
+Documentation is forthcoming.
+
+---
+
+| tag | date | title |
+|---|---|---|
+| v2.6.6 | 2021-11-04 | User Sync Tool v2.6.6 |
+
+# Bug Fixes
+
+\#745 - Management actions halted when max Adobe-only limit exceeded
+
+---
+
+| tag | date | title |
+|---|---|---|
+| v2.6.5 | 2021-09-16 | User Sync Tool v2.6.5 |
+
+\#728 - Fix keyring misidentification issue
+\#731 - None-type issue with user commands
+\#732 - Executable fails on Ubuntu 18.04 (bionic)
+
+# Build Information
+
+* Builds are now made with Python 3.9 on all platforms
+* Separate build for Ubuntu Bionic (18.04)
+
+---
+
+| tag | date | title |
+|---|---|---|
 | v2.6.4 | 2021-08-31 | User Sync Tool v2.6.4 |
 
 # Bug Fixes

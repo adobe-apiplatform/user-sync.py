@@ -56,7 +56,8 @@ setup(name='user-sync',
           'click',
           'click-default-group',
           'configparser==3.7.4',
-          'aiohttp'
+          'schema==0.7.2',
+          'sign-client'
       ],
       extras_require={
           ':sys_platform=="linux" or sys_platform=="linux2"': [

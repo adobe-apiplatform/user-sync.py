@@ -23,46 +23,25 @@ import string
 
 import ldap3
 
-import user_sync.config
 import user_sync.connector.helper
 import user_sync.error
 import user_sync.identity_type
+from user_sync.connector.directory import DirectoryConnector
+from user_sync.config.common import DictConfig
 from user_sync.error import AssertionException
+from user_sync.config import user_sync as config
+from user_sync.config import common as config_common
 
 import platform
 import ssl
 
-def connector_metadata():
-    metadata = {
-        'name': LDAPDirectoryConnector.name
-    }
-    return metadata
 
-
-def connector_initialize(options):
-    """
-    :type options: dict
-    """
-    connector = LDAPDirectoryConnector(options)
-    return connector
-
-
-def connector_load_users_and_groups(state, groups=None, extended_attributes=None, all_users=True):
-    """
-    :type state: LDAPDirectoryConnector
-    :type groups: Optional(list(str))
-    :type extended_attributes: Optional(list(str))
-    :type all_users: bool
-    :rtype (bool, iterable(dict))
-    """
-    return state.load_users_and_groups(groups or [], extended_attributes or [], all_users)
-
-
-class LDAPDirectoryConnector(object):
+class LDAPDirectoryConnector(DirectoryConnector):
     name = 'ldap'
 
-    def __init__(self, caller_options):
-        caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
+    def __init__(self, caller_options, *args, **kwargs):
+        super(LDAPDirectoryConnector, self).__init__(*args, **kwargs)
+        caller_config = DictConfig('%s configuration' % self.name, caller_options)
 
         options = self.get_options(caller_config)
         self.options = options
@@ -140,7 +119,7 @@ class LDAPDirectoryConnector(object):
 
     @staticmethod
     def get_options(caller_config):
-        builder = user_sync.config.OptionsBuilder(caller_config)
+        builder = config_common.OptionsBuilder(caller_config)
         builder.set_string_value('group_filter_format', six.text_type(
             '(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))'))
         builder.set_string_value('all_users_filter', six.text_type(
@@ -169,7 +148,7 @@ class LDAPDirectoryConnector(object):
         options['two_steps_enabled'] = False
         if options['two_steps_lookup'] is not None:
             ts_config = caller_config.get_dict_config('two_steps_lookup', True)
-            ts_builder = user_sync.config.OptionsBuilder(ts_config)
+            ts_builder = config_common.OptionsBuilder(ts_config)
             ts_builder.require_string_value('group_member_attribute_name')
             ts_builder.set_bool_value('nested_group', False)
             options['two_steps_enabled'] = True
