@@ -362,3 +362,8 @@ invocation_defaults:
   # For argument --users, the default is 'all'.
   # for CSV input, use an array - ['file', 'users.csv']
   users: mapped
+
+# Storage location of UMAPI cache. This contains cached users, groups and user assignent info
+# The cache will refresh after 24 hours
+cache:
+  path: cache/umapi

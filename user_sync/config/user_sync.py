@@ -46,6 +46,7 @@ class UMAPIConfigLoader(ConfigLoader):
                              '/directory_users/connectors/*': (True, False, None),
                              '/directory_users/extension': (True, False, None),
                              '/logging/file_log_directory': (False, False, "logs"),
+                             '/cache/path': (False, False, None),
                              }
 
     # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files
@@ -78,6 +79,7 @@ class UMAPIConfigLoader(ConfigLoader):
         'users': ['all']
     }
 
+    default_cache_path = "cache/umapi"
     def __init__(self, args):
         """
         Load the config files and invocation options.
@@ -86,6 +88,9 @@ class UMAPIConfigLoader(ConfigLoader):
         """
         self.logger = logging.getLogger('config')
         self.args = args
+
+
+
         self.main_config = self.load_main_config()
         self.invocation_options = self.load_invocation_options()
         self.directory_groups = self.load_directory_groups()
@@ -550,7 +555,7 @@ class UMAPIConfigLoader(ConfigLoader):
         # set the adobe group filter from the mapping, if requested.
         if options.get('adobe_group_mapped') is True:
             options['adobe_group_filter'] = set(AdobeGroup.iter_groups())
-
+        options['cache'] = self.main_config.get_dict('cache')
         return options
 
     def create_umapi_options(self, connector_config_sources):

@@ -60,6 +60,7 @@ class RuleProcessor(object):
         'test_mode': False,
         'update_user_info': False,
         'username_filter_regex': None,
+        'cache': None,
     }
 
     def __init__(self, caller_options):
@@ -166,6 +167,9 @@ class RuleProcessor(object):
                 options_to_report['username_filter_regex'] = "%s: %s" % (type(username_filter_regex),
                                                                          username_filter_regex.pattern)
             logger.debug('Initialized with options: %s', options_to_report)
+
+        # initialize cache type for umapi
+        self.cache = {}
 
     def run(self, directory_groups, directory_connector, umapi_connectors):
         """
