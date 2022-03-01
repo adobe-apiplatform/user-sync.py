@@ -552,7 +552,6 @@ class UMAPIConfigLoader(ConfigLoader):
         # set the adobe group filter from the mapping, if requested.
         if options.get('adobe_group_mapped') is True:
             options['adobe_group_filter'] = set(AdobeGroup.iter_groups())
-        options['cache'] = self.main_config.get_dict('cache')
         return options
 
     def create_umapi_options(self, connector_config_sources):
