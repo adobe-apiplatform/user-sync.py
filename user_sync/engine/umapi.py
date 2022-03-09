@@ -538,10 +538,10 @@ class RuleProcessor(object):
 
         total_users = len(command_list)
 
-        # split off the last command if we have more than 10, so we can send the signals
+        # split off the last command if we have more than 10, so we can send an end signal
+        connector.start_sync()
         if len(command_list) > 10:
             command_list, last_command = command_list[0:-1], command_list[-1]
-            connector.start_sync()
         else:
             last_command = None
 
