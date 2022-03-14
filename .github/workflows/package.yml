@@ -55,7 +55,7 @@ jobs:
       with:
           name: user-sync-artifact
           path: dist/*.tar.gz
-          retention-days: 5
+          retention-days: 30
   ubuntu-focal:
     runs-on: ubuntu-latest
     strategy:
@@ -105,7 +105,7 @@ jobs:
       with:
           name: user-sync-artifact
           path: dist/*.tar.gz
-          retention-days: 5
+          retention-days: 30
 
 
   windows:
@@ -145,7 +145,7 @@ jobs:
       with:
         name: user-sync-artifact
         path: dist/*.zip
-        retention-days: 5
+        retention-days: 30
 
 
   centos:
@@ -208,7 +208,7 @@ jobs:
         with:
           name: user-sync-artifact
           path: dist/*.tar.gz
-          retention-days: 5
+          retention-days: 30
 
 
   examples:
@@ -223,7 +223,7 @@ jobs:
       with:
         name: user-sync-artifact
         path: examples/*.zip
-        retention-days: 5
+        retention-days: 30
     - name: user-sync.tar.gz
       run: |
          tar -czvf "user-sync-examples.tar.gz" examples
@@ -231,7 +231,7 @@ jobs:
       with:
         name: user-sync-artifact
         path: user-sync-examples.tar.gz
-        retention-days: 5
+        retention-days: 30
 
 #  release:
 #    runs-on: ubuntu-latest
