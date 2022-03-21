@@ -1,5 +1,13 @@
 | tag | date | title |
 |---|---|---|
+| v2.7.1 | 2022-03-14 | User Sync Tool v2.7.1 |
+
+* \#773 Sync signal logic tweaks
+
+---
+
+| tag | date | title |
+|---|---|---|
 | v2.7.0 | 2021-12-02 | User Sync Tool v2.7.0 |
 
 # New Features

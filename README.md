@@ -8,7 +8,7 @@ Tool are to streamline the process of named user deployment and automate user ma
 This application is open source, maintained by Adobe, and distributed under the terms
 of the OSI-approved MIT license.  See the LICENSE file for details.
 
-Copyright (c) 2016-2020 Adobe Inc.
+Copyright (c) 2016-2022 Adobe Inc.
 
 ## Documentation
 
@@ -62,11 +62,12 @@ to learn how to build the Sync Tool from source.
 3. Activate the environment `source /path/to/venv/bin/activate` (or `.\path\to\venv\Scripts\activate` on Windows)
 4. `cd` to the `user-sync.py` directory
 5. Install the Okta client wheel `pip install external/okta-0.0.3.1-py2.py3-none-any.whl`
-6. Install the sync tool locally
+6. Install the Sign client `pip install ./sign_client`
+7. Install the sync tool locally
     1. `pip install -e .`
     2. `pip install -e .[test]`
     3. `pip install -e .[setup]`
-7. Create the build by running `make`
+8. Create the build by running `make`
 
 If the Sync Tool was built successfully, then the executable can be found in the `dist/` directory. The binary will be named
 `user-sync` or `user-sync.exe` depending on platform.
