@@ -204,8 +204,10 @@ enterprise:
 uses_business_id: True
 ```
 
-This essentially overrides the Business ID user type to the type of the user from the primary target, ensuring that
-the full user lifecycle of the user on the secondary target is managed.
+This setting overrides the identity type of all users in the target to the identity type specified in the main sync config file.
+
+**NOTE:** When using this option, it isn't sufficient to exclude users by identity type. Be sure to exclude by group
+(e.g. `_org_admin`) and/or email address.
 
 ## Custom Attributes and Mappings
 
