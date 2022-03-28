@@ -113,7 +113,6 @@ class RuleProcessor(object):
         self.primary_users_created = set()
         self.secondary_users_created = set()
         self.updated_user_keys = set()
-        self.primary_users_by_email: dict[str, dict] = {}
 
         # stray key input path comes in, stray_list_output_path goes out
         self.stray_key_map = {}
@@ -922,9 +921,9 @@ class RuleProcessor(object):
         # Walk all the adobe users, getting their group data, matching them with directory users,
         # and adjusting their attribute and group data accordingly.
         for umapi_user in umapi_users:
-            # if target is ESM, then treat existing AdobeID (i.e. businessID) as linked identity type
-            if umapi_connector.uses_business_id and umapi_user['email'] in self.primary_users_by_email:
-                umapi_user['type'] = self.primary_users_by_email[umapi_user['email']]['type']
+            # if target is ESM, then override identity type
+            if umapi_connector.uses_business_id:
+                umapi_user['type'] = self.options['new_account_type']
             # let save adobeID users to a seperate list
             self.filter_adobeID_user(umapi_user)
             # get the basic data about this user; initialize change markers to "no change"
@@ -952,9 +951,6 @@ class RuleProcessor(object):
                 continue
 
             self.map_email_override(umapi_user)
-
-            if umapi_connector.is_primary:
-                self.primary_users_by_email[umapi_user['email']] = umapi_user
 
             directory_user = filtered_directory_user_by_user_key.get(user_key)
             if directory_user is None:
