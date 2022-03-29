@@ -2,7 +2,7 @@ import logging
 import os
 
 import re
-import six
+# import six
 import yaml
 from abc import ABC, abstractmethod
 
@@ -72,7 +72,7 @@ class ObjectConfig:
         :rtype iterable(ObjectConfig)
         """
         yield self
-        for child_config in six.itervalues(self.child_configs):
+        for child_config in self.child_configs.values():
             for subtree_config in child_config.iter_configs():
                 yield subtree_config
 
@@ -88,7 +88,7 @@ class ObjectConfig:
         return AssertionException("%s in: %s" % (message, self.get_full_scope()))
 
     def describe_types(self, types_to_describe):
-        if types_to_describe == six.string_types:
+        if types_to_describe == str:
             result = self.describe_types(str)
         elif isinstance(types_to_describe, tuple):
             result = []
@@ -166,7 +166,7 @@ class DictConfig(ObjectConfig):
         return item in self.value
 
     def iter_keys(self):
-        return six.iterkeys(self.value)
+        return self.value.keys()
 
     def iter_unused_keys(self):
         for key in self.iter_keys():
@@ -196,7 +196,7 @@ class DictConfig(ObjectConfig):
         """
         :rtype: basestring
         """
-        return self.get_value(key, six.string_types, none_allowed)
+        return self.get_value(key, str, none_allowed)
 
     def get_int(self, key, none_allowed=False):
         """
@@ -393,7 +393,7 @@ class ConfigFileLoader:
         if not isinstance(yml, dict):
             # malformed YML files produce a non-dictionary
             raise AssertionException("Configuration file or command '{}' does not contain settings".format(filepath))
-        for path_key, options in six.iteritems(path_keys):
+        for path_key, options in path_keys.items():
             key_path = path_key
             keys = path_key.split('/')
             self.process_path_key(dirpath, filename, key_path, yml, keys, 1, *options)
@@ -419,7 +419,7 @@ class ConfigFileLoader:
             # if a wildcard is specified at this level, that means we
             # should process all keys as path values
             if key == "*":
-                for key, val in six.iteritems(dictionary):
+                for key, val in dictionary.items():
                     dictionary[key] = self.process_path_value(dirpath, filename, key_path, val, must_exist, can_have_subdict)
             elif key in dictionary:
                 dictionary[key] = self.process_path_value(dirpath, filename, key_path, dictionary[key], must_exist, can_have_subdict)
@@ -451,13 +451,13 @@ class ConfigFileLoader:
         :param must_exist: whether there must be a value
         :param can_have_subdict: whether the value can be a tagged string
         """
-        if isinstance(val, six.string_types):
+        if isinstance(val, str):
             return self.relative_path(dirpath, filename, key_path, val, must_exist)
         elif isinstance(val, list):
             vals = []
             for entry in val:
                 if can_have_subdict and isinstance(entry, dict):
-                    for subkey, subval in six.iteritems(entry):
+                    for subkey, subval in entry.items():
                         vals.append({subkey: self.relative_path(dirpath, filename, key_path, subval, must_exist)})
                 else:
                     vals.append(self.relative_path(dirpath, filename, key_path, entry, must_exist))
@@ -468,7 +468,7 @@ class ConfigFileLoader:
         """
         returns an absolute path that is resolved relative to the file being loaded
         """
-        if not isinstance(val, six.string_types):
+        if not isinstance(val, str):
             raise AssertionException("Expected pathname for setting {} in config file {}".format(key_path, filename))
         if val.startswith('$(') and val.endswith(')'):
             raise AssertionException("Shell execution is no longer supported: {}".format(val))
@@ -509,7 +509,7 @@ class OptionsBuilder:
         :type key: str
         :type default_value: Optional(str)
         """
-        self.set_value(key, six.string_types, default_value)
+        self.set_value(key, str, default_value)
 
     def set_dict_value(self, key, default_value):
         """
@@ -526,7 +526,7 @@ class OptionsBuilder:
         self.options[key] = value
 
     def require_string_value(self, key):
-        return self.require_value(key, six.string_types)
+        return self.require_value(key, str)
 
     def require_value(self, key, allowed_types):
         config = self.default_config
@@ -539,7 +539,7 @@ class OptionsBuilder:
 def resolve_invocation_options(options: dict, invocation_config: DictConfig, invocation_defaults: dict, args: dict) -> dict:
     # get overrides from the main config
     if invocation_config:
-        for k, v in six.iteritems(invocation_defaults):
+        for k, v in invocation_defaults.items():
             if isinstance(v, bool):
                 val = invocation_config.get_bool(k, True)
                 if val is not None:
