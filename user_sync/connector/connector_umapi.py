@@ -132,6 +132,7 @@ class UmapiConnector(object):
         page_size = 0
         page_number = 0
         try:
+            self.connection.start_sync()
             u_query = umapi_client.UsersQuery(self.connection, in_group=in_group)
             for i, u in enumerate(u_query):
                 total_count, page_count, page_size, page_number = u_query.stats()
@@ -142,6 +143,8 @@ class UmapiConnector(object):
 
                 if (i + 1) % page_size == 0:
                     self.logger.progress(len(users), total_count)
+                if page_number == page_count-2:
+                    self.connection.end_sync()
             self.logger.progress(total_count, total_count)
 
         except umapi_client.UnavailableError as e:

@@ -53,9 +53,10 @@ jobs:
     - name: Make artifacts
       uses: actions/upload-artifact@v2
       with:
-          name: user-sync-artifact
+          name: ubuntu-bionic
           path: dist/*.tar.gz
-          retention-days: 5
+          retention-days: 30
+
   ubuntu-focal:
     runs-on: ubuntu-latest
     strategy:
@@ -103,10 +104,9 @@ jobs:
     - name: Make artifacts
       uses: actions/upload-artifact@v2
       with:
-          name: user-sync-artifact
+          name: ubuntu-focal
           path: dist/*.tar.gz
-          retention-days: 5
-
+          retention-days: 30
 
   windows:
     runs-on: windows-latest
@@ -143,10 +143,9 @@ jobs:
     - name: Make artifact
       uses: actions/upload-artifact@v2
       with:
-        name: user-sync-artifact
+        name: windows
         path: dist/*.zip
-        retention-days: 5
-
+        retention-days: 30
 
   centos:
     runs-on: ubuntu-latest
@@ -174,7 +173,7 @@ jobs:
           wget https://www.python.org/ftp/python/3.9.7/Python-3.9.7.tgz
           tar xzf Python-3.9.7.tgz
           cd Python-3.9.7
-          ./configure --enable-optimizations --enable-shared
+          ./configure --enable-optimizations --enable-shared --enable-loadable-sqlite-extensions
           make altinstall
           cd ../..
       - name: Build executable
@@ -206,10 +205,9 @@ jobs:
       - name: Make artifact
         uses: actions/upload-artifact@v2
         with:
-          name: user-sync-artifact
+          name: centos
           path: dist/*.tar.gz
-          retention-days: 5
-
+          retention-days: 30
 
   examples:
     runs-on: ubuntu-latest
@@ -221,46 +219,45 @@ jobs:
          zip -r user-sync-examples.zip .
     - uses: actions/upload-artifact@v2
       with:
-        name: user-sync-artifact
+        name: examples
         path: examples/*.zip
-        retention-days: 5
+        retention-days: 30
     - name: user-sync.tar.gz
       run: |
          tar -czvf "user-sync-examples.tar.gz" examples
     - uses: actions/upload-artifact@v2
       with:
-        name: user-sync-artifact
+        name: examples
         path: user-sync-examples.tar.gz
-        retention-days: 5
+        retention-days: 30
 
-#  release:
-#    runs-on: ubuntu-latest
-#    needs: [ubuntu,windows, centos, examples]
-#    steps:
-#    - uses: actions/checkout@v2
-#    - name: Create Release
-#      id: create_release
-#      uses: actions/create-release@v1
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#      with:
-#        tag_name: ${{ github.ref }}
-#        release_name: user-sync ${{ github.ref }}
-#        body_path: .changelog/latest.md
-#        draft: true
-#        prerelease: false
-#
-#  upload-assets:
-#    needs: release
-#    runs-on: ubuntu-latest
-#    steps:
-#    - uses: actions/download-artifact@v2
-#    - name: Get version tag
-#      id: get_version
-#      uses: battila7/get-version-action@v2
-#    - run: ls -R
-#    - uses: fnkr/github-action-ghr@v1
-#      if: startsWith(github.ref, 'refs/tags/')
-#      env:
-#        GHR_PATH: user-sync-artifact/
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  release:
+    runs-on: ubuntu-latest
+    needs: [centos, ubuntu-bionic, ubuntu-focal, examples, windows]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: User Sync Tool ${{ github.ref }}
+        body_path: .changelog/latest.md
+        draft: false
+        prerelease: false
+
+  upload-assets:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/download-artifact@v2
+    - name: Get version tag
+      id: get_version
+      uses: battila7/get-version-action@v2
+    - uses: AButler/upload-release-assets@v2.0
+      with:
+        files: 'examples/*;ubuntu-bionic/*;ubuntu-focal/*;centos/*'
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        release-tag: ${{ steps.get_version.outputs.version }}

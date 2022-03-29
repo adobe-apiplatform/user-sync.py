@@ -8,7 +8,7 @@ Tool are to streamline the process of named user deployment and automate user ma
 This application is open source, maintained by Adobe, and distributed under the terms
 of the OSI-approved MIT license.  See the LICENSE file for details.
 
-Copyright (c) 2016-2020 Adobe Inc.
+Copyright (c) 2016-2022 Adobe Inc.
 
 ## Documentation
 
