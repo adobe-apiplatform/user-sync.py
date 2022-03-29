@@ -121,11 +121,8 @@ class SignSyncEngine:
             'Number of Sign users read': self.total_sign_user_count,
             'Number of Sign users not in directory (sign-only)': self.total_sign_only_user_count,
             'Number of Sign users updated': len(self.sign_users_group_updates | self.sign_users_role_updates),
-            'Number of users with matched groups unchanged': len(self.sign_users_matched_groups),
-            'Number of users with admin roles unchanged': len(self.sign_admins_matched),
             'Number of users with groups updated': len(self.sign_users_group_updates),
             'Number of users admin roles updated': len(self.sign_users_role_updates),
-            'Number of users matched with no updates': len(self.sign_users_matched_no_updates),
             'Number of Sign users created': len(self.sign_users_created),
             'Number of Sign users deactivated': len(self.sign_users_deactivated),
         }
@@ -200,6 +197,7 @@ class SignSyncEngine:
                         self.logger.info(f"Removing account admin status from f{sign_user.email}")
                     user_data = DetailedUserInfo(**sign_user.__dict__)
                     user_data.isAccountAdmin = is_admin
+                    self.sign_users_role_updates.add(sign_user.email)
                     users_update_list.append(user_data)
                 # manage primary group asssignment
                 current_group: UserGroupInfo = self.sign_user_primary_groups[org_name][sign_user.id]
@@ -220,13 +218,15 @@ class SignSyncEngine:
                 if current_group.name.lower() != assignment_group.lower():
                     assignment_group_info: GroupInfo = self.sign_groups[org_name][assignment_group.lower()]
                     self.logger.info(f"Assigning primary group '{assignment_group}' to user {sign_user.email}")
-                    group_to_assign.id=assignment_group_info.groupId
-                    group_to_assign.name=assignment_group_info.groupName
+                    group_to_assign.id = assignment_group_info.groupId
+                    group_to_assign.name = assignment_group_info.groupName
+                    self.sign_users_group_updates.add(sign_user.email)
                     updated_group_info=True
 
                 if is_group_admin != should_be_group_admin:
                     self.logger.info(f"Changing group Admin role for user '{sign_user.email}', status? {should_be_group_admin}")
                     group_to_assign.isGroupAdmin = should_be_group_admin
+                    self.sign_users_role_updates.add(sign_user.email)
                     updated_group_info=True
 
                 if updated_group_info:
@@ -444,6 +444,7 @@ class SignSyncEngine:
                         comment='Deactivated by User Sync Tool'
                     )
                     sign_connector.update_user_state(user.id, state)
+                    self.sign_users_deactivated.add(user.email)
                     self.logger.info(f"{self.org_string(org_name)}Deactivated sign user '{user.email}'")
                 except ClientException as e:
                     self.logger.error(format(e))
