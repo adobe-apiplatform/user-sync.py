@@ -6,6 +6,8 @@ from math import ceil
 import aiohttp
 import requests
 
+from aiohttp.client_exceptions import ServerTimeoutError
+
 from .error import AssertionException, TimeoutException
 
 from .model import GroupInfo, UsersInfo, DetailedUserInfo, GroupsInfo, UserGroupsInfo, JSONEncoder, DetailedGroupInfo, UserStateInfo
@@ -343,7 +345,7 @@ class SignClient:
                     else:
                         # PUT calls respond with an empty body
                         return body, r.status
-            except TimeoutException as err:
+            except (TimeoutException, ServerTimeoutError) as err:
                 retry_nb += 1
                 self.logger.warning('Call failed: Type: {} - Message: {}'.format(type(err), err))
                 if retry_nb == (self.max_sign_retries + 1):
