@@ -8,7 +8,7 @@ nav_level: 1
 nav_order: 100
 ---
 
-Version 2.7.2, released 2022-03-21
+Version 2.7.3, released 2022-03-29
 
 This document walks you through the steps needed to understand
 and setup the User Sync Tool.
