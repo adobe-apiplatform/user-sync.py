@@ -233,7 +233,7 @@ class SignConfigLoader(ConfigLoader):
         sign_only_user_action = user_sync.get_value('sign_only_user_action', (str, int))
         options['user_sync']['sign_only_user_action'] = sign_only_user_action
         if options.get('directory_group_mapped'):
-            options['directory_group_filter'] = set(six.iterkeys(self.directory_groups))
+            options['directory_group_filter'] = set(self.directory_groups.keys())
         options['cache'] = self.main_config.get_dict('cache')
         return options
 
