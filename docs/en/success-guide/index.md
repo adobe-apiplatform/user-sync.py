@@ -32,4 +32,4 @@ action.
 10. [Monitoring the User Sync Process](monitoring.md)
 11. [Choose Final Command Line Options](command_line_options.md)
 12. [Setup Scheduled Ongoing Execution of User Sync](scheduling.md)
-13. [Adobe Sign Sync Connector](sync_adobe_sign.md)
+13. [Update Certificates](update_cert.md)
