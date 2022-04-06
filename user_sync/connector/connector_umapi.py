@@ -283,7 +283,7 @@ class Commands(object):
 
     def convert_user_attributes_to_params(self, attributes):
         params = {}
-        for key, value in six.iteritems(attributes):
+        for key, value in attributes.items():
             if key == 'firstname':
                 key = 'first_name'
             elif key == 'lastname':

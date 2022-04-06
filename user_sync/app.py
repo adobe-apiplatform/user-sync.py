@@ -355,12 +355,12 @@ def begin_work_umapi(config_loader: UMAPIConfigLoader):
     # make sure that all the adobe groups are from known umapi connector names
     primary_umapi_config, secondary_umapi_configs = config_loader.get_target_options()
     referenced_umapi_names = set()
-    for groups in six.itervalues(directory_groups):
+    for groups in directory_groups.values():
         for group in groups:
             umapi_name = group.umapi_name
             if umapi_name != PRIMARY_TARGET_NAME:
                 referenced_umapi_names.add(umapi_name)
-    referenced_umapi_names.difference_update(six.iterkeys(secondary_umapi_configs))
+    referenced_umapi_names.difference_update(secondary_umapi_configs.keys())
     if len(referenced_umapi_names) > 0:
         raise AssertionException('Adobe groups reference unknown umapi connectors: %s' % referenced_umapi_names)
 
@@ -380,7 +380,7 @@ def begin_work_umapi(config_loader: UMAPIConfigLoader):
     primary_name = '.primary' if secondary_umapi_configs else ''
     umapi_primary_connector = UmapiConnector(primary_name, primary_umapi_config, True)
     umapi_other_connectors = {}
-    for secondary_umapi_name, secondary_config in six.iteritems(secondary_umapi_configs):
+    for secondary_umapi_name, secondary_config in secondary_umapi_configs.items():
         umapi_secondary_conector = UmapiConnector(".secondary.%s" % secondary_umapi_name,
                                                   secondary_config)
         umapi_other_connectors[secondary_umapi_name] = umapi_secondary_conector
@@ -646,7 +646,7 @@ def log_parameters(argv, config_loader):
     logger.info('------- Command line arguments -------')
     logger.info(' '.join(argv))
     logger.debug('-------- Resulting invocation options --------')
-    for parameter_name, parameter_value in six.iteritems(config_loader.get_invocation_options()):
+    for parameter_name, parameter_value in config_loader.get_invocation_options().items():
         logger.debug('  %s: %s', parameter_name, parameter_value)
     logger.info('-------------------------------------')
 

@@ -18,4 +18,28 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-__version__ = '2.7.3'
+from setuptools import setup, find_packages
+
+version_namespace = {}
+with open('sign_client/version.py') as f:
+    exec(f.read(), version_namespace)
+
+setup(name='sign-client',
+      version=version_namespace['__version__'],
+      description='Client for the Adobe Sign API',
+      classifiers=[
+          'Programming Language :: Python :: 3.7',
+          'Programming Language :: Python :: 3.8',
+          'Programming Language :: Python :: 3.9',
+          'Programming Language :: Python :: 3.10',
+          'License :: OSI Approved :: MIT License',
+      ],
+      maintainer='Andrew Dorton',
+      maintainer_email='adorton@adobe.com',
+      license='MIT',
+      packages=find_packages(),
+      install_requires=[
+        "requests~=2.26.0",
+        "aiohttp~=3.8.1",
+      ],
+      zip_safe=False)

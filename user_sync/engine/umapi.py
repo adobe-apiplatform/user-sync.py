@@ -113,7 +113,6 @@ class RuleProcessor(object):
         self.primary_users_created = set()
         self.secondary_users_created = set()
         self.updated_user_keys = set()
-        self.primary_users_by_email: dict[str, dict] = {}
 
         # stray key input path comes in, stray_list_output_path goes out
         self.stray_key_map = {}
@@ -294,7 +293,7 @@ class RuleProcessor(object):
         if umapi_connectors.get_secondary_connectors():
             spacer = ' '
             connectors = [('primary', umapi_connectors.get_primary_connector())]
-            connectors.extend(six.iteritems(umapi_connectors.get_secondary_connectors()))
+            connectors.extend(umapi_connectors.get_secondary_connectors().items())
         else:
             spacer = ''
             connectors = [('', umapi_connectors.get_primary_connector())]
@@ -367,7 +366,7 @@ class RuleProcessor(object):
 
         directory_user_by_user_key = self.directory_user_by_user_key
 
-        directory_groups = set(six.iterkeys(mappings)) if self.will_process_groups() else set()
+        directory_groups = set(mappings.keys()) if self.will_process_groups() else set()
         if directory_group_filter is not None:
             directory_groups.update(directory_group_filter)
         directory_users = directory_connector.load_users_and_groups(groups=directory_groups,
@@ -450,7 +449,7 @@ class RuleProcessor(object):
         if self.logger.isEnabledFor(logging.DEBUG):
             self.logger.debug('Group work list: %s', dict([(umapi_name, umapi_info.get_desired_groups_by_user_key())
                                                            for umapi_name, umapi_info
-                                                           in six.iteritems(self.umapi_info_by_name)]))
+                                                           in self.umapi_info_by_name.items()]))
 
     def is_directory_user_in_groups(self, directory_user, groups):
         """
@@ -517,7 +516,7 @@ class RuleProcessor(object):
                 secondary_adds_by_user_key, update_commands = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
                 secondary_command_lists[umapi_name].extend(update_commands)
             total_users = len(secondary_adds_by_user_key)
-            for user_key, groups_to_add in six.iteritems(secondary_adds_by_user_key):
+            for user_key, groups_to_add in secondary_adds_by_user_key.items():
                 # We only create users who have group mappings in the secondary umapi
                 if groups_to_add:
                     self.secondary_users_created.add(user_key)
@@ -922,9 +921,9 @@ class RuleProcessor(object):
         # Walk all the adobe users, getting their group data, matching them with directory users,
         # and adjusting their attribute and group data accordingly.
         for umapi_user in umapi_users:
-            # if target is ESM, then treat existing AdobeID (i.e. businessID) as linked identity type
-            if umapi_connector.uses_business_id and umapi_user['email'] in self.primary_users_by_email:
-                umapi_user['type'] = self.primary_users_by_email[umapi_user['email']]['type']
+            # if target is ESM, then override identity type
+            if umapi_connector.uses_business_id:
+                umapi_user['type'] = self.options['new_account_type']
             # let save adobeID users to a seperate list
             self.filter_adobeID_user(umapi_user)
             # get the basic data about this user; initialize change markers to "no change"
@@ -952,9 +951,6 @@ class RuleProcessor(object):
                 continue
 
             self.map_email_override(umapi_user)
-
-            if umapi_connector.is_primary:
-                self.primary_users_by_email[umapi_user['email']] = umapi_user
 
             directory_user = filtered_directory_user_by_user_key.get(user_key)
             if directory_user is None:
@@ -1060,7 +1056,7 @@ class RuleProcessor(object):
     def get_user_attribute_difference(self, directory_user, umapi_user):
         differences = {}
         attributes = self.get_user_attributes(directory_user)
-        for key, value in six.iteritems(attributes):
+        for key, value in attributes.items():
             umapi_value = umapi_user.get(key)
             if key == 'email':
                 diff = normalize_string(value) != normalize_string(umapi_value)
@@ -1115,7 +1111,7 @@ class RuleProcessor(object):
             domain = ""
         elif not domain:
             return None
-        return six.text_type(id_type) + u',' + six.text_type(username) + u',' + six.text_type(domain)
+        return str(id_type) + u',' + str(username) + u',' + str(domain)
 
     def parse_user_key(self, user_key):
         """
@@ -1225,7 +1221,7 @@ class UmapiConnectors(object):
         self.secondary_connectors = secondary_connectors
 
         connectors = [primary_connector]
-        connectors.extend(six.itervalues(secondary_connectors))
+        connectors.extend(secondary_connectors.values())
         self.connectors = connectors
 
     def get_primary_connector(self):
@@ -1320,7 +1316,7 @@ class UmapiTargetInfo(object):
         self.umapi_user_by_user_key[user_key] = user
 
     def iter_umapi_users(self):
-        return six.iteritems(self.umapi_user_by_user_key)
+        return self.umapi_user_by_user_key.items()
 
     def get_umapi_user(self, user_key):
         """

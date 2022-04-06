@@ -143,9 +143,9 @@ class AdobeConsoleConnector(DirectoryConnector):
             self.logger.debug('Count of users in any groups: %d', len(grouped_user_records))
             self.logger.debug('Count of users not in any groups: %d',
                               len(self.user_by_usr_key) - len(grouped_user_records))
-            return six.itervalues(self.user_by_usr_key)
+            return self.user_by_usr_key.values()
         else:
-            return six.itervalues(grouped_user_records)
+            return grouped_user_records.values()
 
     def convert_user(self, record):
 

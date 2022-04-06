@@ -1,5 +1,26 @@
 | tag | date | title |
 |---|---|---|
+| v2.7.3 | 2022-03-29 | User Sync Tool v2.7.3 |
+
+\#755 Fix Sign email comparison issue
+\#774 ESM trustee sync fix
+\#761 Remove six dependency
+\#776 Sign timeout error fix
+fe073bf7 Update Sign summary log counts
+
+---
+
+| tag | date | title |
+|---|---|---|
+| v2.7.2 | 2022-03-21 | User Sync Tool v2.7.2 |
+
+\#763 Fix CentOS build
+\#759 Resolve Windows keyring error
+
+---
+
+| tag | date | title |
+|---|---|---|
 | v2.7.1 | 2022-03-14 | User Sync Tool v2.7.1 |
 
 * \#773 Sync signal logic tweaks

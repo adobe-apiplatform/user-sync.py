@@ -8,7 +8,7 @@ nav_level: 1
 nav_order: 100
 ---
 
-Version 2.7.1, released 2022-03-22
+Version 2.7.3, released 2022-03-29
 
 This document walks you through the steps needed to understand
 and setup the User Sync Tool.
@@ -32,4 +32,4 @@ action.
 10. [Monitoring the User Sync Process](monitoring.md)
 11. [Choose Final Command Line Options](command_line_options.md)
 12. [Setup Scheduled Ongoing Execution of User Sync](scheduling.md)
-13. [Adobe Sign Sync Connector](sync_adobe_sign.md)
+13. [Update Certificates](update_cert.md)

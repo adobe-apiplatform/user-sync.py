@@ -51,13 +51,12 @@ setup(name='user-sync',
           'pycryptodome==3.9.7',
           'ldap3',
           'PyYAML',
-          'six',
           'umapi-client==2.19',
           'click',
           'click-default-group',
           'configparser==3.7.4',
           'schema==0.7.2',
-          'sign-client'
+          'sign-client~=0.2.1',
       ],
       extras_require={
           ':sys_platform=="linux" or sys_platform=="linux2"': [

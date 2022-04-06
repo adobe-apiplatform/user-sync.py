@@ -283,11 +283,11 @@ class UMAPIConfigLoader(ConfigLoader):
                     raise AssertionException("Secondary umapi configuration found with no prefix: " + item)
                 primary_config_sources.append(item)
             elif isinstance(item, dict):
-                for key, val in six.iteritems(item):
+                for key, val in item.items():
                     secondary_config_sources[key] = as_list(val)
         primary_config = self.create_umapi_options(primary_config_sources)
         secondary_configs = {key: self.create_umapi_options(val)
-                             for key, val in six.iteritems(secondary_config_sources)}
+                             for key, val in secondary_config_sources.items()}
         return primary_config, secondary_configs
 
     def get_directory_connector_module_name(self):
@@ -431,7 +431,7 @@ class UMAPIConfigLoader(ConfigLoader):
         result = {}
         for dict_item in dicts:
             if isinstance(dict_item, dict):
-                for dict_key, dict_val in six.iteritems(dict_item):
+                for dict_key, dict_val in dict_item.items():
                     result_val = result.get(dict_key)
                     if isinstance(result_val, dict) and isinstance(dict_val, dict):
                         result_val.update(dict_val)
@@ -545,7 +545,7 @@ class UMAPIConfigLoader(ConfigLoader):
         # set the directory group filter from the mapping, if requested.
         # This must come late, after any prior adds to the mapping from other parameters.
         if options.get('directory_group_mapped'):
-            options['directory_group_filter'] = set(six.iterkeys(self.directory_groups))
+            options['directory_group_filter'] = set(self.directory_groups.keys())
 
         # set the adobe group filter from the mapping, if requested.
         if options.get('adobe_group_mapped') is True:
