@@ -1,15 +1,6 @@
-import collections
+from collections.abc import Mapping
 from copy import deepcopy
-
-
-def update_dict(d, ks, u):
-    k, ks = ks[0], ks[1:]
-    v = d.get(k)
-    if ks and isinstance(v, collections.abc.Mapping):
-        d[k] = update_dict(v, ks, u)
-    else:
-        d[k] = u
-    return d
+from io import StringIO
 
 def make_dict(keylist, value):
     """
@@ -25,6 +16,12 @@ def make_dict(keylist, value):
             key: val
         }
     return tree_dict
+
+def compare_iter(a, b):
+    return (len(a) == len(b) and
+            {x in b for x in a} ==
+            {x in b for x in a} ==
+            {True})
 
 
 def merge_dict(d1, d2, immutable=False):
@@ -44,15 +41,78 @@ def merge_dict(d1, d2, immutable=False):
     for k in d2:
         # if d1 and d2 have dict for k, then recurse
         # else assign the new value to d1[k]
-        if (k in d1 and isinstance(d1[k], collections.Mapping)
-                and isinstance(d2[k], collections.Mapping)):
+        if (k in d1 and isinstance(d1[k], Mapping)
+                and isinstance(d2[k], Mapping)):
             merge_dict(d1[k], d2[k])
         else:
             d1[k] = d2[k]
     return d1
 
-def compare_iter(a, b):
-    return (len(a) == len(b) and
-            {x in b for x in a} ==
-            {x in b for x in a} ==
-            {True})
+# Serves as a base user for either umapi or directory user tests
+def create_blank_user(
+        identifier,
+        firstname=None,
+        lastname=None,
+        groups=None,
+        country="US",
+        identity_type="federatedID",
+        domain="example.com",
+        username=None
+):
+    if '@' not in identifier:
+        identifier = identifier + "@" + domain
+    user_id = identifier.split("@")[0]
+    firstname = firstname or user_id + " First"
+    lastname = lastname or user_id + " Last"
+    domain = domain or identifier.split("@")[-1]
+
+    return deepcopy({
+        'identity_type': identity_type,
+        'type': identity_type,
+        'username': username or identifier,
+        'domain': domain,
+        'firstname': firstname,
+        'lastname': lastname,
+        'email': identifier,
+        'groups': groups or [],
+        'member_groups': [],
+        'adminRoles': [],
+        'status': 'active',
+        'country': country,
+        'source_attributes': {
+            'email': identifier,
+            'identity_type': None,
+            'username': user_id,
+            'domain': domain,
+            'givenName': firstname,
+            'sn': lastname,
+            'c': country}
+    })
+
+
+
+class MockResponse:
+
+    def __init__(self, status=200, body=None, headers=None, text=None):
+        self.status_code = status
+        self.body = body if body is not None else {}
+        self.headers = headers if headers else {}
+        self.text = text if text else ""
+
+    def json(self):
+        return self.body
+
+class ClearableStringIO(StringIO, object):
+
+    def __init__(self):
+        super(ClearableStringIO, self).__init__()
+
+    def clear(self):
+        self.truncate(0)
+        self.seek(0)
+
+    def getvalue(self, *args, **kwargs):
+        self.flush()
+        return super(ClearableStringIO, self).getvalue()
+
+

@@ -28,12 +28,13 @@ import six
 import umapi_client
 
 import user_sync.connector.helper
-import user_sync.config
 import user_sync.helper
 import user_sync.identity_type
+from user_sync.config import user_sync as config
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 from user_sync.connector.umapi_util import make_auth_dict
+from user_sync.config import common as config_common
 
 try:
     from jwt.contrib.algorithms.pycrypto import RSAAlgorithm
@@ -43,24 +44,29 @@ except:
 
 
 class UmapiConnector(object):
-    def __init__(self, name, caller_options):
+    # class-level flag that determines if we are creating a UMAPI connection
+    # set to False if using in a unit test
+    create_conn = True
+    def __init__(self, name, caller_options, is_primary=False):
         """
         :type name: str
         :type caller_options: dict
         """
         self.name = 'umapi' + name
-        caller_config = user_sync.config.DictConfig(self.name + ' configuration', caller_options)
+        caller_config = config_common.DictConfig(self.name + ' configuration', caller_options)
         self.trusted = caller_config.get_bool('trusted', True)
         if self.trusted is None:
             self.trusted = False
-        builder = user_sync.config.OptionsBuilder(caller_config)
+        self.uses_business_id = caller_config.get_bool('uses_business_id', True)
+        self.is_primary = is_primary
+        builder = config_common.OptionsBuilder(caller_config)
         builder.set_string_value('logger_name', self.name)
         builder.set_bool_value('test_mode', False)
         builder.set_bool_value('ssl_cert_verify', True)
         options = builder.get_options()
 
         server_config = caller_config.get_dict_config('server', True)
-        server_builder = user_sync.config.OptionsBuilder(server_config)
+        server_builder = config_common.OptionsBuilder(server_config)
         server_builder.set_string_value('host', 'usermanagement.adobe.io')
         server_builder.set_string_value('endpoint', '/v2/usermanagement')
         server_builder.set_string_value('ims_host', 'ims-na1.adobelogin.com')
@@ -71,7 +77,7 @@ class UmapiConnector(object):
         options['server'] = server_options = server_builder.get_options()
 
         enterprise_config = caller_config.get_dict_config('enterprise')
-        enterprise_builder = user_sync.config.OptionsBuilder(enterprise_config)
+        enterprise_builder = config_common.OptionsBuilder(enterprise_config)
         enterprise_builder.require_string_value('org_id')
         tech_field = 'tech_acct_id' if 'tech_acct_id' in enterprise_config else 'tech_acct'
         enterprise_builder.require_string_value(tech_field)
@@ -94,26 +100,27 @@ class UmapiConnector(object):
         enterprise_config.report_unused_values(logger)
         # open the connection
         um_endpoint = "https://" + server_options['host'] + server_options['endpoint']
-        logger.debug('%s: creating connection for org %s at endpoint %s', self.name, org_id, um_endpoint)
-        try:
-            self.connection = connection = umapi_client.Connection(
-                org_id=org_id,
-                auth_dict=auth_dict,
-                ims_host=ims_host,
-                ims_endpoint_jwt=server_options['ims_endpoint_jwt'],
-                user_management_endpoint=um_endpoint,
-                test_mode=options['test_mode'],
-                user_agent="user-sync/" + app_version,
-                logger=self.logger,
-                timeout_seconds=float(server_options['timeout']),
-                retry_max_attempts=server_options['retries'] + 1,
-                ssl_verify=options['ssl_cert_verify']
-            )
-        except Exception as e:
-            raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))
-        logger.debug('%s: connection established', self.name)
-        # wrap the connection in an action manager
-        self.action_manager = ActionManager(connection, org_id, logger)
+        if self.create_conn:
+            logger.debug('%s: creating connection for org %s at endpoint %s', self.name, org_id, um_endpoint)
+            try:
+                self.connection = connection = umapi_client.Connection(
+                    org_id=org_id,
+                    auth_dict=auth_dict,
+                    ims_host=ims_host,
+                    ims_endpoint_jwt=server_options['ims_endpoint_jwt'],
+                    user_management_endpoint=um_endpoint,
+                    test_mode=options['test_mode'],
+                    user_agent="user-sync/" + app_version,
+                    logger=self.logger,
+                    timeout_seconds=float(server_options['timeout']),
+                    retry_max_attempts=server_options['retries'] + 1,
+                    ssl_verify=options['ssl_cert_verify']
+                )
+            except Exception as e:
+                raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))
+            logger.debug('%s: connection established', self.name)
+            # wrap the connection in an action manager
+            self.action_manager = ActionManager(connection, org_id, logger)
 
     def get_users(self):
         return list(self.iter_users())
@@ -125,6 +132,7 @@ class UmapiConnector(object):
         page_size = 0
         page_number = 0
         try:
+            self.connection.start_sync()
             u_query = umapi_client.UsersQuery(self.connection, in_group=in_group)
             for i, u in enumerate(u_query):
                 total_count, page_count, page_size, page_number = u_query.stats()
@@ -135,6 +143,8 @@ class UmapiConnector(object):
 
                 if (i + 1) % page_size == 0:
                     self.logger.progress(len(users), total_count)
+                if page_number == page_count-2:
+                    self.connection.end_sync()
             self.logger.progress(total_count, total_count)
 
         except umapi_client.UnavailableError as e:
@@ -273,7 +283,7 @@ class Commands(object):
 
     def convert_user_attributes_to_params(self, attributes):
         params = {}
-        for key, value in six.iteritems(attributes):
+        for key, value in attributes.items():
             if key == 'firstname':
                 key = 'first_name'
             elif key == 'lastname':

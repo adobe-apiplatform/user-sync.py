@@ -56,13 +56,13 @@ def create_key():
 def create_cert(subject_fields, key):
     try:
         subject = issuer = x509.Name([
-            x509.NameAttribute(NameOID.COUNTRY_NAME, six.text_type(subject_fields['countryName'])),
+            x509.NameAttribute(NameOID.COUNTRY_NAME, str(subject_fields['countryName'])),
             x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME,
-                               six.text_type(subject_fields['stateOrProvinceName'])),
-            x509.NameAttribute(NameOID.LOCALITY_NAME, six.text_type(subject_fields['localityName'])),
-            x509.NameAttribute(NameOID.ORGANIZATION_NAME, six.text_type(subject_fields['organizationName'])),
-            x509.NameAttribute(NameOID.COMMON_NAME, six.text_type(subject_fields['commonName'])),
-            x509.NameAttribute(NameOID.EMAIL_ADDRESS, six.text_type(subject_fields['emailAddress']))
+                               str(subject_fields['stateOrProvinceName'])),
+            x509.NameAttribute(NameOID.LOCALITY_NAME, str(subject_fields['localityName'])),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, str(subject_fields['organizationName'])),
+            x509.NameAttribute(NameOID.COMMON_NAME, str(subject_fields['commonName'])),
+            x509.NameAttribute(NameOID.EMAIL_ADDRESS, str(subject_fields['emailAddress']))
         ])
 
         return x509.CertificateBuilder().subject_name(

@@ -8,7 +8,7 @@ Tool are to streamline the process of named user deployment and automate user ma
 This application is open source, maintained by Adobe, and distributed under the terms
 of the OSI-approved MIT license.  See the LICENSE file for details.
 
-Copyright (c) 2016-2020 Adobe Inc.
+Copyright (c) 2016-2022 Adobe Inc.
 
 ## Documentation
 
@@ -54,7 +54,7 @@ The general procedure to build the User Sync Tool is the same across platforms. 
 prerequisites that must be met before following these instructions. Refer to the notes for your platform and return here
 to learn how to build the Sync Tool from source.
 
-**NOTE:** Python 3.6 is required on all platforms.
+**NOTE:** Python 3.9 is required on all platforms.
 
 1. Clone this repository `git clone https://github.com/adobe-apiplatform/user-sync.py.git`
 2. Create a new Python 3.6 virtual environment `python -m venv /path/to/venv` (note: your system may prompt you to install
@@ -62,11 +62,12 @@ to learn how to build the Sync Tool from source.
 3. Activate the environment `source /path/to/venv/bin/activate` (or `.\path\to\venv\Scripts\activate` on Windows)
 4. `cd` to the `user-sync.py` directory
 5. Install the Okta client wheel `pip install external/okta-0.0.3.1-py2.py3-none-any.whl`
-6. Install the sync tool locally
+6. Install the Sign client `pip install ./sign_client`
+7. Install the sync tool locally
     1. `pip install -e .`
     2. `pip install -e .[test]`
     3. `pip install -e .[setup]`
-7. Create the build by running `make`
+8. Create the build by running `make`
 
 If the Sync Tool was built successfully, then the executable can be found in the `dist/` directory. The binary will be named
 `user-sync` or `user-sync.exe` depending on platform.
@@ -79,12 +80,12 @@ On Linux, many of the Sync Tool's dependencies are built from source and contain
 languages. For this reason, it is necessary to install some system packages and libraries.
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y software-properties-common
-sudo apt-get install -y build-essential
-sudo apt-get install -y python-dev python-pip python-virtualenv
-sudo apt-get install -y pkg-config libssl-dev libdbus-1-dev libdbus-glib-1-dev python-dbus libffi-dev libkrb5-dev
-sudo apt-get install -y python3-dev python3-venv
+sudo apt-get update && \
+sudo apt-get install -y \
+        software-properties-common build-essential \
+        pkg-config libssl-dev libdbus-1-dev \
+        libdbus-glib-1-dev python-dbus \
+        libffi-dev libkrb5-dev python3.9-dev python3-venv
 ```
 
 ### CentOS and other RedHat variants

@@ -40,16 +40,17 @@ def test_create_cert(random_subject, key):
         create_cert(random_subject, key)
 
 
-def test_write_key_to_file(private_key, key):
-    write_key_to_file(private_key, key)
-    with open(private_key, 'r') as f:
+def test_write_key_to_file(test_resources, key):
+    write_key_to_file(test_resources['priv_key'], key)
+    with open(test_resources['priv_key'], 'r') as f:
         data = f.read()
     opening = '-----BEGIN RSA PRIVATE KEY-----'
     ending = '-----END RSA PRIVATE KEY-----'
     assert opening in data and ending in data
 
 
-def test_write_cert_to_file(public_cert, random_subject, key):
+def test_write_cert_to_file(test_resources, random_subject, key):
+    public_cert = test_resources['certificate']
     cert = create_cert(random_subject, key)
     write_cert_to_file(public_cert, cert)
     with open(public_cert, 'r') as f:

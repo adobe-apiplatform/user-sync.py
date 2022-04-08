@@ -20,51 +20,26 @@
 
 import six
 import umapi_client
-import user_sync.config
 import user_sync.connector.helper
 import user_sync.helper
 import user_sync.identity_type
+from user_sync.connector.directory import DirectoryConnector
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 from user_sync.connector.umapi_util import make_auth_dict
 from user_sync.helper import normalize_string
 from user_sync.identity_type import parse_identity_type
+from user_sync.config import user_sync as config
+from user_sync.config import common as config_common
 
 
-def connector_metadata():
-    metadata = {
-        'name': AdobeConsoleConnector.name
-    }
-    return metadata
-
-
-def connector_initialize(options):
-    """
-    :type options: dict
-    """
-    state = AdobeConsoleConnector(options)
-    return state
-
-
-def connector_load_users_and_groups(state, groups=None, extended_attributes=None, all_users=True):
-    """
-    :type state: OktaDirectoryConnector
-    :type groups: list(str)
-    :type extended_attributes: list(str)
-    :type all_users: bool
-    :rtype (bool, iterable(dict))
-    """
-
-    return state.load_users_and_groups(groups or [], extended_attributes or [], all_users)
-
-
-class AdobeConsoleConnector(object):
+class AdobeConsoleConnector(DirectoryConnector):
     name = 'adobe_console'
 
-    def __init__(self, caller_options):
-
-        caller_config = user_sync.config.DictConfig('<%s configuration>' % self.name, caller_options)
-        builder = user_sync.config.OptionsBuilder(caller_config)
+    def __init__(self, caller_options, *args, **kwargs):
+        super(AdobeConsoleConnector, self).__init__(*args, **kwargs)
+        caller_config = config_common.DictConfig('<%s configuration>' % self.name, caller_options)
+        builder = config_common.OptionsBuilder(caller_config)
         # Let just ignore this
         builder.set_string_value('user_identity_type', None)
         builder.set_string_value('identity_type_filter', 'all')
@@ -79,7 +54,7 @@ class AdobeConsoleConnector(object):
         self.filter_by_identity_type = options['identity_type_filter']
 
         server_config = caller_config.get_dict_config('server', True)
-        server_builder = user_sync.config.OptionsBuilder(server_config)
+        server_builder = config_common.OptionsBuilder(server_config)
         server_builder.set_string_value('host', 'usermanagement.adobe.io')
         server_builder.set_string_value('endpoint', '/v2/usermanagement')
         server_builder.set_string_value('ims_host', 'ims-na1.adobelogin.com')
@@ -89,7 +64,7 @@ class AdobeConsoleConnector(object):
         options['server'] = server_options = server_builder.get_options()
 
         enterprise_config = caller_config.get_dict_config('integration')
-        integration_builder = user_sync.config.OptionsBuilder(enterprise_config)
+        integration_builder = config_common.OptionsBuilder(enterprise_config)
         integration_builder.require_string_value('org_id')
         tech_field = 'tech_acct_id' if 'tech_acct_id' in enterprise_config else 'tech_acct'
         integration_builder.require_string_value(tech_field)
@@ -168,9 +143,9 @@ class AdobeConsoleConnector(object):
             self.logger.debug('Count of users in any groups: %d', len(grouped_user_records))
             self.logger.debug('Count of users not in any groups: %d',
                               len(self.user_by_usr_key) - len(grouped_user_records))
-            return six.itervalues(self.user_by_usr_key)
+            return self.user_by_usr_key.values()
         else:
-            return six.itervalues(grouped_user_records)
+            return grouped_user_records.values()
 
     def convert_user(self, record):
 

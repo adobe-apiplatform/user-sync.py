@@ -23,58 +23,35 @@ import six
 import string
 from okta.framework.OktaError import OktaError
 
-import user_sync.config
 import user_sync.connector.helper
 import user_sync.helper
 import user_sync.identity_type
+from user_sync.connector.directory import DirectoryConnector
+from user_sync.config.common import DictConfig, OptionsBuilder
 from user_sync.error import AssertionException
+from user_sync.config import user_sync as config
+from user_sync.config import common as config_common
 
 
-def connector_metadata():
-    metadata = {
-        'name': OktaDirectoryConnector.name
-    }
-    return metadata
-
-
-def connector_initialize(options):
-    """
-    :type options: dict
-    """
-    state = OktaDirectoryConnector(options)
-    return state
-
-
-def connector_load_users_and_groups(state, groups=None, extended_attributes=None, all_users=True):
-    """
-    :type state: OktaDirectoryConnector
-    :type groups: list(str)
-    :type extended_attributes: list(str)
-    :type all_users: bool
-    :rtype (bool, iterable(dict))
-    """
-
-    return state.load_users_and_groups(groups or [], extended_attributes or [], all_users)
-
-
-class OktaDirectoryConnector(object):
+class OktaDirectoryConnector(DirectoryConnector):
     name = 'okta'
 
-    def __init__(self, caller_options):
-        caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
-        builder = user_sync.config.OptionsBuilder(caller_config)
+    def __init__(self, caller_options, *args, **kwargs):
+        super(OktaDirectoryConnector, self).__init__(*args, **kwargs)
+        caller_config = DictConfig('%s configuration' % self.name, caller_options)
+        builder = OptionsBuilder(caller_config)
         builder.set_string_value('group_filter_format',
                                  '{group}')
         builder.set_string_value('all_users_filter',
                                  'user.status == "ACTIVE"')
         builder.set_string_value('string_encoding', 'utf8')
         builder.set_string_value('user_identity_type_format', None)
-        builder.set_string_value('user_email_format', six.text_type('{email}'))
+        builder.set_string_value('user_email_format', str('{email}'))
         builder.set_string_value('user_username_format', None)
         builder.set_string_value('user_domain_format', None)
-        builder.set_string_value('user_given_name_format', six.text_type('{firstName}'))
-        builder.set_string_value('user_surname_format', six.text_type('{lastName}'))
-        builder.set_string_value('user_country_code_format', six.text_type('{countryCode}'))
+        builder.set_string_value('user_given_name_format', str('{firstName}'))
+        builder.set_string_value('user_surname_format', str('{lastName}'))
+        builder.set_string_value('user_country_code_format', str('{countryCode}'))
         builder.set_string_value('user_identity_type', None)
         builder.set_string_value('logger_name', self.name)
         host = builder.require_string_value('host')
@@ -151,7 +128,7 @@ class OktaDirectoryConnector(object):
 
             self.logger.debug('Group %s members: %d users: %d', group, total_group_members, total_group_users)
 
-        return six.itervalues(user_by_uid)
+        return user_by_uid.values()
 
     def find_group(self, group):
         """
@@ -334,9 +311,9 @@ class OKTAValueFormatter(object):
         if string_format is None:
             attribute_names = []
         else:
-            string_format = six.text_type(string_format)  # force unicode so attribute values are unicode
+            string_format = str(string_format)  # force unicode so attribute values are unicode
             formatter = string.Formatter()
-            attribute_names = [six.text_type(item[1]) for item in formatter.parse(string_format) if item[1]]
+            attribute_names = [str(item[1]) for item in formatter.parse(string_format) if item[1]]
         self.string_format = string_format
         self.attribute_names = attribute_names
 

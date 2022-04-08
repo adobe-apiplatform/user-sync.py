@@ -23,46 +23,25 @@ import string
 
 import ldap3
 
-import user_sync.config
 import user_sync.connector.helper
 import user_sync.error
 import user_sync.identity_type
+from user_sync.connector.directory import DirectoryConnector
+from user_sync.config.common import DictConfig
 from user_sync.error import AssertionException
+from user_sync.config import user_sync as config
+from user_sync.config import common as config_common
 
 import platform
 import ssl
 
-def connector_metadata():
-    metadata = {
-        'name': LDAPDirectoryConnector.name
-    }
-    return metadata
 
-
-def connector_initialize(options):
-    """
-    :type options: dict
-    """
-    connector = LDAPDirectoryConnector(options)
-    return connector
-
-
-def connector_load_users_and_groups(state, groups=None, extended_attributes=None, all_users=True):
-    """
-    :type state: LDAPDirectoryConnector
-    :type groups: Optional(list(str))
-    :type extended_attributes: Optional(list(str))
-    :type all_users: bool
-    :rtype (bool, iterable(dict))
-    """
-    return state.load_users_and_groups(groups or [], extended_attributes or [], all_users)
-
-
-class LDAPDirectoryConnector(object):
+class LDAPDirectoryConnector(DirectoryConnector):
     name = 'ldap'
 
-    def __init__(self, caller_options):
-        caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
+    def __init__(self, caller_options, *args, **kwargs):
+        super(LDAPDirectoryConnector, self).__init__(*args, **kwargs)
+        caller_config = DictConfig('%s configuration' % self.name, caller_options)
 
         options = self.get_options(caller_config)
         self.options = options
@@ -103,13 +82,13 @@ class LDAPDirectoryConnector(object):
             auth = {'authentication': ldap3.ANONYMOUS}
             logger.debug('Connecting to: %s - Authentication Method: ANONYMOUS', options['host'])
         elif auth_method == 'simple':
-            auth = {'authentication': ldap3.SIMPLE, 'user': six.text_type(options['username']),
-                    'password': six.text_type(password)}
+            auth = {'authentication': ldap3.SIMPLE, 'user': str(options['username']),
+                    'password': str(password)}
             logger.debug('Connecting to: %s - Authentication Method: SIMPLE using username: %s', options['host'],
                          options['username'])
         elif auth_method == 'ntlm':
-            auth = {'authentication': ldap3.NTLM, 'user': six.text_type(options['username']),
-                    'password': six.text_type(password)}
+            auth = {'authentication': ldap3.NTLM, 'user': str(options['username']),
+                    'password': str(password)}
             logger.debug('Connecting to: %s - Authentication Method: NTLM using username: %s', options['host'],
                          options['username'])
         elif auth_method == 'kerberos':
@@ -140,27 +119,27 @@ class LDAPDirectoryConnector(object):
 
     @staticmethod
     def get_options(caller_config):
-        builder = user_sync.config.OptionsBuilder(caller_config)
-        builder.set_string_value('group_filter_format', six.text_type(
+        builder = config_common.OptionsBuilder(caller_config)
+        builder.set_string_value('group_filter_format', str(
             '(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))'))
-        builder.set_string_value('all_users_filter', six.text_type(
+        builder.set_string_value('all_users_filter', str(
             '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))'))
         builder.set_string_value('group_member_filter_format', None)
         builder.set_bool_value('require_tls_cert', False)
         builder.set_dict_value('two_steps_lookup', None)
         builder.set_string_value('string_encoding', 'utf8')
         builder.set_string_value('user_identity_type_format', None)
-        builder.set_string_value('user_email_format', six.text_type('{mail}'))
+        builder.set_string_value('user_email_format', str('{mail}'))
         builder.set_string_value('user_username_format', None)
         builder.set_string_value('user_domain_format', None)
-        builder.set_string_value('user_given_name_format', six.text_type('{givenName}'))
-        builder.set_string_value('user_surname_format', six.text_type('{sn}'))
-        builder.set_string_value('user_country_code_format', six.text_type('{c}'))
+        builder.set_string_value('user_given_name_format', str('{givenName}'))
+        builder.set_string_value('user_surname_format', str('{sn}'))
+        builder.set_string_value('user_country_code_format', str('{c}'))
         builder.set_string_value('dynamic_group_member_attribute', None)
         builder.set_string_value('user_identity_type', None)
         builder.set_int_value('search_page_size', 200)
         builder.set_string_value('logger_name', LDAPDirectoryConnector.name)
-        builder.set_string_value('authentication_method', six.text_type('simple'))
+        builder.set_string_value('authentication_method', str('simple'))
         builder.set_string_value('username', None)
         builder.require_string_value('host')
         builder.require_string_value('base_dn')
@@ -169,7 +148,7 @@ class LDAPDirectoryConnector(object):
         options['two_steps_enabled'] = False
         if options['two_steps_lookup'] is not None:
             ts_config = caller_config.get_dict_config('two_steps_lookup', True)
-            ts_builder = user_sync.config.OptionsBuilder(ts_config)
+            ts_builder = config_common.OptionsBuilder(ts_config)
             ts_builder.require_string_value('group_member_attribute_name')
             ts_builder.set_bool_value('nested_group', False)
             options['two_steps_enabled'] = True
@@ -179,7 +158,7 @@ class LDAPDirectoryConnector(object):
                     "Cannot define both 'group_member_attribute_name' and 'group_member_filter_format' in config")
         else:
             if not options['group_member_filter_format']:
-                options['group_member_filter_format'] = six.text_type('(memberOf={group_dn})')
+                options['group_member_filter_format'] = str('(memberOf={group_dn})')
         return options
 
     def load_users_and_groups(self, groups, extended_attributes, all_users):
@@ -191,12 +170,12 @@ class LDAPDirectoryConnector(object):
         """
         options = self.options
         user = {}
-        base_dn = six.text_type(options['base_dn'])
-        all_users_filter = six.text_type(options['all_users_filter'])
-        group_member_filter_format = six.text_type(options['group_member_filter_format'])
+        base_dn = str(options['base_dn'])
+        all_users_filter = str(options['all_users_filter'])
+        group_member_filter_format = str(options['group_member_filter_format'])
         grouped_user_records = {}
         if options['two_steps_enabled']:
-            group_member_attribute_name = six.text_type(options['two_steps_lookup']['group_member_attribute_name'])
+            group_member_attribute_name = str(options['two_steps_lookup']['group_member_attribute_name'])
 
         # save all the users to memory for faster 2-steps lookup or all_users process
         if all_users:
@@ -214,11 +193,11 @@ class LDAPDirectoryConnector(object):
                 continue
             group_member_subfilter = self.format_ldap_query_string(group_member_filter_format, group_dn=group_dn)
             if not group_member_subfilter.startswith('('):
-                group_member_subfilter = six.text_type('(') + group_member_subfilter + six.text_type(')')
+                group_member_subfilter = str('(') + group_member_subfilter + str(')')
             user_subfilter = all_users_filter
             if not user_subfilter.startswith('('):
-                user_subfilter = six.text_type('(') + user_subfilter + six.text_type(')')
-            group_user_filter = six.text_type('(&') + group_member_subfilter + user_subfilter + six.text_type(')')
+                user_subfilter = str('(') + user_subfilter + str(')')
+            group_user_filter = str('(&') + group_member_subfilter + user_subfilter + str(')')
             group_users = 0
             try:
                 if options['two_steps_enabled']:
@@ -263,7 +242,7 @@ class LDAPDirectoryConnector(object):
                 raise AssertionException('Unexpected LDAP failure reading all users: %s' % e)
 
         self.logger.debug('Total users loaded: %d', len(self.user_by_dn))
-        return six.itervalues(self.user_by_dn)
+        return self.user_by_dn.values()
 
     def find_ldap_group_dn(self, group):
         """
@@ -272,8 +251,8 @@ class LDAPDirectoryConnector(object):
         """
         connection = self.connection
         options = self.options
-        base_dn = six.text_type(options['base_dn'])
-        group_filter_format = six.text_type(options['group_filter_format'])
+        base_dn = str(options['base_dn'])
+        group_filter_format = str(options['group_filter_format'])
         try:
             filter_string = self.format_ldap_query_string(group_filter_format, group=group)
             connection.search(search_base=base_dn, search_scope=ldap3.SUBTREE, search_filter=filter_string)
@@ -334,9 +313,9 @@ class LDAPDirectoryConnector(object):
         user_attribute_names.extend(self.user_username_formatter.get_attribute_names())
         user_attribute_names.extend(self.user_domain_formatter.get_attribute_names())
         if dynamic_group_member_attribute is not None:
-            user_attribute_names.append(six.text_type(dynamic_group_member_attribute))
+            user_attribute_names.append(str(dynamic_group_member_attribute))
 
-        extended_attributes = [six.text_type(attr) for attr in extended_attributes]
+        extended_attributes = [str(attr) for attr in extended_attributes]
         extended_attributes = list(set(extended_attributes) - set(user_attribute_names))
         user_attribute_names.extend(extended_attributes)
 
@@ -495,10 +474,10 @@ class LDAPDirectoryConnector(object):
         :return:
         """
         # See http://www.rfc-editor.org/rfc/rfc4515.txt
-        escape_chars = six.text_type('*()\\&|<>~!:')
+        escape_chars = str('*()\\&|<>~!:')
         escaped_args = {}
         # kwargs is a dict that would normally be passed to string.format
-        for k, v in six.iteritems(kwargs):
+        for k, v in kwargs.items():
             # LDAP special characters are escaped in the general format '\' + hex(char)
             # we need to run through the string char by char and if the char exists in
             # the escape_char list, get the ord of it (decimal ascii value), convert it to hex, and
@@ -506,11 +485,11 @@ class LDAPDirectoryConnector(object):
             escaped_list = []
             for c in v:
                 if c in escape_chars:
-                    replace = six.text_type(hex(ord(c))).replace('0x', '\\')
+                    replace = str(hex(ord(c))).replace('0x', '\\')
                     escaped_list.append(replace)
                 else:
                     escaped_list.append(c)
-            escaped_args[k] = six.text_type('').join(escaped_list)
+            escaped_args[k] = str('').join(escaped_list)
         return query.format(**escaped_args)
 
     def format_group_user_filter(self, group_dn):
@@ -521,11 +500,11 @@ class LDAPDirectoryConnector(object):
         group_member_subfilter = self.format_ldap_query_string(self.options['group_member_filter_format'],
                                                                group_dn=group_dn)
         if not group_member_subfilter.startswith('('):
-            group_member_subfilter = six.text_type('(') + group_member_subfilter + six.text_type(')')
+            group_member_subfilter = str('(') + group_member_subfilter + str(')')
         user_subfilter = self.options['all_users_filter']
         if not user_subfilter.startswith('('):
-            user_subfilter = six.text_type('(') + user_subfilter + six.text_type(')')
-        group_user_filter = six.text_type('(&') + group_member_subfilter + user_subfilter + six.text_type(')')
+            user_subfilter = str('(') + user_subfilter + str(')')
+        group_user_filter = str('(&') + group_member_subfilter + user_subfilter + str(')')
         return group_user_filter
 
     @staticmethod
@@ -557,9 +536,9 @@ class LDAPValueFormatter(object):
         if string_format is None:
             attribute_names = []
         else:
-            string_format = six.text_type(string_format)  # force unicode so attribute values are unicode
+            string_format = str(string_format)  # force unicode so attribute values are unicode
             formatter = string.Formatter()
-            attribute_names = [six.text_type(item[1]) for item in formatter.parse(string_format) if item[1]]
+            attribute_names = [str(item[1]) for item in formatter.parse(string_format) if item[1]]
         self.string_format = string_format
         self.attribute_names = attribute_names
 

@@ -41,6 +41,15 @@ def normalize_string(string_value):
     return string_value.strip().lower() if string_value is not None else None
 
 
+def normal_group(group):
+    """
+    Returns true if group name can be normalized, false otherwise
+    :param group: str
+    :return: bool
+    """
+    return False if group.startswith('_product_admin_') else True
+
+
 class CSVAdapter:
     """
     Read and write CSV files to and from lists of dictionaries
@@ -114,7 +123,7 @@ class CSVAdapter:
                     row.pop(None, None)
                     if is_py2():
                         newrow = {}
-                        for key, val in six.iteritems(row):
+                        for key, val in row.items():
                             newrow[key.decode(encoding, 'strict')] = val.decode(encoding, 'strict') if val else val
                         yield newrow
                     else:
@@ -146,7 +155,7 @@ class CSVAdapter:
             for row in rows:
                 if is_py2():
                     # in py2, we have to encode the field values, because the file is written as bytes
-                    for name, val in six.iteritems(row):
+                    for name, val in row.items():
                         row[name] = val.encode(encoding, 'strict')
                 writer.writerow(row)
 
