@@ -31,7 +31,6 @@ from user_sync.config.common import DictConfig
 from user_sync.error import AssertionException
 from user_sync.config import user_sync as config
 from user_sync.config import common as config_common
-
 import platform
 import ssl
 

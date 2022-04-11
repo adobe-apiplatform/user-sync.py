@@ -11,7 +11,7 @@ from ruamel.yaml.main import YAML
 from ruamel.yaml.scalarstring import PreservedScalarString as pss
 
 from user_sync import encryption
-from user_sync.config import ConfigFileLoader, ConfigLoader
+from user_sync.config.common import ConfigFileLoader, ConfigLoader
 from user_sync.error import AssertionException
 
 keyrings.cryptfile.cryptfile.CryptFileKeyring.keyring_key = "none"

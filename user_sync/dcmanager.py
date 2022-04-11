@@ -22,7 +22,7 @@ import logging
 import six
 
 from user_sync import identity_type
-from user_sync.config import DictConfig, OptionsBuilder
+from user_sync.config.common import DictConfig, OptionsBuilder
 from user_sync.connector.directory import DirectoryConnector
 from user_sync.error import AssertionException
 

@@ -4,7 +4,7 @@ from unittest import mock
 
 import pytest
 
-from user_sync.config import ConfigLoader
+from user_sync.config.common import ConfigLoader
 from user_sync.dcmanager import *
 
 
@@ -44,8 +44,8 @@ def dc_manager(multi_config_files, modify_root_config):
         connector_dict('src3', 'csv', multi_config_files['src3'])
     ]
 
-    modify_root_config(['directory_users', 'connectors'], {'multi': conn_list}, replace=True)
-    modify_root_config(['invocation_defaults', 'connector'], 'multi', replace=True)
+    modify_root_config(['directory_users', 'connectors'], {'multi': conn_list}, merge=False)
+    modify_root_config(['invocation_defaults', 'connector'], 'multi', merge=False)
 
     # Create the config loader
     cl = ConfigLoader({'config_filename': multi_config_files['root_config'], 'encoding_name': None})

@@ -157,27 +157,34 @@ def test_shell_exec_disabled(modify_root_config, default_args):
         UMAPIConfigLoader(default_args)
 
 
-def test_twostep_config(default_args, test_resources, modify_config):
-    def load_ldap_config_options(args):
-        config_loader = UMAPIConfigLoader(args)
-        dc_config_options = config_loader.get_directory_connector_options(LDAPDirectoryConnector.name)
-        caller_config = DictConfig('%s configuration' % DirectoryConnector.name, dc_config_options)
+def test_twostep_config():
+    def load_ldap_config_options(config_options):
+        caller_config = DictConfig('%s configuration' % DirectoryConnector.name, config_options)
         return LDAPDirectoryConnector.get_options(caller_config)
-
-    modify_config('ldap', ['two_steps_lookup'], {})
-    # test invalid "two_steps_lookup" config
-    with pytest.raises(AssertionException):
-        load_ldap_config_options(default_args)
+    
+    ldap_options = {
+        'all_users_filter': '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))',
+        'base_dn': 'DC=example,DC=com',
+        'group_filter_format': '(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))',
+        'group_member_filter_format': '(memberOf={group_dn})',
+        'host': 'ldap://host',
+        'password': 'password',
+        'require_tls_cert': False,
+        'search_page_size': 200,
+        'two_steps_lookup': {
+        },
+        'user_email_format': '{mail}',
+        'username': 'ldapuser@example.com',
+    }
 
     # test valid "two_steps_lookup" config with "group_member_filter_format" still set
-    modify_config('ldap', ['two_steps_lookup', 'group_member_attribute_name'], 'member')
+    ldap_options['two_steps_lookup'] = {'group_member_attribute_name': 'member'}
     with pytest.raises(AssertionException):
-        load_ldap_config_options(default_args)
+        load_ldap_config_options(ldap_options)
 
     # test valid "two_steps_lookup" setup
-    modify_config('ldap', ['two_steps_lookup', 'group_member_attribute_name'], 'member')
-    modify_config('ldap', ['group_member_filter_format'], "")
-    options = load_ldap_config_options(default_args)
+    ldap_options['group_member_filter_format'] = ''
+    options = load_ldap_config_options(ldap_options)
     assert 'two_steps_enabled' in options
     assert 'two_steps_lookup' in options
     assert 'group_member_attribute_name' in options['two_steps_lookup']
@@ -190,22 +197,13 @@ def test_shell_exec_flag(test_resources, modify_root_config, cli_args):
 
     args = cli_args({'config_filename': root_config_file})
     modify_root_config(['directory_users', 'connectors', 'ldap'], "$(some command)")
-    config_loader = ConfigLoader(args)
-
-    directory_connector_module_name = config_loader.get_directory_connector_module_name()
-    if directory_connector_module_name is not None:
-        directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
-        directory_connector = DirectoryConnector(directory_connector_module)
-        with pytest.raises(AssertionException):
-            config_loader.get_directory_connector_options(directory_connector.name)
     with pytest.raises(AssertionException):
         UMAPIConfigLoader(args)
 
 
-def test_get_credential_new_format(tmp_config_files):
-    (root_config_file, ldap_config_file, umapi_config_file) = tmp_config_files
+def test_get_credential_new_format(cf_loader, test_resources):
     credman = CredentialManager()
-    ldap_config = ConfigFileLoader.load_from_yaml(ldap_config_file, {})
+    ldap_config = cf_loader.load_from_yaml(test_resources['ldap'], {})
     ldap_dict_config = DictConfig('testscope', ldap_config)
     # make sure it still works in plaintext format
     assert ldap_dict_config.get_credential('password', 'user_sync') == 'password'
@@ -223,10 +221,9 @@ def test_get_credential_new_format(tmp_config_files):
         ldap_dict_config.get_credential('password', 'user_sync')
 
 
-def test_get_credential_old_format(tmp_config_files):
-    (root_config_file, ldap_config_file, umapi_config_file) = tmp_config_files
+def test_get_credential_old_format(cf_loader, test_resources):
     credman = CredentialManager()
-    ldap_config = ConfigFileLoader.load_from_yaml(ldap_config_file, {})
+    ldap_config = cf_loader.load_from_yaml(test_resources['ldap'], {})
     ldap_dict_config = DictConfig('testscope', ldap_config)
     # adding the secure key format without removing the plain format should throw an exception
     ldap_config['secure_password_key'] = 'ldap_secure_identifier'
