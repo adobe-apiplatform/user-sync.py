@@ -119,7 +119,9 @@ class CredentialConfig:
         self.filename = filename
         self.auto = auto
         self.logger = logging.getLogger('credman')
-
+        name = self.__class__.__name__
+        if name == 'UmapiCredentialConfig' or name == 'AdobeConsoleCredentialConfig':
+            self.handle_umapi_config_compatibility(name)
         # The dictionary including comments that will be updated and re-saved
         self.load()
 
@@ -139,6 +141,22 @@ class CredentialConfig:
 
         # name = subclass.capitalize().replace("_","") + "CredentialConfig"
         # return globals()[name](filename, auto)
+
+    def handle_umapi_config_compatibility(self, name):
+        if name == 'UmapiCredentialConfig':
+            old_identifier = ['enterprise', 'api_key']
+            new_identifier = ['enterprise', 'client_id']
+        if name == 'AdobeConsoleCredentialConfig':
+            old_identifier = ['integration', 'api_key']
+            new_identifier = ['integration', 'client_id']
+        with open(self.filename) as f:
+            keys = yaml.load(f)
+            api_key = self.get_nested_key(old_identifier, d=keys)
+        if api_key is not None:
+            keys[new_identifier[0]][new_identifier[1]] = api_key
+            del keys[old_identifier[0]][old_identifier[1]]
+            with open(self.filename, 'w') as g:
+                yaml.dump(keys, g)
 
     def modify_credentials(self, action):
         credentials = {}
@@ -378,6 +396,7 @@ class UmapiCredentialConfig(CredentialConfig):
     pass_key = Key(key_path=['enterprise', 'priv_key_pass'])
     secured_keys = [
         Key(key_path=['enterprise', 'client_id']),
+        Key(key_path=['enterprise', 'api_key']),
         Key(key_path=['enterprise', 'client_secret']),
         pass_key,
         Key(key_path=['enterprise', 'priv_key_data'],
@@ -393,6 +412,7 @@ class AdobeConsoleCredentialConfig(UmapiCredentialConfig):
     pass_key = Key(key_path=['integration', 'priv_key_pass'])
     secured_keys = [
         Key(key_path=['integration', 'client_id']),
+        Key(key_path=['integration', 'api_key']),
         Key(key_path=['integration', 'client_secret']),
         pass_key,
         Key(key_path=['integration', 'priv_key_data'],
