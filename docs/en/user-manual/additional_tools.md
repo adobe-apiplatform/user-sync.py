@@ -15,12 +15,10 @@ nav_order: 80
 
 ---
 
-#### Documentation goes here
-
-###Credential Manager
+## Credential Manager
 
 The user can manage credentials from the command line using the 
-```credentials``` command with any of the
+`credentials` command with any of the
 following subcommands.
 
 | Subcommand | Description |
@@ -33,10 +31,10 @@ following subcommands.
 
 **Sample Output (Windows)**
 
-Successful output from ```set``` subcommand:
+Successful output from `set` subcommand:
 
 ```
-(venv) C:\Program Files\Adobe\Adobe User Sync Tool>python user-sync.pex credentials set
+C:\Program Files\Adobe\Adobe User Sync Tool>user-sync.exe credentials set
 Enter identifier: ldap_password
 Enter value:
 Using backend: Windows WinVaultKeyring
@@ -49,7 +47,7 @@ Credentials stored successfully for: ldap_password
 The identifier and value (password) can also be set as parameters:
 
 ```
-(venv) C:\Program Files\Adobe\Adobe User Sync Tool>python user-sync.pex credentials set --identifier ldap_password --value password
+C:\Program Files\Adobe\Adobe User Sync Tool>user-sync.exe credentials set --identifier ldap_password --value password
 Using backend: Windows WinVaultKeyring
 Setting 'ldap_password' in keyring
 Using keyring 'Windows WinVaultKeyring' to set 'ldap_password'
@@ -58,11 +56,11 @@ Using keyring 'Windows WinVaultKeyring' to retrieve 'ldap_password'
 Credentials stored successfully for: ldap_password
 ```
 
-Successful output from ```get``` subcommand. Note that the 
+Successful output from `get` subcommand. Note that the 
 output echoes the requested identifier and password on the last line:
 
 ```
-(venv) C:\Program Files\Adobe\Adobe User Sync Tool>python user-sync.pex credentials get
+C:\Program Files\Adobe\Adobe User Sync Tool>user-sync.exe credentials get
 Enter identifier: ldap_password
 Using backend: Windows WinVaultKeyring
 Getting 'ldap_password' from keyring
@@ -70,14 +68,14 @@ Using keyring 'Windows WinVaultKeyring' to retrieve 'ldap_password'
 ldap_password: password
 ```
 
-Similar to ```set```, ```get``` can also be run without the prompt by
+Similar to `set`, `get` can also be run without the prompt by
 passing in the identifier as a parameter.
 
-The ```store``` subcommand does not take any parameters. Rather,
+The `store` subcommand does not take any parameters. Rather,
 it will automatically place all sensitive credentials contained in
-the configuration files specified in ```user-sync-config.yml``` in
+the configuration files specified in `user-sync-config.yml` in
 OS Secure storage. This snippet 
-of ```connector-ldap.yml``` shows the unsecured credential prior to running ```store```:
+of `connector-ldap.yml` shows the unsecured credential prior to running `store`:
 
 ```
 username: ldapuser@example.com
@@ -85,7 +83,7 @@ password: ldap_password
 host: ldap://host
 ```
 
-After running ```store```, the value of the sensitive key will be replaced with a 
+After running `store`, the value of the sensitive key will be replaced with a 
 new key-value pair in which the key is the string "secure" and the value is 
 the absolute path to the configuration file appended
 with ":" and the original key as shown below.
@@ -97,49 +95,72 @@ password:
 host: ldap://host
 ```
 
-In the example above, Keyring has used ```C:\Program Files\Adobe\Adobe User Sync Tool\connector-ldap.yml:password```
+In the example above, Keyring has used `C:\Program Files\Adobe\Adobe User Sync Tool\connector-ldap.yml:password`
 as the identifier (called "Internet or Network Address" on Windows)
-in OS Secure storage.
+in OS secure storage.
 
-Successful console output after running the ```store``` command:
+The `connector-umapi.yml` configuration file contains two sensitive keys (`client_id` and `client_secret`) as well as either `priv_key_path` (with the path to the `private.key` file) or `priv_key_data` with the value stored in-line. If the file uses `priv_key_path` and the key has not been encrypted, the console will prompt the user asking if they want to encrypt the private key. If yes, it will prompt the user to create a password and then confirm it. This action adds a new key to `connector-umapi.yml` called `priv_key_pass`, which will automatically be stored in OS secure storage along with the other sensitive keys. If no, the key remains unencrypted in the file.
+
+If the user has put the key data in-line under `priv_key_data`, the Sync Tool will attempt to store the key data in OS secure storage. If successful, the key data will stored just like the other sensitive values. If unsuccessful (this can happen due to character limits in the default Windows credential store), the Sync Tool will take the user through the encryption prompts described above. The result is that the key data has been replaced with encrypted key data, and the key `priv_key_pass` has been added to `connector-umapi.yml` and its value subsequently stored.
+
+Below is the successful console output after running the `store` command where the `connector-umapi.yml` file uses `priv_key_path`:
 
 ```
-To store the priv_key_data when it's too long
-In order to save the priv_key_data which is present in the  connector-umapi or connector-adobe-console 
-file, Credential Store command will attempt to store the key data in the OS.
-Window credential store generally can't store data as large as Private Key. To store the key, Sync Tool 
-asks the user to encrypt the key. 
-If yes then user will be prompted for a password which will be saved as priv_key_pass and the encrypted key itself will be saved as priv_key_data in the file. 
-If no, the key data will remain in the file in an unencrypted state.
+C:\Program Files\Adobe\Adobe User Sync Tool>user-sync.exe credentials store
+Using keyring: cryptfile CryptFileKeyring
+Create password : [console input will be hidden]
+Repeat for confirmation:
+Encrypted private key file saved to: 'private.key'
+'['enterprise', 'priv_key_pass']' added to 'C:\Program Files\Adobe\UST_MultiCred_RC1\connector-umapi.yml' and stored securely.
+The following keys were stored:
 
-Refer to the (URL)
+connector-ldap.yml:
+  password
 
-(venv) C:\Program Files\Adobe\Adobe User Sync Tool>python user-sync.pex credentials store
-   <output from store goes here>
+connector-umapi.yml:
+  enterprise:client_id
+  enterprise:client_secret
 ```
 
-Similar to ```store```, ```retrieve``` does not take any arguments. Rather, 
+Similar to `store`, `retrieve` does not take any arguments. Rather, 
 it will automatically read the configuration files specified in 
-```user-sync-config.yml``` to find the values that have been stored securely.
-Then it uses Keyring to retrieve these values from OS Secure storage. These
+`user-sync-config.yml` to find the values that have been stored securely.
+Then it uses Keyring to retrieve these values from OS secure storage. These
 credentials will be printed to the console, but the configuration files
 will remain in their secure state. Successful output is shown below.
 
 ```
-(venv) C:\Program Files\Adobe\Adobe User Sync Tool>python user-sync.pex credentials retrieve
-   <output from retrieve goes here>
+C:\Program Files\Adobe\Adobe User Sync Tool>user-sync.exe credentials retrieve
+Using keyring: cryptfile CryptFileKeyring
+
+connector-ldap.yml:
+  password: [ldap password displayed in plaintext]
+
+connector-umapi.yml:
+  enterprise:client_id: [client_id displayed in plaintext]
+  enterprise:client_secret: [client_secret displayed in plaintext]
+  enterprise:priv_key_pass: [private key password displayed in plaintext]
 ```
 
-The ```revert``` subcommand is essentially the inverse of ```store```.
+The `revert` subcommand is essentially the inverse of `store`.
 It will replace any secured keys in the configuration 
 files with their original plaintext values. Note that OS Secure storage
 will still hold these credentials even after running revert.
 
-Successful output from ```revert``` is shown below.
+Successful output from `revert` is shown below.
 
 ```
-(venv) C:\Program Files\Adobe\Adobe User Sync Tool>python user-sync.pex credentials revert
-   <output from revert goes here>
+C:\Program Files\Adobe\Adobe User Sync Tool>user-sync.exe credentials revert
+Using keyring: cryptfile CryptFileKeyring
+The following keys were reverted to plaintext:
+
+connector-ldap.yml:
+  password
+
+connector-umapi.yml:
+  enterprise:client_id
+  enterprise:client_secret
+  enterprise:priv_key_pass
 ```
 
 <br/>
