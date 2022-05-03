@@ -123,7 +123,7 @@ def test_credman_retrieve_revert_valid(test_resources, modify_config):
 
 def test_credman_retrieve_revert_invalid(test_resources, modify_config):
     umapi_config_file = modify_config('umapi', ['enterprise', 'priv_key_path'], test_resources['priv_key'])
-    credman = CredentialManager(umapi_config_file)
+    credman = CredentialManager(test_resources['umapi_root_config'])
     # if credman.store() has not been called first then we can expect the following
     retrieved_creds = credman.retrieve()
     assert retrieved_creds == {}
