@@ -25,6 +25,10 @@ from user_sync import identity_type
 from user_sync.config.common import DictConfig, OptionsBuilder
 from user_sync.connector.directory import DirectoryConnector
 from user_sync.error import AssertionException
+from .connector.directory_adobe_console import AdobeConsoleConnector
+from .connector.directory_csv import CSVDirectoryConnector
+from .connector.directory_ldap import LDAPDirectoryConnector
+from .connector.directory_okta import OktaDirectoryConnector
 
 
 class DirectoryConnectorConfig(object):
@@ -55,6 +59,12 @@ class DirectoryConnectorConfig(object):
 
 
 class DirectoryConnectorManager(object):
+    connector_classes = {
+        'ldap': LDAPDirectoryConnector,
+        'csv': CSVDirectoryConnector,
+        'okta': OktaDirectoryConnector,
+        'adobe_console': AdobeConsoleConnector,
+    }
 
     def __init__(self, config_loader, additional_groups=None, default_account_type=None):
         self.logger = logging.getLogger("dc manager")
@@ -85,26 +95,25 @@ class DirectoryConnectorManager(object):
         directory_connector = None
         directory_connector_options = None
         directory_connector_module_name = self.config_loader.get_directory_connector_module_name(config.type)
-        if directory_connector_module_name is not None:
-            directory_connector_module = __import__(directory_connector_module_name, fromlist=[''])
-            directory_connector = DirectoryConnector(directory_connector_module)
-            directory_connector_options = self.config_loader.get_directory_connector_options(config.path)
+        if directory_connector_module_name not in self.connector_classes:
+            raise AssertionException(f"Connector type '{directory_connector_module_name}' is not valid")
 
-        if directory_connector is not None and directory_connector_options is not None:
-            # specify the default user_identity_type if it's not already specified in the options
-            if 'user_identity_type' not in directory_connector_options:
-                directory_connector_options['user_identity_type'] = self.new_account_type
-                directory_connector.initialize(directory_connector_options)
+        directory_connector_options = self.config_loader.get_directory_connector_options(config.path)
+        if directory_connector_options is not None:
+            directory_connector_options['user_identity_type'] = self.new_account_type
+
+        directory_connector = self.connector_classes[directory_connector_module_name](directory_connector_options)
 
         additional_group_filters = None
         if self.additional_groups and isinstance(self.additional_groups, list):
             additional_group_filters = [r['source'] for r in self.additional_groups]
-        if directory_connector is not None:
-            directory_connector.state.additional_group_filters = additional_group_filters
-            # show error dynamic mappings enabled but 'dynamic_group_member_attribute' is not defined
-            if additional_group_filters and directory_connector.state.options['dynamic_group_member_attribute'] is None:
-                raise AssertionException(
-                    "Failed to enable dynamic group mappings. 'dynamic_group_member_attribute' is not defined in config")
+
+        directory_connector.additional_group_filters = additional_group_filters
+
+        # show error dynamic mappings enabled but 'dynamic_group_member_attribute' is not defined
+        if additional_group_filters and directory_connector.options['dynamic_group_member_attribute'] is None:
+            raise AssertionException(
+                "Failed to enable dynamic group mappings. 'dynamic_group_member_attribute' is not defined in config")
 
         return directory_connector
 

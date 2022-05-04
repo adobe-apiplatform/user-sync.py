@@ -298,10 +298,7 @@ class UMAPIConfigLoader(ConfigLoader):
         if self.invocation_options.get('stray_list_input_path', None):
             return None
         connector_type = connector_type or self.invocation_options.get('directory_connector_type')
-        if connector_type:
-            return 'user_sync.connector.directory_' + connector_type
-        else:
-            return None
+        return connector_type
 
     def get_directory_connector_configs(self):
         """
