@@ -20,19 +20,16 @@
 import logging
 import os
 import platform
-import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
 
 import click
-import six
 from click_default_group import DefaultGroup
 from urllib3.exceptions import InsecureRequestWarning
 import requests
 
 import user_sync.certgen
-import user_sync.cli
 import user_sync.cli
 import user_sync.config
 import user_sync.connector.directory
@@ -53,10 +50,8 @@ import user_sync.lockfile
 import user_sync.resource
 from user_sync.credentials import CredentialManager
 from user_sync.error import AssertionException
-import user_sync.resource
 from user_sync.config.user_sync import UMAPIConfigLoader
 from user_sync.config.sign_sync import SignConfigLoader
-from user_sync.config import common as config_common
 from user_sync.config import user_sync as config
 from user_sync.config.common import ConfigLoader, OptionsBuilder
 from user_sync.connector.connector_umapi import UmapiConnector
@@ -71,7 +66,6 @@ from user_sync.connector.directory_okta import OktaDirectoryConnector
 import user_sync.cli
 import user_sync.resource
 from user_sync.dcmanager import DirectoryConnectorManager
-from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
 
 LOG_STRING_FORMAT = '%(asctime)s %(process)d %(levelname)s %(name)s - %(message)s'
@@ -208,6 +202,7 @@ def sync(**kwargs):
             logger.critical("%s", e)
             e.set_reported()
 
+
 @main.command()
 @click.help_option('-h', '--help')
 @click.option('-c', '--config-filename',
@@ -236,6 +231,7 @@ def sign_sync(**kwargs):
         if not e.is_reported():
             logger.critical("%s", e)
             e.set_reported()
+
 
 @main.command()
 @click.help_option('-h', '--help')
@@ -324,7 +320,7 @@ def migrate_post_sync(config_filename, connector_type, connector_filename):
             'account_admin': False,
         }
         sign_sync_data['user_management'].append(mapping)
-    
+
     # now define admin role mappings
     admin_roles: list[dict] = post_sync_config.get('admin_roles', [])
     for admin_role in admin_roles:
@@ -366,11 +362,11 @@ def begin_work_umapi(config_loader: UMAPIConfigLoader):
     umapi_engine_config = config_loader.get_engine_options()
 
     if not umapi_engine_config['ssl_cert_verify']:
-      logger.warning("SSL certificate verification is bypassed.  Consider disabling this option and using the "
-                     "REQUESTS_CA_BUNDLE environment variable to specify the PEM firewall bundle...")
-      # Suppress only the single warning from urllib3 needed.
-      # noinspection PyUnresolvedReferences
-      requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+        logger.warning("SSL certificate verification is bypassed.  Consider disabling this option and using the "
+                       "REQUESTS_CA_BUNDLE environment variable to specify the PEM firewall bundle...")
+        # Suppress only the single warning from urllib3 needed.
+        # noinspection PyUnresolvedReferences
+        requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 
     # make sure that all the adobe groups are from known umapi connector names
     primary_umapi_config, secondary_umapi_configs = config_loader.get_target_options()
@@ -403,6 +399,7 @@ def begin_work_umapi(config_loader: UMAPIConfigLoader):
     if len(directory_groups) == 0 and rule_processor.will_process_groups():
         logger.warning('No group mapping specified in configuration but --process-groups requested on command line')
     rule_processor.run(directory_groups, directory_connector_manager, umapi_connectors)
+
 
 def load_directory_config(config_loader: ConfigLoader, new_account_type=None) -> tuple[DirectoryConnector, dict]:
 
@@ -465,12 +462,12 @@ def run_sync(config_loader, begin_work):
     except KeyboardInterrupt:
         try:
             logger.critical('Keyboard interrupt, exiting immediately.')
-        except:
+        except Exception:
             pass
-    except:
+    except Exception:
         try:
             logger.error('Unhandled exception', exc_info=sys.exc_info())
-        except:
+        except Exception:
             pass
 
     finally:
@@ -573,7 +570,7 @@ def example_config_sign(**kwargs):
         'sign': os.path.join('examples', 'connector-sign.yml'),
         'ldap': os.path.join('examples', 'connector-ldap.yml'),
     }
-        
+
     for k, fname in kwargs.items():
         target = Path.cwd() / fname
         assert k in res_files, "Invalid option specified"
@@ -586,7 +583,8 @@ def example_config_sign(**kwargs):
             content = file.read()
         with open(target, 'w') as file:
             file.write(content)
-            
+
+
 def init_log(logging_config):
     """
     :type logging_config: user_sync.config.DictConfig
@@ -643,6 +641,7 @@ def init_log(logging_config):
         logging.getLogger().addHandler(file_handler)
         if unknown_file_log_level:
             logger.log(logging.WARNING, 'Unknown file log level: %s setting to info' % options['file_log_level'])
+
 
 def log_parameters(argv, config_loader):
     """
@@ -808,6 +807,7 @@ def set_credential(identifier, value, username):
 
 
 main.add_command(credentials)
+
 
 @main.command(short_help="Encrypt RSA private key")
 @click.help_option('-h', '--help')

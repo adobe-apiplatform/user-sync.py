@@ -17,6 +17,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import os
 
 
 class AssertionException(Exception):
@@ -29,3 +30,14 @@ class AssertionException(Exception):
 
     def is_reported(self):
         return self.reported
+
+
+class UserSyncDeprecationWarning(DeprecationWarning):
+    def __init__(self, message):
+        super(DeprecationWarning, self).__init__(message)
+        self.message = message
+
+    def __str__(self):
+        # this line required for ANSI text formatting
+        os.system('')
+        return "\x1b[33;21m" + str(self.message) + "\x1b[0m"
