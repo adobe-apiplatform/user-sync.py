@@ -1,0 +1,46 @@
+FROM centos:7 as builder
+
+RUN yum install -y \
+    pkgconfig \
+    gcc \
+    openssl-devel \
+    dbus-glib-devel \
+    dbus-python \
+    libffi-devel \
+    sqlite-devel \
+    wget \
+    make
+
+WORKDIR /tmp/python
+
+RUN wget https://www.python.org/ftp/python/3.9.7/Python-3.9.7.tgz && \
+    tar xzf Python-3.9.7.tgz && \
+    cd Python-3.9.7 && \
+    ./configure --enable-optimizations --enable-shared --enable-loadable-sqlite-extensions && \
+    make altinstall
+
+WORKDIR /app/user-sync.py
+
+COPY . .
+
+RUN export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/ && \
+    /usr/local/bin/python3.9 -m venv venv && \
+    source venv/bin/activate && \
+    # for some reason, pycryptodome won't install when
+    # setuptools is installed/upgraded, so install it before
+    # install/upgrade setuptools
+    pip install pycryptodome==3.9.7 && \
+    python -m pip install --upgrade pip pyinstaller setuptools && \
+    pip install ./sign_client && \
+    pip install external/okta-0.0.3.1-py2.py3-none-any.whl && \
+    pip install -e . && \
+    pip install -e .[test] && \
+    pip install -e .[setup] && \
+    make && \
+    deactivate
+
+FROM centos:7
+
+COPY --from=builder /app/user-sync.py/dist/user-sync /usr/local/bin/user-sync
+
+ENTRYPOINT [ "user-sync" ]
