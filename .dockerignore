@@ -1,0 +1,15 @@
+dist
+docs
+.git
+.vscode
+venv
+.coverage
+.pytest_cache
+.idea
+.eggs
+.config
+*.egg-info
+build
+*~
+.projectile
+.dir-locals.el
