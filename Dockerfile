@@ -1,6 +1,6 @@
-FROM python:3.9
+FROM python:3.9-slim
 
-WORKDIR /src/user-sync.py
+WORKDIR /app/user-sync.py
 
 COPY . .
 

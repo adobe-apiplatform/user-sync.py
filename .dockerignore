@@ -8,3 +8,8 @@ venv
 .idea
 .eggs
 .config
+*.egg-info
+build
+*~
+.projectile
+.dir-locals.el
