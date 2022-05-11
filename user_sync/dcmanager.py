@@ -19,8 +19,6 @@
 # SOFTWARE.
 import logging
 
-import six
-
 from user_sync import identity_type
 from user_sync.config.common import DictConfig, OptionsBuilder
 from user_sync.connector.directory import DirectoryConnector
@@ -74,7 +72,7 @@ class DirectoryConnectorManager(object):
         self.connectors = {}
         self.is_multi = config_loader.invocation_options['connector'] == ['multi']
 
-        for k, v in six.iteritems(self.build_directory_config_dict()):
+        for k, v in self.build_directory_config_dict().items():
             self.connectors[k] = self.build_connector(v)
 
     def build_directory_config_dict(self):
@@ -130,7 +128,7 @@ class DirectoryConnectorManager(object):
         dir_groups = self.build_directory_groups(groups)
         global_groups = self.common_names_for_connector(dir_groups, None)
 
-        for c, v in six.iteritems(self.connectors):
+        for c, v in self.connectors.items():
             self.logger.info("Loading users from connector: " + "id: " + c + "   type: " + v.name)
             common_names = global_groups.copy().union(self.common_names_for_connector(dir_groups, c))
             new_users = list(v.load_users_and_groups(common_names, extended_attributes, all_users))

@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from os import urandom
 
 import click
-import six
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes

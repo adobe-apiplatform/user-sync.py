@@ -5,7 +5,6 @@ from collections.abc import Mapping
 
 import click
 import keyrings.cryptfile.cryptfile
-import six
 from keyring.errors import KeyringError
 from ruamel.yaml.main import YAML
 from ruamel.yaml.scalarstring import PreservedScalarString as pss
@@ -346,7 +345,7 @@ class CredentialConfig:
                 return value['secure']
             raise AssertionException("Invalid secure key format for '{0}'. Dict should have "
                                      "exactly one key called 'secure': {1}".format(value, value))
-        elif not isinstance(value, six.text_type):
+        elif not isinstance(value, str):
             raise AssertionException("Invalid credential format for '{0}'.  "
                                      "Key must be dict or string: {1}".format(value, value))
 

@@ -24,7 +24,6 @@ import logging
 import math
 
 import jwt
-import six
 import umapi_client
 
 import user_sync.connector.helper

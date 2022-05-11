@@ -19,7 +19,6 @@
 # SOFTWARE.
 
 import okta
-import six
 import string
 from okta.framework.OktaError import OktaError
 

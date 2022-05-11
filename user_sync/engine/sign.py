@@ -1,8 +1,6 @@
 import logging
 import time
 
-import six
-
 from user_sync.config.common import DictConfig, ConfigFileLoader, as_set, check_max_limit
 from user_sync.connector.connector_sign import SignConnector
 from user_sync.error import AssertionException

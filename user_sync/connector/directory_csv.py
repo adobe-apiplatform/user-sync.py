@@ -18,7 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import six
 import user_sync.connector.helper
 import user_sync.error
 import user_sync.identity_type
