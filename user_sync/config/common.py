@@ -409,7 +409,7 @@ class ConfigFileLoader:
             self.process_path_key(dirpath, filename, key_path, yml, keys, 1, *options)
         return yml
 
-    def process_path_key(self, dirpath, filename, key_path, dictionary, keys, level, must_exist, can_have_subdict, default_val):
+    def process_path_key(self, dirpath, filename, key_path, dictionary, keys, level, must_exist, can_have_subdict, default_val, key_names):
         """
         this function is given the list of keys in the current key_path, and searches
         recursively into the given dictionary until it finds the designated value, and then
@@ -430,29 +430,37 @@ class ConfigFileLoader:
             # should process all keys as path values
             if key == "*":
                 for key, val in dictionary.items():
-                    dictionary[key] = self.process_path_value(dirpath, filename, key_path, val, must_exist, can_have_subdict)
+                    dictionary[key] = self.process_path_value(dirpath, filename, key_path, val, must_exist, can_have_subdict, key_names)
             elif key in dictionary:
-                dictionary[key] = self.process_path_value(dirpath, filename, key_path, dictionary[key], must_exist, can_have_subdict)
+                dictionary[key] = self.process_path_value(dirpath, filename, key_path, dictionary[key], must_exist, can_have_subdict, key_names)
             # key was not found, but default value was set, so apply it
             elif default_val:
                 dictionary[key] = self.relative_path(dirpath, filename, key_path, default_val, must_exist)
         # otherwise recurse deeper into the dict
         elif level < len(keys) - 1:
             key = keys[level]
-            if key in dictionary:
+            # if a wildcard is specified at this level, this indicates this
+            # should select all keys that have dict type values, and recurse
+            # into them at the next level
+            if key == "*":
+                for key in dictionary.keys():
+                    if isinstance(dictionary[key], dict):
+                        self.process_path_key(dirpath, filename, key_path, dictionary[key], keys, level + 1,
+                                              must_exist, can_have_subdict, default_val, key_names)
+            elif key in dictionary:
                 # if the key refers to a dictionary, recurse into it to go
                 # further down the path key
                 if isinstance(dictionary[key], dict):
                     self.process_path_key(dirpath, filename, key_path, dictionary[key], keys, level + 1,
-                                          must_exist, can_have_subdict, default_val)
+                                          must_exist, can_have_subdict, default_val, key_names)
             # if the key was not found, but a default value is specified,
             # drill down further to set the default value
             elif default_val:
                 dictionary[key] = {}
                 self.process_path_key(dirpath, filename, key_path, dictionary[key], keys, level + 1,
-                                      must_exist, can_have_subdict, default_val)
+                                      must_exist, can_have_subdict, default_val, key_names)
 
-    def process_path_value(self, dirpath, filename, key_path, val, must_exist, can_have_subdict):
+    def process_path_value(self, dirpath, filename, key_path, val, must_exist, can_have_subdict, key_names):
         """
         does the relative path processing for a value from the dictionary,
         which can be a string, a list of strings, or a list of strings
@@ -467,8 +475,14 @@ class ConfigFileLoader:
             vals = []
             for entry in val:
                 if can_have_subdict and isinstance(entry, dict):
-                    for subkey, subval in entry.items():
-                        vals.append({subkey: self.relative_path(dirpath, filename, key_path, subval, must_exist)})
+                    if key_names:
+                        for subkey, subval in entry.items():
+                            if subkey in key_names:
+                                entry[subkey] = self.relative_path(dirpath, filename, key_path, subval, must_exist)
+                        vals.append(entry)
+                    else:
+                        for subkey, subval in entry.items():
+                            vals.append({subkey: self.relative_path(dirpath, filename, key_path, subval, must_exist)})
                 else:
                     vals.append(self.relative_path(dirpath, filename, key_path, entry, must_exist))
             return vals

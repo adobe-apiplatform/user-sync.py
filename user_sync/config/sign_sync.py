@@ -65,16 +65,16 @@ class SignConfigLoader(ConfigLoader):
     # key_paths in the root configuration file that should have filename values
     # mapped to their value options.  See load_from_yaml for the option meanings.
     ROOT_CONFIG_PATH_KEYS = {
-        '/sign_orgs/*': (True, False, None),
-        '/identity_source/connector': (True, False, None),
-        '/logging/file_log_directory': (False, False, "sign_logs"),
-        '/cache/path': (False, False, None),
+        '/sign_orgs/*': (True, False, None, None),
+        '/identity_source/connector': (True, False, None, None),
+        '/logging/file_log_directory': (False, False, "sign_logs", None),
+        '/cache/path': (False, False, None, None),
     }
 
     # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files
     SUB_CONFIG_PATH_KEYS = {
-        '/integration/priv_key_path': (True, False, None),
-        '/file_path': (True, False, None),
+        '/integration/priv_key_path': (True, False, None, None),
+        '/file_path': (True, False, None, None),
     }
 
     config_defaults = {

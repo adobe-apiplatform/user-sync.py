@@ -20,12 +20,8 @@
 
 import codecs
 import logging
-import os
 import re
 from copy import deepcopy
-
-import six
-import yaml
 
 import user_sync.helper
 import user_sync.identity_type
@@ -33,7 +29,7 @@ from user_sync import flags
 from user_sync.engine import umapi as rules
 from user_sync.engine.common import AdobeGroup, PRIMARY_TARGET_NAME
 from user_sync.error import AssertionException
-from .common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options, as_list, resolve_invocation_options, validate_max_limit_config
+from .common import DictConfig, ConfigLoader, ConfigFileLoader, as_list, resolve_invocation_options, validate_max_limit_config
 
 
 class UMAPIConfigLoader(ConfigLoader):
@@ -42,15 +38,17 @@ class UMAPIConfigLoader(ConfigLoader):
     """
     # key_paths in the root configuration file that should have filename values
     # mapped to their value options.  See load_from_yaml for the option meanings.
-    ROOT_CONFIG_PATH_KEYS = {'/adobe_users/connectors/umapi': (True, True, None),
-                             '/directory_users/connectors/*': (True, False, None),
-                             '/directory_users/extension': (True, False, None),
-                             '/logging/file_log_directory': (False, False, "logs"),
+    ROOT_CONFIG_PATH_KEYS = {'/adobe_users/connectors/umapi': (True, True, None, None),
+                             '/directory_users/connectors/*': (True, True, None, ['path']),
+                             '/directory_users/extension': (True, False, None, None),
+                             '/logging/file_log_directory': (False, False, "logs", None),
                              }
 
     # like ROOT_CONFIG_PATH_KEYS, but for non-root configuration files
-    SUB_CONFIG_PATH_KEYS = {'/enterprise/priv_key_path': (True, False, None),
-                            '/integration/priv_key_path': (True, False, None)}
+    SUB_CONFIG_PATH_KEYS = {'/enterprise/priv_key_path': (True, False, None, None),
+                            '/integration/priv_key_path': (True, False, None, None),
+                            '/file_path': (True, False, None, None),
+                            }
 
     # default values for reading configuration files
     # these are in alphabetical order!  Always add new ones that way!
