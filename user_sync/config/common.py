@@ -544,8 +544,8 @@ class OptionsBuilder:
             raise AssertionException("No config found.")
         self.options[key] = value = config.get_value(key, allowed_types)
         return value
-        
-        
+
+
 def resolve_invocation_options(options: dict, invocation_config: DictConfig, invocation_defaults: dict, args: dict) -> dict:
     # get overrides from the main config
     if invocation_config:
@@ -578,8 +578,10 @@ def as_list(value):
         return value
     return [value]
 
+
 def as_set(value):
     return set(as_list(value))
+
 
 def validate_max_limit_config(max_missing):
     percent_pattern = re.compile(r"(\d*(\.\d+)?%)")
@@ -596,6 +598,7 @@ def validate_max_limit_config(max_missing):
             raise AssertionException("Unable to parse max_adobe_only_users value. Value must be a percentage or an integer.")
     return options_param
 
+
 def check_max_limit(stray_count, max_missing_option, primary_user_count, secondary_user_count, console, logger, org_string=""):
     if isinstance(max_missing_option, str) and '%' in max_missing_option:
         percent = float(max_missing_option.strip('%')) / 100
@@ -604,7 +607,7 @@ def check_max_limit(stray_count, max_missing_option, primary_user_count, seconda
         max_missing = max_missing_option
     if stray_count > max_missing:
         logger.critical('%sUnable to process %s-only users, as their count (%s) is larger '
-                                'than the max_adobe_only_users setting (%s)', org_string, console, stray_count, max_missing_option)
+                        'than the max_adobe_only_users setting (%s)', org_string, console, stray_count, max_missing_option)
         return False
     else:
         return True
