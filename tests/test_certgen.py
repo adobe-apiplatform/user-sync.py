@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from user_sync.certgen import *
+from user_sync.certgen import create_key, get_subject_fields, create_cert, write_cert_to_file, write_key_to_file
 from user_sync.error import AssertionException
 
 
