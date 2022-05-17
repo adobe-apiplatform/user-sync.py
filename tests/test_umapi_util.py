@@ -8,8 +8,9 @@ from user_sync.credentials import CredentialConfig, CredentialManager
 
 
 def test_make_auth_dict(test_resources):
-    umapi_config = ConfigFileLoader.load_from_yaml(test_resources['umapi_root_config'], {})
-    umapi_config['enterprise']['priv_key_path'] = test_resources['priv_key']
+    cf_loader = ConfigFileLoader('utf8', UMAPIConfigLoader.ROOT_CONFIG_PATH_KEYS,
+                            UMAPIConfigLoader.SUB_CONFIG_PATH_KEYS)
+    umapi_config = cf_loader.load_from_yaml(test_resources['umapi'], {})
     # note that the private_key fixture is actually just the absolute path to test_private.key in the fixture dir
     umapi_dict_config = DictConfig('enterprise', umapi_config['enterprise'])
     org_id_from_file = umapi_config['enterprise']['org_id']
