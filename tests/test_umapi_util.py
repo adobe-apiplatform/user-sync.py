@@ -1,6 +1,7 @@
 import pytest
 
 from user_sync.config.common import ConfigFileLoader, DictConfig
+from user_sync.config.user_sync import UMAPIConfigLoader
 from user_sync.connector.umapi_util import make_auth_dict
 from user_sync.error import AssertionException
 import user_sync.connector.helper
