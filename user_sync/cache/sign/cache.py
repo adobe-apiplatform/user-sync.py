@@ -8,9 +8,11 @@ import json
 import sqlite3
 from collections import defaultdict
 
+
 class SignCache(CacheBase):
     # increment this every time there are changes to table schema or data model
     VERSION: int = 1
+
     def __init__(self, store_path: Path, org_name: str) -> None:
         sqlite3.register_adapter(DetailedUserInfo, adapt_user)
         sqlite3.register_converter("detailed_user_info", convert_user)
@@ -33,7 +35,7 @@ class SignCache(CacheBase):
             self.init_meta()
             self.should_refresh = True
         super().__init__()
-    
+
     def rebuild_tables(self):
         self.db_conn.execute("drop table users")
         self.db_conn.execute("drop table groups")
@@ -41,7 +43,7 @@ class SignCache(CacheBase):
         for s in [sign_users_schema, sign_groups_schema, sign_user_groups_schema]:
             self.db_conn.execute(s)
         self.db_conn.commit()
-    
+
     def clear_all(self):
         self.db_conn.execute("delete from users")
         self.db_conn.execute("delete from groups")
@@ -55,7 +57,7 @@ class SignCache(CacheBase):
     def update_user(self, user: DetailedUserInfo):
         self.db_conn.execute("update users set user = ? where id = ?", (user, user.id))
         self.db_conn.commit()
-    
+
     def get_users(self) -> list[DetailedUserInfo]:
         cur = self.db_conn.cursor()
         cur.execute("select user from users")
@@ -82,7 +84,7 @@ class SignCache(CacheBase):
     def delete_group(self, group: GroupInfo):
         self.db_conn.execute("delete from groups where id = ?", (group.groupId, ))
         self.db_conn.commit()
-    
+
     def get_groups(self) -> list[GroupInfo]:
         cur = self.db_conn.cursor()
         cur.execute("select group_info from groups")
@@ -91,7 +93,7 @@ class SignCache(CacheBase):
     def cache_user_group(self, user_id: str, user_group: UserGroupInfo):
         self.db_conn.execute("insert into user_groups(user_id, user_group) values (?,?)", (user_id, user_group))
         self.db_conn.commit()
-    
+
     def get_user_groups(self) -> list[tuple[str, list[UserGroupInfo]]]:
         groups_by_user = defaultdict(list)
         cur = self.db_conn.cursor()
@@ -106,20 +108,26 @@ class SignCache(CacheBase):
         for user_group in user_groups:
             self.cache_user_group(user_id, user_group)
 
+
 def adapt_user(user: DetailedUserInfo) -> str:
     return json.dumps(user.__dict__, cls=JSONEncoder).encode('ascii')
+
 
 def convert_user(s: str) -> DetailedUserInfo:
     return DetailedUserInfo.from_dict(json.loads(s))
 
+
 def adapt_group(group: GroupInfo) -> str:
     return json.dumps(group.__dict__, cls=JSONEncoder).encode('ascii')
+
 
 def convert_group(s: str) -> GroupInfo:
     return GroupInfo.from_dict(json.loads(s))
 
+
 def adapt_user_group(user_group: UserGroupInfo) -> str:
     return json.dumps(user_group.__dict__, cls=JSONEncoder).encode('ascii')
+
 
 def convert_user_group(s: str) -> UserGroupInfo:
     return UserGroupInfo.from_dict(json.loads(s))
