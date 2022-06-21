@@ -11,7 +11,7 @@ from collections import defaultdict
 
 class SignCache(CacheBase):
     # increment this every time there are changes to table schema or data model
-    VERSION: int = 1
+    VERSION: int = 2
 
     def __init__(self, store_path: Path, org_name: str) -> None:
         sqlite3.register_adapter(DetailedUserInfo, adapt_user)

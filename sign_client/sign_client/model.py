@@ -147,7 +147,7 @@ class GroupsInfo:
 @dataclass
 class BooleanSettingsInfo:
     value: bool
-    inherited: bool
+    inherited: bool = False
 
     @classmethod
     def from_dict(cls, dct):
@@ -159,6 +159,8 @@ class SettingsInfo:
     libaryDocumentCreationVisible: BooleanSettingsInfo = None
     sendRestrictedToWorkflows: BooleanSettingsInfo = None
     userCanSend: BooleanSettingsInfo = None
+    userManagedWorkflowsEnabled: BooleanSettingsInfo = None
+    allowedToShareUserCreatedWorkflows: BooleanSettingsInfo = None
 
     @classmethod
     def from_dict(cls, dct):
