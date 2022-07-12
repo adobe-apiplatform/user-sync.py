@@ -147,7 +147,7 @@ class GroupsInfo:
 @dataclass
 class BooleanSettingsInfo:
     value: bool
-    inherited: bool = False
+    inherited: bool = None
 
     @classmethod
     def from_dict(cls, dct):
