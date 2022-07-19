@@ -53,7 +53,7 @@ from user_sync.error import AssertionException
 from user_sync.config.user_sync import UMAPIConfigLoader
 from user_sync.config.sign_sync import SignConfigLoader
 from user_sync.config import user_sync as config
-from user_sync.config.common import ConfigLoader, OptionsBuilder
+from user_sync.config.common import ConfigLoader, ConfigFileLoader, OptionsBuilder
 from user_sync.connector.connector_umapi import UmapiConnector
 from user_sync.engine.common import PRIMARY_TARGET_NAME
 from user_sync.engine.sign import SignSyncEngine
@@ -695,7 +695,12 @@ def log_credentials(credentials, show_values=False):
               default="all",
               metavar='all|ldap|umapi|okta|console')
 @click.option('--auto', '-a', help='Override user input (encrypt private key data if storage fails, etc.', is_flag=True)
-def store(config_filename, type, auto):
+@click.option('--config-file-encoding', 'encoding_name',
+              help="encoding of your configuration files",
+              type=str,
+              nargs=1,
+              metavar='encoding-name')
+def store(config_filename, encoding_name, type, auto):
     """
     Stores secure credentials in the configuration file.
     Use the --type parameter to store for just one file type (ldap, umapi, etc)
@@ -703,7 +708,8 @@ def store(config_filename, type, auto):
     random passphrase, which will be stored in the credential manager instead.
     """
     click.echo()
-    stored = CredentialManager(config_filename, connector_type=type, auto=auto).store()
+    config_loader = ConfigFileLoader(encoding_name, UMAPIConfigLoader.ROOT_CONFIG_PATH_KEYS, UMAPIConfigLoader.SUB_CONFIG_PATH_KEYS)
+    stored = CredentialManager(config_filename, config_loader, connector_type=type, auto=auto).store()
     if stored:
         click.echo("The following keys were stored:")
         log_credentials(stored)
@@ -725,11 +731,17 @@ def store(config_filename, type, auto):
               nargs=1,
               default="all",
               metavar='all|ldap|umapi|okta|console')
-def revert(config_filename, type):
+@click.option('--config-file-encoding', 'encoding_name',
+              help="encoding of your configuration files",
+              type=str,
+              nargs=1,
+              metavar='encoding-name')
+def revert(config_filename, encoding_name, type):
     """
     Revert updates config files with actual plaintext data. This is an automated process.
     """
-    reverted = CredentialManager(config_filename, type).revert()
+    config_loader = ConfigFileLoader(encoding_name, UMAPIConfigLoader.ROOT_CONFIG_PATH_KEYS, UMAPIConfigLoader.SUB_CONFIG_PATH_KEYS)
+    reverted = CredentialManager(config_filename, config_loader, type).revert()
     if reverted:
         click.echo("The following keys were reverted to plaintext:")
         log_credentials(reverted)
@@ -750,11 +762,17 @@ def revert(config_filename, type):
               nargs=1,
               default="all",
               metavar='all|ldap|umapi|okta|console')
-def retrieve(config_filename, type):
+@click.option('--config-file-encoding', 'encoding_name',
+              help="encoding of your configuration files",
+              type=str,
+              nargs=1,
+              metavar='encoding-name')
+def retrieve(config_filename, encoding_name, type):
     """
     Fetch and display currently stored credentials
     """
-    retrieved = CredentialManager(config_filename, type).retrieve()
+    config_loader = ConfigFileLoader(encoding_name, UMAPIConfigLoader.ROOT_CONFIG_PATH_KEYS, UMAPIConfigLoader.SUB_CONFIG_PATH_KEYS)
+    retrieved = CredentialManager(config_filename, config_loader, type).retrieve()
     if not retrieved:
         click.echo("No credentials currently stored with valid identifiers.")
     log_credentials(retrieved, show_values=True)
@@ -790,6 +808,11 @@ def get_credential(identifier, username):
                    "Username will always be 'user_sync' unless you specify --username.")
 @click.option('-u', '--username', type=str,
               help="Alternative username setting, for backwards compatibility only. ")
+@click.option('--config-file-encoding', 'encoding_name',
+              help="encoding of your configuration files",
+              type=str,
+              nargs=1,
+              metavar='encoding-name')
 def set_credential(identifier, value, username):
     """
     Sets the specified credentials in keyring

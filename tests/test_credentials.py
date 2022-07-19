@@ -6,6 +6,8 @@ import pytest
 import yaml
 
 from user_sync import encryption
+from user_sync.config.common import ConfigFileLoader
+from user_sync.config.user_sync import UMAPIConfigLoader
 from user_sync.credentials import CredentialConfig, CredentialManager, Key, LdapCredentialConfig, UmapiCredentialConfig
 
 
@@ -94,7 +96,8 @@ def test_retrieve_revert_umapi_valid(test_resources, modify_config):
 
 def test_credman_retrieve_revert_valid(test_resources, modify_config):
     umapi_config_file = modify_config('umapi', ['enterprise', 'priv_key_path'], test_resources['priv_key'])
-    credman = CredentialManager(test_resources['umapi_root_config'], auto=True)
+    config_loader = ConfigFileLoader('utf-8', UMAPIConfigLoader.ROOT_CONFIG_PATH_KEYS, UMAPIConfigLoader.SUB_CONFIG_PATH_KEYS)
+    credman = CredentialManager(test_resources['umapi_root_config'], config_loader, auto=True)
     with open(test_resources['ldap']) as f:
         data = yaml.safe_load(f)
         plaintext_ldap_password = data['password']
@@ -122,8 +125,8 @@ def test_credman_retrieve_revert_valid(test_resources, modify_config):
 
 
 def test_credman_retrieve_revert_invalid(test_resources, modify_config):
-    umapi_config_file = modify_config('umapi', ['enterprise', 'priv_key_path'], test_resources['priv_key'])
-    credman = CredentialManager(umapi_config_file)
+    config_loader = ConfigFileLoader('utf-8', UMAPIConfigLoader.ROOT_CONFIG_PATH_KEYS, UMAPIConfigLoader.SUB_CONFIG_PATH_KEYS)
+    credman = CredentialManager(test_resources['umapi_root_config'], config_loader, auto=True)
     # if credman.store() has not been called first then we can expect the following
     retrieved_creds = credman.retrieve()
     assert retrieved_creds == {}
@@ -195,8 +198,9 @@ def test_config_store_key_none(test_resources):
 
 
 def test_credman_encrypt_decrypt_key_path(test_resources, modify_config):
-    umapi_config_file = modify_config('umapi', ['enterprise', 'priv_key_path'], test_resources['priv_key'])
-    credman = CredentialManager(test_resources['umapi_root_config'], auto=True)
+    modify_config('umapi', ['enterprise', 'priv_key_path'], test_resources['priv_key'])
+    config_loader = ConfigFileLoader('utf-8', UMAPIConfigLoader.ROOT_CONFIG_PATH_KEYS, UMAPIConfigLoader.SUB_CONFIG_PATH_KEYS)
+    credman = CredentialManager(test_resources['umapi_root_config'], config_loader, auto=True)
     with open(test_resources['priv_key']) as f:
         key_data = f.read()
         assert encryption.is_encryptable(key_data)
@@ -215,7 +219,8 @@ def test_credman_encrypt_decrypt_key_data(test_resources, modify_config):
     with open(test_resources['priv_key']) as f:
         key_data = f.read()
         umapi_config_file = modify_config('umapi', ['enterprise', 'priv_key_data'], key_data)
-    credman = CredentialManager(test_resources['umapi_root_config'], auto=True)
+    config_loader = ConfigFileLoader('utf-8', UMAPIConfigLoader.ROOT_CONFIG_PATH_KEYS, UMAPIConfigLoader.SUB_CONFIG_PATH_KEYS)
+    credman = CredentialManager(test_resources['umapi_root_config'], config_loader, auto=True)
     with open(umapi_config_file) as f:
         umapi_dict = yaml.safe_load(f)
         assert encryption.is_encryptable(umapi_dict['enterprise']['priv_key_data'])

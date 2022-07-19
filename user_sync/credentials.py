@@ -10,7 +10,7 @@ from ruamel.yaml.main import YAML
 from ruamel.yaml.scalarstring import PreservedScalarString as pss
 
 from user_sync import encryption
-from user_sync.config.common import ConfigFileLoader, ConfigLoader
+from user_sync.config.common import ConfigFileLoader, ConfigLoader, as_list
 from user_sync.error import AssertionException
 
 keyrings.cryptfile.cryptfile.CryptFileKeyring.keyring_key = "none"
@@ -30,9 +30,10 @@ class CredentialManager:
     logger = logging.getLogger("credential_manager")
     keyring_name = keyring.get_keyring().name
 
-    def __init__(self, root_config=None, connector_type="all", auto=False):
+    def __init__(self, root_config=None, config_loader=None, connector_type="all", auto=False):
         self.config_files = {}
         self.root_config = root_config
+        self.config_loader = config_loader
         self.auto = auto
         if self.root_config:
             self.load_configs(connector_type)
@@ -67,7 +68,7 @@ class CredentialManager:
         This method will be responsible for reading all config files specified in user-sync-config.yml
         so that credential manager knows which keys and values are needed per file
         """
-        root_cfg = ConfigFileLoader.load_root_config(self.root_config)
+        root_cfg = self.config_loader.load_root_config(self.root_config)
         try:
             console_log_level = root_cfg['logging']['console_log_level'].upper()
             self.logger.setLevel(console_log_level)
@@ -87,7 +88,7 @@ class CredentialManager:
                 self.config_files[c[1]] = CredentialConfig.create(c[0], c[1])
 
         if connector_type in ['all', 'umapi']:
-            for u in ConfigLoader.as_list(root_cfg['adobe_users']['connectors']['umapi']):
+            for u in as_list(root_cfg['adobe_users']['connectors']['umapi']):
                 u = list(u.values())[0] if isinstance(u, dict) else u
                 self.config_files[u] = UmapiCredentialConfig(u, auto=self.auto)
 
