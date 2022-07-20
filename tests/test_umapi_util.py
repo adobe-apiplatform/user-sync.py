@@ -1,14 +1,16 @@
 import pytest
 
 from user_sync.config.common import ConfigFileLoader, DictConfig
+from user_sync.config.user_sync import UMAPIConfigLoader
 from user_sync.connector.umapi_util import make_auth_dict
 from user_sync.error import AssertionException
 import user_sync.connector.helper
-from user_sync.credentials import CredentialConfig, CredentialManager
+from user_sync.credentials import CredentialManager
 
 
 def test_make_auth_dict(test_resources):
-    umapi_config = ConfigFileLoader.load_from_yaml(test_resources['umapi_root_config'], {})
+    config_loader = ConfigFileLoader('utf-8', UMAPIConfigLoader.ROOT_CONFIG_PATH_KEYS, UMAPIConfigLoader.SUB_CONFIG_PATH_KEYS)
+    umapi_config = config_loader.load_from_yaml(test_resources['umapi'], {})
     umapi_config['enterprise']['priv_key_path'] = test_resources['priv_key']
     # note that the private_key fixture is actually just the absolute path to test_private.key in the fixture dir
     umapi_dict_config = DictConfig('enterprise', umapi_config['enterprise'])
@@ -29,7 +31,7 @@ def test_make_auth_dict(test_resources):
     # add priv_key_data along with path and check for the exception
     umapi_config['enterprise']['priv_key_data'] = key_data_from_file
     with pytest.raises(AssertionException):
-        invalid_auth_dict = make_auth_dict(name, umapi_dict_config, org_id_from_file, tech_acct_from_file, logger)
+        make_auth_dict(name, umapi_dict_config, org_id_from_file, tech_acct_from_file, logger)
     # now set the path to none and make sure that auth dict will still return the key data correctly
     umapi_config['enterprise']['priv_key_path'] = None
     auth_dict_key_data = make_auth_dict(name, umapi_dict_config, org_id_from_file, tech_acct_from_file, logger)
@@ -38,7 +40,7 @@ def test_make_auth_dict(test_resources):
     # AssertionException thrown by get_credential (from the DictConfig)
     umapi_config['enterprise']['secure_priv_key_data_key'] = 'make_auth_identifier'
     with pytest.raises(AssertionException):
-        invalid_auth_dict = make_auth_dict(name, umapi_dict_config, org_id_from_file, tech_acct_from_file, logger)
+        make_auth_dict(name, umapi_dict_config, org_id_from_file, tech_acct_from_file, logger)
     # and if there is only the secure format it should work as long as the credential has been set
     credman = CredentialManager()
     credman.set('make_auth_identifier', 'keydata', username=org_id_from_file)

@@ -4,8 +4,9 @@ from unittest import mock
 
 import pytest
 
-from user_sync.config.common import ConfigLoader
-from user_sync.dcmanager import *
+from user_sync.config.user_sync import UMAPIConfigLoader
+from user_sync.dcmanager import DirectoryConnectorConfig, DirectoryConnectorManager, DirectoryGroup
+from user_sync.error import AssertionException
 
 
 def connector_dict(id, type, path):
@@ -48,7 +49,7 @@ def dc_manager(multi_config_files, modify_root_config):
     modify_root_config(['invocation_defaults', 'connector'], 'multi', merge=False)
 
     # Create the config loader
-    cl = ConfigLoader({'config_filename': multi_config_files['root_config'], 'encoding_name': None})
+    cl = UMAPIConfigLoader({'config_filename': multi_config_files['root_config'], 'encoding_name': None})
 
     # Finally, return the DCM
     return DirectoryConnectorManager(cl)
@@ -110,7 +111,7 @@ def test_common_names_for_connector(dc_manager):
     assert g == {'All Apps', 'Group One'}
 
 
-@mock.patch('user_sync.config.ConfigLoader.get_directory_connector_configs')
+@mock.patch('user_sync.config.user_sync.UMAPIConfigLoader.get_directory_connector_configs')
 def test_build_directory_config_dict(gdcc, dc_manager):
     conn_list = [
         connector_dict('src1', 'ldap', 'path1'),
