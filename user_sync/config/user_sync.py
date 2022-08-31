@@ -24,7 +24,6 @@ import os
 import re
 from copy import deepcopy
 
-import six
 import yaml
 
 import user_sync.helper

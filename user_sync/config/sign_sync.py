@@ -5,7 +5,6 @@ from copy import deepcopy
 from collections import defaultdict
 from typing import Dict
 
-import six
 from schema import Schema
 
 from user_sync.config.common import DictConfig, ConfigLoader, ConfigFileLoader, resolve_invocation_options, validate_max_limit_config

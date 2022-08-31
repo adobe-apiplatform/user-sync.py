@@ -23,8 +23,6 @@ import datetime
 import os
 import sys
 
-import six
-
 from user_sync.error import AssertionException
 
 

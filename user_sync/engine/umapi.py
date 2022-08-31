@@ -20,7 +20,6 @@
 # SOFTWARE.
 
 import logging
-import six
 from itertools import chain
 from collections import defaultdict
 

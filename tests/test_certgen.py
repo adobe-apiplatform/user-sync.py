@@ -33,7 +33,7 @@ def test_create_key(key):
 def test_create_cert(random_subject, key):
     cert = create_cert(random_subject, key)
     cert_dict = {i.oid._name: i.value for i in cert.subject}
-    for k, v in six.iteritems(cert_dict):
+    for k, v in cert_dict.items():
         assert random_subject[k] == v
     random_subject['countryName'] = 'usa'
     with pytest.raises(AssertionException):
