@@ -38,9 +38,6 @@ def mock_umapi_info():
     return _mock_umapi_info
 
 
-
-
-
 class MockUmapiConnector(MagicMock):
     class MockActionManager:
         def get_statistics(self):
@@ -205,17 +202,14 @@ def test_create_umapi_commands_for_directory_user(rule_processor, mock_dir_user)
     # test username format
     user['username'] = 'different@example.com'
     commands = get_commands(user)
-    commands.update_user({
-        "email": user['email'],
-        "username": user['username']})
-    commands.username = user['email']
+    commands.username = user['username']
     result = rp.create_umapi_commands_for_directory_user(user)
     assert vars(result) == vars(commands)
 
     # test console trusted
     user['username'] = 'different@example.com'
     commands = get_commands(user)
-    commands.username = user['email']
+    commands.username = user['username']
     result = rp.create_umapi_commands_for_directory_user(user, console_trusted=True)
     assert vars(result) == vars(commands)
 
@@ -496,3 +490,4 @@ class TestUmapiTargetInfo():
             mock_desired_groups.return_value = None
             umapi_target_info.add_desired_group_for('user_key', 'group_name')
             assert umapi_target_info.desired_groups_by_user_key['user_key'] == {'group_name'}
+ 
