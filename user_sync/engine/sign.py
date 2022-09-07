@@ -52,11 +52,8 @@ class SignSyncEngine:
         self.connectors: dict[str, SignConnector] = {}
         self.default_groups = {}
         self.sign_groups = {}
-        # Each of the Sign orgs is captured in a dict with the org name as key
-        # and org specific parameter embedded in Sign Connector as value
-        for org_name, target_dict in target_options.items():
-            self.connectors[org_name] = SignConnector(target_dict, org_name, options['test_mode'], caller_options['connection'], caller_options['cache'])
-
+        self.caller_options = caller_options
+        self.target_options = target_options
         self.action_summary = {}
         self.sign_users_by_org: dict[str, dict[str, DetailedUserInfo]] = {}
         self.total_sign_user_count = 0
@@ -85,12 +82,14 @@ class SignSyncEngine:
         :param directory_connector:
         :return:
         """
+        self.read_desired_user_groups(directory_groups, directory_connector)
 
+        for org_name, target_dict in self.target_options.items():
+            self.connectors[org_name] = SignConnector(target_dict, org_name, self.options['test_mode'], self.caller_options['connection'], self.caller_options['cache'])
+        
         for org_name in self.connectors:
             self.sign_groups[org_name] = self.get_groups(org_name)
             self.default_groups[org_name] = self.get_default_group(org_name)
-
-        self.read_desired_user_groups(directory_groups, directory_connector)
 
         for org_name, sign_connector in self.connectors.items():
             # Create any new Sign groups
