@@ -274,6 +274,14 @@ During the calls, you may also see a warning from requests:
 "InsecureRequestWarning: Unverified HTTPS request is being made to host 'usermanagement.adobe.io'. Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
   InsecureRequestWarning"
 
+## Restricted /tmp Access
+
+Certain Linux security practices recommend `/tmp` be remounted with restricted permissions. If your systems follow this practice, you may be unable to run the User Sync Tool. The UST requires access to the system's temporary directory to self-extract and execute. To run the tool, try the following:
+
+* Ensure the user running the UST has read, write and exec permissions on `/tmp`
+* Set `TMPDIR` to an alternate location (do not `export` this var)
+
+  Example: `TMPDIR=/my/tmp/dir ./user-sync`
 
 ---
 
