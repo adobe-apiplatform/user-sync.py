@@ -20,7 +20,6 @@
 
 import okta
 import requests
-import six
 import string
 from okta.framework.OktaError import OktaError
 
