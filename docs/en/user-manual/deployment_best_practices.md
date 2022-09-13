@@ -8,6 +8,7 @@ nav_order: 80
 
 
 # Deployment Best Practices
+{:."no_toc"}
 
 ## In This Section
 {:."no_toc"}
@@ -38,7 +39,7 @@ enterprise directory changes, and how quickly you want the changes
 to show up on the Adobe side.
 - Running User Sync more often than once every 2 hours is not recommended.
 
-## Security recommendations
+## Security Recommendations
 
 Given the nature of the data in the configuration and log files,
 a server should be dedicated for this task and locked down with
@@ -163,7 +164,7 @@ To further prevent customers from experiencing degraded performance, Adobe will 
 
 To learn more, please visit our [User Management API Documentation](https://adobe-apiplatform.github.io/umapi-documentation/en/).
 
-## Scheduled task examples
+## Scheduled Task Examples
 
 You can use a scheduler provided by your operating system to run
 the User Sync tool periodically, as required by your
@@ -204,7 +205,7 @@ The following example shows how to set up a shell file
 user-sync --users file users-file.csv --process-groups | grep "CRITICAL\|WARNING\|ERROR\|=====\|-----\|number of\|Number of" | mail -s “Adobe User Sync Report for `date +%F-%a`” UserSyncAdmins@example.com
 ```
 
-### Schedule a UserSync task
+### Schedule a Sync
 
 #### Cron
 
@@ -251,7 +252,7 @@ logging:
   log_file_name_format: "user-sync.log"
 ```
 
-### Disabling SSL Verification
+## Disabling SSL Verification
 
 In environments where SSL inspection is enforced at the firewall, the https requests can encounter an error similar to the following:
 
@@ -273,6 +274,14 @@ During the calls, you may also see a warning from requests:
 "InsecureRequestWarning: Unverified HTTPS request is being made to host 'usermanagement.adobe.io'. Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
   InsecureRequestWarning"
 
+## Restricted /tmp Access
+
+Certain Linux security practices recommend `/tmp` be remounted with restricted permissions. If your systems follow this practice, you may be unable to run the User Sync Tool. The UST requires access to the system's temporary directory to self-extract and execute. To run the tool, try the following:
+
+* Ensure the user running the UST has read, write and exec permissions on `/tmp`
+* Set `TMPDIR` to an alternate location (do not `export` this var)
+
+  Example: `TMPDIR=/my/tmp/dir ./user-sync`
 
 ---
 

@@ -23,22 +23,23 @@ import json
 
 
 class JSONEncoder(json.JSONEncoder):
-        def default(self, o):
-            new_dct = {}
-            if dataclasses.is_dataclass(o):
-                dct = dataclasses.asdict(o)
+    def default(self, o):
+        new_dct = {}
+        if dataclasses.is_dataclass(o):
+            dct = dataclasses.asdict(o)
+        else:
+            dct = o
+        for k, v in dct.items():
+            if v is None:
+                continue
+            if isinstance(v, dict):
+                new_dct[k] = self.default(v)
+            elif isinstance(v, list):
+                new_dct[k] = [self.default(i) for i in v]
             else:
-                dct = o
-            for k, v in dct.items():
-                if v is None:
-                    continue
-                if isinstance(v, dict):
-                    new_dct[k] = self.default(v)
-                elif isinstance(v, list):
-                    new_dct[k] = [self.default(i) for i in v]
-                else:
-                    new_dct[k] = v
-            return new_dct
+                new_dct[k] = v
+        return new_dct
+
 
 @dataclass
 class PageInfo:
@@ -146,7 +147,7 @@ class GroupsInfo:
 @dataclass
 class BooleanSettingsInfo:
     value: bool
-    inherited: bool
+    inherited: bool = None
 
     @classmethod
     def from_dict(cls, dct):
@@ -158,6 +159,8 @@ class SettingsInfo:
     libaryDocumentCreationVisible: BooleanSettingsInfo = None
     sendRestrictedToWorkflows: BooleanSettingsInfo = None
     userCanSend: BooleanSettingsInfo = None
+    userManagedWorkflowsEnabled: BooleanSettingsInfo = None
+    allowedToShareUserCreatedWorkflows: BooleanSettingsInfo = None
 
     @classmethod
     def from_dict(cls, dct):

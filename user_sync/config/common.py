@@ -2,7 +2,6 @@ import logging
 import os
 
 import re
-# import six
 import yaml
 from abc import ABC, abstractmethod
 

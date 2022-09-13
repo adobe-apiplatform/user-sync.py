@@ -19,7 +19,7 @@
 # SOFTWARE.
 
 import okta
-import six
+import requests
 import string
 from okta.framework.OktaError import OktaError
 
@@ -145,6 +145,9 @@ class OktaDirectoryConnector(DirectoryConnector):
         except OktaError as e:
             self.logger.warning("Unable to query group")
             raise AssertionException("Okta error querying for group: %s" % e)
+        except requests.exceptions.SSLError as ce:
+            if "doesn't match either of '*.okta.com', 'okta.com" in str(ce):
+                raise AssertionException("Invalid hostname: %s" % ce)
 
         if results is None:
             self.logger.warning("No group found for: %s", group)

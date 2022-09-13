@@ -8,6 +8,7 @@ nav_order: 60
 
 
 # Advanced Configuration
+{:."no_toc"}
 
 ## In This Section
 {:."no_toc"}
@@ -168,46 +169,6 @@ group name. Join them with "::". For example:
     - "org1::Default Adobe Enterprise Support Program configuration"
     - "d37::Special Ops Group"
 ```
-
-### ESM Secondary Targets
-
-Organizations with Enterprise Storage Model (ESM) enabled handle users differently from traditional User Storage Model (USM) organizations.
-ESM organizations use Business IDs instead of Adobe IDs. Business IDs are special accounts that govern a user's profile for a specific
-organization. Business IDs do not directly provide authentication capabilities for users. Instead, each is linked to an Adobe ID,
-Enterprise ID or Federated ID that handles authentication.
-
-The nature of Business IDs creates unique behavior in ESM organizations that have a trust with an existing user directory. Users
-with a domain belonging to the directory will always be created as Business ID instead of the actual user type (Federated or Enterprise,
-depending on directory settings).
-
-For example, if we have a Federated directory with a claim on `example.com`, and we create a new user in the ESM trustee
-(e.g. `user@example.com`), then that user will be a Business ID in the trustee console and not Federate. The user will
-still use the configured Identity Provider to authenticate.
-
-When syncing to secondary ESM targets, this feature prevents the UST from fully managing Business ID users on trustee consoles.
-When performing user sync on secondary targets, the UST expects the identity types between users on parent and child to match.
-
-To manage Business IDs as their linked identity type, enable the `uses_business_id` option in the secondary target's UMAPI
-connector config file.
-
-```yaml
-# connector-umapi-org2.yml
-server:
-  host: usermanagement.adobe.io
-  ims_host: ims-na1.adobelogin.com
-enterprise:
-  org_id: xxx@AdobeOrg
-  client_secret: xxx
-  priv_key_path: private-org2.key
-  client_id: xxx
-  tech_acct_id: xxx@techacct.adobe.com
-uses_business_id: True
-```
-
-This setting overrides the identity type of all users in the target to the identity type specified in the main sync config file.
-
-**NOTE:** When using this option, it isn't sufficient to exclude users by identity type. Be sure to exclude by group
-(e.g. `_org_admin`) and/or email address.
 
 ## Custom Attributes and Mappings
 
@@ -959,6 +920,34 @@ two_steps_lookup:
 recursively query nested group memberships.
 
 **NOTE:** `group_member_filter_format` may not be defined when two-step lookup is enabled.
+
+## Enterprise Storage Model (ESM)
+
+Organizations with Enterprise Storage Model (ESM) enabled handle users differently from traditional User Storage Model (USM) organizations. ESM organizations use Business IDs instead of Adobe IDs. Business IDs are special accounts that govern a user's profile for a specific organization. Business IDs do not directly provide authentication capabilities for users. Instead, each is linked to an Adobe ID, Enterprise ID or Federated ID that handles authentication.
+
+The User Management API exposes a user's underlying authenticating account type. For example, if a Business ID user has an email address with a domain claimed to a federated directory, then when queried from the UMAPI will have the type `federatedID`.
+
+This means that sync to an ESM target should use the underlying type. Just set the `user_identity_type` as intended in `user-sync-config.yml` (typically `enterpriseID` or `federatedID`).
+
+### User Exclusion Caveat
+
+Unlike USM, an ESM Admin Console does not provide a choice of identity type for new users. If a new user is on a claimed domain, then it is automatically linked to an enterprise or federated ID (a new account is created in the directory if needed).
+
+This means you must take care when configuring user exclusions as there may be admins in the console that will be identified as enterprise or federated in the UMAPI.
+
+The example `user-sync-config.yml` recommends these defaults:
+
+```yaml
+adobe_users:
+  exclude_identity_types:
+    - adobeID
+  exclue_adobe_groups:
+    - _org_admin
+```
+
+This excludes all system admins (using the special `_org_admin` group) and any user linked to a plain `adobeID`. This may not be sufficient to exclude all intended users from sync.
+
+If you have other users you wish to protect (non-system admins for instance), consider excluding them by email address (`exclude_users`) or set up a special group for them in the console UI and add that group to the `exclude_adobe_groups` list.
 
 ---
 
