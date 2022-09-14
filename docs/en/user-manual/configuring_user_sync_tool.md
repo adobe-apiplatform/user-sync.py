@@ -6,7 +6,10 @@ nav_level: 2
 nav_order: 30
 ---
 
+[Previous Section](setup_and_installation.md)  \| [Next Section](command_parameters.md)
+
 # Configuring the User Sync Tool
+{:."no_toc"}
 
 ## In This Section
 {:."no_toc"}
@@ -16,48 +19,60 @@ nav_order: 30
 
 ---
 
-[Previous Section](setup_and_installation.md)  \| [Next Section](command_parameters.md)
+## Overview
 
----
+User Sync Tool behavior is governed by a set of configuration files.
 
-The operation of the User Sync tool is controlled by a set of
-configuration files with these file names, located (by default) in the same
-folder as the command-line executable.
+These files are typically placed in the same directory as the User Sync Tool executable.
 
-| Configuration File | Purpose |
-|:------|:---------|
-| user-sync-config.yml | Required. Contains configuration options that define the mapping of directory groups to Adobe product configurations and user groups, and that control the update behavior.  Also contains references to the other config files.|
-| connector&#x2011;umapi.yml&nbsp;&nbsp; | Required. Contains credentials and access information for calling the Adobe User Management API. |
-| connector-ldap.yml | Required. Contains credentials and access information for accessing the enterprise directory. |
-{: .bordertablestyle }
+While this overview covers the configuration files for Sign Sync, this section focuses on UMAPI sync. See
+[Sign Sync](sign_sync.md) for details around configuring Sign Sync.
 
+### Core Configuration (Admin Console)
 
-If you need to set up access to Adobe groups in other organizations that
-have granted you access, you can include additional configuration
-files. For details, see the
-[advanced configuration instructions](advanced_configuration.md#accessing-groups-in-other-organizations)
-below.
+These configuration files are required to synchronize users to the Admin Console.
+
+* `user-sync-config.yml` - Main config file for Admin Console Sync
+* `connector-umapi.yml` - Defines connection to the [User Management API](https://adobe-apiplatform.github.io/umapi-documentation/en/). Stores
+credentials (or keychain references) and defines advanced connection options. If you plan to synchronize to multiple UMAPI targets, then each
+connection is configured in a different UMAPI connector config file.
+
+### Core Configuration (Sign Sync)
+
+These configuration files are required to synchronize users to Adobe Acrobat Sign.
+
+* `sign-sync-config.yml` - Main config file for Sign Sync
+* `connector-sign.yml` - Defines a connection to a Sign account (using the [Sign API](https://helpx.adobe.com/sign/faq/api.html)).
+Multiple connections are supported (each in their own connector config file).
+
+### Directory Connector Configuration
+
+These configuration files define connections to various identity sources. They can be used with both UMAPI sync and Sign Sync.
+They are only required if the connector is enabled (TODO see below). The exception - when using UMAPI sync, `connector-csv.yml`
+is totally optional assuming the CSV uses the standard headers and encoding (`utf-8`). The CSV connector is required when using
+Sign Sync.
+
+* `connector-ldap.yml` - Defines connection to an LDAP system such as Active Directory
+* `connector-okta.yml` - Defines connection to an Okta tenant (using the Okta API)
+* `connector-adobe-console.yml` - Defines a connection to the UMAPI for treating an Admin Console organization as an identity source. Useful
+in cases when synchronizing to a console-linked Sign account, or when syncing to an Admin Console org with a trusted Azure AD-synced directory
+* `connector-csv.yml` - Defines header columns and encoding of CSV input file
+
+### Advanced Configuration
+
+The extension config (`extension-config.yml`) can be set up for use with UMAPI sync to get more control over how syncs are
+executed. See [advanced configuration](advanced_configuration.md#custom-attributes-and-mappings) for details.
 
 ## Setting up configuration files
 
-Examples of the three required files are provided in the `config
-files - basic` folder in the release artifact
-`example-configurations.tar.gz`:
+Example configuration files can be obtained in several ways:
 
-```text
-1 user-sync-config.yml
-2 connector-umapi.yml
-3 connector-ldap.yml
-```
+* In the `examples` folder of the [code repository](https://github.com/adobe-apiplatform/user-sync.py/tree/v2/examples)
+* The example bundles (`user-sync-examples.zip` or `user-sync-examples.tar.gz`) on
+[any release page](https://github.com/adobe-apiplatform/user-sync.py/releases/latest)
+* Running `./user-sync init` or `./user-sync example-config` from the command line (**recommended**)
 
-To create your own configuration, copy the example files to your
-User Sync root folder and rename them (to get rid of the leading
-number). Use a plain-text editor to customize the your copied
-configuration files for your environment and usage model. The
-examples contain comments showing all possible configuration
-items. You can uncomment items that you need to use.
-
-Configurations files are in [YAML format](http://yaml.org/spec/)
+Configurations files are in [YAML format](http://yaml.org/)
 and use the `yml` suffix. When editing YAML, remember some
 important rules:
 
@@ -68,7 +83,7 @@ not use TAB characters.
 example, the following defines a list named “adobe\_groups”
 with two items in it.
 
-```YAML
+```yml
 adobe_groups:
   - Photoshop Users
   - Lightroom Users
@@ -77,32 +92,76 @@ adobe_groups:
 Note that this can look confusing if the list has only one item
 in it.  For example:
 
-```YAML
+```yml
 adobe_groups:
   - Photoshop Users
 ```
 
-## Create and secure connection configuration files
+**Tip:** use a developer-friendly text editor such as [Notepad++](https://notepad-plus-plus.org/) for maximum ease-of-use.
 
-The two connection configuration files store the credentials that
-give User Sync access to the Adobe Admin Console and to your
-enterprise LDAP directory. In order to isolate the sensitive
-information needed to connect to the two systems, all actual
-credential details are confined to these two files. **Be sure to
-secure them properly**, as described in the
-[Security Recommendations](deployment_best_practices.md#security-recommendations) section of
-this document.
+If you're not using Windows, we recommend an editor that supports
 
-There are three techniques supported by User Sync for securing credentials.
+* Line numbers
+* Syntax highlighting
+* Smart indentation
+* Ability to set line endings and file encoding
 
-1. Credentials can be placed in the connector-umapi.yml and connector-ldap.yml files directly and the files protected with operating system access control.
-2. Credentials can be placed in the operating system secure credential store and referenced from the two configuration files.
-3. The two files in their entirety can be stored securely or encrypted and a program that returns their contents is referenced from the main configuration file.
+## Configuring a UMAPI Connection
 
+All UMAPI sync setups require at least one UMAPI connector configuration. This primary connection config should
+be called `connector-umapi.yml`.
 
-The example configuration files include entries that illustrate each of
-these techniques.  You would keep only one set of configuration items
-and comment out or remove the others.
+This section focuses on a single connection. See the [advanced config](advanced_configuration.md#accessing-groups-in-other-organizations)
+section for details around synchronizing to multiple UMAPI targets.
+
+`connector-umapi.yml` defines two primary top-level config keys.
+
+* `server` - Override default identity and UMAPI endpoints (generally not needed) and customize connection timeout and retry settings
+* `enterprise` - Define UMAPI credentials (either in-line plaintext or references to OS keyring objects)
+
+### `server` Settings
+
+The `server` settings do not generally need to be customized. `timeout` and `retry` settings can be customized if the Sync Tool
+is running on a high-latency network connection.
+
+### `enterprise` Settings
+
+The `enterprise` key defines credentials used to authenticate with the User Management API. The following information
+is required:
+
+- Organization ID
+- Client ID (API Key)
+- Client Secret
+- Technical Account ID
+- Private Key File Path
+
+All items except for the key file (`private.key`) can be found on the [Adobe Developer Console](https://developer.adobe.com/console/).
+The `private.key` file should already be present on the server that will be running the User Sync Tool.
+
+These can be stored in plaintext inside the config file:
+
+```yml
+enterprise:
+  org_id: "Organization ID goes here"
+  client_id: "Client ID goes here"
+  client_secret: "Client Secret goes here"
+  tech_acct_id: "Tech Account ID goes here"
+  priv_key_path: "Path to Private Certificate goes here" (default: private.key)
+```
+
+Replace each "goes here" string (including the double quotes) with the item copied from the console. If `private.key` is
+placed in the same directory as `connector-umapi.yml`, then `priv_key_path` can be relative.
+
+`enterprise` supports additional advanced configuration options. Some of those are covered in [Advanced Configuration](advanced_configuration.md)
+and all are documented in the example configuration file.
+
+### Credential Security
+
+The `client_secret` and the contents of `private.key` are considered sensitive and should be secured accordingly. If
+you intend to keep these items in plaintext, it is your responsibility to restrict access to `connector-umapi.yml`
+and `private.key` using any necessary practices (ACLs, file permissons, etc).
+
+We strongly recommend using the OS keychain to store sensitive credentials. See [Security Recommendations](deployment_best_practices.md#security-recommendations) for more information.
 
 ### Configure connection to the Adobe Admin Console (UMAPI)
 
@@ -112,23 +171,9 @@ Management in the Adobe I/O
 the following configuration items that you have created or that
 have been assigned to your organization:
 
-- Organization ID
-- API Key
-- Client Secret
-- Technical Account ID
-- Private Certificate
 
 Open your copy of the connector-umapi.yml file in a plain-text
 editor, and enter these values in the “enterprise” section:
-
-```YAML
-enterprise:
-  org_id: "Organization ID goes here"
-  client_id: "Client ID goes here"
-  client_secret: "Client Secret goes here"
-  tech_acct_id: "Tech Account ID goes here"
-  priv_key_path: "Path to Private Certificate goes here"
-```
 
 **Note:** Make sure you put the private key file at the location
 specified in `priv_key_path`, and that it is readable only to the
