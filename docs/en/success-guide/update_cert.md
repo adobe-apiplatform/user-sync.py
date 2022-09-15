@@ -1,14 +1,14 @@
 ---
 layout: default
 lang: en
-nav_link: Update Certificates
+nav_link: Certificate Update
 nav_level: 2
 nav_order: 330
 ---
 
 # Updating Public/Private Certificates
 
-[Previous Section](scheduling.md) \| [Back to Contents](index.md) 
+[Previous Section](scheduling.md) \| [Next Section](upgrading.md) 
 
 The [Adobe Developer Console certificates](setup_adobeio.md) you created during initial setup will eventually expire and
 need replacement. Adobe will notify all system admins for an organization when one or more certificates are set to expire.
@@ -69,3 +69,5 @@ Return to the [Adobe Developer Console](https://developer.adobe.com/console), op
 Service Account details, and click the trash icon next to the old public key.
 
 ![](images/delete_old_key.png)
+
+[Previous Section](scheduling.md) \| [Next Section](upgrading.md) 

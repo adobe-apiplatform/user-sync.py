@@ -57,5 +57,5 @@ Note that often when setting up scheduled tasks, commands that work from the com
 
 When scheduling your cron job please limit your sync to once a day and consider a time that works best for you, taking into consideration other timezones and clients.  
 
-[Previous Section](command_line_options.md) \| [Back to Contents](index.md) 
+[Previous Section](command_line_options.md) \| [Next Section](update_cert.md) 
 

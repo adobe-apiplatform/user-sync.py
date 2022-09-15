@@ -1,12 +1,12 @@
 ---
 layout: default
 lang: en
-nav_link: Configuring User Sync
+nav_link: Configure User Sync
 nav_level: 2
 nav_order: 30
 ---
 
-[Previous Section](setup_and_installation.md)  \| [Next Section](command_parameters.md)
+[Previous Section](setup_and_installation.md)  \| [Next Section](connect_adobe.md)
 
 # Configuring the User Sync Tool
 {:."no_toc"}
@@ -106,102 +106,40 @@ If you're not using Windows, we recommend an editor that supports
 * Smart indentation
 * Ability to set line endings and file encoding
 
-## Configuring a UMAPI Connection
+## Configuring Identity Sources
 
-All UMAPI sync setups require at least one UMAPI connector configuration. This primary connection config should
-be called `connector-umapi.yml`.
+### LDAP Connector
 
-This section focuses on a single connection. See the [advanced config](advanced_configuration.md#accessing-groups-in-other-organizations)
-section for details around synchronizing to multiple UMAPI targets.
+### Okta Connector
 
-`connector-umapi.yml` defines two primary top-level config keys.
+The Okta connector uses an [Okta](https://www.okta.com) tenant as a source for user identity and group membership.  Since Okta always uses email addresses as the unique ID for users, the Okta connector does not support username-based federation.
 
-* `server` - Override default identity and UMAPI endpoints (generally not needed) and customize connection timeout and retry settings
-* `enterprise` - Define UMAPI credentials (either in-line plaintext or references to OS keyring objects)
+Okta customers must obtain an API token for use with the Okta Users API.  See [Okta's Developer Documentation](http://developer.okta.com/docs/api/getting_started/api_test_client.html)
+for more information.
 
-### `server` Settings
+**Configuration**
 
-The `server` settings do not generally need to be customized. `timeout` and `retry` settings can be customized if the Sync Tool
-is running on a high-latency network connection.
+To specify your Okta configuration file, use the key `okta` in `user-sync-config.yml`.
 
-### `enterprise` Settings
-
-The `enterprise` key defines credentials used to authenticate with the User Management API. The following information
-is required:
-
-- Organization ID
-- Client ID (API Key)
-- Client Secret
-- Technical Account ID
-- Private Key File Path
-
-All items except for the key file (`private.key`) can be found on the [Adobe Developer Console](https://developer.adobe.com/console/).
-The `private.key` file should already be present on the server that will be running the User Sync Tool.
-
-These can be stored in plaintext inside the config file:
-
-```yml
-enterprise:
-  org_id: "Organization ID goes here"
-  client_id: "Client ID goes here"
-  client_secret: "Client Secret goes here"
-  tech_acct_id: "Tech Account ID goes here"
-  priv_key_path: "Path to Private Certificate goes here" (default: private.key)
+```yaml
+directory_users:
+  connectors:
+    okta: connector-okta.yml
 ```
 
-Replace each "goes here" string (including the double quotes) with the item copied from the console. If `private.key` is
-placed in the same directory as `connector-umapi.yml`, then `priv_key_path` can be relative.
+There is a sample Okta connector file in the User Sync source tree.
 
-`enterprise` supports additional advanced configuration options. Some of those are covered in [Advanced Configuration](advanced_configuration.md)
-and all are documented in the example configuration file.
+**Runtime**
 
-### Credential Security
+In order to use the Okta connector, you will need to specify the `--connector okta` command-line parameter.  (LDAP is the default connector.)  In addition because the Okta connector does not support fetching all users, you must additionally specify a `--users` command line option of `group` or `mapped`.  All other User Sync command-line parameters have their usual meaning.
 
-The `client_secret` and the contents of `private.key` are considered sensitive and should be secured accordingly. If
-you intend to keep these items in plaintext, it is your responsibility to restrict access to `connector-umapi.yml`
-and `private.key` using any necessary practices (ACLs, file permissons, etc).
+**Extensions**
 
-We strongly recommend using the OS keychain to store sensitive credentials. See [Security Recommendations](deployment_best_practices.md#security-recommendations) for more information.
+Okta sync can use extended groups, attributes and after-mapping hooks.  The names of extended attributes must be valid Okta profile fields.
 
-### Configure connection to the Adobe Admin Console (UMAPI)
+### Admin Console Connector
 
-When you have obtained access and set up an integration with User
-Management in the Adobe I/O
-[Developer Portal](https://www.adobe.io/console/), make note of
-the following configuration items that you have created or that
-have been assigned to your organization:
-
-
-Open your copy of the connector-umapi.yml file in a plain-text
-editor, and enter these values in the “enterprise” section:
-
-**Note:** Make sure you put the private key file at the location
-specified in `priv_key_path`, and that it is readable only to the
-user account that runs the tool.
-
-In User Sync 2.1 or later there is an alternative to storing the private key in a separate file; you can place
-the private key directly in the configuration file.  Rather than using the
-`priv_key_path` key, use `priv_key_data` as follows:
-
-	  priv_key_data: |
-	    -----BEGIN RSA PRIVATE KEY-----
-	    MIIJKAIBAAKCAge85H76SDKJ8273HHSDKnnfhd88837aWwE2O2LGGz7jLyZWSscH
-	    ...
-	    Fz2i8y6qhmfhj48dhf84hf3fnGrFP2mX2Bil48BoIVc9tXlXFPstJe1bz8xpo=
-	    -----END RSA PRIVATE KEY-----
-
-In User Sync 2.2 or later, there are some additional parameters to control
-connection timeout and retry.  These should never need to be used, however,
-in case there is some unusual situation you can set them in the `server` section:
-
-  server:
-    timeout: 120
-    retries: 3
-
-`timeout` sets the maximum wait time, in seconds, for a call to complete.
-`retries` sets the number of times to retry an operation if it fails due to a non-specific problem such as server error or timeout.
-
-### Configure connection to your enterprise directory
+### CSV Connector
 
 Open your copy of the connector-ldap.yml file in a plain-text
 editor, and set these values to enable access to your enterprise
@@ -487,124 +425,6 @@ the warning message. In this case, User Sync attempted to add the
 user "cceuser2@ensemble.ca". The add action failed because the
 user was not found.
 
-## Example configurations
-
-These examples show the configuration file structures and
-illustrate possible configuration values.
-
-### user-sync-config.yml
-
-```YAML
-adobe_users:
-  connectors:
-    umapi: connector-umapi.yml
-  exclude_identity_types:
-    - adobeID
-
-directory_users:
-  user_identity_type: federatedID
-  default_country_code: US
-  connectors:
-    ldap: connector-ldap.yml
-  groups:
-    - directory_group: Acrobat
-      adobe_groups:
-        - Default Acrobat Pro DC configuration
-    - directory_group: Photoshop
-      adobe_groups:
-        - "Default Photoshop CC - 100 GB configuration"
-        - "Default All Apps plan - 100 GB configuration"
-        - "Default Adobe Document Cloud for enterprise configuration"
-        - "Default Adobe Enterprise Support Program configuration"
-
-limits:
-  max_adobe_only_users: 200
-
-logging:
-  log_to_file: True
-  file_log_directory: userSyncLog
-  file_log_level: debug
-  console_log_level: debug
-```
-
-### connector-ldap.yml
-
-```YAML
-username: "LDAP_username"
-password: "LDAP_password"
-host: "ldap://LDAP_ host"
-base_dn: "base_DN"
-
-group_filter_format: "(&(objectClass=posixGroup)(cn={group}))"
-all_users_filter: "(&(objectClass=person)(objectClass=top))"
-```
-
-### connector-umapi.yml
-
-```YAML
-server:
-  # This section describes the location of the servers used for the Adobe user management. Default is:
-  # host: usermanagement.adobe.io
-  # endpoint: /v2/usermanagement
-  # ims_host: ims-na1.adobelogin.com
-  # ims_endpoint_jwt: /ims/exchange/jwt
-
-enterprise:
-  org_id: "Org ID goes here"
-  client_id: "Client ID goes here"
-  client_secret: "Client secret goes here"
-  tech_acct_id: "Tech account ID goes here"
-  priv_key_path: "Path to private.key goes here"
-  # priv_key_data: "actual key data goes here" # This is an alternative to priv_key_path
-```
-
-## Testing your configuration
-
-Use these test cases to ensure that your configuration is working
-correctly, and that the product configurations are correctly
-mapped to your enterprise directory security groups . Run the
-tool in test mode first (by supplying the -t parameter), so that
-you can see the result before running live.
-
-The following examples use `--users all` to select users, but you may want to use
-`--users mapped` to select only users in directory groups listed in your configuration file,
-or `--users file f.csv` to select a smaller set of test users listed in a file.
-
-###  User Creation
-
-1. Create one or more test users in enterprise directory.
-
-2. Add users to one or more configured directory/security groups.
-
-3. Run User Sync in test mode. (`./user-sync -t --users all --process-groups --adobe-only-user-action exclude`)
-
-3. Run User Sync not in test mode. (`./user-sync --users all --process-groups --adobe-only-user-action exclude`)
-
-4. Check that test users were created in Adobe Admin Console.
-
-### User Update
-
-1. Modify group membership of one or more test user in the directory.
-
-1. Run User Sync. (`./user-sync --users all --process-groups --adobe-only-user-action exclude`)
-
-2. Check that test users in Adobe Admin Console were updated to
-reflect new product configuration membership.
-
-###  User Disable
-
-1. Remove or disable one or more existing test users in your
-enterprise directory.
-
-2. Run User Sync. (`./user-sync --users all --process-groups --adobe-only-user-action remove-adobe-groups`)  You may want to run in test mode (-t) first.
-
-3. Check that users were removed from configured product
-configurations in the Adobe Admin Console.
-
-4. Run User Sync to remove the users (`./user-sync -t --users all --process-groups --adobe-only-user-action delete`) Then run without -t.  Caution: check that only the desired user was removed when running with -t.  This run (without -t) will actually delete users.
-
-5. Check that the user accounts are removed from the Adobe Admin Console.
-
 ---
 
-[Previous Section](setup_and_installation.md)  \| [Next Section](command_parameters.md)
+[Previous Section](setup_and_installation.md)  \| [Next Section](connect_adobe.md)
