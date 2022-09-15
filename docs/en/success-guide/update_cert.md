@@ -25,7 +25,7 @@ You can generate a new public/private keypair in the Adobe Developer console. **
 privileges in the Admin Console organization associated with your keys.
 
 1. Log into [Adobe Developer Console](https://developer.adobe.com/console)
-2. Make sure you select the correct organization in the dropdown menu in the upper-left-hand corner of the page
+2. Make sure you select the correct organization in the dropdown menu in the upper-right-hand corner of the page
 3. Click the "Projects" tab in the top navigation menu
 4. Click the card for the project associated with the credentials you wish to update
 
