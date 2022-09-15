@@ -74,7 +74,7 @@ in the readme. Note that Python 3.9 is required to build the tool, which may nee
 
 # Basic Procedure
 
-**Note:** If run multiple sync processes (perhaps to sync from different identity sources), we recommend repeating this procedure
+**Note:** If you run multiple sync processes (perhaps to sync from different identity sources), we recommend repeating this procedure
 for each sync config. You will not need to repeat steps 1 and 2 if each sync is run from the same root directory.
 
 1. Download the [latest release](https://github.com/adobe-apiplatform/user-sync.py/releases/latest) for your platform.
