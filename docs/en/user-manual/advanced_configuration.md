@@ -432,56 +432,6 @@ not in the directory group and
 they will all be moved.  Once this has happened, you can remove
 the entire mapping from the configuration file.
 
-## Working with Username-Based Login
-
-On the Adobe Admin Console, you can configure a federated domain to use email-based user login names or username-based (i.e., non-email-based) login.   Username-based login can be used when email addresses are expected to change often or your organization does not allow email addresses to be used for login.  Ultimately, whether to use username-based login or email-based login depends on a company's overall identity strategy.
-
-To configure User Sync to work with username logins, you need to set several additional configuration items.
-
-In the `connector-ldap.yml` file:
-
-- Set the value of `user_username_format` to a value like '{attrname}' where attrname names the directory attribute whose value is to be used for the user name.
-- Set the value of `user_domain_format` to a value like '{attrname}' if the domain name comes from the named directory attribute, or to a fixed string value like 'example.com'.
-
-When processing the directory, User Sync will fill in the username and domain values from those fields (or values).
-
-The values given for these configuration items can be a mix of string characters and one or more attribute names enclosed in curly-braces "{}".  The fixed characters are combined with the attribute value to form the string used in processing the user.
-
-For domains that use username-based login, the `user_username_format` configuration item should not produce an email address; the "@" character is not allowed in usernames used in username-based login.
-
-If you are using username-based login, you must still provide a unique email address for every user, and that email address must be in a domain that the organization has claimed and owns. User Sync will not add a user to the Adobe organization without an email address.
-
-## Syncing Email-based Users with Different Email Address
-
-Some organizations must authenticate users with an internal-facing
-email-type ID such as user principal name, but wish to allow users to
-user their public-facing email address to log into Adobe products and
-use collaboration features.
-
-Internally, the Adobe Admin Console maintains a distinction between a
-user's email-type username and their email address.  These fields are
-normally set to the same value, but the Admin Console allows the
-email address to differ from the username.  The User Management API
-also supports the creation, update, and deletion of users that have
-different usernames and email addresses.
-
-**Note:** Any domain used in the email address field **must** be
-claimed and added to an Adobe identity directory.
-
-To use this functionality in the Sync Tool, simply specify both the
-`user_email_format` and the `user_username_format` options in
-`connector-ldap.yml`.
-
-```yaml
-user_email_format: "{mail}"
-user_username_format: "{userPrincipalName}"
-```
-
-In this scenario, the `user_username_format` option must map to a field
-that will always contain an email-type identifier (it does not need
-to be a live, working email address).  Users with non-email values
-will fail to be validated and synced.
-
 ## Protecting Specific Accounts from User Sync Deletion
 
 If you drive account creation and removal through User Sync, and want to manually create a few accounts, you may need this feature to keep User Sync from deleting the manually created accounts.

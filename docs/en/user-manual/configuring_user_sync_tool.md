@@ -108,8 +108,6 @@ If you're not using Windows, we recommend an editor that supports
 
 ## Configuring Identity Sources
 
-### LDAP Connector
-
 ### Okta Connector
 
 The Okta connector uses an [Okta](https://www.okta.com) tenant as a source for user identity and group membership.  Since Okta always uses email addresses as the unique ID for users, the Okta connector does not support username-based federation.
@@ -140,20 +138,6 @@ Okta sync can use extended groups, attributes and after-mapping hooks.  The name
 ### Admin Console Connector
 
 ### CSV Connector
-
-Open your copy of the connector-ldap.yml file in a plain-text
-editor, and set these values to enable access to your enterprise
-directory system:
-
-```
-username: "username-goes-here"
-password: "password-goes-here"
-host: "FQDN.of.host"
-base_dn: "base_dn.of.directory"
-```
-
-See the section [Security Recommendations](deployment_best_practices.md#security-recommendations) for
-details of how to store the password more securely in User Sync version 2.1 or later.
 
 ## Configuration options
 
