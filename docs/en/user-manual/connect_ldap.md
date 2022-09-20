@@ -313,70 +313,164 @@ two_steps_lookup:
 
 ## Attribute Mapping Options
 
-### `user_identity_type_format`
+This group of options govern how attributes are mapped. The most important options to look at are `user_email_format`
+and `user_username_format`. These attributes determine how users are identified in the Admin Console. They
+impact Single Sign-On for federated users and affect how users are identified for User Sync.
+
+Each of these options use an interpolation convention to inject the value of a variably-named LDAP attribute.
+
+For example, `user_country_code_format` looks like this by default:
+
+```yml
+user_country_code_format: "{c}"
+```
+
+The `c` attribute is the default country name or country code attribute in Active Directory. If a user is
+retrieved from the LDAP system with a `c` attribute of `GB`, then the User Sync Tool will look at the column
+name defined between the curly braces, get the `c` attribute value `GB` from the LDAP user record, and inject the
+value in the user's `country` attribute, setting the user's country code to `GB`.
+
+This syntax can be used to inject multiple fields to create composite values. For example, if you want to
+build the username from two fields, you might do something like this:
+
+```yml
+user_username_format: "{field1}_{field2}"
+```
+
+This will inject the values of attributes `field1` and `field2` into the template string, which contains
+an underscore (`_`) as a separator. So if `field1 = abc` and `field2 = 123` then the interpolated result
+would be `username = abc_123`
+
+The curly-brace syntax can also be omitted for cases where a value should be hard-coded.
+
+```yml
+user_domain_format: "example.com"
+```
 
 ### `user_email_format`
 
+`user_email_format` defines the attribute used to set an Adobe user's email address. This field can serve
+as a primary identifier for a user depending on the circumstances.
+
+* Serves as primary ID for `adobeID` and `enterpriseID` users since those users cannot have usernames that
+differ from `email`
+* On any Adobe login page, the email address determines
+  * Account type availability (Personal or Company/School account)
+  * The "profile picker" widget when logging with a Business ID
+* For `federatedID` users, the email address determines the identity provider in the IDP redirect during login
+flow
+* Email address is also used in any sharing or collaboration features in Creative or Document Cloud
+
+This option is set to `{mail}` by default which is the default in Active Directory.
+
+```yml
+user_email_format: "{mail}"
+```
+
 ### `user_username_format`
+
+The `user_username_format` option maps an Adobe user's username field. For `federatedID` users, the username
+can be set to a different value from the email address. **Note:** do not set this option for `adobeID` or
+`enterpriseID` users. The username will always be set to the user's email address for those types.
+
+The username is used in the SSO login workflow. It should be mapped to the field used to populate `NameID`
+in the SAML payload.
+
+The username can take two forms:
+
+* **Email-type** e.g. `jdoe@example.com`. The email-type username does not necessarily need to correspond to
+a live email address. It just needs to resemble an email address. If you want to use email-type usernames, it
+is important to know that the username's domain must be claimed to the same directory as the user's email address.
+Otherwise user login will fail. For Active Directory, the suggested field to map is `userPrincipalName`.
+* **Non-email** e.g. `jdoe`. An alphanumeric username that may correspond to something like a user's internal user ID
+or LAN login name. For this type, the Admin Console still needs to know the domain associated with the username, so the
+domain must be explicitly mapped using the `user_domain_format` option. The suggested field to map for Active Directory is
+`sAMAccountName`.
+
+Mapping the username separately gives the UST a way to update a user's email address.
+
+* The `update_user_info` option in `user-sync-config.tml` must be `True` (or invoke with the `--update-user-info` CLI option)
+* The username must not change
+
+If those conditions are met, then the UST will keep a user's email address up-to-date.
 
 ### `user_domain_format`
 
+If you are syncing users with non-email usernames, the domain must be set or mapped in the `user_domain_format` field.
+This may be dynamically mapped to an LDAP attribute if one exists.
+
+```yml
+user_domain_format: "{domain}"
+```
+
+Or if such an attribute isn't available then it can be hard-coded.
+
+```yml
+# set the domain of *all users* to "example.com"
+user_domain_format: "example.com"
+```
+
+**Note:** If `user_domain_format` is enabled, then the username for **all** users must be in non-email format. Any
+user with an email-type username will fail to sync.
+
 ### `user_given_name_format`
+
+A user's given name ("First Name" in Admin Console nomenclature) can be mapped with `user_given_name_format`.
+
+The default value is `"{givenName}"` - the default attribute in Active Directory.
 
 ### `user_surname_format`
 
+A user's surname ("Last Name" in Admin Console nomenclature) can be mapped with `user_surname_format`.
+
+The default value is `"{sn}"` - the default attribute in Active Directory.
+
 ### `user_country_code_format`
 
-## Working with Username-Based Login
+`user_country_code_format` maps the user's country code.
 
-On the Adobe Admin Console, you can configure a federated domain to use email-based user login names or username-based (i.e., non-email-based) login.   Username-based login can be used when email addresses are expected to change often or your organization does not allow email addresses to be used for login.  Ultimately, whether to use username-based login or email-based login depends on a company's overall identity strategy.
+The User Management API requires the country code field be a valid [ISO-3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2)
+code.
 
-To configure User Sync to work with username logins, you need to set several additional configuration items.
+The country code is important - it governs key aspects of cloud storage and service availability. It must
+be set for all users, but assignment may be deferred depending on user type.
 
-In the `connector-ldap.yml` file:
+* For `adobeID` and `enterpriseID`, the country code can be set to `UD` to mark the country "undefined".
+Users with `UD` country codes will be prompted to specify their own country code upon login.
+* Country code is required for `federatedID` users and cannot be set to `UD`.
 
-- Set the value of `user_username_format` to a value like '{attrname}' where attrname names the directory attribute whose value is to be used for the user name.
-- Set the value of `user_domain_format` to a value like '{attrname}' if the domain name comes from the named directory attribute, or to a fixed string value like 'example.com'.
+By default, the LDAP connector looks at the `c` field, which is the default country attribute
+for Active Directory. AD does not place any formatting requirements on this field, so it isn't
+uncommon to see users with country fields in different formats such as `USA` or `United States`.
 
-When processing the directory, User Sync will fill in the username and domain values from those fields (or values).
+There are a few different solutions to this. One possible solution is to hard-code the country value
+in the `user_country_code_format` option.
 
-The values given for these configuration items can be a mix of string characters and one or more attribute names enclosed in curly-braces "{}".  The fixed characters are combined with the attribute value to form the string used in processing the user.
-
-For domains that use username-based login, the `user_username_format` configuration item should not produce an email address; the "@" character is not allowed in usernames used in username-based login.
-
-If you are using username-based login, you must still provide a unique email address for every user, and that email address must be in a domain that the organization has claimed and owns. User Sync will not add a user to the Adobe organization without an email address.
-
-## Syncing Email-based Users with Different Email Address
-
-Some organizations must authenticate users with an internal-facing
-email-type ID such as user principal name, but wish to allow users to
-user their public-facing email address to log into Adobe products and
-use collaboration features.
-
-Internally, the Adobe Admin Console maintains a distinction between a
-user's email-type username and their email address.  These fields are
-normally set to the same value, but the Admin Console allows the
-email address to differ from the username.  The User Management API
-also supports the creation, update, and deletion of users that have
-different usernames and email addresses.
-
-**Note:** Any domain used in the email address field **must** be
-claimed and added to an Adobe identity directory.
-
-To use this functionality in the Sync Tool, simply specify both the
-`user_email_format` and the `user_username_format` options in
-`connector-ldap.yml`.
-
-```yaml
-user_email_format: "{mail}"
-user_username_format: "{userPrincipalName}"
+```yml
+user_country_code_format: US
 ```
 
-In this scenario, the `user_username_format` option must map to a field
-that will always contain an email-type identifier (it does not need
-to be a live, working email address).  Users with non-email values
-will fail to be validated and synced.
+Note that this will set the same code for every user, overriding anything read from `c` or the equivalent
+attribute. 
 
+It may be a better option to use the (TODO: add link) extension config to dynamically normalize the
+country code.
+
+### `user_identity_type_format`
+
+The `user_identity_type_format` can be used to dynamically set the identity type. It maps an LDAP attribute
+to a user's identity type. If this option is used it will override the `user_identity_type` option
+defined in the LDAP connector config (which itself overrides `user_identity_type` in `user-sync-config.yml`).
+
+For example, an LDAP system with a theoretical `idType` attribute that could be set to `adobe`, `enterprise`
+or `federated` might be used in this manner:
+
+```yml
+user_identity_type_format: "{idType}ID"
+```
+
+However, this option is not typically used. It's a better practice to ensure that all users from a given identity
+source have the same identity type.
 
 ---
 
