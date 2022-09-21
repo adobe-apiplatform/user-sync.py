@@ -4,6 +4,7 @@
 
 
 # --- Connection and Authentication Options ---
+# These options control how the LDAP connector connects to an LDAP system and authenticates with it
 # See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/connect_ldap.html#authentication
 
 username: "LDAP or Credential Manager username goes here"
@@ -15,6 +16,7 @@ base_dn: "DC=example,DC=com"
 
 
 # --- General Options ---
+# These are options that don't fit into the other categories
 # See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/connect_ldap.html#general-options
 
 # user_identity_type: enterpriseID
@@ -22,6 +24,7 @@ base_dn: "DC=example,DC=com"
 
 
 # --- LDAP Query Options ---
+# These options govern how users and groups are retrieved from the LDAP system
 # See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/connect_ldap.html#ldap-query-options
 
 search_page_size: 1000
@@ -36,11 +39,12 @@ group_member_filter_format: "(memberOf={group_dn})"
 
 
 # --- Attribute Mapping Options ---
+# These options define how LDAP user attributes map to Adobe user attributes
 # See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/connect_ldap.html#attribute-mapping-options
 
 user_email_format: "{mail}"
-# user_domain_format: "{domain}"
 # user_username_format: "{userPrincipalName}"
+# user_domain_format: "{domain}"
 # user_given_name_format: "{givenName}"
 # user_surname_format: "{sn}"
 # user_country_code_format: "{c}"
