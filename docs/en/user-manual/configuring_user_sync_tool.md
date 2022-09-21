@@ -63,7 +63,7 @@ in cases when synchronizing to a console-linked Sign account, or when syncing to
 The extension config (`extension-config.yml`) can be set up for use with UMAPI sync to get more control over how syncs are
 executed. See [advanced configuration](advanced_configuration.md#custom-attributes-and-mappings) for details.
 
-## Setting up configuration files
+## Config File Setup
 
 Example configuration files can be obtained in several ways:
 
@@ -76,64 +76,39 @@ Configurations files are in [YAML format](http://yaml.org/)
 and use the `yml` suffix. When editing YAML, remember some
 important rules:
 
-- Sections and hierarchy in the file are based on
-indentation. You must use SPACE characters for indentation. Do
-not use TAB characters.
-- The dash character (-) is used to form a list of values. For
-example, the following defines a list named “adobe\_groups”
-with two items in it.
+* Indentation governs scope and heirarchy (as opposed to a system like JSON which uses curly braces)
 
-```yml
-adobe_groups:
-  - Photoshop Users
-  - Lightroom Users
-```
+* Keys and values are delimited with a single colon (`:`) followed by a space character
 
-Note that this can look confusing if the list has only one item
-in it.  For example:
+  ```yml
+  some_key: A Value
+  ```
 
-```yml
-adobe_groups:
-  - Photoshop Users
-```
+* A dash (`-`) denotes a list item
+
+  ```yml
+  # example with one item
+  adobe_groups:
+	- Photoshop Users
+
+  # example with multiple items
+  adobe_groups:
+    - Photoshop Users
+    - Lightroom Users
+    - Illustrator Users
+  ```
 
 **Tip:** use a developer-friendly text editor such as [Notepad++](https://notepad-plus-plus.org/) for maximum ease-of-use.
 
-If you're not using Windows, we recommend an editor that supports
+If you're not using Windows, we recommend an editor with these features.
 
 * Line numbers
-* Syntax highlighting
+* YAML syntax highlighting
 * Smart indentation
 * Ability to set line endings and file encoding
+* Ability to show special characters (tabs, line endings, etc)
 
 ## Configuring Identity Sources
-
-### Okta Connector
-
-The Okta connector uses an [Okta](https://www.okta.com) tenant as a source for user identity and group membership.  Since Okta always uses email addresses as the unique ID for users, the Okta connector does not support username-based federation.
-
-Okta customers must obtain an API token for use with the Okta Users API.  See [Okta's Developer Documentation](http://developer.okta.com/docs/api/getting_started/api_test_client.html)
-for more information.
-
-**Configuration**
-
-To specify your Okta configuration file, use the key `okta` in `user-sync-config.yml`.
-
-```yaml
-directory_users:
-  connectors:
-    okta: connector-okta.yml
-```
-
-There is a sample Okta connector file in the User Sync source tree.
-
-**Runtime**
-
-In order to use the Okta connector, you will need to specify the `--connector okta` command-line parameter.  (LDAP is the default connector.)  In addition because the Okta connector does not support fetching all users, you must additionally specify a `--users` command line option of `group` or `mapped`.  All other User Sync command-line parameters have their usual meaning.
-
-**Extensions**
-
-Okta sync can use extended groups, attributes and after-mapping hooks.  The names of extended attributes must be valid Okta profile fields.
 
 ### Admin Console Connector
 
