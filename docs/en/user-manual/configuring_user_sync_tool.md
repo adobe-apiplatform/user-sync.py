@@ -89,7 +89,7 @@ important rules:
   ```yml
   # example with one item
   adobe_groups:
-	- Photoshop Users
+    - Photoshop Users
 
   # example with multiple items
   adobe_groups:
