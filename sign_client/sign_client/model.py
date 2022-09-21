@@ -41,13 +41,24 @@ class JSONEncoder(json.JSONEncoder):
         return new_dct
 
 
+def remove_unknown_keys(dct: dict, cls):
+    known_keys = set()
+    for field in dataclasses.fields(cls):
+        known_keys.add(field.name)
+    new_dct = {}
+    for k, v in dct.items():
+        if k in known_keys:
+            new_dct[k] = v
+    return new_dct
+
+
 @dataclass
 class PageInfo:
     nextCursor: str = None
 
     @classmethod
     def from_dict(cls, dct):
-        return cls(**dct)
+        return cls(**remove_unknown_keys(dct, cls))
 
 
 @dataclass
@@ -62,7 +73,7 @@ class UserInfo:
 
     @classmethod
     def from_dict(cls, dct):
-        return cls(**dct)
+        return cls(**remove_unknown_keys(dct, cls))
 
 
 @dataclass
@@ -83,7 +94,7 @@ class UserStateInfo:
 
     @classmethod
     def from_dict(cls, dct):
-        return cls(**dct)
+        return cls(**remove_unknown_keys(dct, cls))
 
 
 @dataclass
@@ -106,7 +117,7 @@ class DetailedUserInfo:
 
     @classmethod
     def from_dict(cls, dct):
-        return cls(**dct)
+        return cls(**remove_unknown_keys(dct, cls))
 
 
 @dataclass
@@ -118,7 +129,7 @@ class GroupInfo:
 
     @classmethod
     def from_dict(cls, dct):
-        return cls(**dct)
+        return cls(**remove_unknown_keys(dct, cls))
 
 
 @dataclass
@@ -130,7 +141,7 @@ class DetailedGroupInfo:
 
     @classmethod
     def from_dict(cls, dct):
-        return cls(**dct)
+        return cls(**remove_unknown_keys(dct, cls))
 
 
 @dataclass
@@ -167,7 +178,7 @@ class SettingsInfo:
         if dct is None:
             return None
         new_dct = {k: BooleanSettingsInfo.from_dict(v) for k, v in dct.items()}
-        return cls(**new_dct)
+        return cls(**remove_unknown_keys(new_dct, cls))
 
 
 @dataclass
