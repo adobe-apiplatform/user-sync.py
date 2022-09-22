@@ -1,12 +1,15 @@
 ---
 layout: default
 lang: en
-nav_link: Configuring User Sync
+nav_link: Configure User Sync
 nav_level: 2
 nav_order: 30
 ---
 
+[Previous Section](setup_and_installation.md)  \| [Next Section](connect_adobe.md)
+
 # Configuring the User Sync Tool
+{:."no_toc"}
 
 ## In This Section
 {:."no_toc"}
@@ -16,161 +19,100 @@ nav_order: 30
 
 ---
 
-[Previous Section](setup_and_installation.md)  \| [Next Section](command_parameters.md)
+## Overview
 
----
+User Sync Tool behavior is governed by a set of configuration files.
 
-The operation of the User Sync tool is controlled by a set of
-configuration files with these file names, located (by default) in the same
-folder as the command-line executable.
+These files are typically placed in the same directory as the User Sync Tool executable.
 
-| Configuration File | Purpose |
-|:------|:---------|
-| user-sync-config.yml | Required. Contains configuration options that define the mapping of directory groups to Adobe product configurations and user groups, and that control the update behavior.  Also contains references to the other config files.|
-| connector&#x2011;umapi.yml&nbsp;&nbsp; | Required. Contains credentials and access information for calling the Adobe User Management API. |
-| connector-ldap.yml | Required. Contains credentials and access information for accessing the enterprise directory. |
-{: .bordertablestyle }
+While this overview covers the configuration files for Sign Sync, this section focuses on UMAPI sync. See
+[Sign Sync](sign_sync.md) for details around configuring Sign Sync.
 
+### Core Configuration (Admin Console)
 
-If you need to set up access to Adobe groups in other organizations that
-have granted you access, you can include additional configuration
-files. For details, see the
-[advanced configuration instructions](advanced_configuration.md#accessing-groups-in-other-organizations)
-below.
+These configuration files are required to synchronize users to the Admin Console.
 
-## Setting up configuration files
+* `user-sync-config.yml` - Main config file for Admin Console Sync
+* `connector-umapi.yml` - Defines connection to the [User Management API](https://adobe-apiplatform.github.io/umapi-documentation/en/). Stores
+credentials (or keychain references) and defines advanced connection options. If you plan to synchronize to multiple UMAPI targets, then each
+connection is configured in a different UMAPI connector config file.
 
-Examples of the three required files are provided in the `config
-files - basic` folder in the release artifact
-`example-configurations.tar.gz`:
+### Core Configuration (Sign Sync)
 
-```text
-1 user-sync-config.yml
-2 connector-umapi.yml
-3 connector-ldap.yml
-```
+These configuration files are required to synchronize users to Adobe Acrobat Sign.
 
-To create your own configuration, copy the example files to your
-User Sync root folder and rename them (to get rid of the leading
-number). Use a plain-text editor to customize the your copied
-configuration files for your environment and usage model. The
-examples contain comments showing all possible configuration
-items. You can uncomment items that you need to use.
+* `sign-sync-config.yml` - Main config file for Sign Sync
+* `connector-sign.yml` - Defines a connection to a Sign account (using the [Sign API](https://helpx.adobe.com/sign/faq/api.html)).
+Multiple connections are supported (each in their own connector config file).
 
-Configurations files are in [YAML format](http://yaml.org/spec/)
+### Directory Connector Configuration
+
+These configuration files define connections to various identity sources. They can be used with both UMAPI sync and Sign Sync.
+They are only required if the connector is enabled (TODO see below). The exception - when using UMAPI sync, `connector-csv.yml`
+is totally optional assuming the CSV uses the standard headers and encoding (`utf-8`). The CSV connector is required when using
+Sign Sync.
+
+* `connector-ldap.yml` - Defines connection to an LDAP system such as Active Directory
+* `connector-okta.yml` - Defines connection to an Okta tenant (using the Okta API)
+* `connector-adobe-console.yml` - Defines a connection to the UMAPI for treating an Admin Console organization as an identity source. Useful
+in cases when synchronizing to a console-linked Sign account, or when syncing to an Admin Console org with a trusted Azure AD-synced directory
+* `connector-csv.yml` - Defines header columns and encoding of CSV input file
+
+### Advanced Configuration
+
+The extension config (`extension-config.yml`) can be set up for use with UMAPI sync to get more control over how syncs are
+executed. See [advanced configuration](advanced_configuration.md#custom-attributes-and-mappings) for details.
+
+## Config File Setup
+
+Example configuration files can be obtained in several ways:
+
+* In the `examples` folder of the [code repository](https://github.com/adobe-apiplatform/user-sync.py/tree/v2/examples)
+* The example bundles (`user-sync-examples.zip` or `user-sync-examples.tar.gz`) on
+[any release page](https://github.com/adobe-apiplatform/user-sync.py/releases/latest)
+* Running `./user-sync init` or `./user-sync example-config` from the command line (**recommended**)
+
+Configurations files are in [YAML format](http://yaml.org/)
 and use the `yml` suffix. When editing YAML, remember some
 important rules:
 
-- Sections and hierarchy in the file are based on
-indentation. You must use SPACE characters for indentation. Do
-not use TAB characters.
-- The dash character (-) is used to form a list of values. For
-example, the following defines a list named “adobe\_groups”
-with two items in it.
+* Indentation governs scope and heirarchy (as opposed to a system like JSON which uses curly braces)
 
-```YAML
-adobe_groups:
-  - Photoshop Users
-  - Lightroom Users
-```
+* Keys and values are delimited with a single colon (`:`) followed by a space character
 
-Note that this can look confusing if the list has only one item
-in it.  For example:
+  ```yml
+  some_key: A Value
+  ```
 
-```YAML
-adobe_groups:
-  - Photoshop Users
-```
+* A dash (`-`) denotes a list item
 
-## Create and secure connection configuration files
+  ```yml
+  # example with one item
+  adobe_groups:
+    - Photoshop Users
 
-The two connection configuration files store the credentials that
-give User Sync access to the Adobe Admin Console and to your
-enterprise LDAP directory. In order to isolate the sensitive
-information needed to connect to the two systems, all actual
-credential details are confined to these two files. **Be sure to
-secure them properly**, as described in the
-[Security Recommendations](deployment_best_practices.md#security-recommendations) section of
-this document.
+  # example with multiple items
+  adobe_groups:
+    - Photoshop Users
+    - Lightroom Users
+    - Illustrator Users
+  ```
 
-There are three techniques supported by User Sync for securing credentials.
+**Tip:** use a developer-friendly text editor such as [Notepad++](https://notepad-plus-plus.org/) for maximum ease-of-use.
 
-1. Credentials can be placed in the connector-umapi.yml and connector-ldap.yml files directly and the files protected with operating system access control.
-2. Credentials can be placed in the operating system secure credential store and referenced from the two configuration files.
-3. The two files in their entirety can be stored securely or encrypted and a program that returns their contents is referenced from the main configuration file.
+If you're not using Windows, we recommend an editor with these features.
 
+* Line numbers
+* YAML syntax highlighting
+* Smart indentation
+* Ability to set line endings and file encoding
+* Ability to show special characters (tabs, line endings, etc)
 
-The example configuration files include entries that illustrate each of
-these techniques.  You would keep only one set of configuration items
-and comment out or remove the others.
+## Configuring Identity Sources
 
-### Configure connection to the Adobe Admin Console (UMAPI)
+### Admin Console Connector
 
-When you have obtained access and set up an integration with User
-Management in the Adobe I/O
-[Developer Portal](https://www.adobe.io/console/), make note of
-the following configuration items that you have created or that
-have been assigned to your organization:
-
-- Organization ID
-- API Key
-- Client Secret
-- Technical Account ID
-- Private Certificate
-
-Open your copy of the connector-umapi.yml file in a plain-text
-editor, and enter these values in the “enterprise” section:
-
-```YAML
-enterprise:
-  org_id: "Organization ID goes here"
-  client_id: "Client ID goes here"
-  client_secret: "Client Secret goes here"
-  tech_acct_id: "Tech Account ID goes here"
-  priv_key_path: "Path to Private Certificate goes here"
-```
-
-**Note:** Make sure you put the private key file at the location
-specified in `priv_key_path`, and that it is readable only to the
-user account that runs the tool.
-
-In User Sync 2.1 or later there is an alternative to storing the private key in a separate file; you can place
-the private key directly in the configuration file.  Rather than using the
-`priv_key_path` key, use `priv_key_data` as follows:
-
-	  priv_key_data: |
-	    -----BEGIN RSA PRIVATE KEY-----
-	    MIIJKAIBAAKCAge85H76SDKJ8273HHSDKnnfhd88837aWwE2O2LGGz7jLyZWSscH
-	    ...
-	    Fz2i8y6qhmfhj48dhf84hf3fnGrFP2mX2Bil48BoIVc9tXlXFPstJe1bz8xpo=
-	    -----END RSA PRIVATE KEY-----
-
-In User Sync 2.2 or later, there are some additional parameters to control
-connection timeout and retry.  These should never need to be used, however,
-in case there is some unusual situation you can set them in the `server` section:
-
-  server:
-    timeout: 120
-    retries: 3
-
-`timeout` sets the maximum wait time, in seconds, for a call to complete.
-`retries` sets the number of times to retry an operation if it fails due to a non-specific problem such as server error or timeout.
-
-### Configure connection to your enterprise directory
-
-Open your copy of the connector-ldap.yml file in a plain-text
-editor, and set these values to enable access to your enterprise
-directory system:
-
-```
-username: "username-goes-here"
-password: "password-goes-here"
-host: "FQDN.of.host"
-base_dn: "base_dn.of.directory"
-```
-
-See the section [Security Recommendations](deployment_best_practices.md#security-recommendations) for
-details of how to store the password more securely in User Sync version 2.1 or later.
+### CSV Connector
 
 ## Configuration options
 
@@ -442,124 +384,6 @@ the warning message. In this case, User Sync attempted to add the
 user "cceuser2@ensemble.ca". The add action failed because the
 user was not found.
 
-## Example configurations
-
-These examples show the configuration file structures and
-illustrate possible configuration values.
-
-### user-sync-config.yml
-
-```YAML
-adobe_users:
-  connectors:
-    umapi: connector-umapi.yml
-  exclude_identity_types:
-    - adobeID
-
-directory_users:
-  user_identity_type: federatedID
-  default_country_code: US
-  connectors:
-    ldap: connector-ldap.yml
-  groups:
-    - directory_group: Acrobat
-      adobe_groups:
-        - Default Acrobat Pro DC configuration
-    - directory_group: Photoshop
-      adobe_groups:
-        - "Default Photoshop CC - 100 GB configuration"
-        - "Default All Apps plan - 100 GB configuration"
-        - "Default Adobe Document Cloud for enterprise configuration"
-        - "Default Adobe Enterprise Support Program configuration"
-
-limits:
-  max_adobe_only_users: 200
-
-logging:
-  log_to_file: True
-  file_log_directory: userSyncLog
-  file_log_level: debug
-  console_log_level: debug
-```
-
-### connector-ldap.yml
-
-```YAML
-username: "LDAP_username"
-password: "LDAP_password"
-host: "ldap://LDAP_ host"
-base_dn: "base_DN"
-
-group_filter_format: "(&(objectClass=posixGroup)(cn={group}))"
-all_users_filter: "(&(objectClass=person)(objectClass=top))"
-```
-
-### connector-umapi.yml
-
-```YAML
-server:
-  # This section describes the location of the servers used for the Adobe user management. Default is:
-  # host: usermanagement.adobe.io
-  # endpoint: /v2/usermanagement
-  # ims_host: ims-na1.adobelogin.com
-  # ims_endpoint_jwt: /ims/exchange/jwt
-
-enterprise:
-  org_id: "Org ID goes here"
-  client_id: "Client ID goes here"
-  client_secret: "Client secret goes here"
-  tech_acct_id: "Tech account ID goes here"
-  priv_key_path: "Path to private.key goes here"
-  # priv_key_data: "actual key data goes here" # This is an alternative to priv_key_path
-```
-
-## Testing your configuration
-
-Use these test cases to ensure that your configuration is working
-correctly, and that the product configurations are correctly
-mapped to your enterprise directory security groups . Run the
-tool in test mode first (by supplying the -t parameter), so that
-you can see the result before running live.
-
-The following examples use `--users all` to select users, but you may want to use
-`--users mapped` to select only users in directory groups listed in your configuration file,
-or `--users file f.csv` to select a smaller set of test users listed in a file.
-
-###  User Creation
-
-1. Create one or more test users in enterprise directory.
-
-2. Add users to one or more configured directory/security groups.
-
-3. Run User Sync in test mode. (`./user-sync -t --users all --process-groups --adobe-only-user-action exclude`)
-
-3. Run User Sync not in test mode. (`./user-sync --users all --process-groups --adobe-only-user-action exclude`)
-
-4. Check that test users were created in Adobe Admin Console.
-
-### User Update
-
-1. Modify group membership of one or more test user in the directory.
-
-1. Run User Sync. (`./user-sync --users all --process-groups --adobe-only-user-action exclude`)
-
-2. Check that test users in Adobe Admin Console were updated to
-reflect new product configuration membership.
-
-###  User Disable
-
-1. Remove or disable one or more existing test users in your
-enterprise directory.
-
-2. Run User Sync. (`./user-sync --users all --process-groups --adobe-only-user-action remove-adobe-groups`)  You may want to run in test mode (-t) first.
-
-3. Check that users were removed from configured product
-configurations in the Adobe Admin Console.
-
-4. Run User Sync to remove the users (`./user-sync -t --users all --process-groups --adobe-only-user-action delete`) Then run without -t.  Caution: check that only the desired user was removed when running with -t.  This run (without -t) will actually delete users.
-
-5. Check that the user accounts are removed from the Adobe Admin Console.
-
 ---
 
-[Previous Section](setup_and_installation.md)  \| [Next Section](command_parameters.md)
+[Previous Section](setup_and_installation.md)  \| [Next Section](connect_adobe.md)
