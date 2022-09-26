@@ -4,6 +4,8 @@ lang: bp
 nav_link: Monitoramento
 nav_level: 2
 nav_order: 300
+parent: success-guide
+page_id: monitoring
 ---
 
 # Monitoramento do processo do User Sync

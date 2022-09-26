@@ -4,6 +4,8 @@ lang: fr
 nav_link: Identification de l’organisation
 nav_level: 2
 nav_order: 120
+parent: success-guide
+page_id: plan-groups-orgs
 ---
 
 # Description de votre organisation, des groupes et des annuaires

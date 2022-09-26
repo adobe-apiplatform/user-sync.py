@@ -6,6 +6,8 @@ lang: fr
 nav_link: Manuel d’utilisation
 nav_level: 1
 nav_order: 10
+parent: root
+page_id: user-manual
 ---
 
 Version 2.1.1, publiée le 09/06/2017

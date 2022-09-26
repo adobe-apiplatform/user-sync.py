@@ -4,6 +4,8 @@ lang: bp
 nav_link: Configuração de User Sync
 nav_level: 2
 nav_order: 30
+parent: user-manual
+page_id: configuring
 ---
 
 <a name="configuring-the-user-sync-tool"></a>

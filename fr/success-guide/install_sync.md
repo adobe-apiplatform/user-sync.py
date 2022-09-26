@@ -4,6 +4,8 @@ lang: fr
 nav_link: Installation de l’outil User Sync
 nav_level: 2
 nav_order: 270
+parent: success-guide
+page_id: install-sync
 ---
 
 # Installation de l’outil User Sync

@@ -4,6 +4,8 @@ lang: bp
 nav_link: Cenários de uso
 nav_level: 2
 nav_order: 50
+parent: user-manual
+page_id: usage
 ---
 
 <a name="usage-scenarios"></a>

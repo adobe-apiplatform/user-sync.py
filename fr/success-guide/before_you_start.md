@@ -4,6 +4,8 @@ lang: fr
 nav_link: Avant de commencer
 nav_level: 2
 nav_order: 110
+parent: success-guide
+page_id: before-you-start
 ---
 
 # Ce que vous devez savoir avant de commencer

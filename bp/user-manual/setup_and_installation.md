@@ -4,6 +4,8 @@ lang: bp
 nav_link: Instalação e configuração
 nav_level: 2
 nav_order: 20
+parent: user-manual
+page_id: installation
 ---
 
 # Instalação e configuração

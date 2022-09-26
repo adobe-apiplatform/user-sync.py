@@ -4,6 +4,8 @@ lang: bp
 nav_link: Configuração do Servidor
 nav_level: 2
 nav_order: 160
+parent: success-guide
+page_id: identify-server
 ---
 
 # Identificação e configuração do servidor em que o User Sync será executado

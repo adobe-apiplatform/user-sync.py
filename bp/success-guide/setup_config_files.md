@@ -4,6 +4,8 @@ lang: bp
 nav_link: Arquivos de Configuração
 nav_level: 2
 nav_order: 280
+parent: success-guide
+page_id: config-setup
 ---
 
 # Definição de arquivos de configuração

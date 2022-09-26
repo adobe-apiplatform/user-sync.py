@@ -4,6 +4,8 @@ lang: fr
 nav_link: Installation et configuration
 nav_level: 2
 nav_order: 20
+parent: user-manual
+page_id: installation
 ---
 
 # Installation et configuration

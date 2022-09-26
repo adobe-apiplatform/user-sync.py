@@ -4,6 +4,8 @@ lang: fr
 nav_link: Suppression de compte
 nav_level: 2
 nav_order: 140
+parent: success-guide
+page_id: deletion
 ---
 
 # Mode de traitement des suppressions de comptes

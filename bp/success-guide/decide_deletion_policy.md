@@ -4,6 +4,8 @@ lang: bp
 nav_link: Exclusão de Conta
 nav_level: 2
 nav_order: 140
+parent: success-guide
+page_id: deletion
 ---
 
 # Decisão sobre como lidar com exclusão de conta

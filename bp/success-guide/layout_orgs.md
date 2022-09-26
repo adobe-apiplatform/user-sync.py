@@ -4,6 +4,8 @@ lang: bp
 nav_link: Layout da Organização
 nav_level: 2
 nav_order: 120
+parent: success-guide
+page_id: config-groups-orgs
 ---
 
 # Layout da organização, dos grupos e dos diretórios

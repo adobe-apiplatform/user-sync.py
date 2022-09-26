@@ -4,6 +4,8 @@ lang: bp
 nav_link: Layout dos Produtos
 nav_level: 2
 nav_order: 130
+parent: success-guide
+page_id: config-prods
 ---
 
 # Layout dos produtos da Adobe, das configurações de produtos e dos grupos de usuários

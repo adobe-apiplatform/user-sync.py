@@ -4,6 +4,8 @@ lang: fr
 nav_link: Identification des produits
 nav_level: 2
 nav_order: 130
+parent: success-guide
+page_id: plan-prods
 ---
 
 # Description de vos produits, configurations de produits et groupes d’utilisateurs Adobe

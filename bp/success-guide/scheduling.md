@@ -4,6 +4,8 @@ lang: bp
 nav_link: Agendamento
 nav_level: 2
 nav_order: 320
+parent: success-guide
+page_id: scheduling
 ---
 
 # Configuração da execução contínua agendada do User Sync

@@ -6,6 +6,8 @@ lang: fr
 nav_link: Guide d’installation
 nav_level: 1
 nav_order: 100
+parent: root
+page_id: success-guide
 ---
 
 Version 2.1.1, publiée le 09/06/2017

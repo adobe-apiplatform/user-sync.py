@@ -4,6 +4,8 @@ lang: fr
 nav_link: Configuration du serveur
 nav_level: 2
 nav_order: 160
+parent: success-guide
+page_id: identify-server
 ---
 
 # Identification et configuration du serveur sur lequel doit s’exécuter User Sync

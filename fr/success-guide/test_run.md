@@ -4,6 +4,8 @@ lang: fr
 nav_link: Test d’exécution
 nav_level: 2
 nav_order: 290
+parent: success-guide
+page_id: test-run
 ---
 
 # Réalisation d’un test d’exécution pour vérifier la configuration

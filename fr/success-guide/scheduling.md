@@ -4,6 +4,8 @@ lang: fr
 nav_link: Planification
 nav_level: 2
 nav_order: 320
+parent: success-guide
+page_id: scheduling
 ---
 
 # Configuration de l’exécution planifiée en continu de l’outil User Sync

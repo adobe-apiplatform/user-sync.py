@@ -6,6 +6,8 @@ lang: bp
 nav_link: Guia de instalação e sucesso
 nav_level: 1
 nav_order: 100
+parent: root
+page_id: success-guide
 ---
 
 Versão 2.1.1, lançada em 09-06-2017

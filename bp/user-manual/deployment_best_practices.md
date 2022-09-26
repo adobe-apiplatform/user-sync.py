@@ -4,6 +4,8 @@ lang: bp
 nav_link: Práticas recomendadas de implantação
 nav_level: 2
 nav_order: 70
+parent: user-manual
+page_id: deployment
 ---
 
 

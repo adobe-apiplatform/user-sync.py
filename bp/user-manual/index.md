@@ -6,6 +6,8 @@ lang: bp
 nav_link: Manual do usuário
 nav_level: 1
 nav_order: 10
+parent: root
+page_id: user-manual
 ---
 
 Versão 2.1.1, lançada em 09-06-2017

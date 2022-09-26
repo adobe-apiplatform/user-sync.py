@@ -4,6 +4,8 @@ lang: bp
 nav_link: Instalação do User Sync
 nav_level: 2
 nav_order: 270
+parent: success-guide
+page_id: install-sync
 ---
 
 # Instalação do User Sync

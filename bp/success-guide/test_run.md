@@ -4,6 +4,8 @@ lang: bp
 nav_link: Execução de Teste
 nav_level: 2
 nav_order: 290
+parent: success-guide
+page_id: test-run
 ---
 
 # Execução de um teste para verificar a configuração

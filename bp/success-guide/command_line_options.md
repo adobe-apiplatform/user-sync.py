@@ -4,6 +4,8 @@ lang: bp
 nav_link: Linha de Comando
 nav_level: 2
 nav_order: 310
+parent: success-guide
+page_id: command-line-options
 ---
 
 # Escolha das opções finais da linha de comando

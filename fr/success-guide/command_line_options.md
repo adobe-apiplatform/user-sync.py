@@ -4,6 +4,8 @@ lang: fr
 nav_link: Ligne de commande
 nav_level: 2
 nav_order: 310
+parent: success-guide
+page_id: command-line-options
 ---
 
 # Choix des options de ligne de commande finales
