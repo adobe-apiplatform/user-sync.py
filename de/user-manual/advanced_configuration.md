@@ -4,6 +4,8 @@ lang: de
 nav_link: Erweiterte Konfiguration
 nav_level: 2
 nav_order: 60
+parent: user-manual
+page_id: advanced-config
 ---
 
 

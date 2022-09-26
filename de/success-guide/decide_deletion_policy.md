@@ -4,6 +4,8 @@ lang: de
 nav_link: Kontolöschung
 nav_level: 2
 nav_order: 140
+parent: success-guide
+page_id: decide-deletion
 ---
 
 # Gewünschtes Verhalten bei Kontolöschung

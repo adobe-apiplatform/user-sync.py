@@ -4,6 +4,8 @@ lang: de
 nav_link: Best Practices für die Bereitstellung
 nav_level: 2
 nav_order: 70
+parent: user-manual
+page_id: deployment-best-practices
 ---
 
 

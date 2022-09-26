@@ -4,6 +4,8 @@ lang: de
 nav_link: Überwachung
 nav_level: 2
 nav_order: 300
+parent: success-guide
+page_id: monitoring
 ---
 
 # Überwachen des Benutzersynchronisationsvorgangs

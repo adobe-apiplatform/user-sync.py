@@ -4,6 +4,8 @@ lang: de
 nav_link: Server-Setup
 nav_level: 2
 nav_order: 160
+parent: success-guide
+page_id: identify-server
 ---
 
 # Bestimmen und Einrichten des Servers für die Benutzersynchronisation

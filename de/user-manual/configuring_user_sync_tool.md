@@ -4,6 +4,8 @@ lang: de
 nav_link: Konfigurieren der Benutzersynchronisation
 nav_level: 2
 nav_order: 30
+parent: user-manual
+page_id: configuration
 ---
 
 # Konfigurieren des Benutzer-Synchronisationstools

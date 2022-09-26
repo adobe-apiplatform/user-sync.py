@@ -4,6 +4,8 @@ lang: de
 nav_link: Testlauf
 nav_level: 2
 nav_order: 290
+parent: success-guide
+page_id: test-run
 ---
 
 # Ausführen eines Testlaufs zum Überprüfen der Konfiguration

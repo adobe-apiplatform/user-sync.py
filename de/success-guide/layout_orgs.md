@@ -4,6 +4,8 @@ lang: de
 nav_link: Organisationslayout
 nav_level: 2
 nav_order: 120
+parent: success-guide
+page_id: plan-config-org
 ---
 
 # Layout Ihrer Organisation, Ihrer Gruppen und Verzeichnisse

@@ -4,6 +4,8 @@ lang: de
 nav_link: Produktlayout
 nav_level: 2
 nav_order: 130
+parent: success-guide
+page_id: plan-config-org
 ---
 
 # Layout Ihrer Adobe-Produkte, Produktkonfigurationen und Benutzergruppen

@@ -6,6 +6,8 @@ lang: de
 nav_link: Häufige Fragen
 nav_level: 1
 nav_order: 500
+parent: root
+page_id: faq
 ---
 ### Inhaltsverzeichnis
 {:."no_toc"}

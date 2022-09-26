@@ -4,6 +4,8 @@ lang: de
 nav_link: Befehlsparameter
 nav_level: 2
 nav_order: 40
+parent: user-manual
+page_id: command-parameters
 ---
 
 

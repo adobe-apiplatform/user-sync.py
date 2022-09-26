@@ -4,6 +4,8 @@ lang: de
 nav_link: Befehlszeile
 nav_level: 2
 nav_order: 310
+parent: success-guide
+page_id: command-line-options
 ---
 
 # Befehlszeilenoptionen

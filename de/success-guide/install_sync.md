@@ -4,6 +4,8 @@ lang: de
 nav_link: Installieren des Benutzer-Synchronisationstools
 nav_level: 2
 nav_order: 270
+parent: success-guide
+page_id: install-sync
 ---
 
 # Installieren des Benutzer-Synchronisationstools
