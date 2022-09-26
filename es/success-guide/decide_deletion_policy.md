@@ -4,6 +4,8 @@ lang: es
 nav_link: Eliminación de cuenta
 nav_level: 2
 nav_order: 140
+parent: success-guide
+page_id: deletion
 ---
 
 # Decida cómo gestionará la supresión de las cuentas

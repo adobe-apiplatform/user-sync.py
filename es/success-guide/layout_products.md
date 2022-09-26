@@ -4,6 +4,8 @@ lang: es
 nav_link: Productos de diseño
 nav_level: 2
 nav_order: 130
+parent: success-guide
+page_id: plan-config-prod
 ---
 
 # Diseño de sus productos de Adobe, configuraciones de productos y grupos de usuarios

@@ -4,6 +4,8 @@ lang: es
 nav_link: Configuración de User Sync
 nav_level: 2
 nav_order: 30
+parent: user-manual
+page_id: configuring-sync-tool
 ---
 
 # Configuración de la herramienta User Sync

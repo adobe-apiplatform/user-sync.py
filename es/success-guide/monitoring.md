@@ -4,6 +4,8 @@ lang: es
 nav_link: Supervisión
 nav_level: 2
 nav_order: 300
+parent: success-guide
+page_id: monitoring
 ---
 
 # Control del proceso de User Sync

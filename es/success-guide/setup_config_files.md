@@ -4,6 +4,8 @@ lang: es
 nav_link: Archivos de configuración
 nav_level: 2
 nav_order: 280
+parent: success-guide
+page_id: config-setup
 ---
 
 # Configurar archivos de configuración

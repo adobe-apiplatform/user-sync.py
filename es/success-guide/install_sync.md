@@ -4,6 +4,8 @@ lang: es
 nav_link: Instalación de User Sync
 nav_level: 2
 nav_order: 270
+parent: success-guide
+page_id: install
 ---
 
 # Instalación de User Sync

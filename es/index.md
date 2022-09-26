@@ -5,6 +5,8 @@ nav_link: Acerca de User Sync
 nav_level: 1
 nav_order: 1
 lang: es
+parent: root
+page_id: about-user-sync
 ---
 
 Bienvenido al centro de documentación de [User Sync de Adobe](https://github.com/adobe-apiplatform/user-sync.py).

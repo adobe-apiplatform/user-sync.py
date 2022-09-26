@@ -4,6 +4,8 @@ lang: es
 nav_link: Programación
 nav_level: 2
 nav_order: 320
+parent: success-guide
+page_id: scheduling
 ---
 
 # Configuración de la ejecución continuada programada de User Sync

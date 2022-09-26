@@ -6,6 +6,8 @@ lang: es
 nav_link: Preguntas frecuentes
 nav_level: 1
 nav_order: 500
+parent: root
+page_id: faq
 ---
 ### Tabla de contenido
 {:."no_toc"}

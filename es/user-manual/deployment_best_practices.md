@@ -4,6 +4,8 @@ lang: es
 nav_link: Prácticas recomendadas de implementación
 nav_level: 2
 nav_order: 70
+parent: user-manual
+page_id: deployment
 ---
 
 

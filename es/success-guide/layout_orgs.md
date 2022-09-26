@@ -4,6 +4,8 @@ lang: es
 nav_link: Organización del diseño
 nav_level: 2
 nav_order: 120
+parent: success-guide
+page_id: plan-config-org
 ---
 
 # Diseño de la organización, los grupos y los directorios

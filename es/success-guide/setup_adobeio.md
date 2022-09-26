@@ -4,6 +4,8 @@ lang: es
 nav_link: Integración Adobe.io
 nav_level: 2
 nav_order: 150
+parent: success-guide
+page_id: adobeio-setup
 ---
 
 # Configuración de una integración Adobe.io

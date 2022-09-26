@@ -4,6 +4,8 @@ lang: es
 nav_link: Servidor de configuración
 nav_level: 2
 nav_order: 160
+parent: success-guide
+page_id: identify-server
 ---
 
 # Identificar y establecer el servidor en el lugar en el que se ejecutará User Sync

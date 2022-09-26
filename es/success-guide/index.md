@@ -6,6 +6,8 @@ lang: es
 nav_link: Guía de configuración y éxito
 nav_level: 1
 nav_order: 100
+parent: root
+page_id: success-guide
 ---
 
 Versión 2.1.1 publicada el 09/06/2017
