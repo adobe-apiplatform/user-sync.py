@@ -42,7 +42,7 @@ Copy it to your User Sync Tool directory.
 
 Then, add the config to `user-sync-config.yml` under `directory_users.connectors`:
 
-```yml
+```yaml
 directory_users:
   connectors:
     okta: connector-okta.yml
@@ -65,7 +65,7 @@ To set up authentication, configure the `host` and `api_token` options.
 
 The `host` option should be set to the hostname of the Okta instance. Just the hostname (sans `https://`) is needed.
 
-```yml
+```yaml
 host: example.oktapreview.com
 ```
 
@@ -78,14 +78,14 @@ for information on creating the token.
 The token can be specified in plaintext in the config file. If you do this, you are responsible
 for keeping the file and server environment secure.
 
-```yml
+```yaml
 api_token: "okta_api_token"
 ```
 
 The recommended way to store the token is to save it to the OS keyring and reference
 the key in the config file using the `secure_api_token_key` option.
 
-```yml
+```yaml
 secure_api_token_key: "UST Okta Token"
 ```
 

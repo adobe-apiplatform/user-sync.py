@@ -60,7 +60,7 @@ global catalog ports - 3268/3269).
 
 Example:
 
-```yml
+```yaml
 # connect to LDAPS global catalog port
 host: ldaps://global-catalog.example.com:3269
 ```
@@ -77,7 +77,7 @@ In other words, the `base_dn` points to the root object from which to conduct an
 For best results, this should generally be set to the root domain of the directory. For example, if the
 domain is `example.com` then the `base_dn` would be set to `DC=example,DC=com`.
 
-```yml
+```yaml
 base_dn: DC=example,DC=com
 ```
 
@@ -86,7 +86,7 @@ set by `base_dn`.
 
 In some cases, perhaps when querying a global catalog, the `base_dn` may be left blank.
 
-```yml
+```yaml
 base_dn: ""
 ```
 
@@ -100,7 +100,7 @@ can set the method explicitly if desired with `authentication_method: simple`.
 
 Example:
 
-```yml
+```yaml
 username: user@example.com
 password: password13
 host: "ldaps://my-ldap-fdqn.example.com"
@@ -118,7 +118,7 @@ The password can be saved securely to the OS keyring (e.g. Windows Credential Ma
 field `secure_password_key`. If the secure key option is specified, then the `password` option should be
 omitted. Example:
 
-```yml
+```yaml
 secure_password_key: my_ldap_password
 # password:
 ```
@@ -131,7 +131,7 @@ The `anonymous` auth method makes the LDAP connector perform an anonymous (un-au
 the LDAP source. The server will return an error if anonymous queries are not supported. To enable anonymous
 queries, simply omit the `username` field.
 
-```yml
+```yaml
 # username: user@example.com
 host: "ldaps://my-ldap-fdqn.example.com"
 base_dn: DC=example,DC=com
@@ -157,7 +157,7 @@ running the sync tool should be authenticated with the Active Directory domain c
 If these conditions are met, then configuring the LDAP connection is simple.
 
 
-```yml
+```yaml
 host: "ldaps://my-ldap-fdqn.example.com"
 base_dn: DC=example,DC=com
 
@@ -185,7 +185,7 @@ with the option `secure_password_key`.
 
 **Note:** Username should be specified in the format `DOMAIN\USER`.
 
-```yml
+```yaml
 username: EXAMPLE\User
 password: "[NTLM hash]"
 host: "ldaps://my-ldap-fdqn.example.com"
@@ -221,7 +221,7 @@ Controls the size of LDAP query pages. Default is `1000` records.
 The `all_users_filter` setting defines the LDAP query used to query all users from the LDAP system. The default
 is geared at Active Directory.
 
-```yml
+```yaml
 all_users_filter: "(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
 ```
 
@@ -229,7 +229,7 @@ This query filters out any object that isn't a user account or is disabled.
 
 A different LDAP system such as OpenLDAP may use a different query.
 
-```yml
+```yaml
 all_users_filter: "(&(objectClass=person)(objectClass=top))"
 ```
 
@@ -244,7 +244,7 @@ customized for other types of LDAP systems.
 
 The group common name is interpolated into the query string using `{group}` marker.
 
-```yml
+```yaml
 group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
 ```
 
@@ -258,7 +258,7 @@ need to be customized to work with other LDAP systems.
 
 The marker `{group_dn}` interpolates the DN of the group.
 
-```yml
+```yaml
 group_member_filter_format: "(memberOf={group_dn})"
 ```
 
@@ -266,7 +266,7 @@ group_member_filter_format: "(memberOf={group_dn})"
 of the group. The query can be modified to include users in nested subgroups if the LDAP server supports
 it. Here is an example for Active Directory:
 
-```yml
+```yaml
 group_member_filter_format: "(memberOf:1.2.840.113556.1.4.1941:={group_dn})"
 ```
 
@@ -278,7 +278,7 @@ If `additional_groups` rules are defined in `user-sync-config.yml`, the `dynamic
 option defines the attribute to use when identifying a user's member groups. It is set to `memberOf` by
 default (which works for Active Directory).
 
-```yml
+```yaml
 dynamic_group_member_attribute: "memberOf"
 ```
 
@@ -304,7 +304,7 @@ to retrieve users and groups.
 
 Example:
 
-```yml
+```yaml
 # must disable (comment out) group_member_filter_format
 # group_member_filter_format: "(memberOf={group_dn})"
 
@@ -323,7 +323,7 @@ Each of these options use an interpolation convention to inject the value of a v
 
 For example, `user_country_code_format` looks like this by default:
 
-```yml
+```yaml
 user_country_code_format: "{c}"
 ```
 
@@ -335,7 +335,7 @@ value in the user's `country` attribute, setting the user's country code to `GB`
 This syntax can be used to inject multiple fields to create composite values. For example, if you want to
 build the username from two fields, you might do something like this:
 
-```yml
+```yaml
 user_username_format: "{field1}_{field2}"
 ```
 
@@ -345,7 +345,7 @@ would be `username = abc_123`
 
 The curly-brace syntax can also be omitted for cases where a value should be hard-coded.
 
-```yml
+```yaml
 user_domain_format: "example.com"
 ```
 
@@ -365,7 +365,7 @@ flow
 
 This option is set to `{mail}` by default which is the default in Active Directory.
 
-```yml
+```yaml
 user_email_format: "{mail}"
 ```
 
@@ -401,13 +401,13 @@ If those conditions are met, then the UST will keep a user's email address up-to
 If you are syncing users with non-email usernames, the domain must be set or mapped in the `user_domain_format` field.
 This may be dynamically mapped to an LDAP attribute if one exists.
 
-```yml
+```yaml
 user_domain_format: "{domain}"
 ```
 
 Or if such an attribute isn't available then it can be hard-coded.
 
-```yml
+```yaml
 # set the domain of *all users* to "example.com"
 user_domain_format: "example.com"
 ```
@@ -448,7 +448,7 @@ uncommon to see users with country fields in different formats such as `USA` or 
 There are a few different solutions to this. One possible solution is to hard-code the country value
 in the `user_country_code_format` option.
 
-```yml
+```yaml
 user_country_code_format: US
 ```
 
@@ -467,7 +467,7 @@ defined in the LDAP connector config (which itself overrides `user_identity_type
 For example, an LDAP system with a theoretical `idType` attribute that could be set to `adobe`, `enterprise`
 or `federated` might be used in this manner:
 
-```yml
+```yaml
 user_identity_type_format: "{idType}ID"
 ```
 

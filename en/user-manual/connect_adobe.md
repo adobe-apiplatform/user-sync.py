@@ -55,7 +55,7 @@ The `private.key` file should already be present on the server that will be runn
 
 These can be stored in plaintext inside the config file:
 
-```yml
+```yaml
 enterprise:
   org_id: "Organization ID goes here"
   client_id: "Client ID goes here"

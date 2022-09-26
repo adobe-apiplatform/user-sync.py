@@ -82,13 +82,13 @@ important rules:
 
 * Keys and values are delimited with a single colon (`:`) followed by a space character
 
-  ```yml
+  ```yaml
   some_key: A Value
   ```
 
 * A dash (`-`) denotes a list item
 
-  ```yml
+  ```yaml
   # example with one item
   adobe_groups:
     - Photoshop Users
