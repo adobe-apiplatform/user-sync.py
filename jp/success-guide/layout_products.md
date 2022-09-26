@@ -4,6 +4,8 @@ lang: jp
 nav_link: 製品のレイアウト
 nav_level: 2
 nav_order: 130
+parent: success-guide
+page_id: plan-prods
 ---
 
 # アドビ製品、製品プロファイル、ユーザーグループのレイアウト

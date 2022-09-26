@@ -4,6 +4,8 @@ lang: jp
 nav_link: デプロイメントのベストプラクティス
 nav_level: 2
 nav_order: 70
+parent: user-manual
+page_id: deployment
 ---
 
 

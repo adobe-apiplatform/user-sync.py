@@ -4,6 +4,8 @@ lang: jp
 nav_link: テスト実行
 nav_level: 2
 nav_order: 290
+parent: success-guide
+page_id: test-run
 ---
 
 # 構成を確認するためのテスト実行

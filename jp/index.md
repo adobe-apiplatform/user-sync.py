@@ -5,6 +5,8 @@ nav_link: User Sync について
 nav_level: 1
 nav_order: 1
 lang: jp
+parent: root
+page_id: about-user-sync
 ---
 
 [Adobe の User Sync](https://github.com/adobe-apiplatform/user-sync.py) のドキュメントセンターをご利用いただきありがとうございます。

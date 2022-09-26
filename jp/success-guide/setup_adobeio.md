@@ -4,6 +4,8 @@ lang: jp
 nav_link: Adobe.io 統合
 nav_level: 2
 nav_order: 150
+parent: success-guide
+page_id: adobeio-setup
 ---
 
 # Adobe.io 統合のセットアップ

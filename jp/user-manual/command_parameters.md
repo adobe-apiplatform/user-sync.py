@@ -4,6 +4,8 @@ lang: jp
 nav_link: コマンドパラメーター
 nav_level: 2
 nav_order: 40
+parent: user-manual
+page_id: command-params
 ---
 
 

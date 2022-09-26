@@ -4,6 +4,8 @@ lang: jp
 nav_link: 開始する前に
 nav_level: 2
 nav_order: 110
+parent: success-guide
+page_id: before-you-start
 ---
 
 # 開始する前に必要な情報

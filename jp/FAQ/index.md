@@ -6,6 +6,8 @@ lang: jp
 nav_link: FAQ
 nav_level: 1
 nav_order: 500
+parent: root
+page_id: faq
 ---
 ### 目次
 {:."no_toc"}

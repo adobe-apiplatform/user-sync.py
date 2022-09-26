@@ -4,6 +4,8 @@ lang: jp
 nav_link: コマンドライン
 nav_level: 2
 nav_order: 310
+parent: success-guide
+page_id: command-line-options
 ---
 
 # 最終的なコマンドラインオプションの選択

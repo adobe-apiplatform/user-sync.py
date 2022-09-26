@@ -4,6 +4,8 @@ lang: jp
 nav_link: 構成ファイル
 nav_level: 2
 nav_order: 280
+parent: success-guide
+page_id: config-file-setup
 ---
 
 # 構成ファイルのセットアップ

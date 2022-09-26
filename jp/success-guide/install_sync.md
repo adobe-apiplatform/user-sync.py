@@ -4,6 +4,8 @@ lang: jp
 nav_link: User Sync のインストール
 nav_level: 2
 nav_order: 270
+parent: success-guide
+page_id: install-sync
 ---
 
 # User Sync のインストール

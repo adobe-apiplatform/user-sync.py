@@ -4,6 +4,8 @@ lang: jp
 nav_link: 監視
 nav_level: 2
 nav_order: 300
+parent: success-guide
+page_id: monitoring
 ---
 
 # User Sync プロセスの監視

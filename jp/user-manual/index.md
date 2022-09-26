@@ -6,6 +6,8 @@ lang: jp
 nav_link: ユーザーマニュアル
 nav_level: 1
 nav_order: 10
+parent: root
+page_id: user-manual
 ---
 
 バージョン 2.1.1、2017 年 6 月 9 日公開

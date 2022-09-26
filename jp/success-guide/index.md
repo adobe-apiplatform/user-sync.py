@@ -6,6 +6,8 @@ lang: jp
 nav_link: セットアップと成功のガイド
 nav_level: 1
 nav_order: 100
+parent: root
+page_id: success-guide
 ---
 
 バージョン 2.1.1、2017 年 6 月 9 日公開

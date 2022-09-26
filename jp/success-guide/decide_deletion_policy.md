@@ -4,6 +4,8 @@ lang: jp
 nav_link: アカウントの削除
 nav_level: 2
 nav_order: 140
+parent: success-guide
+page_id: deletion
 ---
 
 # アカウントの削除の処理方法の決定

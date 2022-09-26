@@ -4,6 +4,8 @@ lang: jp
 nav_link: スケジューリング
 nav_level: 2
 nav_order: 320
+parent: success-guide
+page_id: scheduling
 ---
 
 # User Sync を継続実行するスケジュールのセットアップ

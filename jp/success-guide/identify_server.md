@@ -4,6 +4,8 @@ lang: jp
 nav_link: サーバーの設定
 nav_level: 2
 nav_order: 160
+parent: success-guide
+page_id: identify-server
 ---
 
 # User Sync が実行されるサーバーの識別と設定

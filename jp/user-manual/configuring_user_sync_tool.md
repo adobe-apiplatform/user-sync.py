@@ -4,6 +4,8 @@ lang: jp
 nav_link: User Sync の構成
 nav_level: 2
 nav_order: 30
+parent: user-manual
+page_id: configuring
 ---
 
 # User Sync ツールの構成

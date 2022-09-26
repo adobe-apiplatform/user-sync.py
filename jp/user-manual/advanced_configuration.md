@@ -4,6 +4,8 @@ lang: jp
 nav_link: 詳細な構成
 nav_level: 2
 nav_order: 60
+parent: user-manual
+page_id: advanced-config
 ---
 
 

@@ -4,6 +4,8 @@ lang: jp
 nav_link: 組織のレイアウト
 nav_level: 2
 nav_order: 120
+parent: success-guide
+page_id: plan-groups-orgs
 ---
 
 # 組織、グループ、ディレクトリのレイアウト
