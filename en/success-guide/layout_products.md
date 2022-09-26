@@ -1,12 +1,14 @@
 ---
 layout: default
 lang: en
-nav_link: Layout Products
+nav_link: Plan Product Config
 nav_level: 2
 nav_order: 130
+parent: success-guide
+page_id: plan-config-org
 ---
 
-# Layout Your Adobe Products, Product Configurations, and User Groups
+# Plan Your Adobe Products, Product Configurations, and User Groups Layout
 
 [Previous Section](layout_orgs.md) \| [Back to Contents](index.md) \| [Next Section](decide_deletion_policy.md)
 

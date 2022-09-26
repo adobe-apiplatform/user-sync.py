@@ -4,6 +4,8 @@ lang: en
 nav_link: Connect to Adobe
 nav_level: 2
 nav_order: 31
+parent: user-manual
+page_id: connect-adobe
 ---
 
 [Previous Section](configuring_user_sync_tool.md)  \| [Next Section](command_parameters.md)

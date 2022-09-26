@@ -4,6 +4,8 @@ lang: en
 nav_link: Configure User Sync
 nav_level: 2
 nav_order: 30
+parent: user-manual
+page_id: configuration
 ---
 
 [Previous Section](setup_and_installation.md)  \| [Next Section](connect_adobe.md)

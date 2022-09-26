@@ -4,6 +4,8 @@ lang: en
 nav_link: Usage Scenarios
 nav_level: 2
 nav_order: 50
+parent: user-manual
+page_id: usage-scenarios
 ---
 
 # Usage Scenarios

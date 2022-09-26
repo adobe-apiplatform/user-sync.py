@@ -5,6 +5,8 @@ nav_link: Über das Benutzer-Synchronisationstool
 nav_level: 1
 nav_order: 1
 lang: de
+page_id: about-user-sync
+parent: root
 ---
 
 Willkommen beim Dokumentationscenter für das [Benutzer-Synchronisationstool von Adobe](https://github.com/adobe-apiplatform/user-sync.py).

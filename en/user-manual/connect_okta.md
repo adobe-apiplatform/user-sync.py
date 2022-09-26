@@ -4,6 +4,8 @@ lang: en
 nav_link: Sync from Okta
 nav_level: 2
 nav_order: 33
+parent: user-manual
+page_id: connect-okta
 ---
 
 [Previous Section](connect_ldap.md)  \| [Next Section](command_parameters.md)

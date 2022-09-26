@@ -4,6 +4,8 @@ lang: en
 nav_link: Sign Sync
 nav_level: 2
 nav_order: 70
+parent: user-manual
+page_id: sign-sync
 ---
 
 # Synchronizing Users to Adobe Sign

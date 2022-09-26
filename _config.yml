@@ -13,7 +13,7 @@
 # you will see them accessed via {{ site.title }}, {{ site.email }}, and so on.
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
-title: Adobe User Sync Tool User Guide
+title: Adobe User Sync Tool Guide
 email: 
 description: > # this means to ignore newlines until "baseurl:"
   User Sync is a tool for synchronizing Adobe customer directories
@@ -24,9 +24,9 @@ github_username:  adobe-apiplatform
 
 # Build settings
 markdown: kramdown
-theme: minima
+theme: just-the-docs
 plugins:
-  - jekyll-feed
+  # - jekyll-feed
 exclude:
   - Gemfile
   - Gemfile.lock

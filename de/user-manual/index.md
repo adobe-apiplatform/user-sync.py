@@ -6,6 +6,8 @@ lang: de
 nav_link: Benutzerhandbuch
 nav_level: 1
 nav_order: 10
+parent: root
+page_id: success-guide
 ---
 
 Version 2.1.1, veröffentlicht am 09.06.2017

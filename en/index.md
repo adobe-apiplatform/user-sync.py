@@ -2,7 +2,9 @@
 layout: page
 title: About User Sync
 nav_link: About User Sync
+page_id: about-user-sync
 nav_level: 1
+parent: root
 nav_order: 1
 lang: en
 ---

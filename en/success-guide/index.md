@@ -6,6 +6,8 @@ lang: en
 nav_link: Setup and Success Guide
 nav_level: 1
 nav_order: 100
+parent: root
+page_id: success-guide
 ---
 
 Version 2.7.4, released 2022-09-07

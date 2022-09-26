@@ -4,6 +4,8 @@ lang: en
 nav_link: Certificate Update
 nav_level: 2
 nav_order: 330
+parent: success-guide
+page_id: cert-update
 ---
 
 # Updating Public/Private Certificates

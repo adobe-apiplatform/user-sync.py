@@ -4,6 +4,8 @@ lang: en
 nav_link: Upgrade Guide
 nav_level: 2
 nav_order: 340
+parent: success-guide
+page_id: upgrade-guide
 ---
 
 # Upgrade From PEX to Binary

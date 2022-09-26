@@ -1,0 +1,34 @@
+<ul class="nav-list">
+{% capture lang %}/{{ page.lang }}/{% endcapture %}
+{% assign page_list = site.pages | where_exp: "page", "page.nav_level > 0 " | where_exp: "page", "page.url contains lang" | sort: "nav_order" %}
+{% assign root_pages = page_list | where: "parent", "root" %}
+{% for node in root_pages %}
+    <li class="nav-list-item {% if node.url == page.url or page.parent == node.page_id %}active{% endif %}">
+	{% assign children = page_list | where: "parent", node.page_id %}
+	{% if children.size > 0 %}
+          <a href="#" class="nav-list-expander" aria-label="toggle links in {{ node.title }} category">
+            <svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg>
+          </a>
+	{% endif %}
+        <a class="nav-list-link {% if node.url == page.url %}active{% endif %}" href="{{ node.url | relative_url }}">{{ node.nav_link | escape }}</a>
+	{% if children.size > 0 %}
+          <ul class="nav-list">
+	  {% for child in children %}
+            <li class="nav-list-item {% if child.url == page.url %}active{% endif %}">
+              <a class="nav-list-link {% if child.url == page.url %}active{% endif %}" href="{{ child.url | relative_url }}">{{ child.nav_link | escape }}</a>
+	    </li>
+	  {% endfor %}
+	  </ul>
+	{% endif %}
+    </li>
+{% endfor %}
+</ul>
+<hr/>
+<ul class="nav-list">
+	<li><a href="{{page.url | relative_url | replace: lang, '/de/'}}">Deutsch</a></li>
+	<li><a href="{{page.url | relative_url | replace: lang, '/en/'}}">English</a></li>
+	<li><a href="{{page.url | relative_url | replace: lang, '/es/'}}">Español</a></li>
+	<li><a href="{{page.url | relative_url | replace: lang, '/fr/'}}">Français</a></li>
+	<li><a href="{{page.url | relative_url | replace: lang, '/jp/'}}">日本語</a></li>
+	<li><a href="{{page.url | relative_url | replace: lang, '/bp/'}}">Português</a></li>
+</ul>

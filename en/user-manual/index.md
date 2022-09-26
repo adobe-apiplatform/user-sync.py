@@ -6,6 +6,8 @@ lang: en
 nav_link: User Manual
 nav_level: 1
 nav_order: 10
+parent: root
+page_id: user-manual
 ---
 
 Version 2.7.4, released 2022-09-07

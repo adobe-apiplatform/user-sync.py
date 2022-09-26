@@ -4,6 +4,8 @@ lang: en
 nav_link: Account Deletion
 nav_level: 2
 nav_order: 140
+parent: success-guide
+page_id: decide-deletion
 ---
 
 # Decide How You Will Handle Account Deletion

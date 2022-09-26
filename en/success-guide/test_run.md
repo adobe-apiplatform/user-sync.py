@@ -4,6 +4,8 @@ lang: en
 nav_link: Test Run
 nav_level: 2
 nav_order: 290
+parent: success-guide
+page_id: test-run
 ---
 
 # Make a Test Run To Check Configuration

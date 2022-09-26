@@ -4,6 +4,8 @@ lang: en
 nav_link: Connect to LDAP
 nav_level: 2
 nav_order: 32
+parent: user-manual
+page_id: connect-ldap
 ---
 
 [Previous Section](connect_adobe.md)  \| [Next Section](command_parameters.md)

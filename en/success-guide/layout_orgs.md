@@ -1,12 +1,14 @@
 ---
 layout: default
 lang: en
-nav_link: Layout Organization
+nav_link: Map Org Structure
 nav_level: 2
 nav_order: 120
+parent: success-guide
+page_id: plan-config-org
 ---
 
-# Layout Your Organization, Groups, and Directories
+# Map Organization, Groups, and Directory Layout
 
 [Previous Section](before_you_start.md) \| [Back to Contents](index.md) \| [Next Section](layout_products.md)
 
