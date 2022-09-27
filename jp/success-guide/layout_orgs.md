@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: jp
+title: 組織のレイアウト
 nav_link: 組織のレイアウト
 nav_level: 2
 nav_order: 120

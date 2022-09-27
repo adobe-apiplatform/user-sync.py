@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: jp
+title: よくある作業例
 nav_link: よくある作業例
 nav_level: 2
 nav_order: 50

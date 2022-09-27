@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: jp
+title: コマンドパラメーター
 nav_link: コマンドパラメーター
 nav_level: 2
 nav_order: 40

@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: jp
+title: 監視
 nav_link: 監視
 nav_level: 2
 nav_order: 300

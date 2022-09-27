@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: jp
+title: 開始する前に
 nav_link: 開始する前に
 nav_level: 2
 nav_order: 110

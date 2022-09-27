@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: jp
+title: テスト実行
 nav_link: テスト実行
 nav_level: 2
 nav_order: 290

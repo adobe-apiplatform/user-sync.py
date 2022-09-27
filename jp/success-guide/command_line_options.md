@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: jp
+title: コマンドライン
 nav_link: コマンドライン
 nav_level: 2
 nav_order: 310

@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: jp
+title: サーバーの設定
 nav_link: サーバーの設定
 nav_level: 2
 nav_order: 160

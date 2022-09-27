@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: jp
+title: アカウントの削除
 nav_link: アカウントの削除
 nav_level: 2
 nav_order: 140

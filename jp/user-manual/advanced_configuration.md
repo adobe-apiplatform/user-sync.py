@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: jp
+title: 詳細な構成
 nav_link: 詳細な構成
 nav_level: 2
 nav_order: 60

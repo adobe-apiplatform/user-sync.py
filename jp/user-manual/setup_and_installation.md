@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: jp
+title: セットアップとインストール
 nav_link: セットアップとインストール
 nav_level: 2
 nav_order: 20

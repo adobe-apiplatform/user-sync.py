@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: jp
+title: 構成ファイル
 nav_link: 構成ファイル
 nav_level: 2
 nav_order: 280

@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: jp
+title: Adobe.io 統合
 nav_link: Adobe.io 統合
 nav_level: 2
 nav_order: 150

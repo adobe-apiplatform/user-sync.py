@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: jp
+title: User Sync のインストール
 nav_link: User Sync のインストール
 nav_level: 2
 nav_order: 270

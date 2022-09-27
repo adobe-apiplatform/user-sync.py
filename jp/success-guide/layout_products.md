@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: jp
+title: 製品のレイアウト
 nav_link: 製品のレイアウト
 nav_level: 2
 nav_order: 130
