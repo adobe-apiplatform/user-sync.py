@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: en
+title: Deployment Best Practices
 nav_link: Deployment Best Practices
 nav_level: 2
 nav_order: 80

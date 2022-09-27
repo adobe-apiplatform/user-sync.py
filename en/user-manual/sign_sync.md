@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: en
+title: Sign Sync
 nav_link: Sign Sync
 nav_level: 2
 nav_order: 70

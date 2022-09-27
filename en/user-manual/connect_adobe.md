@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: en
+title: Connect to Adobe
 nav_link: Connect to Adobe
 nav_level: 2
 nav_order: 31

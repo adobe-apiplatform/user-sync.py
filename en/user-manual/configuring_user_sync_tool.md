@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: en
+title: Configure User Sync
 nav_link: Configure User Sync
 nav_level: 2
 nav_order: 30

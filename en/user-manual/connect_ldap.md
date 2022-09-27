@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: en
+title: Connect to LDAP
 nav_link: Connect to LDAP
 nav_level: 2
 nav_order: 32

@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: en
+title: Additional Tools
 nav_link: Additional Tools
 nav_level: 2
 nav_order: 80
