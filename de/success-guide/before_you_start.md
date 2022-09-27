@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: de
+title: Benötigte Informationen
 nav_link: Benötigte Informationen
 nav_level: 2
 nav_order: 110

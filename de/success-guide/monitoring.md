@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: de
+title: Überwachung
 nav_link: Überwachung
 nav_level: 2
 nav_order: 300

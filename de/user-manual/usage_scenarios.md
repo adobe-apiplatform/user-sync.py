@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: de
+title: Verwendungsszenarien
 nav_link: Verwendungsszenarien
 nav_level: 2
 nav_order: 50

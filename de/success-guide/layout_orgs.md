@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: de
+title: Organisationslayout
 nav_link: Organisationslayout
 nav_level: 2
 nav_order: 120

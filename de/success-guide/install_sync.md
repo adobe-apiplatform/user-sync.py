@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: de
+title: Installieren des Benutzer-Synchronisationstools
 nav_link: Installieren des Benutzer-Synchronisationstools
 nav_level: 2
 nav_order: 270

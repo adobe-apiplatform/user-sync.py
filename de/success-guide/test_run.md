@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: de
+title: Testlauf
 nav_link: Testlauf
 nav_level: 2
 nav_order: 290

@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: de
+title: Setup und Installation
 nav_link: Setup und Installation
 nav_level: 2
 nav_order: 20

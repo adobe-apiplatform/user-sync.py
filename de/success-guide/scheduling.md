@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: de
+title: Zeitplan
 nav_link: Zeitplan
 nav_level: 2
 nav_order: 320

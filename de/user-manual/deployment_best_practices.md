@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: de
+title: Best Practices für die Bereitstellung
 nav_link: Best Practices für die Bereitstellung
 nav_level: 2
 nav_order: 70

@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: de
+title: Befehlszeile
 nav_link: Befehlszeile
 nav_level: 2
 nav_order: 310

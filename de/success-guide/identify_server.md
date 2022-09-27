@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: de
+title: Server-Setup
 nav_link: Server-Setup
 nav_level: 2
 nav_order: 160

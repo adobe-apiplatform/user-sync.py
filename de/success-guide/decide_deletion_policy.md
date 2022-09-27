@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: de
+title: Kontolöschung
 nav_link: Kontolöschung
 nav_level: 2
 nav_order: 140

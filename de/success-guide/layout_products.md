@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: de
+title: Produktlayout
 nav_link: Produktlayout
 nav_level: 2
 nav_order: 130

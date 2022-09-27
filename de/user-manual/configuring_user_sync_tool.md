@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: de
+title: Konfigurieren der Benutzersynchronisation
 nav_link: Konfigurieren der Benutzersynchronisation
 nav_level: 2
 nav_order: 30
