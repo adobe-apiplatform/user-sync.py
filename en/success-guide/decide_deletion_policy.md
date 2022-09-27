@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: en
+title: Account Deletion
 nav_link: Account Deletion
 nav_level: 2
 nav_order: 140

@@ -32,4 +32,4 @@ exclude:
   - Gemfile.lock
   - art
 
-search_enabled: False
+search_enabled: True

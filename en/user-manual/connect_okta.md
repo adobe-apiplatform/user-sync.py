@@ -2,6 +2,7 @@
 layout: default
 lang: en
 nav_link: Sync from Okta
+title: Syncing Users From Okta
 nav_level: 2
 nav_order: 33
 parent: user-manual

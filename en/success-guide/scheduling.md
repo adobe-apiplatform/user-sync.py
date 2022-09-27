@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: en
+title: Scheduling
 nav_link: Scheduling
 nav_level: 2
 nav_order: 320

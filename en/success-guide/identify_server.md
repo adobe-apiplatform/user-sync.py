@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: en
+title: Identify and Set Up Server
 nav_link: Set Up Server
 nav_level: 2
 nav_order: 160

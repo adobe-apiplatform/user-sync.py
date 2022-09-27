@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: en
+title: Test Run
 nav_link: Test Run
 nav_level: 2
 nav_order: 290

@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: en
+title: Certificate Update
 nav_link: Certificate Update
 nav_level: 2
 nav_order: 330

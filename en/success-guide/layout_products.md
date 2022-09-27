@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: en
+title: Plan Product Config
 nav_link: Plan Product Config
 nav_level: 2
 nav_order: 130

@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: en
+title: Upgrade Guide
 nav_link: Upgrade Guide
 nav_level: 2
 nav_order: 340

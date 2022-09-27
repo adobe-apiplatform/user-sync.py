@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: en
+title: Map Org Structure
 nav_link: Map Org Structure
 nav_level: 2
 nav_order: 120

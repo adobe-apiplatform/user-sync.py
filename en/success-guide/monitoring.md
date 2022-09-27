@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: en
+title: Monitoring
 nav_link: Monitoring
 nav_level: 2
 nav_order: 300
