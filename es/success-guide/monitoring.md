@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: es
+title: Supervisión
 nav_link: Supervisión
 nav_level: 2
 nav_order: 300

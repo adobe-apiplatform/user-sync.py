@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: es
+title: Línea de comandos
 nav_link: Línea de comandos
 nav_level: 2
 nav_order: 310

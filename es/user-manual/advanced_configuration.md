@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: es
+title: Configuración avanzada
 nav_link: Configuración avanzada
 nav_level: 2
 nav_order: 60

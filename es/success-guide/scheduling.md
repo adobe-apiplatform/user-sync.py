@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: es
+title: Programación
 nav_link: Programación
 nav_level: 2
 nav_order: 320

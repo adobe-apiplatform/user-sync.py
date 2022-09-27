@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: es
+title: Antes de empezar
 nav_link: Antes de empezar
 nav_level: 2
 nav_order: 110

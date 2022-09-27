@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: es
+title: Archivos de configuración
 nav_link: Archivos de configuración
 nav_level: 2
 nav_order: 280

@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: es
+title: Organización del diseño
 nav_link: Organización del diseño
 nav_level: 2
 nav_order: 120

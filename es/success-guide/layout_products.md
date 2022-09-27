@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: es
+title: Productos de diseño
 nav_link: Productos de diseño
 nav_level: 2
 nav_order: 130

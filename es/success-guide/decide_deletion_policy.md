@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: es
+title: Eliminación de cuenta
 nav_link: Eliminación de cuenta
 nav_level: 2
 nav_order: 140

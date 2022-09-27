@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: es
+title: Servidor de configuración
 nav_link: Servidor de configuración
 nav_level: 2
 nav_order: 160

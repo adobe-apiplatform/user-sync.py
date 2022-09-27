@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: es
+title: Integración Adobe.io
 nav_link: Integración Adobe.io
 nav_level: 2
 nav_order: 150

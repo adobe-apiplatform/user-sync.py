@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: es
+title: Prácticas recomendadas de implementación
 nav_link: Prácticas recomendadas de implementación
 nav_level: 2
 nav_order: 70

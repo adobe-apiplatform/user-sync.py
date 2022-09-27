@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: es
+title: Ejecución de prueba
 nav_link: Ejecución de prueba
 nav_level: 2
 nav_order: 290
