@@ -866,7 +866,7 @@ The example `user-sync-config.yml` recommends these defaults:
 adobe_users:
   exclude_identity_types:
     - adobeID
-  exclue_adobe_groups:
+  exclude_adobe_groups:
     - _org_admin
 ```
 
