@@ -63,6 +63,22 @@ function initSearch() {
       lunr.tokenizer.separator = /[\s\-/]+/
 
       var index = lunr(function(){
+	  if (lang == 'de') {
+	      console.log("'de' enabled");
+	      this.use(lunr.de);
+	  } else if (lang == 'es') {
+	      console.log("'es' enabled");
+	      this.use(lunr.es);
+	  } else if (lang == 'fr') {
+	      console.log("'fr' enabled");
+	      this.use(lunr.fr);
+	  } else if (lang == 'jp') {
+	      console.log("'ja' enabled");
+	      this.use(lunr.ja);
+	  } else if (lang == 'bp') {
+	      console.log("'pt' enabled");
+	      this.use(lunr.pt);
+	  }
         this.ref('id');
         this.field('title', { boost: 200 });
         this.field('content', { boost: 2 });
