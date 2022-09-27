@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: fr
+title: Configuration avancée
 nav_link: Configuration avancée
 nav_level: 2
 nav_order: 60

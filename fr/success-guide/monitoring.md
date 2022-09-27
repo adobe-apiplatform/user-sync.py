@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: fr
+title: Contrôle
 nav_link: Contrôle
 nav_level: 2
 nav_order: 300

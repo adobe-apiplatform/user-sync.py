@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: fr
+title: Planification
 nav_link: Planification
 nav_level: 2
 nav_order: 320

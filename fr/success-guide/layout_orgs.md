@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: fr
+title: Identification de l’organisation
 nav_link: Identification de l’organisation
 nav_level: 2
 nav_order: 120

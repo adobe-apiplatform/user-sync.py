@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: fr
+title: Identification des produits
 nav_link: Identification des produits
 nav_level: 2
 nav_order: 130

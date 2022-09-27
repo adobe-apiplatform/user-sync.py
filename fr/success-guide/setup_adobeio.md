@@ -2,6 +2,7 @@
 layout: default
 lang: fr
 nav_link: Intégration Adobe.io
+nav_link: Intégration Adobe.io
 nav_level: 2
 nav_order: 150
 parent: success-guide

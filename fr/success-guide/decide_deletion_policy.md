@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: fr
+title: Suppression de compte
 nav_link: Suppression de compte
 nav_level: 2
 nav_order: 140

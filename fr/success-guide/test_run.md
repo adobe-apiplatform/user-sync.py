@@ -2,6 +2,7 @@
 layout: default
 lang: fr
 nav_link: Test d’exécution
+nav_link: Test d’exécution
 nav_level: 2
 nav_order: 290
 parent: success-guide

@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: fr
+title: Bonnes pratiques de déploiement
 nav_link: Bonnes pratiques de déploiement
 nav_level: 2
 nav_order: 70

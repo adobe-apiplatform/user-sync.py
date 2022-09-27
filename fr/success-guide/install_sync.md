@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: fr
+title: Installation de l’outil User Sync
 nav_link: Installation de l’outil User Sync
 nav_level: 2
 nav_order: 270

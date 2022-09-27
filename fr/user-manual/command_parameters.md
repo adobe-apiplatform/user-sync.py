@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: fr
+title: Paramètres de commande
 nav_link: Paramètres de commande
 nav_level: 2
 nav_order: 40
