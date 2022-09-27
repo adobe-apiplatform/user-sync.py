@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: bp
+title: Exclusão de Conta
 nav_link: Exclusão de Conta
 nav_level: 2
 nav_order: 140

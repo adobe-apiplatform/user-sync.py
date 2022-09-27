@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: bp
+title: Agendamento
 nav_link: Agendamento
 nav_level: 2
 nav_order: 320

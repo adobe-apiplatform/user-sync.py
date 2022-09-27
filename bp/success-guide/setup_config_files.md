@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: bp
+title: Arquivos de Configuração
 nav_link: Arquivos de Configuração
 nav_level: 2
 nav_order: 280

@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: bp
+title: Instalação e configuração
 nav_link: Instalação e configuração
 nav_level: 2
 nav_order: 20

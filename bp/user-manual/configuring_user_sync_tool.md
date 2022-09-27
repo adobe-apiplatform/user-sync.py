@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: bp
+title: Configuração de User Sync
 nav_link: Configuração de User Sync
 nav_level: 2
 nav_order: 30

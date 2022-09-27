@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: bp
+title: Linha de Comando
 nav_link: Linha de Comando
 nav_level: 2
 nav_order: 310

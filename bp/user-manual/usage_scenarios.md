@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: bp
+title: Cenários de uso
 nav_link: Cenários de uso
 nav_level: 2
 nav_order: 50

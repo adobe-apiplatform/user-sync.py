@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: bp
+title: Práticas recomendadas de implantação
 nav_link: Práticas recomendadas de implantação
 nav_level: 2
 nav_order: 70

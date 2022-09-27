@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: bp
+title: Configuração avançada
 nav_link: Configuração avançada
 nav_level: 2
 nav_order: 60

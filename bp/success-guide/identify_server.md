@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: bp
+title: Configuração do Servidor
 nav_link: Configuração do Servidor
 nav_level: 2
 nav_order: 160

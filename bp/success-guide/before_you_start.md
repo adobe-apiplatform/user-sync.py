@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: bp
+title: Antes de começar
 nav_link: Antes de começar
 nav_level: 2
 nav_order: 110

@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: bp
+title: Layout da Organização
 nav_link: Layout da Organização
 nav_level: 2
 nav_order: 120

@@ -1,6 +1,7 @@
 ---
 layout: default
 lang: bp
+title: Monitoramento
 nav_link: Monitoramento
 nav_level: 2
 nav_order: 300
