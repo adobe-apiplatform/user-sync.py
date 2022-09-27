@@ -1,5 +1,5 @@
 ---
-permalink: /assets/js/search-data.json
+permalink: /assets/js/search-data-es.json
 ---
 {
 {%- assign i = 0 -%}
@@ -16,7 +16,7 @@ permalink: /assets/js/search-data.json
   {%- endfor -%}
 {%- endif -%}
 {%- for pages in pages_array -%}
-  {% assign lang_pages = pages | where: "lang", "en" %}
+  {% assign lang_pages = pages | where: "lang", "es" %}
   {%- for page in lang_pages -%}
     {%- if page.title and page.search_exclude != true -%}
       {%- assign page_content = page.content -%}
