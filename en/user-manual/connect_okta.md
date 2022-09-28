@@ -1,7 +1,7 @@
 ---
 layout: default
 lang: en
-nav_link: Sync from Okta
+nav_link: Sync From Okta
 title: Syncing Users From Okta
 nav_level: 2
 nav_order: 33
@@ -9,9 +9,9 @@ parent: user-manual
 page_id: connect-okta
 ---
 
-[Previous Section](connect_ldap.md)  \| [Next Section](command_parameters.md)
+[Previous Section](connect_ldap.md)  \| [Next Section](sync_from_console.md)
 
-# Syncing Users from Okta
+# Syncing Users From Okta
 {:."no_toc"}
 
 ## In This Section
@@ -116,4 +116,4 @@ Okta sync can use extended groups, attributes and after-mapping hooks.  The name
 
 ---
 
-[Previous Section](connect_ldap.md)  \| [Next Section](command_parameters.md)
+[Previous Section](connect_ldap.md)  \| [Next Section](sync_from_console.md)
