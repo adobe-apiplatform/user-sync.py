@@ -14,24 +14,27 @@ page_id: configuration
 # Configuring the User Sync Tool
 {:."no_toc"}
 
-## In This Section
-{:."no_toc"}
-
-* TOC Placeholder
+<details open markdown="block">
+  <summary>
+    Table of contents
+  </summary>
+  {: .text-delta }
+1. TOC
 {:toc}
+</details>
 
 ---
 
-## Overview
+# Overview
 
 User Sync Tool behavior is governed by a set of configuration files.
 
 These files are typically placed in the same directory as the User Sync Tool executable.
 
-While this overview covers the configuration files for Sign Sync, this section focuses on UMAPI sync. See
+Although this overview covers the configuration files for Sign Sync, this section focuses on UMAPI sync. See
 [Sign Sync](sign_sync.md) for details around configuring Sign Sync.
 
-### Core Configuration (Admin Console)
+## Core Configuration (Admin Console)
 
 These configuration files are required to synchronize users to the Admin Console.
 
@@ -40,7 +43,7 @@ These configuration files are required to synchronize users to the Admin Console
 credentials (or keychain references) and defines advanced connection options. If you plan to synchronize to multiple UMAPI targets, then each
 connection is configured in a different UMAPI connector config file.
 
-### Core Configuration (Sign Sync)
+## Core Configuration (Sign Sync)
 
 These configuration files are required to synchronize users to Adobe Acrobat Sign.
 
@@ -48,7 +51,7 @@ These configuration files are required to synchronize users to Adobe Acrobat Sig
 * `connector-sign.yml` - Defines a connection to a Sign account (using the [Sign API](https://helpx.adobe.com/sign/faq/api.html)).
 Multiple connections are supported (each in their own connector config file).
 
-### Directory Connector Configuration
+## Directory Connector Configuration
 
 These configuration files define connections to various identity sources. They can be used with both UMAPI sync and Sign Sync.
 They are only required if the connector is enabled (TODO see below). The exception - when using UMAPI sync, `connector-csv.yml`
@@ -61,12 +64,12 @@ Sign Sync.
 in cases when synchronizing to a console-linked Sign account, or when syncing to an Admin Console org with a trusted Azure AD-synced directory
 * `connector-csv.yml` - Defines header columns and encoding of CSV input file
 
-### Advanced Configuration
+## Advanced Configuration
 
 The extension config (`extension-config.yml`) can be set up for use with UMAPI sync to get more control over how syncs are
 executed. See [advanced configuration](advanced_configuration.md#custom-attributes-and-mappings) for details.
 
-## Config File Setup
+# Config File Setup
 
 Example configuration files can be obtained in several ways:
 
@@ -111,13 +114,13 @@ If you're not using Windows, we recommend an editor with these features.
 * Ability to set line endings and file encoding
 * Ability to show special characters (tabs, line endings, etc)
 
-## Configuring Identity Sources
+# Configuring Identity Sources
 
-### Admin Console Connector
+## Admin Console Connector
 
-### CSV Connector
+## CSV Connector
 
-## Configuration options
+# Configuration options
 
 The main configuration file, user-sync-config.yml, is divided
 into several main sections: **adobe_users**, **directory_users**,
@@ -152,7 +155,7 @@ in case of misconfiguration or other errors.  This is a required item.
 - The **logging** section specifies an audit trail path and
 controls how much information is written to the log.
 
-### Configure connection files
+## Configure connection files
 
 The main User Sync configuration file contains only the names of
 the connection configuration files that actually contain the
@@ -172,7 +175,7 @@ directory_users:
     ldap: connector-ldap.yml
 ```
 
-### Configure group mapping
+## Configure group mapping
 
 Before you can synchronize user groups and entitlements, you must
 create user groups and product configurations in the
@@ -217,7 +220,7 @@ groups:
       - Accounting_Department
 ```
 
-### Mapping Admin Roles
+## Mapping Admin Roles
 
 Admin roles can be assigned to users by the User Sync tool using
 special group names and prefixes.  Using these special naming
@@ -246,7 +249,7 @@ same product as the admin role.
 
 See the [UMAPI Docs](https://adobe-apiplatform.github.io/umapi-documentation/en/api/ActionsCmds.html#addRemoveAttr) for more details.
 
-#### Role Assignment Example
+### Role Assignment Example
 
 ```YAML
 groups:
@@ -267,7 +270,7 @@ groups:
 ```
 
 
-### Configure limits
+## Configure limits
 
 User accounts are removed from the Adobe system when
 corresponding users are not present in the directory and the tool
@@ -311,7 +314,7 @@ This configuration causes User Sync to check if more than
 15% user accounts present in Adobe are not found in the enterprise directory (as filtered),
 and if so no existing Adobe accounts are updated and an error message is logged.
 
-###  Configure logging
+##  Configure logging
 
 Log entries are written to the console from which the tool was
 invoked, and optionally to a log file. A new

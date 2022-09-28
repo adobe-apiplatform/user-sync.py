@@ -1,17 +1,17 @@
 ---
 layout: default
 lang: en
-title: Connect to Adobe
-nav_link: Connect to Adobe
+title: Syncing From the Admin Console
+nav_link: Sync From Admin Console
 nav_level: 2
-nav_order: 31
+nav_order: 34
 parent: user-manual
-page_id: connect-adobe
+page_id: sync-from-console
 ---
 
-[Previous Section](configuring_user_sync_tool.md)  \| [Next Section](command_parameters.md)
+[Previous Section](connect_okta.md)  \| [Next Section](command_parameters.md)
 
-# Connecting To Adobe
+# Syncing From the Admin Console
 {:."no_toc"}
 
 <details open markdown="block">
@@ -25,27 +25,60 @@ page_id: connect-adobe
 
 ---
 
-# Configuring a UMAPI Connection
+# Overview
+
+The User Sync Tool can use the Admin Console as an identity connector. This can be used to manage users
+for a trustee directory when the parent directory uses Azure AD sync or Google Sync, or to manage
+[Sign Enterprise Users](sign_sync.md#sign-enterprise).
+
+# Initial Setup
+
+The connector can be enabled by adding `adobe_console` to `directory_users.connectors` in `user-sync-config.yml`.
+
+```yaml
+directory_users:
+  connectors:
+    adobe_console: connector-adobe-console.yml
+```
+
+A template config file can be obtained [here](https://github.com/adobe-apiplatform/user-sync.py/blob/v2/examples/config%20files%20-%20basic/connector-adobe-console.yml).
+
+To invoke the sync tool with the `adobe_console` connector, do one of the following.
+
+* Specify `adobe_console` as the `connector` in `invocation_options` inside `user-sync-config.yml`.
+
+  ```yaml
+  invocation_options:
+    connector: adobe_console
+  ```
+* Run the Sync Tool with the option `--connector adobe_console`
+
+  ```
+  $ ./user-sync --connector adobe_console
+  ```
+
+# Configuring a Connection
 
 All UMAPI sync setups require at least one UMAPI connector configuration. This primary connection config should
 be called `connector-umapi.yml`.
 
-This section focuses on a single connection. See the [advanced config](advanced_configuration.md#accessing-groups-in-other-organizations)
-section for details around synchronizing to multiple UMAPI targets.
+Like the UMAPI connector, the Admin Console Connector requires a [service account integration on adobe.io](setup_and_installation.md##set-up-a-user-management-api-integration-on-adobe-io)
 
-`connector-umapi.yml` defines two primary top-level config keys.
+`connector-adobe-console.yml` defines three top-level config keys.
 
 * `server` - Override default identity and UMAPI endpoints (generally not needed) and customize connection timeout and retry settings
-* `enterprise` - Define UMAPI credentials (either in-line plaintext or references to OS keyring objects)
+* `integration` - Define UMAPI credentials (either in-line plaintext or references to OS keyring objects)
+* `identity_type_filter` - Tells the connector to only include the identity type specified (`adobeID`, `enterpriseID` or
+  `federatedID`)
 
-# `server` Settings
+## `server` Settings
 
 The `server` settings do not generally need to be customized. `timeout` and `retry` settings can be customized if the Sync Tool
 is running on a high-latency network connection.
 
-# `enterprise` Settings
+## `integration` Settings
 
-The `enterprise` key defines credentials used to authenticate with the User Management API. The following information
+The `integration` key defines credentials used to authenticate with the User Management API. The following information
 is required:
 
 - Organization ID
@@ -57,10 +90,15 @@ is required:
 All items except for the key file (`private.key`) can be found on the [Adobe Developer Console](https://developer.adobe.com/console/).
 The `private.key` file should already be present on the server that will be running the User Sync Tool.
 
+> **Note**: The default filename `private.key` is used here for the sake of clarity since it is the default filename
+> when generating the certificate pair. In your UST setup, you will want to plan to change the filename (i.e. `src-private.key`)
+> to distinguish it from the `private.key` file used for the UMAPI sync target. This page will continue to refer
+> to it as `private.key`.
+
 These can be stored in plaintext inside the config file:
 
 ```yaml
-enterprise:
+integration:
   org_id: "Organization ID goes here"
   client_id: "Client ID goes here"
   client_secret: "Client Secret goes here"
@@ -94,11 +132,12 @@ The private key file can optionally be stored differently than a plain file refe
   To encrypt the private key file, use the `encrypt` command:
   
   ```
-  $ ./user-sync encrypt
+  $ ./user-sync encrypt src-private.key
   ```
   
-  If invoked with no additional options, `encrypt` will prompt you for a passphrase and then encrypt `private.key`,
-  replacing the plaintext file with the encrypted version.
+  If invoked in this manner, `encrypt` will prompt you for a passphrase and then encrypt `src-private.key`,
+  replacing the plaintext file with the encrypted version. Replace `src-private.key` with the filename
+  of your console connector key file.
   
   See [here](additional_tools.md#private-key-encryption) for full details.
 
@@ -123,7 +162,6 @@ and securely store the private key passphrase.
 
 We strongly recommend securing your credentials in this manner.
 See [Security Recommendations](deployment_best_practices.md#security-recommendations) for more information.
-
 ---
 
-[Previous Section](configuring_user_sync_tool.md)  \| [Next Section](command_parameters.md)
+[Previous Section](connect_okta.md)  \| [Next Section](command_parameters.md)
