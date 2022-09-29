@@ -929,6 +929,9 @@ The User Management API exposes a user's underlying authenticating account type.
 
 This means that sync to an ESM target should use the underlying type. Just set the `user_identity_type` as intended in `user-sync-config.yml` (typically `enterpriseID` or `federatedID`).
 
+**Note:** The config option `uses_business_id` is deprecated. Leaving it enabled will not currently have an adverse impact. However, the option will
+be removed in a future release. When this happens the Sync Tool will throw an error when the option is enabled.
+
 ### User Exclusion Caveat
 
 Unlike USM, an ESM Admin Console does not provide a choice of identity type for new users. If a new user is on a claimed domain, then it is automatically linked to an enterprise or federated ID (a new account is created in the directory if needed).
