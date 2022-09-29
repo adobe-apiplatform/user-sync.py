@@ -55,7 +55,7 @@ class OktaDirectoryConnector(DirectoryConnector):
         builder.set_string_value('user_identity_type', None)
         builder.set_string_value('logger_name', self.name)
         host = builder.require_string_value('host')
-        api_token = builder.require_string_value('api_token')
+        api_token = caller_config.get_credential('api_token', host)
 
         options = builder.get_options()
 
