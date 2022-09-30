@@ -167,7 +167,7 @@ user_email_format: "{mail}"
 # federation configuration specifies username-based login.  In all other cases,
 # make sure this is not set or returns an empty value, and the user's username
 # will be taken from the user's email.
-#user_username_format: "{sAMAccountName}"
+#user_username_format: "{userPrincipalName}"
 
 # (optional) user_given_name_format (default value given below)
 # user_given_name_format specifies how to construct a user's given name by

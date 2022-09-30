@@ -19,6 +19,7 @@
 # SOFTWARE.
 
 import okta
+import requests
 import string
 from okta.framework.OktaError import OktaError
 
@@ -54,7 +55,7 @@ class OktaDirectoryConnector(DirectoryConnector):
         builder.set_string_value('user_identity_type', None)
         builder.set_string_value('logger_name', self.name)
         host = builder.require_string_value('host')
-        api_token = builder.require_string_value('api_token')
+        api_token = caller_config.get_credential('api_token', host)
 
         options = builder.get_options()
 
@@ -144,6 +145,9 @@ class OktaDirectoryConnector(DirectoryConnector):
         except OktaError as e:
             self.logger.warning("Unable to query group")
             raise AssertionException("Okta error querying for group: %s" % e)
+        except requests.exceptions.SSLError as ce:
+            if "doesn't match either of '*.okta.com', 'okta.com" in str(ce):
+                raise AssertionException("Invalid hostname: %s" % ce)
 
         if results is None:
             self.logger.warning("No group found for: %s", group)

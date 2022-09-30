@@ -36,6 +36,7 @@ adobe_users:
   # Any user in one or more of the named Adobe groups is excluded from
   # updates by User Sync.
   exclude_adobe_groups:
+    - _org_admin
     #- "Sample Product Profile"
     #- "Sample User Group"
 
