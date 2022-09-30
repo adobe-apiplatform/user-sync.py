@@ -9,7 +9,7 @@ parent: user-manual
 page_id: sync-from-console
 ---
 
-[Previous Section](connect_okta.md)  \| [Next Section](command_parameters.md)
+[Previous Section](connect_okta.md)  \| [Next Section](sync_from_csv.md)
 
 # Syncing From the Admin Console
 {:."no_toc"}
@@ -22,8 +22,6 @@ page_id: sync-from-console
 1. TOC
 {:toc}
 </details>
-
----
 
 # Overview
 
@@ -162,6 +160,7 @@ and securely store the private key passphrase.
 
 We strongly recommend securing your credentials in this manner.
 See [Security Recommendations](deployment_best_practices.md#security-recommendations) for more information.
+
 ---
 
-[Previous Section](connect_okta.md)  \| [Next Section](command_parameters.md)
+[Previous Section](connect_okta.md)  \| [Next Section](sync_from_csv.md)
