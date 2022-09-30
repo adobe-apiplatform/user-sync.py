@@ -5,7 +5,6 @@ from user_sync.config.user_sync import UMAPIConfigLoader
 from user_sync.connector.umapi_util import make_auth_dict
 from user_sync.error import AssertionException
 import user_sync.connector.helper
-from user_sync.credentials import CredentialManager
 
 
 def test_make_auth_dict(test_resources):
@@ -41,17 +40,3 @@ def test_make_auth_dict(test_resources):
     umapi_config['enterprise']['secure_priv_key_data_key'] = 'make_auth_identifier'
     with pytest.raises(AssertionException):
         make_auth_dict(name, umapi_dict_config, org_id_from_file, tech_acct_from_file, logger)
-    # and if there is only the secure format it should work as long as the credential has been set
-    credman = CredentialManager()
-    credman.set('make_auth_identifier', 'keydata', username=org_id_from_file)
-    umapi_config['enterprise']['priv_key_data'] = None
-    auth_dict = make_auth_dict(name, umapi_dict_config, org_id_from_file, tech_acct_from_file, logger)
-    assert auth_dict['private_key_data'] == 'keydata'
-    # clear out old format (already tested for the exception if both are provided)
-    umapi_config['enterprise']['secure_priv_key_data_key'] = None
-    # put the regular priv_key_data back in the file and store
-    # the first 256 chars so it'll work without cryptfile on Windows
-    umapi_config['enterprise']['priv_key_data'] = {'secure': 'truncated_key_data'}
-    credman.set('truncated_key_data', key_data_from_file[:255])
-    auth_dict = make_auth_dict(name, umapi_dict_config, org_id_from_file, tech_acct_from_file, logger)
-    assert auth_dict['private_key_data'] == key_data_from_file[:255]

@@ -10,7 +10,6 @@ from user_sync.config.user_sync import UMAPIConfigLoader
 from user_sync.connector.directory import DirectoryConnector
 from user_sync.connector.directory_ldap import LDAPDirectoryConnector
 from user_sync.error import AssertionException
-from user_sync.credentials import CredentialConfig, CredentialManager
 
 engine_defaults = user_sync.engine.umapi.RuleProcessor.default_options.copy()
 
@@ -199,41 +198,6 @@ def test_shell_exec_flag(test_resources, modify_root_config, cli_args):
     modify_root_config(['directory_users', 'connectors', 'ldap'], "$(some command)")
     with pytest.raises(AssertionException):
         UMAPIConfigLoader(args)
-
-
-def test_get_credential_new_format(cf_loader, test_resources):
-    credman = CredentialManager()
-    ldap_config = cf_loader.load_from_yaml(test_resources['ldap'], {})
-    ldap_dict_config = DictConfig('testscope', ldap_config)
-    # make sure it still works in plaintext format
-    assert ldap_dict_config.get_credential('password', 'user_sync') == 'password'
-    ldap_config['password'] = {'secure': 'ldap_key'}
-    credman.set('ldap_key', 'test_password')
-    # make sure get_cred still works when passed in a dict with a valid identifier
-    assert ldap_dict_config.get_credential('password', 'user_sync') == 'test_password'
-    # if the identifier is invalid it should throw an exception
-    ldap_config['password'] = {'secure': 'invalid_identifier'}
-    with pytest.raises(AssertionException):
-        ldap_dict_config.get_credential('password', 'user_sync')
-    # check for exception to be thrown if there is no value for 'password'
-    ldap_config['password'] = None
-    with pytest.raises(AssertionException):
-        ldap_dict_config.get_credential('password', 'user_sync')
-
-
-def test_get_credential_old_format(cf_loader, test_resources):
-    credman = CredentialManager()
-    ldap_config = cf_loader.load_from_yaml(test_resources['ldap'], {})
-    ldap_dict_config = DictConfig('testscope', ldap_config)
-    # adding the secure key format without removing the plain format should throw an exception
-    ldap_config['secure_password_key'] = 'ldap_secure_identifier'
-    with pytest.raises(AssertionException):
-        ldap_dict_config.get_credential('password', 'user_sync')
-    username = ldap_config['username']
-    credman.set('ldap_secure_identifier', 'test_password', username=username)
-    # set the plain key to None so get_credential will look for the secure_password_key format
-    ldap_config['password'] = None
-    assert ldap_dict_config.get_credential('password', username) == 'test_password'
 
 
 def test_uses_business_id_true(test_resources, modify_config, cli_args):
