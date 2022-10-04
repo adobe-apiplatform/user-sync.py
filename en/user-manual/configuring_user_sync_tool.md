@@ -23,8 +23,6 @@ page_id: configuration
 {:toc}
 </details>
 
----
-
 # Overview
 
 User Sync Tool behavior is governed by a set of configuration files.

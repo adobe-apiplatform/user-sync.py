@@ -9,20 +9,21 @@ parent: user-manual
 page_id: sign-sync
 ---
 
+[Previous Section](advanced_configuration.md)  \| [Next Section](additional_tools.md)
+
 # Synchronizing Users to Adobe Sign
 {:."no_toc"}
 
-## In This Section
-{:."no_toc"}
-
-* TOC Placeholder
+<details open markdown="block">
+  <summary>
+    Table of contents
+  </summary>
+  {: .text-delta }
+1. TOC
 {:toc}
+</details>
 
----
-
-[Previous Section](advanced_configuration.md)  \| [Next Section](deployment_best_practices.md)
-
----
+# Overview
 
 The **Sign Sync Connector** is an optional component of the User Sync Tool used to manage Adobe Sign users.
 
@@ -418,3 +419,7 @@ can be created by an Admin user for a given Sign account.
 8. Click "Integration Key" to display the integration key.  This is used in the Sign Sync connector config file.
 
    ![](media/sign/sign_key_display.png)
+
+---
+
+[Previous Section](advanced_configuration.md)  \| [Next Section](additional_tools.md)

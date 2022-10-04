@@ -4,26 +4,26 @@ lang: en
 title: Deployment Best Practices
 nav_link: Deployment Best Practices
 nav_level: 2
-nav_order: 80
+nav_order: 90
 parent: user-manual
 page_id: deployment-best-practices
 ---
 
+[Previous Section](additional_tools.md)
 
 # Deployment Best Practices
 {:."no_toc"}
 
-## In This Section
-{:."no_toc"}
-
-* TOC Placeholder
+<details open markdown="block">
+  <summary>
+    Table of contents
+  </summary>
+  {: .text-delta }
+1. TOC
 {:toc}
+</details>
 
----
-
-[Previous Section](advanced_configuration.md)  \| [Next Section](additional_tools.md)
-
----
+# Overview
 
 The User Sync tool is designed to run with limited or no human
 interaction, once it is properly configured. You can use a
@@ -42,7 +42,7 @@ enterprise directory changes, and how quickly you want the changes
 to show up on the Adobe side.
 - Running User Sync more often than once every 2 hours is not recommended.
 
-## Security Recommendations
+# Security Recommendations
 
 Given the nature of the data in the configuration and log files,
 a server should be dedicated for this task and locked down with
@@ -77,7 +77,7 @@ a mechanism you must provide to securely store the entire configuration file for
 and/or ldap which includes all the credentials required.  These are
 detailed in the next two sections.
 
-### Storing Credentials in OS Level Storage
+## Storing Credentials in OS Level Storage
 
 To set up User Sync to pull credentials from the OS keyring (e.g. Windows Credential Manager), set the connector-umapi.yml and connector-ldap.yml files as follows:
 
@@ -159,7 +159,7 @@ On Linux, the secure storage application would have been installed and configure
 
 The credentials are added to the OS secure storage and given the username and credential id that you will use to specify the credential.  For umapi credentials, the username is the organization id.  For the LDAP password credential, the username is the LDAP username.  You can pick any identifier you wish for the specific credentials; they must match between what is in the credential store and the name used in the configuration file.  Suggested values for the key names are shown in the examples above.
 
-## Scheduling Recommendations
+# Scheduling Recommendations
 
 The User Sync Tool is designed to run with limited to no human interaction and can leverage a scheduler feature to run the tool.  Our recommendation is to run the tool no more than once every 2 hours.  
 
@@ -167,7 +167,7 @@ To further prevent customers from experiencing degraded performance, Adobe will 
 
 To learn more, please visit our [User Management API Documentation](https://adobe-apiplatform.github.io/umapi-documentation/en/).
 
-## Scheduled Task Examples
+# Scheduled Task Examples
 
 You can use a scheduler provided by your operating system to run
 the User Sync tool periodically, as required by your
@@ -184,7 +184,7 @@ logging:
   console_log_level: info
 ```
 
-### Run with log analysis in Windows
+## Run with log analysis in Windows
 
 The following example shows how to set up a batch file `run_sync.bat` in
 Windows.
@@ -199,7 +199,7 @@ sendmail -s “Adobe User Sync Report for today” UserSyncAdmins@example.com < 
 is no standard email command-line tool in Windows.  Several are
 available commercially.
 
-### Run with log analysis on Unix platforms
+## Run with log analysis on Unix platforms
 
 The following example shows how to set up a shell file
 `run_sync.sh` on Linux or Mac OS X:
@@ -208,9 +208,9 @@ The following example shows how to set up a shell file
 user-sync --users file users-file.csv --process-groups | grep "CRITICAL\|WARNING\|ERROR\|=====\|-----\|number of\|Number of" | mail -s “Adobe User Sync Report for `date +%F-%a`” UserSyncAdmins@example.com
 ```
 
-### Schedule a Sync
+## Schedule a Sync
 
-#### Cron
+### Cron
 
 This entry in the Unix crontab will run the User Sync tool at 4
 AM each day:
@@ -223,7 +223,7 @@ Cron can also be setup to email results to a specified user or
 mailing list. Check the documentation on cron for your system
 for more details.
 
-#### Windows Task Scheduler
+### Windows Task Scheduler
 
 This command uses the Windows task scheduler to run the User Sync
 tool every day starting at 4:00 PM:
@@ -239,7 +239,7 @@ There is also a GUI for managing windows scheduled tasks. You can
 find the Task Scheduler in the Windows administrative control
 panel.
 
-### Log File Rotation
+## Log File Rotation
 
 The default name of the log file produced by each run of User Sync changes on a daily basis,
 which provides a sort of "poor man's log file rotation" where all prior days are saved
@@ -255,7 +255,7 @@ logging:
   log_file_name_format: "user-sync.log"
 ```
 
-## Disabling SSL Verification
+# Disabling SSL Verification
 
 In environments where SSL inspection is enforced at the firewall, the https requests can encounter an error similar to the following:
 
@@ -277,7 +277,7 @@ During the calls, you may also see a warning from requests:
 "InsecureRequestWarning: Unverified HTTPS request is being made to host 'usermanagement.adobe.io'. Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
   InsecureRequestWarning"
 
-## Restricted /tmp Access
+# Restricted /tmp Access
 
 Certain Linux security practices recommend `/tmp` be remounted with restricted permissions. If your systems follow this practice, you may be unable to run the User Sync Tool. The UST requires access to the system's temporary directory to self-extract and execute. To run the tool, try the following:
 
@@ -288,5 +288,5 @@ Certain Linux security practices recommend `/tmp` be remounted with restricted p
 
 ---
 
-[Previous Section](advanced_configuration.md)  \| [Next Section](additional_tools.md)
+[Previous Section](additional_tools.md)
 

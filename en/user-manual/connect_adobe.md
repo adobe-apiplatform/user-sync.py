@@ -9,7 +9,7 @@ parent: user-manual
 page_id: connect-adobe
 ---
 
-[Previous Section](configuring_user_sync_tool.md)  \| [Next Section](command_parameters.md)
+[Previous Section](configuring_user_sync_tool.md)  \| [Next Section](connect_ldap.md)
 
 # Connecting To Adobe
 {:."no_toc"}
@@ -22,8 +22,6 @@ page_id: connect-adobe
 1. TOC
 {:toc}
 </details>
-
----
 
 # Configuring a UMAPI Connection
 
@@ -126,4 +124,4 @@ See [Security Recommendations](deployment_best_practices.md#security-recommendat
 
 ---
 
-[Previous Section](configuring_user_sync_tool.md)  \| [Next Section](command_parameters.md)
+[Previous Section](configuring_user_sync_tool.md)  \| [Next Section](connect_ldap.md)

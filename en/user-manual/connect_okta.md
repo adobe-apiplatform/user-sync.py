@@ -14,15 +14,16 @@ page_id: connect-okta
 # Syncing Users From Okta
 {:."no_toc"}
 
-## In This Section
-{:."no_toc"}
-
-* TOC Placeholder
+<details open markdown="block">
+  <summary>
+    Table of contents
+  </summary>
+  {: .text-delta }
+1. TOC
 {:toc}
+</details>
 
----
-
-## Overview
+# Overview
 
 The Okta connector uses an [Okta](https://www.okta.com) tenant as a source for user identity
 and group membership.  Since Okta always uses email addresses as the unique ID for users,
@@ -32,7 +33,7 @@ Okta customers must obtain an API token for use with the Okta Users API.
 See [Okta's Developer Documentation](http://developer.okta.com/docs/api/getting_started/api_test_client.html)
 for more information.
 
-## Initial Setup
+# Initial Setup
 
 Okta support is facilitated by the Okta connector. The Okta connector requires its own config
 file (`connector-okta.yml`). This config file must be referenced in `user-sync-config.yml` to
@@ -51,7 +52,7 @@ directory_users:
 
 See [below](#runtime) to learn how to invoke the User Sync Tool with the Okta connector.
 
-## Authentication
+# Authentication
 
 The Okta connector uses the Okta API to retrieve user and group information. In order to use the
 connector, an API connection must be defined.
@@ -62,7 +63,7 @@ information about creating a token. OAuth is not supported at this time.
 
 To set up authentication, configure the `host` and `api_token` options.
 
-### `host`
+## `host`
 
 The `host` option should be set to the hostname of the Okta instance. Just the hostname (sans `https://`) is needed.
 
@@ -70,7 +71,7 @@ The `host` option should be set to the hostname of the Okta instance. Just the h
 host: example.oktapreview.com
 ```
 
-### `api_token`
+## `api_token`
 
 `api_token` is used to configure the token for accessing the Okta API. Refer to
 [Okta's documentation](https://developer.okta.com/docs/guides/create-an-api-token/main/)
@@ -92,17 +93,17 @@ secure_api_token_key: "UST Okta Token"
 
 See (TODO add link) Security Recommendations for more information.
 
-## User Filter Options
+# User Filter Options
 
-### `group_filter_format`
+## `group_filter_format`
 
-### `all_users_filter`
+## `all_users_filter`
 
-## General Options
+# General Options
 
-## Attribute Mapping Options
+# Attribute Mapping Options
 
-## Runtime
+# Runtime
 
 In order to use the Okta connector, you will need to specify the `--connector okta`
 command-line parameter.  (LDAP is the default connector.)  In addition because the
@@ -110,7 +111,7 @@ Okta connector does not support fetching all users, you must additionally specif
 a `--users` command line option of `group` or `mapped`.  All other User Sync
 command-line parameters have their usual meaning.
 
-## Extension Support
+# Extension Support
 
 Okta sync can use extended groups, attributes and after-mapping hooks.  The names of extended attributes must be valid Okta profile fields.
 

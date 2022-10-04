@@ -9,20 +9,21 @@ parent: user-manual
 page_id: connect-ldap
 ---
 
-[Previous Section](connect_adobe.md)  \| [Next Section](command_parameters.md)
+[Previous Section](connect_adobe.md)  \| [Next Section](connect_okta.md)
 
 # Connecting To LDAP
 {:."no_toc"}
 
-## In This Section
-{:."no_toc"}
-
-* TOC Placeholder
+<details open markdown="block">
+  <summary>
+    Table of contents
+  </summary>
+  {: .text-delta }
+1. TOC
 {:toc}
+</details>
 
----
-
-## Overview
+# Overview
 
 The User Sync Tool can synchronize user and entitlement group information from a variety of sources. The recommended
 and most common source is an LDAP system such as Active Directory.
@@ -33,7 +34,7 @@ LDAP query structures and attribute mapping.
 
 `connector-ldap.yml` is one of the three core configuration files generated when using the `init` or `example-config` command.
 
-## Authentication
+# Authentication
 
 The `ldap` connector supports four authentication methods. This is set with the `authentication_method` option.
 
@@ -46,7 +47,7 @@ further for more information.
 * `ntlm` - Authenticates LDAP session using NTLM. User should be specified in the format `DOMAIN\USER`. Password
 can be set to NTLM hash instead of plaintext password.
 
-### `host` Option
+## `host` Option
 
 The `host` option should take the form `(ldap|ldaps)://server.host[:port]`. The protocol should be `ldap` if
 the connection should be plain (non-SSL). Use `ldaps` to force a secure (LDAP over SSL) connection.
@@ -66,7 +67,7 @@ Example:
 host: ldaps://global-catalog.example.com:3269
 ```
 
-### `base_dn` Option
+## `base_dn` Option
 
 LDAP queries generally require a base distinguished name (DN). A DN is a type of identifier that uniquely
 identifies any object in an LDAP system. Because of the hierarchical nature of LDAP, a query must be
@@ -91,7 +92,7 @@ In some cases, perhaps when querying a global catalog, the `base_dn` may be left
 base_dn: ""
 ```
 
-### Simple Auth
+## Simple Auth
 
 `simple` authentication uses a username and password to authenticate with an LDAP server.
 
@@ -126,7 +127,7 @@ secure_password_key: my_ldap_password
 
 See [Security Recommendations](deployment_best_practices.md#security-recommendations) for more information.
 
-### Anonymous Auth
+## Anonymous Auth
 
 The `anonymous` auth method makes the LDAP connector perform an anonymous (un-authenticated) query against
 the LDAP source. The server will return an error if anonymous queries are not supported. To enable anonymous
@@ -143,7 +144,7 @@ system will assume you are using `anonymous` auth. You can set the method explic
 `authentication_method: anonymous`.
 
 
-### Kerberos Auth
+## Kerberos Auth
 
 The `kerberos` authentication method uses Kerberos to use a user's authenticated session to securely connect
 to the LDAP system. For Kerberos auth to work, the user account running the Sync Tool must be authenticated
@@ -178,7 +179,7 @@ FDQN, you can find the server your system is connecting do by running this comma
 > echo %logonserver%
 ```
 
-### NTLM Auth
+## NTLM Auth
 
 Use the authentication method option `ntlm` to use NTLM authentication. The `password` field can contain either
 the plaintext password or the NTLM hash. Either can optionally be secured in the OS keychain and referenced
@@ -193,9 +194,9 @@ host: "ldaps://my-ldap-fdqn.example.com"
 base_dn: DC=example,DC=com
 ```
 
-## General Options
+# General Options
 
-### `user_identity_type`
+## `user_identity_type`
 
 The `user_identity_type` option can be used to override the `identity_type` setting in `user-sync-config.yml`.
 This can be useful if the same root configuration file is used with different identity connectors. If this
@@ -203,21 +204,21 @@ option isn't set then the identity type for user sync will be governed by the to
 
 **Note:** This setting can be overridden by `user_identity_type_format`.
 
-### `string_encoding`
+## `string_encoding`
 
 The `string_encoding` option defines the character encoding used in the LDAP system.
 
 Default is `utf8`.
 
-## LDAP Query Options
+# LDAP Query Options
 
 These options govern LDAP query behavior.
 
-### `search_page_size`
+## `search_page_size`
 
 Controls the size of LDAP query pages. Default is `1000` records.
 
-### `all_users_filter`
+## `all_users_filter`
 
 The `all_users_filter` setting defines the LDAP query used to query all users from the LDAP system. The default
 is geared at Active Directory.
@@ -234,7 +235,7 @@ A different LDAP system such as OpenLDAP may use a different query.
 all_users_filter: "(&(objectClass=person)(objectClass=top))"
 ```
 
-### `group_filter_format`
+## `group_filter_format`
 
 The `group_filter_format` options defines the query used by the LDAP connector to get the DN of a group for a given
 common name. This is a necessary step when running user sync with group mapping and processing enabled (the most common
@@ -249,7 +250,7 @@ The group common name is interpolated into the query string using `{group}` mark
 group_filter_format: "(&(|(objectCategory=group)(objectClass=groupOfNames)(objectClass=posixGroup))(cn={group}))"
 ```
 
-### `group_member_filter_format`
+## `group_member_filter_format`
 
 `group_member_filter_format` defines the query used to identify all users belonging to a given group based
 on the group DN. This query is used when group mapping and processing are enabled.
@@ -273,7 +274,7 @@ group_member_filter_format: "(memberOf:1.2.840.113556.1.4.1941:={group_dn})"
 
 Note that this may increase the time it takes to retrieve users.
 
-### `dynamic_group_member_attribute`
+## `dynamic_group_member_attribute`
 
 If `additional_groups` rules are defined in `user-sync-config.yml`, the `dynamic_group_member_attribute`
 option defines the attribute to use when identifying a user's member groups. It is set to `memberOf` by
@@ -283,7 +284,7 @@ default (which works for Active Directory).
 dynamic_group_member_attribute: "memberOf"
 ```
 
-### `two_steps_lookup`
+## `two_steps_lookup`
 
 Some LDAP systems do not support a `memberOf`-type group membership lookup predicate. `two_steps_lookup` enables
 a two-step group lookup workflow.
@@ -314,7 +315,7 @@ two_steps_lookup:
   nested_group: True
 ```
 
-## Attribute Mapping Options
+# Attribute Mapping Options
 
 This group of options govern how attributes are mapped. The most important options to look at are `user_email_format`
 and `user_username_format`. These attributes determine how users are identified in the Admin Console. They
@@ -350,7 +351,7 @@ The curly-brace syntax can also be omitted for cases where a value should be har
 user_domain_format: "example.com"
 ```
 
-### `user_email_format`
+## `user_email_format`
 
 `user_email_format` defines the attribute used to set an Adobe user's email address. This field can serve
 as a primary identifier for a user depending on the circumstances.
@@ -370,7 +371,7 @@ This option is set to `{mail}` by default which is the default in Active Directo
 user_email_format: "{mail}"
 ```
 
-### `user_username_format`
+## `user_username_format`
 
 The `user_username_format` option maps an Adobe user's username field. For `federatedID` users, the username
 can be set to a different value from the email address. **Note:** do not set this option for `adobeID` or
@@ -397,7 +398,7 @@ Mapping the username separately gives the UST a way to update a user's email add
 
 If those conditions are met, then the UST will keep a user's email address up-to-date.
 
-### `user_domain_format`
+## `user_domain_format`
 
 If you are syncing users with non-email usernames, the domain must be set or mapped in the `user_domain_format` field.
 This may be dynamically mapped to an LDAP attribute if one exists.
@@ -416,19 +417,19 @@ user_domain_format: "example.com"
 **Note:** If `user_domain_format` is enabled, then the username for **all** users must be in non-email format. Any
 user with an email-type username will fail to sync.
 
-### `user_given_name_format`
+## `user_given_name_format`
 
 A user's given name ("First Name" in Admin Console nomenclature) can be mapped with `user_given_name_format`.
 
 The default value is `"{givenName}"` - the default attribute in Active Directory.
 
-### `user_surname_format`
+## `user_surname_format`
 
 A user's surname ("Last Name" in Admin Console nomenclature) can be mapped with `user_surname_format`.
 
 The default value is `"{sn}"` - the default attribute in Active Directory.
 
-### `user_country_code_format`
+## `user_country_code_format`
 
 `user_country_code_format` maps the user's country code.
 
@@ -459,7 +460,7 @@ attribute.
 It may be a better option to use the (TODO: add link) extension config to dynamically normalize the
 country code.
 
-### `user_identity_type_format`
+## `user_identity_type_format`
 
 The `user_identity_type_format` can be used to dynamically set the identity type. It maps an LDAP attribute
 to a user's identity type. If this option is used it will override the `user_identity_type` option
@@ -477,4 +478,4 @@ source have the same identity type.
 
 ---
 
-[Previous Section](connect_adobe.md)  \| [Next Section](command_parameters.md)
+[Previous Section](connect_adobe.md)  \| [Next Section](connect_okta.md)

@@ -9,23 +9,21 @@ parent: user-manual
 page_id: additional-tools
 ---
 
+[Previous Section](sign_sync.md)  \| [Next Section](deployment_best_practices.md)
 
 # Additional Tools
-
-## In This Section
 {:."no_toc"}
 
-* TOC Placeholder
+<details open markdown="block">
+  <summary>
+    Table of contents
+  </summary>
+  {: .text-delta }
+1. TOC
 {:toc}
+</details>
 
----
-
-[Previous Section](deployment_best_practices.md)
-
-<br/>
-
----
-## Certificate Generation
+# Certificate Generation
 
 ```
 user-sync certgen [optional parameters]
@@ -41,7 +39,6 @@ User Sync Tool includes built in X509 certificate/key pair generator which is su
 | `-p` _filename_<br />`--private-key-file`  _filename_ | Specifying `-p` or` --private-key-file` will set a custom output path for the private key. Absolute or relative to the working folder. The default is private.key. |
 | `-c` _filename_<br />`--cert-pub-file` _filename_ | Specifying `-c` or `--cert-pub-file` will set a custom output path for the public certificate. Absolute or relative to the working folder. The default is certificate_pub.crt. |
 {: .bordertablestyle }
-<br/>
 <h3>Example #1</h3>
 
 ```
@@ -82,11 +79,9 @@ State = cec8268e8b05
 Country = 6d
 ```
 
-You can use certificate_pub to create your UMAPI integration and private key to [configure connector-umapi.yml](configuring_user_sync_tool.html#connector-umapiyml). <br/><br/>
+You can use certificate_pub to create your UMAPI integration and private key to [configure connector-umapi.yml](configuring_user_sync_tool.html#connector-umapiyml).
 
----
-
-## Private Key Encryption
+# Private Key Encryption
 
 ```
 user-sync encrypt [optional parameters]
@@ -102,5 +97,6 @@ Private key encryption allows a user to encrypt a private key file with a passph
 | `-p`<br />`--password` | Password will be prompted if not passed as a parameter. This will be used as the passphrase for the RSA encryption of the private key file.  |
 {: .bordertablestyle }
 
+---
 
-[Previous Section](deployment_best_practices.md)
+[Previous Section](sign_sync.md)  \| [Next Section](deployment_best_practices.md)

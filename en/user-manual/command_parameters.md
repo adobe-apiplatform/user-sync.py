@@ -9,14 +9,20 @@ parent: user-manual
 page_id: command-parameters
 ---
 
+[Previous Section](sync_from_csv.md)  \| [Next Section](usage_scenarios.md)
 
 # Command Parameters
+{:."no_toc"}
 
----
+<details open markdown="block">
+  <summary>
+    Table of contents
+  </summary>
+  {: .text-delta }
+1. TOC
+{:toc}
+</details>
 
-[Previous Section](configuring_user_sync_tool.md)  \| [Next Section](usage_scenarios.md)
-
----
 Once the configuration files are set up, you can run the User
 Sync tool on the command line or in a script. To run the tool,
 execute the following command in a command shell or from a
@@ -75,4 +81,4 @@ Command-line parameters that are actually specified on the command line take pre
 
 ---
 
-[Previous Section](configuring_user_sync_tool.md)  \| [Next Section](usage_scenarios.md)
+[Previous Section](sync_from_csv.md)  \| [Next Section](usage_scenarios.md)
