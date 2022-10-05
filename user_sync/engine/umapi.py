@@ -638,6 +638,7 @@ class RuleProcessor(object):
                 return primary_commands, secondary_command_lists
             self.logger.debug("Processing Adobe-only users...")
             return self.manage_strays(primary_commands, secondary_command_lists, umapi_connectors)
+        return primary_commands, secondary_command_lists
 
     def manage_strays(self, primary_commands, secondary_command_lists, umapi_connectors):
         """
