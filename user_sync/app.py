@@ -60,6 +60,8 @@ from user_sync.version import __version__ as app_version
 LOG_STRING_FORMAT = '%(asctime)s %(process)d %(levelname)s %(name)s - %(message)s'
 LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
+EXIT_CODE = 0
+
 # file logger, defined early so later functions can refer to it.
 logger = logging.getLogger('main')
 
@@ -424,6 +426,7 @@ def load_directory_config(config_loader: ConfigLoader, new_account_type=None) ->
 
 def run_sync(config_loader, begin_work):
     run_stats = None
+    global EXIT_CODE
     try:
         init_log(config_loader.get_logging_config())
 
@@ -447,6 +450,7 @@ def run_sync(config_loader, begin_work):
     except AssertionException as e:
         if not e.is_reported():
             logger.critical("%s", e)
+            EXIT_CODE = 1
             e.set_reported()
     except KeyboardInterrupt:
         try:
@@ -455,13 +459,15 @@ def run_sync(config_loader, begin_work):
             pass
     except Exception:
         try:
-            logger.error('Unhandled exception', exc_info=sys.exc_info())
+            logger.critical('Unhandled exception', exc_info=sys.exc_info())
+            EXIT_CODE = 1
         except Exception:
             pass
 
     finally:
         if run_stats is not None:
             run_stats.log_end(logger)
+    sys.exit(EXIT_CODE)
 
 
 # Additional CLI commands #
