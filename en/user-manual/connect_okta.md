@@ -95,13 +95,54 @@ See (TODO add link) Security Recommendations for more information.
 
 # User Filter Options
 
+These options are used to filter users and groups. Their defaults are generally sufficient
+for most use cases but can be customized if needed.
+
 ## `group_filter_format`
+
+The `group_filter_format` option specifies a template string used when querying users
+for a group.
+
+By default it is set to `{group}`. The name of a given group is inserted in between
+the curly braces.
 
 ## `all_users_filter`
 
+`all_users_filter` controls which users are considered in-scope for sync from the Okta connector.
+It should be set to a Python statement that returns `True` or `False`. Users where the
+filter evaluates `True` are included in sync. Users where it evaluates `False` are
+filtered out.
+
+Any user attribute returned from Okta's "List Group Members" call can be used in the filter
+See [their API docs](https://developer.okta.com/docs/reference/api/groups/#response-example-12)
+for more info.
+
 # General Options
 
+## `user_identity_type`
+
+The `user_identity_type` option can be used to override the `identity_type` setting in `user-sync-config.yml`.
+This can be useful if the same root configuration file is used with different identity connectors. If this
+option isn't set then the identity type for user sync will be governed by the top-level `identity_type` setting.
+
+**Note:** This setting can be overridden by `user_identity_type_format`.
+
+## `string_encoding`
+
+The `string_encoding` option defines the character encoding used in the LDAP system.
+
+Default is `utf8`.
+
 # Attribute Mapping Options
+
+This group of options govern how attributes are mapped. These generally don't need to be customized
+for the Okta, but can be in case customization is needed.
+
+These options are named identically to the attribute mapping options in the LDAP config
+and behave similarly.
+
+See the [LDAP config page](connect_ldap.md#attribute-mapping-options) for more information.
+
 
 # Runtime
 
