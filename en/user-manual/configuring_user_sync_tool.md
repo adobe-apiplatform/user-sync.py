@@ -29,8 +29,11 @@ User Sync Tool behavior is governed by a set of configuration files.
 
 These files are typically placed in the same directory as the User Sync Tool executable.
 
-Although this overview covers the configuration files for Sign Sync, this section focuses on UMAPI sync. See
+Although this overview covers the configuration files for Sign Sync, this page focuses on UMAPI sync. See
 [Sign Sync](sign_sync.md) for details around configuring Sign Sync.
+
+After a brief overview of the configuration files used by the User Sync Tool and some general notes,
+this page focuses on the configuration options used in `user-sync-config.yml`.
 
 ## Core Configuration (Admin Console)
 
@@ -112,113 +115,277 @@ If you're not using Windows, we recommend an editor with these features.
 * Ability to set line endings and file encoding
 * Ability to show special characters (tabs, line endings, etc)
 
-# Configuring Identity Sources
+# `user-sync-config.yml` Example
 
-## Admin Console Connector
+A basic example:
 
-## CSV Connector
-
-# Configuration options
-
-The main configuration file, user-sync-config.yml, is divided
-into several main sections: **adobe_users**, **directory_users**,
-**limits**, and **logging**.
-
-- The **adobe_users** section specifies how the User Sync tool
-connects to the Adobe Admin Console through the User Management
-API. It should point to the separate, secure configuration file
-that stores the access credentials.  This is set in the umapi field of
-the connectors field.
-    - The adobe_users section also can contain exclude_identity_types,
-exclude_adobe_groups, and exclude_users which limit the scope of users
-affected by User Sync.  See the later section
-[Protecting Specific Accounts from User Sync Deletion](advanced_configuration.md#protecting-specific-accounts-from-user-sync-deletion)
-which describes this more fully.
-- The **directory_users** subsection contains two subsections,
-connectors and groups:
-    - The **connectors** subsection points to the separate,
-secure configuration file that stores the access credentials for
-your enterprise directory.
-    - The **groups** section defines the mapping between your
-directory groups and Adobe product configurations and user
-groups.
-    - **directory_users** can also contain keys that set the default country
-code and identity type.  See the example configuration files for details.
-- The **limits** section sets the `max_adobe_only_users` value that
-prevents User Sync from updating or deleting Adobe user accounts if
-there are more than the specified value of accounts that appear in
-the Adobe organization but not in the directory. This
-limit prevents removal of a large number of accounts
-in case of misconfiguration or other errors.  This is a required item.
-- The **logging** section specifies an audit trail path and
-controls how much information is written to the log.
-
-## Configure connection files
-
-The main User Sync configuration file contains only the names of
-the connection configuration files that actually contain the
-connection credentials. This isolates the sensitive information,
-allowing you to secure the files and limit access to them.
-
-Provide pointers to the connection configuration files in the
-**adobe_users** and **directory_users** sections:
-
-```
+```yaml
 adobe_users:
+  exclude_identity_types:
+  - adobeID
+  exclude_adobe_groups:
+  - _org_admin
+  exclude_users:
   connectors:
     umapi: connector-umapi.yml
 
 directory_users:
+  default_country_code: US
   connectors:
     ldap: connector-ldap.yml
+  user_identity_type: federatedID
+  groups:
+    - directory_group: adobe-all-apps
+      adobe_groups:
+        - All Apps
+limits:
+  max_adobe_only_users: 10%
+
+logging:
+  log_to_file: true
+  file_log_directory: logs
+  file_log_name_format: '{:%Y-%m-%d}.log'
+  file_log_level: debug
+  console_log_level: debug
+
+invocation_defaults:
+  adobe_only_user_action: preserve
+  adobe_only_user_list:
+  adobe_users: all
+  connector: ldap
+  process_groups: Yes
+  strategy: sync
+  test_mode: False
+  update_user_info: True
+  user_filter:
+  users: mapped
 ```
 
-## Configure group mapping
+# `adobe_users` Config
 
-Before you can synchronize user groups and entitlements, you must
-create user groups and product configurations in the
-Adobe Admin Console, and corresponding groups in your enterprise
-directory, as described above in
-[Set up product-access synchronization](setup_and_installation.md#set-up-product-access-synchronization).
+The `adobe_users` config key contains all of the options pertinent to Adobe-side sync management.
 
-**NOTE:** All groups must exist and have the specified names on
-both sides. User Sync does not create any groups on either side;
-if a named group is not found, User Sync logs an error.
+* Define Admin Console/User Management API (UMAPI) sync targets
+* Define rules to exclude certain users from sync
+  * Exclude certain identity types
+  * Exclude certain groups
+  * Exclude specific users by email address [regular expression](https://www.regular-expressions.info/)
+  
+Note that the exclusion rules defined here only apply to the Adobe-side workflow. That is to say these
+filters are applied to user information queried from the Admin Console using the UMAPI.
+  
+## `exclude_identity_types`
 
-The **groups** section under **directory_users** must have an entry for
-each enterprise directory group that represents access to an
-Adobe product or products. For each group entry, list the product
-configurations to which users in that group are granted
-access. For example:
+This option defines a list of identity types to exclude. It generally should just be set to `adobeID` since it
+isn't common for a console to have both `enterpriseID` directories and `federatedID` directories.
 
-```YAML
+Example:
+
+```yaml
+  exclude_identity_types:
+    - adobeID
+```
+
+`adobeID` users should generally always be excluded as a best practice.
+
+## `exclude_adobe_groups`
+
+Here the config defines a list of user groups or product profiles to exclude from sync. 
+
+This can include any user group, product profile, or admin group you wish to exclude
+from sync.
+
+At minimum, it should include the special group name `_org_admin` which denotes
+users with system admin privileges.
+
+```yaml
+  exclude_adobe_groups:
+    - _org_admin
+```
+
+Note that you may have other users you might wish to exclude here - developer accounts, support admins, etc.
+They should also be excluded here if needed.
+
+## `exclude_users`
+
+Exclude individual users by email address or a list of users with a [regular expression](https://www.regular-expressions.info/).
+
+Example:
+
+```yaml
+  exclude_users:
+    - "freelancer-[0-9]+.*"
+```
+
+## `connectors`
+
+`adobe_users.connectors` defines one or more connections to the User Management API (UMAPI).
+
+Each connection should at minimum contain a reference to the [UMAPI connector config](connect_adobe.md)
+(e.g. `connector-umapi.yml`). Secondary targets also require an identifier field.
+
+### Single Target
+
+To configure a single target, `connectors` should be set to a single configuration file
+reference. This should point to your main UMAPI config (e.g. `connector-umapi.yml`).
+
+```yaml
+adobe_users:
+  connectors:
+    umapi: connector-umapi.yml
+```
+
+The `umapi` key tells the sync tool that the UMAPI connector is in use.
+
+### Multiple Targets
+
+To target multiple console organizations, the `umapi` key is specified as a list instead of a
+plain string.
+
+Each target must have its own connector configuration file as well as its own set of UMAPI
+credentials.
+
+The User Sync Tool expects all target consoles to be related via
+[directory trust](https://helpx.adobe.com/enterprise/using/directory-trust.html).
+
+* The main target should own the directories and domains associated with UST-managed users
+* Other targets should be trustees of the main target
+
+This primary-secondary structure is represented in the `adobe_users.connectors` config:
+
+```yaml
+adobe_users:
+  connectors:
+    umapi:
+      - connector-umapi.yml
+      - org2: connector-umapi-org2.yml
+```
+
+Under the `umapi` key, the config file for the primary (identity-owning) target is
+specified as a plain string. Each secondary target is specified as a key-value pair
+with the key being a unique identifier for the target. This ID is used for several
+key purposes:
+
+* Targeting org-specific groups in the group mapping
+* Distinguishing between targets in log messages
+* Identifying different targets internally
+
+# `directory_users` Config
+
+Every option under the `directory_users` key pertains to managing general identity
+source behavior. This includes:
+
+* Defining the connector type
+* Linking the connector config file
+* Defining default country code and identity type
+* Defining how directory groups map to Adobe groups
+
+## `default_country_code`
+
+The country code is a mandatory attribute for every Adobe user. It governs the location
+in which a user's data is stored, among other things.
+
+When creating `federatedID` users, the country code must be specified on user creation.
+On `enterpriseID` and `adobeID` users, it can be set to `UD` to leave the country undefined.
+In this case, the user will select their own country when they log in for the first time.
+
+Except for `UD` (which is not a valid country code), the country code must be
+a valid [ISO-3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) code.
+
+`default_country_code` defines the code to use when the identity source does not
+specify a country code for a given user. It is only set for a given user whose
+"country" field is empty. If a user's country is set to anything, even a country
+in a format not accepted by the UMAPI, the Sync Tool will attempt to set it for
+a user. This operation will only succeed if the country code is in the expected
+format.
+
+The [extension config](advanced_configuration.md#custom-attributes-and-mappings) can
+be used to normalize country codes that aren't in the expected format.
+
+## `connectors`
+
+The `connectors` key under `directory_users` is where identity source connectors are
+defined. This is done by setting the connector type as the key and the configuration
+filename as the value.
+
+Multiple connectors can be defined here (though only one can be enabled at any given time).
+
+Example:
+
+```yaml
+directory_users:
+  connectors:
+    ldap: connector-ldap.yml
+    csv: connector-csv.yml
+    adobe_console: connector-adobe-console.yml
+    okta: connector-okta.yml
+```
+
+Once an identity connector is configured, it must be enabled to be used. The connector
+can be enabled in the [invocation defaults](runtime_config.md) settings or
+command-line options.
+
+## `user_identity_type`
+
+The default identity type of new users is controlled by the `user_identity_type` option.
+This can be overridden by identity options that may be available via identity source
+connectors.
+
+Valid options are `adobeID`, `enterpriseID` and `federatedID`.
+
+Here is some [additional information](https://helpx.adobe.com/enterprise/using/identity.html)
+about Adobe's different identity types.
+
+> **Note**: in the UMAPI, Business IDs are represented by their underlying linked
+> account types. In other words, there is no `businessID` type.
+
+## `groups`
+
+The `groups` option defines a mapping that describes rules for how identity
+source groups should govern Adobe groups.
+
+Structure:
+
+* `groups` consists of a list of at least one mapping object
+* Each mapping object has two keys
+  * `directory_group` - Name of directory group to map
+  * `adobe_groups` - List of zero or more Adobe groups to map
+
+Example:
+
+```yaml
 groups:
-  - directory_group: Acrobat
+  - directory_group: adobe-acrobat
     adobe_groups:
       - "Default Acrobat Pro DC configuration"
-  - directory_group: Photoshop
+  - directory_group: adobe-creative
     adobe_groups:
       - "Default Photoshop CC - 100 GB configuration"
       - "Default All Apps plan - 100 GB configuration"
 ```
 
-Directory groups can be mapped to either *product configurations*
-or *user groups*. An `adobe_groups` entry can name either kind
-of group.
+In this example, any user queried by the identity source belonging to the
+source group `adobe-acrobat` is assigned the Adobe group
+`Default Acrobat Pro DC configuration`.
 
-For example:
+Any user beloning to the directory group `adobe-creative` is assigned
+both of these Adobe groups:
 
-```YAML
-groups:
-  - directory_group: Acrobat
-    adobe_groups:
-      - Default Acrobat Pro DC configuration
-  - directory_group: Acrobat_Accounting
-    adobe_groups:
-      - Accounting_Department
-```
+* `Default Photoshop CC - 100 GB configuration`
+* `Default All Apps plan - 100 GB configuration`
 
-## Mapping Admin Roles
+Users assigned to both `adobe-acrobot` and `adobe-creative` will be assigned
+all three Adobe groups in the mapping.
+
+### Group Types
+
+The User Management API doesn't distinguish between product profile group names
+and user group names. They are treated identically when assigning group membership
+to a user.
+
+The only way the use of user groups is different is if
+[automatic group creation](advanced_configuration.md#automatic-group-creation)
+is enabled.
 
 Admin roles can be assigned to users by the User Sync tool using
 special group names and prefixes.  Using these special naming
@@ -234,8 +401,9 @@ profile or user group.
 | Product Admin | `_product_admin_[PRODUCT_NAME]` |
 {: .bordertablestyle }
 
-*System admin roles can't currently be assigned by the UMAPI, so they
-are not supported in the User Sync Tool
+> \* The User Management API does not currently support the assignment of the System Admin
+> role. This means that System Admins cannnot be assigned in the group mapping. This
+> role can however be used in the [`exclude_adobe_groups` configuration](#exclude_adobe_groups).
 
 **Notes about the Product Admin role:**
 
@@ -247,146 +415,159 @@ same product as the admin role.
 
 See the [UMAPI Docs](https://adobe-apiplatform.github.io/umapi-documentation/en/api/ActionsCmds.html#addRemoveAttr) for more details.
 
-### Role Assignment Example
+## `additional_groups`
 
-```YAML
-groups:
-  - directory_group: Acrobat Admins
-    adobe_groups:
-      # assuming the product name is "Adobe Acrobat Pro DC"
-      - Default Acrobat Pro DC configuration
-      - _product_admin_Adobe Acrobat Pro DC
-  - directory_group: Support and Deployment Admins
-    adobe_groups:
-      - _support_admin
-      - _deployment_admin
-  - directory_group: Department A Admins
-    adobe_groups:
-      # assuming a user group called "Department A"
-      - Department A
-      - _admin_Department A
-```
+Configures dynamic group mappings based on regular expression rules. See
+[advanced config](advanced_configuration.md#additional-group-options) for more
+information.
 
+## `group_sync_options`
 
-## Configure limits
+`group_sync_options` controls the synchronization of user groups. The only
+supported option at the moment is `auto_create` which will automatically
+create user groups targetted by the group mapping. See
+[advanced config](advanced_configuration.md#automatic-group-creation)
+for more information.
 
-User accounts are removed from the Adobe system when
-corresponding users are not present in the directory and the tool
-is invoked with one of the options
+# `limits` Config
 
-- `--adobe-only-user-action delete`
-- `--adobe-only-user-action remove`
-- `--adobe-only-user-action remove-adobe-groups`
+User offboarding behavior (i.e. the Adobe-only user action) can be a destructive operation.
+Care should be taken with how your user sync workflow is configured.
 
-If your organization has a large number of users in the
-enterprise directory and the number of users read during a sync
-is suddenly small, this could indicate a misconfiguration or
-error situation.  The value of `max_adobe_only_users` is a threshold
-which causes User Sync to suspend deletion and update of existing Adobe accounts
-and report an error if there are
-this many fewer users in the enterprise directory (as filtered by query parameters) than in the
-Adobe admin console.
+In particular, the following `adobe_only_user_action` (or `--adobe-only-user-action`) options
+can have potentially undesirable side effects.
 
-Raise this value if you expect the number of users to drop by
-more than the current value.
+* `preserve` - Removes mapped Adobe groups. Users offboarded with this method
+  will lose access to groups/products they were provisioned with the User Sync
+  Tool. User data should not be impacted.
+* `remove-adobe-groups` - Removes **all** Adobe groups for offboarded users.
+This will also strip offboarded users of admin privileges.
+* `remove` - Remove offboarded users from the Console's Organization Users list.
+  Stored Creative or Document Cloud data will not be deleted. User settings in
+  other Adobe products may be affected.
+* `delete` - Delete offboarded users from the underlying identity directory.
+  User stored in Creative or Document Cloud will be subject to deletion.
 
-Example 1:
+The `max_adobe_only_users` setting is used to protect an Adobe userbase from the
+`adobe_only_user_action` from operating on a large number of users. If the limit
+defined by `max_adobe_only_users` is exceeded, the Adobe-only user action is
+not executed at all. This can happen when something changes in the identity
+source or in the User Sync Tool configuration to impact the number of Adobe-only
+users identified during a sync.
 
-```YAML
-limits:
-  max_adobe_only_users: 200
-```
+`max_adobe_only_users` can be set to a hard number or a percent.
 
-This configuration causes User Sync to check if more than
-200 user accounts present in Adobe are not found in the enterprise directory (as filtered),
-and if so no existing Adobe accounts are updated and an error message is logged.
+* Hard number - The limit is checked against the total number of Adobe-only users (as governed by
+  the `adobe_users` setting).
+* Percent - The limit is computed as a percentage of total users (as governd by
+  the `adobe_users` setting).
 
-Example 2:
+Example scenarios:
 
-```YAML
-limits:
-  max_adobe_only_users: 15%
-```
+| `max_adobe_only_users` | Total Adobe Users | Directory Users | Adobe-only Users | Outcome                                                                  |
+|------------------------|-------------------|-----------------|------------------|--------------------------------------------------------------------------|
+| 200                    | 1000              | 900             | 100              | Adobe-only users are processed                                           |
+| 200                    | 1000              | 750             | 250              | Do not process Adobe-only users                                          |
+| 20%                    | 1000              | 900             | 100              | Max is 200 (20% of 1000) so Adobe-only users are processed               |
+| 20%                    | 1000              | 750             | 250              | Max of 200 (20% of 1000) exceeded, so Adobe-only users are not processed |
 
-This configuration causes User Sync to check if more than
-15% user accounts present in Adobe are not found in the enterprise directory (as filtered),
-and if so no existing Adobe accounts are updated and an error message is logged.
+# `logging` Config
 
-##  Configure logging
+The User Sync Tool produces log messages describing what it is doing. Log
+messages are written to the console (`stdout`) from which the tool was invoken and
+optionally to a log file.
 
-Log entries are written to the console from which the tool was
-invoked, and optionally to a log file. A new
-entry with a date-time stamp is written to the log each time User Sync
-runs.
+Logging behavior is governed by the `logging` option.
 
-The **logging** section lets you enable and
-disable logging to a file, and controls how much information is
-written to the log and console output.
+Example:
 
-```YAML
+```yaml
 logging:
-  log_to_file: True | False
-  file_log_directory: "path to log folder"
-  file_log_name_format: "Python format string for datetime"
-  file_log_level: debug | info | warning | error | critical
-  console_log_level: debug | info | warning | error | critical
+  log_to_file: true
+  file_log_directory: logs
+  file_log_name_format: '{:%Y-%m-%d}.log'
+  file_log_level: debug
+  console_log_level: debug
 ```
 
-The log_to_file value turns file-logging on or off. Log messages are always
-written to the console regardless of the log_to_file setting.
+## `log_to_file`
 
-When file-logging is enabled, the file_log_directory value is
-required. It specifies the folder where the log entries are to be
-written.
+File logging is toggled by `log_to_file`. Set to `true` to write log messages to
+the filesystem and `false` to suppress file logging.
 
-- Provide an absolute path or a path relative to the folder
-containing this configuration file.
-- Ensure that the file and folder have appropriate read/write
-permissions.
+If `log_to_file` is enables, then the other file-related options should be set as well.
 
-When file-logging is enabled, the file_log_name_format value is
-an optional Python format string which takes as its only argument
-the Python `datetime` value at the start of the run;
-the format operation produces the name of the log file.  The default
-value of this parameter, `{:%Y-%m-%d}.log`, produces a file
-named for the date of the run in year-month-day format,
-with the extension ".log", as `2017-11-21.log`.
+* `file_log_directory`
+* `file_log_name_format`
+* `file_log_level`
 
-Log-level values determine how much information is written to the
-log file or console.
+## `file_log_directory`
 
-- The lowest level, debug, writes the most information, and the
-highest level, critical, writes the least.
-- You can define different log-level values for the file and
-console.
+Log files are written to files in a dedicated directory. The directory where
+logs are written is set by `file_log_directory`.
 
-Log entries that contain WARNING, ERROR or CRITICAL include a
-description that accompanies the status. For example:
+This can be set to a path relative to the Sync Tool. For example, setting it
+to `logs` when the Sync Tool is in the directory `/home/user-sync` will write
+log files to the directory `/home/user-sync/logs`.
 
-> `2017-01-19 12:54:04 7516 WARNING
-console.trustee.org1.action - Error requestID: action_5 code:
-"error.user.not_found" message: "No valid users were found in the
-request"`
+`file_log_directory` can also be set to an absolute path.
 
-In this example, a warning was logged on 2017-01-19 at 12:54:04
-during execution. An action caused an error with the code
-“error.user.not_found”. The description associated with that
-error code is included.
+## `file_log_name_format`
 
-You can use the requestID value to search for the exact request
-associated with a reported error. For the example, searching for
-“action_5” returns the following detail:
+File log messages are appended to the file defined by `file_log_name_format`.
+This can be set to a static filename such as `user-sync.log`. Or date/time
+information can be encoded using curly braces `{}`.
 
-> `2017-01-19 12:54:04 7516 INFO console.trustee.org1.action -
-Added action: {"do":
-\[{"add": {"product": \["default adobe enterprise support program configuration"\]}}\],
-"requestID": "action_5", "user": "cceuser2@ensemble.ca"}`
+Any of [these formatting codes](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes)
+can be used.
 
-This gives you more information about the action that resulted in
-the warning message. In this case, User Sync attempted to add the
-“default adobe enterprise support program configuration” to the
-user "cceuser2@ensemble.ca". The add action failed because the
-user was not found.
+For example, to set the filename to the date in `yyyy-mm-dd` format,
+`file_log_name_format` can be set to `{:%Y-%m-%d}.log`.
+
+> **Note**: The date is formatted at the beginning of the sync workflow.
+
+Log files that don't exist will be created automatically.
+
+## `file_log_level` and `console_log_level`
+
+These options control the verbosity for log files and console (`stdout`)
+output respectively.
+
+Each level adds more information to the logs. These are the supported levels,
+in order from least verbose to most verbose. The higher verbosity levels
+include messages from lower levels. In other words `debug` includes all other
+message types.
+
+1. `critical`
+
+   Only log critical errors that generally impact the overall sync process.
+
+2. `error`
+
+   Log errors of any kind, even those that may not halt or negatively impact
+   sync.
+
+3. `warning`
+
+   Warnings include messages that warrant attention but are not serious. Reasons
+   include deprecated functionality, missing identity source data, etc.
+
+4. `info` (default)
+
+   Informational log messages. General information around sync behavior
+   including summary info.
+   
+5. `debug`
+
+	Any lower-level debug information: configuration options, raw API call
+	payloads, etc. This information can be critical for debugging issues with
+	User Sync Tool config, but can increase log file sizes significantly.
+
+# `invocation_defaults` Config
+
+See [Runtime Config](runtime_config.md) for information about the Sync Tool's
+`invocation_default` options and how they interact with the tool's
+command-line options.
 
 ---
 

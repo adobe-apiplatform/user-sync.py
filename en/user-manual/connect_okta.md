@@ -4,7 +4,7 @@ lang: en
 nav_link: Sync From Okta
 title: Syncing Users From Okta
 nav_level: 2
-nav_order: 33
+nav_order: 43
 parent: user-manual
 page_id: connect-okta
 ---

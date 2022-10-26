@@ -1,15 +1,15 @@
 ---
 layout: default
 lang: en
-title: Command Parameters
-nav_link: Command Parameters
+title: Runtime Config
+nav_link: Runtime Config
 nav_level: 2
-nav_order: 40
+nav_order: 30
 parent: user-manual
-page_id: command-parameters
+page_id: runtime-config
 ---
 
-[Previous Section](sync_from_csv.md)  \| [Next Section](usage_scenarios.md)
+[Previous Section](configuring_user_sync_tool.md)  \| [Next Section](connect_adobe.md)
 
 # Command Parameters
 {:."no_toc"}
@@ -81,4 +81,4 @@ Command-line parameters that are actually specified on the command line take pre
 
 ---
 
-[Previous Section](sync_from_csv.md)  \| [Next Section](usage_scenarios.md)
+[Previous Section](configuring_user_sync_tool.md)  \| [Next Section](connect_adobe.md)

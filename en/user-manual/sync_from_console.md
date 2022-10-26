@@ -4,7 +4,7 @@ lang: en
 title: Syncing From the Admin Console
 nav_link: Sync From Admin Console
 nav_level: 2
-nav_order: 34
+nav_order: 44
 parent: user-manual
 page_id: sync-from-console
 ---

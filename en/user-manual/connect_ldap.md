@@ -4,7 +4,7 @@ lang: en
 title: Connect to LDAP
 nav_link: Connect to LDAP
 nav_level: 2
-nav_order: 32
+nav_order: 42
 parent: user-manual
 page_id: connect-ldap
 ---

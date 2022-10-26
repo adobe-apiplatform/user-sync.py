@@ -9,7 +9,7 @@ parent: user-manual
 page_id: usage-scenarios
 ---
 
-[Previous Section](command_parameters.md)  \| [Next Section](advanced_configuration.md)
+[Previous Section](sync_from_csv.md)  \| [Next Section](advanced_configuration.md)
 
 # Usage Scenarios
 {:."no_toc"}
@@ -339,5 +339,4 @@ The statistics collected include:
 
 ---
 
-[Previous Section](command_parameters.md)  \| [Next Section](advanced_configuration.md)
-
+[Previous Section](sync_from_csv.md)  \| [Next Section](advanced_configuration.md)

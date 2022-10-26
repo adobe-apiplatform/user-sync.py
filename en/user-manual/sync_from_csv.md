@@ -4,12 +4,12 @@ lang: en
 title: Syncing From a CSV File
 nav_link: Sync From CSV
 nav_level: 2
-nav_order: 35
+nav_order: 45
 parent: user-manual
 page_id: sync-from-csv
 ---
 
-[Previous Section](sync_from_console.md)  \| [Next Section](command_parameters.md)
+[Previous Section](sync_from_console.md)  \| [Next Section](usage_scenarios.md)
 
 # Syncing From a CSV File
 {:."no_toc"}
@@ -206,4 +206,4 @@ can be used to redefine any column name.
 
 ---
 
-[Previous Section](sync_from_console.md)  \| [Next Section](command_parameters.md)
+[Previous Section](sync_from_console.md)  \| [Next Section](usage_scenarios.md)

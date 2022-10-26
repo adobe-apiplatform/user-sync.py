@@ -4,12 +4,12 @@ lang: en
 title: Connect to Adobe
 nav_link: Connect to Adobe
 nav_level: 2
-nav_order: 31
+nav_order: 41
 parent: user-manual
 page_id: connect-adobe
 ---
 
-[Previous Section](configuring_user_sync_tool.md)  \| [Next Section](connect_ldap.md)
+[Previous Section](runtime_config.md)  \| [Next Section](connect_ldap.md)
 
 # Connecting To Adobe
 {:."no_toc"}
@@ -124,4 +124,4 @@ See [Security Recommendations](deployment_best_practices.md#security-recommendat
 
 ---
 
-[Previous Section](configuring_user_sync_tool.md)  \| [Next Section](connect_ldap.md)
+[Previous Section](runtime_config.md)  \| [Next Section](connect_ldap.md)
