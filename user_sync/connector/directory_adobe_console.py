@@ -25,7 +25,7 @@ import user_sync.identity_type
 from user_sync.connector.directory import DirectoryConnector
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
-from user_sync.connector.umapi_util import make_auth_dict
+from user_sync.connector.umapi_util import create_umapi_auth
 from user_sync.helper import normalize_string
 from user_sync.identity_type import parse_identity_type
 from user_sync.config import user_sync as config

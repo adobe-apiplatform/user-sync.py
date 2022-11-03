@@ -32,7 +32,7 @@ import user_sync.identity_type
 from user_sync.config import user_sync as config
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
-from user_sync.connector.umapi_util import make_auth_dict
+from user_sync.connector.umapi_util import create_umapi_auth
 from user_sync.config import common as config_common
 
 try:
@@ -62,14 +62,23 @@ class UmapiConnector(object):
         builder.set_string_value('logger_name', self.name)
         builder.set_bool_value('test_mode', False)
         builder.set_bool_value('ssl_cert_verify', True)
+        builder.set_string_value('authentication_method', 'jwt')
         options = builder.get_options()
 
         server_config = caller_config.get_dict_config('server', True)
         server_builder = config_common.OptionsBuilder(server_config)
         server_builder.set_string_value('host', 'usermanagement.adobe.io')
         server_builder.set_string_value('endpoint', '/v2/usermanagement')
-        server_builder.set_string_value('ims_host', 'ims-na1.adobelogin.com')
-        server_builder.set_string_value('ims_endpoint_jwt', '/ims/exchange/jwt')
+
+        auth_host_key = 'ims_host' if 'ims_host' in server_config else 'auth_host'
+        server_builder.set_string_value(auth_host_key, 'ims-na1.adobelogin.com')
+
+        auth_endpoint_key = 'ims_endpoint_jwt' if 'ims_endpoint_jwt' in server_config else 'auth_endpoint'
+        auth_endpoint_default = '/ims/exchange/jwt'
+        if options['authentication_method'] == 'oauth':
+            auth_endpoint_default = '/ims/token/v2'
+        server_builder.set_string_value(auth_endpoint_key, auth_endpoint_default)
+
         server_builder.set_int_value('timeout', 120)
         server_builder.set_int_value('retries', 3)
         server_builder.set_value('ssl_verify', bool, None)
@@ -78,50 +87,60 @@ class UmapiConnector(object):
         enterprise_config = caller_config.get_dict_config('enterprise')
         enterprise_builder = config_common.OptionsBuilder(enterprise_config)
         enterprise_builder.require_string_value('org_id')
-        tech_field = 'tech_acct_id' if 'tech_acct_id' in enterprise_config else 'tech_acct'
-        enterprise_builder.require_string_value(tech_field)
+
+        tech_field = 'tech_acct' if 'tech_acct' in enterprise_config else 'tech_acct_id'
+        enterprise_builder.set_string_value(tech_field, None)
         options['enterprise'] = enterprise_options = enterprise_builder.get_options()
+
+        if enterprise_options[tech_field] is None and options['authentication_method'] == 'jwt':
+            raise AssertionException(f"'{tech_field}' is required for jwt authentication")
 
         # Override with old umapi entry if present
         if options['server']['ssl_verify'] is not None:
             options['ssl_cert_verify'] = options['server']['ssl_verify']
 
         self.options = options
-        self.logger = logger = user_sync.connector.helper.create_logger(options)
+        self.logger = logging.getLogger(__name__)
         if server_config:
-            server_config.report_unused_values(logger)
+            server_config.report_unused_values(self.logger)
         if self.uses_business_id is not None:
-            logger.warning("NOTICE: uses_business_id is deprecated. Please remove it from your UMAPI config file.")
-        logger.debug('UMAPI initialized with options: %s', options)
+            self.logger.warning("NOTICE: uses_business_id is deprecated. Please remove it from your UMAPI config file.")
+        self.logger.debug('UMAPI initialized with options: %s', options)
 
-        ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
-        auth_dict = make_auth_dict(self.name, enterprise_config, org_id, enterprise_options[tech_field], logger)
-        # this check must come after we fetch all the settings
-        enterprise_config.report_unused_values(logger)
         # open the connection
         um_endpoint = "https://" + server_options['host'] + server_options['endpoint']
         if self.create_conn:
-            logger.debug('%s: creating connection for org %s at endpoint %s', self.name, org_id, um_endpoint)
+            self.logger.debug('%s: creating connection for org %s at endpoint %s', self.name, org_id, um_endpoint)
             try:
+                auth = create_umapi_auth(
+                    self.name,
+                    enterprise_config,
+                    org_id,
+                    enterprise_options[tech_field],
+                    server_options[auth_host_key],
+                    server_options[auth_endpoint_key],
+                    options['ssl_cert_verify'],
+                    options['authentication_method'],
+                    self.logger,
+                )
                 self.connection = connection = umapi_client.Connection(
                     org_id=org_id,
-                    auth_dict=auth_dict,
-                    ims_host=ims_host,
-                    ims_endpoint_jwt=server_options['ims_endpoint_jwt'],
-                    user_management_endpoint=um_endpoint,
+                    auth=auth,
+                    endpoint=um_endpoint,
                     test_mode=options['test_mode'],
                     user_agent="user-sync/" + app_version,
-                    logger=self.logger,
-                    timeout_seconds=float(server_options['timeout']),
-                    retry_max_attempts=server_options['retries'] + 1,
+                    timeout=float(server_options['timeout']),
                     ssl_verify=options['ssl_cert_verify']
                 )
+
             except Exception as e:
                 raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))
-            logger.debug('%s: connection established', self.name)
+            self.logger.debug('%s: connection established', self.name)
             # wrap the connection in an action manager
-            self.action_manager = ActionManager(connection, org_id, logger)
+            self.action_manager = ActionManager(connection, org_id, self.logger)
+        # this check must come after we fetch all the settings
+        enterprise_config.report_unused_values(self.logger)
 
     def get_users(self):
         return list(self.iter_users())
