@@ -139,7 +139,7 @@ include entries that reference these files, and
 associate each one with the short organization name. For
 example:
 
-```YAML
+```yaml
 adobe-users:
   connectors:
     umapi:
@@ -164,7 +164,7 @@ organization.
 To do this, use the organization identifier as a prefix to the
 group name. Join them with "::". For example:
 
-```YAML
+```yaml
 - directory_group: CCE Trustee Group
   adobe_groups:
     - "org1::Default Adobe Enterprise Support Program configuration"
@@ -202,7 +202,7 @@ The configuration for custom attributes and mappings go in a separate
 configuration file.  That file is referenced from the main
 configuration file in the `directory_users` section:
 
-```
+```yaml
 directory_users:
   extension: extension-config.yml  # reference to file with custom mapping information
 ```
@@ -211,7 +211,7 @@ Custom attribute handling is performed for each user, so the
 customizations are configured in the per-user subsection of the
 extensions section of the main User Sync configuration file.
 
-```
+```yaml
 extensions:
   - context: per_user
     extended_attributes:
@@ -240,11 +240,11 @@ filters in the LDAP connector configuration.
 
 You can add attributes to this set by specifying them in an
 `extended_attributes` key in the main configuration file, as shown above. The
-value of the `extended_attributes` key is a YAML list of strings, with
+value of the `extended_attributes` key is a yaml list of strings, with
 each string giving the name of a user attribute to be
 captured. For example:
 
-```YAML
+```yaml
 extensions:
   - context: per-user
     extended_attributes:
@@ -271,7 +271,7 @@ attributes and group memberships have been retrieved from the
 directory system, but before actions to Adobe have been
 generated.
 
-```YAML
+```yaml
 extensions:
   - context: per-user
     extended_attributes:
@@ -440,7 +440,7 @@ If you drive account creation and removal through User Sync, and want to manuall
 In the `adobe_users` section of the main configuration file you can include
 the following entries:
 
-```YAML
+```yaml
 adobe_users:
   exclude_adobe_groups: 
       - special_users       # Adobe accounts in the named group will not be removed or changed by user sync
@@ -736,7 +736,7 @@ pattern.
   additional_groups:
     - source: "ACL-GRP-(\\d+)"
       target: "org2::ACL Group \\1"
- ```
+```
 
 Refer to [Accessing Users in Other Organizations](https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/advanced_configuration.html#accessing-users-in-other-organizations)
 for more information.

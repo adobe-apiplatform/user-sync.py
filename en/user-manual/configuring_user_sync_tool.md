@@ -54,10 +54,11 @@ Multiple connections are supported (each in their own connector config file).
 
 ## Directory Connector Configuration
 
-These configuration files define connections to various identity sources. They can be used with both UMAPI sync and Sign Sync.
-They are only required if the connector is enabled (TODO see below). The exception - when using UMAPI sync, `connector-csv.yml`
-is totally optional assuming the CSV uses the standard headers and encoding (`utf-8`). The CSV connector is required when using
-Sign Sync.
+These configuration files define connections to various identity sources. They
+can be used with both UMAPI sync and Sign Sync. They are only required if the
+connector is enabled. The exception - when using UMAPI sync, `connector-csv.yml`
+is totally optional assuming the CSV uses the standard headers and encoding
+(`utf-8`). The CSV connector is required when using Sign Sync.
 
 * `connector-ldap.yml` - Defines connection to an LDAP system such as Active Directory
 * `connector-okta.yml` - Defines connection to an Okta tenant (using the Okta API)
@@ -559,9 +560,9 @@ message types.
    
 5. `debug`
 
-	Any lower-level debug information: configuration options, raw API call
-	payloads, etc. This information can be critical for debugging issues with
-	User Sync Tool config, but can increase log file sizes significantly.
+   Any lower-level debug information: configuration options, raw API call
+   payloads, etc. This information can be critical for debugging issues with
+   User Sync Tool config, but can increase log file sizes significantly.
 
 # `invocation_defaults` Config
 

@@ -9,7 +9,7 @@ parent: user-manual
 page_id: additional-tools
 ---
 
-[Previous Section](sign_sync.md)  \| [Next Section](deployment_best_practices.md)
+[Previous Section](sign_sync.md)  \| [Next Section](security.md)
 
 # Additional Tools
 {:."no_toc"}
@@ -99,4 +99,4 @@ Private key encryption allows a user to encrypt a private key file with a passph
 
 ---
 
-[Previous Section](sign_sync.md)  \| [Next Section](deployment_best_practices.md)
+[Previous Section](sign_sync.md)  \| [Next Section](security.md)

@@ -91,7 +91,8 @@ the key in the config file using the `secure_api_token_key` option.
 secure_api_token_key: "UST Okta Token"
 ```
 
-See (TODO add link) Security Recommendations for more information.
+See [Security Recommendations](security.md#secure-credential-storage) for more
+information.
 
 # User Filter Options
 

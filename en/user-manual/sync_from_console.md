@@ -118,7 +118,7 @@ The private key file can optionally be stored differently than a plain file refe
   priv_key_data: |
      -----BEGIN RSA PRIVATE KEY-----
      MIIf74jfd84oAgEA6brj4uZ2f1Nkf84j843jfjjJGHYJ8756GHHGGz7jLyZWSscH
-	 [....]
+     [....]
      CoifurKJY763GHKL98mJGYxWSBvhlWskdjdatagoeshere986fKFUNGd74kdfuEH
      -----END RSA PRIVATE KEY-----
   ```
@@ -159,7 +159,8 @@ This makes it impossible to store the private key contents. We recommend instead
 and securely store the private key passphrase.
 
 We strongly recommend securing your credentials in this manner.
-See [Security Recommendations](deployment_best_practices.md#security-recommendations) for more information.
+See [Security Recommendations](security.md#secure-credential-storage) for more
+information.
 
 ---
 

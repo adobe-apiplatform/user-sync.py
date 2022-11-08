@@ -125,7 +125,8 @@ secure_password_key: my_ldap_password
 # password:
 ```
 
-See [Security Recommendations](deployment_best_practices.md#security-recommendations) for more information.
+See [Security Recommendations](security.md#secure-credential-storage) for more
+information.
 
 ## Anonymous Auth
 
@@ -457,8 +458,9 @@ user_country_code_format: US
 Note that this will set the same code for every user, overriding anything read from `c` or the equivalent
 attribute. 
 
-It may be a better option to use the (TODO: add link) extension config to dynamically normalize the
-country code.
+It may be a better option to use the
+[extension config](advanced_configuration.md#custom-attributes-and-mappings) to
+dynamically normalize the country code.
 
 ## `user_identity_type_format`
 

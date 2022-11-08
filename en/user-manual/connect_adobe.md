@@ -36,6 +36,21 @@ section for details around synchronizing to multiple UMAPI targets.
 * `server` - Override default identity and UMAPI endpoints (generally not needed) and customize connection timeout and retry settings
 * `enterprise` - Define UMAPI credentials (either in-line plaintext or references to OS keyring objects)
 
+# General Settings
+
+## `ssl_verify`
+
+The `ssl_verify` should be used as a last resort to make the User Sync Tool work
+in environments where it can't connect to Adobe services. Specifically, it can
+be used in cases where the UST reports SSL errors like this when running.
+
+```
+UMAPI connection to org id failed: [SSL: CERTIFICATE_VERIFY_FAILED]
+```
+
+Please note this option isn't recommended and should only be used when
+[other options](security.md#dealing-with-ssl-issues) have been exhausted.
+
 # `server` Settings
 
 The `server` settings do not generally need to be customized. `timeout` and `retry` settings can be customized if the Sync Tool
@@ -80,7 +95,7 @@ The private key file can optionally be stored differently than a plain file refe
   priv_key_data: |
      -----BEGIN RSA PRIVATE KEY-----
      MIIf74jfd84oAgEA6brj4uZ2f1Nkf84j843jfjjJGHYJ8756GHHGGz7jLyZWSscH
-	 [....]
+     [....]
      CoifurKJY763GHKL98mJGYxWSBvhlWskdjdatagoeshere986fKFUNGd74kdfuEH
      -----END RSA PRIVATE KEY-----
   ```
@@ -120,7 +135,8 @@ This makes it impossible to store the private key contents. We recommend instead
 and securely store the private key passphrase.
 
 We strongly recommend securing your credentials in this manner.
-See [Security Recommendations](deployment_best_practices.md#security-recommendations) for more information.
+See [Security Recommendations](security.md#secure-credential-storage) for more
+information.
 
 ---
 

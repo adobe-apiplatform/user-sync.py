@@ -4,12 +4,12 @@ lang: en
 title: Deployment Best Practices
 nav_link: Deployment Best Practices
 nav_level: 2
-nav_order: 90
+nav_order: 100
 parent: user-manual
 page_id: deployment-best-practices
 ---
 
-[Previous Section](additional_tools.md)
+[Previous Section](security.md)
 
 # Deployment Best Practices
 {:."no_toc"}
@@ -76,88 +76,6 @@ store to store individual configuration credential values.  The second uses
 a mechanism you must provide to securely store the entire configuration file for umapi
 and/or ldap which includes all the credentials required.  These are
 detailed in the next two sections.
-
-## Storing Credentials in OS Level Storage
-
-To set up User Sync to pull credentials from the OS keyring (e.g. Windows Credential Manager), set the connector-umapi.yml and connector-ldap.yml files as follows:
-
-connector-umapi.yml
-
-	server:
-	
-	enterprise:
-	  org_id: your org id
-	  secure_client_id_key: client_id
-	  secure_client_secret_key: umapi_client_secret
-	  tech_acct_id: your tech account@techacct.adobe.com
-	  secure_priv_key_data_key: umapi_private_key_data
-
-Note the change of `client_id`, `client_secret`, and `priv_key_path` to `secure_client_id_key`, `secure_client_secret_key`, and `secure_priv_key_data_key`, respectively.  These alternate configuration values give the key names to be looked up in the user keychain (or the equivalent service on other platforms) to retrieve the actual credential values.  In this example, the credential key names are `umapi_client_id`, `umapi_client_secret`, and `umapi_private_key_data`.
-
-The contents of the private key file is used as the value of `umapi_private_key_data` in the credential store.  This can only be done on platforms other than Windows.  See below for how to secure the
-private key file on Windows.
-
-The credential values will be looked up in the secure store using org_id as the username value and the key names in the config file as the key name.
-
-A slight variant on this approach is available (in User Sync version 2.1.1 or later) to encrypt the
-private key file using the standard RSA encrypted representation for private keys (known as the
-PKCS#8 format).  This approach must be used on Windows because the Windows secure store is not
-able to store strings longer than 512 bytes which prevents its use with private keys. This approach
-can also be used on the other platforms if you wish.
-
-To store the private key in encrypted format proceed as follows.  First, create an encrypted
-version of the private key file.  Select a passphrase and encrypt the
-private key file:
-
-    openssl pkcs8 -in private.key -topk8 -v2 des3 -out private-encrypted.key
-
-On Windows, you will need to run openssl from Cygwin or some other provider; it is not included
-in the standard Windows distribution.
-
-Next, use the following configuration items in connector-umapi.yml.  The last two items below cause
-the decryption passphrase to be obtained from the secure credential store, and reference the encrypted
-private key file, respectively:
-
-	server:
-	
-	enterprise:
-	  org_id: your org id
-	  secure_client_id_key: umapi_client_id
-	  secure_client_secret_key: umapi_client_secret
-	  tech_acct_id: your tech account@techacct.adobe.com
-	  secure_priv_key_pass_key: umapi_private_key_passphrase
-	  priv_key_path: private-encrypted.key
-
-Finally, add the passphrase to the secure store as an entry with the username or url as the org Id, the key
-name as `umapi_private_key_passphrase` to match the `secure_priv_key_pass_key` config file entry, and the value
-as the passphrase.  (You can also inline the encrypted private key by placing the data in the
-connector-umapi.yml file under the key `priv_key_data` instead of using `priv_key_path`.)
-
-This ends the description of the variant where the RSA private key encryption is used.
-
-connector-ldap.yml
-
-	username: "your ldap account username"
-	secure_password_key: ldap_password 
-	host: "ldap://ldap server name"
-	base_dn: "DC=domain name,DC=com"
-
-The LDAP access password will be looked up using the specified key name
-(`ldap_password` in this example) with the user being the specified username
-config value.
-
-Credentials are stored in the underlying operating system secure store.  The specific storage system depends in the operating system.
-
-| OS | Credential Store |
-|------------|--------------|
-| Windows | Windows Credential Vault |
-| Mac OS X | Keychain |
-| Linux | Freedesktop Secret Service or KWallet |
-{: .bordertablestyle }
-
-On Linux, the secure storage application would have been installed and configured by the OS vendor.
-
-The credentials are added to the OS secure storage and given the username and credential id that you will use to specify the credential.  For umapi credentials, the username is the organization id.  For the LDAP password credential, the username is the LDAP username.  You can pick any identifier you wish for the specific credentials; they must match between what is in the credential store and the name used in the configuration file.  Suggested values for the key names are shown in the examples above.
 
 # Scheduling Recommendations
 
@@ -277,16 +195,7 @@ During the calls, you may also see a warning from requests:
 "InsecureRequestWarning: Unverified HTTPS request is being made to host 'usermanagement.adobe.io'. Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
   InsecureRequestWarning"
 
-# Restricted /tmp Access
-
-Certain Linux security practices recommend `/tmp` be remounted with restricted permissions. If your systems follow this practice, you may be unable to run the User Sync Tool. The UST requires access to the system's temporary directory to self-extract and execute. To run the tool, try the following:
-
-* Ensure the user running the UST has read, write and exec permissions on `/tmp`
-* Set `TMPDIR` to an alternate location (do not `export` this var)
-
-  Example: `TMPDIR=/my/tmp/dir ./user-sync`
-
 ---
 
-[Previous Section](additional_tools.md)
+[Previous Section](security.md)
 
