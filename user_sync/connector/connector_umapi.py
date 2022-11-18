@@ -95,6 +95,9 @@ class UmapiConnector(object):
         if enterprise_options[tech_field] is None and options['authentication_method'] == 'jwt':
             raise AssertionException(f"'{tech_field}' is required for jwt authentication")
 
+        if enterprise_options[tech_field] is not None and options['authentication_method'] == 'oauth':
+            raise AssertionException(f"'{tech_field}' should not be set for oauth authentication")
+
         # Override with old umapi entry if present
         if options['server']['ssl_verify'] is not None:
             options['ssl_cert_verify'] = options['server']['ssl_verify']
