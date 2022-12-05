@@ -1173,6 +1173,9 @@ class RuleProcessor(object):
         for umapi_name in self.stray_key_map:
             for user_key in self.get_stray_keys(umapi_name):
                 id_type, username, domain = self.parse_user_key(user_key)
+                # switch username with email if override in place:
+                if '@' in username and username in self.email_override.keys():
+                    username = self.email_override[username]
                 umapi = umapi_name if umapi_name else ""
                 if secondary_count:
                     row_dict = {'type': id_type, 'username': username, 'domain': domain, 'umapi': umapi}
