@@ -706,7 +706,7 @@ directory_users:
     # ... group mappings, etc
   additional_groups:
     - source: "AEM-ACL-(.+)"
-      target: "AEM-(\\1)"
+      target: "AEM-\\1"
 ```
 
 `additional_groups` contains a list of additional group rules. `source`
