@@ -371,11 +371,7 @@ def begin_work_umapi(config_loader: UMAPIConfigLoader):
     if additional_groups and isinstance(additional_groups, list):
         additional_group_filters = [r['source'] for r in additional_groups]
     if directory_connector is not None:
-        directory_connector.additional_group_filters = additional_group_filters
-        # show error dynamic mappings enabled but 'dynamic_group_member_attribute' is not defined
-        if additional_group_filters and directory_connector.options['dynamic_group_member_attribute'] is None:
-            raise AssertionException(
-                "Failed to enable dynamic group mappings. 'dynamic_group_member_attribute' is not defined in config")
+        directory_connector.set_additional_group_filters(additional_group_filters)
 
     primary_name = '.primary' if secondary_umapi_configs else ''
     umapi_primary_connector = UmapiConnector(primary_name, primary_umapi_config, True)
