@@ -640,7 +640,7 @@ the next batch.
 # Additional Group Options
 
 It is possible for the User Sync Tool to sync group relationships that
-are not explicitly mapped out in `user-sync-config.yml`.  Any LDAP group
+are not explicitly mapped out in `user-sync-config.yml`.  Any identity source group
 that a user belongs to directly can be mapped and targeted to an Adobe
 profile or user group using the `additional_groups` configuration
 option.
@@ -658,25 +658,42 @@ Possible use cases:
 ## Additional Group Rules
 
 `additional_groups` is defined in `user-sync-config.yml` in the `groups`
-object.  It specifies a list of rules to identify and filter groups
-present in the `memberOf` LDAP attribute, as well as rules that govern
-how corresponding Adobe groups should be named.  Groups that are
-discovered with this feature will be added to a user's list of
-targeted Adobe groups.
+object. It consists of a series of rules that can identify groups assigned
+to a given user. These rules are used to assign users to groups dynamically
+based on information matched in the groups matched from the identity source.
 
 **Note:** Additional group mapping will fail if a multiple source groups
 map to the same target group.
 
-## Configure 'dynamic_group_member_attribute'
+## Directory Connector Support
 
-From User Sync tool 2.5 onward, you are required to mention the `memberOf` 
-LDAP attribute in `connector-ldap.yml`. There is no default value and if 
-`addtional_groups` is defined but `dynamic_group_member_attribute` not defined,
-you would see an warning. Here is example:
+1. `ldap`
 
-```yaml
-dynamic_group_member_attribute: 'memberOf'
-```
+   From User Sync tool 2.5 onward, you are required to mention the `memberOf` 
+   LDAP attribute in `connector-ldap.yml`. There is no default value and if 
+   `addtional_groups` is defined but `dynamic_group_member_attribute` not defined,
+   you would see an warning. Here is example:
+
+   ```yaml
+   dynamic_group_member_attribute: 'memberOf'
+   ```
+   
+2. `csv`
+
+   The CSV connector supports `additional_groups` rules with no special
+   configuration. Any groups assigned a user in the `groups` column of the input
+   file will be checked in the additional groups logic.
+   
+3. `adobe_console`
+
+   The `adobe_console` connector works similarly to the `csv` connector. All
+   groups assigned to a user are checked in the Additional Groups rules if
+   `additional_groups` is enabled.
+
+4. `okta`
+
+   `additional_groups` functionality is not supported for the Okta connector due
+   to the nature of the Okta's group API.
 
 ## Additional Group Example
 
