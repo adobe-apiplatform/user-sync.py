@@ -1145,7 +1145,7 @@ class RuleProcessor(object):
 
             if email is None:
                 if user is not None:
-                    self.logger.warn("Please specify user email address for user '%s', action may fail otherwise", user)
+                    self.logger.warning("Please specify user email address for user '%s', action may fail otherwise", user)
                 else:
                     self.logger.warn("Username or email address must be specified for record: %s", row)
                     continue

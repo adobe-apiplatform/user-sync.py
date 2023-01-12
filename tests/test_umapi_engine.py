@@ -65,15 +65,15 @@ class MockUmapiConnector(MagicMock):
 def test_is_umapi_user_excluded(rule_processor):
     in_primary_org = True
     rule_processor.exclude_identity_types = ['adobeID']
-    user_key = 'adobeID,adobe.user@example.com,'
+    user_key = 'adobeID,adobe.user@example.com,,'
     current_groups = {'default acrobat pro dc configuration', 'one', '_admin_group a'}
     assert rule_processor.is_umapi_user_excluded(in_primary_org, user_key, current_groups)
 
-    user_key = 'federatedID,adobe.user@example.com,'
+    user_key = 'federatedID,adobe.user@example.com,,'
     rule_processor.exclude_groups = {'one'}
     assert rule_processor.is_umapi_user_excluded(in_primary_org, user_key, current_groups)
 
-    user_key = 'federatedID,adobe.user@example.com,'
+    user_key = 'federatedID,adobe.user@example.com,,'
     rule_processor.exclude_groups = set()
     compiled_expression = re.compile(r'\A' + "adobe.user@example.com" + r'\Z', re.IGNORECASE)
     rule_processor.exclude_users = {compiled_expression}
@@ -265,33 +265,33 @@ def test_get_user_attribute_difference(rule_processor, mock_dir_user, mock_umapi
 
 def test_get_directory_user_key(rule_processor):
     mock_directory_user_dict = {
-        'email': 'exampledirectory@exmaple.com',
-        'username': 'exampledirectory@example.com',
+        'email': 'email@example.com',
+        'username': 'username@example.com',
         'domain': 'example.com',
         'identity_type': 'federatedID'
     }
     actual_result = rule_processor.get_directory_user_key(mock_directory_user_dict)
-    assert actual_result == 'federatedID,exampledirectory@example.com,'
+    assert actual_result == 'federatedID,username@example.com,,email@example.com'
 
 
 def test_get_umapi_user_key(rule_processor):
     mock_umapi_user_dict = {
-        'email': '7of9@exmaple.com',
-        'username': '7of9@example.com',
+        'email': 'email@example.com',
+        'username': 'username@example.com',
         'domain': 'example.com',
         'type': 'federatedID'
     }
 
     actual_result = rule_processor.get_umapi_user_key(mock_umapi_user_dict)
-    assert actual_result == 'federatedID,7of9@example.com,'
+    assert actual_result == 'federatedID,username@example.com,,email@example.com'
 
 
 def test_get_user_key(rule_processor):
-    key = rule_processor.get_user_key("federatedID", "wriker@example.com", "wriker@example.com", "example.com")
-    assert key == 'federatedID,wriker@example.com,'
+    key = rule_processor.get_user_key("federatedID", "username@example.com", "example.com", "email@example.com")
+    assert key == 'federatedID,username@example.com,,email@example.com'
 
-    key = rule_processor.get_user_key("federatedID", "wriker", "example.com")
-    assert key == 'federatedID,wriker,example.com'
+    key = rule_processor.get_user_key("federatedID", "username", "example.com", "email@example.com")
+    assert key == 'federatedID,username,example.com,email@example.com'
 
     assert not rule_processor.get_user_key(None, "wriker@example.com", "wriker@example.com", "example.com")
     assert not rule_processor.get_user_key("federatedID", None, "wriker@example.com")
@@ -335,16 +335,19 @@ def test_read_stray_key_map(csv_reader, rule_processor):
     csv_mock_data = [
         {
             'type': 'adobeID',
-            'username': 'removeuser2@example.com',
-            'domain': 'example.com'},
+            'email': 'removeuser2@example.com',
+            'domain': 'example.com'
+        },
         {
             'type': 'federatedID',
-            'username': 'removeuser@example.com',
-            'domain': 'example.com'},
+            'email': 'removeuser@example.com',
+            'domain': 'example.com'
+        },
         {
             'type': 'enterpriseID',
-            'username': 'removeuser3@example.com',
-            'domain': 'example.com'}
+            'email': 'removeuser3@example.com',
+            'domain': 'example.com'
+        },
     ]
 
     csv_reader.return_value = csv_mock_data
@@ -352,9 +355,10 @@ def test_read_stray_key_map(csv_reader, rule_processor):
     actual_value = rule_processor.stray_key_map
     expected_value = {
         None: {
-            'federatedID,removeuser@example.com,': None,
-            'enterpriseID,removeuser3@example.com,': None,
-            'adobeID,removeuser2@example.com,': None}
+            'adobeID,removeuser2@example.com,,removeuser2@example.com': None,
+            'federatedID,removeuser@example.com,,removeuser@example.com': None,
+            'enterpriseID,removeuser3@example.com,,removeuser3@example.com': None,
+        }
     }
 
     assert expected_value == actual_value
@@ -363,15 +367,15 @@ def test_read_stray_key_map(csv_reader, rule_processor):
     csv_mock_data = [
         {
             'type': 'adobeID',
-            'username': 'remo@sample.com',
+            'email': 'remove@example.com',
             'domain': 'sample.com',
             'umapi': 'secondary'},
         {
             'type': 'federatedID',
-            'username': 'removeuser@example.com'},
+            'email': 'removeuser@example.com'},
         {
             'type': 'enterpriseID',
-            'username': 'removeuser3@example.com',
+            'email': 'removeuser3@example.com',
             'domain': 'example.com'}
 
     ]
@@ -380,12 +384,13 @@ def test_read_stray_key_map(csv_reader, rule_processor):
     actual_value = rule_processor.stray_key_map
     expected_value = {
         'secondary': {
-            'adobeID,remo@sample.com,': None
+            'adobeID,remove@example.com,,remove@example.com': None
         },
         None: {
-            'federatedID,removeuser@example.com,': None,
-            'enterpriseID,removeuser3@example.com,': None,
-            'adobeID,removeuser2@example.com,': None}
+            'federatedID,removeuser@example.com,,removeuser@example.com': None,
+            'enterpriseID,removeuser3@example.com,,removeuser3@example.com': None,
+            'adobeID,removeuser2@example.com,,removeuser2@example.com': None
+        }
     }
     assert expected_value == actual_value
 
@@ -396,18 +401,18 @@ def test_write_stray_key_map(rule_processor, tmpdir):
     rule_processor.stray_list_output_path = tmp_file
     rule_processor.stray_key_map = {
         'secondary': {
-            'adobeID,remoab@example.com,': set(),
-            'enterpriseID,adobe.user3@example.com,': set(), },
+            'adobeID,remoab@example.com,,remoab@example.com': set(),
+            'enterpriseID,adobe.user3@example.com,,adobe.user3@example.com': set(), },
         None: {
-            'enterpriseID,adobe.user1@example.com,': set(),
-            'federatedID,adobe.user2@example.com,': set()
+            'enterpriseID,adobe.user1@example.com,,adobe.user1@example.com': set(),
+            'federatedID,adobe.user2@example.com,,adobe.user2@example.com': set()
         }}
 
     rule_processor.write_stray_key_map()
     with open(tmp_file, 'r') as our_file:
         reader = csv.reader(our_file)
         actual = list(reader)
-        expected = [['type', 'username', 'domain', 'umapi'],
+        expected = [['type', 'email', 'domain', 'umapi'],
                     ['adobeID', 'remoab@example.com', '', 'secondary'],
                     ['enterpriseID', 'adobe.user3@example.com', '', 'secondary'],
                     ['enterpriseID', 'adobe.user1@example.com', '', ''],
