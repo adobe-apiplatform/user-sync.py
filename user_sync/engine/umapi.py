@@ -664,7 +664,7 @@ class RuleProcessor(object):
         # convenience function to get umapi Commands given a user key
         def get_commands(key):
             """Given a user key, returns the umapi commands targeting that user"""
-            id_type, username, domain = self.parse_user_key(key)
+            id_type, username, domain, _ = self.parse_user_key(key)
             if '@' in username and username.lower() in self.email_override:
                 username = self.email_override[username.lower()]
             return user_sync.connector.connector_umapi.Commands(identity_type=id_type, username=username, domain=domain)
@@ -1003,7 +1003,7 @@ class RuleProcessor(object):
         if in_primary_org:
             self.primary_user_count += 1
             # in the primary umapi, we actually check the exclusion conditions
-            identity_type, username, domain = self.parse_user_key(user_key)
+            identity_type, username, domain, _ = self.parse_user_key(user_key)
             if identity_type in self.exclude_identity_types:
                 self.logger.debug("Excluding adobe user (due to type): %s", user_key)
                 self.excluded_user_count += 1
@@ -1092,7 +1092,7 @@ class RuleProcessor(object):
         :rtype: str
         """
         id_type = user_sync.identity_type.parse_identity_type(id_type)
-        email = normalize_string(email) if email else None
+        email = normalize_string(email) if email is not None else ""
         username = normalize_string(username) or email
         domain = normalize_string(domain)
 
@@ -1104,7 +1104,7 @@ class RuleProcessor(object):
             domain = ""
         elif not domain:
             return None
-        return str(id_type) + u',' + str(username) + u',' + str(domain)
+        return f"{id_type},{username},{domain},{email}"
 
     def parse_user_key(self, user_key):
         """
@@ -1126,11 +1126,12 @@ class RuleProcessor(object):
         self.logger.info('Reading Adobe-only users from: %s', file_path)
         id_type_column_name = 'type'
         user_column_name = 'username'
+        email_column_name = 'email'
         domain_column_name = 'domain'
         ummapi_name_column_name = 'umapi'
         rows = CSVAdapter.read_csv_rows(file_path,
                                         recognized_column_names=[
-                                            id_type_column_name, user_column_name, domain_column_name,
+                                            id_type_column_name, email_column_name, user_column_name, domain_column_name,
                                             ummapi_name_column_name,
                                         ],
                                         logger=self.logger,
@@ -1139,8 +1140,17 @@ class RuleProcessor(object):
             umapi_name = row.get(ummapi_name_column_name) or PRIMARY_TARGET_NAME
             id_type = row.get(id_type_column_name)
             user = row.get(user_column_name)
+            email = row.get(email_column_name)
             domain = row.get(domain_column_name)
-            user_key = self.get_user_key(id_type, user, domain)
+
+            if email is None:
+                if user is not None:
+                    self.logger.warn("Please specify user email address for user '%s', action may fail otherwise", user)
+                else:
+                    self.logger.warn("Username or email address must be specified for record: %s", row)
+                    continue
+
+            user_key = self.get_user_key(id_type, user, domain, email)
             if user_key:
                 self.add_stray(umapi_name, None)
                 self.add_stray(umapi_name, user_key)
@@ -1162,7 +1172,7 @@ class RuleProcessor(object):
         logger.info('Writing Adobe-only users to: %s', file_path)
         # figure out if we should include a umapi column
         secondary_count = 0
-        fieldnames = ['type', 'username', 'domain']
+        fieldnames = ['type', 'email', 'domain']
         rows = []
         # count the secondaries, and if there are any add the name as a column
         for umapi_name in self.stray_key_map:
@@ -1172,12 +1182,12 @@ class RuleProcessor(object):
                 secondary_count += 1
         for umapi_name in self.stray_key_map:
             for user_key in self.get_stray_keys(umapi_name):
-                id_type, username, domain = self.parse_user_key(user_key)
+                id_type, username, domain, email = self.parse_user_key(user_key)
                 umapi = umapi_name if umapi_name else ""
                 if secondary_count:
-                    row_dict = {'type': id_type, 'username': username, 'domain': domain, 'umapi': umapi}
+                    row_dict = {'type': id_type, 'email': email, 'domain': domain, 'umapi': umapi}
                 else:
-                    row_dict = {'type': id_type, 'username': username, 'domain': domain}
+                    row_dict = {'type': id_type, 'email': email, 'domain': domain}
                 rows.append(row_dict)
 
         CSVAdapter.write_csv_rows(file_path, fieldnames, rows)
