@@ -10,7 +10,7 @@ parent: root
 page_id: user-manual
 ---
 
-Version 2.7.4, released 2022-09-07
+Version 2.7.6, released 2023-01-12
 
 This document has all the information you need to get up and
 running with User Sync. It presumes familiarity with the use of
