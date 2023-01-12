@@ -6,6 +6,7 @@
 
 * 183e1d2 Fix bug when writing Adobe-only users to file (#801)
 * 79ce27d Non-zero exit code for certain error conditions (#803)
+* 651d211 Deal with emails, not usernames in CSV adobe-only features (write to CSV, read from CSV) (#808)
 
 # Documentation
 
