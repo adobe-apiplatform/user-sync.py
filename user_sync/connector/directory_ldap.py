@@ -117,9 +117,12 @@ class LDAPDirectoryConnector(DirectoryConnector):
         self.additional_group_filters = None
 
     def set_additional_group_filters(self, additional_group_filters):
+        if additional_group_filters is None:
+            return
         if self.options['dynamic_group_member_attribute'] is None:
             raise AssertionException(
                 "Failed to enable dynamic group mappings. 'dynamic_group_member_attribute' is not defined in config")
+        self.additional_group_filters = additional_group_filters
 
     @staticmethod
     def get_options(caller_config):
