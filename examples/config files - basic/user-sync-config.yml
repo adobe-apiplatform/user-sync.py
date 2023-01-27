@@ -36,6 +36,7 @@ adobe_users:
   # Any user in one or more of the named Adobe groups is excluded from
   # updates by User Sync.
   exclude_adobe_groups:
+    - _org_admin
     #- "Sample Product Profile"
     #- "Sample User Group"
 
@@ -193,9 +194,9 @@ directory_users:
   # see https://docs.python.org/howto/regex.html )
   # additional_groups:
   #   - source: "ACL-(.+)"
-  #     target: "ACL-Grp-(\\1)"
+  #     target: "ACL-Grp-\\1"
   #   - source: "(.+)-ACL"
-  #     target: "ACL-Grp-(\\1)"
+  #     target: "ACL-Grp-\\1"
 
   # (optional) group_sync_options (default: all options false)
   # Options that govern the automatic creation and/or deletion of Adobe user groups
@@ -222,7 +223,7 @@ directory_users:
 #    - sign_sync
 #
 #  connectors:
-#    sign_sync: connector-sign-sync.yml
+#    sign_sync: sign-sync-config.yml
 
 # The limits section provides processing limits which can help ensure that
 # User Sync jobs do not exceed expected guardrails in their operation

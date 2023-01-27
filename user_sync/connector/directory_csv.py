@@ -18,47 +18,23 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import six
-
-import user_sync.config
 import user_sync.connector.helper
 import user_sync.error
 import user_sync.identity_type
+from user_sync.connector.directory import DirectoryConnector
+from user_sync.config.common import DictConfig, OptionsBuilder
 from user_sync.helper import CSVAdapter
-
-def connector_metadata():
-    metadata = {
-        'name': CSVDirectoryConnector.name
-    }
-    return metadata
+from user_sync.config import user_sync as config
+from user_sync.config import common as config_common
 
 
-def connector_initialize(options):
-    """
-    :type options: dict
-    """
-    state = CSVDirectoryConnector(options)
-    return state
-
-
-def connector_load_users_and_groups(state, groups=None, extended_attributes=None, all_users=True):
-    """
-    :type state: CSVDirectoryConnector
-    :type groups: Optional(list(str))
-    :type extended_attributes: Optional(list(str))
-    :type all_users: bool
-    :rtype (bool, iterable(dict))
-    """
-    # CSV always reads all users, so we don't bother passing the all_users parameter into the implementation
-    return state.load_users_and_groups(groups or [], extended_attributes or [])
-
-
-class CSVDirectoryConnector(object):
+class CSVDirectoryConnector(DirectoryConnector):
     name = 'csv'
 
-    def __init__(self, caller_options):
-        caller_config = user_sync.config.DictConfig('%s configuration' % self.name, caller_options)
-        builder = user_sync.config.OptionsBuilder(caller_config)
+    def __init__(self, caller_options, *args, **kwargs):
+        super(CSVDirectoryConnector, self).__init__(*args, **kwargs)
+        caller_config = DictConfig('%s configuration' % self.name, caller_options)
+        builder = OptionsBuilder(caller_config)
         builder.set_string_value('delimiter', None)
         builder.set_string_value('string_encoding', 'utf8')
         builder.set_string_value('first_name_column_name', 'firstname')
@@ -82,8 +58,9 @@ class CSVDirectoryConnector(object):
         self.encoding = options['string_encoding']
         # identity type for new users if not specified in column
         self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
+        self.additional_group_filters = None
 
-    def load_users_and_groups(self, groups, extended_attributes):
+    def load_users_and_groups(self, groups, extended_attributes, all_users):
         """
         :type groups: list(str)
         :type extended_attributes: list
@@ -94,7 +71,7 @@ class CSVDirectoryConnector(object):
         self.logger.debug('Reading from: %s', file_path)
         self.users = users = self.read_users(file_path, extended_attributes)
         self.logger.debug('Number of users loaded: %d', len(users))
-        return six.itervalues(users)
+        return users.values()
 
     def read_users(self, file_path, extended_attributes):
         """
@@ -164,6 +141,7 @@ class CSVDirectoryConnector(object):
             groups = self.get_column_value(row, groups_column_name)
             if groups is not None:
                 user['groups'].extend(groups.split(','))
+                user['member_groups'] = user['groups']
 
             username = self.get_column_value(row, username_column_name)
             if username is None:
@@ -193,6 +171,9 @@ class CSVDirectoryConnector(object):
             user['source_attributes'] = sa
 
         return users
+
+    def set_additional_group_filters(self, _):
+        pass
 
     def get_column_value(self, row, column_name):
         """

@@ -1,0 +1,5 @@
+host: api.echosignstage.com
+integration_key: "[Sign API Key]"
+admin_email: user@example.com
+create_users: False
+deactivate_users: False

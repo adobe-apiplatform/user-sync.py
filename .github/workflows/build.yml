@@ -4,7 +4,7 @@ on:
   push:
     branches: [ v2 ]
   pull_request:
-    branches: [ v2 ]
+    branches: [ '**'  ]
 
 jobs:
   build:
@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-20.04, windows-latest]
         extension_support: [0, 1]
    
     steps:
@@ -23,7 +23,7 @@ jobs:
       with:
         python-version: '3.9'
     - name: Ubuntu 
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-20.04'
       run: | 
         sudo apt-get update
         sudo apt-get install -y software-properties-common
@@ -33,6 +33,7 @@ jobs:
 
     - name: Install dependencies
       run: |
+        pip install ./sign_client
         pip install external/okta-0.0.3.1-py2.py3-none-any.whl
         pip install -e .
         pip install -e .[test]

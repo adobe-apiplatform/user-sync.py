@@ -33,23 +33,24 @@ def test_create_key(key):
 def test_create_cert(random_subject, key):
     cert = create_cert(random_subject, key)
     cert_dict = {i.oid._name: i.value for i in cert.subject}
-    for k, v in six.iteritems(cert_dict):
+    for k, v in cert_dict.items():
         assert random_subject[k] == v
     random_subject['countryName'] = 'usa'
     with pytest.raises(AssertionException):
         create_cert(random_subject, key)
 
 
-def test_write_key_to_file(private_key, key):
-    write_key_to_file(private_key, key)
-    with open(private_key, 'r') as f:
+def test_write_key_to_file(test_resources, key):
+    write_key_to_file(test_resources['priv_key'], key)
+    with open(test_resources['priv_key'], 'r') as f:
         data = f.read()
     opening = '-----BEGIN RSA PRIVATE KEY-----'
     ending = '-----END RSA PRIVATE KEY-----'
     assert opening in data and ending in data
 
 
-def test_write_cert_to_file(public_cert, random_subject, key):
+def test_write_cert_to_file(test_resources, random_subject, key):
+    public_cert = test_resources['certificate']
     cert = create_cert(random_subject, key)
     write_cert_to_file(public_cert, cert)
     with open(public_cert, 'r') as f:
