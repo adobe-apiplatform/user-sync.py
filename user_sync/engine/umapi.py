@@ -499,8 +499,6 @@ class RuleProcessor(object):
             if exclude_unmapped_users and not groups_to_add:
                 # If user is not part of any group and ignore outcast is enabled. Do not create user.
                 continue
-            # We always create every user in the primary umapi, because it's believed to own the directories.
-            self.primary_users_created.add(user_key)
             primary_commands.append(self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector.trusted))
 
         # then sync the secondary connectors
