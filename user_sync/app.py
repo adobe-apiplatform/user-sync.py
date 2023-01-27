@@ -41,7 +41,7 @@ import user_sync.encryption
 import user_sync.engine.umapi
 import user_sync.helper
 import user_sync.lockfile
-import user_sync.resource
+from user_sync import resource
 from user_sync.config.user_sync import UMAPIConfigLoader
 from user_sync.config.sign_sync import SignConfigLoader
 from user_sync.config import user_sync as config
@@ -514,7 +514,7 @@ def shell_scripts(platform):
     """Generate invocation shell scripts for the given platform."""
     if platform is None:
         platform = 'win' if 'win' in sys.platform.lower() else 'linux'
-    shell_scripts = user_sync.resource.get_resource_dir('shell_scripts/{}'.format(platform))
+    shell_scripts = resource.get_resource_dir('shell_scripts/{}'.format(platform))
     for script in shell_scripts:
         with open(script, 'r') as fh:
             content = fh.read()
@@ -530,7 +530,7 @@ def shell_scripts(platform):
 @click.help_option('-h', '--help')
 def docs():
     """Open user manual in browser"""
-    res_file = user_sync.resource.get_resource('manual_url')
+    res_file = resource.get_resource('manual_url')
     assert res_file is not None, "User Manual URL file not found"
     with click.open_file(res_file) as f:
         url = f.read().strip()
@@ -556,7 +556,7 @@ def example_config(**kwargs):
     for k, fname in kwargs.items():
         target = Path.cwd() / fname
         assert k in res_files, "Invalid option specified"
-        res_file = user_sync.resource.get_resource(res_files[k])
+        res_file = resource.get_resource(res_files[k])
         assert res_file is not None, "Resource file '{}' not found".format(res_files[k])
         if target.exists() and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(target)):
             continue
@@ -586,7 +586,7 @@ def example_config_sign(**kwargs):
     for k, fname in kwargs.items():
         target = Path.cwd() / fname
         assert k in res_files, "Invalid option specified"
-        res_file = user_sync.resource.get_resource(res_files[k])
+        res_file = resource.get_resource(res_files[k])
         assert res_file is not None, "Resource file '{}' not found".format(res_files[k])
         if target.exists() and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(target)):
             continue
