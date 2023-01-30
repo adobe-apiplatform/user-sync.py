@@ -1,3 +1,7 @@
+# Features
+
+* #738 Platform and environment info
+
 # Fixes
 
 * df8b33d Prevent dynamic attribute error
