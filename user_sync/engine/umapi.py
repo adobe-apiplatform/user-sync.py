@@ -68,8 +68,8 @@ class RuleProcessor(object):
         options = dict(self.default_options)
         options.update(caller_options)
         self.options = options
-        self.directory_user_index: MultiIndex = None
-        self.filtered_directory_user_index: MultiIndex = None
+        self.directory_user_index = MultiIndex([], ['email', 'username'])
+        self.filtered_directory_user_index = MultiIndex([], ['email', 'username'])
         self.umapi_info_by_name = {}
         self.adobeid_user_by_email = {}
         # counters for action summary log
@@ -363,9 +363,6 @@ class RuleProcessor(object):
             directory_group_filter = set(directory_group_filter)
         extended_attributes = options.get('extended_attributes')
 
-        read_directory_users = []
-        filtered_directory_users = []
-
         directory_groups = set(mappings.keys()) if self.will_process_groups() else set()
         if directory_group_filter is not None:
             directory_groups.update(directory_group_filter)
@@ -379,14 +376,14 @@ class RuleProcessor(object):
                 self.logger.warning("Ignoring directory user with empty user key: %s", directory_user)
                 continue
 
-            read_directory_users.append(directory_user)
+            self.directory_user_index.add(directory_user)
 
             if not self.is_directory_user_in_groups(directory_user, directory_group_filter):
                 continue
             if not self.is_selected_user_key(user_key):
                 continue
 
-            filtered_directory_users.append(directory_user)
+            self.filtered_directory_user_index.add(directory_user)
 
             # set up groups in hook scope; the target groups will be used whether or not there's customer hook code
             self.after_mapping_hook_scope['source_groups'] = set()
@@ -446,10 +443,7 @@ class RuleProcessor(object):
                     umapi_info.add_additional_group(rename_group, member_group)
                     umapi_info.add_desired_group_for(user_key, rename_group)
 
-        self.directory_user_index = MultiIndex(data=read_directory_users, key_names=['email', 'username'])
-        self.filtered_directory_user_index = MultiIndex(data=filtered_directory_users, key_names=['email', 'username'])
-
-        self.logger.debug('Total directory users after filtering: %d', len(filtered_directory_users))
+        self.logger.debug('Total directory users after filtering: %d', len(self.filtered_directory_user_index.data))
         if self.logger.isEnabledFor(logging.DEBUG):
             self.logger.debug('Group work list: %s', dict([(umapi_name, umapi_info.get_desired_groups_by_user_key().data)
                                                            for umapi_name, umapi_info
