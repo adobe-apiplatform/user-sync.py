@@ -934,10 +934,10 @@ class RuleProcessor(object):
             if not user_key:
                 self.logger.warning("Ignoring umapi user with empty user key: %s", umapi_user)
                 continue
-            if umapi_info.get_umapi_user(user_key) is not None:
+            if umapi_info.get_umapi_user(email=umapi_user['email'], username=umapi_user['username']) is not None:
                 self.logger.debug("Ignoring umapi user. This user has already been processed: %s", umapi_user)
                 continue
-            umapi_info.add_umapi_user(user_key, umapi_user)
+            umapi_info.add_umapi_user(umapi_user)
             attribute_differences = {}
             current_groups = self.normalize_groups(umapi_user.get('groups'))
             groups_to_add = set()
@@ -1273,11 +1273,8 @@ class UmapiTargetInfo:
         self.mapped_groups = set()
         self.non_normalize_mapped_groups = set()
         self.desired_groups_by_user_key = MultiIndex(data=[], key_names=['email', 'username'])
-        self.umapi_user_by_user_key = {}
+        self.umapi_user_by_user_key = MultiIndex(data=[], key_names=['email', 'username'])
         self.umapi_users_loaded = False
-        self.stray_by_user_key = {}
-        self.groups_added_by_user_key = {}
-        self.groups_removed_by_user_key = {}
 
         # keep track of auto-mapped additional groups for conflict tracking.
         # if feature is disabled, this dict will be empty
@@ -1342,21 +1339,18 @@ class UmapiTargetInfo:
             desired_groups_rec['desired_groups'].add(normalized_group_name)
             self.desired_groups_by_user_key.update(desired_groups_rec, email=email, username=username)
 
-    def add_umapi_user(self, user_key, user):
+    def add_umapi_user(self, user):
         """
         :type user_key: str
         :type user: dict
         """
-        self.umapi_user_by_user_key[user_key] = user
+        self.umapi_user_by_user_key.add(user)
 
-    def iter_umapi_users(self):
-        return self.umapi_user_by_user_key.items()
-
-    def get_umapi_user(self, user_key):
+    def get_umapi_user(self, email, username):
         """
         :type user_key: str
         """
-        return self.umapi_user_by_user_key.get(user_key)
+        return self.umapi_user_by_user_key.get(email=email, username=username)
 
     def set_umapi_users_loaded(self):
         self.umapi_users_loaded = True
