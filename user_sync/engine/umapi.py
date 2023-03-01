@@ -1360,6 +1360,37 @@ class UmapiTargetInfo:
 
 
 class MultiIndex:
+    """
+    This data structure replaces the old convention of caching users in a
+    dictionary indexed by a static composite key. The MultiIndex structure
+    consists of a simple list (self.data) consisting of one or more dictionaries
+    that follow a regular structure (e.g. a list of directory users or UMAPI
+    users).
+
+    This list is indexed by one or more keys. Each key should point to one
+    record in self.data.
+
+    When a record is fetched from the index, a record is returned if at least
+    one key matches a record. This allows partial matches - i.e. when retrieving
+    information for a user where the email address matches a record but the
+    username does not (or vice versa).
+
+    Example:
+
+    >>> data = [{"key1": "foo", "key2": "bar", "other": "data"}]
+    >>> mi = MultiIndex(data=data, key_names=["key1", "key2"])
+    >>> mi.get(key1="foo", key2="bar")
+    {"key1": "foo", "key2": "bar", "other": "data"}
+    >>> mi.get(key1="foo", key2="invalid")
+    {"key1": "foo", "key2": "bar", "other": "data"}
+    >>> mi.get(key1="invalid", key2="invalid")
+    None
+
+    MultiIndex supports the addition of new individual records and
+    the ability to update existing records. It does not support
+    deletion because that would require a full reindex for each
+    deletion.
+    """
     def __init__(self, data, key_names):
         self.data = data
         self.key_names = key_names
