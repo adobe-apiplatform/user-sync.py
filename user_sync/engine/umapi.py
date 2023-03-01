@@ -513,15 +513,18 @@ class RuleProcessor(object):
             else:
                 secondary_adds_by_user_key, update_commands = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
                 secondary_command_lists[umapi_name].extend(update_commands)
-            total_users = len(secondary_adds_by_user_key)
-            for user_key, groups_to_add in secondary_adds_by_user_key.items():
+            total_users = len(secondary_adds_by_user_key.data)
+            for secondary_add in secondary_adds_by_user_key.data:
                 # We only create users who have group mappings in the secondary umapi
-                if groups_to_add:
+                if secondary_add['desired_groups']:
+                    user_key = self.get_user_key(secondary_add['id_type'], secondary_add['username'],
+                                                 secondary_add['domain'], secondary_add['email'])
                     self.secondary_users_created.add(user_key)
                     if user_key not in self.primary_users_created:
                         # We pushed an existing user to a secondary in order to update his groups
                         self.updated_user_keys.add(user_key)
-                    secondary_command_lists[umapi_name].append(self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector.trusted))
+                    secondary_command_lists[umapi_name].append(self.create_umapi_user(user_key, secondary_add['desired_groups'],
+                                                                                      umapi_info, umapi_connector.trusted))
         return primary_commands, secondary_command_lists
 
     def execute_commands(self, command_list, connector):
