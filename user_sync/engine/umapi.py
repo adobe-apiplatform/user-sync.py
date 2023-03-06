@@ -728,7 +728,7 @@ class RuleProcessor(object):
     @staticmethod
     def get_user_attributes(directory_user):
         return {'email': directory_user['email'], 'firstname': directory_user['firstname'],
-                'lastname': directory_user['lastname']}
+                'lastname': directory_user['lastname'], 'username': directory_user['username']}
 
     def get_identity_type_from_directory_user(self, directory_user):
         identity_type = directory_user.get('identity_type')
@@ -1069,6 +1069,9 @@ class RuleProcessor(object):
             umapi_value = umapi_user.get(key)
             if key == 'email':
                 diff = normalize_string(value) != normalize_string(umapi_value)
+            elif key == 'username' and normalize_string(value) != normalize_string(umapi_value):
+                self.logger.warning('Username updates are not currently supported (%s != %s)',
+                                    normalize_string(value), normalize_string(umapi_value))
             else:
                 diff = value != umapi_value
             if diff:
