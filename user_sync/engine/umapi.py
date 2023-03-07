@@ -726,7 +726,14 @@ class RuleProcessor(object):
         return primary_commands, secondary_command_lists
 
     @staticmethod
-    def get_user_attributes(directory_user):
+    def get_create_attributes(directory_user):
+        """get just the attributes we need to create user"""
+        return {'email': directory_user['email'], 'firstname': directory_user['firstname'],
+                'lastname': directory_user['lastname']}
+
+    @staticmethod
+    def get_update_attributes(directory_user):
+        """get user attributes for info update comparison"""
         return {'email': directory_user['email'], 'firstname': directory_user['firstname'],
                 'lastname': directory_user['lastname'], 'username': directory_user['username']}
 
@@ -765,7 +772,7 @@ class RuleProcessor(object):
 
         commands = user_sync.connector.connector_umapi.Commands(identity_type, directory_user['email'],
                                                       directory_user['username'], directory_user['domain'])
-        attributes = self.get_user_attributes(directory_user)
+        attributes = self.get_create_attributes(directory_user)
         # check whether the country is set in the directory, use default if not
         country = directory_user['country']
         if not country:
@@ -1061,17 +1068,13 @@ class RuleProcessor(object):
                 result.add(normalized_group_name)
         return result
 
-
     def get_user_attribute_difference(self, directory_user, umapi_user):
         differences = {}
-        attributes = self.get_user_attributes(directory_user)
+        attributes = self.get_update_attributes(directory_user)
         for key, value in attributes.items():
             umapi_value = umapi_user.get(key)
-            if key == 'email':
+            if key in ['email', 'username']:
                 diff = normalize_string(value) != normalize_string(umapi_value)
-            elif key == 'username' and normalize_string(value) != normalize_string(umapi_value):
-                self.logger.warning('Username updates are not currently supported (%s != %s)',
-                                    normalize_string(value), normalize_string(umapi_value))
             else:
                 diff = value != umapi_value
             if diff:
