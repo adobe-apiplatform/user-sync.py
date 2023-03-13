@@ -134,6 +134,7 @@ class UmapiConnector(object):
                     test_mode=options['test_mode'],
                     user_agent="user-sync/" + app_version,
                     timeout=float(server_options['timeout']),
+                    max_retries=server_options['retries'],
                     ssl_verify=options['ssl_cert_verify']
                 )
 
