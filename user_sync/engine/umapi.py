@@ -1408,7 +1408,7 @@ class MultiIndex:
             keys = self.index.get(kn)
             if keys is None:
                 raise KeyError(f"Key '{kn}' not found in index")
-            i = keys.get(k)
+            i = keys.get(k.lower())
             if i is None:
                 continue
             return i
@@ -1423,7 +1423,7 @@ class MultiIndex:
             k = obj.get(kn)
             if k is None:
                 raise KeyError(f"Can't find key '{kn}' on object {obj=}")
-            self.index[kn][k] = i
+            self.index[kn][k.lower()] = i
 
     def add(self, obj):
         i = len(self.data)
@@ -1440,8 +1440,8 @@ class MultiIndex:
         for kn in self.key_names:
             if kn not in obj:
                 raise KeyError(f"Can't find key '{kn}' on object {obj=}")
-            if curr_obj[kn] != obj[kn]:
-                reindex[kn] = (curr_obj[kn], obj[kn])
+            if curr_obj[kn].lower() != obj[kn].lower():
+                reindex[kn] = (curr_obj[kn].lower(), obj[kn].lower())
 
         self.data[i] = obj
         for kn, keys in reindex.items():
