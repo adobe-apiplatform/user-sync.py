@@ -441,7 +441,8 @@ class RuleProcessor(object):
                         raise user_sync.error.AssertionException("Additional group resolution error: {}".format(str(e)))
                     umapi_info.add_mapped_group(rename_group)
                     umapi_info.add_additional_group(rename_group, member_group)
-                    umapi_info.add_desired_group_for(user_key, rename_group)
+                    umapi_info.add_desired_group_for(directory_user['identity_type'], directory_user['domain'],
+                                                     directory_user['email'], directory_user['username'], rename_group)
 
         self.logger.debug('Total directory users after filtering: %d', len(self.filtered_directory_user_index.data))
         if self.logger.isEnabledFor(logging.DEBUG):
