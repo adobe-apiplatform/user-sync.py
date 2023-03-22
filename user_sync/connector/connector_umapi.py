@@ -155,6 +155,7 @@ class UmapiConnector(object):
         return list(self.iter_groups())
 
     def iter_groups(self):
+        self.connection.start_sync()
         try:
             for g in umapi_client.GroupsQuery(self.connection):
                 yield g
