@@ -441,7 +441,8 @@ class RuleProcessor(object):
                         raise user_sync.error.AssertionException("Additional group resolution error: {}".format(str(e)))
                     umapi_info.add_mapped_group(rename_group)
                     umapi_info.add_additional_group(rename_group, member_group)
-                    umapi_info.add_desired_group_for(user_key, rename_group)
+                    umapi_info.add_desired_group_for(directory_user['identity_type'], directory_user['domain'],
+                                                     directory_user['email'], directory_user['username'], rename_group)
 
         self.logger.debug('Total directory users after filtering: %d', len(self.filtered_directory_user_index.data))
         if self.logger.isEnabledFor(logging.DEBUG):
@@ -1414,7 +1415,7 @@ class MultiIndex:
             keys = self.index.get(kn)
             if keys is None:
                 raise KeyError(f"Key '{kn}' not found in index")
-            i = keys.get(k)
+            i = keys.get(k.lower())
             if i is None:
                 continue
             return i
@@ -1429,7 +1430,7 @@ class MultiIndex:
             k = obj.get(kn)
             if k is None:
                 raise KeyError(f"Can't find key '{kn}' on object {obj=}")
-            self.index[kn][k] = i
+            self.index[kn][k.lower()] = i
 
     def add(self, obj):
         i = len(self.data)
@@ -1446,8 +1447,8 @@ class MultiIndex:
         for kn in self.key_names:
             if kn not in obj:
                 raise KeyError(f"Can't find key '{kn}' on object {obj=}")
-            if curr_obj[kn] != obj[kn]:
-                reindex[kn] = (curr_obj[kn], obj[kn])
+            if curr_obj[kn].lower() != obj[kn].lower():
+                reindex[kn] = (curr_obj[kn].lower(), obj[kn].lower())
 
         self.data[i] = obj
         for kn, keys in reindex.items():
