@@ -37,6 +37,7 @@ class AdobeConsoleConnector(DirectoryConnector):
 
     def __init__(self, caller_options, *args, **kwargs):
         super(AdobeConsoleConnector, self).__init__(*args, **kwargs)
+        self.additional_group_filters = None
         caller_config = config_common.DictConfig('<%s configuration>' % self.name, caller_options)
         builder = config_common.OptionsBuilder(caller_config)
         # Let just ignore this
@@ -103,6 +104,9 @@ class AdobeConsoleConnector(DirectoryConnector):
         logger.debug('%s: connection established', self.name)
         self.umapi_users = []
         self.user_by_usr_key = {}
+
+    def set_additional_group_filters(self, _):
+        pass
 
     def load_users_and_groups(self, groups, extended_attributes, all_users):
         """
@@ -178,6 +182,10 @@ class AdobeConsoleConnector(DirectoryConnector):
         source_attributes['country'] = user['country'] = record['country']
 
         user['source_attributes'] = source_attributes.copy()
+
+        groups = record.get('groups', [])
+        user['member_groups'] = groups
+
         return user
 
     def iter_umapi_groups(self):

@@ -58,6 +58,7 @@ class CSVDirectoryConnector(DirectoryConnector):
         self.encoding = options['string_encoding']
         # identity type for new users if not specified in column
         self.user_identity_type = user_sync.identity_type.parse_identity_type(options['user_identity_type'])
+        self.additional_group_filters = None
 
     def load_users_and_groups(self, groups, extended_attributes, all_users):
         """
@@ -140,6 +141,7 @@ class CSVDirectoryConnector(DirectoryConnector):
             groups = self.get_column_value(row, groups_column_name)
             if groups is not None:
                 user['groups'].extend(groups.split(','))
+                user['member_groups'] = user['groups']
 
             username = self.get_column_value(row, username_column_name)
             if username is None:
@@ -169,6 +171,9 @@ class CSVDirectoryConnector(DirectoryConnector):
             user['source_attributes'] = sa
 
         return users
+
+    def set_additional_group_filters(self, _):
+        pass
 
     def get_column_value(self, row, column_name):
         """
