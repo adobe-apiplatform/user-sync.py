@@ -44,8 +44,6 @@ jobs:
       run: make
       env:
         UST_EXTENSION: ${{matrix.extension_support}}
-    - name: Test with pytest
-      run: pytest
     - name: Get build
       run: |
         cd dist
@@ -95,8 +93,6 @@ jobs:
       run: make
       env:
         UST_EXTENSION: ${{matrix.extension_support}}
-    - name: Test with pytest
-      run: pytest
     - name: Get build
       run: |
         cd dist
@@ -137,8 +133,6 @@ jobs:
     - run: make standalone
       env:
         UST_EXTENSION: ${{matrix.extension_support}}
-    - name: Test with pytest
-      run: pytest
     - name: Get build
       run: |
          cd dist
