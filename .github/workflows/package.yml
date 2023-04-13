@@ -6,8 +6,8 @@ on:
     - 'v*'
 
 jobs:
-  ubuntu-bionic:
-    runs-on: ubuntu-18.04
+  ubuntu-jammy:
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         include:
@@ -20,18 +20,20 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.9'
+        python-version: '3.10'
     - name: Get version tag
       id: get_version
       uses: battila7/get-version-action@v2
-    - name: Ubuntu-Install dependencies
+    - name: Ubuntu dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y software-properties-common
-        sudo apt-get install -y build-essential
-        sudo apt-get install -y python3-dev python3-pip python3-virtualenv
-        sudo apt-get install -y pkg-config libssl-dev libdbus-1-dev libdbus-glib-1-dev python-dbus libffi-dev libkrb5-dev
-    - run: |
+        apt-get install -y software-properties-common \
+                           build-essential \
+                           python3-dev python3-pip python3.10-venv \
+                           pkg-config libssl-dev libdbus-1-dev libdbus-glib-1-dev libffi-dev libkrb5-dev
+    - name: Python dependencies
+      run: |
+        python3 -m venv venv
+        source venv/bin/activate
         pip install ./sign_client
         pip install external/okta-0.0.3.1-py2.py3-none-any.whl
         pip install -e .
@@ -46,14 +48,14 @@ jobs:
     - name: Get build
       run: |
         cd dist
-        tar czf "user-sync-${UST_VERSION}${UST_VARIANT_TAG}-ubuntu_bionic.tar.gz" user-sync
+        tar czf "user-sync-${UST_VERSION}${UST_VARIANT_TAG}-ubuntu_jammy.tar.gz" user-sync
       env:
         UST_VARIANT_TAG: ${{matrix.variant_tag}}
         UST_VERSION: ${{ steps.get_version.outputs.version }}
     - name: Make artifacts
       uses: actions/upload-artifact@v2
       with:
-          name: ubuntu-bionic
+          name: ubuntu-jammy
           path: dist/*.tar.gz
           retention-days: 30
 
@@ -233,7 +235,7 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
-    needs: [centos, ubuntu-bionic, ubuntu-focal, examples, windows]
+    needs: [centos, ubuntu-jammy, ubuntu-focal, examples, windows]
     steps:
     - uses: actions/checkout@v2
     - name: Create Release
@@ -258,6 +260,6 @@ jobs:
       uses: battila7/get-version-action@v2
     - uses: AButler/upload-release-assets@v2.0
       with:
-        files: 'examples/*;ubuntu-bionic/*;ubuntu-focal/*;centos/*'
+        files: 'examples/*;ubuntu-jammy/*;ubuntu-focal/*;centos/*'
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         release-tag: ${{ steps.get_version.outputs.version }}
