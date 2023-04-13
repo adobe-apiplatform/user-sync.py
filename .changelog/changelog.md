@@ -1,5 +1,19 @@
 | tag | date | title |
 |---|---|---|
+| v2.9.0rc1 | 2023-04-12 | User Sync Tool v2.9.0rc1 |
+
+# Features
+
+* 8c4ea5c Implement unconditional username update
+
+# Fixes
+
+* #811 Fix user email update failures
+
+---
+
+| tag | date | title |
+|---|---|---|
 | v2.8.0 | 2023-01-30 | User Sync Tool v2.8.0 |
 
 # Features
@@ -12,6 +26,7 @@
 * fa985d1 Fix new user count
 
 ---
+
 | tag | date | title |
 |---|---|---|
 | v2.7.6 | 2023-01-12 | User Sync Tool v2.7.6 |
