@@ -176,7 +176,7 @@ def test_create_umapi_commands_for_directory_user(rule_processor, mock_dir_user)
     user = mock_dir_user
 
     def get_commands(user, update_option='ignoreIfAlreadyExists'):
-        attributes = rp.get_user_attributes(user)
+        attributes = rp.get_create_attributes(user)
         attributes['country'] = user['country']
         attributes['option'] = update_option
         commands = Commands(user['identity_type'], user['email'], user['username'], user['domain'])
