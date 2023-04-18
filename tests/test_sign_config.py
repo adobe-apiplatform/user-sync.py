@@ -31,8 +31,6 @@ def test_config_structure(default_sign_args):
     # nothing to assert here, if the config object is constructed without exceptions, then the test passes
 
 
-# NOTE: tmp_sign_connector_config and tmp_config_files are needed to prevent the ConfigFileLoader
-# from complaining that there are no temporary sign connector or ldap connector files
 def test_invocation_defaults(modify_sign_config):
     """ensure that invocation defaults are resolved correctly"""
     sign_config_file = modify_sign_config(['invocation_defaults', 'users'], 'all')
@@ -45,6 +43,13 @@ def test_invocation_defaults(modify_sign_config):
     assert 'users' in config.invocation_options
     assert config.invocation_options['users'] == ['mapped']
 
+def test_umg_setting(modify_sign_config):
+    sign_config_file = modify_sign_config(['user_sync', 'umg'], True)
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    options = config.get_engine_options()
+    assert 'umg' in options['user_sync']
+    assert options['user_sync']['umg'] is True
 
 def test_group_config(modify_sign_config):
 
