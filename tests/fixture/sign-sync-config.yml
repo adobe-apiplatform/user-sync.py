@@ -17,6 +17,7 @@ user_sync:
   # Default action is to reset (user admin_role removed, user_group set to default group)
   # options: reset, exclude, remove_groups, remove_roles, deactivate
   sign_only_user_action: reset
+  umg: False
 
 cache:
   path: cache/sign
