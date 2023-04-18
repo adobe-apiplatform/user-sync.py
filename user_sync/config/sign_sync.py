@@ -26,6 +26,7 @@ def config_schema() -> Schema:
         'user_sync': {
             'sign_only_limit': Or(int, Regex(r'^\d+%$')),
             'sign_only_user_action': Or('exclude', 'reset', 'deactivate', 'remove_roles', 'remove_groups'),
+            Optional('umg'): bool,
         },
         Optional('connection'): {
             Optional('request_concurrency'): int,
@@ -231,6 +232,7 @@ class SignConfigLoader(ConfigLoader):
         options['connection'] = self.main_config.get_dict('connection', True) or {}
         sign_only_user_action = user_sync.get_value('sign_only_user_action', (str, int))
         options['user_sync']['sign_only_user_action'] = sign_only_user_action
+        options['user_sync']['umg'] = user_sync.get_bool('umg', True) or False
         if options.get('directory_group_mapped'):
             options['directory_group_filter'] = set(self.directory_groups.keys())
         options['cache'] = self.main_config.get_dict('cache')
