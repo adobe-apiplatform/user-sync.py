@@ -53,7 +53,6 @@ def config_schema() -> Schema:
         Optional('invocation_defaults'): {
             Optional('test_mode'):  bool,
             Optional('users'): Or('mapped', 'all', ['group', And(str, len)])
-            #'directory_group_filter': Or('mapped', 'all', None)
         }
     })
 
@@ -155,7 +154,7 @@ class SignConfigLoader(ConfigLoader):
         return self.load_directory_groups()
 
     def load_directory_groups(self) -> Dict[str, AdobeGroup]:
-        group_mapping = defaultdict(dict)
+        group_mapping = {}
         group_config = self.main_config.get_list_config('user_management', True)
         if group_config is None:
             return group_mapping
@@ -167,6 +166,11 @@ class SignConfigLoader(ConfigLoader):
                 group_mapping[dir_group]['priority'] = i
                 group_mapping[dir_group]['groups'] = []
                 group_mapping[dir_group]['roles'] = set()
+                group_mapping[dir_group] = {
+                    'priority': i,
+                    'groups': [],
+                    'roles': set(),
+                }
 
             # Add all roles associated with a directory group
             # This way, the collection or roles will be applied correctly
@@ -193,7 +197,7 @@ class SignConfigLoader(ConfigLoader):
                 if group not in group_mapping[dir_group]['groups']:
                     group_mapping[dir_group]['groups'].append(group)
 
-        return dict(group_mapping)
+        return group_mapping
 
     def get_directory_connector_module_name(self) -> str:
         # these .get()s can be safely chained because we've already validated the config schema
