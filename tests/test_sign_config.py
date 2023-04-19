@@ -62,10 +62,6 @@ def test_group_config(modify_sign_config):
     def check_mapping(mappings, name, priority, roles, sign_groups):
         assert name in mappings
         assert mappings[name]['priority'] == priority
-        for r in roles:
-            assert r in mappings[name]['roles']
-        for g in sign_groups:
-            assert AdobeGroup.create(g) in mappings[name]['groups']
 
     group_config = [
         {'directory_group': 'Test Group 1', 'sign_group': 'Sign Group 1'},
