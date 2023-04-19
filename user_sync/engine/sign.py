@@ -7,6 +7,7 @@ from user_sync.error import AssertionException
 from sign_client.error import AssertionException as ClientException
 
 from sign_client.model import DetailedUserInfo, GroupInfo, UserGroupsInfo, UserGroupInfo, DetailedGroupInfo, UserStateInfo
+from .common import AdobeGroup
 import re
 
 
@@ -173,7 +174,7 @@ class SignSyncEngine:
             assignment_groups = [g for g in directory_user['sign_groups'] if g.umapi_name == org_name]
 
             if not assignment_groups:
-                assignment_groups = [self.default_groups[org_name].groupName]
+                assignment_groups = [AdobeGroup(self.default_groups[org_name].groupName, org_name)]
 
             if sign_user is None:
                 if directory_user['email'] in self.excluded_users:
