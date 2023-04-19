@@ -36,7 +36,7 @@ def config_schema() -> Schema:
         },
         'user_management': [{
             'directory_group': Or(None, And(str, len)),
-            Optional('sign_group', default=None): Or(None, And(str, len)),
+            Optional('sign_group', default=None): Or(None, list, And(str, len)),
             Optional('group_admin', default=False): Or(bool, None),
             Optional('account_admin', default=False): Or(bool, None)
         }],
@@ -167,12 +167,13 @@ class SignConfigLoader(ConfigLoader):
                     'groups': [],
                 }
 
-            sign_group = mapping.get_string('sign_group', True)
-            if sign_group is not None:
-
+            sign_group = mapping.get_list('sign_group', True)
+            if sign_group is None:
+                continue
+            for sg in sign_group:
                 # AdobeGroup will return the same memory instance of a pre-existing group,
                 # so we create it no matter what
-                group = AdobeGroup.create(sign_group)
+                group = AdobeGroup.create(sg)
                 if group is None:
                     raise AssertionException('Bad Sign group: "{}" in directory group: "{}"'.format(sign_group, dir_group))
                 if group.umapi_name is None:
@@ -210,10 +211,10 @@ class SignConfigLoader(ConfigLoader):
         group_config = self.main_config.get_list_config('user_management', True)
         for mapping in group_config.iter_dict_configs():
             dir_group = mapping.get_string('directory_group')
-            sign_group = mapping.get_string('sign_group', True)
+            sign_group = mapping.get_list('sign_group', True)
 
             group_admin = mapping.get_bool('group_admin', True)
-            if sign_group is None:
+            if sign_group is None or not len(sign_group):
                 # if there is no Sign group, add the directory group anyway
                 # in case we're non-UMG, in which case the group admin status is
                 # applied to the user's currently-assigned group
@@ -221,7 +222,7 @@ class SignConfigLoader(ConfigLoader):
                     group_admin_mappings[dir_group] = set()
                 continue
 
-            group = AdobeGroup.create(sign_group)
+            group = AdobeGroup.create(sign_group[0])
             if group is None:
                 raise AssertionException('Bad Sign group: "{}" in directory group: "{}"'.format(sign_group, dir_group))
             if group.umapi_name is None:
