@@ -32,6 +32,10 @@ connection:
   # Timeout for requests in seconds
   timeout: 120
 
+account_admin_groups:
+  - Sign Admins 1
+  - Sign Admins 2
+
 # User management group/role mappings
 user_management:
   # sign_group format: sign_org_name::Sign Group Name, default is 'primary'
@@ -40,25 +44,11 @@ user_management:
   - directory_group: Sign Users 1
     sign_group: Group 1
     group_admin:
-    account_admin:
   # Example 2 - group admin assignment
   - directory_group: Sign Group Admins 1
     sign_group: primary::Group 2
     group_admin: True
-    account_admin: False
 
-  # Example 3 - account admin assignment
-  # - directory_group: Sign Admins
-  #   sign_group: secondary::Group 3
-  #   admin_role: 
-  #     - ACCOUNT_ADMIN
-  # Example 4 - create user if `create_users` is `True`, otherwise do nothing
-  # - directory_group: Sign Normal Users
-  #   sign_group: tertiary::Group 4
-  #   admin_role:
-  #     - ACCOUNT_ADMIN
-  #     - GROUP_ADMIN
-  
 # Logging options
 logging:
   log_to_file: True

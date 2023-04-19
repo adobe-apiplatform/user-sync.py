@@ -24,6 +24,10 @@ user_sync:
 # The cache will refresh after 24 hours
 cache:
   path: cache/sign
+
+account_admin_groups:
+  - Sign Admins 1
+  - Sign Admins 2
  
 # User management group/role mappings
 user_management:
@@ -33,13 +37,11 @@ user_management:
   - directory_group: Sign Users 1
     sign_group: Group 1
     group_admin: False
-    account_admin: False
 
   # Example 2 - group admin assignment
   - directory_group: Sign Group Admins 1
     sign_group: primary::Group 2
     group_admin: True
-    account_admin: False
 
   # Example 3 - account admin assignment
   # - directory_group: Sign Admins
