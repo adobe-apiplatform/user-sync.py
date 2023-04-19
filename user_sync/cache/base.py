@@ -6,7 +6,7 @@ from .schema import cache_meta as cache_meta_schema
 class CacheBase:
     should_refresh: bool = False
     cache_meta_filename: str = 'cache-meta.db'
-    refresh_interval: int = 86400
+    refresh_interval: int = 0
 
     # used by child classes to manage schema and data model changes
     VERSION: int = 0
