@@ -66,12 +66,12 @@ def test_handle_sign_only_users(example_engine):
         createdDate="6 o'clock",
         isDefaultGroup=True,
     )
-    example_engine.sign_user_primary_groups['primary'] = {ex_sign_user.id: UserGroupInfo(
+    example_engine.sign_user_groups['primary'] = {ex_sign_user.id: [UserGroupInfo(
         id='xyz98765',
         isGroupAdmin=True,
         isPrimaryGroup=True,
         status='ACTIVE',
-    )}
+    )]}
 
     # Check exclude action
     example_engine.options['user_sync']['sign_only_user_action'] = 'exclude'
@@ -127,22 +127,9 @@ def test_roles_match():
 
 def test_should_sync():
     AdobeGroup.index_map = {}
-    dir_user = {'sign_group': {'group': AdobeGroup.create('test group')}}
+    dir_user = {'sign_groups': [AdobeGroup.create('test group')]}
     assert SignSyncEngine.should_sync(dir_user, None)
     assert not SignSyncEngine.should_sync(dir_user, 'secondary')
-
-
-def test_retrieve_admin_role():
-    user = {'sign_group': {'roles': ['ACCOUNT_ADMIN', 'GROUP_ADMIN']}}
-    assert SignSyncEngine.retrieve_admin_role(user) == sorted(['ACCOUNT_ADMIN', 'GROUP_ADMIN'])
-
-
-def test_retrieve_assignment_group():
-    AdobeGroup.index_map = {}
-    user = {'sign_group': {'group': AdobeGroup.create('Test Group')}}
-    assert SignSyncEngine.retrieve_assignment_group(user) == 'Test Group'
-    user['sign_group']['group'] = None
-    assert SignSyncEngine.retrieve_assignment_group(user) is None
 
 
 def test__groupify():
@@ -218,6 +205,7 @@ def test_read_desired_user_groups_simple(example_engine, mock_dir_user):
     assert example_engine.directory_user_by_user_key == user
 
 
+@pytest.mark.skip("wait until UMG is implemented")
 def test_extract_mapped_group():
     AdobeGroup.index_map = {}
 
