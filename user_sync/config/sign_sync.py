@@ -40,6 +40,7 @@ def config_schema() -> Schema:
             Optional('group_admin', default=False): Or(bool, None),
             Optional('account_admin', default=False): Or(bool, None)
         }],
+        Optional('account_admin_groups'): list,
         'cache': {
             'path': And(str, len),
         },
@@ -187,11 +188,21 @@ class SignConfigLoader(ConfigLoader):
 
     def load_account_admin_groups(self):
         account_admin_groups = set()
+        using_deprecated_config = False
         group_config = self.main_config.get_list_config('user_management', True)
         for mapping in group_config.iter_dict_configs():
             dir_group = mapping.get_string('directory_group')
-            if mapping.get_bool('account_admin', True):
+            is_admin = mapping.get_bool('account_admin', True)
+            if is_admin is not None:
+                using_deprecated_config = True
+            if is_admin:
                 account_admin_groups.add(dir_group)
+        if using_deprecated_config:
+            self.logger.warn("Deprecation warning: using 'account_admin' flag inside of group mapping is deprecated")
+        admin_cfg_groups = self.main_config.get_list('account_admin_groups', True)
+        if admin_cfg_groups is not None:
+            for group in admin_cfg_groups:
+                account_admin_groups.add(group)
         return list(account_admin_groups)
 
     def load_group_admin_mappings(self):
