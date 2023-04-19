@@ -100,7 +100,7 @@ class SignConfigLoader(ConfigLoader):
         self.main_config = self.load_main_config(filename, self.raw_config)
         self.invocation_options = self.load_invocation_options()
         self.directory_groups = self.load_directory_groups()
-    
+
     def load_invocation_options(self) -> dict:
         options = deepcopy(self.invocation_defaults)
         invocation_config = self.main_config.get_dict_config('invocation_defaults', True)
@@ -161,24 +161,10 @@ class SignConfigLoader(ConfigLoader):
         for i, mapping in enumerate(group_config.iter_dict_configs()):
             dir_group = mapping.get_string('directory_group')
             if dir_group not in group_mapping:
-                # Assign an ordering (priority) for sorting later, since
-                # we cannot depend on defaultdict to preserve order.
-                group_mapping[dir_group]['priority'] = i
-                group_mapping[dir_group]['groups'] = []
-                group_mapping[dir_group]['roles'] = set()
                 group_mapping[dir_group] = {
                     'priority': i,
                     'groups': [],
-                    'roles': set(),
                 }
-
-            # Add all roles associated with a directory group
-            # This way, the collection or roles will be applied correctly
-            # instead of only the role associated with one group
-            if mapping.get_bool('group_admin', True):
-                group_mapping[dir_group]['roles'].add('GROUP_ADMIN')
-            if mapping.get_bool('account_admin', True):
-                group_mapping[dir_group]['roles'].add('ACCOUNT_ADMIN')
 
             sign_group = mapping.get_string('sign_group', True)
             if sign_group is not None:
@@ -198,6 +184,43 @@ class SignConfigLoader(ConfigLoader):
                     group_mapping[dir_group]['groups'].append(group)
 
         return group_mapping
+
+    def load_account_admin_groups(self):
+        account_admin_groups = set()
+        group_config = self.main_config.get_list_config('user_management', True)
+        for mapping in group_config.iter_dict_configs():
+            dir_group = mapping.get_string('directory_group')
+            if mapping.get_bool('account_admin', True):
+                account_admin_groups.add(dir_group)
+        return list(account_admin_groups)
+
+    def load_group_admin_mappings(self):
+        group_admin_mappings = {}
+        group_config = self.main_config.get_list_config('user_management', True)
+        for mapping in group_config.iter_dict_configs():
+            dir_group = mapping.get_string('directory_group')
+            sign_group = mapping.get_string('sign_group', True)
+
+            group_admin = mapping.get_bool('group_admin', True)
+            if sign_group is None:
+                # if there is no Sign group, add the directory group anyway
+                # in case we're non-UMG, in which case the group admin status is
+                # applied to the user's currently-assigned group
+                if group_admin:
+                    group_admin_mappings[dir_group] = set()
+                continue
+
+            group = AdobeGroup.create(sign_group)
+            if group is None:
+                raise AssertionException('Bad Sign group: "{}" in directory group: "{}"'.format(sign_group, dir_group))
+            if group.umapi_name is None:
+                group.umapi_name = self.DEFAULT_ORG_NAME
+
+            if group_admin:
+                if dir_group not in group_admin_mappings:
+                    group_admin_mappings[dir_group] = set()
+                group_admin_mappings[dir_group].add(group)
+        return group_admin_mappings
 
     def get_directory_connector_module_name(self) -> str:
         # these .get()s can be safely chained because we've already validated the config schema
@@ -240,6 +263,8 @@ class SignConfigLoader(ConfigLoader):
         if options.get('directory_group_mapped'):
             options['directory_group_filter'] = set(self.directory_groups.keys())
         options['cache'] = self.main_config.get_dict('cache')
+        options['account_admin_groups'] = self.load_account_admin_groups()
+        options['group_admin_mappings'] = self.load_group_admin_mappings()
         return options
 
     def check_unused_config_keys(self):
