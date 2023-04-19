@@ -53,6 +53,7 @@ class SignSyncEngine:
         self.connectors: dict[str, SignConnector] = {}
         self.default_groups = {}
         self.sign_groups = {}
+        self.sign_user_groups = {}
         self.caller_options = caller_options
         self.target_options = target_options
         self.action_summary = {}
@@ -67,7 +68,6 @@ class SignSyncEngine:
         self.sign_users_matched_no_updates = set()
         self.directory_users_excluded = set()
         self.sign_only_users_by_org: dict[str, dict[str, DetailedUserInfo]] = {}
-        self.sign_user_primary_groups = {}
         self.total_sign_only_user_count = 0
 
     def get_groups(self, org):
@@ -93,6 +93,7 @@ class SignSyncEngine:
             self.default_groups[org_name] = self.get_default_group(org_name)
 
         for org_name, sign_connector in self.connectors.items():
+            self.sign_user_groups[org_name] = sign_connector.get_user_groups()
             # Create any new Sign groups
             org_directory_groups = self._groupify(
                 org_name, directory_groups.values())
@@ -110,7 +111,6 @@ class SignSyncEngine:
         self.log_action_summary()
 
     def log_action_summary(self):
-
         self.action_summary = {
             'Number of directory users read': len(self.directory_user_by_user_key),
             'Number of directory selected for input': len(self.directory_user_by_user_key) - len(
@@ -165,17 +165,16 @@ class SignSyncEngine:
         self.total_sign_user_count += len(sign_users)
         self.sign_users_by_org[org_name] = sign_users
         for directory_user_key, directory_user in directory_users.items():
-
             if not self.should_sync(directory_user, org_name):
                 continue
 
             sign_user = sign_users.get(directory_user_key)
             dir_users_for_org[directory_user_key] = directory_user
-            assignment_group = self.retrieve_assignment_group(directory_user)
+            assignment_groups = [g for g in directory_user['sign_groups'] if g.umapi_name == org_name]
 
-            if assignment_group is None:
-                assignment_group = self.default_groups[org_name].groupName
-            user_roles = self.retrieve_admin_role(directory_user)
+            if not assignment_groups:
+                assignment_groups = [self.default_groups[org_name].groupName]
+
             if sign_user is None:
                 if directory_user['email'] in self.excluded_users:
                     self.logger.debug("(%s) Found excluded user %s directory user list, skipping", org_name, directory_user['email'])
@@ -196,29 +195,35 @@ class SignSyncEngine:
                     else:
                         # if user is totally new then create it
                         self.insert_new_users(
-                            org_name, sign_connector, directory_user, user_roles, assignment_group)
+                            org_name, sign_connector, directory_user, assignment_groups)
                 else:
                     self.logger.info("{0}User {1} not present and will be skipped."
                                      .format(self.org_string(org_name), directory_user['email']))
                     self.directory_users_excluded.add(directory_user['email'])
                     continue
             else:
-                is_admin = 'ACCOUNT_ADMIN' in user_roles
                 # do not update if admin status should not change
-                if sign_user.isAccountAdmin != is_admin:
+                if sign_user.isAccountAdmin != directory_user['is_admin']:
                     # Update existing users
-                    if is_admin:
+                    if directory_user['is_admin']:
                         self.logger.info(f"Assigning account admin status to {sign_user.email}")
                     else:
                         self.logger.info(f"Removing account admin status from {sign_user.email}")
                     user_data = DetailedUserInfo(**sign_user.__dict__)
-                    user_data.isAccountAdmin = is_admin
+                    user_data.isAccountAdmin = directory_user['is_admin']
                     self.sign_users_role_updates.add(sign_user.email)
                     users_update_list.append(user_data)
                 # manage primary group asssignment
-                current_group: UserGroupInfo = self.sign_user_primary_groups[org_name][sign_user.id]
-                should_be_group_admin = 'GROUP_ADMIN' in user_roles
+                # current_group: UserGroupInfo = self.sign_user_primary_groups[org_name][sign_user.id]
+                current_group = self.get_primary_group(sign_user, self.sign_user_groups[org_name])
+                should_be_group_admin = directory_user['is_group_admin']
                 is_group_admin = current_group.isGroupAdmin
+
+                assignment_group = None
+                if directory_user['sign_groups']:
+                    assignment_group = directory_user['sign_groups'][0].group_name
+                else:
+                    assignment_group = self.get_primary_group(sign_user, self.sign_user_groups[org_name])
 
                 updated_group_info = False
                 group_to_assign = UserGroupInfo(
@@ -258,6 +263,12 @@ class SignSyncEngine:
                 self.sign_only_users_by_org[org_name][user] = data
 
     @staticmethod
+    def get_primary_group(user, sign_user_groups) -> UserGroupInfo:
+        user_groups = sign_user_groups.get(user.id)
+        if user_groups:
+            return [g for g in user_groups if g.isPrimaryGroup][0]
+
+    @staticmethod
     def roles_match(resolved_roles, sign_roles) -> bool:
         """
         Checks if the existing user role in Sign Console is same as in configuration
@@ -277,17 +288,10 @@ class SignSyncEngine:
         :param org_name:
         :return:
         """
-        group = directory_user['sign_group']['group']
-        return group.umapi_name == org_name if group else True
-
-    @staticmethod
-    def retrieve_assignment_group(directory_user) -> str:
-        group = directory_user['sign_group']['group']
-        return group.group_name if group else None
-
-    @staticmethod
-    def retrieve_admin_role(directory_user) -> list:
-        return directory_user['sign_group']['roles']
+        if not directory_user['sign_groups']:
+            return True
+        groups = [g for g in directory_user['sign_groups'] if g.umapi_name == org_name]
+        return len(groups) > 0
 
     @staticmethod
     def _groupify(org_name, groups):
@@ -336,8 +340,14 @@ class SignSyncEngine:
                 self.logger.warning(
                     "Ignoring directory user with empty user key: %s", directory_user)
                 continue
-            sign_group = self.extract_mapped_group(directory_user['groups'], mappings)
-            directory_user['sign_group'] = sign_group
+            sign_groups, is_admin, is_group_admin, admin_groups = \
+                self.resolve_group_mappings(directory_user['groups'], mappings,
+                                            self.options['account_admin_groups'],
+                                            self.options['group_admin_mappings'])
+            directory_user['sign_groups'] = sign_groups
+            directory_user['is_admin'] = is_admin
+            directory_user['is_group_admin'] = is_group_admin
+            directory_user['admin_groups'] = admin_groups
             directory_user_by_user_key[user_key] = directory_user
 
     def is_directory_user_in_groups(self, directory_user, groups):
@@ -363,48 +373,43 @@ class SignSyncEngine:
         return None
 
     @staticmethod
-    def extract_mapped_group(directory_user_group, group_mapping) -> dict:
+    def resolve_group_mappings(directory_groups, group_mapping, account_admin_groups, group_admin_mapping) -> dict:
+        matched_groups = []
 
-        roles = set()
-        matched_group = None
+        matched_mappings = [m for g, m in group_mapping.items() if g in directory_groups]
+        matched_mappings.sort(key=lambda x: x['priority'])
 
-        matched_mappings = {g: m for g, m in group_mapping.items() if g in directory_user_group}
-        ordered_mappings = list(matched_mappings.values())
-        ordered_mappings.sort(key=lambda x: x['priority'])
+        for g in matched_mappings:
+            if g['groups']:
+                matched_groups.extend(g['groups'])
 
-        if ordered_mappings is not None:
-            groups = []
-            for g in ordered_mappings:
-                roles |= g['roles']
-                if g['groups']:
-                    groups.extend(g['groups'])
-            if groups:
-                matched_group = groups[0]
+        is_admin = False
+        for g in directory_groups:
+            if g in account_admin_groups:
+                is_admin = True
+                break
 
-        # return roles as list instead of set
-        sign_group_mapping = {
-            'group': matched_group,
-            'roles': list(roles) if roles else ['NORMAL_USER']
-        }
+        # for non-UMG we don't care which group we make admin. we apply the
+        # setting to the user's currently-assigned group (which may change
+        # in the group mapping)
+        is_group_admin = False
+        admin_groups = set()
+        for dir_group, target_groups in group_admin_mapping.items():
+            if dir_group in directory_groups:
+                is_group_admin = True
+                admin_groups.update(target_groups)
 
-        # For illustration.  Just return line 322 instead.
-        return sign_group_mapping
+        return matched_groups, is_admin, is_group_admin, admin_groups
 
-    def insert_new_users(self, org_name: str, sign_connector: SignConnector, directory_user: dict, user_roles, assignment_group):
+    def insert_new_users(self, org_name: str, sign_connector: SignConnector, directory_user: dict, assignment_groups):
         """
         Constructs the data for insertion and inserts new user in the Sign Console
-        :param sign_connector:
-        :param directory_user:
-        :param user_roles:
-        :param group_id:
-        :param assignment_group:
-        :return:
         """
         new_user = DetailedUserInfo(
             accountType='GLOBAL', # ignored on POST
             email=directory_user['email'],
             id='', # required, but not set by the user
-            isAccountAdmin='ACCOUNT_ADMIN' in user_roles,
+            isAccountAdmin=directory_user['is_admin'],
             status='ACTIVE',
             firstName=directory_user['firstname'],
             lastName=directory_user['lastname'],
@@ -414,19 +419,19 @@ class SignSyncEngine:
             self.sign_users_created.add(directory_user['email'])
             self.logger.info(f"{self.org_string(sign_connector.console_org)}Inserted sign user '{new_user.email}', admin?: {new_user.isAccountAdmin}")
 
+            assignment_group = assignment_groups[0].group_name
             group_to_assign: GroupInfo = self.sign_groups[org_name][assignment_group.lower()]
 
-            is_group_admin = 'GROUP_ADMIN' in user_roles
             group_update_data = UserGroupsInfo(groupInfoList=[UserGroupInfo(
                 id=group_to_assign.groupId,
                 name=group_to_assign.groupName,
-                isGroupAdmin=is_group_admin,
+                isGroupAdmin=directory_user['is_group_admin'],
                 isPrimaryGroup=True,
                 status='ACTIVE',
             )])
 
             sign_connector.update_user_group_single(user_id, group_update_data)
-            self.logger.info(f"{self.org_string(sign_connector.console_org)}Assigned '{new_user.email}' to group '{group_to_assign.groupName}', group admin?: {is_group_admin}")
+            self.logger.info(f"{self.org_string(sign_connector.console_org)}Assigned '{new_user.email}' to group '{group_to_assign.groupName}', group admin?: {directory_user['is_group_admin']}")
         except ClientException as e:
             self.logger.error(format(e))
 
@@ -464,18 +469,18 @@ class SignSyncEngine:
                     self.logger.info(f"{self.org_string(org_name)}Deactivated sign user '{user.email}'")
                 except ClientException as e:
                     self.logger.error(format(e))
-                    continue
+                continue
 
-            in_default_group = self.sign_user_primary_groups[org_name][user.id].id == self.default_groups[org_name].groupId
-            is_group_admin = self.sign_user_primary_groups[org_name][user.id].isGroupAdmin
+            in_default_group = self.get_primary_group(user, self.sign_user_groups[org_name]) == self.default_groups[org_name].groupId
+            is_group_admin = self.get_primary_group(user, self.sign_user_groups[org_name]).isGroupAdmin
 
             if in_default_group and not is_group_admin and not user.isAccountAdmin:
                 continue
 
             # set up group update in case we end up making one
             new_user_group = UserGroupInfo(
-                id=self.sign_user_primary_groups[org_name][user.id].id,
-                isGroupAdmin=self.sign_user_primary_groups[org_name][user.id].isGroupAdmin,
+                id=self.get_primary_group(user, self.sign_user_groups[org_name]).id,
+                isGroupAdmin=self.get_primary_group(user, self.sign_user_groups[org_name]).isGroupAdmin,
                 isPrimaryGroup=True,
                 status='ACTIVE',
             )
