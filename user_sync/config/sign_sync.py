@@ -38,6 +38,7 @@ def config_schema() -> Schema:
             'directory_group': Or(None, And(str, len)),
             Optional('sign_group', default=None): Or(None, list, And(str, len)),
             Optional('group_admin', default=False): Or(bool, None),
+            Optional('admin_groups'): Or(None, [And(str, len)]),
             Optional('account_admin', default=False): Or(bool, None)
         }],
         Optional('account_admin_groups'): list,
@@ -206,7 +207,7 @@ class SignConfigLoader(ConfigLoader):
                 account_admin_groups.add(group)
         return list(account_admin_groups)
 
-    def load_group_admin_mappings(self):
+    def load_group_admin_mappings(self, umg):
         group_admin_mappings = {}
         group_config = self.main_config.get_list_config('user_management', True)
         for mapping in group_config.iter_dict_configs():
@@ -214,12 +215,14 @@ class SignConfigLoader(ConfigLoader):
             sign_group = mapping.get_list('sign_group', True)
 
             group_admin = mapping.get_bool('group_admin', True)
-            if sign_group is None or not len(sign_group):
+            if (sign_group is None or not len(sign_group)) and group_admin:
                 # if there is no Sign group, add the directory group anyway
                 # in case we're non-UMG, in which case the group admin status is
                 # applied to the user's currently-assigned group
-                if group_admin:
+                if not umg:
                     group_admin_mappings[dir_group] = set()
+                else:
+                    raise AssertionException("If UMG is enabled, then at least one Sign group is required in a mapping that enables group admin")
                 continue
 
             group = AdobeGroup.create(sign_group[0])
@@ -228,10 +231,29 @@ class SignConfigLoader(ConfigLoader):
             if group.umapi_name is None:
                 group.umapi_name = self.DEFAULT_ORG_NAME
 
-            if group_admin:
+            admin_groups = mapping.get_list('admin_groups', True)
+            using_admin_groups = admin_groups is not None and len(admin_groups)
+
+            if group_admin and not using_admin_groups:
                 if dir_group not in group_admin_mappings:
                     group_admin_mappings[dir_group] = set()
                 group_admin_mappings[dir_group].add(group)
+
+            if not using_admin_groups:
+                continue
+
+            if not umg:
+                self.logger.warn("Ignoring 'admin_groups' list because 'umg' mode is disabled")
+                continue
+
+            for ag in admin_groups:
+                if ag not in sign_group:
+                    self.logger.warn("Skipping admin group '%s' because it isn't specified in 'sign_group'", ag)
+                    continue
+                if dir_group not in group_admin_mappings:
+                    group_admin_mappings[dir_group] = set()
+                group_admin_mappings[dir_group].add(ag)
+
         return group_admin_mappings
 
     def get_directory_connector_module_name(self) -> str:
@@ -276,7 +298,7 @@ class SignConfigLoader(ConfigLoader):
             options['directory_group_filter'] = set(self.directory_groups.keys())
         options['cache'] = self.main_config.get_dict('cache')
         options['account_admin_groups'] = self.load_account_admin_groups()
-        options['group_admin_mappings'] = self.load_group_admin_mappings()
+        options['group_admin_mappings'] = self.load_group_admin_mappings(options['user_sync']['umg'])
         return options
 
     def check_unused_config_keys(self):
