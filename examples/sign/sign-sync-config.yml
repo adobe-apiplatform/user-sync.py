@@ -38,18 +38,26 @@ user_management:
     sign_group: Group 1
     group_admin: False
 
-  # Example 2 - group admin assignment
-  - directory_group: Sign Group Admins 1
+  # Example 2 - group admin assignment (single group mode)
+  - directory_group: Sign Users (Admin)
     sign_group: primary::Group 2
     group_admin: True
 
-  # Example 3 - account admin assignment
+  # Example 3 - group admin assignment (UMG)
+  - directory_group: Sign Users (Admin)
+    sign_group:
+      - Sign Users
+    group_admin: True
+    # if UMG enabled, then admin_groups must be specified if group_admin is True
+    admin_groups:
+      - Sign Users
+
+  # Example 4 - account admin assignment
   # - directory_group: Sign Admins
   #   sign_group: secondary::Group 3
   #   group_admin: False
-  #   account_admin: True
 
-  # Example 4 - create user if `create_users` is `True`, otherwise do nothing
+  # Example 5 - create user if `create_users` is `True`, otherwise do nothing
   # - directory_group: Sign Normal Users
   #   sign_group: tertiary::Group 4
   #   group_admin: True
