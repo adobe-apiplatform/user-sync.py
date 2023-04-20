@@ -48,6 +48,14 @@ user_management:
   - directory_group: Sign Group Admins 1
     sign_group: primary::Group 2
     group_admin: True
+  # Example 3 - group admin assignment (UMG)
+  - directory_group: Sign Users (Admin)
+    sign_group:
+      - Sign Users
+    group_admin: True
+    # if UMG enabled, then admin_groups must be specified if group_admin is True
+    admin_groups:
+      - Sign Users
 
 # Logging options
 logging:
