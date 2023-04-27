@@ -174,11 +174,7 @@ class SignConfigLoader(ConfigLoader):
             for sg in sign_group:
                 # AdobeGroup will return the same memory instance of a pre-existing group,
                 # so we create it no matter what
-                group = AdobeGroup.create(sg)
-                if group is None:
-                    raise AssertionException('Bad Sign group: "{}" in directory group: "{}"'.format(sign_group, dir_group))
-                if group.umapi_name is None:
-                    group.umapi_name = self.DEFAULT_ORG_NAME
+                group = self._groupify(sg)
 
                 # Note checking a memory equivalency, not group name
                 # the groups in group_mapping are stored in order of YML file - important
@@ -211,8 +207,10 @@ class SignConfigLoader(ConfigLoader):
         group_admin_mappings = {}
         group_config = self.main_config.get_list_config('user_management', True)
         for mapping in group_config.iter_dict_configs():
-            dir_group = mapping.get_string('directory_group')
+            dir_group = mapping.get_string('directory_group').lower()
             sign_group = mapping.get_list('sign_group', True)
+            if sign_group is not None:
+                sign_group = [sg.lower() for sg in sign_group]
 
             group_admin = mapping.get_bool('group_admin', True)
             if (sign_group is None or not len(sign_group)) and group_admin:
@@ -225,19 +223,20 @@ class SignConfigLoader(ConfigLoader):
                     raise AssertionException("If UMG is enabled, then at least one Sign group is required in a mapping that enables group admin")
                 continue
 
-            group = AdobeGroup.create(sign_group[0])
-            if group is None:
-                raise AssertionException('Bad Sign group: "{}" in directory group: "{}"'.format(sign_group, dir_group))
-            if group.umapi_name is None:
-                group.umapi_name = self.DEFAULT_ORG_NAME
-
             admin_groups = mapping.get_list('admin_groups', True)
             using_admin_groups = admin_groups is not None and len(admin_groups)
 
+            # if group_admin flag is True and we're not using admin_groups list, then
+            # map the first item in sign_group list and move on
             if group_admin and not using_admin_groups:
+                group = self._groupify(sign_group[0])
                 if dir_group not in group_admin_mappings:
                     group_admin_mappings[dir_group] = set()
                 group_admin_mappings[dir_group].add(group)
+                continue
+
+            if not group_admin:
+                continue
 
             if not using_admin_groups:
                 continue
@@ -247,14 +246,30 @@ class SignConfigLoader(ConfigLoader):
                 continue
 
             for ag in admin_groups:
+                ag = ag.lower()
                 if ag not in sign_group:
                     self.logger.warn("Skipping admin group '%s' because it isn't specified in 'sign_group'", ag)
                     continue
                 if dir_group not in group_admin_mappings:
                     group_admin_mappings[dir_group] = set()
-                group_admin_mappings[dir_group].add(ag)
+                group_admin_mappings[dir_group].add(self._groupify(ag))
 
         return group_admin_mappings
+
+    def _groupify(self, group_name):
+        """For a given group name, return AdobeGroup with proper primary
+           target, error checking, etc"""
+        group = AdobeGroup.create(group_name.lower())
+        if group is None:
+            raise AssertionException(f"Bad sign group '{group_name}' specified")
+        if group.umapi_name is None:
+            group.umapi_name = self.DEFAULT_ORG_NAME
+        return group
+
+    def load_primary_group_rules(self, umg):
+        # group_config = self.main_config.get_list_config('user_management', True)
+        # return primary_group_rules
+        return []
 
     def get_directory_connector_module_name(self) -> str:
         # these .get()s can be safely chained because we've already validated the config schema
@@ -299,6 +314,7 @@ class SignConfigLoader(ConfigLoader):
         options['cache'] = self.main_config.get_dict('cache')
         options['account_admin_groups'] = self.load_account_admin_groups()
         options['group_admin_mappings'] = self.load_group_admin_mappings(options['user_sync']['umg'])
+        options['primary_group_rules'] = self.load_primary_group_rules(options['user_sync']['umg'])
         return options
 
     def check_unused_config_keys(self):
