@@ -216,52 +216,82 @@ class SignSyncEngine:
                     desired_groups = set([self.get_primary_group(sign_user, self.sign_user_groups[org_name]).name.lower()])
                 if not is_umg:
                     desired_groups = set([directory_user['sign_roups'][0].group_name.lower()])
-                target_groups = set([g.group_name.lower() for g in self.target_groups_by_org[org_name]])
 
-                groups_to_assign = []
-                for dg in desired_groups:
-                    group_info = self.sign_groups[org_name].get(dg)
+                groups_to_update = {}
+                admin_groups = set([g.group_name for g in directory_user['admin_groups'] if g.umapi_name == org_name])
+
+                # identify groups to add for user
+                groups_to_assign = desired_groups.difference(set(assigned_groups.keys()))
+                for group_name in groups_to_assign:
+                    group_info = self.sign_groups[org_name].get(group_name)
                     if group_info is None:
-                        raise AssertionException(f"'{dg}' isn't a valid Sign group")
+                        raise AssertionException(f"'{group_name}' isn't a valid Sign group")
+
+                    is_group_admin = ((not is_umg and directory_user['is_admin_group'])
+                                      or (group_name in admin_groups))
+                    groups_to_update[group_name] = UserGroupInfo(
+                        id=group_info.groupId,
+                        name=group_info.groupName,
+                        isGroupAdmin=is_group_admin,
+                        isPrimaryGroup=False,
+                        status='ACTIVE',
+                    )
+                    self.logger.info(f"Assigning group '{group_info.groupName}' to user {sign_user.email}")
+                    if group_name in admin_groups:
+                        self.logger.info(f"Assigning group admin privileges to user {sign_user.email} for group '{group_info.groupName}'")
+
+                # identify groups to remove for user
+                target_groups = set([g.group_name.lower() for g in self.target_groups_by_org[org_name]])
+                assigned_group_names = set(assigned_groups.keys())
+                # first, get groups that are assigned but not in the desired list
+                # then see what that has in common with overall target groups - this is the list
+                # of groups to remove. non-targeted groups remain untouched
+                remove_groups = target_groups.intersection(assigned_group_names.difference(desired_groups))
+                for group_name in remove_groups:
+                    # this should never happen but we need to check
+                    if group_name in groups_to_assign:
+                        raise AssertionException(f"Cannot remove group '{group_name}' because it is in the assignment list")
+                    group_info = self.sign_groups[org_name].get(group_name)
+                    if group_info is None:
+                        raise AssertionException(f"'{group_name}' isn't a valid Sign group")
 
                     assigned_group = assigned_groups.get(group_info.groupName.lower())
 
-                    wants_group_admin = False
-                    if is_umg:
-                        wants_group_admin = directory_user['is_group_admin']
-                    else:
-                        wants_group_admin = dg in directory_user['admin_groups']
-
-                    change_group_admin = (assigned_group is None and
-                                          wants_group_admin) or \
-                                         (assigned_group is not None and
-                                          assigned_group.isGroupAdmin is not wants_group_admin)
-
-                    if assigned_group is not None and not change_group_admin:
-                        continue
-
-                    if assigned_group is None:
-                        self.logger.info(f"Assigning group '{group_info.groupId}' to user {sign_user.email}")
-                        self.sign_users_group_updates.add(sign_user.email)
-
-                    admin_status = False if not wants_group_admin and assigned_group.isGroupAdmin is not wants_group_admin else True
-
-                    if change_group_admin:
-                        self.logger.info(f"Changing group Admin role for user '{sign_user.email}', status? {admin_status}")
-                        self.sign_users_role_updates.add(sign_user.email)
-
-                    groups_to_assign.append(UserGroupInfo(
+                    groups_to_update[group_name] = UserGroupInfo(
                         id=group_info.groupId,
                         name=group_info.groupName,
-                        isGroupAdmin=admin_status,
-                        isPrimaryGroup=False,
-                        status='ACTIVE',
-                    ))
+                        isGroupAdmin=assigned_group.isGroupAdmin,
+                        isPrimaryGroup=assigned_group.isPrimaryGroup,
+                        status='DELETED',
+                    )
+                    self.logger.info(f"Removing group '{group_info.groupName}' for user {sign_user.email}")
 
-                if groups_to_assign:
-                    group_update_data = UserGroupsInfo(groupInfoList=groups_to_assign)
+                # get a full list of groups the user is an admin for
+                current_admin_groups = set([g.name.lower() for g in assigned_groups.values() if g.isGroupAdmin]).\
+                    union(set([g.name.lower() for g in groups_to_update.values() if g.status == 'ACTIVE' and g.isGroupAdmin]))
+
+                # if a user is group admin to any group they're not mapped to be admin for, then they
+                # need to have their status removed
+                non_admin_groups = current_admin_groups.difference(set([g.group_name for g in directory_user['admin_groups']]))
+
+                for group_name in non_admin_groups:
+                    if group_name in groups_to_update:
+                        groups_to_update[group_name].isGroupAdmin = False
+                    else:
+                        group_info = assigned_groups.get(group_name)
+                        groups_to_update[group_name] = UserGroupInfo(
+                            id=group_info.id,
+                            name=group_info.name,
+                            isGroupAdmin=False,
+                            isPrimaryGroup=group_info.isPrimaryGroup,
+                            status='DELETED',
+                        )
+
+
+                if groups_to_update:
+                    group_update_data = UserGroupsInfo(groupInfoList=groups_to_update)
                     user_groups_update_list.append((sign_user.id, group_update_data))
-                
+
         sign_connector.update_users(users_update_list)
         sign_connector.update_user_groups(user_groups_update_list)
         self.sign_only_users_by_org[org_name] = {}
