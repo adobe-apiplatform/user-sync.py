@@ -287,9 +287,25 @@ class SignSyncEngine:
                             status='DELETED',
                         )
 
+                # figure out primary group for user
+                sign_groups = set([g.lower() for g in groups_to_update.keys()])\
+                              .union(set([g.lower() for g in assigned_groups.keys()]))
+                desired_pg = self.resolve_primary_group(sign_groups)
+                current_pg = [g.name.lower() for g in assigned_groups.values() if g.isPrimaryGroup]
+                if current_pg:
+                    current_pg = current_pg[0]
+                else:
+                    current_pg = None
+
+                if desired_pg is None:
+                    raise AssertionException(f"Can't identify a primary group for user '{sign_user.email}'")
+
+                if current_pg is None or desired_pg.lower() != current_pg:
+                    self.logger.debug(f"Primary group of '{sign_user.email}' is '{desired_pg}'")
+                    groups_to_update[desired_pg.lower()].isPrimaryGroup = True
 
                 if groups_to_update:
-                    group_update_data = UserGroupsInfo(groupInfoList=groups_to_update)
+                    group_update_data = UserGroupsInfo(groupInfoList=list(groups_to_update.values()))
                     user_groups_update_list.append((sign_user.id, group_update_data))
 
         sign_connector.update_users(users_update_list)
@@ -299,6 +315,12 @@ class SignSyncEngine:
             if user not in dir_users_for_org:
                 self.total_sign_only_user_count += 1
                 self.sign_only_users_by_org[org_name][user] = data
+
+    def resolve_primary_group(self, sign_groups):
+        rules = self.options['primary_group_rules']
+        for r in rules:
+            if set(sign_groups).intersection(r['sign_groups']) == r['sign_groups']:
+                return r['primary_group']
 
     @staticmethod
     def get_primary_group(user, sign_user_groups) -> UserGroupInfo:
@@ -459,7 +481,7 @@ class SignSyncEngine:
                 groups = assignment_groups
             else:
                 groups = assignment_groups[0:1]
-            groups_to_assign = []
+            groups_to_assign = {}
             for group in groups:
                 wants_group_admin = False
                 if is_umg:
@@ -467,19 +489,24 @@ class SignSyncEngine:
                 else:
                     wants_group_admin = group in directory_user['admin_groups']
                 group_to_assign = self.sign_groups[org_name][group.group_name.lower()]
-                groups_to_assign.append(UserGroupInfo(
+                groups_to_assign[group_to_assign.groupName.lower()] = UserGroupInfo(
                     id=group_to_assign.groupId,
                     name=group_to_assign.groupName,
                     isGroupAdmin=wants_group_admin,
                     isPrimaryGroup=False,
                     status='ACTIVE',
-                ))
+                )
                 self.logger.info(f"{self.org_string(sign_connector.console_org)}Assigning '{new_user.email}' to group '{group_to_assign.groupName}', group admin?: {wants_group_admin}")
+            primary_group = self.resolve_primary_group(groups_to_assign.keys())
+            if primary_group is None:
+                raise AssertionException(f"Can't identify a primary group for user '{new_user.email}'")
+            self.logger.debug(f"Primary group of '{new_user.email}' is '{primary_group}'")
+            groups_to_assign[primary_group.lower()].isPrimaryGroup = True
             user_id = sign_connector.insert_user(new_user)
             self.sign_users_created.add(directory_user['email'])
             self.logger.info(f"{self.org_string(sign_connector.console_org)}Inserted sign user '{new_user.email}', admin?: {new_user.isAccountAdmin}")
 
-            group_update_data = UserGroupsInfo(groupInfoList=groups_to_assign)
+            group_update_data = UserGroupsInfo(groupInfoList=list(groups_to_assign.values()))
             sign_connector.update_user_group_single(user_id, group_update_data)
         except ClientException as e:
             self.logger.error(format(e))

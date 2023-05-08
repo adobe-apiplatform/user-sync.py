@@ -41,6 +41,10 @@ def config_schema() -> Schema:
             Optional('admin_groups'): Or(None, [And(str, len)]),
             Optional('account_admin', default=False): Or(bool, None)
         }],
+        Optional('primary_group_rules'): [{
+            'sign_groups': [And(str, len)],
+            'primary_group': And(str, len),
+        }],
         Optional('account_admin_groups'): list,
         'cache': {
             'path': And(str, len),
@@ -267,9 +271,16 @@ class SignConfigLoader(ConfigLoader):
         return group
 
     def load_primary_group_rules(self, umg):
-        # group_config = self.main_config.get_list_config('user_management', True)
-        # return primary_group_rules
-        return []
+        primary_group_rules = []
+        group_config = self.main_config.get_list_config('primary_group_rules', True)
+        for mapping in group_config.iter_dict_configs():
+            sign_groups = mapping.get_list('sign_groups')
+            primary_group = mapping.get_string('primary_group')
+            primary_group_rules.append({
+                'sign_groups': set([g.lower() for g in sign_groups]),
+                'primary_group': primary_group
+            })
+        return primary_group_rules
 
     def get_directory_connector_module_name(self) -> str:
         # these .get()s can be safely chained because we've already validated the config schema
