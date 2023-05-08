@@ -63,6 +63,19 @@ user_management:
   #   group_admin: True
   #   account_admin: True
   
+# # when UMG is enabled, primary_group_rules is required to specify rules
+# # primary group designation. sync tool will log warning if this is present
+# # with UMG disabled. omitting it with UMG enabled will cause an error
+# primary_group_rules:
+#   # sign_groups list can specify groups that aren't necessarily assigned
+#   # the user in the sync tool
+#   - sign_groups:
+#       - Sign Group 1
+#       - Sign Group 2
+#     # assign the primary group only if the user is a member of all groups
+#     # specified in sign_groups
+#     primary_group: Sign Group 2
+
 # Logging options
 logging:
   log_to_file: True
