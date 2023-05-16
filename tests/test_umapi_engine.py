@@ -104,9 +104,11 @@ def test_create_umapi_user(rule_processor, mock_dir_user, mock_umapi_info):
     result[0][1].pop('on_conflict')
     assert result[0] == ('create', {
         'email': user['email'],
-        'first_name': user['firstname'],
-        'last_name': user['lastname'],
-        'country': user['country']})
+        'firstname': user['firstname'],
+        'lastname': user['lastname'],
+        'country': user['country'],
+        'id_type': user['identity_type'],
+    })
     assert result[1] == ('remove_from_groups', {
         'groups': {'group b', 'group a'}})
     assert result[2] == ('add_to_groups', {
@@ -147,8 +149,8 @@ def test_update_umapi_user(rule_processor, mock_dir_user, mock_umapi_user):
         'user': user['email'],
         'domain': user['domain'],
         'do_list': [('update', {
-            'first_name': user['firstname'],
-            'last_name': user['lastname']})]}
+            'firstname': user['firstname'],
+            'lastname': user['lastname']})]}
 
     user['username'] = 'different@example.com'
     result = update(user, up_attrs)
@@ -175,8 +177,9 @@ def test_create_umapi_commands_for_directory_user(rule_processor, mock_dir_user)
         attributes = rp.get_user_attributes(user)
         attributes['country'] = user['country']
         attributes['option'] = update_option
+        attributes['id_type'] = user['identity_type']
         commands = Commands(user['username'], user['domain'])
-        commands.add_user(user['identity_type'], attributes)
+        commands.add_user(attributes)
         return commands
 
     # simple case

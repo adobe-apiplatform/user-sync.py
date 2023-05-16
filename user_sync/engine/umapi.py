@@ -786,7 +786,8 @@ class RuleProcessor(object):
             attributes['option'] = 'updateIfAlreadyExists'
         else:
             attributes['option'] = 'ignoreIfAlreadyExists'
-        commands.add_user(identity_type, attributes)
+        attributes['id_type'] = identity_type
+        commands.add_user(attributes)
 
         return commands
 

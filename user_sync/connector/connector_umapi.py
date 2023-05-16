@@ -244,8 +244,7 @@ class Commands(object):
         :type attributes: dict
         """
         if attributes is not None and len(attributes) > 0:
-            params = self.convert_user_attributes_to_params(attributes)
-            self.do_list.append(('update', params))
+            self.do_list.append(('update', attributes))
 
     def add_groups(self, groups_to_add):
         """
@@ -270,23 +269,21 @@ class Commands(object):
             }
             self.do_list.append(('remove_from_groups', params))
 
-    def add_user(self, identity_type, attributes):
+    def add_user(self, attributes):
         """
         :type attributes: dict
         """
-        self.identity_type = identity_type
-        params = self.convert_user_attributes_to_params(attributes)
 
         on_conflict_value = None
-        option = params.pop('option', None)
+        option = attributes.pop('option', None)
         if option == "updateIfAlreadyExists":
             on_conflict_value = umapi_client.IfAlreadyExistsOption.updateIfAlreadyExists
         elif option == "ignoreIfAlreadyExists":
             on_conflict_value = umapi_client.IfAlreadyExistsOption.ignoreIfAlreadyExists
         if on_conflict_value is not None:
-            params['on_conflict'] = on_conflict_value
+            attributes['on_conflict'] = on_conflict_value
 
-        self.do_list.append(('create', params))
+        self.do_list.append(('create', attributes))
 
     def remove_from_org(self, delete_account):
         """
@@ -301,16 +298,6 @@ class Commands(object):
 
     def __len__(self):
         return len(self.do_list)
-
-    def convert_user_attributes_to_params(self, attributes):
-        params = {}
-        for key, value in attributes.items():
-            if key == 'firstname':
-                key = 'first_name'
-            elif key == 'lastname':
-                key = 'last_name'
-            params[key] = value
-        return params
 
 
 class ActionManager(object):
