@@ -1,6 +1,6 @@
 from user_sync.error import AssertionException
 from user_sync.encryption import decrypt
-from umapi_client.auth import JWTAuth, OAuthS2S
+from umapi_client import JWTAuth, OAuthS2S
 
 
 def create_umapi_auth(name, config, org_id, tech_acct, auth_host, auth_endpoint, ssl_verify, auth_type, logger):

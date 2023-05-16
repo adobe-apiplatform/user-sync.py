@@ -283,9 +283,9 @@ class Commands(object):
         on_conflict_value = None
         option = params.pop('option', None)
         if option == "updateIfAlreadyExists":
-            on_conflict_value = umapi_client.IfAlreadyExistsOptions.updateIfAlreadyExists
+            on_conflict_value = umapi_client.IfAlreadyExistsOption.updateIfAlreadyExists
         elif option == "ignoreIfAlreadyExists":
-            on_conflict_value = umapi_client.IfAlreadyExistsOptions.ignoreIfAlreadyExists
+            on_conflict_value = umapi_client.IfAlreadyExistsOption.ignoreIfAlreadyExists
         if on_conflict_value is not None:
             params['on_conflict'] = on_conflict_value
 
@@ -357,7 +357,8 @@ class ActionManager(object):
         elif identity_type is None:
             identity_type = user_sync.identity_type.FEDERATED_IDENTITY_TYPE
         try:
-            umapi_identity_type = umapi_client.IdentityTypes[identity_type]
+            umapi_identity_type = umapi_client.IdentityType[identity_type]
+            breakpoint()
             action = umapi_client.UserAction(umapi_identity_type, email, username, domain,
                                              requestID=self.get_next_request_id())
         except ValueError as e:
