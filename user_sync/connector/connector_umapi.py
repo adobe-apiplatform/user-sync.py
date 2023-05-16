@@ -238,10 +238,10 @@ class Commands(object):
         self.do_list = []
 
     def __str__(self):
-        return "Command "+str(self.__dict__)
+        return "Commands "+str(self.__dict__)
 
     def __repr__(self):
-        return "Command "+str(self.__dict__)
+        return "Commands "+str(self.__dict__)
 
     def update_user(self, attributes):
         """
