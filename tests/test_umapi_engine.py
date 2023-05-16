@@ -144,9 +144,7 @@ def test_update_umapi_user(rule_processor, mock_dir_user, mock_umapi_user):
 
     result = update(user, up_attrs)
     assert result == {
-        'identity_type': user['identity_type'],
-        'email': user['email'],
-        'username': user['username'],
+        'user': user['email'],
         'domain': user['domain'],
         'do_list': [('update', {
             'first_name': user['firstname'],
@@ -154,7 +152,7 @@ def test_update_umapi_user(rule_processor, mock_dir_user, mock_umapi_user):
 
     user['username'] = 'different@example.com'
     result = update(user, up_attrs)
-    assert result['username'] == user['email']
+    assert result['user'] == user['email']
 
     user['email'] = 'different@example.com'
     up_attrs = {
@@ -162,9 +160,7 @@ def test_update_umapi_user(rule_processor, mock_dir_user, mock_umapi_user):
     result = update(user, up_attrs)
 
     assert result == {
-        'identity_type': user['identity_type'],
-        'email': user['email'],
-        'username': user['username'],
+        'user': user['email'],
         'domain': user['domain'],
         'do_list': [('update', {
             'email': 'different@example.com',
@@ -179,8 +175,8 @@ def test_create_umapi_commands_for_directory_user(rule_processor, mock_dir_user)
         attributes = rp.get_user_attributes(user)
         attributes['country'] = user['country']
         attributes['option'] = update_option
-        commands = Commands(user['identity_type'], user['email'], user['username'], user['domain'])
-        commands.add_user(attributes)
+        commands = Commands(user['username'], user['domain'])
+        commands.add_user(user['identity_type'], attributes)
         return commands
 
     # simple case
@@ -202,14 +198,12 @@ def test_create_umapi_commands_for_directory_user(rule_processor, mock_dir_user)
     # test username format
     user['username'] = 'different@example.com'
     commands = get_commands(user)
-    commands.username = user['username']
     result = rp.create_umapi_commands_for_directory_user(user)
     assert vars(result) == vars(commands)
 
     # test console trusted
     user['username'] = 'different@example.com'
     commands = get_commands(user)
-    commands.username = user['username']
     result = rp.create_umapi_commands_for_directory_user(user, console_trusted=True)
     assert vars(result) == vars(commands)
 

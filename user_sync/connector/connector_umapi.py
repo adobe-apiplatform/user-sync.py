@@ -224,16 +224,12 @@ class UmapiConnector(object):
 
 
 class Commands(object):
-    def __init__(self, identity_type=None, email=None, username=None, domain=None):
+    def __init__(self, user=None, domain=None):
         """
-        :type identity_type: str
-        :type email: str
-        :type username: str
+        :type user: str
         :type domain: str
         """
-        self.identity_type = identity_type
-        self.email = email
-        self.username = username
+        self.user = user
         self.domain = domain
         self.do_list = []
 
@@ -274,10 +270,11 @@ class Commands(object):
             }
             self.do_list.append(('remove_from_groups', params))
 
-    def add_user(self, attributes):
+    def add_user(self, identity_type, attributes):
         """
         :type attributes: dict
         """
+        self.identity_type = identity_type
         params = self.convert_user_attributes_to_params(attributes)
 
         on_conflict_value = None
@@ -358,7 +355,6 @@ class ActionManager(object):
             identity_type = user_sync.identity_type.FEDERATED_IDENTITY_TYPE
         try:
             umapi_identity_type = umapi_client.IdentityType[identity_type]
-            breakpoint()
             action = umapi_client.UserAction(umapi_identity_type, email, username, domain,
                                              requestID=self.get_next_request_id())
         except ValueError as e:

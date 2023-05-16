@@ -670,7 +670,7 @@ class RuleProcessor(object):
             id_type, username, domain, _ = self.parse_user_key(key)
             if '@' in username and username.lower() in self.email_override:
                 username = self.email_override[username.lower()]
-            return user_sync.connector.connector_umapi.Commands(identity_type=id_type, username=username, domain=domain)
+            return user_sync.connector.connector_umapi.Commands(username, domain)
 
         # do the secondary umapis first, in case we are deleting user accounts from the primary umapi at the end
         for umapi_name in umapi_connectors.get_secondary_connectors():
@@ -764,8 +764,7 @@ class RuleProcessor(object):
                                 self.get_directory_user_key(directory_user), directory_user['email'])
             return None
 
-        commands = user_sync.connector.connector_umapi.Commands(identity_type, directory_user['email'],
-                                                      directory_user['username'], directory_user['domain'])
+        commands = user_sync.connector.connector_umapi.Commands(directory_user['username'], directory_user['domain'])
         attributes = self.get_user_attributes(directory_user)
         # check whether the country is set in the directory, use default if not
         country = directory_user['country']
@@ -787,7 +786,7 @@ class RuleProcessor(object):
             attributes['option'] = 'updateIfAlreadyExists'
         else:
             attributes['option'] = 'ignoreIfAlreadyExists'
-        commands.add_user(attributes)
+        commands.add_user(identity_type, attributes)
 
         return commands
 
@@ -879,8 +878,7 @@ class RuleProcessor(object):
                 directory_user['email'] = umapi_user['email']
                 directory_user['username'] = umapi_user['email']
 
-        commands = user_sync.connector.connector_umapi.Commands(identity_type, directory_user['email'],
-                                                      directory_user['username'], directory_user['domain'])
+        commands = user_sync.connector.connector_umapi.Commands(directory_user['email'], directory_user['domain'])
         commands.update_user(attributes_to_update)
         commands.remove_groups(groups_to_remove)
         commands.add_groups(groups_to_add)
