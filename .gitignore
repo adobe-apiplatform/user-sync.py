@@ -117,3 +117,4 @@ lockfile
 .dir-locals.el
 *~
 .projectile
+.tool-versions
