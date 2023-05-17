@@ -25,39 +25,39 @@ page_id: setup-and-installation
 
 # Overview
 
-The use of the User Sync tool depends on your enterprise having
-set up product configurations in the Adobe Admin
-Console. For more information about how to do this, see the
-[Configure Services](https://helpx.adobe.com/enterprise/help/configure-services.html#configure_services_for_group)
+The use of the User Sync tool depends on your enterprise having set up product
+configurations in the Adobe Admin Console. For more information about how to do
+this, see the [Configure
+Services](https://helpx.adobe.com/enterprise/help/configure-services.html#configure_services_for_group)
 help page.
 
-# Set up a User Management API integration on Adobe I/O
+# Adobe Developer Console Setup
 
-The User Sync tool is a client of the User Management API. Before
-you install the tool, you must register it as a client of the API
-by adding an *integration* in the Adobe I/O
-[Developer Portal](https://www.adobe.io/console/). You will need
-to add an Enterprise Key integration in order to obtain the
-credentials the tool needs to access the Adobe User Management
-system.
+The User Sync Tool uses the [User Management API
+(UMAPI)](https://developer.adobe.com/umapi/) to manage users an groups in the
+admin console. To use the User Sync Tool to manage your organization's users and
+groups, you must first set up a UMAPI integration on the [Adobe Developer
+Console](https://developer.adobe.com/console).
 
-The steps required for creating an integration are described in
-detail in the
-[Adobe I/O Authentication Overview](https://www.adobe.io/apis/cloudplatform/console/authentication/gettingstarted.html)
-section of the Adobe I/O website.  Look for the 
-sections on Service Account Authentication.  The
-process requires that you create an integration-specific
-certificate, which may self-signed.  When the process is
-complete, you will be assigned an **API key**, a **Technical
-account ID**, an **Organization ID**, and a **client secret**
-that the tool will use, along with your cerficate information, to
-communicate securely with the Admin Console. When you install the
-User Sync tool, you must provide these as configuration
-values that the tool requires to access your organization's user
-information store in Adobe.
+> **Note:** Only those with system administrator privileges can create UMAPI
+> integrations. Contact an Adobe admin in your organization if you need access.
 
-Additional information is available in the UMAPI documentation available
-[here](https://adobe-apiplatform.github.io/umapi-documentation) or [here](https://www.adobe.io/apis/cloudplatform/usermanagement/docs/gettingstarted.html).
+Refer to [the Developer Console authentication
+docs](https://developer.adobe.com/developer-console/docs/guides/authentication/ServerToServerAuthentication/implementation/)
+to learn how to create a new integration. Be sure to select "User Management
+API" as the service to associate with the project. You will not be prompted to
+select product profiles (that feature does not apply to the UMAPI).
+
+Once the integration is created, navigate to the credentails page. The Sync Tool
+needs three items to authenticate with the UMAPI:
+
+- Organization ID
+- Client ID
+- Client Secret
+
+> If you have a JWT-based integration that you wish to migrate to
+> Server-to-Server, refer to [this
+> guide](https://developer.adobe.com/developer-console/docs/guides/authentication/ServerToServerAuthentication/migration/).
 
 # Set up product-access synchronization
 
