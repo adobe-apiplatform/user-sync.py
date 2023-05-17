@@ -326,23 +326,11 @@ class ActionManager(object):
         return request_id
 
     def create_action(self, commands):
-        identity_type = commands.identity_type
-        email = commands.email
-        username = commands.username
+        user = commands.user
         domain = commands.domain
 
-        if username.find('@') > 0:
-            if email is None:
-                email = username
-            if identity_type is None:
-                identity_type = (user_sync.identity_type.FEDERATED_IDENTITY_TYPE
-                                 if username != user_sync.helper.normalize_string(email)
-                                 else user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE)
-        elif identity_type is None:
-            identity_type = user_sync.identity_type.FEDERATED_IDENTITY_TYPE
         try:
-            umapi_identity_type = umapi_client.IdentityType[identity_type]
-            action = umapi_client.UserAction(umapi_identity_type, email, username, domain,
+            action = umapi_client.UserAction(user, domain,
                                              requestID=self.get_next_request_id())
         except ValueError as e:
             self.logger.error("Skipping user - Error creating umapi Action: %s" % e)
