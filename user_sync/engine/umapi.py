@@ -670,6 +670,8 @@ class RuleProcessor(object):
             id_type, username, domain, _ = self.parse_user_key(key)
             if '@' in username and username.lower() in self.email_override:
                 username = self.email_override[username.lower()]
+            if not domain:
+                domain = None
             return user_sync.connector.connector_umapi.Commands(username, domain)
 
         # do the secondary umapis first, in case we are deleting user accounts from the primary umapi at the end
@@ -772,7 +774,7 @@ class RuleProcessor(object):
             return None
 
         commands = user_sync.connector.connector_umapi.Commands(directory_user['username'], directory_user['domain'])
-        attributes = self.get_user_attributes(directory_user)
+        attributes = self.get_create_attributes(directory_user)
         # check whether the country is set in the directory, use default if not
         country = directory_user['country']
         if not country:
