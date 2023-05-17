@@ -23,7 +23,7 @@ import shutil
 import json
 import pkg_resources
 from pathlib import Path
-from backports import configparser
+import configparser
 
 
 def cd():
