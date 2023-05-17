@@ -326,9 +326,15 @@ class ActionManager(object):
         return request_id
 
     def create_action(self, commands):
+        # "user" field identifies the user in the action command it is
+        # either email or username
         user = commands.user
         domain = commands.domain
 
+        # cannot construct the action if domain is not None and there is an
+        # email-like identifier in use
+        if '@' in user:
+            domain = None
         try:
             action = umapi_client.UserAction(user, domain,
                                              requestID=self.get_next_request_id())
