@@ -54,7 +54,7 @@ function initNav() {
 function initSearch() {
   var request = new XMLHttpRequest();
   var lang = window.location.pathname.split('/')[2];
-  request.open('GET', 'http://localhost:4000/user-sync.py/assets/js/search-data-'+lang+'.json', true);
+  request.open('GET', '/user-sync.py/assets/js/search-data-'+lang+'.json', true);
 
   request.onload = function(){
     if (request.status >= 200 && request.status < 400) {

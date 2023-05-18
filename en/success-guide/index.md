@@ -10,7 +10,7 @@ parent: root
 page_id: success-guide
 ---
 
-Version 2.7.4, released 2022-09-07
+Version 2.7.6, released 2023-01-12
 
 This document walks you through the steps needed to understand
 and setup the User Sync Tool.
