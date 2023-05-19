@@ -91,7 +91,6 @@ class AdobeConsoleConnector(DirectoryConnector):
 
         self.options = options
 
-        ims_host = server_options['ims_host']
         self.org_id = org_id = integration_options['org_id']
         auth = create_umapi_auth(
             self.name,
