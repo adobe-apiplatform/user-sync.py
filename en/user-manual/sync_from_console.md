@@ -65,11 +65,19 @@ following.
 All UMAPI sync setups require at least one UMAPI connector configuration. This
 primary connection config should be called `connector-umapi.yml`.
 
-Like the UMAPI connector, the Admin Console Connector requires a [service
-account integration on
-adobe.io](setup_and_installation.md##set-up-a-user-management-api-integration-on-adobe-io)
+Like the UMAPI connector, the Admin Console Connector requires a [UMAPI
+integration on the Adobe Developer
+Console](setup_and_installation.md#adobe-developer-console-setup).
 
-`connector-adobe-console.yml` defines three top-level config keys.
+> **Note:** This guide covers [OAuth
+> Server-to-Server](https://developer.adobe.com/developer-console/docs/guides/authentication/ServerToServerAuthentication/implementation/)
+> authentication. JWT-based authentication is **deprecated**. If you need to
+> migrate your integration, please refer to [this
+> guide](connect_adobe.md#migrating-from-jwt-to-server-to-server). It is geard
+> to the UMAPI connector, but the procedure for migrating Admin Console
+> connector config is very similar.
+
+`connector-adobe-console.yml` defines the following top-level config keys.
 
 * `server` - Override default identity and UMAPI endpoints (generally not
   needed) and customize connection timeout and retry settings
@@ -77,12 +85,19 @@ adobe.io](setup_and_installation.md##set-up-a-user-management-api-integration-on
   references to OS keyring objects)
 * `identity_type_filter` - Tells the connector to only include the identity type
   specified (`adobeID`, `enterpriseID` or `federatedID`)
+* `authentication_method` - Governs authentication method. Supports `oauth` for
+  Server-to-Server connections and `jwt` for deprecated JWT connections. Default
+  for compatibility reasons is `jwt`.
 
 ## `server` Settings
 
 The `server` settings do not generally need to be customized. `timeout` and
 `retry` settings can be customized if the Sync Tool is running on a high-latency
 network connection.
+
+> **Note:** The options `ims_host` and `ims_endpoint_jwt` are deprecated in
+> favor of the options `auth_host` and `auth_endpoint`. These options serve the
+> same purpose as their deprecated counterparts.
 
 ## `integration` Settings
 
@@ -92,77 +107,26 @@ Management API. The following information is required:
 - Organization ID
 - Client ID (API Key)
 - Client Secret
-- Technical Account ID
-- Private Key File Path
-
-All items except for the key file (`private.key`) can be found on the [Adobe
-Developer Console](https://developer.adobe.com/console/). The `private.key` file
-should already be present on the server that will be running the User Sync Tool.
-
-> **Note**: The default filename `private.key` is used here for the sake of
-> clarity since it is the default filename when generating the certificate pair.
-> In your UST setup, you will want to plan to change the filename (i.e.
-> `src-private.key`) to distinguish it from the `private.key` file used for the
-> UMAPI sync target. This page will continue to refer to it as `private.key`.
 
 These can be stored in plaintext inside the config file:
 
 ```yaml
+authentication_method: oauth
 integration:
   org_id: "Organization ID goes here"
   client_id: "Client ID goes here"
   client_secret: "Client Secret goes here"
-  tech_acct_id: "Tech Account ID goes here"
-  priv_key_path: "private.key"
 ```
 
 Replace each "goes here" string (including the double quotes) with the item
-copied from the console. If `private.key` is placed in the same directory as
-`connector-umapi.yml`, then `priv_key_path` can be relative.
-
-## Private Key Settings
-
-The private key file can optionally be stored differently than a plain file
-referenced by `priv_key_path`.
-
-* The key's contents can be stored inside the config file using the
-  `priv_key_data` option. Note that this must be the raw, unencrypted contents
-  of `private.key`.
-
-  ```yaml
-  priv_key_data: |
-     -----BEGIN RSA PRIVATE KEY-----
-     MIIf74jfd84oAgEA6brj4uZ2f1Nkf84j843jfjjJGHYJ8756GHHGGz7jLyZWSscH
-     [....]
-     CoifurKJY763GHKL98mJGYxWSBvhlWskdjdatagoeshere986fKFUNGd74kdfuEH
-     -----END RSA PRIVATE KEY-----
-  ```
-
-* The private key file can also be symmetrically encrypted. This type of
-  encryption uses a passphrase to secure secure the file. The passphrase can be
-  specified in `priv_key_pass`. If the passphrase option is set, then
-  `priv_key_path` should contain the path to the encrypted key file.
-  
-  To encrypt the private key file, use the `encrypt` command:
-  
-  ```
-  $ ./user-sync encrypt src-private.key
-  ```
-  
-  If invoked in this manner, `encrypt` will prompt you for a passphrase and then
-  encrypt `src-private.key`, replacing the plaintext file with the encrypted
-  version. Replace `src-private.key` with the filename of your console connector
-  key file.
-  
-  See [here](additional_tools.md#private-key-encryption) for full details.
+copied from the console.
 
 # Credential Security
 
-The `client_id`, `client_secret` and the contents of `private.key` are
-considered sensitive and should be secured accordingly. If you intend to keep
-these items in plaintext, it is your responsibility to restrict access to
-`connector-umapi.yml` and `private.key` using any necessary practices (ACLs,
-file permissons, etc).
+The `client_id` and `client_secret` are considered sensitive and should be
+secured accordingly. If you intend to keep these items in plaintext, it is your
+responsibility to restrict access to `connector-umapi.yml` using any necessary
+practices (ACLs, file permissons, etc).
 
 Any sensitive credential can be stored in a secure OS keychain (such as Windows
 Credential Manager). Each credential is identified by key name and account ID
@@ -171,13 +135,6 @@ name is stored in the respective config option.
 
 * `secure_client_id_key` - Key name of `client_id`
 * `secure_client_secret_key` - Key name of `client_secret`
-* `secure_priv_key_data` - Key name of `priv_key_data`**\***
-* `secure_priv_key_pass_key` - Key name of `priv_key_pass`
-
-**\*** Some keyring backends such as Windows Credential Manager impose a
-character limit on the password field. This makes it impossible to store the
-private key contents. We recommend instead to encrypt the key file and securely
-store the private key passphrase.
 
 We strongly recommend securing your credentials in this manner. See [Security
 Recommendations](security.md#secure-credential-storage) for more information.
