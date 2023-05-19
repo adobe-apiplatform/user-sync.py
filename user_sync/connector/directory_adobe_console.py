@@ -121,7 +121,7 @@ class AdobeConsoleConnector(DirectoryConnector):
 
         # Loading all the groups because UMAPI doesn't support group query. DOH!
         self.logger.info('Loading groups...')
-        umapi_groups = list(self.iter_umapi_groups())
+        umapi_groups = [g.lower() for g in self.iter_umapi_groups()]
         self.logger.info('Loading users...')
 
         # Loading all umapi users based on ID Type first before doing group filtering
@@ -198,10 +198,10 @@ class AdobeConsoleConnector(DirectoryConnector):
 
     def iter_group_members(self, group):
         umapi_users = self.umapi_users
-        members = filter(lambda u: ('groups' in u and group in u['groups']), umapi_users)
+        members = filter(lambda u: ('groups' in u and group in [g.lower() for g in u['groups']]), umapi_users)
         for member in members:
             user_key = self.generate_user_key(member['type'], member['username'], member['domain'])
-            yield (user_key)
+            yield user_key
 
     def load_umapi_users(self, identity_type):
         try:
