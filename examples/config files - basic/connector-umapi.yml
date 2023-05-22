@@ -24,6 +24,7 @@ server:
 # --- Enterprise Options ---
 # These options contain the credentials for connecting with the User Management API
 # client_id and client_secret can be stored in plaintext or can be secured (see below)
+# See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/connect_adobe.html#enterprise-settings
 enterprise:
   org_id: "Org ID goes here"
   client_id: "Client ID goes here"
