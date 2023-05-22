@@ -23,21 +23,22 @@ page_id: config-files
 {:toc}
 </details>
 
-Now comes the step where we put everything together. You’ll need:
+# Overview
 
-- Adobe.io integration access values from the adobe.io console
-- Private key file
-- Directory system access credentials and information about how users are
-  organized
-- Decision of whether you are managing product access via user sync
-  - Product Configuration names and user group names for how you want licenses
-    organized on the Adobe side
-  - Product Configurations and user groups need to have been already created on
-    the Adobe Admin Console.
+Now to put things together in the User Sync Tool configuration files. Ensure
+that you have the following:
 
-Be sure to use a text editor, not a word processing editor.
+- UMAPI credentials from the [Adobe Developer
+  Console](https://developer.adobe.com/console)
+  - See [this
+    guide](https://developer.adobe.com/developer-console/docs/guides/authentication/ServerToServerAuthentication/implementation/)
+    to create them if needed
+- Plan to map user groups
+- Credentials to LDAP system or other identity source (Admin Console, Okta, etc)
 
-Be sure to use spaces, not tabs in .yml files.
+Be sure to use a plain text editor, not a word processor or rich text editor.
+
+Be sure to use spaces, not tab characters for indentation in `.yml` files.
 
 # Configuration File Setup
 
@@ -88,14 +89,26 @@ in connector-ldap.yml can be set to False (the default):
 
 # Adobe UMAPI Credentials 
 
-- Edit the connector-umapi.yml. Put in the information from the adobe.io
-integration you created earlier. This would be the org\_id, api\_key,
-client\_secret, and tech\_acct.
+Open `connector-umapi.yml` in a text editor. Under the `server` key, set these
+values according to your UMAPI credentials.
 
-- Place the private key file in the user_sync_tool folder. The
-priv\_key\_path config file item is then set to the name of this file.
+- `org_id`
+- `client_id`
+- `client_secret`
 
-![](images/setup_config_umapi.png)
+Next, ensure that the key `authentication_method` is present at the top level of
+the file (i.e. with no indentation in front of it) and that it is set to
+`oauth`.
+
+Your UMAPI configuration should look like this:
+
+```yaml
+authentication_method: oauth
+enterprise:
+  org_id: "1234abc@AdobeOrg"
+  client_id: "12345-12313-abcdef"
+  client_secret: "97765-12313-abcdef"
+```
 
 # Main User Sync config file 
 
@@ -121,7 +134,8 @@ like this
   default_country_code: US
 ```
 
-and set the code to the appropriate country.  Don't change the indent level of the line.
+and set the code to the appropriate country. Don't change the indentation of the
+line.
 
 A country code is **REQUIRED** for Federated Ids and recommended for Enterprise
 Ids. If not supplied for Enterprise Ids, the user will be prompted to choose a
