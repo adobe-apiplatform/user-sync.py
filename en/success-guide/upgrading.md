@@ -59,13 +59,20 @@ The User Sync Tool also has many new features unavailable in older versions.
 # Compatibility
 
 The binary build of the UST has been tested on the supported versions of our
-targeted platforms (Windows, CentOS and Ubuntu). It is compatible with all major
-versions except for older Ubuntu LTS releases.
+targeted platforms (Windows, CentOS and Ubuntu). It is compatible with most
+major versions except for older Ubuntu LTS releases.
 
-Neither the Bionic nor Focal builds will run on Ubuntu Trusty or Xenial because
-each of the former require newer versions of `libc`. It may be possible to
-upgrade libc and other system packages to get the tool running, but the UST
-development team will not be able to provide support.
+The UST development team generally targets the environments supported by Github Actions.
+
+[https://github.com/actions/runner-images](https://github.com/actions/runner-images)
+
+With the exception of macOS, which currently isn't supported, and CentOS, which
+is supported for certain versions.
+
+Newer Ubuntu builds of the tool are unlikely to be combatible with older
+releases due to system library changes. It may be possible to upgrade libc and
+other system packages to get the tool running, but the UST development team will
+not be able to provide support.
 
 The tool can also be built from source to run on unsupported platforms. See the
 [build
@@ -73,17 +80,21 @@ instructions](https://github.com/adobe-apiplatform/user-sync.py#build-instructio
 in the readme. Note that Python 3.9 is required to build the tool, which may
 need to be installed on the system (or built from source).
 
+
+
 | Platform | Compatible? | Notes |
 |---|---|---|
-| Windows Server 2012R2 | Y | |
-| Windows Server 2016 | Y | |
+| Windows Server 2012R2 | ? | We can't guarantee 2012R2 compatibility. Use at your own risk. |
+| Windows Server 2016 | ? | The sync tool should likely work with 2016, but we can't guarantee it. |
 | Windows Server 2019 | Y | |
+| Windows Server 2022 | Y | |
 | CentOS/RedHat Enterprise Linux 7 | Y | |
 | CentOS/RedHat Enterprise Linux 8 | Y | |
-| Ubuntu Trusty 12.04 | N | `bionic` or `focal` builds will not run on Trusty and it [isn't supported by our build system](https://github.com/actions/virtual-environments) |
-| Ubuntu Xenial 16.04 | N | `bionic` or `focal` builds will not run on Xenial and it [isn't supported by our build system](https://github.com/actions/virtual-environments) |
-| Ubuntu Bionic 18.04 | Y | Use `ubuntu-bionic` build |
+| Ubuntu Trusty 12.04 | N | |
+| Ubuntu Xenial 16.04 | N | |
+| Ubuntu Bionic 18.04 | N | Bionic is no longer supported as of `v2.9.0` |
 | Ubuntu Focal 20.04 | Y | Use `ubuntu-focal` build |
+| Ubuntu Jammy 22.04 | Y | Use `ubuntu-jammy` build |
 {: .bordertablestyle }
 
 # Basic Procedure
