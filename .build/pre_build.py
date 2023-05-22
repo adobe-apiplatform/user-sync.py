@@ -20,7 +20,10 @@
 
 import os
 import shutil
-from backports import configparser
+import json
+import pkg_resources
+from pathlib import Path
+import configparser
 
 
 def cd():
@@ -61,7 +64,14 @@ def bundle_feature_flag_config():
         flag_cfg.write(flag_cfg_file)
 
 
+def pkg_meta():
+    pkg_meta_path = Path('user_sync', 'resources', 'pkg_meta.json')
+    with open(pkg_meta_path, 'w') as f:
+        json.dump({p.project_name: p.version for p in pkg_resources.working_set}, f)
+
+
 if __name__ == '__main__':
     cd()
     bundle_example_config('config files - basic')
     bundle_example_config('sign')
+    pkg_meta()

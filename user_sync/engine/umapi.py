@@ -68,8 +68,8 @@ class RuleProcessor(object):
         options = dict(self.default_options)
         options.update(caller_options)
         self.options = options
-        self.directory_user_by_user_key = {}
-        self.filtered_directory_user_by_user_key = {}
+        self.directory_user_index = MultiIndex([], ['email', 'username'])
+        self.filtered_directory_user_index = MultiIndex([], ['email', 'username'])
         self.umapi_info_by_name = {}
         self.adobeid_user_by_email = {}
         # counters for action summary log
@@ -228,8 +228,8 @@ class RuleProcessor(object):
         """
         logger = self.logger
         # find the total number of directory users and selected/filtered users
-        self.action_summary['directory_users_read'] = len(self.directory_user_by_user_key)
-        self.action_summary['directory_users_selected'] = len(self.filtered_directory_user_by_user_key)
+        self.action_summary['directory_users_read'] = len(self.directory_user_index.data)
+        self.action_summary['directory_users_selected'] = len(self.filtered_directory_user_index.data)
         # find the total number of adobe users and excluded users
         self.action_summary['primary_users_read'] = self.primary_user_count
         self.action_summary['excluded_user_count'] = self.excluded_user_count
@@ -363,8 +363,6 @@ class RuleProcessor(object):
             directory_group_filter = set(directory_group_filter)
         extended_attributes = options.get('extended_attributes')
 
-        directory_user_by_user_key = self.directory_user_by_user_key
-
         directory_groups = set(mappings.keys()) if self.will_process_groups() else set()
         if directory_group_filter is not None:
             directory_groups.update(directory_group_filter)
@@ -377,15 +375,15 @@ class RuleProcessor(object):
             if not user_key:
                 self.logger.warning("Ignoring directory user with empty user key: %s", directory_user)
                 continue
-            directory_user_by_user_key[user_key] = directory_user
+
+            self.directory_user_index.add(directory_user)
 
             if not self.is_directory_user_in_groups(directory_user, directory_group_filter):
                 continue
             if not self.is_selected_user_key(user_key):
                 continue
 
-            self.filtered_directory_user_by_user_key[user_key] = directory_user
-            self.get_umapi_info(PRIMARY_TARGET_NAME).add_desired_group_for(user_key, None)
+            self.filtered_directory_user_index.add(directory_user)
 
             # set up groups in hook scope; the target groups will be used whether or not there's customer hook code
             self.after_mapping_hook_scope['source_groups'] = set()
@@ -422,7 +420,8 @@ class RuleProcessor(object):
                 target_group = AdobeGroup.lookup(target_group_qualified_name)
                 if target_group is not None:
                     umapi_info = self.get_umapi_info(target_group.get_umapi_name())
-                    umapi_info.add_desired_group_for(user_key, target_group.get_group_name())
+                    umapi_info.add_desired_group_for(directory_user['identity_type'], directory_user['domain'],
+                                                     directory_user['email'], directory_user['username'], target_group.get_group_name())
                 else:
                     self.logger.error('Target adobe group %s is not known; ignored', target_group_qualified_name)
 
@@ -442,11 +441,12 @@ class RuleProcessor(object):
                         raise user_sync.error.AssertionException("Additional group resolution error: {}".format(str(e)))
                     umapi_info.add_mapped_group(rename_group)
                     umapi_info.add_additional_group(rename_group, member_group)
-                    umapi_info.add_desired_group_for(user_key, rename_group)
+                    umapi_info.add_desired_group_for(directory_user['identity_type'], directory_user['domain'],
+                                                     directory_user['email'], directory_user['username'], rename_group)
 
-        self.logger.debug('Total directory users after filtering: %d', len(self.filtered_directory_user_by_user_key))
+        self.logger.debug('Total directory users after filtering: %d', len(self.filtered_directory_user_index.data))
         if self.logger.isEnabledFor(logging.DEBUG):
-            self.logger.debug('Group work list: %s', dict([(umapi_name, umapi_info.get_desired_groups_by_user_key())
+            self.logger.debug('Group work list: %s', dict([(umapi_name, umapi_info.get_desired_groups_by_user_key().data)
                                                            for umapi_name, umapi_info
                                                            in self.umapi_info_by_name.items()]))
 
@@ -485,23 +485,23 @@ class RuleProcessor(object):
             self.logger.debug('%sing users to umapi...', verb)
         umapi_info, umapi_connector = self.get_umapi_info(PRIMARY_TARGET_NAME), umapi_connectors.get_primary_connector()
         if self.push_umapi:
-            primary_adds_by_user_key = umapi_info.get_desired_groups_by_user_key()
+            primary_adds = umapi_info.get_desired_groups_by_user_key().data
         else:
-            primary_adds_by_user_key, update_commands = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
+            primary_adds, update_commands = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
             primary_commands.extend(update_commands)
         # save groups for new users
 
-        total_users = len(primary_adds_by_user_key)
+        total_users = len(primary_adds.data)
 
         user_count = 0
-        for user_key, groups_to_add in primary_adds_by_user_key.items():
+        for primary_add in primary_adds.data:
             user_count += 1
-            if exclude_unmapped_users and not groups_to_add:
+            if exclude_unmapped_users and not primary_add['desired_groups']:
                 # If user is not part of any group and ignore outcast is enabled. Do not create user.
                 continue
-            # We always create every user in the primary umapi, because it's believed to own the directories.
-            self.primary_users_created.add(user_key)
-            primary_commands.append(self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector.trusted))
+            user_key = self.get_user_key(primary_add['id_type'], primary_add['username'],
+                                         primary_add['domain'], primary_add['email'])
+            primary_commands.append(self.create_umapi_user(user_key, primary_add['desired_groups'], umapi_info, umapi_connector.trusted))
 
         # then sync the secondary connectors
         for umapi_name, umapi_connector in umapi_connectors.get_secondary_connectors().items():
@@ -514,15 +514,18 @@ class RuleProcessor(object):
             else:
                 secondary_adds_by_user_key, update_commands = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
                 secondary_command_lists[umapi_name].extend(update_commands)
-            total_users = len(secondary_adds_by_user_key)
-            for user_key, groups_to_add in secondary_adds_by_user_key.items():
+            total_users = len(secondary_adds_by_user_key.data)
+            for secondary_add in secondary_adds_by_user_key.data:
                 # We only create users who have group mappings in the secondary umapi
-                if groups_to_add:
+                if secondary_add['desired_groups']:
+                    user_key = self.get_user_key(secondary_add['id_type'], secondary_add['username'],
+                                                 secondary_add['domain'], secondary_add['email'])
                     self.secondary_users_created.add(user_key)
                     if user_key not in self.primary_users_created:
                         # We pushed an existing user to a secondary in order to update his groups
                         self.updated_user_keys.add(user_key)
-                    secondary_command_lists[umapi_name].append(self.create_umapi_user(user_key, groups_to_add, umapi_info, umapi_connector.trusted))
+                    secondary_command_lists[umapi_name].append(self.create_umapi_user(user_key, secondary_add['desired_groups'],
+                                                                                      umapi_info, umapi_connector.trusted))
         return primary_commands, secondary_command_lists
 
     def execute_commands(self, command_list, connector):
@@ -638,6 +641,7 @@ class RuleProcessor(object):
                 return primary_commands, secondary_command_lists
             self.logger.debug("Processing Adobe-only users...")
             return self.manage_strays(primary_commands, secondary_command_lists, umapi_connectors)
+        return primary_commands, secondary_command_lists
 
     def manage_strays(self, primary_commands, secondary_command_lists, umapi_connectors):
         """
@@ -663,7 +667,7 @@ class RuleProcessor(object):
         # convenience function to get umapi Commands given a user key
         def get_commands(key):
             """Given a user key, returns the umapi commands targeting that user"""
-            id_type, username, domain = self.parse_user_key(key)
+            id_type, username, domain, _ = self.parse_user_key(key)
             if '@' in username and username.lower() in self.email_override:
                 username = self.email_override[username.lower()]
             return user_sync.connector.connector_umapi.Commands(identity_type=id_type, username=username, domain=domain)
@@ -723,9 +727,16 @@ class RuleProcessor(object):
         return primary_commands, secondary_command_lists
 
     @staticmethod
-    def get_user_attributes(directory_user):
+    def get_create_attributes(directory_user):
+        """get just the attributes we need to create user"""
         return {'email': directory_user['email'], 'firstname': directory_user['firstname'],
                 'lastname': directory_user['lastname']}
+
+    @staticmethod
+    def get_update_attributes(directory_user):
+        """get user attributes for info update comparison"""
+        return {'email': directory_user['email'], 'firstname': directory_user['firstname'],
+                'lastname': directory_user['lastname'], 'username': directory_user['username']}
 
     def get_identity_type_from_directory_user(self, directory_user):
         identity_type = directory_user.get('identity_type')
@@ -762,7 +773,7 @@ class RuleProcessor(object):
 
         commands = user_sync.connector.connector_umapi.Commands(identity_type, directory_user['email'],
                                                       directory_user['username'], directory_user['domain'])
-        attributes = self.get_user_attributes(directory_user)
+        attributes = self.get_create_attributes(directory_user)
         # check whether the country is set in the directory, use default if not
         country = directory_user['country']
         if not country:
@@ -801,7 +812,8 @@ class RuleProcessor(object):
         :type umapi_info: UmapiTargetInfo
         :type trusted: bool
         """
-        directory_user = self.directory_user_by_user_key[user_key]
+        directory_user = self.get_from_index(self.directory_user_index, user_key)
+
         commands = self.create_umapi_commands_for_directory_user(directory_user, self.will_update_user_info(umapi_info), trusted)
         if not commands:
             return
@@ -817,6 +829,12 @@ class RuleProcessor(object):
             self.logger.info('Queuing new user with user key: %s', user_key)
             self.primary_users_created.add(user_key)
         return commands
+
+    def get_from_index(self, index, user_key):
+        """Parse user key and try to retrieve user from provided index"""
+
+        _, username, _, email = self.parse_user_key(user_key)
+        return index.get(email=email, username=username)
 
     def update_umapi_user(self, umapi_info, user_key, attributes_to_update=None, groups_to_add=None,
                           groups_to_remove=None, umapi_user=None):
@@ -844,8 +862,8 @@ class RuleProcessor(object):
                 self.logger.info('Managing groups in %s for user key: %s added: %s removed: %s',
                                  umapi_info.get_name(), user_key, groups_to_add, groups_to_remove)
 
-        if user_key in self.directory_user_by_user_key:
-            directory_user = self.directory_user_by_user_key[user_key]
+        directory_user = self.get_from_index(self.directory_user_index, user_key)
+        if directory_user is not None:
             identity_type = self.get_identity_type_from_directory_user(directory_user)
         else:
             directory_user = umapi_user
@@ -889,13 +907,11 @@ class RuleProcessor(object):
         """
         command_list = []
 
-        filtered_directory_user_by_user_key = self.filtered_directory_user_by_user_key
-
         # the way we construct the return value is to start with a map from all directory users
         # to their groups in this umapi, make a copy, and pop off any adobe users we find.
         # That way, any key/value pairs left in the map are the unmatched adobe users and their groups.
-        user_to_group_map = umapi_info.get_desired_groups_by_user_key()
-        user_to_group_map = {} if user_to_group_map is None else user_to_group_map.copy()
+        dir_user_groups_all = umapi_info.get_desired_groups_by_user_key()
+        dir_user_groups_update = MultiIndex([], ['email', 'username'])
 
         # compute all static options before looping over users
         in_primary_org = self.is_primary_org(umapi_info)
@@ -910,7 +926,7 @@ class RuleProcessor(object):
             umapi_users = self.get_umapi_user_in_groups(umapi_info, umapi_connector, self.options['adobe_group_filter'])
         else:
             umapi_users = umapi_connector.iter_users()
-        # Walk all the adobe users, getting their group data, matching them with directory users,
+        # Walk all the adobe us
         # and adjusting their attribute and group data accordingly.
         for umapi_user in umapi_users:
             # if target is ESM, then override identity type
@@ -923,10 +939,10 @@ class RuleProcessor(object):
             if not user_key:
                 self.logger.warning("Ignoring umapi user with empty user key: %s", umapi_user)
                 continue
-            if umapi_info.get_umapi_user(user_key) is not None:
+            if umapi_info.get_umapi_user(email=umapi_user['email'], username=umapi_user['username']) is not None:
                 self.logger.debug("Ignoring umapi user. This user has already been processed: %s", umapi_user)
                 continue
-            umapi_info.add_umapi_user(user_key, umapi_user)
+            umapi_info.add_umapi_user(umapi_user)
             attribute_differences = {}
             current_groups = self.normalize_groups(umapi_user.get('groups'))
             groups_to_add = set()
@@ -936,7 +952,11 @@ class RuleProcessor(object):
             # map because we know they don't need to be created.
             # Also, keep track of the mapped groups for the directory user
             # so we can update the adobe user's groups as needed.
-            desired_groups = user_to_group_map.pop(user_key, None) or set()
+            desired_groups_rec = self.get_from_index(dir_user_groups_all, user_key)
+            desired_groups = set()
+            if desired_groups_rec is not None:
+                dir_user_groups_update.add(desired_groups_rec)
+                desired_groups = desired_groups_rec['desired_groups']
 
             # check for excluded users
             if self.is_umapi_user_excluded(in_primary_org, user_key, current_groups):
@@ -944,7 +964,7 @@ class RuleProcessor(object):
 
             self.map_email_override(umapi_user)
 
-            directory_user = filtered_directory_user_by_user_key.get(user_key)
+            directory_user = self.get_from_index(self.filtered_directory_user_index, user_key)
             if directory_user is None:
                 # There's no selected directory user matching this adobe user
                 # so we mark this adobe user as a stray, and we mark him
@@ -976,7 +996,12 @@ class RuleProcessor(object):
                                 groups_to_add, groups_to_remove, umapi_user))
         # mark the umapi's adobe users as processed and return the remaining ones in the map
         umapi_info.set_umapi_users_loaded()
-        return (user_to_group_map, command_list)
+        new_user_groups = MultiIndex([], ['email', 'username'])
+        for user in dir_user_groups_all.data:
+            r = dir_user_groups_update.get(email=user['email'], username=user['username'])
+            if r is None:
+                new_user_groups.add(user)
+        return (new_user_groups, command_list)
 
     def map_email_override(self, umapi_user):
         """
@@ -1002,7 +1027,7 @@ class RuleProcessor(object):
         if in_primary_org:
             self.primary_user_count += 1
             # in the primary umapi, we actually check the exclusion conditions
-            identity_type, username, domain = self.parse_user_key(user_key)
+            identity_type, username, domain, _ = self.parse_user_key(user_key)
             if identity_type in self.exclude_identity_types:
                 self.logger.debug("Excluding adobe user (due to type): %s", user_key)
                 self.excluded_user_count += 1
@@ -1044,13 +1069,12 @@ class RuleProcessor(object):
                 result.add(normalized_group_name)
         return result
 
-
     def get_user_attribute_difference(self, directory_user, umapi_user):
         differences = {}
-        attributes = self.get_user_attributes(directory_user)
+        attributes = self.get_update_attributes(directory_user)
         for key, value in attributes.items():
             umapi_value = umapi_user.get(key)
-            if key == 'email':
+            if key in ['email', 'username']:
                 diff = normalize_string(value) != normalize_string(umapi_value)
             else:
                 diff = value != umapi_value
@@ -1091,7 +1115,7 @@ class RuleProcessor(object):
         :rtype: str
         """
         id_type = user_sync.identity_type.parse_identity_type(id_type)
-        email = normalize_string(email) if email else None
+        email = normalize_string(email) if email is not None else ""
         username = normalize_string(username) or email
         domain = normalize_string(domain)
 
@@ -1103,7 +1127,7 @@ class RuleProcessor(object):
             domain = ""
         elif not domain:
             return None
-        return str(id_type) + u',' + str(username) + u',' + str(domain)
+        return f"{id_type},{username},{domain},{email}"
 
     def parse_user_key(self, user_key):
         """
@@ -1125,11 +1149,12 @@ class RuleProcessor(object):
         self.logger.info('Reading Adobe-only users from: %s', file_path)
         id_type_column_name = 'type'
         user_column_name = 'username'
+        email_column_name = 'email'
         domain_column_name = 'domain'
         ummapi_name_column_name = 'umapi'
         rows = CSVAdapter.read_csv_rows(file_path,
                                         recognized_column_names=[
-                                            id_type_column_name, user_column_name, domain_column_name,
+                                            id_type_column_name, email_column_name, user_column_name, domain_column_name,
                                             ummapi_name_column_name,
                                         ],
                                         logger=self.logger,
@@ -1138,8 +1163,17 @@ class RuleProcessor(object):
             umapi_name = row.get(ummapi_name_column_name) or PRIMARY_TARGET_NAME
             id_type = row.get(id_type_column_name)
             user = row.get(user_column_name)
+            email = row.get(email_column_name)
             domain = row.get(domain_column_name)
-            user_key = self.get_user_key(id_type, user, domain)
+
+            if email is None:
+                if user is not None:
+                    self.logger.warning("Please specify user email address for user '%s', action may fail otherwise", user)
+                else:
+                    self.logger.warn("Username or email address must be specified for record: %s", row)
+                    continue
+
+            user_key = self.get_user_key(id_type, user, domain, email)
             if user_key:
                 self.add_stray(umapi_name, None)
                 self.add_stray(umapi_name, user_key)
@@ -1161,7 +1195,7 @@ class RuleProcessor(object):
         logger.info('Writing Adobe-only users to: %s', file_path)
         # figure out if we should include a umapi column
         secondary_count = 0
-        fieldnames = ['type', 'username', 'domain']
+        fieldnames = ['type', 'email', 'domain']
         rows = []
         # count the secondaries, and if there are any add the name as a column
         for umapi_name in self.stray_key_map:
@@ -1171,12 +1205,12 @@ class RuleProcessor(object):
                 secondary_count += 1
         for umapi_name in self.stray_key_map:
             for user_key in self.get_stray_keys(umapi_name):
-                id_type, username, domain = self.parse_user_key(user_key)
+                id_type, username, domain, email = self.parse_user_key(user_key)
                 umapi = umapi_name if umapi_name else ""
                 if secondary_count:
-                    row_dict = {'type': id_type, 'username': username, 'domain': domain, 'umapi': umapi}
+                    row_dict = {'type': id_type, 'email': email, 'domain': domain, 'umapi': umapi}
                 else:
-                    row_dict = {'type': id_type, 'username': username, 'domain': domain}
+                    row_dict = {'type': id_type, 'email': email, 'domain': domain}
                 rows.append(row_dict)
 
         CSVAdapter.write_csv_rows(file_path, fieldnames, rows)
@@ -1234,7 +1268,7 @@ class UmapiConnectors(object):
                 break
 
 
-class UmapiTargetInfo(object):
+class UmapiTargetInfo:
     def __init__(self, name):
         """
         :type name: str
@@ -1242,12 +1276,9 @@ class UmapiTargetInfo(object):
         self.name = name
         self.mapped_groups = set()
         self.non_normalize_mapped_groups = set()
-        self.desired_groups_by_user_key = {}
-        self.umapi_user_by_user_key = {}
+        self.desired_groups_by_user_key = MultiIndex(data=[], key_names=['email', 'username'])
+        self.umapi_user_by_user_key = MultiIndex(data=[], key_names=['email', 'username'])
         self.umapi_users_loaded = False
-        self.stray_by_user_key = {}
-        self.groups_added_by_user_key = {}
-        self.groups_removed_by_user_key = {}
 
         # keep track of auto-mapped additional groups for conflict tracking.
         # if feature is disabled, this dict will be empty
@@ -1281,40 +1312,49 @@ class UmapiTargetInfo(object):
     def get_desired_groups_by_user_key(self):
         return self.desired_groups_by_user_key
 
-    def get_desired_groups(self, user_key):
+    def get_desired_groups(self, email, username):
         """
         :type user_key: str
         """
-        desired_groups = self.desired_groups_by_user_key.get(user_key)
-        return desired_groups
+        return self.desired_groups_by_user_key.get(email=email, username=username)
 
-    def add_desired_group_for(self, user_key, group):
+    def add_desired_group_for(self, id_type, domain, email, username, group):
         """
         :type user_key: str
         :type group: Optional(str)
         """
-        desired_groups = self.get_desired_groups(user_key)
-        if desired_groups is None:
-            self.desired_groups_by_user_key[user_key] = desired_groups = set()
-        if group is not None:
-            normalized_group_name = normalize_string(group)
-            desired_groups.add(normalized_group_name)
+        if group is None:
+            return
 
-    def add_umapi_user(self, user_key, user):
+        normalized_group_name = normalize_string(group)
+        desired_groups_rec = self.get_desired_groups(email, username)
+        if desired_groups_rec is None:
+            groups = set()
+            groups.add(normalized_group_name)
+            desired_groups_rec = {
+                'id_type': id_type,
+                'domain': domain,
+                'email': email,
+                'username': username,
+                'desired_groups': groups,
+            }
+            self.desired_groups_by_user_key.add(desired_groups_rec)
+        else:
+            desired_groups_rec['desired_groups'].add(normalized_group_name)
+            self.desired_groups_by_user_key.update(desired_groups_rec, email=email, username=username)
+
+    def add_umapi_user(self, user):
         """
         :type user_key: str
         :type user: dict
         """
-        self.umapi_user_by_user_key[user_key] = user
+        self.umapi_user_by_user_key.add(user)
 
-    def iter_umapi_users(self):
-        return self.umapi_user_by_user_key.items()
-
-    def get_umapi_user(self, user_key):
+    def get_umapi_user(self, email, username):
         """
         :type user_key: str
         """
-        return self.umapi_user_by_user_key.get(user_key)
+        return self.umapi_user_by_user_key.get(email=email, username=username)
 
     def set_umapi_users_loaded(self):
         self.umapi_users_loaded = True
@@ -1324,3 +1364,94 @@ class UmapiTargetInfo(object):
 
     def __repr__(self):
         return "UmapiTargetInfo('name': %s)" % self.name
+
+
+class MultiIndex:
+    """
+    This data structure replaces the old convention of caching users in a
+    dictionary indexed by a static composite key. The MultiIndex structure
+    consists of a simple list (self.data) consisting of one or more dictionaries
+    that follow a regular structure (e.g. a list of directory users or UMAPI
+    users).
+
+    This list is indexed by one or more keys. Each key should point to one
+    record in self.data.
+
+    When a record is fetched from the index, a record is returned if at least
+    one key matches a record. This allows partial matches - i.e. when retrieving
+    information for a user where the email address matches a record but the
+    username does not (or vice versa).
+
+    Example:
+
+    >>> data = [{"key1": "foo", "key2": "bar", "other": "data"}]
+    >>> mi = MultiIndex(data=data, key_names=["key1", "key2"])
+    >>> mi.get(key1="foo", key2="bar")
+    {"key1": "foo", "key2": "bar", "other": "data"}
+    >>> mi.get(key1="foo", key2="invalid")
+    {"key1": "foo", "key2": "bar", "other": "data"}
+    >>> mi.get(key1="invalid", key2="invalid")
+    None
+
+    MultiIndex supports the addition of new individual records and
+    the ability to update existing records. It does not support
+    deletion because that would require a full reindex for each
+    deletion.
+    """
+    def __init__(self, data, key_names):
+        self.data = data
+        self.key_names = key_names
+        self.index = {}
+        for kn in key_names:
+            self.index[kn] = {}
+        self.build_index()
+
+    def build_index(self):
+        for i, obj in enumerate(self.data):
+            self.index_obj(i, obj)
+
+    def get_index(self, **kwargs):
+        for kn, k in kwargs.items():
+            keys = self.index.get(kn)
+            if keys is None:
+                raise KeyError(f"Key '{kn}' not found in index")
+            i = keys.get(k.lower())
+            if i is None:
+                continue
+            return i
+        return None
+
+    def get(self, **kwargs):
+        i = self.get_index(**kwargs)
+        return self.data[i] if i is not None else None
+
+    def index_obj(self, i, obj):
+        for kn in self.key_names:
+            k = obj.get(kn)
+            if k is None:
+                raise KeyError(f"Can't find key '{kn}' on object {obj=}")
+            self.index[kn][k.lower()] = i
+
+    def add(self, obj):
+        i = len(self.data)
+        self.data.append(obj)
+        self.index_obj(i, obj)
+
+    def update(self, obj, **kwargs):
+        i = self.get_index(**kwargs)
+        if i is None:
+            raise ValueError(f"Can't find object for any key {kwargs=}")
+
+        curr_obj = self.data[i]
+        reindex = {}
+        for kn in self.key_names:
+            if kn not in obj:
+                raise KeyError(f"Can't find key '{kn}' on object {obj=}")
+            if curr_obj[kn].lower() != obj[kn].lower():
+                reindex[kn] = (curr_obj[kn].lower(), obj[kn].lower())
+
+        self.data[i] = obj
+        for kn, keys in reindex.items():
+            old, new = keys
+            del self.index[kn][old]
+            self.index[kn][new] = i

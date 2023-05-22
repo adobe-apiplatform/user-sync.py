@@ -1,5 +1,81 @@
 | tag | date | title |
 |---|---|---|
+| v2.9.0rc1 | 2023-04-12 | User Sync Tool v2.9.0rc1 |
+
+# Features
+
+* 8c4ea5c Implement unconditional username update
+
+# Fixes
+
+* #811 Fix user email update failures
+
+# Build Changes
+
+* Github Actions no longer maintains a build for Ubuntu Bionic (18.04),
+  so automated `bionic` builds are no longer available. Automated builds
+  for 22.04 Jammy have been added with the `jammy` label.
+
+# Advisory
+
+This is a pre-release and may not be stable for production use. The username
+update feature is under development and will currently update the username of
+any user that can be identified as being in need of a username update. This
+may have unexpected side effects.
+
+---
+
+| tag | date | title |
+|---|---|---|
+| v2.8.0 | 2023-01-30 | User Sync Tool v2.8.0 |
+
+# Features
+
+* #738 Platform and environment info
+
+# Fixes
+
+* df8b33d Prevent dynamic attribute error
+* fa985d1 Fix new user count
+
+---
+
+| tag | date | title |
+|---|---|---|
+| v2.7.6 | 2023-01-12 | User Sync Tool v2.7.6 |
+
+# Features
+
+* 4c4545a Extend "additional groups" awareness/support to all directory connectors
+
+# Fixes
+
+* 183e1d2 Fix bug when writing Adobe-only users to file (#801)
+* 79ce27d Non-zero exit code for certain error conditions (#803)
+* 651d211 Deal with emails, not usernames in CSV adobe-only features (write to CSV, read from CSV) (#808)
+
+# Documentation
+
+* c54a9eb Update Additional Groups documentation to discuss all directory connector types
+
+---
+
+| tag | date | title |
+|---|---|---|
+| v2.7.5 | 2022-09-29 | User Sync Tool v2.7.5 |
+
+# Bug Fixes
+* fbeb468b Update Sign API model to ignore unknown attributes
+* 637a2bf7 Get Okta token from config securely
+
+# Documentation Updates
+* Documentation is now built from branch `user-guide`
+* eab9825 Create GHA workflow to build docs
+
+---
+
+| tag | date | title |
+|---|---|---|
 | v2.7.4 | 2022-09-07 | User Sync Tool v2.7.4 |
 
 # Bug Fixes

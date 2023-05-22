@@ -90,6 +90,8 @@ class UmapiConnector(object):
         self.logger = logger = user_sync.connector.helper.create_logger(options)
         if server_config:
             server_config.report_unused_values(logger)
+        if self.uses_business_id is not None:
+            logger.warning("NOTICE: uses_business_id is deprecated. Please remove it from your UMAPI config file.")
         logger.debug('UMAPI initialized with options: %s', options)
 
         ims_host = server_options['ims_host']

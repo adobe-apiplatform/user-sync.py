@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-20.04, windows-latest]
         extension_support: [0, 1]
    
     steps:
@@ -23,7 +23,7 @@ jobs:
       with:
         python-version: '3.9'
     - name: Ubuntu 
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-20.04'
       run: | 
         sudo apt-get update
         sudo apt-get install -y software-properties-common

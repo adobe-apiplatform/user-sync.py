@@ -38,6 +38,7 @@ class OktaDirectoryConnector(DirectoryConnector):
 
     def __init__(self, caller_options, *args, **kwargs):
         super(OktaDirectoryConnector, self).__init__(*args, **kwargs)
+        self.additional_group_filters = None
         caller_config = DictConfig('%s configuration' % self.name, caller_options)
         builder = OptionsBuilder(caller_config)
         builder.set_string_value('group_filter_format',
@@ -55,7 +56,7 @@ class OktaDirectoryConnector(DirectoryConnector):
         builder.set_string_value('user_identity_type', None)
         builder.set_string_value('logger_name', self.name)
         host = builder.require_string_value('host')
-        api_token = builder.require_string_value('api_token')
+        api_token = caller_config.get_credential('api_token', host)
 
         options = builder.get_options()
 
@@ -129,6 +130,9 @@ class OktaDirectoryConnector(DirectoryConnector):
             self.logger.debug('Group %s members: %d users: %d', group, total_group_members, total_group_users)
 
         return user_by_uid.values()
+
+    def set_additional_group_filters(self, _):
+        self.logger.warn("Additional group rules are not supported by the Okta connector")
 
     def find_group(self, group):
         """

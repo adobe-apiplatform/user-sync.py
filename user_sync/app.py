@@ -21,6 +21,7 @@ import logging
 import os
 import platform
 import sys
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -40,7 +41,7 @@ import user_sync.encryption
 import user_sync.engine.umapi
 import user_sync.helper
 import user_sync.lockfile
-import user_sync.resource
+from user_sync import resource
 from user_sync.config.user_sync import UMAPIConfigLoader
 from user_sync.config.sign_sync import SignConfigLoader
 from user_sync.config import user_sync as config
@@ -59,6 +60,8 @@ from user_sync.version import __version__ as app_version
 
 LOG_STRING_FORMAT = '%(asctime)s %(process)d %(levelname)s %(name)s - %(message)s'
 LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+
+EXIT_CODE = 0
 
 # file logger, defined early so later functions can refer to it.
 logger = logging.getLogger('main')
@@ -96,6 +99,26 @@ def main():
     user-sync [COMMAND] -h/--help
     """
     pass
+
+
+@main.command()
+@click.help_option('-h', '--help')
+def info():
+    """Get a dump of environmental information"""
+    click.echo(f"Python: {platform.python_version()}")
+    plat = platform.platform()
+    click.echo(f"Platform: {plat}")
+    if 'linux' in plat.lower():
+        click.echo("OS Release Info:")
+        with open('/etc/os-release') as f:
+            for l in f:
+                click.echo(f"  {l.strip()}")
+    click.echo("Packages:")
+    pkg_meta_file = resource.get_resource('pkg_meta.json')
+    with open(pkg_meta_file) as f:
+        pkg_meta = json.load(f) 
+        for p in sorted(pkg_meta):
+            click.echo(f"  {p}: {pkg_meta[p]}")
 
 
 @main.command()
@@ -369,11 +392,7 @@ def begin_work_umapi(config_loader: UMAPIConfigLoader):
     if additional_groups and isinstance(additional_groups, list):
         additional_group_filters = [r['source'] for r in additional_groups]
     if directory_connector is not None:
-        directory_connector.additional_group_filters = additional_group_filters
-        # show error dynamic mappings enabled but 'dynamic_group_member_attribute' is not defined
-        if additional_group_filters and directory_connector.options['dynamic_group_member_attribute'] is None:
-            raise AssertionException(
-                "Failed to enable dynamic group mappings. 'dynamic_group_member_attribute' is not defined in config")
+        directory_connector.set_additional_group_filters(additional_group_filters)
 
     primary_name = '.primary' if secondary_umapi_configs else ''
     umapi_primary_connector = UmapiConnector(primary_name, primary_umapi_config, True)
@@ -424,6 +443,7 @@ def load_directory_config(config_loader: ConfigLoader, new_account_type=None) ->
 
 def run_sync(config_loader, begin_work):
     run_stats = None
+    global EXIT_CODE
     try:
         init_log(config_loader.get_logging_config())
 
@@ -447,6 +467,7 @@ def run_sync(config_loader, begin_work):
     except AssertionException as e:
         if not e.is_reported():
             logger.critical("%s", e)
+            EXIT_CODE = 1
             e.set_reported()
     except KeyboardInterrupt:
         try:
@@ -455,13 +476,15 @@ def run_sync(config_loader, begin_work):
             pass
     except Exception:
         try:
-            logger.error('Unhandled exception', exc_info=sys.exc_info())
+            logger.critical('Unhandled exception', exc_info=sys.exc_info())
+            EXIT_CODE = 1
         except Exception:
             pass
 
     finally:
         if run_stats is not None:
             run_stats.log_end(logger)
+    sys.exit(EXIT_CODE)
 
 
 # Additional CLI commands #
@@ -491,7 +514,7 @@ def shell_scripts(platform):
     """Generate invocation shell scripts for the given platform."""
     if platform is None:
         platform = 'win' if 'win' in sys.platform.lower() else 'linux'
-    shell_scripts = user_sync.resource.get_resource_dir('shell_scripts/{}'.format(platform))
+    shell_scripts = resource.get_resource_dir('shell_scripts/{}'.format(platform))
     for script in shell_scripts:
         with open(script, 'r') as fh:
             content = fh.read()
@@ -507,7 +530,7 @@ def shell_scripts(platform):
 @click.help_option('-h', '--help')
 def docs():
     """Open user manual in browser"""
-    res_file = user_sync.resource.get_resource('manual_url')
+    res_file = resource.get_resource('manual_url')
     assert res_file is not None, "User Manual URL file not found"
     with click.open_file(res_file) as f:
         url = f.read().strip()
@@ -533,7 +556,7 @@ def example_config(**kwargs):
     for k, fname in kwargs.items():
         target = Path.cwd() / fname
         assert k in res_files, "Invalid option specified"
-        res_file = user_sync.resource.get_resource(res_files[k])
+        res_file = resource.get_resource(res_files[k])
         assert res_file is not None, "Resource file '{}' not found".format(res_files[k])
         if target.exists() and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(target)):
             continue
@@ -563,7 +586,7 @@ def example_config_sign(**kwargs):
     for k, fname in kwargs.items():
         target = Path.cwd() / fname
         assert k in res_files, "Invalid option specified"
-        res_file = user_sync.resource.get_resource(res_files[k])
+        res_file = resource.get_resource(res_files[k])
         assert res_file is not None, "Resource file '{}' not found".format(res_files[k])
         if target.exists() and not click.confirm('\nWarning - file already exists: \n{}\nOverwrite?'.format(target)):
             continue

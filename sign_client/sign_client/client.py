@@ -235,7 +235,7 @@ class SignClient:
         set_number = 1
         batch_count = ceil(len(objects) / self.batch_size)
         for i in range(0, len(objects), self.batch_size):
-            self.logger.info("{}s - batch {}/{}".format(handle.__name__, set_number, batch_count))
+            self.logger.info("Batching calls to {} - batch {}/{}".format(handle.__name__, set_number, batch_count))
             self.loop.run_until_complete(self._await_calls(handle, headers, objects[i:i + self.batch_size]))
             set_number += 1
 
