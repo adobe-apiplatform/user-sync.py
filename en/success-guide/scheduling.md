@@ -9,10 +9,10 @@ parent: success-guide
 page_id: scheduling
 ---
 
-# Setup Scheduled Ongoing Execution of User Sync
+# Set up Scheduled Ongoing Execution of User Sync
 
 
-[Previous Section](command_line_options.md) \| [Next Section](update_cert.md) 
+[Previous Section](command_line_options.md) \| [Next Section](upgrading.md) 
 
 ## Setting Up Scheduled Run on Windows
 
@@ -60,5 +60,5 @@ Note that often when setting up scheduled tasks, commands that work from the com
 
 When scheduling your cron job please limit your sync to once a day and consider a time that works best for you, taking into consideration other timezones and clients.  
 
-[Previous Section](command_line_options.md) \| [Next Section](update_cert.md) 
+[Previous Section](command_line_options.md) \| [Next Section](upgrading.md) 
 

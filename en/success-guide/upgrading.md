@@ -20,7 +20,7 @@ page_id: upgrade-guide
 
 ---
 
-[Previous Section](update_cert.md) \| [Back to Contents](index.md)
+[Previous Section](scheduling.md) \| [Back to Contents](index.md)
 
 ---
 
@@ -113,4 +113,4 @@ for each sync config. You will not need to repeat steps 1 and 2 if each sync is 
 
 Please [create an issue](https://github.com/adobe-apiplatform/user-sync.py/issues) if you need help with the upgrade process.
 
-[Previous Section](update_cert.md) \| [Back to Contents](index.md)
+[Previous Section](scheduling.md) \| [Back to Contents](index.md)
