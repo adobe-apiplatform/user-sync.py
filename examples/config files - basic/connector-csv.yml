@@ -6,7 +6,7 @@
 # See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/sync_from_csv.html#format-options
 
 #delimiter: ","
-#string_encoding: utf-8
+# string_encoding: utf-8
 
 # --- Column Mapping Options ---
 # These options let you control the column naming scheme of the CSV input file
