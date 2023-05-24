@@ -130,7 +130,7 @@ option isn't set then the identity type for user sync will be governed by the to
 
 ## `string_encoding`
 
-The `string_encoding` option defines the character encoding used in the LDAP system.
+The `string_encoding` option defines the character encoding used when formatting Okta values.
 
 Default is `utf8`.
 
