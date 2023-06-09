@@ -1079,6 +1079,9 @@ class RuleProcessor(object):
             else:
                 diff = value != umapi_value
             if diff:
+                if key not in self.options['update_attributes']:
+                    self.logger.warn(f"'{key}' has changed for user '{self.get_umapi_user_key(umapi_user)}', but that attribute isn't configured for updating")
+                    continue
                 differences[key] = value
         return differences
 
