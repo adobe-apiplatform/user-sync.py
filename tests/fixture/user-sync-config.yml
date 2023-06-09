@@ -5,6 +5,10 @@ adobe_users:
   exclude_users: null
   connectors:
     umapi: connector-umapi.yml
+  update_attributes:
+    - firstname
+    - lastname
+    - email
 directory_users:
   user_identity_type: federatedID
   default_country_code: US

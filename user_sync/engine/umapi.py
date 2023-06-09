@@ -57,6 +57,7 @@ class RuleProcessor(object):
         'stray_list_input_path': None,
         'stray_list_output_path': None,
         'test_mode': False,
+        'update_attributes': ['firstname', 'lastname', 'email'],
         'update_user_info': False,
         'username_filter_regex': None,
     }
