@@ -26,9 +26,9 @@ server:
 # client_id and client_secret can be stored in plaintext or can be secured (see below)
 # See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/connect_adobe.html#enterprise-settings
 enterprise:
-  org_id: "Org ID goes here"
   client_id: "Client ID goes here"
   client_secret: "Client secret goes here"
+  org_id: "Org ID goes here"
 
   # NOTE: Credentials can be stored securely with these options
   # secure_client_id_key: my_client_id
