@@ -1,34 +1,18 @@
-# This is a sample configuration file for the umapi connector type.
+# This is a template configuration file for the User Sync Tool UMAPI connector
 #
-# umapi (user management api) is a network protocol served by Adobe that
-# provides management of users in Adobe-hosted enterprise organizations.
-#
-# This sample file contains all of the settable options for this protocol.
-# All of the settings here can be changed.  It is recommended
-# that you make a copy of this file and edit that to match your configuration.
-# While you are at it, you will likely want to remove a lot of this  commentary,
-# in order to enhance the readability of your file.
+# Full documentation here -
+# https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/connect_adobe.html
 
+# --- General Options ---
+# The following options control general UMAPI connector behavior.
+# See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/connect_adobe.html#general-settings
+
+# ssl_verify: False
 authentication_method: oauth
 
-# (optional) ssl_verify
-# Allows you to disable the SSL verification used by the requests module.  This can
-# come in handy for troubleshooting or working around network / proxy related issues when
-# the following error is encountered:
-#  'UMAPI connection to org id failed: [SSL: CERTIFICATE_VERIFY_FAILED]'
-# It is recommended to leave this set to default (True), since it leaves UST potentially
-# vulnerable to middle man attacks and set to False only if absolutely needed.
-
-# (optional) UMAPI server settings (defaults as shown)
-# The host and endpoint settings specify the Adobe endpoints which
-# host the UMAPI services and those which provide authorization.
-# The timeout and retries settings control how much delay (in seconds)
-# can be tolerated in server responses, and also how many times a request
-# that fails due to server timeout or server throttling will be retried.
-# You will *never* need to alter these settings unless you are provided
-# alternate values by Adobe as part of a support engagement.  It is
-# highly recommended that you leave these values commented out
-# so that the default values are guaranteed to be used.
+# --- Server Options ---
+# These generally never need to be changed by most users.
+# See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/connect_adobe.html#server-settings
 server:
   #host: usermanagement.adobe.io
   #endpoint: /v2/usermanagement
@@ -37,22 +21,16 @@ server:
   #timeout: 120
   #retries: 3
 
-# (required) enterprise organization settings
-# You must specify all five of these settings.  Consult the
-# Adobe UMAPI documentation and the Adobe I/O Console to determine
-# the correct settings for your enterprise organization.
+# --- Enterprise Options ---
+# These options contain the credentials for connecting with the User Management API
+# client_id and client_secret can be stored in plaintext or can be secured (see below)
+# See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/connect_adobe.html#enterprise-settings
 enterprise:
-  org_id: "Org ID goes here"
   client_id: "Client ID goes here"
   client_secret: "Client secret goes here"
+  org_id: "Org ID goes here"
 
-  # (optional) You can store credentials in the operating system credential store
-  # (Windows Credential Manager, Mac Keychain, Linux Freedesktop Secret Service
-  # or KWallet - these will be built into the Linux distribution).
-  # To use this feature, uncomment the following entries and remove the
-  # client_id, and client_secret above.
-  # The actual credential values are placed in the credential store with the
-  # username as the org_id value, and the key name (perhaps called internet 
-  # or network address) as one of the values below.
-  #secure_client_id_key: umapi_client_id
-  #secure_client_secret_key: umapi_client_secret
+  # NOTE: Credentials can be stored securely with these options
+  # secure_client_id_key: my_client_id
+  # secure_client_secret_key: my_client_secret
+  # See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/connect_adobe.html#credential-security

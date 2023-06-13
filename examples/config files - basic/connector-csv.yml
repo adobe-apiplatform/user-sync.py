@@ -1,81 +1,22 @@
-# This is a sample configuration file for the csv connector type.
-#
-# CSV (Comma-Separated Values) is a plain-text spreadsheet format.
-# The main function of this configuration file is to specify how column names
-# in the spreadsheet are mapped to attribute names in the directory.
-#
-# The first line of a CSV file is assumed to be header row with column names.
-# The column names in your spreadsheet can be in any order, and if there are
-# fewer values in a row than there are in the header row, the attributes
-# for the missing columns are given no value.
-#
-# This sample file contains all of the settable options for this format,
-# with each set to its default value.  If the defaults are fine for your
-# application, you can use a copy of this file as-is, or you can omit the csv
-# setting from the connectors in your main User Sync configuration file.
+# This is the configuration template for the CSV connector.
+# For more information, see https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/sync_from_csv.html
 
-# (optional) delimiter (no default value)
-# The delimiter is the string that separates columns.  Normally,
-# this is detected automatically from the first line in the file.
-# To set it to a specific value, uncomment this setting:
+# --- Format Options ---
+# These options relate to the CSV file format
+# See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/sync_from_csv.html#format-options
+
 #delimiter: ","
+# string_encoding: utf-8
 
-# (optional) string_encoding (default value given below)
-# string_encoding specifies the Unicode string encoding used in the CSV file.
-# All values retrieved from the file are converted to Unicode before being
-# sent to or compared with values on the Adobe side, to avoid encoding issues.
-# The value must be a Python codec name or alias, such as 'latin1' or 'utf-8.
-# See https://docs.python.org/2/library/codecs.html#standard-encodings for details.
-#string_encoding: utf-8
+# --- Column Mapping Options ---
+# These options let you control the column naming scheme of the CSV input file
+# See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/sync_from_csv.html#column-mapping-options
 
-# (optional) email_column_name (default "email")
-# The column name that contains the user's email address.
-# Values in this column must be valid, unquoted email addresses.
-# A value is required in this column for all users, regardless
-# of their identity type.  For Adobe ID users, all of the other
-# column values are optional.  For Enterprise and Federated ID
-# users, all of the other column values are significant.
 email_column_name: email
-
-# (optional) first_name_column_name (default "firstname")
-# The column name that contains the user's first name (aka given name).
-# Values in this column can be any string
 first_name_column_name: firstname
-
-# (optional) last_name_column_name (default "lastname")
-# The column name that contains the user's last name (aka surname).
-# Values in this column can be any string
 last_name_column_name: lastname
-
-# (optional) country_column_name (default "country")
-# The column name that contains the user's home country.
-# Values in this column must be an ISO-3166 two-letter country code.
 country_column_name: country
-
-# (optional) groups_column_name (default "groups")
-# The column name that contains the user's group memberships.
-# Values in this column must be a comma-separated list of group names.
-# NOTE: Since commas usually separate columns, be sure to surround the
-# entire column value with double quotes, to prevent any embedded commas
-# from being interpreted as column separators.
 groups_column_name: groups
-
-# (optional) identity_type_column_name (default "type")
-# The column name that contains the user's identity type.
-# Values in this column must be adobeID, enterpriseID, or FederatedID.
 identity_type_column_name: type
-
-# (optional) username_column_name (default "username")
-# The column name that contains the user's username (for the Adobe side).
-# Values in this column should not be specified unless the user is of type federatedID
-# and the user's domain is configured for username-based federation.  In all other
-# cases, leave this column blank, and the email will be used for the username.
 username_column_name: username
-
-# (optional) domain_column_name (default "domain")
-# The column name that contains the user's domain.
-# Values in this column should not be specified unless the user is of type federatedID,
-# the user's domain is configured for username-based federation, and there is a value
-# in the username field.  If this field is left blank, the domain part of the email
-# address will be used for the user's domain.
 domain_column_name: domain
