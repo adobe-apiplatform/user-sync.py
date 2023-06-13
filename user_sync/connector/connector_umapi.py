@@ -70,10 +70,14 @@ class UmapiConnector(object):
         server_builder.set_string_value('host', 'usermanagement.adobe.io')
         server_builder.set_string_value('endpoint', '/v2/usermanagement')
 
-        auth_host_key = 'ims_host' if 'ims_host' in server_config else 'auth_host'
-        server_builder.set_string_value(auth_host_key, 'ims-na1.adobelogin.com')
+        if server_config is None:
+            auth_host_key = 'auth_host'
+            auth_endpoint_key = 'auth_endpoint'
+        else:
+            auth_host_key = 'ims_host' if 'ims_host' in server_config else 'auth_host'
+            auth_endpoint_key = 'ims_endpoint_jwt' if 'ims_endpoint_jwt' in server_config else 'auth_endpoint'
 
-        auth_endpoint_key = 'ims_endpoint_jwt' if 'ims_endpoint_jwt' in server_config else 'auth_endpoint'
+        server_builder.set_string_value(auth_host_key, 'ims-na1.adobelogin.com')
         auth_endpoint_default = '/ims/exchange/jwt'
         if options['authentication_method'] == 'oauth':
             auth_endpoint_default = '/ims/token/v2'
