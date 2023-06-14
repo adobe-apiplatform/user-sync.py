@@ -1,20 +1,25 @@
 from user_sync.error import AssertionException
 from user_sync.encryption import decrypt
+from umapi_client import JWTAuth, OAuthS2S
 
 
-def make_auth_dict(name, config, org_id, tech_acct, logger):
+def create_umapi_auth(name, config, org_id, tech_acct, auth_host, auth_endpoint, ssl_verify, auth_type, logger):
     api_field = 'client_id' if 'client_id' in config or 'secure_client_id_key' in config else "api_key"
     if "api_key" in config and "client_id" in config:
         #word to be the same thing--take out api key--
         raise AssertionException('Cannot contain setting for both "api_key" and "client_id"(both fields set the same value). Please use "client_id."')
     if "api_key" in config and "secure_client_id" in config:
         raise AssertionException('Cannot contain setting for both "api_key" and "secure_client_id_key"(both fields set the same value). Please use "secure_client_id_key"')
-    auth_dict = {
-        'org_id': org_id,
-        'tech_acct_id': tech_acct,
-        'api_key': config.get_credential(api_field, org_id),
-        'client_secret': config.get_credential('client_secret', org_id),
-    }
+
+    if auth_type == 'oauth':
+        return OAuthS2S(
+            client_id=config.get_credential(api_field, org_id),
+            client_secret=config.get_credential('client_secret', org_id),
+            auth_host=auth_host,
+            auth_endpoint=auth_endpoint,
+            ssl_verify=ssl_verify,
+        )
+
     # get the private key
     key_path = config.get_string('priv_key_path', True)
     if key_path:
@@ -39,5 +44,14 @@ def make_auth_dict(name, config, org_id, tech_acct, logger):
         except (ValueError, IndexError, TypeError, AssertionException) as e:
             raise AssertionException('%s: Error decrypting private key, either the password is wrong or: %s' %
                                      (config.get_full_scope(), e))
-    auth_dict['private_key_data'] = key_data
-    return auth_dict
+
+    return JWTAuth(
+        org_id=org_id,
+        client_id=config.get_credential(api_field, org_id),
+        client_secret=config.get_credential('client_secret', org_id),
+        tech_acct_id=tech_acct,
+        priv_key_data=key_data,
+        auth_host=auth_host,
+        auth_endpoint=auth_endpoint,
+        ssl_verify=ssl_verify,
+    )

@@ -32,7 +32,7 @@ import user_sync.identity_type
 from user_sync.config import user_sync as config
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
-from user_sync.connector.umapi_util import make_auth_dict
+from user_sync.connector.umapi_util import create_umapi_auth
 from user_sync.config import common as config_common
 
 try:
@@ -62,14 +62,27 @@ class UmapiConnector(object):
         builder.set_string_value('logger_name', self.name)
         builder.set_bool_value('test_mode', False)
         builder.set_bool_value('ssl_cert_verify', True)
+        builder.set_string_value('authentication_method', 'jwt')
         options = builder.get_options()
 
         server_config = caller_config.get_dict_config('server', True)
         server_builder = config_common.OptionsBuilder(server_config)
         server_builder.set_string_value('host', 'usermanagement.adobe.io')
         server_builder.set_string_value('endpoint', '/v2/usermanagement')
-        server_builder.set_string_value('ims_host', 'ims-na1.adobelogin.com')
-        server_builder.set_string_value('ims_endpoint_jwt', '/ims/exchange/jwt')
+
+        if server_config is None:
+            auth_host_key = 'auth_host'
+            auth_endpoint_key = 'auth_endpoint'
+        else:
+            auth_host_key = 'ims_host' if 'ims_host' in server_config else 'auth_host'
+            auth_endpoint_key = 'ims_endpoint_jwt' if 'ims_endpoint_jwt' in server_config else 'auth_endpoint'
+
+        server_builder.set_string_value(auth_host_key, 'ims-na1.adobelogin.com')
+        auth_endpoint_default = '/ims/exchange/jwt'
+        if options['authentication_method'] == 'oauth':
+            auth_endpoint_default = '/ims/token/v2'
+        server_builder.set_string_value(auth_endpoint_key, auth_endpoint_default)
+
         server_builder.set_int_value('timeout', 120)
         server_builder.set_int_value('retries', 3)
         server_builder.set_value('ssl_verify', bool, None)
@@ -78,50 +91,64 @@ class UmapiConnector(object):
         enterprise_config = caller_config.get_dict_config('enterprise')
         enterprise_builder = config_common.OptionsBuilder(enterprise_config)
         enterprise_builder.require_string_value('org_id')
-        tech_field = 'tech_acct_id' if 'tech_acct_id' in enterprise_config else 'tech_acct'
-        enterprise_builder.require_string_value(tech_field)
+
+        tech_field = 'tech_acct' if 'tech_acct' in enterprise_config else 'tech_acct_id'
+        enterprise_builder.set_string_value(tech_field, None)
         options['enterprise'] = enterprise_options = enterprise_builder.get_options()
+
+        if enterprise_options[tech_field] is None and options['authentication_method'] == 'jwt':
+            raise AssertionException(f"'{tech_field}' is required for jwt authentication")
+
+        if enterprise_options[tech_field] is not None and options['authentication_method'] == 'oauth':
+            raise AssertionException(f"'{tech_field}' should not be set for oauth authentication")
 
         # Override with old umapi entry if present
         if options['server']['ssl_verify'] is not None:
             options['ssl_cert_verify'] = options['server']['ssl_verify']
 
         self.options = options
-        self.logger = logger = user_sync.connector.helper.create_logger(options)
+        self.logger = logging.getLogger(__name__)
         if server_config:
-            server_config.report_unused_values(logger)
+            server_config.report_unused_values(self.logger)
         if self.uses_business_id is not None:
-            logger.warning("NOTICE: uses_business_id is deprecated. Please remove it from your UMAPI config file.")
-        logger.debug('UMAPI initialized with options: %s', options)
+            self.logger.warning("NOTICE: uses_business_id is deprecated. Please remove it from your UMAPI config file.")
+        self.logger.debug('UMAPI initialized with options: %s', options)
 
-        ims_host = server_options['ims_host']
         self.org_id = org_id = enterprise_options['org_id']
-        auth_dict = make_auth_dict(self.name, enterprise_config, org_id, enterprise_options[tech_field], logger)
-        # this check must come after we fetch all the settings
-        enterprise_config.report_unused_values(logger)
         # open the connection
         um_endpoint = "https://" + server_options['host'] + server_options['endpoint']
         if self.create_conn:
-            logger.debug('%s: creating connection for org %s at endpoint %s', self.name, org_id, um_endpoint)
+            self.logger.debug('%s: creating connection for org %s at endpoint %s', self.name, org_id, um_endpoint)
             try:
+                auth = create_umapi_auth(
+                    self.name,
+                    enterprise_config,
+                    org_id,
+                    enterprise_options[tech_field],
+                    server_options[auth_host_key],
+                    server_options[auth_endpoint_key],
+                    options['ssl_cert_verify'],
+                    options['authentication_method'],
+                    self.logger,
+                )
                 self.connection = connection = umapi_client.Connection(
                     org_id=org_id,
-                    auth_dict=auth_dict,
-                    ims_host=ims_host,
-                    ims_endpoint_jwt=server_options['ims_endpoint_jwt'],
-                    user_management_endpoint=um_endpoint,
+                    auth=auth,
+                    endpoint=um_endpoint,
                     test_mode=options['test_mode'],
                     user_agent="user-sync/" + app_version,
-                    logger=self.logger,
-                    timeout_seconds=float(server_options['timeout']),
-                    retry_max_attempts=server_options['retries'] + 1,
+                    timeout=float(server_options['timeout']),
+                    max_retries=server_options['retries'],
                     ssl_verify=options['ssl_cert_verify']
                 )
+
             except Exception as e:
                 raise AssertionException("Connection to org %s at endpoint %s failed: %s" % (org_id, um_endpoint, e))
-            logger.debug('%s: connection established', self.name)
+            self.logger.debug('%s: connection established', self.name)
             # wrap the connection in an action manager
-            self.action_manager = ActionManager(connection, org_id, logger)
+            self.action_manager = ActionManager(connection, org_id, self.logger)
+        # this check must come after we fetch all the settings
+        enterprise_config.report_unused_values(self.logger)
 
     def get_users(self):
         return list(self.iter_users())
@@ -202,32 +229,27 @@ class UmapiConnector(object):
 
 
 class Commands(object):
-    def __init__(self, identity_type=None, email=None, username=None, domain=None):
+    def __init__(self, user=None, domain=None):
         """
-        :type identity_type: str
-        :type email: str
-        :type username: str
+        :type user: str
         :type domain: str
         """
-        self.identity_type = identity_type
-        self.email = email
-        self.username = username
+        self.user = user
         self.domain = domain
         self.do_list = []
 
     def __str__(self):
-        return "Command "+str(self.__dict__)
+        return "Commands "+str(self.__dict__)
 
     def __repr__(self):
-        return "Command "+str(self.__dict__)
+        return "Commands "+str(self.__dict__)
 
     def update_user(self, attributes):
         """
         :type attributes: dict
         """
         if attributes is not None and len(attributes) > 0:
-            params = self.convert_user_attributes_to_params(attributes)
-            self.do_list.append(('update', params))
+            self.do_list.append(('update', attributes))
 
     def add_groups(self, groups_to_add):
         """
@@ -256,18 +278,17 @@ class Commands(object):
         """
         :type attributes: dict
         """
-        params = self.convert_user_attributes_to_params(attributes)
 
         on_conflict_value = None
-        option = params.pop('option', None)
+        option = attributes.pop('option', None)
         if option == "updateIfAlreadyExists":
-            on_conflict_value = umapi_client.IfAlreadyExistsOptions.updateIfAlreadyExists
+            on_conflict_value = umapi_client.IfAlreadyExistsOption.updateIfAlreadyExists
         elif option == "ignoreIfAlreadyExists":
-            on_conflict_value = umapi_client.IfAlreadyExistsOptions.ignoreIfAlreadyExists
+            on_conflict_value = umapi_client.IfAlreadyExistsOption.ignoreIfAlreadyExists
         if on_conflict_value is not None:
-            params['on_conflict'] = on_conflict_value
+            attributes['on_conflict'] = on_conflict_value
 
-        self.do_list.append(('create', params))
+        self.do_list.append(('create', attributes))
 
     def remove_from_org(self, delete_account):
         """
@@ -282,16 +303,6 @@ class Commands(object):
 
     def __len__(self):
         return len(self.do_list)
-
-    def convert_user_attributes_to_params(self, attributes):
-        params = {}
-        for key, value in attributes.items():
-            if key == 'firstname':
-                key = 'first_name'
-            elif key == 'lastname':
-                key = 'last_name'
-            params[key] = value
-        return params
 
 
 class ActionManager(object):
@@ -320,23 +331,17 @@ class ActionManager(object):
         return request_id
 
     def create_action(self, commands):
-        identity_type = commands.identity_type
-        email = commands.email
-        username = commands.username
+        # "user" field identifies the user in the action command it is
+        # either email or username
+        user = commands.user
         domain = commands.domain
 
-        if username.find('@') > 0:
-            if email is None:
-                email = username
-            if identity_type is None:
-                identity_type = (user_sync.identity_type.FEDERATED_IDENTITY_TYPE
-                                 if username != user_sync.helper.normalize_string(email)
-                                 else user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE)
-        elif identity_type is None:
-            identity_type = user_sync.identity_type.FEDERATED_IDENTITY_TYPE
+        # cannot construct the action if domain is not None and there is an
+        # email-like identifier in use
+        if '@' in user:
+            domain = None
         try:
-            umapi_identity_type = umapi_client.IdentityTypes[identity_type]
-            action = umapi_client.UserAction(umapi_identity_type, email, username, domain,
+            action = umapi_client.UserAction(user, domain,
                                              requestID=self.get_next_request_id())
         except ValueError as e:
             self.logger.error("Skipping user - Error creating umapi Action: %s" % e)

@@ -179,35 +179,3 @@ def test_shell_exec_flag(test_resources, modify_root_config, cli_args, monkeypat
         modify_root_config(['directory_users', 'connectors', 'ldap'], "$(some command)")
         with pytest.raises(AssertionException):
             UMAPIConfigLoader(args)
-
-
-def test_uses_business_id_true(test_resources, modify_config, cli_args):
-    modify_config('umapi', ['uses_business_id'], True)
-    modify_config('umapi', ['enterprise', 'priv_key_path'], test_resources['priv_key'])
-    args = cli_args({'config_filename': test_resources['umapi_root_config']})
-    config_loader = UMAPIConfigLoader(args)
-    connector_options, _ = config_loader.get_target_options()
-    UmapiConnector.create_conn = False
-    umapi_connector = UmapiConnector('.primary', connector_options)
-    assert umapi_connector.uses_business_id
-
-
-def test_uses_business_id_false(test_resources, modify_config, cli_args):
-    modify_config('umapi', ['uses_business_id'], False)
-    modify_config('umapi', ['enterprise', 'priv_key_path'], test_resources['priv_key'])
-    args = cli_args({'config_filename': test_resources['umapi_root_config']})
-    config_loader = UMAPIConfigLoader(args)
-    connector_options, _ = config_loader.get_target_options()
-    UmapiConnector.create_conn = False
-    umapi_connector = UmapiConnector('.primary', connector_options)
-    assert not umapi_connector.uses_business_id
-
-
-def test_uses_business_id_unspecified(test_resources, modify_config, cli_args):
-    modify_config('umapi', ['enterprise', 'priv_key_path'], test_resources['priv_key'])
-    args = cli_args({'config_filename': test_resources['umapi_root_config']})
-    config_loader = UMAPIConfigLoader(args)
-    connector_options, _ = config_loader.get_target_options()
-    UmapiConnector.create_conn = False
-    umapi_connector = UmapiConnector('.primary', connector_options)
-    assert not umapi_connector.uses_business_id

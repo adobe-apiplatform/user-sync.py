@@ -25,7 +25,7 @@ import user_sync.identity_type
 from user_sync.connector.directory import DirectoryConnector
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as app_version
-from user_sync.connector.umapi_util import make_auth_dict
+from user_sync.connector.umapi_util import create_umapi_auth
 from user_sync.helper import normalize_string
 from user_sync.identity_type import parse_identity_type
 from user_sync.config import user_sync as config
@@ -44,6 +44,7 @@ class AdobeConsoleConnector(DirectoryConnector):
         builder.set_string_value('user_identity_type', None)
         builder.set_string_value('identity_type_filter', 'all')
         builder.set_bool_value('ssl_cert_verify', True)
+        builder.set_string_value('authentication_method', 'jwt')
         options = builder.get_options()
 
         if not options['identity_type_filter'] == 'all':
@@ -57,8 +58,21 @@ class AdobeConsoleConnector(DirectoryConnector):
         server_builder = config_common.OptionsBuilder(server_config)
         server_builder.set_string_value('host', 'usermanagement.adobe.io')
         server_builder.set_string_value('endpoint', '/v2/usermanagement')
-        server_builder.set_string_value('ims_host', 'ims-na1.adobelogin.com')
         server_builder.set_string_value('ims_endpoint_jwt', '/ims/exchange/jwt')
+
+        if server_config is None:
+            auth_host_key = 'auth_host'
+            auth_endpoint_key = 'auth_endpoint'
+        else:
+            auth_host_key = 'ims_host' if 'ims_host' in server_config else 'auth_host'
+            auth_endpoint_key = 'ims_endpoint_jwt' if 'ims_endpoint_jwt' in server_config else 'auth_endpoint'
+
+        server_builder.set_string_value(auth_host_key, 'ims-na1.adobelogin.com')
+        auth_endpoint_default = '/ims/exchange/jwt'
+        if options['authentication_method'] == 'oauth':
+            auth_endpoint_default = '/ims/token/v2'
+        server_builder.set_string_value(auth_endpoint_key, auth_endpoint_default)
+
         server_builder.set_int_value('timeout', 120)
         server_builder.set_int_value('retries', 3)
         options['server'] = server_options = server_builder.get_options()
@@ -67,17 +81,32 @@ class AdobeConsoleConnector(DirectoryConnector):
         integration_builder = config_common.OptionsBuilder(enterprise_config)
         integration_builder.require_string_value('org_id')
         tech_field = 'tech_acct_id' if 'tech_acct_id' in enterprise_config else 'tech_acct'
-        integration_builder.require_string_value(tech_field)
+        integration_builder.set_string_value(tech_field, None)
         options['integration'] = integration_options = integration_builder.get_options()
+
+        if integration_options[tech_field] is None and options['authentication_method'] == 'jwt':
+            raise AssertionException(f"'{tech_field}' is required for jwt authentication")
+
+        if integration_options[tech_field] is not None and options['authentication_method'] == 'oauth':
+            raise AssertionException(f"'{tech_field}' should not be set for oauth authentication")
 
         self.logger = logger = user_sync.connector.helper.create_logger(options)
         logger.debug('%s initialized with options: %s', self.name, options)
 
         self.options = options
 
-        ims_host = server_options['ims_host']
         self.org_id = org_id = integration_options['org_id']
-        auth_dict = make_auth_dict(self.name, enterprise_config, org_id, integration_options[tech_field], logger)
+        auth = create_umapi_auth(
+            self.name,
+            enterprise_config,
+            org_id,
+            integration_options[tech_field],
+            server_options[auth_host_key],
+            server_options[auth_endpoint_key],
+            options['ssl_cert_verify'],
+            options['authentication_method'],
+            logger,
+        )
 
         # this check must come after we fetch all the settings
         caller_config.report_unused_values(logger)
@@ -88,15 +117,12 @@ class AdobeConsoleConnector(DirectoryConnector):
         try:
             self.connection = umapi_client.Connection(
                 org_id=org_id,
-                auth_dict=auth_dict,
-                ims_host=ims_host,
-                ims_endpoint_jwt=server_options['ims_endpoint_jwt'],
-                user_management_endpoint=um_endpoint,
+                auth=auth,
+                endpoint=um_endpoint,
                 test_mode=False,
                 user_agent="user-sync/" + app_version,
-                logger=self.logger,
-                timeout_seconds=float(server_options['timeout']),
-                retry_max_attempts=server_options['retries'] + 1,
+                timeout=float(server_options['timeout']),
+                max_retries=server_options['retries'] + 1,
                 ssl_verify=options['ssl_cert_verify']
             )
         except Exception as e:
@@ -121,7 +147,7 @@ class AdobeConsoleConnector(DirectoryConnector):
 
         # Loading all the groups because UMAPI doesn't support group query. DOH!
         self.logger.info('Loading groups...')
-        umapi_groups = list(self.iter_umapi_groups())
+        umapi_groups = [g.lower() for g in self.iter_umapi_groups()]
         self.logger.info('Loading users...')
 
         # Loading all umapi users based on ID Type first before doing group filtering
@@ -198,10 +224,10 @@ class AdobeConsoleConnector(DirectoryConnector):
 
     def iter_group_members(self, group):
         umapi_users = self.umapi_users
-        members = filter(lambda u: ('groups' in u and group in u['groups']), umapi_users)
+        members = filter(lambda u: ('groups' in u and group in [g.lower() for g in u['groups']]), umapi_users)
         for member in members:
             user_key = self.generate_user_key(member['type'], member['username'], member['domain'])
-            yield (user_key)
+            yield user_key
 
     def load_umapi_users(self, identity_type):
         try:

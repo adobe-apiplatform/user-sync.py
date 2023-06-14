@@ -1,9 +1,13 @@
-# Sign API Connections
+# This is a template of the main Sign Sync config file
+# Full documentation here - https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/sign_sync.html
+
+# --- Sign Connector Options ---
 sign_orgs:
+  # main connection should have "primary" key
   primary: connector-sign.yml
-  # Additional Sign Connection configuration files
+  # Additional Sign Connection configuration files (can have any name other than "primary")
   #secondary: connector-sign-sec.yml
-  #tertiary: connector-sign-ter.yml
+  #conection3: connector-sign-ter.yml
   
 # Similar to "directory_users.connectors" in user-sync-config.yml
 identity_source:
@@ -59,10 +63,8 @@ logging:
   file_log_level: info
   console_log_level: debug
   
-# Defaults for options that can be passed as CLI options
+# Invocation defaults - these work similarly to those found in the main UMAPI config
+# they provide default options that can be overridden in the command line
 invocation_defaults:
   users: mapped
-# test_mode presents post_sync output without performing any updates of users or user groups to the Sign Dashboard
-# test_mode possible values are yes or no. (default no)
-# test_mode is independent of user_sync test mode.
   test_mode: False

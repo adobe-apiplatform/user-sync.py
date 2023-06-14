@@ -497,7 +497,6 @@ def init(ctx):
     Generates configuration files, an X509 certificate/keypair, and the batch files for running the user-sync tool
     in test and live mode.
     """
-    ctx.forward(certgen, randomize=True)
     ctx.forward(shell_scripts, platform=None)
 
     sync = 'user-sync-config.yml'
