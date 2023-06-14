@@ -416,7 +416,6 @@ class RuleProcessor(object):
                     for adobe_group in adobe_groups:
                         self.after_mapping_hook_scope['target_groups'].add(adobe_group.get_qualified_name())
 
-                self.log_after_mapping_hook_scope(before_call=True)
             for target_group_qualified_name in self.after_mapping_hook_scope['target_groups']:
                 target_group = AdobeGroup.lookup(target_group_qualified_name)
                 if target_group is not None:
