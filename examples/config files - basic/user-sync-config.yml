@@ -18,6 +18,14 @@ adobe_users:
   connectors:
     umapi: "connector-umapi.yml"
 
+  # Enable or disable user attributes to be updated when `--update-user-info` or `update_user_info` is enabled
+  # `username` updates are disabled by default
+  update_attributes:
+    - firstname
+    - lastname
+    - email
+    # - username
+
 # --- Directory Users Options
 # Governs directory-side behavior and configuration related to the identity source
 # See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/configuring_user_sync_tool.html#directory_users-config

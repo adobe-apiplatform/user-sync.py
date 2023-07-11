@@ -58,6 +58,27 @@ def test_max_adobe_percentage(cleanup, default_args, modify_root_config, cf_load
         UMAPIConfigLoader(default_args).get_engine_options()
 
 
+def test_update_attributes(cleanup, default_args, test_resources, modify_root_config, cf_loader):
+    config = cf_loader.load_root_config(test_resources['umapi_root_config'])
+    assert 'adobe_users' in config and 'update_attributes' in config['adobe_users']
+    assert 'firstname' in config['adobe_users']['update_attributes']
+    assert 'lastname' in config['adobe_users']['update_attributes']
+    assert 'email' in config['adobe_users']['update_attributes']
+    assert 'username' not in config['adobe_users']['update_attributes']
+
+    reset_rule_options()
+    options = UMAPIConfigLoader(default_args).get_engine_options()
+    assert 'update_attributes' in options
+    assert 'firstname' in options['update_attributes']
+    assert 'lastname' in options['update_attributes']
+    assert 'email' in options['update_attributes']
+
+    root_config_file = modify_root_config(['adobe_users', 'update_attributes'], ['firstname', 'lastname', 'foo'])
+    config = cf_loader.load_root_config(root_config_file)
+    reset_rule_options()
+    with pytest.raises(AssertionException):
+        UMAPIConfigLoader(default_args).get_engine_options()
+
 def test_additional_groups_config(cleanup, default_args, modify_root_config, cf_loader):
     addl_groups = [
         {
