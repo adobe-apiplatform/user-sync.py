@@ -271,6 +271,36 @@ key purposes:
 * Distinguishing between targets in log messages
 * Identifying different targets internally
 
+## `update_attributes`
+
+When `--update-user-info/update_user_info` is enabled (see [runtime
+config](runtime_config.md)), the user attributes updated for a given user can be
+controlled with `update_attributes`.
+
+```yaml
+adobe_users:
+  #...
+  update_attributes:
+  # - username
+  - firstname
+  - lastname
+  - email
+```
+
+By default, the `firstname`, `lastname` and `email` attributes are enabled for
+updating. `username` is disabled by default.
+
+If sync is run with `update_user_info` enabled and any changes are detected to a
+disabled attribute for a given user, the Sync Tool logs a warning:
+
+```
+2023-07-12 13:32:55 54531 WARNING processor - 'username' has changed for user
+ > 'federatedID,test.un.01@example.com,,test.user.01@example.com',
+ > but that attribute isn't configured for updating
+```
+
+[line continuations added for clarity]
+
 # `directory_users` Config
 
 Every option under the `directory_users` key pertains to managing general identity
