@@ -34,4 +34,5 @@ integration:
   # NOTE: Credentials can be stored securely with these options
   # secure_client_id_key: my_client_id
   # secure_client_secret_key: my_client_secret
+  #
   # See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/sync_from_console.html#credential-security
