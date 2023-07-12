@@ -1,6 +1,9 @@
 # Features
 
-* 8c4ea5c Implement unconditional username update
+* 8c4ea5c Implement username update (disabled by default - see #819)
+* #819 Add `update_attributes` config to govern which user attributes can be updated
+  * `username` disabled by default, all others enabled
+  * Generates warning message when a disabled attribute is different (assuming `--update-user-info` is enabled)
 * [OAuth Server-to-Server Support](https://developer.adobe.com/developer-console/docs/guides/authentication/ServerToServerAuthentication/implementation/)
   * New config option in UMAPI connector config and Admin Console connector:
     `authentication_method`
