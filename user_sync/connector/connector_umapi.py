@@ -25,6 +25,7 @@ import math
 
 import jwt
 import umapi_client
+from umapi_client import GroupAction
 
 import user_sync.connector.helper
 import user_sync.helper
@@ -200,7 +201,7 @@ class UmapiConnector(object):
 
     def create_group(self, name):
         if name:
-            group = umapi_client.UserGroupAction(group_name=name)
+            group = GroupAction(group_name=name)
             group.create(description="Automatically created by User Sync Tool")
             return self.connection.execute_single(group)
 
