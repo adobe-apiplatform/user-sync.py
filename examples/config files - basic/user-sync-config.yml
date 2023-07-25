@@ -73,6 +73,16 @@ directory_users:
   # group_sync_options:
   #   auto_create: False
 
+    # when auto_create is True, define rules to optionally assign product profiles to new groups
+    # profile_rules:
+    #   - user_group: "Adobe Group \\d+"
+    #     profiles:
+    #       - Photoshop
+    #       - Acrobat DC
+    #   - user_group: "Acrobat Sign \\d+"
+    #     profiles:
+    #       - Acrobat Sign Enterprise
+
 # --- Limit Options ---
 # The limit for maximum Adobe-only users prevents the Adobe-only action from running when the limit of Adobe-only users
 # is exceeded
