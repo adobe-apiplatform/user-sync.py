@@ -15,7 +15,7 @@ page_id: user-manual
 # Adobe User Sync Tool
 {:."no_toc"}
 
-> Version 2.7.6, released 2023-01-12
+> Version 2.9.0, released 2023-07-27
 
 <details open markdown="block">
   <summary>
