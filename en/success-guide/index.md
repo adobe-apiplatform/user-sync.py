@@ -15,12 +15,7 @@ Version 2.7.6, released 2023-01-12
 This document walks you through the steps needed to understand
 and setup the User Sync Tool.
 
-Throughout this document, steps you need to complete are
-marked with the box symbol &#9744;.  These steps require you to gather
-some information for a later step, or to take some specific
-action.
-
-## Table of Contents
+# Table of Contents
 
 1. [What You Need To Know Before You Start](before_you_start.md)
 2. [Layout Your Organization, Groups, and Directories](layout_orgs.md)
