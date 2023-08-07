@@ -1,5 +1,15 @@
 | tag    | date       | title                 |
 |--------|------------|-----------------------|
+| v2.9.1 | 2023-08-07 | User Sync Tool v2.9.1 |
+
+# Fixes
+
+* 8fbeb83 Fix build config for Jammy
+
+---
+
+| tag    | date       | title                 |
+|--------|------------|-----------------------|
 | v2.9.0 | 2023-07-26 | User Sync Tool v2.9.0 |
 
 # Features
