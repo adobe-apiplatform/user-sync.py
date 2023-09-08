@@ -46,7 +46,7 @@ There are a wide variety of command-line arguments; see
 
 ## Configuration
 
-You will need a personalized User Sync configuration to use the tool effectively.  The documentation includes a [Setup and Success Guide](https://adobe-apiplatform.github.io/user-sync.py/success-guide/) that will take you step-by-step through the configuration process.  In addition, the `examples` directory (also available as a tarball on the [releases page](https://github.com/adobe-apiplatform/user-sync.py/releases)) contains sample configuration files which include all of the possible options with their descriptions and default values.
+You will need a personalized User Sync configuration to use the tool effectively.  The documentation includes a [Setup and Success Guide](https://adobe-apiplatform.github.io/user-sync.py/en/success-guide/) that will take you step-by-step through the configuration process.  In addition, the `examples` directory (also available as a tarball on the [releases page](https://github.com/adobe-apiplatform/user-sync.py/releases)) contains sample configuration files which include all of the possible options with their descriptions and default values.
 
 ## Build Instructions
 

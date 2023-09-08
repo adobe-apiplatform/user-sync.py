@@ -157,7 +157,7 @@ class AdobeConsoleConnector(DirectoryConnector):
         grouped_user_records = {}
         for group in groups:
             group_users_count = 0
-            if group in umapi_groups:
+            if group.lower() in umapi_groups:
                 grouped_users = self.iter_group_members(group)
                 for user_key in grouped_users:
                     if user_key in self.user_by_usr_key:
@@ -224,7 +224,7 @@ class AdobeConsoleConnector(DirectoryConnector):
 
     def iter_group_members(self, group):
         umapi_users = self.umapi_users
-        members = filter(lambda u: ('groups' in u and group in [g.lower() for g in u['groups']]), umapi_users)
+        members = filter(lambda u: ('groups' in u and group.lower() in [g.lower() for g in u['groups']]), umapi_users)
         for member in members:
             user_key = self.generate_user_key(member['type'], member['username'], member['domain'])
             yield user_key

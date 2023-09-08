@@ -518,6 +518,15 @@ class UMAPIConfigLoader(ConfigLoader):
                 exclude_groups.append(group.get_group_name())
             options['exclude_groups'] = exclude_groups
 
+        update_attributes = adobe_config.get_list('update_attributes', True)
+        valid_attributes = ['firstname', 'lastname', 'email', 'username']
+        if update_attributes is not None:
+            update_attributes = [attr.lower() for attr in update_attributes]
+            for attr in update_attributes:
+                if attr not in valid_attributes:
+                    raise AssertionException(f"'{attr}' is not a valid attribute for user updates")
+            options['update_attributes'] = update_attributes
+
         # get the limits
         limits_config = self.main_config.get_dict_config('limits')
         max_missing = limits_config.get_value('max_adobe_only_users', (int, str), False)
