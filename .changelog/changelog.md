@@ -1,3 +1,13 @@
+| tag        | date       | title                     |
+|------------|------------|---------------------------|
+| v2.10.0rc1 | 2023-09-27 | User Sync Tool v2.10.0rc1 |
+
+# Fixes
+
+* e61ec81 Fix issue with all users setting
+
+---
+
 | tag    | date       | title                 |
 |--------|------------|-----------------------|
 | v2.9.1 | 2023-08-07 | User Sync Tool v2.9.1 |

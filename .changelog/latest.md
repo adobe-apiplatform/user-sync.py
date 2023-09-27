@@ -1,3 +1,3 @@
 # Fixes
 
-* 8fbeb83 Fix build config for Jammy
+* e61ec81 Fix issue with all users setting
