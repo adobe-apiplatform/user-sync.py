@@ -385,6 +385,9 @@ class RuleProcessor(object):
                 continue
 
             self.filtered_directory_user_index.add(directory_user)
+            umapi_info = self.get_umapi_info(PRIMARY_TARGET_NAME)
+            umapi_info.add_desired_group_for(directory_user['identity_type'], directory_user['domain'],
+                                             directory_user['email'], directory_user['username'], None)
 
             # set up groups in hook scope; the target groups will be used whether or not there's customer hook code
             self.after_mapping_hook_scope['source_groups'] = set()
@@ -1326,14 +1329,15 @@ class UmapiTargetInfo:
         :type user_key: str
         :type group: Optional(str)
         """
-        if group is None:
-            return
-
-        normalized_group_name = normalize_string(group)
+        if group is not None:
+            normalized_group_name = normalize_string(group)
+        else:
+            normalized_group_name = None
         desired_groups_rec = self.get_desired_groups(email, username)
         if desired_groups_rec is None:
             groups = set()
-            groups.add(normalized_group_name)
+            if normalized_group_name is not None:
+                groups.add(normalized_group_name)
             desired_groups_rec = {
                 'id_type': id_type,
                 'domain': domain,
