@@ -17,7 +17,7 @@ server:
   #host: usermanagement.adobe.io
   #endpoint: /v2/usermanagement
   #auth_host: ims-na1.adobelogin.com
-  #auth_endmpoint: /ims/exchange/jwt
+  #auth_endpoint: /ims/exchange/jwt
   #timeout: 120
   #retries: 3
 
