@@ -372,37 +372,9 @@ class RuleProcessor(object):
                                                                     all_users=directory_group_filter is None)
 
         for directory_user in directory_users:
-            user_key = self.get_directory_user_key(directory_user)
-            if not user_key:
-                self.logger.warning("Ignoring directory user with empty user key: %s", directory_user)
-                continue
-
-            self.directory_user_index.add(directory_user)
-
-            if not self.is_directory_user_in_groups(directory_user, directory_group_filter):
-                continue
-            if not self.is_selected_user_key(user_key):
-                continue
-
-            self.filtered_directory_user_index.add(directory_user)
-            umapi_info = self.get_umapi_info(PRIMARY_TARGET_NAME)
-            umapi_info.add_desired_group_for(directory_user['identity_type'], directory_user['domain'],
-                                             directory_user['email'], directory_user['username'], None)
-
-            # set up groups in hook scope; the target groups will be used whether or not there's customer hook code
-            self.after_mapping_hook_scope['source_groups'] = set()
-            self.after_mapping_hook_scope['target_groups'] = set()
-            for group in directory_user['groups']:
-                self.after_mapping_hook_scope['source_groups'].add(group)  # this is a directory group name
-                adobe_groups = mappings.get(group)
-                if adobe_groups is not None:
-                    for adobe_group in adobe_groups:
-                        self.after_mapping_hook_scope['target_groups'].add(adobe_group.get_qualified_name())
-
             # only if there actually is hook code: set up rest of hook scope, invoke hook, update user attributes
             if options['after_mapping_hook'] is not None:
                 self.after_mapping_hook_scope['source_attributes'] = directory_user['source_attributes'].copy()
-
                 target_attributes = dict()
                 target_attributes['email'] = directory_user.get('email')
                 target_attributes['username'] = directory_user.get('username')
@@ -419,6 +391,30 @@ class RuleProcessor(object):
 
                 # copy modified attributes back to the user object
                 directory_user.update(self.after_mapping_hook_scope['target_attributes'])
+
+            user_key = self.get_directory_user_key(directory_user)
+            if not user_key:
+                self.logger.warning("Ignoring directory user with empty user key: %s", directory_user)
+                continue
+            if not self.is_directory_user_in_groups(directory_user, directory_group_filter):
+                continue
+            if not self.is_selected_user_key(user_key):
+                continue
+            self.directory_user_index.add(directory_user)
+            self.filtered_directory_user_index.add(directory_user)
+            umapi_info = self.get_umapi_info(PRIMARY_TARGET_NAME)
+            umapi_info.add_desired_group_for(directory_user['identity_type'], directory_user['domain'],
+                                             directory_user['email'], directory_user['username'], None)
+
+            # set up groups in hook scope; the target groups will be used whether or not there's customer hook code
+            self.after_mapping_hook_scope['source_groups'] = set()
+            self.after_mapping_hook_scope['target_groups'] = set()
+            for group in directory_user['groups']:
+                self.after_mapping_hook_scope['source_groups'].add(group)  # this is a directory group name
+                adobe_groups = mappings.get(group)
+                if adobe_groups is not None:
+                    for adobe_group in adobe_groups:
+                        self.after_mapping_hook_scope['target_groups'].add(adobe_group.get_qualified_name())
 
             for target_group_qualified_name in self.after_mapping_hook_scope['target_groups']:
                 target_group = AdobeGroup.lookup(target_group_qualified_name)
