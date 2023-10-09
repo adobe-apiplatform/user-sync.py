@@ -156,9 +156,9 @@ def test_update_umapi_user(rule_processor, mock_dir_user, mock_umapi_user):
     result = update(user, up_attrs)
     assert result['user'] == user['email']
 
-    user['email'] = 'different@example.com'
+    user['email'] = 'user1@example.com'
     up_attrs = {
-        'email': user['email']}
+        'email': 'different@example.com'}
     result = update(user, up_attrs)
 
     assert result == {
