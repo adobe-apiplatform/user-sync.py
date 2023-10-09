@@ -143,7 +143,6 @@ def test_update_umapi_user(rule_processor, mock_dir_user, mock_umapi_user):
     up_attrs = {
         'firstname': user['firstname'],
         'lastname': user['lastname']}
-
     result = update(user, up_attrs)
     assert result == {
         'user': user['email'],
@@ -152,21 +151,40 @@ def test_update_umapi_user(rule_processor, mock_dir_user, mock_umapi_user):
             'firstname': user['firstname'],
             'lastname': user['lastname']})]}
 
+    up_attrs = {'username':  'different@example.com'}
     user['username'] = 'different@example.com'
     result = update(user, up_attrs)
     assert result['user'] == user['email']
 
-    user['email'] = 'user1@example.com'
-    up_attrs = {
-        'email': 'different@example.com'}
+    up_attrs = {'username':  'different@example.com'}
+    user['username'] = 'different@example.com'
     result = update(user, up_attrs)
-
     assert result == {
         'user': user['email'],
         'domain': user['domain'],
         'do_list': [('update', {
-            'email': 'different@example.com',
-            'username': user['username']})]}
+            'username': user['username'] })]}
+    
+    up_attrs = {
+        'email': 'different@example.com'}
+    result = update(user, up_attrs)
+    assert result == {
+        'user': user['email'],
+        'domain': user['domain'],
+        'do_list': [('update', {
+            'email': 'different@example.com'})]}
+
+    user['username'] = 'example1'
+    user['domain'] = 'example.com'
+    user['email'] = 'example1@example.com'
+    up_attrs = {
+        'email': 'differentone@example.com'}
+    result = update(user, up_attrs)
+    assert result == {
+        'user': user['username'],
+        'domain': user['domain'],
+        'do_list': [('update', {
+            'email': 'differentone@example.com'})]}
 
 
 def test_create_umapi_commands_for_directory_user(rule_processor, mock_dir_user):
