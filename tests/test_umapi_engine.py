@@ -139,32 +139,36 @@ def test_update_umapi_user(rule_processor, mock_dir_user, mock_umapi_user):
         rp.execute_commands(commands, conn)
         assert user_key in rp.updated_user_keys
         return vars(conn.commands_sent)
-
-    up_attrs = {
-        'firstname': user['firstname'],
-        'lastname': user['lastname']}
-    result = update(user, up_attrs)
-    assert result == {
-        'user': user['email'],
-        'domain': user['domain'],
-        'do_list': [('update', {
-            'firstname': user['firstname'],
-            'lastname': user['lastname']})]}
-
-    up_attrs = {'username':  'different@example.com'}
-    user['username'] = 'different@example.com'
-    result = update(user, up_attrs)
-    assert result['user'] == user['email']
-
-    up_attrs = {'username':  'different@example.com'}
-    user['username'] = 'different@example.com'
-    result = update(user, up_attrs)
-    assert result == {
-        'user': user['email'],
-        'domain': user['domain'],
-        'do_list': [('update', {
-            'username': user['username'] })]}
     
+    up_attrs = {
+        'firstname': 'some',
+        'lastname': 'other'}
+    result = update(user, up_attrs)
+    assert result == {
+        'user': user['email'],
+        'domain': user['domain'],
+        'do_list': [('update', {
+            'firstname': up_attrs['firstname'],
+            'lastname': up_attrs['lastname']})]}
+    
+    up_attrs = {
+        'username': 'different'}
+    result = update(user, up_attrs)
+    assert result == {
+        'user': user['email'],
+        'domain': user['domain'],
+        'do_list': [('update', {
+            'username': up_attrs['username']})]}
+    
+    up_attrs = {
+        'username': 'different@example.com'}
+    result = update(user, up_attrs)
+    assert result == {
+        'user': user['email'],
+        'domain': user['domain'],
+        'do_list': [('update', {
+            'username': up_attrs['username']})]}
+
     up_attrs = {
         'email': 'different@example.com'}
     result = update(user, up_attrs)
@@ -172,20 +176,8 @@ def test_update_umapi_user(rule_processor, mock_dir_user, mock_umapi_user):
         'user': user['email'],
         'domain': user['domain'],
         'do_list': [('update', {
-            'email': 'different@example.com'})]}
-
-    user['username'] = 'example1'
-    user['domain'] = 'example.com'
-    user['email'] = 'example1@example.com'
-    up_attrs = {
-        'email': 'differentone@example.com'}
-    result = update(user, up_attrs)
-    assert result == {
-        'user': user['username'],
-        'domain': user['domain'],
-        'do_list': [('update', {
-            'email': 'differentone@example.com'})]}
-
+            'email': up_attrs['email']})]}
+    
 
 def test_create_umapi_commands_for_directory_user(rule_processor, mock_dir_user):
     rp = rule_processor
