@@ -868,11 +868,9 @@ class RuleProcessor(object):
 
         directory_user = self.get_from_index(self.directory_user_index, user_key)
         if directory_user is not None:
-            identity_type = self.get_identity_type_from_directory_user(directory_user)
             directory_user['email'] = umapi_user['email']
         else:
             directory_user = umapi_user
-            identity_type = umapi_user.get('type')
 
         commands = user_sync.connector.connector_umapi.Commands(directory_user['email'], directory_user['domain'])
         commands.update_user(attributes_to_update)
