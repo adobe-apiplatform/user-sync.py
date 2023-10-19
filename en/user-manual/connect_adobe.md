@@ -9,7 +9,7 @@ parent: user-manual
 page_id: connect-adobe
 ---
 
-[Previous Section](runtime_config.md)  \| [Next Section](connect_ldap.md)
+[Previous Section](runtime_config.html)  \| [Next Section](connect_ldap.html)
 
 # Connecting To Adobe
 {:."no_toc"}
@@ -29,12 +29,12 @@ All UMAPI sync setups require at least one UMAPI connector configuration. This
 primary connection config should be called `connector-umapi.yml`.
 
 This section focuses on a single connection. See the [advanced
-config](advanced_configuration.md#accessing-groups-in-other-organizations)
+config](advanced_configuration.html#accessing-groups-in-other-organizations)
 section for details around synchronizing to multiple UMAPI targets.
 
 Before configuring any UMAPI connections, you must set up an integration for
 each target. See the [Setup and
-Installation](setup_and_installation.md#adobe-developer-console-setup) page for
+Installation](setup_and_installation.html#adobe-developer-console-setup) page for
 more information.
 
 `connector-umapi.yml` defines three top-level config keys.
@@ -56,7 +56,7 @@ communicating with the UMAPI. Two options are supported.
 - `oauth` (**recommended**) - Use OAuth Server-to-Server authentication. This is
   simple to set up and unlike JWT does not require a certificate pair. See
   [Setup and
-  Installation](setup_and_installation.md#adobe-developer-console-setup) for
+  Installation](setup_and_installation.html#adobe-developer-console-setup) for
   more info.
 - `jwt` - This is the default for compatibility reasons, but should generally
   not be used because JWT authentication is deprecated.
@@ -73,7 +73,7 @@ UMAPI connection to org id failed: [SSL: CERTIFICATE_VERIFY_FAILED]
 ```
 
 Please note this option isn't recommended and should only be used when [other
-options](security.md#dealing-with-ssl-issues) have been exhausted.
+options](security.html#dealing-with-ssl-issues) have been exhausted.
 
 # `server` Settings
 
@@ -196,7 +196,7 @@ referenced by `priv_key_path`.
   passphrase and then encrypt `private.key`, replacing the plaintext file with
   the encrypted version.
   
-  See [here](additional_tools.md#private-key-encryption) for full details.
+  See [here](additional_tools.html#private-key-encryption) for full details.
 
 # Migrating From JWT to Server-to-Server
 
@@ -266,8 +266,8 @@ name is stored in the respective config option.
 > securely store the private key passphrase.
 
 We strongly recommend securing your credentials in this manner. See [Security
-Recommendations](security.md#secure-credential-storage) for more information.
+Recommendations](security.html#secure-credential-storage) for more information.
 
 ---
 
-[Previous Section](runtime_config.md)  \| [Next Section](connect_ldap.md)
+[Previous Section](runtime_config.html)  \| [Next Section](connect_ldap.html)

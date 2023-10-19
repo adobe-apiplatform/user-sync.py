@@ -11,7 +11,7 @@ page_id: plan-config-org
 
 # Plan Your Adobe Products, Product Configurations, and User Groups Layout
 
-[Previous Section](layout_orgs.md) \| [Back to Contents](index.md) \| [Next Section](decide_deletion_policy.md)
+[Previous Section](layout_orgs.html) \| [Back to Contents](index.html) \| [Next Section](decide_deletion_policy.html)
 
 Product Configurations (PCs) are group-like structures in the Adobe user management system.  Each PC is associated with a product you have purchased.  Users added to a PC are granted access to and get a license to use the corresponding product.  (The user does not receive anything in this process other than an optional notification that access has been granted.  All license management is handled by back-end systems).
 
@@ -43,5 +43,5 @@ User Sync helps you manage Adobe product licenses by allowing you to place users
 
 
 
-[Previous Section](layout_orgs.md) \| [Back to Contents](index.md) \| [Next Section](decide_deletion_policy.md)
+[Previous Section](layout_orgs.html) \| [Back to Contents](index.html) \| [Next Section](decide_deletion_policy.html)
 

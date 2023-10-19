@@ -9,7 +9,7 @@ parent: user-manual
 page_id: advanced-config
 ---
 
-[Previous Section](usage_scenarios.md)  \| [Next Section](sign_sync.md)
+[Previous Section](usage_scenarios.html)  \| [Next Section](sign_sync.html)
 
 # Advanced Configuration
 {:."no_toc"}
@@ -857,5 +857,5 @@ If you have other users you wish to protect (non-system admins for instance), co
 
 ---
 
-[Previous Section](usage_scenarios.md)  \| [Next Section](sign_sync.md)
+[Previous Section](usage_scenarios.html)  \| [Next Section](sign_sync.html)
 

@@ -11,7 +11,7 @@ page_id: plan-config-org
 
 # Map Organization, Groups, and Directory Layout
 
-[Previous Section](before_you_start.md) \| [Back to Contents](index.md) \| [Next Section](layout_products.md)
+[Previous Section](before_you_start.html) \| [Back to Contents](index.html) \| [Next Section](layout_products.html)
 
 In this step, you will need to create a picture of your directory, Adobe organization, and user configuration.  This should include the LDAP query for selecting the users, and list of domains where the users are based.  (If a user has email n@d.com, d.com is the domain of the user.)
 
@@ -98,4 +98,4 @@ You'll need:
  Note that you may need different credentials to access each directory instance.
 
 
-[Previous Section](before_you_start.md) \| [Back to Contents](index.md) \| [Next Section](layout_products.md)
+[Previous Section](before_you_start.html) \| [Back to Contents](index.html) \| [Next Section](layout_products.html)

@@ -9,7 +9,7 @@ parent: success-guide
 page_id: config-files
 ---
 
-[Previous Section](install_sync.md) \| [Next Section](test_run.md)
+[Previous Section](install_sync.html) \| [Next Section](test_run.html)
 
 # Set Up Configuration Files
 {:."no_toc"}
@@ -310,4 +310,4 @@ logging:
   # console_log_level: debug
 ```
 
-[Previous Section](install_sync.md) \| [Next Section](test_run.md)
+[Previous Section](install_sync.html) \| [Next Section](test_run.html)

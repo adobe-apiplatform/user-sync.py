@@ -11,7 +11,7 @@ page_id: install-sync
 
 # Installation
 
-[Previous Section](identify_server.md) \| [Back to Contents](index.md) \| [Next Section](setup_config_files.md)
+[Previous Section](identify_server.html) \| [Back to Contents](index.html) \| [Next Section](setup_config_files.html)
 
 ## Installation Procedure
 
@@ -34,4 +34,4 @@ page_id: install-sync
       release asset list (see step 2)
 5. Refer to the [User Manual](../user-manual) for full User Sync Tool documentation.
 
-[Previous Section](identify_server.md) \| [Back to Contents](index.md) \| [Next Section](setup_config_files.md)
+[Previous Section](identify_server.html) \| [Back to Contents](index.html) \| [Next Section](setup_config_files.html)

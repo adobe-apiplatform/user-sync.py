@@ -9,7 +9,7 @@ parent: user-manual
 page_id: connect-okta
 ---
 
-[Previous Section](connect_ldap.md)  \| [Next Section](sync_from_console.md)
+[Previous Section](connect_ldap.html)  \| [Next Section](sync_from_console.html)
 
 # Syncing Users From Okta
 {:."no_toc"}
@@ -91,7 +91,7 @@ the key in the config file using the `secure_api_token_key` option.
 secure_api_token_key: "UST Okta Token"
 ```
 
-See [Security Recommendations](security.md#secure-credential-storage) for more
+See [Security Recommendations](security.html#secure-credential-storage) for more
 information.
 
 # User Filter Options
@@ -142,7 +142,7 @@ for the Okta, but can be in case customization is needed.
 These options are named identically to the attribute mapping options in the LDAP config
 and behave similarly.
 
-See the [LDAP config page](connect_ldap.md#attribute-mapping-options) for more information.
+See the [LDAP config page](connect_ldap.html#attribute-mapping-options) for more information.
 
 
 # Runtime
@@ -159,4 +159,4 @@ Okta sync can use extended groups, attributes and after-mapping hooks.  The name
 
 ---
 
-[Previous Section](connect_ldap.md)  \| [Next Section](sync_from_console.md)
+[Previous Section](connect_ldap.html)  \| [Next Section](sync_from_console.html)

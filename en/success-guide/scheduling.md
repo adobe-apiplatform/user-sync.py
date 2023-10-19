@@ -12,7 +12,7 @@ page_id: scheduling
 # Set up Scheduled Ongoing Execution of User Sync
 
 
-[Previous Section](command_line_options.md) \| [Next Section](upgrading.md) 
+[Previous Section](command_line_options.html) \| [Next Section](upgrading.html) 
 
 ## Setting Up Scheduled Run on Windows
 
@@ -60,5 +60,5 @@ Note that often when setting up scheduled tasks, commands that work from the com
 
 When scheduling your cron job please limit your sync to once a day and consider a time that works best for you, taking into consideration other timezones and clients.  
 
-[Previous Section](command_line_options.md) \| [Next Section](upgrading.md) 
+[Previous Section](command_line_options.html) \| [Next Section](upgrading.html) 
 

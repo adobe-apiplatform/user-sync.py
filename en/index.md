@@ -25,19 +25,19 @@ information in your directory.
 # Setup and Success Guide
 
 The fastest way to get started with User Sync is to read the [Setup and Success
-Guide](success-guide/index.md), which gives step-by-step instructions for
+Guide](success-guide/index.html), which gives step-by-step instructions for
 setting up the needed configuration files and running the tool.
 
 # User Manual
 
 For all the details of using User Sync, including how to set it up for a number
 of different typical usage scenarios, dive into the [User
-Manual](user-manual/index.md). It's also your starting point for customizing the
+Manual](user-manual/index.html). It's also your starting point for customizing the
 behavior of User Sync, as it includes instructions for doing custom mappings
 between customer directory information and data on the Adobe side.
 
 # Frequently Asked Questions 
 
-We have compiled a [FAQ document](FAQ/index.md) that answers many questions we
+We have compiled a [FAQ document](FAQ/index.html) that answers many questions we
 have been asked and others we expected to be asked.
 

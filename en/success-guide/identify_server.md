@@ -11,7 +11,7 @@ page_id: identify-server
 
 # Identify and Setup the Server Where User Sync Will Run
 
-[Previous Section](setup_adobeio.md) \| [Back to Contents](index.md) \|  [Next Section](install_sync.md)
+[Previous Section](setup_adobeio.html) \| [Back to Contents](index.html) \|  [Next Section](install_sync.html)
 
 
 User Sync can be run manually, but most companies will want to set up automation where User Sync runs once to a few times per day automatically.
@@ -35,5 +35,5 @@ Unix, OSX, or Windows are all supported by User Sync.
 
 
 
-[Previous Section](setup_adobeio.md) \| [Back to Contents](index.md) \|  [Next Section](install_sync.md)
+[Previous Section](setup_adobeio.html) \| [Back to Contents](index.html) \|  [Next Section](install_sync.html)
 

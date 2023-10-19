@@ -9,7 +9,7 @@ parent: user-manual
 page_id: configuration
 ---
 
-[Previous Section](setup_and_installation.md)  \| [Next Section](connect_adobe.md)
+[Previous Section](setup_and_installation.html)  \| [Next Section](connect_adobe.html)
 
 # Configuring the User Sync Tool
 {:."no_toc"}
@@ -30,7 +30,7 @@ User Sync Tool behavior is governed by a set of configuration files.
 These files are typically placed in the same directory as the User Sync Tool executable.
 
 Although this overview covers the configuration files for Sign Sync, this page focuses on UMAPI sync. See
-[Sign Sync](sign_sync.md) for details around configuring Sign Sync.
+[Sign Sync](sign_sync.html) for details around configuring Sign Sync.
 
 After a brief overview of the configuration files used by the User Sync Tool and some general notes,
 this page focuses on the configuration options used in `user-sync-config.yml`.
@@ -69,7 +69,7 @@ in cases when synchronizing to a console-linked Sign account, or when syncing to
 ## Advanced Configuration
 
 The extension config (`extension-config.yml`) can be set up for use with UMAPI sync to get more control over how syncs are
-executed. See [advanced configuration](advanced_configuration.md#custom-attributes-and-mappings) for details.
+executed. See [advanced configuration](advanced_configuration.html#custom-attributes-and-mappings) for details.
 
 # Config File Setup
 
@@ -222,7 +222,7 @@ Example:
 
 `adobe_users.connectors` defines one or more connections to the User Management API (UMAPI).
 
-Each connection should at minimum contain a reference to the [UMAPI connector config](connect_adobe.md)
+Each connection should at minimum contain a reference to the [UMAPI connector config](connect_adobe.html)
 (e.g. `connector-umapi.yml`). Secondary targets also require an identifier field.
 
 ### Single Target
@@ -274,7 +274,7 @@ key purposes:
 ## `update_attributes`
 
 When `--update-user-info/update_user_info` is enabled (see [runtime
-config](runtime_config.md)), the user attributes updated for a given user can be
+config](runtime_config.html)), the user attributes updated for a given user can be
 controlled with `update_attributes`.
 
 ```yaml
@@ -330,7 +330,7 @@ in a format not accepted by the UMAPI, the Sync Tool will attempt to set it for
 a user. This operation will only succeed if the country code is in the expected
 format.
 
-The [extension config](advanced_configuration.md#custom-attributes-and-mappings) can
+The [extension config](advanced_configuration.html#custom-attributes-and-mappings) can
 be used to normalize country codes that aren't in the expected format.
 
 ## `connectors`
@@ -353,7 +353,7 @@ directory_users:
 ```
 
 Once an identity connector is configured, it must be enabled to be used. The connector
-can be enabled in the [invocation defaults](runtime_config.md) settings or
+can be enabled in the [invocation defaults](runtime_config.html) settings or
 command-line options.
 
 ## `user_identity_type`
@@ -415,7 +415,7 @@ and user group names. They are treated identically when assigning group membersh
 to a user.
 
 The only way the use of user groups is different is if
-[automatic group creation](advanced_configuration.md#automatic-group-creation)
+[automatic group creation](advanced_configuration.html#automatic-group-creation)
 is enabled.
 
 Admin roles can be assigned to users by the User Sync tool using
@@ -449,7 +449,7 @@ See the [UMAPI Docs](https://adobe-apiplatform.github.io/umapi-documentation/en/
 ## `additional_groups`
 
 Configures dynamic group mappings based on regular expression rules. See
-[advanced config](advanced_configuration.md#additional-group-options) for more
+[advanced config](advanced_configuration.html#additional-group-options) for more
 information.
 
 ## `group_sync_options`
@@ -457,7 +457,7 @@ information.
 `group_sync_options` controls the synchronization of user groups. The only
 supported option at the moment is `auto_create` which will automatically
 create user groups targetted by the group mapping. See
-[advanced config](advanced_configuration.md#automatic-group-creation)
+[advanced config](advanced_configuration.html#automatic-group-creation)
 for more information.
 
 # `limits` Config
@@ -596,10 +596,10 @@ message types.
 
 # `invocation_defaults` Config
 
-See [Runtime Config](runtime_config.md) for information about the Sync Tool's
+See [Runtime Config](runtime_config.html) for information about the Sync Tool's
 `invocation_default` options and how they interact with the tool's
 command-line options.
 
 ---
 
-[Previous Section](setup_and_installation.md)  \| [Next Section](connect_adobe.md)
+[Previous Section](setup_and_installation.html)  \| [Next Section](connect_adobe.html)

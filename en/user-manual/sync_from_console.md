@@ -9,7 +9,7 @@ parent: user-manual
 page_id: sync-from-console
 ---
 
-[Previous Section](connect_okta.md)  \| [Next Section](sync_from_csv.md)
+[Previous Section](connect_okta.html)  \| [Next Section](sync_from_csv.html)
 
 # Syncing From the Admin Console
 {:."no_toc"}
@@ -28,7 +28,7 @@ page_id: sync-from-console
 The User Sync Tool can use the Admin Console as an identity connector. This can
 be used to manage users for a trustee directory when the parent directory uses
 Azure AD sync or Google Sync, or to manage [Sign Enterprise
-Users](sign_sync.md#sign-enterprise).
+Users](sign_sync.html#sign-enterprise).
 
 # Initial Setup
 
@@ -67,13 +67,13 @@ primary connection config should be called `connector-umapi.yml`.
 
 Like the UMAPI connector, the Admin Console Connector requires a [UMAPI
 integration on the Adobe Developer
-Console](setup_and_installation.md#adobe-developer-console-setup).
+Console](setup_and_installation.html#adobe-developer-console-setup).
 
 > **Note:** This guide covers [OAuth
 > Server-to-Server](https://developer.adobe.com/developer-console/docs/guides/authentication/ServerToServerAuthentication/implementation/)
 > authentication. JWT-based authentication is **deprecated**. If you need to
 > migrate your integration, please refer to [this
-> guide](connect_adobe.md#migrating-from-jwt-to-server-to-server). It is geard
+> guide](connect_adobe.html#migrating-from-jwt-to-server-to-server). It is geard
 > to the UMAPI connector, but the procedure for migrating Admin Console
 > connector config is very similar.
 
@@ -137,8 +137,8 @@ name is stored in the respective config option.
 * `secure_client_secret_key` - Key name of `client_secret`
 
 We strongly recommend securing your credentials in this manner. See [Security
-Recommendations](security.md#secure-credential-storage) for more information.
+Recommendations](security.html#secure-credential-storage) for more information.
 
 ---
 
-[Previous Section](connect_okta.md)  \| [Next Section](sync_from_csv.md)
+[Previous Section](connect_okta.html)  \| [Next Section](sync_from_csv.html)

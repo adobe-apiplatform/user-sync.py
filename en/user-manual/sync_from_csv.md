@@ -9,7 +9,7 @@ parent: user-manual
 page_id: sync-from-csv
 ---
 
-[Previous Section](sync_from_console.md)  \| [Next Section](usage_scenarios.md)
+[Previous Section](sync_from_console.html)  \| [Next Section](usage_scenarios.html)
 
 # Syncing From a CSV File
 {:."no_toc"}
@@ -206,4 +206,4 @@ can be used to redefine any column name.
 
 ---
 
-[Previous Section](sync_from_console.md)  \| [Next Section](usage_scenarios.md)
+[Previous Section](sync_from_console.html)  \| [Next Section](usage_scenarios.html)

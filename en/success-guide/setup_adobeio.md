@@ -11,7 +11,7 @@ page_id: adobeio-setup
 
 # Setup an Adobe.io Integration
 
-[Previous Section](decide_deletion_policy.md) \| [Back to Contents](index.md) \| [Next Section](identify_server.md)
+[Previous Section](decide_deletion_policy.html) \| [Back to Contents](index.html) \| [Next Section](identify_server.html)
 
 Adobe has designed a secure protocol for applications to integrate with Adobe APIs and User Sync is such an application.
 
@@ -35,4 +35,4 @@ Setup steps are documented.  For complete information about the integration setu
 ![img](images/setup_adobe_io_data.png)
 
 
-[Previous Section](decide_deletion_policy.md) \| [Back to Contents](index.md) \| [Next Section](identify_server.md)
+[Previous Section](decide_deletion_policy.html) \| [Back to Contents](index.html) \| [Next Section](identify_server.html)

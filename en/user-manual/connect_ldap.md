@@ -9,7 +9,7 @@ parent: user-manual
 page_id: connect-ldap
 ---
 
-[Previous Section](connect_adobe.md)  \| [Next Section](connect_okta.md)
+[Previous Section](connect_adobe.html)  \| [Next Section](connect_okta.html)
 
 # Connecting To LDAP
 {:."no_toc"}
@@ -125,7 +125,7 @@ secure_password_key: my_ldap_password
 # password:
 ```
 
-See [Security Recommendations](security.md#secure-credential-storage) for more
+See [Security Recommendations](security.html#secure-credential-storage) for more
 information.
 
 ## Anonymous Auth
@@ -459,7 +459,7 @@ Note that this will set the same code for every user, overriding anything read f
 attribute. 
 
 It may be a better option to use the
-[extension config](advanced_configuration.md#custom-attributes-and-mappings) to
+[extension config](advanced_configuration.html#custom-attributes-and-mappings) to
 dynamically normalize the country code.
 
 ## `user_identity_type_format`
@@ -480,4 +480,4 @@ source have the same identity type.
 
 ---
 
-[Previous Section](connect_adobe.md)  \| [Next Section](connect_okta.md)
+[Previous Section](connect_adobe.html)  \| [Next Section](connect_okta.html)

@@ -11,7 +11,7 @@ page_id: test-run
 
 # Make a Test Run To Check Configuration
 
-[Previous Section](setup_config_files.md) \| [Back to Contents](index.md) \| [Next Section](monitoring.md)
+[Previous Section](setup_config_files.html) \| [Back to Contents](index.html) \| [Next Section](monitoring.html)
 
 To invoke user sync:
 
@@ -30,7 +30,7 @@ These commands ought to produce an output similar to the following:
 
 ```
 >  .\user-sync.exe -v
-user-sync.exe 2.7.6
+user-sync.exe 2.9.1
 ```
 
 ```
@@ -86,4 +86,4 @@ Now try re-running the same command.  User sync should not attempt to recreate a
 
 If these are all working as expected, you are ready to make a full run (without the user filter).  If you don't have too many users in your directory, you can try it now.  If you have more than a few hundred, it could take a long time so don't do the execution until you are ready to have a command running for many hours.  Also, go over the next few section before doing this in case there are other relevant command  line options.
 
-[Previous Section](setup_config_files.md) \| [Back to Contents](index.md) \| [Next Section](monitoring.md)
+[Previous Section](setup_config_files.html) \| [Back to Contents](index.html) \| [Next Section](monitoring.html)

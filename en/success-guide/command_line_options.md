@@ -11,7 +11,7 @@ page_id: command-line-options
 
 # Choose Final Command Line Options
 
-[Previous Section](monitoring.md) \| [Back to Contents](index.md) \|  [Next Section](scheduling.md)
+[Previous Section](monitoring.html) \| [Back to Contents](index.html) \|  [Next Section](scheduling.html)
 
 The command line for user sync selects the set of users to be processed, specifies whether user group and PC membership should be managed, specifies how account deletion should be handled, and a few additional options.
 
@@ -85,4 +85,4 @@ You may want to make your first few runs without any deletion options.
 &#9744;  Put together the command line options you need for your run of user sync.
 
 
-[Previous Section](monitoring.md) \| [Back to Contents](index.md) \|  [Next Section](scheduling.md)
+[Previous Section](monitoring.html) \| [Back to Contents](index.html) \|  [Next Section](scheduling.html)

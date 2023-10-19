@@ -20,7 +20,7 @@ page_id: upgrade-guide
 
 ---
 
-[Previous Section](scheduling.md) \| [Back to Contents](index.md)
+[Previous Section](scheduling.html) \| [Back to Contents](index.html)
 
 ---
 
@@ -54,7 +54,7 @@ The User Sync Tool also has many new features unavailable in older versions.
 * LDAP Kerberos Support
 * Admin Console identity connector
 * Adobe Sign Sync capability
-* See the [changelog](https://raw.githubusercontent.com/adobe-apiplatform/user-sync.py/v2/.changelog/changelog.md) for more details
+* See the [changelog](https://raw.githubusercontent.com/adobe-apiplatform/user-sync.py/v2/.changelog/changelog.html) for more details
 
 # Compatibility
 
@@ -151,4 +151,4 @@ Please [create an
 issue](https://github.com/adobe-apiplatform/user-sync.py/issues) if you need
 help with the upgrade process.
 
-[Previous Section](scheduling.md) \| [Back to Contents](index.md)
+[Previous Section](scheduling.html) \| [Back to Contents](index.html)

@@ -9,7 +9,7 @@ parent: user-manual
 page_id: sign-sync
 ---
 
-[Previous Section](advanced_configuration.md)  \| [Next Section](additional_tools.md)
+[Previous Section](advanced_configuration.html)  \| [Next Section](additional_tools.html)
 
 # Synchronizing Users to Adobe Sign
 {:."no_toc"}
@@ -329,7 +329,7 @@ deactivate_users: False
 The `integration_key` can be stored in an OS keychain or other secret storage backend. Instead of storing the key itself, the
 connector config can be set up to contain a reference to the key in the keychain.
 
-See [this documentation](deployment_best_practices.md#storing-credentials-in-os-level-storage) for more information.
+See [this documentation](deployment_best_practices.html#storing-credentials-in-os-level-storage) for more information.
 
 For the Sign connector, the user or account in the OS keychain should be the admin email as specified in the connector config.
 The `integration_key` config key should not be specified. The reference to the OS keychain credential is specified in
@@ -359,7 +359,7 @@ variety of ways.
 * CSV Bulk Upload
 * Using the User Management API directly
 
-In any case, to manage Sign Enterprise users, you should use the `adobe_console` [identity connector](advanced_configuration.md#the-admin-console-connector).
+In any case, to manage Sign Enterprise users, you should use the `adobe_console` [identity connector](advanced_configuration.html#the-admin-console-connector).
 
 ### Using Sign Sync with Admin Console Sync
 
@@ -422,4 +422,4 @@ can be created by an Admin user for a given Sign account.
 
 ---
 
-[Previous Section](advanced_configuration.md)  \| [Next Section](additional_tools.md)
+[Previous Section](advanced_configuration.html)  \| [Next Section](additional_tools.html)

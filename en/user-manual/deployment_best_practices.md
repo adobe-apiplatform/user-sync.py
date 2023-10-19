@@ -9,7 +9,7 @@ parent: user-manual
 page_id: deployment-best-practices
 ---
 
-[Previous Section](security.md)
+[Previous Section](security.html)
 
 # Deployment Best Practices
 {:."no_toc"}
@@ -197,5 +197,5 @@ During the calls, you may also see a warning from requests:
 
 ---
 
-[Previous Section](security.md)
+[Previous Section](security.html)
 

@@ -11,7 +11,7 @@ page_id: before-you-start
 
 # What You Need To Know Before You Start
 
-[Back to Contents](index.md) \| [Next Section](layout_orgs.md)
+[Back to Contents](index.html) \| [Next Section](layout_orgs.html)
 
 ## Introduction to User Sync
 
@@ -89,4 +89,4 @@ You’ll need to understand what Adobe organizations are setup and which users g
 
 You’ll need administrative access to your Adobe organization(s)
 
-[Back to Contents](index.md) \|  [Next Section](layout_orgs.md)
+[Back to Contents](index.html) \|  [Next Section](layout_orgs.html)
