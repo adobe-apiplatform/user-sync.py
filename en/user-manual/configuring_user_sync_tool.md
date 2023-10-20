@@ -502,6 +502,28 @@ Example scenarios:
 | 20%                    | 1000              | 900             | 100              | Max is 200 (20% of 1000) so Adobe-only users are processed               |
 | 20%                    | 1000              | 750             | 250              | Max of 200 (20% of 1000) exceeded, so Adobe-only users are not processed |
 
+The setting `group_removals_only` impacts how Adobe-only users are counted. With
+that setting missing or set to `False`, the sync tool counts all Adobe-only
+users, even those who may have been offboarded previously.
+
+This may not matter for certain `adobe_only_user_aciton` options, such as
+`remove`. But it can have an impact when using `preserve`, the most common (and
+safest) offboarding option.
+
+When `group_removals_only` is `True`, the sync tool will only operate on
+Adobe-only users with groups to remove. This limits the operation to users who
+should be offboarded in the current sync.
+
+It also affects max Adobe-only check. For example, a sync config with a 200 user
+limit may encounter issues even when a smaller number of users should be
+offboarded in a given sync. Let's say that there are 25 new Adobe-only users in
+a sync, but 190 exising Adobe-only users. That makes a total of 215 Adobe-only
+users, which exceeds the 200 user max.
+
+With `group_removals_only` enabled, the sync tool would ignore the 190 existing
+users and only count the 25 new offboards toward the limit. Since 25 is less
+than 200, the sync tool would perform the Adobe-only offboarding action.
+
 # `logging` Config
 
 The User Sync Tool produces log messages describing what it is doing. Log
