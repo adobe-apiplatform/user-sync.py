@@ -531,6 +531,9 @@ class UMAPIConfigLoader(ConfigLoader):
         limits_config = self.main_config.get_dict_config('limits')
         max_missing = limits_config.get_value('max_adobe_only_users', (int, str), False)
         options['max_adobe_only_users'] = validate_max_limit_config(max_missing)
+        group_removals_only = limits_config.get_value('group_removals_only', bool, True)
+        if group_removals_only is not None:
+            options['group_removals_only'] = group_removals_only
         
         # now get the directory extension, if any
         extension_config = self.get_directory_extension_options()

@@ -49,6 +49,7 @@ class RuleProcessor(object):
         'exclude_users': [],
         'extended_attributes': set(),
         'extension_enabled': False,
+        'group_removals_only': False,
         'process_groups': False,
         'max_adobe_only_users': 200,
         'new_account_type': user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
@@ -611,7 +612,10 @@ class RuleProcessor(object):
         return True
 
     def get_stray_keys(self, umapi_name=PRIMARY_TARGET_NAME):
-        return self.stray_key_map.get(umapi_name, {})
+        key_map = self.stray_key_map.get(umapi_name, {})
+        if self.options['group_removals_only']:
+            return {key: groups for key, groups in key_map.items() if groups}
+        return key_map
 
     def add_stray(self, umapi_name, user_key, removed_groups=None):
         """
