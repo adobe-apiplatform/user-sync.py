@@ -195,10 +195,7 @@ class UserGroupInfo:
     def from_dict(cls, dct):
         new_dct = {}
         for k, v in dct.items():
-            if k == 'settings':
-                new_dct[k] = SettingsInfo.from_dict(v)
-            else:
-                new_dct[k] = v
+            new_dct[k] = v
         return cls(**new_dct)
 
 
