@@ -159,9 +159,11 @@ class GroupsInfo:
 class BooleanSettingsInfo:
     value: bool
     inherited: bool = None
-
+    
     @classmethod
     def from_dict(cls, dct):
+        if isinstance(dct, bool):
+            return dct
         return cls(**dct)
 
 
@@ -195,7 +197,10 @@ class UserGroupInfo:
     def from_dict(cls, dct):
         new_dct = {}
         for k, v in dct.items():
-            new_dct[k] = v
+            if k == 'settings':
+                new_dct[k] = SettingsInfo.from_dict(v)
+            else:
+                new_dct[k] = v
         return cls(**new_dct)
 
 
