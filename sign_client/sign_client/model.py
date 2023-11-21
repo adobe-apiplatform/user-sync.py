@@ -159,9 +159,11 @@ class GroupsInfo:
 class BooleanSettingsInfo:
     value: bool
     inherited: bool = None
-
+    
     @classmethod
     def from_dict(cls, dct):
+        if isinstance(dct, bool):
+            return dct
         return cls(**dct)
 
 
