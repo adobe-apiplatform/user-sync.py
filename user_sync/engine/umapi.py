@@ -490,7 +490,7 @@ class RuleProcessor(object):
             self.logger.debug('%sing users to umapi...', verb)
         umapi_info, umapi_connector = self.get_umapi_info(PRIMARY_TARGET_NAME), umapi_connectors.get_primary_connector()
         if self.push_umapi:
-            primary_adds = umapi_info.get_desired_groups_by_user_key().data
+            primary_adds = umapi_info.get_desired_groups_by_user_key()
         else:
             primary_adds, update_commands = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
             primary_commands.extend(update_commands)
