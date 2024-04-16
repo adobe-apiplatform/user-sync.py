@@ -236,7 +236,7 @@ class SignSyncEngine:
                 else:
                     desired_groups = set([self.get_primary_group(sign_user, self.sign_user_groups[org_name]).name.lower()])
                 if not is_umg:
-                    desired_groups = set([directory_user['sign_roups'][0].group_name.lower()])
+                    desired_groups = set([directory_user['sign_groups'][0].group_name.lower()])
 
                 groups_to_update = {}
                 admin_groups = set([g.group_name for g in directory_user['admin_groups'] if g.umapi_name == org_name])
@@ -248,7 +248,7 @@ class SignSyncEngine:
                     if group_info is None:
                         raise AssertionException(f"'{group_name}' isn't a valid Sign group")
 
-                    is_group_admin = ((not is_umg and directory_user['is_admin_group'])
+                    is_group_admin = ((not is_umg and directory_user['is_group_admin'])
                                       or (group_name in admin_groups))
                     groups_to_update[group_name] = UserGroupInfo(
                         id=group_info.groupId,
@@ -257,6 +257,8 @@ class SignSyncEngine:
                         isPrimaryGroup=False,
                         status='ACTIVE',
                     )
+                    if not is_umg:
+                        groups_to_update[group_name].isPrimaryGroup=True
                     self.logger.info(f"Assigning group '{group_info.groupName}' to user {sign_user.email}")
                     if group_name in admin_groups:
                         self.logger.info(f"Assigning group admin privileges to user {sign_user.email} for group '{group_info.groupName}'")
@@ -309,21 +311,23 @@ class SignSyncEngine:
                         )
 
                 # figure out primary group for user
-                sign_groups = set([g.lower() for g in groups_to_update.keys()])\
-                              .union(set([g.lower() for g in assigned_groups.keys()]))
-                desired_pg = self.resolve_primary_group(sign_groups)
-                current_pg = [g.name.lower() for g in assigned_groups.values() if g.isPrimaryGroup]
-                if current_pg:
-                    current_pg = current_pg[0]
-                else:
-                    current_pg = None
+                if is_umg:
+                    sign_groups = set([g.lower() for g in groups_to_update.keys()])\
+                                  .union(set([g.lower() for g in assigned_groups.keys()]))
+                    desired_pg = self.resolve_primary_group(sign_groups)
+                    current_pg = [g.name.lower() for g in assigned_groups.values() if g.isPrimaryGroup]
+                    if current_pg:
+                        current_pg = current_pg[0]
+                    else:
+                        current_pg = None
 
-                if desired_pg is None:
-                    raise AssertionException(f"Can't identify a primary group for user '{sign_user.email}'")
+                    if desired_pg is None:
+                        raise AssertionException(f"Can't identify a primary group for user '{sign_user.email}'")
 
-                if current_pg is None or desired_pg.lower() != current_pg:
-                    self.logger.debug(f"Primary group of '{sign_user.email}' is '{desired_pg}'")
-                    groups_to_update[desired_pg.lower()].isPrimaryGroup = True
+                    if current_pg is None or desired_pg.lower() != current_pg:
+                        self.logger.debug(f"Primary group of '{sign_user.email}' is '{desired_pg}'")
+                        groups_to_update[desired_pg.lower()].isPrimaryGroup = True
+
 
                 if groups_to_update:
                     group_update_data = UserGroupsInfo(groupInfoList=list(groups_to_update.values()))
@@ -518,11 +522,16 @@ class SignSyncEngine:
                     status='ACTIVE',
                 )
                 self.logger.info(f"{self.org_string(sign_connector.console_org)}Assigning '{new_user.email}' to group '{group_to_assign.groupName}', group admin?: {wants_group_admin}")
-            primary_group = self.resolve_primary_group(groups_to_assign.keys())
-            if primary_group is None:
-                raise AssertionException(f"Can't identify a primary group for user '{new_user.email}'")
-            self.logger.debug(f"Primary group of '{new_user.email}' is '{primary_group}'")
-            groups_to_assign[primary_group.lower()].isPrimaryGroup = True
+            if is_umg:
+                primary_group = self.resolve_primary_group(groups_to_assign.keys())
+                if primary_group is None:
+                    raise AssertionException(f"Can't identify a primary group for user '{new_user.email}'")
+                self.logger.debug(f"Primary group of '{new_user.email}' is '{primary_group}'")
+                groups_to_assign[primary_group.lower()].isPrimaryGroup = True
+            else:
+                group_to_assign = self.sign_groups[org_name][groups[0].group_name.lower()]
+                self.logger.debug(f"Primary group of '{new_user.email}' is '{group_to_assign.groupName.lower()}'")
+                groups_to_assign[group_to_assign.groupName.lower()].isPrimaryGroup = True
             user_id = sign_connector.insert_user(new_user)
             self.sign_users_created.add(directory_user['email'])
             self.logger.info(f"{self.org_string(sign_connector.console_org)}Inserted sign user '{new_user.email}', admin?: {new_user.isAccountAdmin}")
