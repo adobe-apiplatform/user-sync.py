@@ -102,11 +102,13 @@ class SignSyncEngine:
             # Create any new Sign groups
             org_directory_groups = self._groupify(
                 org_name, directory_groups.values())
+            created_groups = []
             for directory_group in org_directory_groups:
-                if (directory_group.lower() not in self.sign_groups[org_name]):
+                if (directory_group.lower() not in self.sign_groups[org_name] and directory_group.lower() not in created_groups):
                     self.logger.info(
                         "{}Creating new Sign group: {}".format(self.org_string(org_name), directory_group))
                     sign_connector.create_group(DetailedGroupInfo(name=directory_group))
+                    created_groups.append(directory_group.lower())
             self.sign_groups[org_name] = self.get_groups(org_name)
             # Update user details or insert new user
             self.update_sign_users(
@@ -326,7 +328,17 @@ class SignSyncEngine:
 
                     if current_pg is None or desired_pg.lower() != current_pg:
                         self.logger.debug(f"Primary group of '{sign_user.email}' is '{desired_pg}'")
-                        groups_to_update[desired_pg.lower()].isPrimaryGroup = True
+                        if desired_pg.lower() in groups_to_update.keys():
+                            groups_to_update[desired_pg.lower()].isPrimaryGroup = True
+                        else:
+                            group_info = assigned_groups.get(desired_pg.lower())
+                            groups_to_update[desired_pg.lower()] = UserGroupInfo(
+                                id=group_info.id,
+                                name=group_info.name.lower(),
+                                isGroupAdmin=group_info.isGroupAdmin,
+                                isPrimaryGroup=True,
+                                status='ACTIVE',
+                            )
 
 
                 if groups_to_update:
@@ -481,7 +493,7 @@ class SignSyncEngine:
         is_group_admin = False
         admin_groups = set()
         for dir_group, target_groups in group_admin_mapping.items():
-            if dir_group in directory_groups:
+            if dir_group in set(g.lower() for g in directory_groups):
                 is_group_admin = True
                 admin_groups.update(target_groups)
 

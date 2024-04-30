@@ -276,7 +276,7 @@ class SignConfigLoader(ConfigLoader):
     def _groupify(self, group_name):
         """For a given group name, return AdobeGroup with proper primary
            target, error checking, etc"""
-        group = AdobeGroup.create(group_name.lower())
+        group = AdobeGroup.create(group_name)
         if group is None:
             raise AssertionException(f"Bad sign group '{group_name}' specified")
         if group.umapi_name is None:
