@@ -49,6 +49,7 @@ class RuleProcessor(object):
         'exclude_users': [],
         'extended_attributes': set(),
         'extension_enabled': False,
+        'group_removals_only': False,
         'process_groups': False,
         'max_adobe_only_users': 200,
         'new_account_type': user_sync.identity_type.ENTERPRISE_IDENTITY_TYPE,
@@ -485,7 +486,7 @@ class RuleProcessor(object):
             self.logger.debug('%sing users to umapi...', verb)
         umapi_info, umapi_connector = self.get_umapi_info(PRIMARY_TARGET_NAME), umapi_connectors.get_primary_connector()
         if self.push_umapi:
-            primary_adds = umapi_info.get_desired_groups_by_user_key().data
+            primary_adds = umapi_info.get_desired_groups_by_user_key()
         else:
             primary_adds, update_commands = self.update_umapi_users_for_connector(umapi_info, umapi_connector)
             primary_commands.extend(update_commands)
@@ -607,7 +608,10 @@ class RuleProcessor(object):
         return True
 
     def get_stray_keys(self, umapi_name=PRIMARY_TARGET_NAME):
-        return self.stray_key_map.get(umapi_name, {})
+        key_map = self.stray_key_map.get(umapi_name, {})
+        if self.options['group_removals_only']:
+            return {key: groups for key, groups in key_map.items() if groups}
+        return key_map
 
     def add_stray(self, umapi_name, user_key, removed_groups=None):
         """

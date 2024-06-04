@@ -191,7 +191,7 @@ class SignSyncEngine:
                     if is_admin:
                         self.logger.info(f"Assigning account admin status to {sign_user.email}")
                     else:
-                        self.logger.info(f"Removing account admin status from f{sign_user.email}")
+                        self.logger.info(f"Removing account admin status from {sign_user.email}")
                     user_data = DetailedUserInfo(**sign_user.__dict__)
                     user_data.isAccountAdmin = is_admin
                     self.sign_users_role_updates.add(sign_user.email)
