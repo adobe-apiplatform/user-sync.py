@@ -79,6 +79,7 @@ directory_users:
 # See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/configuring_user_sync_tool.html#limits-config
 limits:
   max_adobe_only_users: 200
+  # group_removals_only: True
 
 # --- Logging Options ---
 # Options that govern logging to the terminal (console) and/or log file(s)
