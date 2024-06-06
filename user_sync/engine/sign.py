@@ -266,7 +266,7 @@ class SignSyncEngine:
                     if group_name in admin_groups:
                         self.logger.info(f"Assigning group admin privileges to user {sign_user.email} for group '{group_info.groupName}'")
 
-                # figure out primary group and group admin state for user in case of UMG enabled
+                # figure out primary group and group admin state change for user in case of UMG enabled
                 if is_umg:
                     sign_groups = set([g.lower() for g in groups_to_update.keys()]) \
                         .union(set([g.lower() for g in assigned_groups.keys()]))
@@ -308,6 +308,7 @@ class SignSyncEngine:
                                     isPrimaryGroup=group_info.isPrimaryGroup,
                                     status='ACTIVE',
                                 )
+                # change in group admin state change for the group already assigned to the user in case of UMG disabled
                 else:
                     for group in desired_groups:
                         group_info = assigned_groups.get(group)
