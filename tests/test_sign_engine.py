@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from mock import MagicMock, call
+from user_sync.error import AssertionException
 
 from user_sync.config.sign_sync import SignConfigLoader
 from user_sync.engine.sign import SignSyncEngine
@@ -15,6 +16,50 @@ def example_engine(default_sign_args):
     rule_config = config.get_engine_options()
     target_options = config.get_target_options()
     return SignSyncEngine(rule_config, target_options)
+
+@pytest.fixture
+def mock_data_for_update():
+    from sign_client.model import UserGroupInfo
+    return {
+        'groups_to_update': {},
+        'assigned_groups': {
+            'group1': UserGroupInfo(id='1', name='group1', isGroupAdmin=False, isPrimaryGroup=True, status='ACTIVE'),
+            'group2': UserGroupInfo(id='2', name='group2', isGroupAdmin=True, isPrimaryGroup=False, status='ACTIVE')
+        },
+        'desired_groups': ['group1', 'group2'],
+        'admin_groups': ['group1'],
+        'directory_user': {'is_group_admin': True},
+        'sign_user': MagicMock(email='user@example.com')
+    }
+
+@pytest.fixture
+def mock_data_for_insert_user():
+    return {
+        'org_name': 'org1',
+        'directory_user': {
+            'email': 'user@example.com',
+            'is_admin': False,
+            'firstname': 'First',
+            'lastname': 'Last',
+            'is_group_admin': True,
+            'admin_groups': [MagicMock(group_name='group1')]
+        },
+        'assignment_groups': [MagicMock(group_name='group1'), MagicMock(group_name='group2')]
+    }
+
+@pytest.fixture
+def setup_data_resolve_group_mapping():
+    return {
+        'directory_groups': ['group1'],
+        'group_mapping': {
+            'group1': {'priority': 1, 'groups': ['mapped_group1', 'mapped_group2']},
+        },
+        'account_admin_groups': ['group1'],
+        'group_admin_mapping': {
+            'group1': {'mapped_group1'},
+        }
+    }
+
 
 
 def test_load_users_and_groups(example_engine: SignSyncEngine, mock_dir_user):
@@ -203,6 +248,131 @@ def test_read_desired_user_groups_simple(example_engine, mock_dir_user):
     mapping['Sign Users'] = {'groups': adobe_groups}
     example_engine.read_desired_user_groups(mapping, dc)
     assert example_engine.directory_user_by_user_key == user
+
+def test_resolve_primary_group_and_group_admin_state_umg_true(example_engine, mock_data_for_update):
+    example_engine.resolve_primary_group = MagicMock(return_value='group2')
+    groups_to_update = example_engine.resolvePrimaryGroupAndGroupAdminState(
+        is_umg=True,
+        groups_to_update=mock_data_for_update['groups_to_update'],
+        assigned_groups=mock_data_for_update['assigned_groups'],
+        desired_groups=mock_data_for_update['desired_groups'],
+        admin_groups=mock_data_for_update['admin_groups'],
+        directory_user=mock_data_for_update['directory_user'],
+        sign_user=mock_data_for_update['sign_user']
+    )
+    assert 'group2' in groups_to_update
+    assert groups_to_update['group2'].isPrimaryGroup is True
+
+def test_resolve_primary_group_and_group_admin_state_no_primary_group(example_engine, mock_data_for_update):
+    example_engine.resolve_primary_group = MagicMock(return_value=None)
+    with pytest.raises(AssertionException, match="Can't identify a primary group for user 'user@example.com'"):
+        example_engine.resolvePrimaryGroupAndGroupAdminState(
+            is_umg=True,
+            groups_to_update=mock_data_for_update['groups_to_update'],
+            assigned_groups=mock_data_for_update['assigned_groups'],
+            desired_groups=mock_data_for_update['desired_groups'],
+            admin_groups=mock_data_for_update['admin_groups'],
+            directory_user=mock_data_for_update['directory_user'],
+            sign_user=mock_data_for_update['sign_user']
+        )
+
+def test_resolve_primary_group_and_group_admin_state_update_group_admin(example_engine, mock_data_for_update):
+    groups_to_update = example_engine.resolvePrimaryGroupAndGroupAdminState(
+        is_umg=False,
+        groups_to_update=mock_data_for_update['groups_to_update'],
+        assigned_groups=mock_data_for_update['assigned_groups'],
+        desired_groups=mock_data_for_update['desired_groups'],
+        admin_groups=mock_data_for_update['admin_groups'],
+        directory_user=mock_data_for_update['directory_user'],
+        sign_user=mock_data_for_update['sign_user']
+    )
+
+    assert 'group1' in groups_to_update
+    assert groups_to_update['group1'].isGroupAdmin is True
+
+def test_resolve_primary_group_and_group_admin_state_umg_false(example_engine, mock_data_for_update):
+    from sign_client.model import UserGroupInfo
+    groups_to_update = example_engine.resolvePrimaryGroupAndGroupAdminState(
+        is_umg=False,
+        groups_to_update=mock_data_for_update['groups_to_update'],
+        assigned_groups= {'group1': UserGroupInfo(id='1', name='group1', isGroupAdmin=False, isPrimaryGroup=True, status='ACTIVE')},
+        desired_groups= ['group1'],
+        admin_groups=['group1'],
+        directory_user=mock_data_for_update['directory_user'],
+        sign_user=mock_data_for_update['sign_user']
+    )
+
+    assert 'group1' in groups_to_update
+    assert groups_to_update['group1'].isGroupAdmin is True
+
+
+def test_insert_new_users_umg_primary_group(example_engine, mock_data_for_insert_user):
+    from sign_client.model import GroupInfo
+    example_engine.options['user_sync']['umg'] = True
+    example_engine.resolve_primary_group = MagicMock(return_value='group1')
+    example_engine.sign_groups = {
+        'org1': {
+            'group1': GroupInfo(groupId='1', groupName='group1'),
+            'group2': GroupInfo(groupId='2', groupName='group2')
+        } }
+    sign_connector = MagicMock()
+    example_engine.insert_new_users(
+        org_name=mock_data_for_insert_user['org_name'],
+        sign_connector=sign_connector,
+        directory_user=mock_data_for_insert_user['directory_user'],
+        assignment_groups=mock_data_for_insert_user['assignment_groups']
+    )
+
+    assert example_engine.sign_users_created == {'user@example.com'}
+
+def test_insert_new_users_non_umg_primary_group(example_engine, mock_data_for_insert_user):
+    from sign_client.model import GroupInfo
+    example_engine.options['user_sync']['umg'] = False
+    example_engine.resolve_primary_group = MagicMock(return_value='group1')
+    example_engine.sign_groups = {
+        'org1': {
+            'group1': GroupInfo(groupId='1', groupName='group1'),
+            'group2': GroupInfo(groupId='2', groupName='group2')
+        } }
+    sign_connector = MagicMock()
+    example_engine.insert_new_users(
+        org_name=mock_data_for_insert_user['org_name'],
+        sign_connector=sign_connector,
+        directory_user=mock_data_for_insert_user['directory_user'],
+        assignment_groups=mock_data_for_insert_user['assignment_groups']
+    )
+
+    assert example_engine.sign_users_created == {'user@example.com'}
+
+def test_resolve_group_mappings(setup_data_resolve_group_mapping):
+    directory_groups = setup_data_resolve_group_mapping['directory_groups']
+    group_mapping = setup_data_resolve_group_mapping['group_mapping']
+    account_admin_groups = setup_data_resolve_group_mapping['account_admin_groups']
+    group_admin_mapping = setup_data_resolve_group_mapping['group_admin_mapping']
+
+    matched_groups, is_admin, is_group_admin, admin_groups = SignSyncEngine.resolve_group_mappings(
+        directory_groups, group_mapping, account_admin_groups, group_admin_mapping
+    )
+
+    assert set(matched_groups) == {'mapped_group1', 'mapped_group2'}
+    assert is_admin is True
+    assert is_group_admin is True
+    assert admin_groups == {'mapped_group1'}
+
+def test_group_admin_mapping(setup_data_resolve_group_mapping):
+    directory_groups = setup_data_resolve_group_mapping['directory_groups']
+    group_mapping = setup_data_resolve_group_mapping['group_mapping']
+    account_admin_groups =  ['group2']
+    group_admin_mapping = setup_data_resolve_group_mapping['group_admin_mapping']
+
+    matched_groups, is_admin, is_group_admin, admin_groups = SignSyncEngine.resolve_group_mappings(
+        directory_groups, group_mapping, account_admin_groups, group_admin_mapping
+    )
+
+    assert set(matched_groups) == {'mapped_group1', 'mapped_group2'}
+    assert is_admin is False
+    assert is_group_admin is True
+    assert admin_groups == {'mapped_group1'}
 
 
 @pytest.mark.skip("wait until UMG is implemented")
