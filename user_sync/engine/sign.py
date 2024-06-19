@@ -7,6 +7,7 @@ from user_sync.error import AssertionException
 from sign_client.error import AssertionException as ClientException
 
 from sign_client.model import DetailedUserInfo, GroupInfo, UserGroupsInfo, UserGroupInfo, DetailedGroupInfo, UserStateInfo
+import re
 
 
 class SignSyncEngine:
@@ -130,6 +131,18 @@ class SignSyncEngine:
         for description, count in self.action_summary.items():
             self.logger.info('  {}: {}'.format(description.rjust(pad, ' '), count))
 
+    def sign_user_excluded(self, user, user_groups, connector):
+        if 'users' in connector.exclusion_options:
+            for rule in connector.exclusion_options['users']:
+                if rule.match(user.email.lower()):
+                    return True
+        if 'groups' in connector.exclusion_options:
+            user_group_names = set([ug.name.lower() for ug in user_groups])
+            for group in connector.exclusion_options['groups']:
+                if group.lower() in user_group_names:
+                    return True
+        return False
+
     def update_sign_users(self, directory_users, sign_connector: SignConnector, org_name):
         """
         Updates user details or inserts new user
@@ -139,9 +152,10 @@ class SignSyncEngine:
         :return:
         """
         # Fetch the list of active Sign users
-        sign_users = {user.email: user for user in sign_connector.get_users().values() if user.status != 'INACTIVE'}
-        inactive_sign_users = {user.email: user for user in sign_connector.get_users().values() if user.status == 'INACTIVE'}
         sign_user_groups = sign_connector.get_user_groups()
+        filtered_users = {user.email: user for user in sign_connector.get_users().values() if not self.sign_user_excluded(user, sign_user_groups[user.id], sign_connector)}
+        sign_users = {user.email: user for user in filtered_users.values() if user.status != 'INACTIVE'}
+        inactive_sign_users = {user.email: user for user in filtered_users.values() if user.status == 'INACTIVE'}
         self.sign_user_primary_groups[org_name] = {id: [g for g in groups if g.isPrimaryGroup][0] for id, groups in sign_user_groups.items()}
         users_update_list = []
         user_groups_update_list = []
