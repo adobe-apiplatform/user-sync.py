@@ -149,7 +149,7 @@ jobs:
       LC_ALL: en_US.utf8
       LANG: en_US.utf8
     container:
-      image: centos:7
+      image: centos:8
     strategy:
       matrix:
         include:
