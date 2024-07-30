@@ -40,6 +40,6 @@ setup(name='sign-client',
       packages=find_packages(),
       install_requires=[
         "requests~=2.26.0",
-        "aiohttp~=3.8.1",
+        "aiohttp~=3.9.0",
       ],
       zip_safe=False)
