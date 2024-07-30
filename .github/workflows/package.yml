@@ -165,18 +165,18 @@ jobs:
       - name: Rocky-Install dependencies
         run: |
           yum update -y
-          yum install -y pkgconfig gcc openssl-devel dbus-glib-devel python3-dbus sqlite-devel libffi-devel wget make
+          yum install -y pkgconfig gcc openssl-devel dbus-glib-devel python3-dbus sqlite-devel libffi-devel wget make findutils
           mkdir tmp && cd tmp
-          wget https://www.python.org/ftp/python/3.9.17/Python-3.9.17.tgz
-          tar xzf Python-3.9.17.tgz
-          cd Python-3.9.17
+          wget https://www.python.org/ftp/python/3.12.4/Python-3.12.4.tgz
+          tar xzf Python-3.12.4.tgz
+          cd Python-3.12.4
           ./configure --enable-optimizations --enable-shared --enable-loadable-sqlite-extensions
           make altinstall
           cd ../..
       - name: Build executable
         run: |
           export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/
-          /usr/local/bin/python3.9 -m venv venv
+          /usr/local/bin/python3.12 -m venv venv
           source venv/bin/activate
           # for some reason, pycryptodome won't install when
           # setuptools is installed/upgraded, so install it before
