@@ -16,9 +16,9 @@ jobs:
           - extension_support: 1
             variant_tag: ""
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     - name: Get version tag
@@ -67,9 +67,9 @@ jobs:
           - extension_support: 1
             variant_tag: ""
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
     - name: Get version tag
@@ -116,8 +116,8 @@ jobs:
           - extension_support: 1
             variant_tag: ""
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.9'
     - name: Get version tag
@@ -158,7 +158,7 @@ jobs:
           - extension_support: 1
             variant_tag: ""
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Get version tag
         id: get_version
         uses: battila7/get-version-action@v2
@@ -209,7 +209,7 @@ jobs:
   examples:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: user-sync-examples-zip
       run: |
          cd examples
@@ -232,7 +232,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rocky, ubuntu-jammy, ubuntu-focal, examples, windows]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
