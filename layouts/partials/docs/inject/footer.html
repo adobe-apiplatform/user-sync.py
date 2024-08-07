@@ -1,0 +1,17 @@
+<span style="font-size: 1.5em">
+{{if .Next }}
+  <a href="{{.Next.Permalink }}">
+    Previous: {{ .Next.Title }}
+  </a>
+
+{{ if and .Next .Prev }}
+|
+{{end}}
+
+{{end}}
+{{if .Prev }}
+  <a href="{{ .Prev.Permalink }}">
+    Next: {{ .Prev.Title }}
+  </a>
+{{end}}
+</span>

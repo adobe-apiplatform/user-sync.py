@@ -1,0 +1,24 @@
+baseURL = 'https://adobe-apiplatform.github.io/user-sync.py/'
+uglyURLs = true
+languageCode = 'en-us'
+title = 'Adobe User Sync Tool'
+theme = "hugo-book"
+
+defaultContentLanguage = 'en'
+defaultContentLanguageInSubdir = true
+[languages]
+  [languages.de]
+    contentDir = 'content/de'
+    languageName = 'Deutsch'
+    weight = 3
+  [languages.en]
+    contentDir = 'content/en'
+    languageName = 'English'
+    weight = 1
+  [languages.fr]
+    contentDir = 'content/fr'
+    languageName = 'Français'
+    weight = 2
+
+[params]
+    BookSection = '*'
