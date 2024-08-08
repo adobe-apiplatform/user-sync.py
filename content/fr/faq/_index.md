@@ -2,7 +2,7 @@
 weight: 220
 type: docs
 title: FAQ sur l’outil User Sync
-url: '/faq/'
+url: '/fr/faq/'
 bookFlatSection: true
 ---
 

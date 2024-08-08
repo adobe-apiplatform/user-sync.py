@@ -2,7 +2,7 @@
 weight: 290
 type: docs
 title: Frequently Asked Questions
-url: '/faq/'
+url: '/en/faq/'
 bookFlatSection: true
 ---
 
