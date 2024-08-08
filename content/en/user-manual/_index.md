@@ -2,7 +2,7 @@
 weight: 10
 title: User Manual
 type: docs
-url: '/user-manual/'
+url: '/en/user-manual/'
 bookFlatSection: true
 ---
 

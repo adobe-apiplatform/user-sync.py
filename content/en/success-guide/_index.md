@@ -2,7 +2,7 @@
 weight: 150
 title: Setup and Success Guide
 type: docs
-url: '/success-guide/'
+url: '/en/success-guide/'
 bookFlatSection: true
 ---
 

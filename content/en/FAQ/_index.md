@@ -3,6 +3,7 @@ weight: 290
 type: docs
 title: Frequently Asked Questions
 url: '/faq/'
+bookFlatSection: true
 ---
 
 ## What is User Sync?

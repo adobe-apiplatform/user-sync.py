@@ -1,7 +1,7 @@
 <span style="font-size: 1.5em">
 {{if .Next }}
   <a href="{{.Next.Permalink }}">
-    Previous: {{ .Next.Title }}
+    {{ T "previous" }}: {{ .Next.Title }}
   </a>
 
 {{ if and .Next .Prev }}
@@ -11,7 +11,7 @@
 {{end}}
 {{if .Prev }}
   <a href="{{ .Prev.Permalink }}">
-    Next: {{ .Prev.Title }}
+    {{ T "next" }}: {{ .Prev.Title }}
   </a>
 {{end}}
 </span>
