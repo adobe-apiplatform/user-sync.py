@@ -24,4 +24,4 @@ Utilisez la [console Adobe I/O](https://console.adobe.io) pour ajouter le servi
 
 Notez les paramètres de configuration associés à votre intégration (comme dans l’exemple ci-dessous). Vous en aurez besoin dans une prochaine étape.
 
-![img](/user-sync.py/images/setup_adobe_io_data.png)
+![img](/user-sync.py/fr/images/setup_adobe_io_data.png)

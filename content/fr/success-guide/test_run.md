@@ -20,7 +20,7 @@ Essayez :
 
 Essayez les deux commandes ci-dessus et vérifiez qu’elles fonctionnent. (Sous Windows, la commande diffère légèrement.)
 
-![img](/user-sync.py/images/test_run_screen.png)
+![img](/user-sync.py/fr/images/test_run_screen.png)
 
 Ensuite, essayez une synchronisation limitée à un seul utilisateur et exécutée en mode test. Vous devez connaître le nom de certains utilisateurs figurant dans votre annuaire. Par exemple, pour l’utilisateur bart@example.com, essayez :
 

@@ -51,7 +51,7 @@ Cet appel fournit les paramètres users (utilisateurs) et process-groups (groupe
 
 Lorsque la synchronisation réussit, Adobe Admin Console est mis à jour. Une fois que cette commande a été exécutée, vos listes d’utilisateurs et de configurations de produits dans Admin Console indiquent qu’un utilisateur disposant d’un Federated ID a été ajouté à « Default Acrobat Pro DC configuration. ».
 
-![Figure 3: Capture d’écran du portail Admin Console](/user-sync.py/images/edit-product-config.png)
+![Figure 3: Capture d’écran du portail Admin Console](/user-sync.py/fr/images/edit-product-config.png)
 
 ### Synchroniser uniquement les utilisateurs
 

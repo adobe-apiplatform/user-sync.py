@@ -31,7 +31,7 @@ Modifiez le fichier connector-ldap.yml. Celui-ci contient les informations d’a
 
 Passez en revue le reste du fichier pour voir ce qui peut également être spécifié et qui pourrait s’appliquer à votre installation. Généralement, il n’y a rien d’autre à faire.
 
-![](/user-sync.py/images/setup_config_directory.png)
+![](/user-sync.py/fr/images/setup_config_directory.png)
 
 Si vous avez besoin d’une requête LDAP différente de celle par défaut pour sélectionner l’ensemble d’utilisateurs souhaité, celle-ci est définie dans ce fichier au niveau du paramètre de configuration all\_users\_filter.
 
@@ -42,7 +42,7 @@ Modifiez le fichier connector-umapi.yml. Indiquez les informations relatives à 
 
 Placez le fichier de clé privée dans le dossier user_sync_tool. L’élément de fichier de configuration priv\_key\_path est alors défini sur le nom de ce fichier.
 
-![](/user-sync.py/images/setup_config_umapi.png)
+![](/user-sync.py/fr/images/setup_config_umapi.png)
 
 ### Fichier de configuration User Sync principal 
 
@@ -108,7 +108,7 @@ Voici un exemple plus réaliste :
 
 
 
-![](/user-sync.py/images/setup_config_group_map.png)
+![](/user-sync.py/fr/images/setup_config_group_map.png)
 
 #### Limites relatives aux non-correspondances d’utilisateurs 
 

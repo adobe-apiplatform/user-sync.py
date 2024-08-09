@@ -30,7 +30,7 @@ L’outil suppose que votre entreprise a acheté des licences de produits Adobe.
 
 User Sync communique avec votre annuaire d’entreprise via des protocoles LDAP. Il communique avec le portail Adobe Admin Console par le biais de l’API Adobe User Management (UMAPI) afin de mettre à jour les données de comptes d’utilisateurs de votre organisation. La figure suivante illustre le flux de données entre les systèmes.
 
-![Figure 1: Flux de données User Sync](/user-sync.py/images/adobe-to-enterprise-connections.png)
+![Figure 1: Flux de données User Sync](/user-sync.py/fr/images/adobe-to-enterprise-connections.png)
 
 Chaque fois que vous exécutez l’outil :
 

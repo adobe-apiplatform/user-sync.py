@@ -29,4 +29,4 @@ Si vous souhaitez utiliser des groupes d’utilisateurs pour gérer l’accès a
 
 Tracez un schéma de vos organisations Adobe, et des produits et CP de chacune. Ajoutez l’annuaire et les groupes d’annuaire au schéma, puis indiquez le mappage. Par exemple :
 
-![img](/user-sync.py/images/layout_products_map.png)
+![img](/user-sync.py/fr/images/layout_products_map.png)
