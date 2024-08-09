@@ -30,7 +30,7 @@ La herramienta presupone que la empresa ha adquirido licencias de producto de Ad
 
 User Sync se comunica con el directorio de la empresa a través de protocolos LDAP. Se comunica con Adobe Admin Console a través de la API de gestión de usuarios de Adobe (UMAPI) con el fin de actualizar los datos de cuentas de usuario de la organización. La figura siguiente muestra el flujo de datos entre los sistemas.
 
-![Figure 1: Flujo de datos de User Sync](/user-sync.py/images/adobe-to-enterprise-connections.png)
+![Figure 1: Flujo de datos de User Sync](/user-sync.py/images/es/adobe-to-enterprise-connections.png)
 
 Cada vez que ejecuta la herramienta:
 

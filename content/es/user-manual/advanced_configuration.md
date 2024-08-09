@@ -224,7 +224,7 @@ La sección **group** del archivo de configuración principal define una asignac
 - En la parte de Adobe, User Sync examina los miembros de los grupos asignados y las configuraciones de producto. Si algún usuario de esos grupos
 _no_ está en el conjunto de usuarios de directorio seleccionado, User Sync elimina ese usuario del grupo. Este suele ser el comportamiento deseado porque, por ejemplo, si un usuario se encuentra en la configuración de producto de Adobe Photoshop y se elimina del directorio de empresa, se debe esperar que se eliminarán del grupo de manera que ya no se les asigne una licencia.
 
-![Figure 4: Ejemplo de asignación de grupo](/user-sync.py/images/group-mapping.png)
+![Figure 4: Ejemplo de asignación de grupo](/user-sync.py/images/es/group-mapping.png)
 
 Este flujo de trabajo puede presentar dificultades si desea dividir el proceso de sincronización en varias ejecuciones para reducir el número de usuarios de directorio consultados cada vez. Por ejemplo, podría hacer una ejecución para usuarios que comienzan con A-M y otra para los usuarios que comienzan con N-Z. Al hacer esto, cada ejecución debe dirigirse a grupos de usuarios y configuraciones de producto de Adobe diferentes. De lo contrario, la ejecución para A-M quitaría usuarios de grupos asignados que están en el conjunto de N-Z.
 

@@ -14,7 +14,7 @@ En esta sección, se muestran varias configuraciones alternativas. Realizará lo
 
 La mayoría de las configuraciones tienen este aspecto. Hay un solo directorio y una sola organización de Adobe. Todos los usuarios se deben poder seleccionar como usuarios para ir a Adobe o solo un subconjunto como miembros de un grupo del directorio determinado. Tendrá que decidir cómo debe configurarlo para su organización y tener la consulta LDAP que ha seleccionado los usuarios adecuados.
 
-![Configuración simple](/user-sync.py/images/layout_orgs_simple.png)
+![Configuración simple](/user-sync.py/images/es/layout_orgs_simple.png)
 
 Necesitará la consulta LDAP que selecciona el conjunto de los usuarios que se sincronizarán con Adobe. Esto afectará a uno de los archivos de configuración de User Sync en un paso posterior.
 
@@ -35,7 +35,7 @@ Necesitará:
 - Estar preparado para configurar varias instalaciones de User Sync más adelante.
 - Reúna la información de credenciales que necesita para acceder al directorio. Se recomienda crear una cuenta de acceso al directorio de solo lectura y utilizarla para acceder a AD o LDAP y a otro sistema del directorio.
 
-![Configuración múltiple](/user-sync.py/images/layout_orgs_multi.png)
+![Configuración múltiple](/user-sync.py/images/es/layout_orgs_multi.png)
 
 ## Directorio y organización múltiples
 
@@ -43,7 +43,7 @@ Esto son, básicamente, dos instancias de todo. Tendrá que ejecutar dos configu
 
 Si las licencias de una organización se utilizan por los usuarios en la otra organización, la configuración será más compleja.
 
-![Varias organizaciones y directorios](/user-sync.py/images/layout_orgs_multi_dir_multi_org.png)
+![Varias organizaciones y directorios](/user-sync.py/images/es/layout_orgs_multi_dir_multi_org.png)
 
 Necesitará:
 
@@ -61,7 +61,7 @@ Los grupos de usuario (UG) y las configuraciones de producto (PC) asignados y ad
 
 Cuando se configura de esta manera, User Sync no puede eliminar los usuarios. Esto es así porque las dos instancias de sincronización intentarían eliminar los usuarios de los demás.
 
-![Varios directorios y una única organización](/user-sync.py/images/layout_orgs_multi_dir_single_org.png)
+![Varios directorios y una única organización](/user-sync.py/images/es/layout_orgs_multi_dir_single_org.png)
 
 Necesitará:
 

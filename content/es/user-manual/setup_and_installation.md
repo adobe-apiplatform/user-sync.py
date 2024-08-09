@@ -40,7 +40,7 @@ Tome nota de los nombres que elija para estos grupos y los grupos de Adobe a los
 
 Es una buena práctica anotar en el campo de descripción de la configuración de producto o el grupo de usuarios que el grupo es gestionado por User Sync y no se debe editar en Admin Console.
 
-![Figure 2: Descripción general de la asignación de grupos](/user-sync.py/images/group-mapping.png)
+![Figure 2: Descripción general de la asignación de grupos](/user-sync.py/images/es/group-mapping.png)
 
 ## Instalación de la herramienta User Sync
 

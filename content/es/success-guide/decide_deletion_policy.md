@@ -25,7 +25,7 @@ Algunas cosas que hay que saber sobre la eliminación de la cuenta:
     - Puede eliminarlas de su organización, pero no puede eliminar esas cuentas porque son propiedad de una organización diferente
     - Si intenta eliminar una cuenta de este tipo, tiene el mismo efecto que eliminar al usuario de la organización
 
-![organizaciones](/user-sync.py/images/decide_deletion_multi_org.png)
+![organizaciones](/user-sync.py/images/es/decide_deletion_multi_org.png)
 
 Solo tiene que decidir cómo será su política y su proceso después de eliminar a los usuarios de Adobe cuando se eliminen del directorio. Esta decisión le indicará cómo invoca User Sync en un paso posterior.
 

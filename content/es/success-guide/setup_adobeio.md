@@ -24,4 +24,4 @@ Utilice [Adobe I/O Console](https://console.adobe.io) para añadir el servicio d
 
 Tenga en cuenta los parámetros de configuración para su integración (a continuación, se muestra un ejemplo redactado). Estos se utilizan en un paso posterior.
 
-![img](/user-sync.py/images/setup_adobe_io_data.png)
+![img](/user-sync.py/images/es/setup_adobe_io_data.png)

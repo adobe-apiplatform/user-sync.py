@@ -31,7 +31,7 @@ Edite el archivo connector-ldap.yml. Este archivo tiene información de acceso a
 
 Lea el resto del archivo para ver todo lo demás que podría especificarse que es posible que se aplique en su instalación. Por lo general, no se requiere nada más.
 
-![](/user-sync.py/images/setup_config_directory.png)
+![](/user-sync.py/images/es/setup_config_directory.png)
 
 Si desea realizar una consulta de LDAP no predeterminada para seleccionar el conjunto de usuarios deseado, está configurado en este archivo como parte del parámetro de configuración all\_users\_filter.
 
@@ -41,7 +41,7 @@ Edite el connector-umapi.yml. Coloque la información de la integración de adob
 
 Coloque el archivo de clave privado en la carpeta user_sync_tool. El elemento del archivo de configuración priv\_key\_path se define a continuación en el nombre de este archivo.
 
-![](/user-sync.py/images/setup_config_umapi.png)
+![](/user-sync.py/images/es/setup_config_umapi.png)
 
 ### Archivo de configuración de User Sync principal 
 
@@ -103,7 +103,7 @@ Un ejemplo más realista es:
 	      adobe_groups:
 	        - All Apps
 
-![](/user-sync.py/images/setup_config_group_map.png)
+![](/user-sync.py/images/es/setup_config_group_map.png)
 
 #### Límites de usuario no coincidentes 
 

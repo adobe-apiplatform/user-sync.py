@@ -19,7 +19,7 @@ Pruébelo:
 
 Pruebe los dos comandos anteriores y compruebe que funcionen. (En Windows, el comando es ligeramente diferente).
 
-![img](/user-sync.py/images/test_run_screen.png)
+![img](/user-sync.py/images/es/test_run_screen.png)
 
 A continuación, pruebe una sincronización limitada a un único usuario y ejecútela en modo de prueba. Deberá saber el nombre de algún usuario del directorio. Por ejemplo, si el usuario es bart@example.com, pruebe:
 

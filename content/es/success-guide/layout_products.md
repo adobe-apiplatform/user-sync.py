@@ -29,4 +29,4 @@ Si va a usar grupos de usuarios para administrar el acceso a los productos, debe
 
 Dibuje un esquema de su organización de Adobe y los productos y las PC que hay en cada uno. Añada el directorio y los grupos de directorio a la imagen y muestre la asignación. Por ejemplo:
 
-![img](/user-sync.py/images/layout_products_map.png)
+![img](/user-sync.py/images/es/layout_products_map.png)
