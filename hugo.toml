@@ -7,18 +7,22 @@ theme = "hugo-book"
 defaultContentLanguage = 'en'
 defaultContentLanguageInSubdir = true
 [languages]
-  [languages.en]
-    contentDir = 'content/en'
-    languageName = 'English'
-    weight = 1
-  [languages.fr]
-    contentDir = 'content/fr'
-    languageName = 'Français'
-    weight = 2
   [languages.de]
     contentDir = 'content/de'
     languageName = 'Deutsch'
+    weight = 1
+  [languages.en]
+    contentDir = 'content/en'
+    languageName = 'English'
+    weight = 2
+  [languages.es]
+    contentDir = 'content/es'
+    languageName = 'Español'
     weight = 3
+  [languages.fr]
+    contentDir = 'content/fr'
+    languageName = 'Français'
+    weight = 4
 
 [params]
     BookSection = '*'
