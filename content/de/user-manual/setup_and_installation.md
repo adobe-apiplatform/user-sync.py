@@ -40,7 +40,7 @@ Notieren Sie die Namen, die Sie für die Gruppen festlegen, sowie die Adobe-Grup
 
 Als Best Practice sollten Sie im Beschreibungsfeld der Produktkonfiguration oder Benutzergruppe darauf hinweisen, dass die Gruppe vom Benutzer-Synchronisationstool verwaltet wird und in der Admin Console nicht bearbeitet werden sollte.
 
-![Figure 2: Übersicht zum Zuordnen von Gruppen](/user-sync.py/images/group-mapping.png)
+![Figure 2: Übersicht zum Zuordnen von Gruppen](/user-sync.py/images/de/group-mapping.png)
 
 ## Installieren des Benutzer-Synchronisationstools
 

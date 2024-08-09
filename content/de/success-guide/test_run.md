@@ -19,7 +19,7 @@ Probieren Sie es aus:
 
 Führen Sie die beiden Befehle oben aus und vergewissern Sie sich, dass sie ordnungsgemäß funktionieren. (Unter Windows lauten die Befehle etwas anders.)
 
-![img](/user-sync.py/images/test_run_screen.png)
+![img](/user-sync.py/images/de/test_run_screen.png)
 
 Versuchen Sie als Nächstes eine Synchronisation mit einem einzelnen Benutzer, die Sie im Testmodus ausführen. Sie benötigen den Namen eines Benutzers in Ihrem Verzeichnis. Wenn der Benutzer beispielsweise bart@example.com ist, versuchen Sie folgenden Befehl:
 

@@ -14,7 +14,7 @@ In diesem Abschnitt werden verschiedene alternative Konfigurationen vorgestellt.
 
 Die meisten Konfigurationen sehen wie folgt aus: Es sind ein einzelnes Verzeichnis und eine einzelne Adobe-Organisation vorhanden. Als Benutzer, die in die Adobe-Organisation übertragen werden, können alle Benutzer oder eine Teilmenge (z. B. die Mitglieder einer bestimmten Gruppe im Verzeichnis) ausgewählt werden. Sie müssen die optimale Konfiguration für Ihre Organisation und die LDAP-Abfrage festlegen, mit der die richtigen Benutzer ausgewählt werden.
 
-![Einfache Konfiguration](/user-sync.py/images/layout_orgs_simple.png)
+![Einfache Konfiguration](/user-sync.py/images/de/layout_orgs_simple.png)
 
 Sie benötigen eine LDAP-Abfrage, mit der die Gruppe von Benutzern ausgewählt werden, die mit Adobe synchronisiert werden sollen. Diese wird in einem späteren Schritt in eine der Konfigurationsdateien für das Benutzer-Synchronisationstool eingefügt.
 
@@ -39,7 +39,7 @@ Voraussetzungen:
 
 - Besorgen Sie sich die Anmeldeinformationen für den Zugriff auf das Verzeichnis. Es wird empfohlen, ein Konto für den schreibgeschützten Zugriff auf das Verzeichnis zu erstellen und mit diesem Konto auf das AD-, LDAP- oder sonstige Verzeichnissystem zuzugreifen.
 
-![Konfiguration mit mehreren Instanzen](/user-sync.py/images/layout_orgs_multi.png)
+![Konfiguration mit mehreren Instanzen](/user-sync.py/images/de/layout_orgs_multi.png)
 
 ## Mehrere Verzeichnisse und mehrere Organisationen
 
@@ -47,7 +47,7 @@ In diesem Szenario benötigen Sie jeweils zwei Instanzen. Sie müssen zwei Konfi
 
 Wenn die Lizenzen aus einer Organisation für Benutzer in der anderen Organisation verwendet werden sollen, ist die Einrichtung etwas komplizierter.
 
-![Mehrere Organisationen und mehrere Verzeichnisse](/user-sync.py/images/layout_orgs_multi_dir_multi_org.png)
+![Mehrere Organisationen und mehrere Verzeichnisse](/user-sync.py/images/de/layout_orgs_multi_dir_multi_org.png)
 
 Voraussetzungen:
 
@@ -68,7 +68,7 @@ Die Benutzergruppen (BG) und Produktkonfigurationen (PK), die den beiden Benutze
 
 Bei dieser Konfiguration müssen Sie sicherstellen, dass das Benutzer-Synchronisationstool keine Benutzer löscht. Andernfalls würden die beiden Instanzen des Benutzer-Synchronisationstools versuchen, gegenseitig ihre Benutzer zu löschen.
 
-![Mehrere Verzeichnisse und eine Organisation](/user-sync.py/images/layout_orgs_multi_dir_single_org.png)
+![Mehrere Verzeichnisse und eine Organisation](/user-sync.py/images/de/layout_orgs_multi_dir_single_org.png)
 
 Voraussetzungen:
 

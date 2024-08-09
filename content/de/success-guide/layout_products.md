@@ -29,4 +29,4 @@ Wenn Sie den Produktzugriff mit Benutzergruppen verwalten, müssen Sie zunächst
 
 Zeichnen Sie ein Diagramm mit den Adobe-Organisationen sowie den Produkten und PKs in den einzelnen Organisationen. Ergänzen Sie das Verzeichnis und die Verzeichnisgruppen sowie die Zuordnung im Diagramm. Beispiel:
 
-![img](/user-sync.py/images/layout_products_map.png)
+![img](/user-sync.py/images/de/layout_products_map.png)

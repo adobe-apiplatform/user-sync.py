@@ -30,7 +30,7 @@ Das Tool geht davon aus, dass Ihr Unternehmen Adobe-Produktlizenzen erworben hat
 
 Das Benutzer-Synchronisationstool kommuniziert über LDAP-Protokolle mit Ihrem Unternehmensverzeichnis. Die Kommunikation erfolgt dabei mit der Admin Console von Adobe über die Adobe User Management API (UMAPI), um die Daten des Benutzerkontos für Ihre Organisation zu aktualisieren. Die folgende Abbildung zeigt den Datenfluss zwischen den Systemen.
 
-![Figure 1:Datenfluss für die Benutzersynchronisation](/user-sync.py/images/adobe-to-enterprise-connections.png)
+![Figure 1:Datenfluss für die Benutzersynchronisation](/user-sync.py/images/de/adobe-to-enterprise-connections.png)
 
 Jedes Mal, wenn Sie das Tool ausführen, geschieht Folgendes:
 

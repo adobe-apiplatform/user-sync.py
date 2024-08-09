@@ -52,7 +52,7 @@ In diesem Aufruf werden die Parameter „users“ und „process-groups“ angeg
 
 Bei erfolgreicher Synchronisation wird die Adobe Admin Console aktualisiert. Nach der Ausführung dieses Befehls zeigen Ihre Benutzerliste und die Produktkonfiguration-Benutzerliste in der Admin Console, dass der „Default Acrobat Pro DC configuration“ ein Benutzer mit einer Federated Identity hinzugefügt wurde.
 
-![Figure 3: Screenshot der Admin Console](/user-sync.py/images/edit-product-config.png)
+![Figure 3: Screenshot der Admin Console](/user-sync.py/images/de/edit-product-config.png)
 
 ### Nur Benutzerinformationen synchronisieren
 

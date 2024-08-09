@@ -25,12 +25,12 @@ In den nächsten Abschnitten wird der Installationsvorgang erläutert.
 Die neueste Version finden Sie hier: 
 [https://github.com/adobe-apiplatform/user-sync.py](https://github.com/adobe-apiplatform/user-sync.py "https://github.com/adobe-apiplatform/user-sync.py")
 
-![Installation](/user-sync.py/images/install_finding_releases.png)
+![Installation](/user-sync.py/images/de/install_finding_releases.png)
 
 Wählen Sie „release“.
 
 
-![Installation 2](/user-sync.py/images/install_release_screen.png)
+![Installation 2](/user-sync.py/images/de/install_release_screen.png)
 
 Laden Sie die Datei „example-configurations.tar.gz“, das Handbuch für die Benutzersynchronisation und den Build für Ihre Plattform (OS X, Ubuntu, Windows oder CentOS) herunter.
 
@@ -40,4 +40,4 @@ Die Datei „example-configurations.tar.gz“ enthält das Verzeichnis **config 
 
 Als Nächstes benennen Sie die drei Konfigurations-Beispieldateien um, indem Sie die führenden Ziffern „1“, „2“ und „3“ aus dem Namen entfernen.  Diese Dateien werden im Folgenden bearbeitet, um die tatsächlichen Konfigurationsdateien für das Benutzer-Synchronisationstool zu erstellen.
 
-![Installation 2](/user-sync.py/images/install_config_files.png)
+![Installation 2](/user-sync.py/images/de/install_config_files.png)

@@ -226,7 +226,7 @@ Im Abschnitt **group** der Hauptkonfigurationsdatei wird die Zuordnung zwischen 
 - Auf Adobe-Seite prüft das Benutzer-Synchronisationstool die Mitgliedschaft der zugeordneten Gruppen und Produktkonfigurationen. Wenn ein Benutzer in diesen Gruppen
 _nicht_ in der Gruppe von ausgewählten Verzeichnisbenutzern vorhanden ist, entfernt das Benutzer-Synchronisationstool diesen Benutzer aus der Gruppe. Dies ist in der Regel das gewünschte Verhalten. Wenn z. B. ein Benutzer in der Adobe Photoshop-Produktkonfiguration ist und aus dem Unternehmensverzeichnis entfernt wird, erwarten Sie, dass er auch aus der Gruppe entfernt wird, damit ihm keine Lizenz mehr zugewiesen wird.
 
-![Figure 4:Beispiel für Gruppenzuordnung](/user-sync.py/images/group-mapping.png)
+![Figure 4:Beispiel für Gruppenzuordnung](/user-sync.py/images/de/group-mapping.png)
 
 Bei diesem Arbeitsablauf können Schwierigkeiten auftreten, wenn Sie den Synchronisationsvorgang in mehrere Durchläufe aufteilen möchten, um die Anzahl der jeweils abgefragten Verzeichnisbenutzer zu reduzieren. Sie können z. B. einen Durchlauf für Benutzer mit den Anfangsbuchstaben A–M und einen weiteren Durchlauf für Benutzer mit den Anfangsbuchstaben N–Z ausführen. Hierbei muss jeder Durchlauf auf andere Adobe-Benutzergruppen und -Produktkonfigurationen abzielen. Andernfalls würden bei dem Durchlauf für die Buchstaben A–M Benutzer aus zugeordneten Gruppen entfernt werden, die sich in der Gruppe für die Buchstaben N–Z befinden.
 

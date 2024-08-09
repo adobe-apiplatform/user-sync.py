@@ -27,7 +27,7 @@ Hinweise zur Kontolöschung:
     - Solche Konten können Sie aus Ihrer Organisation entfernen, aber nicht löschen, da sie einer anderen Organisation gehören.
     - Wenn Sie versuchen, ein solches Konto zu löschen, wird der Benutzer lediglich aus Ihrer Organisation entfernt.
 
-![Organisationen](/user-sync.py/images/decide_deletion_multi_org.png)
+![Organisationen](/user-sync.py/images/de/decide_deletion_multi_org.png)
 
 Legen Sie die Richtlinie für das Löschen von Benutzern auf Adobe-Seite fest und entscheiden Sie, wie vorgegangen werden soll, wenn ein Benutzer aus dem Verzeichnis entfernt wird. Von dieser Entscheidung hängt ab, wie die Benutzersynchronisation in einem späteren Schritt aufgerufen wird.
 

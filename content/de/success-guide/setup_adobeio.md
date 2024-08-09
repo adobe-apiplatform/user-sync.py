@@ -24,4 +24,4 @@ Verwenden Sie die [Adobe I/O-Konsole](https://console.adobe.io), um für jede Or
 
 Beachten Sie die Parameter für Ihre Integration (siehe geschwärztes Beispiel unten). Diese werden in einem späteren Schritt verwendet.
 
-![img](/user-sync.py/images/setup_adobe_io_data.png)
+![img](/user-sync.py/images/de/setup_adobe_io_data.png)

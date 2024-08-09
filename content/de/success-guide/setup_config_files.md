@@ -31,7 +31,7 @@ Bearbeiten Sie die Datei „connector-ldap.yml“. Diese Datei enthält Informat
 
 Überprüfen Sie den Rest der Datei, um zu ermitteln, ob weitere Informationen angegeben werden können, die für Ihre Installation relevant sind. In der Regel ist nichts Weiteres erforderlich.
 
-![](/user-sync.py/images/setup_config_directory.png)
+![](/user-sync.py/images/de/setup_config_directory.png)
 
 Möglicherweise benötigen Sie eine vom Standard abweichende LDAP-Abfrage, um den gewünschten Satz von Benutzern auszuwählen. Sie ist in dieser Datei als Teil des Konfigurationsparameters all\_users\_filter eingerichtet.
 
@@ -42,7 +42,7 @@ Bearbeiten Sie die Datei „connector-umapi.yml“. Geben Sie die Informationen 
 
 Speichern Sie die Datei mit dem privaten Schlüssel im Ordner „user_sync_tool“. Das Konfigurationsdateielement „priv\_key\_path“ wird dann auf den Namen dieser Datei festgelegt.
 
-![](/user-sync.py/images/setup_config_umapi.png)
+![](/user-sync.py/images/de/setup_config_umapi.png)
 
 ### Hauptkonfigurationsdatei für das Benutzer-Synchronisationstool 
 
@@ -104,7 +104,7 @@ Ein realistischeres Beispiel lautet:
 	      adobe_groups:
 	        - All Apps
 
-![](/user-sync.py/images/setup_config_group_map.png)
+![](/user-sync.py/images/de/setup_config_group_map.png)
 
 #### Beschränkungen für nicht zugeordnete Benutzer 
 
