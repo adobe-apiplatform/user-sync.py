@@ -23,6 +23,10 @@ defaultContentLanguageInSubdir = true
     contentDir = 'content/fr'
     languageName = 'Français'
     weight = 4
+  [languages.pt]
+    contentDir = 'content/pt'
+    languageName = 'Português'
+    weight = 5
 
 [params]
     BookSection = '*'
