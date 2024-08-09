@@ -14,7 +14,7 @@ Dans cette section, plusieurs options de configuration sont illustrées. Vous n�
 
 La plupart des configurations seront de ce type. Il existe un annuaire unique et une seule organisation Adobe. Tous les utilisateurs peuvent être sélectionnés comme utilisateurs Adobe, ou seulement un sous-ensemble, tels que les membres d’un groupe d’annuaire spécifique. Vous devez déterminer la mise en place pour votre entreprise et écrire la requête LDAP qui sélectionne les utilisateurs souhaités.
 
-![Configuration simple](/user-sync.py/fr/images/layout_orgs_simple.png)
+![Configuration simple](/user-sync.py/images/fr/layout_orgs_simple.png)
 
 Vous avez besoin de la requête LDAP qui sélectionne l’ensemble d’utilisateurs à synchroniser avec Adobe. Elle sera incluse dans l’un des fichiers de configuration User Sync lors d’une étape ultérieure.
 
@@ -40,7 +40,7 @@ Vous aurez besoin des éléments suivants :
 
 - Procurez-vous les identifiants dont vous avez besoin pour accéder à l’annuaire. Nous vous conseillons de créer un compte d’accès à l’annuaire en lecture seule et de l’utiliser pour accéder au système Active Directory, LDAP ou à un autre système d’annuaire.
 
-![Configuration multiple](/user-sync.py/fr/images/layout_orgs_multi.png)
+![Configuration multiple](/user-sync.py/images/fr/layout_orgs_multi.png)
 
 ## Annuaires et organisations multiples
 
@@ -49,7 +49,7 @@ Tous les éléments sont en double. Vous devez exécuter deux configurations Use
 Si les licences d’une organisation doivent être utilisées par des membres de l’autre organisation, la configuration est plus complexe.
 
 
-![Organisations et annuaires multiples](/user-sync.py/fr/images/layout_orgs_multi_dir_multi_org.png)
+![Organisations et annuaires multiples](/user-sync.py/images/fr/layout_orgs_multi_dir_multi_org.png)
 
 
 Vous aurez besoin des éléments suivants :
@@ -73,7 +73,7 @@ Les groupes d’utilisateurs (GU) et les configurations de produits (CP) mappés
 Vous ne pouvez pas demander à User Sync de supprimer des utilisateurs lorsqu’il est configuré de cette façon. En effet, les deux instances de User Sync essaieraient chacune de supprimer les utilisateurs de l’autre.
 
 
-![Annuaires multiples et organisation unique](/user-sync.py/fr/images/layout_orgs_multi_dir_single_org.png)
+![Annuaires multiples et organisation unique](/user-sync.py/images/fr/layout_orgs_multi_dir_single_org.png)
 
 Vous aurez besoin des éléments suivants :
 

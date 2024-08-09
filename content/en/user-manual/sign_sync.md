@@ -451,7 +451,7 @@ for a given Sign account.
 3. On the left-hand menu, click "Adobe Sign API"
 4. On the "API Information" page, find the "Integration Key" link
 
-   ![](/images/sign/sign_api_info.png)
+   ![](/user-sync.py/images/en/sign/sign_api_info.png)
 
    If you don't see this link, please contact Sign support
 5. On the "Create Integration Key" page, give the integration a name and select
@@ -461,4 +461,4 @@ for a given Sign account.
 8. Click "Integration Key" to display the integration key. This is used in the
    Sign Sync connector config file.
 
-   ![](/images/sign/sign_key_display.png)
+   ![](/user-sync.py/images/en/sign/sign_key_display.png)

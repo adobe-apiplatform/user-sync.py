@@ -66,7 +66,7 @@ communicates with Adobe's Admin Console through the Adobe User Management API
 (UMAPI) in order to update the user account data for your organization. The
 following figure illustrates the data flow between systems.
 
-![Figure 1: User Sync Data Flow](/images/adobe-to-enterprise-connections.png)
+![Figure 1: User Sync Data Flow](/user-sync.py/images/en/adobe-to-enterprise-connections.png)
 
 Each time you run the tool:
 

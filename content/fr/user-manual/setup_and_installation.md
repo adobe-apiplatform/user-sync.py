@@ -40,7 +40,7 @@ Prenez note des noms que vous donnez à ces groupes et identifiez les groupes Ad
 
 Dans le champ de description de la configuration de produit ou du groupe d’utilisateurs, il est recommandé de noter que le groupe est géré par User Sync et qu’il ne doit pas être modifié dans Admin Console.
 
-![Figure 2: Présentation du mappage de groupe](/user-sync.py/fr/images/group-mapping.png)
+![Figure 2: Présentation du mappage de groupe](/user-sync.py/images/fr/group-mapping.png)
 
 ## Installation de l’outil User Sync
 

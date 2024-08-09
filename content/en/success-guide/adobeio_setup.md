@@ -35,4 +35,4 @@ to access (usually only one).
 Note the configuration parameters for your integration (redacted example shown
 below). They will be used in a later step.
 
-![img](images/setup_adobe_io_data.png)
+![img](/user-sync.py/images/en/setup_adobe_io_data.png)

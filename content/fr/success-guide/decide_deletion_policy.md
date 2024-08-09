@@ -32,7 +32,7 @@ Options de gestion des suppressions de comptes Adobe par le biais de l’outil U
     - Vous pouvez les retirer de votre organisation, mais vous ne pouvez pas supprimer ces comptes car ils appartiennent à une autre organisation.
     - Si vous essayez de supprimer un compte de ce type, cela aura le même effet que de retirer l’utilisateur de votre organisation.
 
-![Organisations](/user-sync.py/fr/images/decide_deletion_multi_org.png)
+![Organisations](/user-sync.py/images/fr/decide_deletion_multi_org.png)
 
 Déterminez quels seront votre politique et votre processus pour supprimer des utilisateurs des systèmes Adobe lorsqu’ils sont retirés de l’annuaire. Cette décision aura un effet sur la façon dont vous appellerez User Sync dans une étape ultérieure.
 

@@ -378,7 +378,7 @@ configuration and they are removed from the enterprise directory,
 you would expect them to be removed from the group so that they
 are no longer allocated a license.
 
-![Figure 4: Group Mapping Example](/images/group-mapping.png)
+![Figure 4: Group Mapping Example](/user-sync.py/images/en/group-mapping.png)
 
 This workflow can present difficulties if you want to divide the
 sync process into multiple runs in order to reduce the number of

@@ -63,4 +63,4 @@ Draw a diagram of your Adobe organizations, and the products and PCs in each.
 Add the directory and directory groups to the picture and show the mapping. For
 example:
 
-![img](images/layout_products_map.png)
+![img](/user-sync.py/images/en/layout_products_map.png)

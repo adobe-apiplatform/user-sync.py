@@ -226,7 +226,7 @@ La section **group** du fichier de configuration principal définit un mappage d
 - Au niveau des systèmes Adobe, User Sync examine les appartenances des groupes et des configurations de produits mappés. Si un utilisateur de ces groupes ne figure PAS
 dans l’ensemble d’utilisateurs d’annuaire sélectionné, User Sync le retire du groupe. Il s’agit généralement du comportement désiré car, par exemple, si un utilisateur figure dans la configuration de produit Adobe Photoshop et qu’il est retiré de l’annuaire d’entreprise, vous vous attendriez également à ce qu’il soit retiré du groupe de sorte qu’il n’obtienne plus de licence.
 
-![Figure 4: Exemple de mappage de groupes](/user-sync.py/fr/images/group-mapping.png)
+![Figure 4: Exemple de mappage de groupes](/user-sync.py/images/fr/group-mapping.png)
 
 Ce workflow peut présenter des difficultés si vous souhaitez diviser le processus de synchronisation en plusieurs exécutions afin de réduire le nombre d’utilisateurs de l’annuaire interrogés en même temps. Par exemple, vous pouvez faire une exécution pour les utilisateurs dont les noms commencent par les lettres A à M, et une autre pour les lettres N à Z. Si vous optez pour cette méthode, chaque exécution doit cibler différents groupes d’utilisateurs et configurations de produits Adobe. Dans le cas contraire, l’exécution pour les lettres A à M aurait pour effet de retirer les utilisateurs des groupes mappés qui se trouvent dans l’ensemble N à Z.
 

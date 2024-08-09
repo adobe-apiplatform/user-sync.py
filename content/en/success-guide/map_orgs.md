@@ -22,7 +22,7 @@ only a subset such as members of a particular directory group. You will have to
 decide how this should be set up for your organization and have the LDAP query
 that selected the right users.
 
-![Simple Configuration](images/layout_orgs_simple.PNG)
+![Simple Configuration](/user-sync.py/images/en/layout_orgs_simple.png)
 
 You’ll need the LDAP query that selects the set of users to be sync’d with
 Adobe. This will go into one of the user sync configuration files in a later
@@ -58,7 +58,7 @@ You'll need:
   recommend creating a read-only directory access account and using that to
   access the AD or LDAP, or other directory system.
 
-![Multi Configuration](images/layout_orgs_multi.png)
+![Multi Configuration](/user-sync.py/images/en/layout_orgs_multi.png)
 
 ## Multi-Directory and Multi-Organization
 
@@ -68,8 +68,7 @@ configurations; one for each directory and organization
 If licenses in one org are to be used by users in the other org, setup is more
 complex.
 
-![Multi orgs and multiple
-directories](images/layout_orgs_multi_dir_multi_org.png)
+![Multi orgs and multiple directories](/user-sync.py/images/en/layout_orgs_multi_dir_multi_org.png)
 
 You'll need:
 
@@ -96,7 +95,7 @@ by only a single instance of user sync.
 You cannot have User Sync delete users when it is configured in this way. This
 is because the two sync instances would try to delete each others' users.
 
-![Multi directories and single org](images/layout_orgs_multi_dir_single_org.png)
+![Multi directories and single org](/user-sync.py/images/en/layout_orgs_multi_dir_single_org.png)
 
 You'll need:
 

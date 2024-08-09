@@ -62,13 +62,13 @@ Credential Manager, which can be found on any Windows system.
 1. Create credential in keychain and set key name (internet name/address),
    username and password.
 
-   ![](/images/cred-create-generic.png)
+   ![](/user-sync.py/images/en/cred-create-generic.png)
 
    (in Windows Credential Manager, click "Add a generic credential")
 
 2. Provide credential details and save credential.
 
-   ![](/images/cred-provide-details.png)
+   ![](/user-sync.py/images/en/cred-provide-details.png)
 
    These fields may be named differently depending on the system. In Windows,
    they map as follows:
@@ -82,7 +82,7 @@ Credential Manager, which can be found on any Windows system.
 
    The saved entry looks like this:
 
-   ![](/images/cred-saved.png)
+   ![](/user-sync.py/images/en/cred-saved.png)
 
 3. Update your configuration file to use the stored credential.
 

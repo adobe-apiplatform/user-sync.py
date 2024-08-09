@@ -41,7 +41,7 @@ Some things to know about account deletion:
     - If you try to delete such an account, it has the same effect as removing
       the user from your org
 
-![orgs](images/decide_deletion_multi_org.png)
+  ![orgs](/user-sync.py/images/en/decide_deletion_multi_org.png)
 
 Decide what your policy and process will be for deleting users on the
 Adobe side when they are removed from the directory. This decision will drive

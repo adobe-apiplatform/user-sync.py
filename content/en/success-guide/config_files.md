@@ -44,7 +44,7 @@ This file is in the example-configurations.tar.gz download from the release.
 - Read through the rest of the file to see what else could be specified which
   might apply in your installation. Usually, nothing else is required.
 
-![](images/setup_config_directory.png)
+![](/user-sync.py/images/en/setup_config_directory.png)
 
 If you need a non-default LDAP query to select the desired set of users, it is
 setup in this file as part of the all\_users\_filter config parameter.
@@ -178,7 +178,7 @@ A more realistic example is:
         - All Apps
 ```
 
-![](images/setup_config_group_map.png)
+![](/user-sync.py/images/en/setup_config_group_map.png)
 
 ## Unmatched User Limits 
 

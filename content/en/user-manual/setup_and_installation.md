@@ -104,7 +104,7 @@ below.
 
 It is a best practice to note in the description field of the Product Configuration or User Group that the group is managed by User Sync and should not be edited in the Admin Console.
 
-![Figure 2: Group Mapping Overview](/images/group-mapping.png)
+![Figure 2: Group Mapping Overview](/user-sync.py/images/en/group-mapping.png)
 
 ## Installing the User Sync tool
 
