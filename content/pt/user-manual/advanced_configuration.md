@@ -375,7 +375,7 @@ e for removido do diretório corporativo,
 você espera que ele seja removido do grupo e perca a
 licença atribuída.
 
-![Figura 4: Exemplo de mapeamento de grupo](/user-sync.py/images/group-mapping.png)
+![Figura 4: Exemplo de mapeamento de grupo](/user-sync.py/images/pt/group-mapping.png)
 
 Este fluxo de trabalho pode apresentar dificuldades caso você queira dividir o
 processo de sincronização em várias execuções para reduzir o número de

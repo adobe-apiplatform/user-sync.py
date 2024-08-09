@@ -80,7 +80,7 @@ a lista de usuários de configuração do produto no
 Admin Console mostra que um usuário com uma identidade federada foi
 adicionado à “Default Acrobat Pro DC configuration”.
 
-![Figura 3: Captura de tela do Admin Console](/user-sync.py/images/edit-product-config.png)
+![Figura 3: Captura de tela do Admin Console](/user-sync.py/images/pt/edit-product-config.png)
 
 ### Sincronizar somente os usuários
 

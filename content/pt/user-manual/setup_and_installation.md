@@ -103,7 +103,7 @@ seção [Configurar mapeamento de grupo]({{< ref "configuring_user_sync_tool#con
 
 Recomenda-se anotar no campo de descrição da Configuração de produto ou do Grupo de usuários que o grupo é gerenciado pelo User Sync e não deve ser editado no Admin Console.
 
-![Figura 2: visão geral do mapeamento de grupo](/user-sync.py/images/group-mapping.png)
+![Figura 2: visão geral do mapeamento de grupo](/user-sync.py/images/pt/group-mapping.png)
 
 ## Instalação da ferramenta User Sync
 

@@ -25,7 +25,7 @@ Alguns aspectos sobre a exclusão de contas:
     - É possível removê-las de sua organização, mas você não pode excluir essas contas pois elas são de propriedade de outra organização.
     - Se você tentar excluir essa conta, terá o mesmo efeito de remover o usuário de sua organização
 
-![orgs](/user-sync.py/images/decide_deletion_multi_org.png)
+![orgs](/user-sync.py/images/pt/decide_deletion_multi_org.png)
 
 Decida quais serão suas políticas e seus processos para exclusão de usuários do lado da Adobe quando forem removidos do diretório.  Essa decisão influenciará como você invocará o User Sync em uma etapa posterior.
 

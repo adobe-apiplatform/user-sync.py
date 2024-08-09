@@ -14,7 +14,7 @@ Nesta seção, várias configurações alternativas são exibidas.  Você seguir
 
 A maioria das configurações tem essa aparência.  Há um único diretório e uma única organização da Adobe. Todos os usuários podem ser selecionados como usuários para entrar na Adobe ou apenas um subconjunto como membros de um grupo específico de diretórios.  Você deverá decidir como isso deve ser configurado para a sua organização e ter a consulta LDAP com os usuários corretos selecionados.
 
-![Configuração simples](/user-sync.py/images/layout_orgs_simple.png)
+![Configuração simples](/user-sync.py/images/pt/layout_orgs_simple.png)
 
 Você precisará da consulta LDAP que seleciona o conjunto de usuários a serem sincronizados com a Adobe.  Isso será inserido em um dos arquivos de configuração do User Sync em uma etapa posterior.
 
@@ -35,7 +35,7 @@ Você precisará:
 - Esteja preparado para configurar várias instalações do User Sync nas etapas posteriores.
 - Reúna as informações de credenciais que precisará para acessar o diretório.  Recomendamos a criação de uma conta de acesso de diretório somente-leitura e o uso dela para acessar AD ou LDAP, ou outro sistema de diretórios.
 
-![Várias configurações](/user-sync.py/images/layout_orgs_multi.png)
+![Várias configurações](/user-sync.py/images/pt/layout_orgs_multi.png)
 
 ## Vários-diretórios e várias-organizações
 
@@ -43,7 +43,7 @@ Basicamente, isso significa duas instâncias de tudo; você precisará executar 
 
 Se as licenças em uma organização precisarem ser usadas por usuários em outra organização, a configuração será mais complexa.
 
-![Várias organizações e vários diretórios](/user-sync.py/images/layout_orgs_multi_dir_multi_org.png)
+![Várias organizações e vários diretórios](/user-sync.py/images/pt/layout_orgs_multi_dir_multi_org.png)
 
 Você precisará:
 
@@ -61,7 +61,7 @@ Grupos de usuários (UG) e Configurações do produto (PC) mapeados e gerenciado
 
 O User Sync não pode excluir usuários nessa configuração,  visto que uma instância do User Sync tentaria excluir os usuários da outra e vice-versa.
 
-![Vários diretórios e uma única organização](/user-sync.py/images/layout_orgs_multi_dir_single_org.png)
+![Vários diretórios e uma única organização](/user-sync.py/images/pt/layout_orgs_multi_dir_single_org.png)
 
 Você precisará:
 

@@ -19,7 +19,7 @@ Faça um teste:
 
 Use os dois comandos acima e verifique se estão funcionando. (No Windows, o comando é ligeiramente diferente.)
 
-![img](/user-sync.py/images/test_run_screen.png)
+![img](/user-sync.py/images/pt/test_run_screen.png)
 
 Em seguida, tente sincronizar apenas um usuário e execute no modo de teste.  Você precisa saber o nome de um usuário em seu diretório.  Por exemplo, se o usuário for bart@example.com, tente:
 

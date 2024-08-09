@@ -60,7 +60,7 @@ por meio da API de gerenciamento de usuários (UMAPI) da Adobe para atualizar
 os dados da conta de usuário para sua organização. A figura a seguir
 ilustra o fluxo de dados entre sistemas.
 
-![Figura 1: Fluxo de dados do User Sync](/user-sync.py/images/adobe-to-enterprise-connections.png)
+![Figura 1: Fluxo de dados do User Sync](/user-sync.py/images/pt/adobe-to-enterprise-connections.png)
 
 Cada vez que você executa a ferramenta:
 

@@ -29,4 +29,4 @@ Se você for usar os grupos de usuários para gerenciar o acesso a produtos, pre
 
 Desenhe um diagrama das suas organizações da Adobe e dos respectivos produtos e PCs.  Adicione o diretório e os grupos de diretórios à imagem e mostre o mapeamento.  Por exemplo:
 
-![img](/user-sync.py/images/layout_products_map.png)
+![img](/user-sync.py/images/pt/layout_products_map.png)

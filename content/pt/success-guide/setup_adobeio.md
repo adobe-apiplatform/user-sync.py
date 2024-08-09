@@ -24,4 +24,4 @@ Use o [Adobe I/O Console](https://console.adobe.io) para adicionar o serviço de
 
 Anote os parâmetros de configuração para a sua integração (exemplos redigidos abaixo).  Eles serão usados em uma etapa posterior.
 
-![img](/user-sync.py/images/setup_adobe_io_data.png)
+![img](/user-sync.py/images/pt/setup_adobe_io_data.png)
