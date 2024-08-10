@@ -218,14 +218,13 @@ user_sync:
 * `sign_only_user_action` - define what to do with users found in Sign but not
   in the identity source.
   
-  | Action | Description | | --- | --- | | `reset` | Reset the user to a
-  "default" state. Reset primary group to Default Group and remove group/account
-  admin status if needed. | | `deactivate` | Deactivate the user. **Note**: This
-  will only work for users on standalone Sign accounts. Sign Enterprise users
-  cannot be deactivated directly in Sign | | `exclude` | Take no action on
-  Sign-only users | | `remove_groups` | Reset user to Default Group, but do not
-  modify admin roles | | `remove_roles` | Remove admin roles, but do not change
-  group membership | {: .bordertablestyle}
+  | Action          | Description                                                                                                                                            |
+  |-----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
+  | `reset`         | Reset the user to a "default" state. Reset primary group to Default Group and remove group/account admin status if needed.                             |
+  | `deactivate`    | Deactivate the user. **Note**: This will only work for users on standalone Sign accounts. Sign Enterprise users cannot be deactivated directly in Sign |
+  | `exclude`       | Take no action on Sign-only users                                                                                                                      |
+  | `remove_groups` | Reset user to Default Group, but do not modify admin roles                                                                                             |
+  | `remove_roles`  | Remove admin roles, but do not change group membership                                                                                                 |
 
 **`cache`**
 
@@ -320,10 +319,11 @@ so the tool can be run without additional command-line options.
 * `test_mode` - if `True`, Sign Sync will run in test mode by default
 * `users` - define scope of users to query from identity source
 
-  | Option | Description | | --- | --- | | `all` | Query all users from identity
-  source | | `group` | Query users for given comma-delimited group list | |
-  `mapped` | Query users for directory groups specified in `user_management`
-  rules | {: .bordertablestyle}
+  | Option   | Description                                                           |
+  |----------|-----------------------------------------------------------------------|
+  | `all`    | Query all users from identity source                                  |
+  | `group`  | Query users for given comma-delimited group list                      |
+  | `mapped` | Query users for directory groups specified in `user_management` rules |
 
 ### Sign Connector Config
 
