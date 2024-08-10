@@ -335,21 +335,33 @@ integration_key: xzy12345
 admin_email: user@example.com
 create_users: False
 deactivate_users: False
+exclusions:
+  users:
+    - "@domain\\.com"
+  groups:
+    - "Special Users"
 ```
 
-* `host`: Hostname of Sign API
-* `integration_key`: Required for API authentication. [See
+- `host`: Hostname of Sign API
+- `integration_key`: Required for API authentication. [See
   below](#api-key-setup) for information on creating a key.
-* `admin_email`: Email address of admin user that owns the integration key.
+- `admin_email`: Email address of admin user that owns the integration key.
   Prevents Sign Sync from operating on that user.
-* `create_users`: If `True`, Sign Sync will create new users. This should be set
+- `create_users`: If `True`, Sign Sync will create new users. This should be set
   to `False` for Sign Enterprise accounts because users linked to an Admin
   Console are automatically provisioned by the platform when they are added to a
   Sign Enterprise profile.
-* `deactivate`: If `True` and `sign_only_user_action` is `deactivate`, then
+- `deactivate`: If `True` and `sign_only_user_action` is `deactivate`, then
   Sign-only users are deactivated. This should be set to `False` for Sign
   Enterprise accounts because users removed from a Sign Enterprise profile in
   the Admin Console are automatically deactivated in Sign.
+- `exclusions.users`: Setting to exclude certain Sign users from sync. Each
+  string in the `users` list is a [regular
+  expression](https://www.regular-expressions.info/) that matches one ore more
+  Sign users.
+- `exclusions.groups`: Setting that excludes users belonging to certain Sign
+  groups from sync. Each item in the list should be a different group to
+  exclude. Any Sign user the belongs to at least one group will be excluded.
 
 #### Securing the API Key
 
