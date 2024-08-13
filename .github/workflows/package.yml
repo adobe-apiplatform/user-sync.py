@@ -152,11 +152,18 @@ jobs:
       image: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ["rockylinux:8", "rockylinux:9"]
         include:
-          - extension_support: 0
+          - container: "rockylinux:8"
+            extension_support: 0
             variant_tag: "-noext"
-          - extension_support: 1
+          - container: "rockylinux:8"
+            extension_support: 1
+            variant_tag: ""
+          - container: "rockylinux:9"
+            extension_support: 0
+            variant_tag: "-noext"
+          - container: "rockylinux:9"
+            extension_support: 1
             variant_tag: ""
     steps:
       - uses: actions/checkout@v4
@@ -167,10 +174,10 @@ jobs:
         run: yum update -y
       - name: Rocky 8 dependencies
         if: ${{ matrix.container == 'rockylinux:8' }}
-        run: yum install -y pkgconfig gcc openssl-devel dbus-glib-devel python3-dbus sqlite-devel libffi-devel wget make findutils
+        run: yum install -y pkgconfig gcc openssl-devel dbus-glib-devel python3-dbus sqlite-devel libffi-devel wget make findutils glibc-langpack-en
       - name: Rocky 9 dependencies
         if: ${{ matrix.container == 'rockylinux:9' }}
-        run: yum install -y pkgconfig gcc openssl-devel dbus-glib-devel python3-dbus sqlite-devel libffi-devel krb5-devel dbus-daemon wget make findutils
+        run: yum install -y pkgconfig gcc openssl-devel dbus-glib-devel python3-dbus sqlite-devel libffi-devel krb5-devel dbus-daemon wget make findutils glibc-langpack-en
       - name: Build Python 3.12
         run: |
           mkdir tmp && cd tmp
