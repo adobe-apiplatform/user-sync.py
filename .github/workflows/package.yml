@@ -152,7 +152,7 @@ jobs:
       image: ${{ matrix.container }}
     strategy:
       matrix:
-        container: [rockylinux:8, rockylinux:9]
+        container: ["rockylinux:8", "rockylinux:9"]
         include:
           - extension_support: 0
             variant_tag: "-noext"
