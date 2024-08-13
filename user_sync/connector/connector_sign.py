@@ -27,6 +27,7 @@ from ..cache.sign import SignCache
 from ..error import AssertionException
 from sign_client.client import SignClient
 from pathlib import Path
+import re
 
 
 class SignConnector(object):
@@ -45,6 +46,20 @@ class SignConnector(object):
         sign_builder.require_string_value('admin_email')
         self.create_users = sign_builder.require_value('create_users', bool)
         self.deactivate_users = sign_builder.require_value('deactivate_users', bool)
+
+        exclusion_config = caller_config.get_dict_config('exclusions', True)
+        exclusion_builder = OptionsBuilder(exclusion_config)
+        exclusion_builder.set_value('groups', list, [])
+        exclusion_builder.set_value('users', list, [])
+
+        self.exclusion_options = exclusion_builder.get_options()
+
+        if 'users' in self.exclusion_options:
+            compiled_rules = []
+            for rule in self.exclusion_options['users']:
+                compiled_rules.append(re.compile(rule))
+            self.exclusion_options['users'] = compiled_rules
+
         store_path = Path(cache_config['path'])
 
         options = sign_builder.get_options()
