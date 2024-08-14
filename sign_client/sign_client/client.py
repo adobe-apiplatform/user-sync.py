@@ -255,7 +255,7 @@ class SignClient:
             # prepare a list of calls to make * Note: calls are prepared by using call
             # syntax (eg, func() and not func), but they will not be run until executed by the wait
             # split into batches of self.bach_size to avoid taking too much memory
-            calls = [handle(sem, o, headers, session) for o in objects]
+            calls = [asyncio.create_task(handle(sem, o, headers, session)) for o in objects]
             await asyncio.wait(calls)
 
     async def _get_user(self, semaphore, user_id, header, session):

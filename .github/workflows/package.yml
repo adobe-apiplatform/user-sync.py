@@ -149,23 +149,37 @@ jobs:
       LC_ALL: en_US.utf8
       LANG: en_US.utf8
     container:
-      image: rockylinux:8
+      image: ${{ matrix.container }}
     strategy:
       matrix:
         include:
-          - extension_support: 0
+          - container: "rockylinux:8"
+            extension_support: 0
             variant_tag: "-noext"
-          - extension_support: 1
+          - container: "rockylinux:8"
+            extension_support: 1
+            variant_tag: ""
+          - container: "rockylinux:9"
+            extension_support: 0
+            variant_tag: "-noext"
+          - container: "rockylinux:9"
+            extension_support: 1
             variant_tag: ""
     steps:
       - uses: actions/checkout@v4
       - name: Get version tag
         id: get_version
         uses: battila7/get-version-action@v2
-      - name: Rocky-Install dependencies
+      - name: Update yum dependencies
+        run: yum update -y
+      - name: Rocky 8 dependencies
+        if: ${{ matrix.container == 'rockylinux:8' }}
+        run: yum install -y pkgconfig gcc openssl-devel dbus-glib-devel python3-dbus sqlite-devel libffi-devel wget make findutils glibc-langpack-en
+      - name: Rocky 9 dependencies
+        if: ${{ matrix.container == 'rockylinux:9' }}
+        run: yum install -y pkgconfig gcc openssl-devel dbus-glib-devel python3-dbus sqlite-devel libffi-devel krb5-devel dbus-daemon wget make findutils glibc-langpack-en
+      - name: Build Python 3.12
         run: |
-          yum update -y
-          yum install -y pkgconfig gcc openssl-devel dbus-glib-devel python3-dbus sqlite-devel libffi-devel wget make findutils
           mkdir tmp && cd tmp
           wget https://www.python.org/ftp/python/3.12.4/Python-3.12.4.tgz
           tar xzf Python-3.12.4.tgz
@@ -195,10 +209,12 @@ jobs:
       - name: Get build
         run: |
           cd dist
-          tar czf "user-sync-${UST_VERSION}${UST_VARIANT_TAG}-rocky.tar.gz" user-sync
+          LABEL=$(echo $CONTAINER | sed "s/linux://g")
+          tar czf "user-sync-${UST_VERSION}${UST_VARIANT_TAG}-${LABEL}.tar.gz" user-sync
         env:
           UST_VARIANT_TAG: ${{matrix.variant_tag}}
           UST_VERSION: ${{ steps.get_version.outputs.version }}
+          CONTAINER: ${{ matrix.container }}
       - name: Make artifact
         uses: actions/upload-artifact@v2
         with:
