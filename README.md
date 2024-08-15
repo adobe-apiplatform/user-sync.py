@@ -23,3 +23,9 @@ To clone `user-guide` to a separate directory:
 ```
 $ git clone -b user-guide https://github.com/adobe-apiplatform/user-sync.py.git user-sync.py-docs
 ```
+
+The theme is installed as a submodule, so after cloning, update it:
+
+```
+$ git submodule update --init --recursive
+```
