@@ -126,26 +126,40 @@ identity_source:
 user_sync:
   sign_only_limit: 100
   sign_only_user_action: reset
-
-## Storage location of Sign data cache. This contains cached users, groups and user assignent info
-## The cache will refresh after 24 hours
-cache:
-  path: cache/sign
+  umg: True
  
 ## User management group/role mappings
 user_management:
   - directory_group: Sign Users 1
-    sign_group: Group 1
-    group_admin: False
-    account_admin: False
+    sign_group:
+    - Group 1
+    - Group 2
   - directory_group: Sign Users 1 Admins
     sign_group: Group 1
-    group_admin: True
-    account_admin: False
+    admin_groups:
+    - Group 1
   - directory_group: Sign Admins
     sign_group:
-    group_admin: False
-    account_admin: True
+
+## If user belongs to any of the follow directory groups, assign them
+## account admin privileges
+account_admin_groups:
+  - Sign Admins 1
+  - Sign Admins 2
+
+## If Users in Muliple Groups (UMG feature) is enabled, then rules must
+## be specified to designate a primary group for each user
+primary_group_rules:
+  # Sign_groups list can specify groups that aren't necessarily assigned
+  # the user in the sync tool
+  # Each rule is evaluated in order, so the first rule in the list that
+  # matches a given user will apply to that user
+  - sign_groups:
+      - Sign Group 1
+      - Sign Group 2
+    # assign the primary group only if the user is a member of all groups
+    # specified in sign_groups
+    primary_group: Sign Group 2
 
 ## Logging options
 logging:
@@ -159,7 +173,6 @@ logging:
 invocation_defaults:
   users: mapped
   test_mode: False
-
 ```
 
 #### A Closer Look
@@ -209,6 +222,7 @@ Define general sync behavior.
 user_sync:
   sign_only_limit: 100
   sign_only_user_action: reset
+  umg: False
 ```
 
 * `sign_only_limit` - similar to `max_adobe_only_users` in
