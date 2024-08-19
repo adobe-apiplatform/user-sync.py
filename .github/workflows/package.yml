@@ -16,11 +16,11 @@ jobs:
           - extension_support: 1
             variant_tag: ""
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.12'
     - name: Get version tag
       id: get_version
       uses: battila7/get-version-action@v2
@@ -67,11 +67,11 @@ jobs:
           - extension_support: 1
             variant_tag: ""
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.9'
+        python-version: '3.12'
     - name: Get version tag
       id: get_version
       uses: battila7/get-version-action@v2
@@ -116,10 +116,10 @@ jobs:
           - extension_support: 1
             variant_tag: ""
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
-        python-version: '3.9'
+        python-version: '3.12'
     - name: Get version tag
       id: get_version
       uses: battila7/get-version-action@v2
@@ -143,39 +143,54 @@ jobs:
         path: dist/*.zip
         retention-days: 30
 
-  centos:
+  rocky:
     runs-on: ubuntu-latest
     env:
       LC_ALL: en_US.utf8
       LANG: en_US.utf8
     container:
-      image: centos:7
+      image: ${{ matrix.container }}
     strategy:
       matrix:
         include:
-          - extension_support: 0
+          - container: "rockylinux:8"
+            extension_support: 0
             variant_tag: "-noext"
-          - extension_support: 1
+          - container: "rockylinux:8"
+            extension_support: 1
+            variant_tag: ""
+          - container: "rockylinux:9"
+            extension_support: 0
+            variant_tag: "-noext"
+          - container: "rockylinux:9"
+            extension_support: 1
             variant_tag: ""
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Get version tag
         id: get_version
         uses: battila7/get-version-action@v2
-      - name: Centos-Install dependencies
+      - name: Update yum dependencies
+        run: yum update -y
+      - name: Rocky 8 dependencies
+        if: ${{ matrix.container == 'rockylinux:8' }}
+        run: yum install -y pkgconfig gcc openssl-devel dbus-glib-devel python3-dbus sqlite-devel libffi-devel wget make findutils glibc-langpack-en
+      - name: Rocky 9 dependencies
+        if: ${{ matrix.container == 'rockylinux:9' }}
+        run: yum install -y pkgconfig gcc openssl-devel dbus-glib-devel python3-dbus sqlite-devel libffi-devel krb5-devel dbus-daemon wget make findutils glibc-langpack-en
+      - name: Build Python 3.12
         run: |
-          yum install -y pkgconfig gcc openssl-devel dbus-glib-devel dbus-python sqlite-devel libffi-devel wget make
           mkdir tmp && cd tmp
-          wget https://www.python.org/ftp/python/3.9.7/Python-3.9.7.tgz
-          tar xzf Python-3.9.7.tgz
-          cd Python-3.9.7
+          wget https://www.python.org/ftp/python/3.12.4/Python-3.12.4.tgz
+          tar xzf Python-3.12.4.tgz
+          cd Python-3.12.4
           ./configure --enable-optimizations --enable-shared --enable-loadable-sqlite-extensions
           make altinstall
           cd ../..
       - name: Build executable
         run: |
           export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/
-          /usr/local/bin/python3.9 -m venv venv
+          /usr/local/bin/python3.12 -m venv venv
           source venv/bin/activate
           # for some reason, pycryptodome won't install when
           # setuptools is installed/upgraded, so install it before
@@ -194,21 +209,23 @@ jobs:
       - name: Get build
         run: |
           cd dist
-          tar czf "user-sync-${UST_VERSION}${UST_VARIANT_TAG}-centos.tar.gz" user-sync
+          LABEL=$(echo $CONTAINER | sed "s/linux://g")
+          tar czf "user-sync-${UST_VERSION}${UST_VARIANT_TAG}-${LABEL}.tar.gz" user-sync
         env:
           UST_VARIANT_TAG: ${{matrix.variant_tag}}
           UST_VERSION: ${{ steps.get_version.outputs.version }}
+          CONTAINER: ${{ matrix.container }}
       - name: Make artifact
         uses: actions/upload-artifact@v2
         with:
-          name: centos
+          name: rocky
           path: dist/*.tar.gz
           retention-days: 30
 
   examples:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: user-sync-examples-zip
       run: |
          cd examples
@@ -229,9 +246,9 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
-    needs: [centos, ubuntu-jammy, ubuntu-focal, examples, windows]
+    needs: [rocky, ubuntu-jammy, ubuntu-focal, examples, windows]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
@@ -254,6 +271,6 @@ jobs:
       uses: battila7/get-version-action@v2
     - uses: AButler/upload-release-assets@v2.0
       with:
-        files: 'examples/*;ubuntu-jammy/*;ubuntu-focal/*;centos/*'
+        files: 'examples/*;ubuntu-jammy/*;ubuntu-focal/*;rocky/*'
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         release-tag: ${{ steps.get_version.outputs.version }}

@@ -57,6 +57,7 @@ setup(name='user-sync',
           'configparser==3.7.4',
           'schema==0.7.2',
           'sign-client~=0.2.1',
+          'setuptools~=72.1.0',
       ],
       extras_require={
           ':sys_platform=="linux" or sys_platform=="linux2"': [
