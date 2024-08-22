@@ -8,7 +8,7 @@ bookFlatSection: true
 
 # Adobe User Sync Tool
 
-> Version 2.9.0, released 2023-07-26
+> Version 2.10.0, released 2024-08-22
 
 ## Introduction
 
