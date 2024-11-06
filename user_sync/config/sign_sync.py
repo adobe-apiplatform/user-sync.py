@@ -62,6 +62,19 @@ def config_schema() -> Schema:
         }
     })
 
+def connector_schema() -> Schema:
+    from schema import And, Optional, Or, Regex
+    return Schema({
+        'host': str,
+        Or('integration_key', 'secure_integration_key'): str,
+        'admin_email': str,
+        Optional('create_users'): Optional(bool),
+        Optional('deactivate_users'): Optional(bool),
+        Optional('exclusions'): {
+            Optional('groups'): list,
+            Optional('users'): list,
+        }
+    })
 
 class SignConfigLoader(ConfigLoader):
     """
@@ -102,7 +115,7 @@ class SignConfigLoader(ConfigLoader):
         filename, encoding = self._config_file_info()
         self.config_loader = ConfigFileLoader(encoding, self.ROOT_CONFIG_PATH_KEYS, self.SUB_CONFIG_PATH_KEYS)
         self.raw_config = self._load_raw_config(filename, encoding)
-        self._validate(self.raw_config)
+        self._validate(config_schema, self.raw_config)
         self.main_config = self.load_main_config(filename, self.raw_config)
         self.invocation_options = self.load_invocation_options()
         self.directory_groups = self.load_directory_groups()
@@ -149,10 +162,10 @@ class SignConfigLoader(ConfigLoader):
         return self.config_loader.load_root_config(filename)
     
     @staticmethod
-    def _validate(raw_config: dict):
+    def _validate(schm, raw_config: dict):
         from schema import SchemaError
         try:
-            config_schema().validate(raw_config)
+            schm().validate(raw_config)
         except SchemaError as e:
             raise ConfigValidationError(e.code) from e
 
@@ -299,11 +312,14 @@ class SignConfigLoader(ConfigLoader):
         if self.DEFAULT_ORG_NAME not in target_configs:
             raise AssertionException(f"'sign_orgs' config must specify a connector with '{self.DEFAULT_ORG_NAME}' key")
         primary_options = self.config_loader.load_sub_config(target_configs[self.DEFAULT_ORG_NAME])
+        self._validate(connector_schema, primary_options)
         all_options = {}
         for target_id, config_file in target_configs.items():
             if target_id == self.DEFAULT_ORG_NAME:
                 continue
-            all_options[target_id] = self.config_loader.load_sub_config(config_file)
+            cfg = self.config_loader.load_sub_config(config_file)
+            self._validate(connector_schema, cfg)
+            all_options[target_id] = cfg
         all_options[self.DEFAULT_ORG_NAME] = primary_options
         return all_options
 
