@@ -276,7 +276,7 @@ class SignConfigLoader(ConfigLoader):
     def _groupify(self, group_name):
         """For a given group name, return AdobeGroup with proper primary
            target, error checking, etc"""
-        group = AdobeGroup.create(group_name.lower())
+        group = AdobeGroup.create(group_name)
         if group is None:
             raise AssertionException(f"Bad sign group '{group_name}' specified")
         if group.umapi_name is None:
@@ -285,14 +285,15 @@ class SignConfigLoader(ConfigLoader):
 
     def load_primary_group_rules(self, umg):
         primary_group_rules = []
-        group_config = self.main_config.get_list_config('primary_group_rules', True)
-        for mapping in group_config.iter_dict_configs():
-            sign_groups = mapping.get_list('sign_groups')
-            primary_group = mapping.get_string('primary_group')
-            primary_group_rules.append({
-                'sign_groups': set([g.lower() for g in sign_groups]),
-                'primary_group': primary_group
-            })
+        if umg:
+            group_config = self.main_config.get_list_config('primary_group_rules', True)
+            for mapping in group_config.iter_dict_configs():
+                sign_groups = mapping.get_list('sign_groups')
+                primary_group = mapping.get_string('primary_group')
+                primary_group_rules.append({
+                    'sign_groups': set([g.lower() for g in sign_groups]),
+                    'primary_group': primary_group
+                })
         return primary_group_rules
 
     def get_directory_connector_module_name(self) -> str:

@@ -195,3 +195,23 @@ def test_load_invocation_options(modify_sign_config):
     options = config.load_invocation_options()
     assert options['directory_group_mapped'] is True
 
+def test_load_primary_group_rules_umg_false(modify_sign_config):
+    sign_config_file =modify_sign_config(['user_sync', 'umg'], False)
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    result = config.load_primary_group_rules(False)
+    assert result == []
+
+def test_load_primary_group_rules_umg_true_empty(modify_sign_config):
+    sign_config_file = modify_sign_config(['user_sync', 'umg'], True)
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    result = config.load_primary_group_rules(True)
+    expected_result = [
+        {
+            'sign_groups': {'sign group 1', 'sign group 2'},
+            'primary_group': 'Sign Group 2'
+        }
+    ]
+    assert result == expected_result
+
