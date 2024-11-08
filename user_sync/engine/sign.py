@@ -165,7 +165,6 @@ class SignSyncEngine:
         sign_users = {user.email: user for user in filtered_users.values() if user.status != 'INACTIVE'}
         inactive_sign_users = {user.email: user for user in filtered_users.values() if user.status == 'INACTIVE'}
         self.excluded_users = {user.email: user for user in all_users if self.sign_user_excluded(user, sign_user_groups[user.id], sign_connector)}
-        self.sign_user_primary_groups[org_name] = {id: [g for g in groups if g.isPrimaryGroup][0] for id, groups in sign_user_groups.items()}
         users_update_list = []
         user_groups_update_list = []
         dir_users_for_org = {}
