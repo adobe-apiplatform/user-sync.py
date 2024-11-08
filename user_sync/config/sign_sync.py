@@ -287,6 +287,8 @@ class SignConfigLoader(ConfigLoader):
         primary_group_rules = []
         if umg:
             group_config = self.main_config.get_list_config('primary_group_rules', True)
+            if group_config is None:
+                raise AssertionException("'primary_group_rules' is required for UMG sync")
             for mapping in group_config.iter_dict_configs():
                 sign_groups = mapping.get_list('sign_groups')
                 primary_group = mapping.get_string('primary_group')
