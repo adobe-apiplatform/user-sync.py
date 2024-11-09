@@ -53,9 +53,9 @@ jobs:
     - name: Make artifacts
       uses: actions/upload-artifact@v4
       with:
-          name: ubuntu-jammy
-          path: dist/*.tar.gz
-          retention-days: 30
+        name: "ubuntu-jammy${{matrix.variant_tag}}"
+        path: dist/*.tar.gz
+        retention-days: 30
 
   ubuntu-focal:
     runs-on: ubuntu-20.04
@@ -102,7 +102,7 @@ jobs:
     - name: Make artifacts
       uses: actions/upload-artifact@v4
       with:
-          name: ubuntu-focal
+          name: "ubuntu-focal{{matrix.variant_tag}}"
           path: dist/*.tar.gz
           retention-days: 30
 
@@ -139,7 +139,7 @@ jobs:
     - name: Make artifact
       uses: actions/upload-artifact@v4
       with:
-        name: windows
+        name: "windows{{matrix.variant_tag}}"
         path: dist/*.zip
         retention-days: 30
 
@@ -218,7 +218,7 @@ jobs:
       - name: Make artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rocky
+          name: "rocky${{matrix.variant_tag}}"
           path: dist/*.tar.gz
           retention-days: 30
 
