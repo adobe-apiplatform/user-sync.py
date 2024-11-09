@@ -51,7 +51,7 @@ jobs:
         UST_VARIANT_TAG: ${{matrix.variant_tag}}
         UST_VERSION: ${{ steps.get_version.outputs.version }}
     - name: Make artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
           name: ubuntu-jammy
           path: dist/*.tar.gz
@@ -100,7 +100,7 @@ jobs:
         UST_VARIANT_TAG: ${{matrix.variant_tag}}
         UST_VERSION: ${{ steps.get_version.outputs.version }}
     - name: Make artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
           name: ubuntu-focal
           path: dist/*.tar.gz
@@ -137,7 +137,7 @@ jobs:
          cd dist
          7z a user-sync-${{ steps.get_version.outputs.version }}${{matrix.variant_tag}}-win64.zip user-sync.exe
     - name: Make artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: windows
         path: dist/*.zip
@@ -216,7 +216,7 @@ jobs:
           UST_VERSION: ${{ steps.get_version.outputs.version }}
           CONTAINER: ${{ matrix.container }}
       - name: Make artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: rocky
           path: dist/*.tar.gz
@@ -230,7 +230,7 @@ jobs:
       run: |
          cd examples
          zip -r user-sync-examples.zip .
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: examples
         path: examples/*.zip
@@ -238,7 +238,7 @@ jobs:
     - name: user-sync.tar.gz
       run: |
          tar -czvf "user-sync-examples.tar.gz" examples
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: examples
         path: user-sync-examples.tar.gz
@@ -265,7 +265,7 @@ jobs:
     needs: release
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4
     - name: Get version tag
       id: get_version
       uses: battila7/get-version-action@v2
