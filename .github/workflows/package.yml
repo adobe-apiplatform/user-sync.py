@@ -240,7 +240,7 @@ jobs:
          tar -czvf "user-sync-examples.tar.gz" examples
     - uses: actions/upload-artifact@v4
       with:
-        name: examples
+        name: examples-tar
         path: user-sync-examples.tar.gz
         retention-days: 30
 
@@ -271,6 +271,6 @@ jobs:
       uses: battila7/get-version-action@v2
     - uses: AButler/upload-release-assets@v2.0
       with:
-        files: 'examples/*;ubuntu-jammy/*;ubuntu-jammy-noext/*;ubuntu-focal/*;ubuntu-focal-noext/*;rocky/*;rocky-noext/*'
+        files: 'examples/*;examples-tar/*;ubuntu-jammy/*;ubuntu-jammy-noext/*;ubuntu-focal/*;ubuntu-focal-noext/*;rocky/*;rocky-noext/*'
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         release-tag: ${{ steps.get_version.outputs.version }}
