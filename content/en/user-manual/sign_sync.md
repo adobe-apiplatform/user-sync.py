@@ -70,7 +70,7 @@ generate new config files, and provide a summary of actions taken and new files
 generated.
 
 The command takes three optional parameters. You will be prompted to provide
-  * [ ] input if any option is omitted.
+input if any option is omitted.
 
 * `--config-filename` path to post-sync config file (e.g.
   `connector-sign-sync.yml`)
