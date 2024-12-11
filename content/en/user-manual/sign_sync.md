@@ -28,8 +28,9 @@ account and can also manage Sign Enterprise users.
   * User deactivation
 * Manage groups and admin role status of Sign Enterprise users
   * Manage primary user groups
+  * Supports users in multiple groups (UMG)
   * Manage account admin status
-  * Manage group admin status
+  * Manage group admin status (with UMG support)
 * Sign-only user management (similar to Adobe-only user management)
 
 ## Using Sign Sync
@@ -69,7 +70,7 @@ generate new config files, and provide a summary of actions taken and new files
 generated.
 
 The command takes three optional parameters. You will be prompted to provide
-input if any option is omitted.
+  * [ ] input if any option is omitted.
 
 * `--config-filename` path to post-sync config file (e.g.
   `connector-sign-sync.yml`)
@@ -239,8 +240,16 @@ user_sync:
   | `exclude`       | Take no action on Sign-only users                                                                                                                      |
   | `remove_groups` | Reset user to Default Group, but do not modify admin roles                                                                                             |
   | `remove_roles`  | Remove admin roles, but do not change group membership                                                                                                 |
+* `umg` - enable this setting to manage multiple group memberships for users.
+  Requires that the users in multiple groups (UMG) setting be enabled for the
+  target Sign account.
 
 **`cache`**
+
+> **NOTE:** As of version v2.11.0, cache funtionality is disabled. The following
+> information does not currently apply. We're leaving it in place in because the
+> `cache` setting is still present in the configuration file and because the
+> cache file is still written (but not used) when Sign Sync is executed.
 
 User, Group and Group Assignment data retrieved from the Sign API is cached
 locally on the filesystem. This ensures the sync tool can manage users and
@@ -279,15 +288,11 @@ user_management:
   - directory_group: Sign Users 1
     sign_group: Group 1
     group_admin: False
-    account_admin: False
+    account_admin: False #deprecated - see "account_admin_groups" documentation
   - directory_group: Sign Users 1 Admins
     sign_group: Group 1
-    group_admin: True
-    account_admin: False
   - directory_group: Sign Admins
     sign_group:
-    group_admin: False
-    account_admin: True
 ```
 
 * `directory_group` - name of group from identity source. Users belonging to
@@ -298,7 +303,69 @@ user_management:
   that this applies even if a user isn't targeted to a group assignment in any
   given rule. In that case, the user will get group admin status on their
   current primary group.
-* `account_admin` - enable account admin privileges for users.
+  
+  **Note:** If UMG is enabled, and this option is true, then `admin_groups` must
+  also be specified.
+* `admin_groups` - If UMG is enabled and `group_admin` is true, this option
+  designates the groups for which the user is granted admin status.
+* `account_admin` - **Deprecated - see `account_admin_groups` documentation
+  below**
+  
+**`account_admin_groups`**
+
+The `account_admin_groups` configuration replaces the old `account_admin`
+setting that was part of the group mapping scheme. It specifies a simple list of
+directory groups that confer account admin status on a user. If a user belongs
+to one or more directory groups in the list, the user will be made an account
+admin.
+
+Example:
+
+```yaml
+account_admin_groups:
+  - Sign Admins 1
+  - Sign Admins 2
+```
+
+**`primary_group_rules`**
+
+For accounts with users in multiple groups (UMG) enabled, it is necessary to
+designate the primary group of a given user. The primary group impacts a number
+of settings for the user.
+
+`primary_group_rules` configures the primary group that will be assigned a user
+for a given set of Sign groups. Note that unlike the group mapping rules and the
+`account_admin_group` setting, primary group rules are evaluated after a user's
+target groups are assigned during sync. This includes all of a user's Sign
+groups, even those that may not have been assigned during user sync.
+
+The `primary_group_rules` setting is a list of key/value pairs consisting of the
+following options. The order of this list defines precedence in cases where more
+than one rule may apply to a given user. The first rule in the list that applies
+to a given user will define that user's primary group.
+
+* `sign_groups` - list of sign groups that a user must belong to in order to be
+  assigned the corresponding primary group. The user must belong to **all**
+  groups in this list in order for this rule to apply.
+* `primary_group` - the name of the primary group to assign the user if this
+  rule applies
+  
+**Note:** If no rules apply to a user, the sync tool will raise an error and the
+user will not be synced.
+
+Example:
+
+```yaml
+primary_group_rules:
+  # sign_groups list can specify groups that aren't necessarily assigned
+  # the user in the sync tool
+  - sign_groups:
+      - Sign Group 1
+      - Sign Group 2
+    # assign the primary group only if the user is a member of all groups
+    # specified in sign_groups
+    primary_group: Sign Group 2
+```
 
 **`logging`**
 
