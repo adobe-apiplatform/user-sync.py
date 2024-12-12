@@ -350,8 +350,14 @@ to a given user will define that user's primary group.
 * `primary_group` - the name of the primary group to assign the user if this
   rule applies
   
-**Note:** If no rules apply to a user, the sync tool will raise an error and the
-user will not be synced.
+**Notes:** 
+
+* If no rules apply to a user, the sync tool will raise an error and the user
+  will not be synced.
+* If a user's primary group is not assigned the user, the tool will issue a
+  warning and the primary group will not be assigned. Assignment of the group
+  itself must be done in the group mappings. The `primary_group_rules` setting
+  only impacts which assigned group will be designated as the primary group.
 
 Example:
 
