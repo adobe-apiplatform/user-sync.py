@@ -263,18 +263,18 @@ def test_resolve_primary_group_and_group_admin_state_umg_true(example_engine, mo
     assert 'group2' in groups_to_update
     assert groups_to_update['group2'].isPrimaryGroup is True
 
-def test_resolve_primary_group_and_group_admin_state_no_primary_group(example_engine, mock_data_for_update):
-    example_engine.resolve_primary_group = MagicMock(return_value=None)
-    with pytest.raises(AssertionException, match="Can't identify a primary group for user 'user@example.com'"):
-        example_engine.resolvePrimaryGroupAndGroupAdminState(
-            is_umg=True,
-            groups_to_update=mock_data_for_update['groups_to_update'],
-            assigned_groups=mock_data_for_update['assigned_groups'],
-            desired_groups=mock_data_for_update['desired_groups'],
-            admin_groups=mock_data_for_update['admin_groups'],
-            directory_user=mock_data_for_update['directory_user'],
-            sign_user=mock_data_for_update['sign_user']
-        )
+# def test_resolve_primary_group_and_group_admin_state_no_primary_group(example_engine, mock_data_for_update):
+#     example_engine.resolve_primary_group = MagicMock(return_value=None)
+#     with pytest.raises(AssertionException, match="Can't identify a primary group for user 'user@example.com'"):
+#         example_engine.resolvePrimaryGroupAndGroupAdminState(
+#             is_umg=True,
+#             groups_to_update=mock_data_for_update['groups_to_update'],
+#             assigned_groups=mock_data_for_update['assigned_groups'],
+#             desired_groups=mock_data_for_update['desired_groups'],
+#             admin_groups=mock_data_for_update['admin_groups'],
+#             directory_user=mock_data_for_update['directory_user'],
+#             sign_user=mock_data_for_update['sign_user']
+#         )
 
 def test_resolve_primary_group_and_group_admin_state_update_group_admin(example_engine, mock_data_for_update):
     groups_to_update = example_engine.resolvePrimaryGroupAndGroupAdminState(

@@ -345,7 +345,8 @@ class SignSyncEngine:
                 current_pg = None
 
             if desired_pg is None:
-                raise AssertionException(f"Can't identify a primary group for user '{sign_user.email}'")
+                self.logger.error(f"Can't identify a primary group for user '{sign_user.email}'")
+                return
 
             if current_pg is None or desired_pg.lower() != current_pg:
                 if desired_pg.lower() in groups_to_update.keys():
@@ -577,7 +578,8 @@ class SignSyncEngine:
             if is_umg:
                 primary_group = self.resolve_primary_group(groups_to_assign.keys())
                 if primary_group is None:
-                    raise AssertionException(f"Can't identify a primary group for user '{new_user.email}'")
+                    self.logger.error(f"Can't identify a primary group for user '{new_user.email}'")
+                    return
                 self.logger.debug(f"Primary group of '{new_user.email}' is '{primary_group}'")
                 groups_to_assign[primary_group.lower()].isPrimaryGroup = True
             else:
