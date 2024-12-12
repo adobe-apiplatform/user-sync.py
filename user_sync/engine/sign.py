@@ -348,18 +348,21 @@ class SignSyncEngine:
                 raise AssertionException(f"Can't identify a primary group for user '{sign_user.email}'")
 
             if current_pg is None or desired_pg.lower() != current_pg:
-                self.logger.debug(f"Primary group of '{sign_user.email}' is '{desired_pg}'")
                 if desired_pg.lower() in groups_to_update.keys():
                     groups_to_update[desired_pg.lower()].isPrimaryGroup = True
                 else:
                     group_info = assigned_groups.get(desired_pg.lower())
-                    groups_to_update[desired_pg.lower()] = UserGroupInfo(
-                        id=group_info.id,
-                        name=group_info.name,
-                        isGroupAdmin=group_info.isGroupAdmin,
-                        isPrimaryGroup=True,
-                        status='ACTIVE',
-                    )
+                    if group_info is None:
+                        self.logger.warn(f"'{desired_pg}' must be assigned to user {sign_user.email} if designated the primary group")
+                    else:
+                        groups_to_update[desired_pg.lower()] = UserGroupInfo(
+                            id=group_info.id,
+                            name=group_info.name,
+                            isGroupAdmin=group_info.isGroupAdmin,
+                            isPrimaryGroup=True,
+                            status='ACTIVE',
+                        )
+                        self.logger.debug(f"Primary group of '{sign_user.email}' is '{desired_pg}'")
 
             for group in desired_groups:
                 group_info = assigned_groups.get(group)
