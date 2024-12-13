@@ -37,6 +37,14 @@ Group admin status is assigned differently. If `group_admin` is set to `True`, t
 
 (note: `group_admin` is actually deprecated and can be omitted. `admin_groups` is sufficient for managing group admin status)
 
+Account admin status is also handled differently in this release. The `account_admin` field inside a group mapping rule is still permitted for now, but is deprecated. Instead, directory groups that grant account admin status should be set using `account_admin_groups`.
+
+```yaml
+account_admin_groups:
+  - Sign Admins 1
+  - Sign Admins 2
+```
+
 Finally, since a user's primary group impacts several key aspects of user experience, if UMG is enabled, then rules must be specified to designate primary groups for all users. `primary_group_rules` is a new config construct that specifies rules to designate a primary group given different sets of Sign groups.
 
 **NOTE:** Primary group rules are evaluated after group management rules are resolved. `sign_groups` may contain groups that aren't specified in group mappings.
