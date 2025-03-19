@@ -51,11 +51,11 @@ jobs:
         UST_VARIANT_TAG: ${{matrix.variant_tag}}
         UST_VERSION: ${{ steps.get_version.outputs.version }}
     - name: Make artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
-          name: ubuntu-jammy
-          path: dist/*.tar.gz
-          retention-days: 30
+        name: "ubuntu-jammy${{matrix.variant_tag}}"
+        path: dist/*.tar.gz
+        retention-days: 30
 
   ubuntu-focal:
     runs-on: ubuntu-20.04
@@ -100,9 +100,9 @@ jobs:
         UST_VARIANT_TAG: ${{matrix.variant_tag}}
         UST_VERSION: ${{ steps.get_version.outputs.version }}
     - name: Make artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
-          name: ubuntu-focal
+          name: "ubuntu-focal${{matrix.variant_tag}}"
           path: dist/*.tar.gz
           retention-days: 30
 
@@ -137,9 +137,9 @@ jobs:
          cd dist
          7z a user-sync-${{ steps.get_version.outputs.version }}${{matrix.variant_tag}}-win64.zip user-sync.exe
     - name: Make artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
-        name: windows
+        name: "windows${{matrix.variant_tag}}"
         path: dist/*.zip
         retention-days: 30
 
@@ -154,15 +154,19 @@ jobs:
       matrix:
         include:
           - container: "rockylinux:8"
+            label: rocky8
             extension_support: 0
             variant_tag: "-noext"
           - container: "rockylinux:8"
+            label: rocky8
             extension_support: 1
             variant_tag: ""
           - container: "rockylinux:9"
+            label: rocky9
             extension_support: 0
             variant_tag: "-noext"
           - container: "rockylinux:9"
+            label: rocky9
             extension_support: 1
             variant_tag: ""
     steps:
@@ -216,9 +220,9 @@ jobs:
           UST_VERSION: ${{ steps.get_version.outputs.version }}
           CONTAINER: ${{ matrix.container }}
       - name: Make artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: rocky
+          name: "${{matrix.label}}${{matrix.variant_tag}}"
           path: dist/*.tar.gz
           retention-days: 30
 
@@ -230,7 +234,7 @@ jobs:
       run: |
          cd examples
          zip -r user-sync-examples.zip .
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: examples
         path: examples/*.zip
@@ -238,9 +242,9 @@ jobs:
     - name: user-sync.tar.gz
       run: |
          tar -czvf "user-sync-examples.tar.gz" examples
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
-        name: examples
+        name: examples-tar
         path: user-sync-examples.tar.gz
         retention-days: 30
 
@@ -265,12 +269,12 @@ jobs:
     needs: release
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4
     - name: Get version tag
       id: get_version
       uses: battila7/get-version-action@v2
     - uses: AButler/upload-release-assets@v2.0
       with:
-        files: 'examples/*;ubuntu-jammy/*;ubuntu-focal/*;rocky/*'
+        files: 'examples/*;examples-tar/*;ubuntu-jammy/*;ubuntu-jammy-noext/*;ubuntu-focal/*;ubuntu-focal-noext/*;rocky8/*;rocky8-noext/*;rocky9/*;rocky9-noext/*'
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         release-tag: ${{ steps.get_version.outputs.version }}

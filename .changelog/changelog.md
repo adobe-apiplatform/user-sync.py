@@ -1,3 +1,160 @@
+| tag     | date       | title                  |
+|---------|------------|------------------------|
+| v2.11.0 | 2024-12-12 | User Sync Tool v2.11.0 |
+
+# New Features
+
+This release introduces the **Users In Multiple Groups** (UMG) feature for Sign Sync. This feature allows Sign Sync to target Sign accounts with UMG enabled to fully utilize the User Sync Tool.
+
+UMG sync can be enabled in the `user_sync` config setting:
+
+```yaml
+user_sync:
+  sign_only_limit: 100
+  sign_only_user_action: reset
+  # default is False
+  umg: True
+```
+
+With UMG enabled, the `sign_group` setting in a group mapping can be a list of Sign groups to target:
+
+```yaml
+- directory_group: Sign Users
+  sign_group:
+    - Group 1
+    - Group 2
+```
+
+Group admin status is assigned differently. If `group_admin` is set to `True`, then groups for the user to admin must be specified in their own list.
+
+```yaml
+- directory_group: Sign Users
+  sign_group:
+    - Group 1
+    - Group 2
+  # groups specified in "group_admin" list must be present in
+  # sign_group list
+  group_admin: True
+  admin_groups:
+    - Group 1
+```
+
+(note: `group_admin` is actually deprecated and can be omitted. `admin_groups` is sufficient for managing group admin status)
+
+Account admin status is also handled differently in this release. The `account_admin` field inside a group mapping rule is still permitted for now, but is deprecated. Instead, directory groups that grant account admin status should be set using `account_admin_groups`.
+
+```yaml
+account_admin_groups:
+  - Sign Admins 1
+  - Sign Admins 2
+```
+
+Finally, since a user's primary group impacts several key aspects of user experience, if UMG is enabled, then rules must be specified to designate primary groups for all users. `primary_group_rules` is a new config construct that specifies rules to designate a primary group given different sets of Sign groups.
+
+**NOTE:** Primary group rules are evaluated after group management rules are resolved. `sign_groups` may contain groups that aren't specified in group mappings.
+
+```yaml
+primary_group_rules:
+  # sign_groups list can specify groups that aren't necessarily assigned
+  # the user in the sync tool
+  - sign_groups:
+      - Sign Group 1
+      - Sign Group 2
+    # assign the primary group only if the user is a member of all groups
+    # specified in sign_groups
+    primary_group: Sign Group 2
+```
+
+# Notes
+
+* **Sign Sync:** Cache funtionality is disabled for the time being
+
+---
+
+| tag        | date       | title                     |
+|------------|------------|---------------------------|
+| v2.11.0rc1 | 2024-11-08 | User Sync Tool v2.11.0rc1 |
+
+# New Features
+
+This is the first release candidate for the **Users In Multiple Groups** (UMG) feature. This feature allows Sign Sync to target Sign accounts with UMG enabled to fully utilize the User Sync Tool.
+
+UMG sync can be enabled in the `user_sync` config setting:
+
+```yaml
+user_sync:
+  sign_only_limit: 100
+  sign_only_user_action: reset
+  # default is False
+  umg: True
+```
+
+With UMG enabled, the `sign_group` setting in a group mapping can be a list of Sign groups to target:
+
+```yaml
+- directory_group: Sign Users
+  sign_group:
+    - Group 1
+    - Group 2
+```
+
+Group admin status is assigned differently. If `group_admin` is set to `True`, then groups for the user to admin must be specified in their own list.
+
+```yaml
+- directory_group: Sign Users
+  sign_group:
+    - Group 1
+    - Group 2
+  # groups specified in "group_admin" list must be present in
+  # sign_group list
+  group_admin: True
+  admin_groups:
+    - Group 1
+```
+
+(note: `group_admin` is actually deprecated and can be omitted. `admin_groups` is sufficient for managing group admin status)
+
+Finally, since a user's primary group impacts several key aspects of user experience, if UMG is enabled, then rules must be specified to designate primary groups for all users. `primary_group_rules` is a new config construct that specifies rules to designate a primary group given different sets of Sign groups.
+
+**NOTE:** Primary group rules are evaluated after group management rules are resolved. `sign_groups` may contain groups that aren't specified in group mappings.
+
+```yaml
+primary_group_rules:
+  # sign_groups list can specify groups that aren't necessarily assigned
+  # the user in the sync tool
+  - sign_groups:
+      - Sign Group 1
+      - Sign Group 2
+    # assign the primary group only if the user is a member of all groups
+    # specified in sign_groups
+    primary_group: Sign Group 2
+```
+
+# Notes
+
+* **Sign Sync:** Cache funtionality is disabled for the time being
+
+---
+
+| tag     | date       | title                  |
+|---------|------------|------------------------|
+| v2.10.0 | 2024-08-22 | User Sync Tool v2.10.0 |
+
+# Fixes
+
+* #825 send `start_sync()` signal when querying groups for auto-create purposes
+* #834 make TimeoutException a child of AssertionException so we don't show a stack trace
+* #837 fix typo in sign engine log message
+* #840 push strategy fails with unhandled exception
+* e61ec81 Fix issue with all users setting
+
+# New Features
+
+* 5e9e01b Ability to exclude Sign users in Sign Sync
+* d761c5e Introduce option to limit scope of Adobe-only users to just those that have groups to remove in the current sync. See [the manual](https://github.com/adobe-apiplatform/user-sync.py/blob/8082c987c79eddcc3fc06f31a1c32de300a30cd7/en/user-manual/configuring_user_sync_tool.md#limits-config) for more information
+
+---
+
 | tag        | date       | title                     |
 |------------|------------|---------------------------|
 | v2.10.0rc4 | 2024-08-13 | User Sync Tool v2.10.0rc4 |

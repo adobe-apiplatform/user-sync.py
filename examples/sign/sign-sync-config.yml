@@ -21,11 +21,17 @@ user_sync:
   # Default action is to reset (user admin_role removed, user_group set to default group)
   # options: reset, exclude, remove_groups, remove_roles, deactivate
   sign_only_user_action: reset
+  # enable "Users in Multiple Groups" (UMG) support
+  umg: False
 
 # Storage location of Sign data cache. This contains cached users, groups and user assignent info
 # The cache will refresh after 24 hours
 cache:
   path: cache/sign
+
+account_admin_groups:
+  - Sign Admins 1
+  - Sign Admins 2
  
 # User management group/role mappings
 user_management:
@@ -35,26 +41,45 @@ user_management:
   - directory_group: Sign Users 1
     sign_group: Group 1
     group_admin: False
-    account_admin: False
 
-  # Example 2 - group admin assignment
-  - directory_group: Sign Group Admins 1
+  # Example 2 - group admin assignment (single group mode)
+  - directory_group: Sign Users (Admin)
     sign_group: primary::Group 2
     group_admin: True
-    account_admin: False
 
-  # Example 3 - account admin assignment
+  # Example 3 - group admin assignment (UMG)
+  - directory_group: Sign Users (Admin)
+    sign_group:
+      - Sign Users
+    group_admin: True
+    # if UMG enabled, then admin_groups must be specified if group_admin is True
+    admin_groups:
+      - Sign Users
+
+  # Example 4 - account admin assignment
   # - directory_group: Sign Admins
   #   sign_group: secondary::Group 3
   #   group_admin: False
-  #   account_admin: True
 
-  # Example 4 - create user if `create_users` is `True`, otherwise do nothing
+  # Example 5 - create user if `create_users` is `True`, otherwise do nothing
   # - directory_group: Sign Normal Users
   #   sign_group: tertiary::Group 4
   #   group_admin: True
   #   account_admin: True
   
+# # when UMG is enabled, primary_group_rules is required to specify rules
+# # primary group designation. sync tool will log warning if this is present
+# # with UMG disabled. omitting it with UMG enabled will cause an error
+# primary_group_rules:
+#   # sign_groups list can specify groups that aren't necessarily assigned
+#   # the user in the sync tool
+#   - sign_groups:
+#       - Sign Group 1
+#       - Sign Group 2
+#     # assign the primary group only if the user is a member of all groups
+#     # specified in sign_groups
+#     primary_group: Sign Group 2
+
 # Logging options
 logging:
   log_to_file: True

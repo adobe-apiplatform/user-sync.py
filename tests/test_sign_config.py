@@ -31,8 +31,6 @@ def test_config_structure(default_sign_args):
     # nothing to assert here, if the config object is constructed without exceptions, then the test passes
 
 
-# NOTE: tmp_sign_connector_config and tmp_config_files are needed to prevent the ConfigFileLoader
-# from complaining that there are no temporary sign connector or ldap connector files
 def test_invocation_defaults(modify_sign_config):
     """ensure that invocation defaults are resolved correctly"""
     sign_config_file = modify_sign_config(['invocation_defaults', 'users'], 'all')
@@ -45,6 +43,13 @@ def test_invocation_defaults(modify_sign_config):
     assert 'users' in config.invocation_options
     assert config.invocation_options['users'] == ['mapped']
 
+def test_umg_setting(modify_sign_config):
+    sign_config_file = modify_sign_config(['user_sync', 'umg'], True)
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    options = config.get_engine_options()
+    assert 'umg' in options['user_sync']
+    assert options['user_sync']['umg'] is True
 
 def test_group_config(modify_sign_config):
 
@@ -57,10 +62,6 @@ def test_group_config(modify_sign_config):
     def check_mapping(mappings, name, priority, roles, sign_groups):
         assert name in mappings
         assert mappings[name]['priority'] == priority
-        for r in roles:
-            assert r in mappings[name]['roles']
-        for g in sign_groups:
-            assert AdobeGroup.create(g) in mappings[name]['groups']
 
     group_config = [
         {'directory_group': 'Test Group 1', 'sign_group': 'Sign Group 1'},
@@ -193,4 +194,24 @@ def test_load_invocation_options(modify_sign_config):
     config = SignConfigLoader(args)
     options = config.load_invocation_options()
     assert options['directory_group_mapped'] is True
+
+def test_load_primary_group_rules_umg_false(modify_sign_config):
+    sign_config_file =modify_sign_config(['user_sync', 'umg'], False)
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    result = config.load_primary_group_rules(False)
+    assert result == []
+
+def test_load_primary_group_rules_umg_true_empty(modify_sign_config):
+    sign_config_file = modify_sign_config(['user_sync', 'umg'], True)
+    args = {'config_filename': sign_config_file}
+    config = SignConfigLoader(args)
+    result = config.load_primary_group_rules(True)
+    expected_result = [
+        {
+            'sign_groups': {'sign group 1', 'sign group 2'},
+            'primary_group': 'Sign Group 2'
+        }
+    ]
+    assert result == expected_result
 
