@@ -840,8 +840,11 @@ class RuleProcessor(object):
 
     def get_from_index(self, index, user_key):
         """Parse user key and try to retrieve user from provided index"""
-
-        _, username, _, email = self.parse_user_key(user_key)
+        try:
+            _, username, _, email = self.parse_user_key(user_key)
+        except ValueError:
+            self.logger.critical("Invalid user_key: {}".format(user_key))
+            raise ValueError("Check user's email and username in the source directory!")
         return index.get(email=email, username=username)
 
     def update_umapi_user(self, umapi_info, user_key, attributes_to_update=None, groups_to_add=None,
