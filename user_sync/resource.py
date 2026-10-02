@@ -21,13 +21,17 @@
 import os
 import sys
 import enum
-import pkg_resources
+from importlib import resources
 
 _BUNDLE_DIR = "resources"
 
 _PKG = "user_sync.resources"
 
 _run_context = None
+
+
+def _package_path(resource):
+    return str(resources.files(_PKG).joinpath(resource))
 
 
 class RunContext(enum.Enum):
@@ -55,7 +59,7 @@ def get_resource(resource):
         assert getattr(sys, '_MEIPASS', False), "Bundle root dir is not set"
         resource_path = os.path.join(getattr(sys, '_MEIPASS'), "resources", resource)
     else:
-        resource_path = pkg_resources.resource_filename(_PKG, resource)
+        resource_path = _package_path(resource)
     if os.path.exists(resource_path) and os.path.isfile(resource_path):
         return resource_path
     return None
@@ -81,6 +85,6 @@ def get_resource_dir(resource_dir):
         return [os.path.join(resource_path, f) for f in os.listdir(resource_path)
                 if os.path.isfile(os.path.join(resource_path, f))]
     else:
-        resource_path = pkg_resources.resource_filename(_PKG, resource_dir)
-        return [os.path.join(resource_path, f) for f in pkg_resources.resource_listdir(_PKG, resource_dir)
+        resource_path = _package_path(resource_dir)
+        return [os.path.join(resource_path, f) for f in os.listdir(resource_path)
                 if os.path.isfile(os.path.join(resource_path, f))]

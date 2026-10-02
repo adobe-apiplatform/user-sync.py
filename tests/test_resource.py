@@ -22,7 +22,6 @@
 import os
 import sys
 import pytest
-import pkg_resources
 from user_sync import resource
 
 
@@ -45,7 +44,7 @@ def test_resource_file_package(resource_file, tmpdir, monkeypatch):
     tmpdir = str(tmpdir)
     with monkeypatch.context() as m:
         resfile = "test.txt"
-        m.setattr(pkg_resources, "resource_filename", lambda *args: os.path.join(tmpdir, resfile))
+        m.setattr(resource, "_package_path", lambda *args: os.path.join(tmpdir, resfile))
         assert resource_file(tmpdir, resfile) == resource.get_resource(resfile)
 
 
@@ -68,7 +67,7 @@ def test_resource_invalid_file_package(tmpdir, monkeypatch):
     """test for non-existent resource file in a package"""
     tmpdir = str(tmpdir)
     with monkeypatch.context() as m:
-        m.setattr(pkg_resources, "resource_filename", lambda *args: os.path.join('invalid', 'file', 'path'))
+        m.setattr(resource, "_package_path", lambda *args: os.path.join('invalid', 'file', 'path'))
         resfile = os.path.join('invalid', 'file', 'path')
         assert resource.get_resource(resfile) is None
 
@@ -101,13 +100,9 @@ def test_resource_dir_package(resource_file, tmpdir, monkeypatch):
         test_dir = os.path.join(tmpdir, "test")
         os.mkdir(test_dir)
 
-        m.setattr(pkg_resources, "resource_filename", lambda *args: os.path.join(tmpdir, test_dir))
+        m.setattr(resource, "_package_path", lambda *args: test_dir)
 
         resfile = "test_{}.txt"
-
-        res_test_files = [resfile.format(n + 1) for n in range(3)]
-
-        m.setattr(pkg_resources, "resource_listdir", lambda *args: res_test_files)
 
         res_paths = [resource_file(test_dir, resfile.format(n + 1)) for n in range(3)]
 

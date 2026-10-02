@@ -21,7 +21,7 @@
 import os
 import shutil
 import json
-import pkg_resources
+from importlib import metadata
 from pathlib import Path
 import configparser
 
@@ -67,7 +67,7 @@ def bundle_feature_flag_config():
 def pkg_meta():
     pkg_meta_path = Path('user_sync', 'resources', 'pkg_meta.json')
     with open(pkg_meta_path, 'w') as f:
-        json.dump({p.project_name: p.version for p in pkg_resources.working_set}, f)
+        json.dump({d.metadata['Name']: d.version for d in metadata.distributions()}, f)
 
 
 if __name__ == '__main__':
