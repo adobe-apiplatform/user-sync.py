@@ -213,6 +213,7 @@ jobs:
         body_path: .changelog/latest.md
         draft: false
         prerelease: false
+        # Windows builds are intentionally excluded; they're signed and uploaded by an internal build server
         files: |
           artifacts/examples/*
           artifacts/examples-tar/*
