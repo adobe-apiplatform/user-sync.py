@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2017 Adobe Inc.  All rights reserved.
+# Copyright (c) 2016-2026 Adobe Inc.  All rights reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,11 +24,13 @@ import user_sync.helper
 ENTERPRISE_IDENTITY_TYPE = 'enterpriseID'
 FEDERATED_IDENTITY_TYPE = 'federatedID'
 ADOBEID_IDENTITY_TYPE = 'adobeID'
+UNKNOWN_IDENTITY_TYPE = 'unknown'
 
 NORMALIZED_IDENTITY_TYPE_MAP = {
     user_sync.helper.normalize_string(ADOBEID_IDENTITY_TYPE): ADOBEID_IDENTITY_TYPE,
     user_sync.helper.normalize_string(ENTERPRISE_IDENTITY_TYPE): ENTERPRISE_IDENTITY_TYPE,
     user_sync.helper.normalize_string(FEDERATED_IDENTITY_TYPE): FEDERATED_IDENTITY_TYPE,
+    user_sync.helper.normalize_string(UNKNOWN_IDENTITY_TYPE): UNKNOWN_IDENTITY_TYPE,
 }
 
 
