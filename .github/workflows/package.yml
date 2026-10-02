@@ -6,35 +6,36 @@ on:
     - 'v*'
 
 jobs:
-  ubuntu-jammy:
-    runs-on: ubuntu-22.04
+  ubuntu:
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
+        runner: [ubuntu-22.04, ubuntu-24.04]
+        extension_support: [0, 1]
         include:
+          - runner: ubuntu-22.04
+            label: ubuntu-jammy
+            asset_label: ubuntu_jammy
+          - runner: ubuntu-24.04
+            label: ubuntu-noble
+            asset_label: ubuntu_noble
           - extension_support: 0
             variant_tag: "-noext"
           - extension_support: 1
             variant_tag: ""
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v7
       with:
         python-version: '3.12'
-    - name: Get version tag
-      id: get_version
-      uses: battila7/get-version-action@v2
     - name: Ubuntu dependencies
       run: |
-        sudo apt update
-        sudo apt-get install -y software-properties-common \
-                                build-essential \
-                                python3-dev python3-pip python3.11-venv \
-                                pkg-config libssl-dev libdbus-1-dev libdbus-glib-1-dev libffi-dev libkrb5-dev
+        sudo apt-get update
+        sudo apt-get install -y build-essential pkg-config \
+                                libssl-dev libdbus-1-dev libdbus-glib-1-dev libffi-dev libkrb5-dev
     - name: Build the executable
       run: |
-        python3 -m venv venv
-        source venv/bin/activate
         pip install ./sign_client
         pip install external/okta-0.0.3.1-py2.py3-none-any.whl
         pip install -e .
@@ -46,65 +47,17 @@ jobs:
     - name: Get build
       run: |
         cd dist
-        tar czf "user-sync-${UST_VERSION}${UST_VARIANT_TAG}-ubuntu_jammy.tar.gz" user-sync
+        tar czf "user-sync-${UST_VERSION}${UST_VARIANT_TAG}-${ASSET_LABEL}.tar.gz" user-sync
       env:
         UST_VARIANT_TAG: ${{matrix.variant_tag}}
-        UST_VERSION: ${{ steps.get_version.outputs.version }}
+        UST_VERSION: ${{ github.ref_name }}
+        ASSET_LABEL: ${{ matrix.asset_label }}
     - name: Make artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
-        name: "ubuntu-jammy${{matrix.variant_tag}}"
+        name: "${{matrix.label}}${{matrix.variant_tag}}"
         path: dist/*.tar.gz
         retention-days: 30
-
-  ubuntu-focal:
-    runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        include:
-          - extension_support: 0
-            variant_tag: "-noext"
-          - extension_support: 1
-            variant_tag: ""
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
-    - name: Get version tag
-      id: get_version
-      uses: battila7/get-version-action@v2
-    - name: Ubuntu-Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y software-properties-common
-        sudo apt-get install -y build-essential
-        sudo apt-get install -y python3-dev python3-pip python3-virtualenv
-        sudo apt-get install -y pkg-config libssl-dev libdbus-1-dev libdbus-glib-1-dev python-dbus libffi-dev libkrb5-dev
-    - run: |
-        pip install ./sign_client
-        pip install external/okta-0.0.3.1-py2.py3-none-any.whl
-        pip install -e .
-        pip install -e .[test]
-        pip install -e .[setup]
-    - name: Build executable
-      run: make
-      env:
-        UST_EXTENSION: ${{matrix.extension_support}}
-    - name: Get build
-      run: |
-        cd dist
-        tar czf "user-sync-${UST_VERSION}${UST_VARIANT_TAG}-ubuntu_focal.tar.gz" user-sync
-      env:
-        UST_VARIANT_TAG: ${{matrix.variant_tag}}
-        UST_VERSION: ${{ steps.get_version.outputs.version }}
-    - name: Make artifacts
-      uses: actions/upload-artifact@v4
-      with:
-          name: "ubuntu-focal${{matrix.variant_tag}}"
-          path: dist/*.tar.gz
-          retention-days: 30
 
   windows:
     runs-on: windows-latest
@@ -116,13 +69,10 @@ jobs:
           - extension_support: 1
             variant_tag: ""
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - uses: actions/checkout@v7
+    - uses: actions/setup-python@v7
       with:
         python-version: '3.12'
-    - name: Get version tag
-      id: get_version
-      uses: battila7/get-version-action@v2
     - run: |
         pip install ./sign_client
         pip install external/okta-0.0.3.1-py2.py3-none-any.whl
@@ -135,9 +85,9 @@ jobs:
     - name: Get build
       run: |
          cd dist
-         7z a user-sync-${{ steps.get_version.outputs.version }}${{matrix.variant_tag}}-win64.zip user-sync.exe
+         7z a user-sync-${{ github.ref_name }}${{matrix.variant_tag}}-win64.zip user-sync.exe
     - name: Make artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: "windows${{matrix.variant_tag}}"
         path: dist/*.zip
@@ -170,10 +120,7 @@ jobs:
             extension_support: 1
             variant_tag: ""
     steps:
-      - uses: actions/checkout@v4
-      - name: Get version tag
-        id: get_version
-        uses: battila7/get-version-action@v2
+      - uses: actions/checkout@v7
       - name: Update yum dependencies
         run: yum update -y
       - name: Rocky 8 dependencies
@@ -217,10 +164,10 @@ jobs:
           tar czf "user-sync-${UST_VERSION}${UST_VARIANT_TAG}-${LABEL}.tar.gz" user-sync
         env:
           UST_VARIANT_TAG: ${{matrix.variant_tag}}
-          UST_VERSION: ${{ steps.get_version.outputs.version }}
+          UST_VERSION: ${{ github.ref_name }}
           CONTAINER: ${{ matrix.container }}
       - name: Make artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "${{matrix.label}}${{matrix.variant_tag}}"
           path: dist/*.tar.gz
@@ -229,12 +176,12 @@ jobs:
   examples:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - name: user-sync-examples-zip
       run: |
          cd examples
          zip -r user-sync-examples.zip .
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: examples
         path: examples/*.zip
@@ -242,7 +189,7 @@ jobs:
     - name: user-sync.tar.gz
       run: |
          tar -czvf "user-sync-examples.tar.gz" examples
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: examples-tar
         path: user-sync-examples.tar.gz
@@ -250,31 +197,30 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
-    needs: [rocky, ubuntu-jammy, ubuntu-focal, examples, windows]
+    needs: [rocky, ubuntu, examples, windows]
+    permissions:
+      contents: write
     steps:
-    - uses: actions/checkout@v4
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - uses: actions/checkout@v7
+    - uses: actions/download-artifact@v8
       with:
-        tag_name: ${{ github.ref }}
-        release_name: User Sync Tool ${{ github.ref }}
+        path: artifacts
+    - name: Create release and upload assets
+      uses: softprops/action-gh-release@v3
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: User Sync Tool ${{ github.ref_name }}
         body_path: .changelog/latest.md
         draft: false
         prerelease: false
-
-  upload-assets:
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/download-artifact@v4
-    - name: Get version tag
-      id: get_version
-      uses: battila7/get-version-action@v2
-    - uses: AButler/upload-release-assets@v2.0
-      with:
-        files: 'examples/*;examples-tar/*;ubuntu-jammy/*;ubuntu-jammy-noext/*;ubuntu-focal/*;ubuntu-focal-noext/*;rocky8/*;rocky8-noext/*;rocky9/*;rocky9-noext/*'
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        release-tag: ${{ steps.get_version.outputs.version }}
+        files: |
+          artifacts/examples/*
+          artifacts/examples-tar/*
+          artifacts/ubuntu-jammy/*
+          artifacts/ubuntu-jammy-noext/*
+          artifacts/ubuntu-noble/*
+          artifacts/ubuntu-noble-noext/*
+          artifacts/rocky8/*
+          artifacts/rocky8-noext/*
+          artifacts/rocky9/*
+          artifacts/rocky9-noext/*

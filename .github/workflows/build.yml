@@ -11,25 +11,24 @@ jobs:
 
     runs-on: ${{matrix.os}}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-20.04, windows-latest]
+        os: [ubuntu-24.04, windows-latest]
         extension_support: [0, 1]
-   
-    steps:
-    - uses: actions/checkout@v2
 
-    - name: Set up Python 
-      uses: actions/setup-python@v2
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Set up Python
+      uses: actions/setup-python@v7
       with:
-        python-version: '3.9'
-    - name: Ubuntu 
-      if: matrix.os == 'ubuntu-20.04'
-      run: | 
+        python-version: '3.12'
+    - name: Ubuntu dependencies
+      if: runner.os == 'Linux'
+      run: |
         sudo apt-get update
-        sudo apt-get install -y software-properties-common
-        sudo apt-get install -y build-essential
-        sudo apt-get install -y python3-dev python3-pip python3-virtualenv
-        sudo apt-get install -y pkg-config libssl-dev libdbus-1-dev libdbus-glib-1-dev python-dbus libffi-dev libkrb5-dev
+        sudo apt-get install -y build-essential pkg-config \
+                                libssl-dev libdbus-1-dev libdbus-glib-1-dev libffi-dev libkrb5-dev
 
     - name: Install dependencies
       run: |
