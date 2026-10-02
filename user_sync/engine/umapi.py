@@ -894,7 +894,13 @@ class RuleProcessor(object):
                 directory_user['email'] = umapi_user['email']
                 directory_user['username'] = umapi_user['email']
 
-        commands = user_sync.connector.connector_umapi.Commands(directory_user['email'], directory_user['domain'])
+        # if the username is not an email address, matches in both directories, and the email address is changing, then we need to lookup by username.
+        if '@' not in directory_user['username'] and directory_user['username'] == umapi_user['username'] and normalize_string(directory_user['email']) != normalize_string(umapi_user['email']):
+            user_lookup = directory_user['username']
+        else:
+            user_lookup = directory_user['email']
+
+        commands = user_sync.connector.connector_umapi.Commands(user_lookup, directory_user['domain'])
         commands.update_user(attributes_to_update)
         commands.remove_groups(groups_to_remove)
         commands.add_groups(groups_to_add)
