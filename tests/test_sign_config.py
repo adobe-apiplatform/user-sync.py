@@ -227,3 +227,4 @@ def test_load_primary_group_rules_umg_true_empty(modify_sign_config):
         }
     ]
     assert result == expected_result
+
