@@ -15,4 +15,6 @@ deactivate_users: False
 
 # Instead of storing API key in plaintext, store in OS credential keychain
 # See https://adobe-apiplatform.github.io/user-sync.py/en/user-manual/sign_sync.html#securing-the-api-key
+# Comment out integration_key above when using secure_integration_key_key.
+# Store the credential with admin_email as its username.
 #secure_integration_key_key: sign_key

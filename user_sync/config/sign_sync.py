@@ -66,7 +66,7 @@ def connector_schema() -> Schema:
     from schema import And, Optional, Or, Regex
     return Schema({
         'host': str,
-        Or('integration_key', 'secure_integration_key'): str,
+        Or('integration_key', 'secure_integration_key_key'): str,
         'admin_email': str,
         Optional('create_users'): Optional(bool),
         Optional('deactivate_users'): Optional(bool),

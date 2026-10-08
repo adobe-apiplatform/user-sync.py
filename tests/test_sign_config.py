@@ -1,9 +1,13 @@
 import logging
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
+from user_sync.config.error import ConfigValidationError
 from user_sync.config.sign_sync import SignConfigLoader
 from user_sync.config.user_sync import DictConfig
+from user_sync.connector.connector_sign import SignConnector
 from user_sync.engine.common import AdobeGroup
 from user_sync.engine.sign import SignSyncEngine
 from user_sync.error import AssertionException
@@ -162,6 +166,105 @@ def test_target_config_options(default_sign_args, modify_sign_config):
         config.get_target_options()
 
 
+@pytest.mark.parametrize('org_name', ['primary', 'org2'])
+@pytest.mark.parametrize('credential', [
+    {'integration_key': 'plaintext-key'},
+    {'secure_integration_key_key': 'AdobeSignCreds'},
+])
+def test_target_credentials(default_sign_args, monkeypatch, tmp_path, org_name, credential):
+    config = SignConfigLoader(default_sign_args)
+    config.main_config.value['sign_orgs'] = {'primary': 'primary.yml', 'org2': 'org2.yml'}
+    options = {
+        'host': 'api.echosignstage.com',
+        'admin_email': 'user@example.com',
+        'create_users': False,
+        'deactivate_users': False,
+        **credential,
+    }
+    primary_options = {**options, 'integration_key': 'primary-key'}
+    primary_options.pop('secure_integration_key_key', None)
+    monkeypatch.setattr(config.config_loader, 'load_sub_config',
+                        lambda path: options if path == f'{org_name}.yml' else primary_options)
+    keyring_lookup = Mock(return_value='stored-key')
+    monkeypatch.setattr('keyring.get_password', keyring_lookup)
+    monkeypatch.setattr('keyring.get_keyring', lambda: SimpleNamespace(name='test-keyring'))
+    sign_client = Mock()
+    monkeypatch.setattr('user_sync.connector.connector_sign.SignClient', sign_client)
+    monkeypatch.setattr('user_sync.connector.connector_sign.SignCache', Mock())
+
+    target_options = config.get_target_options()
+    assert target_options[org_name] == options
+    connection = Mock()
+    SignConnector(target_options[org_name], org_name, True, connection, {'path': str(tmp_path)})
+
+    if 'secure_integration_key_key' in credential:
+        keyring_lookup.assert_called_once_with(service_name='AdobeSignCreds', username='user@example.com')
+        expected_key = 'stored-key'
+    else:
+        keyring_lookup.assert_not_called()
+        expected_key = 'plaintext-key'
+    sign_client.assert_called_once_with(
+        connection, host=options['host'], integration_key=expected_key,
+        admin_email=options['admin_email'], logger=logging.getLogger(f'sign_{org_name}'))
+
+
+@pytest.mark.parametrize('credential', [
+    {},
+    {'secure_integration_key': 'AdobeSignCreds'},
+    {'secure_integration_key_key': 123},
+])
+def test_invalid_target_credentials(default_sign_args, monkeypatch, credential):
+    config = SignConfigLoader(default_sign_args)
+    options = {'host': 'api.echosignstage.com', 'admin_email': 'user@example.com', **credential}
+    monkeypatch.setattr(config.config_loader, 'load_sub_config', lambda path: options)
+    with pytest.raises(ConfigValidationError):
+        config.get_target_options()
+
+
+@pytest.mark.parametrize('stored_key', [None, ''])
+def test_missing_secure_target_credential(default_sign_args, monkeypatch, tmp_path, stored_key):
+    config = SignConfigLoader(default_sign_args)
+    options = {
+        'host': 'api.echosignstage.com',
+        'admin_email': 'user@example.com',
+        'secure_integration_key_key': 'AdobeSignCreds',
+        'create_users': False,
+        'deactivate_users': False,
+    }
+    monkeypatch.setattr(config.config_loader, 'load_sub_config', lambda path: options)
+    keyring_lookup = Mock(return_value=stored_key)
+    monkeypatch.setattr(DictConfig, 'get_value_from_keyring', keyring_lookup)
+    sign_client = Mock()
+    monkeypatch.setattr('user_sync.connector.connector_sign.SignClient', sign_client)
+    with pytest.raises(AssertionException, match='No value in secure storage'):
+        SignConnector(config.get_target_options()['primary'], 'primary', True,
+                      Mock(), {'path': str(tmp_path)})
+    keyring_lookup.assert_called_once_with('AdobeSignCreds', 'user@example.com')
+    sign_client.assert_not_called()
+
+
+def test_conflicting_target_credentials(default_sign_args, monkeypatch, tmp_path):
+    config = SignConfigLoader(default_sign_args)
+    options = {
+        'host': 'api.echosignstage.com',
+        'admin_email': 'user@example.com',
+        'integration_key': 'plaintext-key',
+        'secure_integration_key_key': 'AdobeSignCreds',
+        'create_users': False,
+        'deactivate_users': False,
+    }
+    monkeypatch.setattr(config.config_loader, 'load_sub_config', lambda path: options)
+    keyring_lookup = Mock()
+    monkeypatch.setattr(DictConfig, 'get_value_from_keyring', keyring_lookup)
+    sign_client = Mock()
+    monkeypatch.setattr('user_sync.connector.connector_sign.SignClient', sign_client)
+    with pytest.raises(AssertionException, match='cannot contain setting for both'):
+        SignConnector(config.get_target_options()['primary'], 'primary', True,
+                      Mock(), {'path': str(tmp_path)})
+    keyring_lookup.assert_not_called()
+    sign_client.assert_not_called()
+
+
 def test_logging_config(default_sign_args):
     config = SignConfigLoader(default_sign_args)
     logging_config = config.get_logging_config()
@@ -214,4 +317,3 @@ def test_load_primary_group_rules_umg_true_empty(modify_sign_config):
         }
     ]
     assert result == expected_result
-
