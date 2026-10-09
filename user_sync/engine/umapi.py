@@ -872,27 +872,9 @@ class RuleProcessor(object):
 
         directory_user = self.get_from_index(self.directory_user_index, user_key)
         if directory_user is not None:
-            identity_type = self.get_identity_type_from_directory_user(directory_user)
+            directory_user['email'] = umapi_user['email']
         else:
             directory_user = umapi_user
-            identity_type = umapi_user.get('type')
-
-        # if user has email-type username and it is different from email address, then we need to
-        # override the username with email address
-        if '@' in directory_user['username'] and normalize_string(directory_user['email']) != normalize_string(directory_user['username']):
-            if groups_to_add or groups_to_remove or attributes_to_update:
-                directory_user['username'] = directory_user['email']
-            if attributes_to_update and 'email' in attributes_to_update:
-                directory_user['email'] = umapi_user['email']
-                attributes_to_update['username'] = umapi_user['username']
-                directory_user['username'] = umapi_user['email']
-
-        # if email based username on umapi is differ than email on umapi and need to update email, then we need to
-        # override the username with email address
-        if '@' in umapi_user['username'] and normalize_string(umapi_user['username']) != normalize_string(umapi_user['email']):
-            if attributes_to_update and 'email' in attributes_to_update:
-                directory_user['email'] = umapi_user['email']
-                directory_user['username'] = umapi_user['email']
 
         commands = user_sync.connector.connector_umapi.Commands(directory_user['email'], directory_user['domain'])
         commands.update_user(attributes_to_update)
