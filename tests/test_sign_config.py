@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-from user_sync.config.sign_sync import SignConfigLoader
+from user_sync.config.sign_sync import SignConfigLoader, connector_schema
 from user_sync.config.user_sync import DictConfig
 from user_sync.engine.common import AdobeGroup
 from user_sync.engine.sign import SignSyncEngine
@@ -160,6 +160,19 @@ def test_target_config_options(default_sign_args, modify_sign_config):
     # 'sign_orgs' must specify a config with the key 'primary'
     with pytest.raises(AssertionException):
         config.get_target_options()
+
+
+@pytest.mark.parametrize('credential', [
+    {'integration_key': 'plaintext-key'},
+    {'secure_integration_key_key': 'AdobeSignCreds'},
+])
+def test_connector_schema_credentials(credential):
+    options = {
+        'host': 'api.echosignstage.com',
+        'admin_email': 'user@example.com',
+        **credential,
+    }
+    assert connector_schema().validate(options) == options
 
 
 def test_logging_config(default_sign_args):
